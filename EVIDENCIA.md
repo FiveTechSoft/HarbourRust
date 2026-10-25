@@ -567,3 +567,9 @@ relative-first order (probe b38). t109 positive (MATCH), t110 negative
 (both reject: Harbour F0029). Battery runner compiles with -I tests.
 Full battery: 113/113 (110 numbered + 3 fixtures), Linux + Wine
 identical.
+
+Line continuation `;`: joining implemented in the preprocessor from
+probes b39/b39b/b39c/b39e (semicolon must be the last non-whitespace
+character outside strings; Harbour rejects trailing comments after it;
+chains). t111 positive (MATCH), t112 negative (both reject). Full
+battery: 115/115 (112 numbered + 3 fixtures), Linux + Wine identical.
