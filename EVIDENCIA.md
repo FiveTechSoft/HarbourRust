@@ -419,3 +419,44 @@ parameters.
   literals).
 - Same caveat as before: the Windows side ran under Wine 10.20, not real
   Windows.
+
+## Iteration 11: function parameters (integers)
+
+`function name(a, b)` declares integer parameters; calls pass arguments
+between the parentheses. Semantics, checked against rustc 1.99.1 behavior:
+an i64 argument COPIES at the call (Rust i64 is Copy), so the caller keeps
+its value; the parameter is an owned local inside the callee and can be
+reassigned. Returning moves the value out, unchanged from before.
+
+Restrictions in this increment (explicit errors, not silent):
+- Parameters are i64 only: passing a string is a compile-time type error
+  ("parameters are integers in this PoC; cannot pass a string to ...").
+- Arity must match exactly ("... takes N argument(s), got M").
+- No shadowing: a local cannot reuse a parameter name ("duplicate local").
+- Calls still require the callee to be defined before use (unchanged).
+
+Calling convention (ours, internal): arguments are pushed in reverse order,
+each in a 16-byte slot (keeps rsp 16-aligned on both targets); the callee
+copies them into its frame after the prologue. Argument expressions are
+pure, so right-to-left evaluation is unobservable.
+
+10 new tests (t57-t66): 6 positive (basic, reassignment, three params,
+nested calls, parameter as for bound, i64 copy usable twice), 4 negative
+(arity, string argument, duplicate parameter, local shadowing a parameter).
+Full battery re-run: 66/66 numbered tests pass (69/69 with fixtures),
+byte-identical output on Linux x86-64 and under Wine.
+
+Differential vs harbour/core @ 694428e1 (pcode): the 6 positive cases MATCH
+(value-identical after whitespace normalization). Negative cases, verified
+against real Harbour: arity errors are RUNTIME errors there (BASE/1081),
+string arguments are accepted (dynamic typing) - both registered in
+docs/DIFFERENTIAL.md as current PoC restrictions, not settled policy.
+Duplicate parameter and shadowing are rejected by Harbour too (E0003):
+equivalent rejection, different message text.
+
+Rust contrast (todo Rust-asm): the equivalent `fn add(a: i64, b: i64)`
+compiled with rustc gives the same value (42). rustc -O inlines and
+constant-folds the call; hbc emits a real frame and call (no optimizer).
+That is an optimization difference, not a semantic one; the call semantics
+(i64 Copy, ownership of returned value) match. No instruction-level
+identity is claimed.
