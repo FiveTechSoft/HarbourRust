@@ -131,6 +131,10 @@ implementation code (C or .ch bodies) is copied or translated into this
 MIT project; reading published rules/headers to learn behaviour is
 recorded, not denied.
 
-- Still scoped OUT: rejected marker forms (<"x">, <#x>), non-call
-  #translate forms, token pasting. No claim of general
-  #command/#translate compatibility.
+- Non-call #translate forms: Harbour applies them at statement start
+  (b19/b20 work; b21 inline-in-expression errors E0030). IMPLEMENTED
+  scoped the same day via the command machinery (t95/t96). Harbour also
+  applies them after its own `?` command through std.ch chaining; this
+  PoC does not emulate that indirect path (scoped difference).
+- Still scoped OUT: rejected marker forms (<"x">, <#x>), token
+  pasting. No claim of general #command/#translate compatibility.
