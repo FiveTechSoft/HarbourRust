@@ -142,6 +142,15 @@ recorded, not denied.
 - Token pasting: no `##` anywhere in Harbour's own .ch headers;
   combined with b04/b10c/b10b there is no usable Harbour behaviour to
   match - left unimplemented.
+- Arity mismatch in a function-like call (b27): Harbour leaves the call
+  UNEXPANDED (fails later at link time as an unresolved function); we
+  reject at compile time ("macro F takes 2 argument(s), got 1") - same
+  rejection class, different phase (registered, consistent with t82).
+- Nested define calls F(G(1),2) work in both with the same value (b28).
+- #include: linear nesting works in both (b29b, 3 levels, t101); a
+  circular chain is rejected by BOTH via depth caps (Harbour F0031, ours
+  "too many nested #include levels") - same rejection class (b29).
+- #command inside a dead #if 0 branch registers in neither (b30).
 - #if expressions: Harbour accepts relational operators, .AND./.OR.,
   unary !, arithmetic and #elif chains (probes b24/b25). Our eval_if
   already had relational/.AND./.OR./.NOT.; extended with !, + - * / %
