@@ -93,7 +93,8 @@ Loop semantics:
   `tests/t25_while_move_reassign.hb`, accepted).
 - After the loop, move states join the pre-loop and end-of-body states:
   the body may have run zero times.
-- `return` stays at the function top level (`tests/t27_while_return.hb`).
+- `return` stayed at the function top level; iteration 7 lifted that
+  (see below).
 
 ## Iteration 6: exit / loop
 
@@ -111,6 +112,22 @@ move checker follows them:
 - After the loop, move states join the pre-loop state, the fall-through
   end-of-body state, and the state at every `exit`: any of those paths
   may be the one that ran (`tests/t32_exit_move_use.hb`, rejected).
+
+## Iteration 7: early return
+
+`return <expr>` is now allowed inside `if` and `while` blocks: it closes
+the function at once with that value (`tests/t16_if_return.hb`,
+`tests/t27_while_return.hb`). Rules, mirroring Rust:
+
+- The closing top-level `return` is still required - an early return is
+  an extra exit, not a replacement for it.
+- Every early return carries a value; bare `return` / `return nil` inside
+  a block is rejected (`tests/t33_return_bare_block.hb`).
+- All returns of a function must agree on the type
+  (`tests/t34_return_type_mix.hb`), and a function that early-returns a
+  value cannot close with `return nil` (`tests/t35_return_nil_closing.hb`).
+- A string moved into an early return stays moved on that path, so using
+  it after the block fails at the join (`tests/t36_return_move_join.hb`).
 
 ## Ownership semantics (what "Rust rules" means here, precisely)
 
@@ -136,7 +153,9 @@ function name()            opens a function (main is the entry point)
     while <cond> ... enddo loop, re-evaluates the condition each iteration
     exit                     leaves the innermost while
     loop                     skips to the next iteration of the innermost while
-return <expr> | return nil closes the function  (top level only)
+    return <expr>            early return: closes the function with a value
+return <expr> | return nil closes the function  (a closing top-level return
+                             is always required)
 // comment
 ```
 
@@ -194,8 +213,7 @@ Integer literals are range-checked (i64).
 - A pure-Rust toolchain end to end: the assembler and linker are GNU
   binutils (C), and `hbc` itself is built with rustc/LLVM. Cranelift or a
   self-hosted path remains open.
-- `for` loops and early returns: `return` stays at the function top
-  level.
+- `for` loops.
 - String comparisons and a first-class boolean: conditions compare
   integers only.
 - The safety of any grammar extension beyond this subset: each extension
