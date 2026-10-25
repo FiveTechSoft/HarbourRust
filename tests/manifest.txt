@@ -293,3 +293,12 @@ pos tests/t294_params3.hb \n         2\n         1\n         2\n        99\n    
 neg tests/t295_neg_params3_moved.hb use of moved value
 pos tests/t296_params3_chain.hb \n         0\n         0\n         0\n         0
 neg tests/t297_neg_print_move.hb use of moved value
+pos tests/t298_hkeys.hb \nbeta\n         1\n        42\n         7\ngamma\n         3\n         3\n         0\n         0
+pos tests/t299_hkeys_case.hb \n         2\none\n         9\nONE\n         0\n         0
+pos tests/t300_hkeys_empty.hb \n         0\n         0\n         0
+pos tests/t301_hkeys_ownstr.hb \nx\n         5\nx\n         0\n         0
+neg tests/t302_neg_hkeys_moved.hb use of moved value
+neg tests/t303_neg_hkeys_param.hb cannot be function parameters
+neg tests/t304_neg_hkeys_aadd.hb `AAdd` applies to dynamic arrays
+pos tests/t306_hkeys_return.hb \nx\nx\n         0\n         0
+neg tests/t305_neg_hkeys_strmoved.hb use of moved value
