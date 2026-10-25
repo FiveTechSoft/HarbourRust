@@ -77,3 +77,11 @@ identical whenever the caller does not reuse the moved variable.
 Negative cases accepted by Harbour but rejected here remain as recorded in
 the iteration-11 run; t64/t70 now fail earlier with "cannot infer the type
 of parameter" (Harbour accepts: dynamic typing).
+
+## Run of 2026-10-25 (preprocessor adversarial round)
+
+t83 (case-sensitive #ifdef): MATCH (both select the else branch, value 2).
+t82 (`#define MiXeD` used as `mixed`): Harbour compiles and fails at
+RUNTIME (BASE/1003); HarbourRust fails at COMPILE time (undefined
+variable). Category: static vs dynamic checking, same rejection class -
+registered, consistent with the arity case from iteration 11.
