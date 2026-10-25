@@ -12,8 +12,8 @@
 #                                       on both targets
 cd "$(dirname "$0")/.." || exit 2
 fail=0
-build_linux() { ./hbc "$1" gen/"$base".s --target=linux -I tests >/dev/null 2>&1 && as -o gen/"$base".o gen/"$base".s && ld -o gen/"$base" gen/"$base".o; }
-build_win() { ./hbc "$1" gen/"$base"_w.s --target=windows -I tests >/dev/null 2>&1 && "$M"/x86_64-w64-mingw32-as -o gen/"$base"_w.o gen/"$base"_w.s && "$M"/x86_64-w64-mingw32-ld -o gen/"$base".exe gen/"$base"_w.o -e _start --subsystem console -L"$MLIB" -lkernel32; }
+build_linux() { ./hbc "$1" gen/"$base".s --target=linux --instrument -I tests >/dev/null 2>&1 && as -o gen/"$base".o gen/"$base".s && ld -o gen/"$base" gen/"$base".o; }
+build_win() { ./hbc "$1" gen/"$base"_w.s --target=windows --instrument -I tests >/dev/null 2>&1 && "$M"/x86_64-w64-mingw32-as -o gen/"$base"_w.o gen/"$base"_w.s && "$M"/x86_64-w64-mingw32-ld -o gen/"$base".exe gen/"$base"_w.o -e _start --subsystem console -L"$MLIB" -lkernel32; }
 run_pos_kind() { # file expected [exit]
   local f=$1 exp=$2 want_rc=$3 base
   base=$(basename "$f" .hb)
