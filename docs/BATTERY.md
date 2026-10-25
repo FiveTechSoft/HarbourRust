@@ -626,3 +626,29 @@ mode). Design: a temporary collection gets a slot registered in
 darr_slots (layout_locals) - prologue zeroes it, the ForEach
 entry frees it if non-null (re-entry), the epilogue frees it on
 every path. No new helpers; harness unchanged.
+
+## Iteration 33e additions (370 manifest cases): FOR EACH over a[i]
+
+t367 (hk53 mirror: `for each x in a[1]` / `a[2]` on an array of
+arrays iterate the subarray's elements; the root survives and
+keeps its length and cells afterwards - t367 replaces the old
+"cannot extract the subarray" rejection, disproved by these
+oracles), t368 (the collection index expression evaluates
+ONCE: `a[ni()]` prints "eval" a single time), t369 (hk58
+mirror: iterating a NIL casilla exits 1 with "Argument error:
+array access" - Harbour's BASE/1068 dialog hangs headless, so
+this is a registered failure mode, not an oracle-matched
+equivalence), t370-t372 (named compile errors: ASize(a, 3),
+AAdd(a[1], 9) and a[1][1] := 9 inside the loop - the root and
+the borrowed child cannot be modified, grown or moved inside
+their own loop; indirect moves through the body environment
+were already rejected by the 33a guards), t373 (`exit` and
+`return` inside a loop over a borrowed subarray: the loop owns
+nothing, so there is no per-statement freeing; the epilogue
+frees the root as usual, balance 0). Design: the codegen
+evaluates the index expression once (Dyn converted via
+hbc_dyn_to_i64), bounds-checks it against the parent's length
+(hbc_bound_error), loads the child {ptr, len} cell, and jumps
+to the new noreturn stub hbc_arracc_error when the child
+pointer is null (NIL casilla). No ABI harness entries: the
+only new runtime helper is noreturn.
