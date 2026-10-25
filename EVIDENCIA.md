@@ -457,3 +457,14 @@ t90 (list capture). Full battery: 93/93 (90 numbered + 3 fixtures),
 Linux + Wine identical. Differential vs Harbour: t89, t90 MATCH; t88 is
 the registered static-vs-dynamic rejection difference (compile-time vs
 BASE/1003 at runtime, same class as t82).
+
+### Match marker <(x)> (scoped)
+
+Probes b07, b14-b17 against Harbour: <(x)> requires a parenthesized
+expression in the source (E0030 otherwise) and captures the inner
+tokens; the result marker <(x)> re-parenthesizes, <x> inserts plain.
+Implemented; t91/t92 positive, t93 negative. Full battery: 96/96 (93
+numbered + 3 fixtures), Linux + Wine identical. Differential vs Harbour:
+t91, t92 MATCH; t93 same compile-time rejection with different error
+code (E0030 vs E0020-class, registered). <"x"> and <#x> are rejected by
+Harbour itself (E0010) and are not implemented.
