@@ -359,3 +359,22 @@ not - matching Harbour's observed behaviour. NOT supported: the marker
 forms Harbour itself rejects (`<"x">`, `<#x>`), non-call `#translate`
 forms, token pasting (`##`), the `&` macro operator, `#pragma`. This is not a complete preprocessor port; see docs/PP-F0.md for
 the probe record and the explicit out-of-scope list.
+
+## Iteration 11: fixed-size integer arrays
+
+`local a := {10, 20, 30}` creates a fixed-size array of integers, stored
+inline in the stack frame (no heap, no GC): `? a[i]` reads, `a[i] := v`
+writes. Indexing is Harbour's base 1, probed against Harbour (a[1] is the
+first element; both a[0] and a[N+1] fail). A constant index out of range
+is a compile error; a runtime-computed index out of range prints Harbour's
+wording (`Bound error: array access`) and exits with code 1 - Harbour
+itself opens an interactive error dialog there (observed hanging even
+with stdin at EOF), so the failure MODE is a registered difference while
+the error CONDITION is the same. Assignment copies the whole array: Rust
+`[i64; N]` is Copy, verified against rustc (mutating the copy leaves the
+source intact); Harbour shares a reference instead - a registered MODEL
+difference, not a bug. Explicit limits of this increment: integer elements
+only, fixed size from the literal, one index level, no array parameters or
+return values, no whole-array printing, no empty literal, no `len()`,
+no mixed types. Battery: tests t126-t139 (4 byte-exact vs compiled
+Harbour, 1 MODEL, 1 DIVERGE-FAILMODE, 8 negatives).
