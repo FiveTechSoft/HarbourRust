@@ -720,6 +720,21 @@ bounds-walk and append tail with the scalar path (a first draft
 duplicated the tail with an early return that dropped the following
 statements - caught by the battery, fixed before publishing).
 
+## Iteration 33o additions (440 manifest cases): hashes as arguments and returns
+
+Hashes follow the established MOVE contract on arguments and returns
+(oracle hk11, compiled hbmk2 -gtstd: Harbour SHARES the hash - the
+callee's added key is visible in the caller - so the move is a
+registered D5/D7-family difference pending the user's contract
+decision, NOT sharing). Tests: t439 (callee reads and extends the
+moved hash, balance 0), t440 (hash return moves to the caller,
+balance 0). Named compile errors: t441 (caller reuse after the
+move), t442 (a hash LITERAL argument - no emission path in argument
+position; the named rejection replaces a compiler unreachable found
+while probing this increment), t443 (a read-only callee pins a flat
+dynamic array - len evidence is array/hash-ambiguous, same
+registered pin pattern). No new helpers, no new ABI harness entries.
+
 ## Iteration 33n additions (435 manifest cases): string arrays as arguments and returns
 
 DArrS (arrays of strings) follow the established MOVE contract on
