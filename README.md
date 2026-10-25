@@ -585,6 +585,28 @@ tested paths (t191). `Array(n, 0)` children are real empty arrays
 (az0b, t256). Battery: 266/266 green on Linux x86-64 and Wine, plus
 the ABI harness on both targets.
 
+## Iteration 26 - class syntax parser (runtime pending)
+
+The class surface PARSES now: CREATE CLASS Name [INHERIT Base] ...
+ENDCLASS with DATA name [INIT expr] and METHOD name(params)
+[CONSTRUCTOR] declarations, METHOD ... CLASS Name definitions, and
+the message-send syntax (o:name, o:name(args), chains, ::name,
+Self, `==` lexed for identity). The runtime representation is NOT
+implemented: every program with a class is rejected with an
+explicit error after parsing (t290), multiple inheritance is its
+own error (t291, oracle cl21: Harbour accepts it), class scopes
+PROTECTED/HIDDEN are their own (t292, oracle cl8: Harbour enforces
+them at runtime), `==` identity is its own (t293, oracles
+cl7/cl19). The parser is ours (MIT); the hbclass.ch macros were
+only observed as oracles, never copied. Semantics probed and
+registered so far (sondas_ac/classes, cl1-cl21): sharing on
+assignment and parameter passing, Self chains, per-instance INIT,
+constructor not auto-run, method-over-DATA precedence, instance
+dispatch with override, child-first INIT order, lax arity,
+identity, cycles usable, unknown message/data errors (headless
+dialogs). Battery: 291/291 green on Linux x86-64 and Wine, plus
+the ABI harness on both targets.
+
 ## Iteration 25 - Array() with three dimensions
 
 `Array(n, m, k)` now builds a full three-level value (oracle pr7,
