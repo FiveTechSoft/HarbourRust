@@ -1212,12 +1212,24 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
     fn is_param(f: &Func, id: &str) -> Option<usize> {
         f.params.iter().position(|p| p == id)
     }
+    // Evidence that an expression is a string at pin time: a literal, a
+    // literal-initialized local, or a call whose signature returns one.
+    fn str_evidence(e: &Expr, lit: &[(String, Ty)], sigs: &[Sig]) -> bool {
+        match e {
+            Expr::Str(_) => true,
+            Expr::Var(v) => lit.iter().any(|(x, t)| x == v && *t == Ty::Str),
+            Expr::Call(id, _) => sigs.iter().any(|s| s.name == *id && matches!(s.ret, Some(Ty::Str) | Some(Ty::StrOwn))),
+            _ => false,
+        }
+    }
     fn setpin(pin: &mut Vec<Option<Ty>>, idx: usize, ty: Ty, n: usize) -> Result<(), String> {
         fn tname(t: Ty) -> &'static str {
             match t {
                 Ty::I64 => "an integer",
                 Ty::Str => "a string",
                 Ty::Dyn => "a NIL-capable value",
+                Ty::StrOwn => "a string",
+                Ty::DArrS => "an array of strings",
                 _ => "a value of another type",
             }
         }
@@ -1240,11 +1252,23 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                 pin[idx] = Some(Ty::DArr3);
                 Ok(())
             }
+            // Whole-array evidence (len(p) pins DArr) merges with
+            // string-element evidence (AAdd(p, "x"), p[i] := "x", p[i] in
+            // a string context): an array of strings (hb_HKeys shape).
+            Some(t) if matches!((t, ty), (Ty::DArr, Ty::DArrS) | (Ty::DArrS, Ty::DArr)) => {
+                pin[idx] = Some(Ty::DArrS);
+                Ok(())
+            }
             Some(t) => Err(format!("line {}: parameter used as both {} and {}", n, tname(t), tname(ty))),
         }
     }
     // Pin parameter vars appearing directly (not under a call) in e.
     fn pin_vars(f: &Func, e: &Expr, ty: Ty, pin: &mut Vec<Option<Ty>>, n: usize) -> Result<(), String> {
+        // String parameters are uniformly OWNED strings (StrOwn): the
+        // callee owns and frees its parameter, a rodata argument is
+        // copied at the call boundary and an owned argument moves. One
+        // kind keeps the freeing behaviour unambiguous.
+        let ty = if ty == Ty::Str { Ty::StrOwn } else { ty };
         match e {
             Expr::Var(id) => { if let Some(i) = is_param(f, id) { setpin(pin, i, ty, n)?; } Ok(()) }
             Expr::Bin(_, a, b) => { pin_vars(f, a, Ty::I64, pin, n)?; pin_vars(f, b, Ty::I64, pin, n) }
@@ -1255,7 +1279,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
             Expr::ArrLit(es) => { for e in es { pin_vars(f, e, Ty::I64, pin, n)?; } Ok(()) }
             Expr::Index(id, ie) => {
                 if is_param(f, id).is_some() {
-                    return Err(format!("line {}: array parameters are not in this increment", n));
+                    // p[i] in a string context (compared against a string
+                    // or passed to a string parameter): the parameter is
+                    // an array of strings (the hb_HKeys shape).
+                    if ty == Ty::StrOwn {
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::DArrS, pin, n)?;
+                    } else {
+                        return Err(format!("line {}: array parameters are not in this increment", n));
+                    }
                 }
                 pin_vars(f, ie, Ty::I64, pin, n)
             }
@@ -1437,15 +1468,25 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     walk(f, a, sigs, lit, pin, *n)?; walk(f, b, sigs, lit, pin, *n)?;
                     walk_stmts(f, body, sigs, lit, pin, nil_ret)?;
                 }
-                Stmt::ArrSet(n, _, ie, e) => {
+                Stmt::ArrSet(n, id, ie, e) => {
+                    // p[i] := "x": a string value pins an array of strings.
+                    if str_evidence(e, lit, sigs) {
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::DArrS, pin, *n)?;
+                    }
                     pin_vars(f, ie, Ty::I64, pin, *n)?;
                     walk(f, ie, sigs, lit, pin, *n)?;
                     walk(f, e, sigs, lit, pin, *n)?;
                 }
                 Stmt::AAdd(n, id, e) => {
                     // AAdd's target is a dynamic array: pins a parameter.
-                    pin_vars(f, &Expr::Var(id.clone()), Ty::DArr, pin, *n)?;
-                    pin_vars(f, e, Ty::I64, pin, *n)?;
+                    // A string element pins an array of strings (the
+                    // hb_HKeys shape); anything else keeps the flat pin.
+                    if str_evidence(e, lit, sigs) {
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::DArrS, pin, *n)?;
+                    } else {
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::DArr, pin, *n)?;
+                        pin_vars(f, e, Ty::I64, pin, *n)?;
+                    }
                     walk(f, e, sigs, lit, pin, *n)?;
                 }
                 Stmt::ASize(n, id, e) => {
@@ -1674,9 +1715,6 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                 if ta == Ty::Hash {
                     return Err(format!("line {}: hashes cannot be function parameters in this increment", n));
                 }
-                if ta == Ty::DArrS || ta == Ty::StrOwn {
-                    return Err(format!("line {}: hb_HKeys results and owned strings cannot be function parameters in this increment", n));
-                }
                 // A string argument moves out of its variable right away, so
                 // a second use later in the same expression (e.g. the other
                 // side of a `+`) is rejected like any other use-after-move.
@@ -1687,7 +1725,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                 }
                 let ok = ta == sig.params[i]
                     || (ta == Ty::Dyn && sig.params[i] == Ty::I64)  // runtime extract (nil -> clean type error)
-                    || (ta == Ty::I64 && sig.params[i] == Ty::Dyn); // tagged at the call
+                    || (ta == Ty::I64 && sig.params[i] == Ty::Dyn) // tagged at the call
+                    || (ta == Ty::Str && sig.params[i] == Ty::StrOwn); // rodata: copied at the call boundary
                 if !ok {
                     return Err(format!("line {}: argument {} of `{}` must be {}, got {}",
                         n, i + 1, id,
@@ -2120,6 +2159,9 @@ fn unify_ret(ret: Option<Ty>, t: Ty, n: usize) -> Result<Ty, String> {
         (None, t) => Ok(t),
         (Some(p), t) if p == t => Ok(t),
         (Some(Ty::I64), Ty::Dyn) | (Some(Ty::Dyn), Ty::I64) => Ok(Ty::Dyn),
+        // A rodata string and an owned string unify to owned (the caller
+        // always owns the result; a rodata return point emits a copy).
+        (Some(Ty::Str), Ty::StrOwn) | (Some(Ty::StrOwn), Ty::Str) => Ok(Ty::StrOwn),
         (Some(p), _) => Err(format!("line {}: return type mismatch (this function already returns {:?} elsewhere; all returns must agree)", n, p)),
     }
 }
@@ -2332,7 +2374,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 if env[kp].moved {
                     return Err(format!("line {}: use of moved value `{}`", n, id));
                 }
-                if !matches!(env[kp].ty, Ty::DArr | Ty::DArrU | Ty::DArr2) {
+                if !matches!(env[kp].ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArrS) {
                     return Err(format!("line {}: `AAdd` applies to dynamic arrays (`{{}}`); `{}` is not one", n, id));
                 }
                 let t = type_expr(e, env, sigs, *n)?;
@@ -2341,8 +2383,17 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                         match t {
                             Ty::I64 | Ty::Dyn => { env[kp].ty = Ty::DArr; false }
                             Ty::DArr | Ty::DArrU => { env[kp].ty = Ty::DArr2; true }
-                            _ => return Err(format!("line {}: `AAdd` grows with integer or dynamic-array elements in this increment", n)),
+                            // A string pins an array of strings; an owned
+                            // string moves in, a rodata one is copied.
+                            Ty::Str | Ty::StrOwn => { env[kp].ty = Ty::DArrS; t == Ty::StrOwn }
+                            _ => return Err(format!("line {}: `AAdd` grows with integer, string or dynamic-array elements in this increment", n)),
                         }
+                    }
+                    Ty::DArrS => {
+                        if !matches!(t, Ty::Str | Ty::StrOwn) {
+                            return Err(format!("line {}: the elements of `{}` are strings", n, id));
+                        }
+                        t == Ty::StrOwn
                     }
                     Ty::DArr => {
                         // Elements are tagged values: an i64 or a Dyn (NIL
@@ -2545,6 +2596,20 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                         apply_moves(e, env, sigs, true);
                         apply_moves(ie, env, sigs, false);
                     }
+                    Ty::DArrS => {
+                        // Element overwrite on an array of strings: an
+                        // owned string moves in, a rodata one is copied;
+                        // the old owned copy is freed in codegen.
+                        let vt = type_expr(e, env, sigs, *n)?;
+                        if !matches!(vt, Ty::Str | Ty::StrOwn) {
+                            return Err(format!("line {}: the elements of `{}` are strings", n, id));
+                        }
+                        if type_expr(ie, env, sigs, *n)? != Ty::I64 {
+                            return Err(format!("line {}: array index must be an integer", n));
+                        }
+                        apply_moves(e, env, sigs, true);
+                        apply_moves(ie, env, sigs, false);
+                    }
                     Ty::Arr(_) => {
                         if type_expr(e, env, sigs, *n)? != Ty::I64 {
                             return Err(format!("line {}: array elements must be integers in this increment", n));
@@ -2727,7 +2792,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             }
             let sig = sigs.iter().find(|v| v.name == *id).expect("checked");
             for (i, a) in args.iter().enumerate() {
-                let m = i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::DArr || sig.params[i] == Ty::DArr2 || sig.params[i] == Ty::DArr3);
+                let m = i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::StrOwn || sig.params[i] == Ty::DArr || sig.params[i] == Ty::DArr2 || sig.params[i] == Ty::DArr3 || sig.params[i] == Ty::DArrS);
                 apply_moves(a, env, sigs, m);
             }
         }
@@ -2953,14 +3018,20 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     continue;
                 }
-                if ta == Ty::Str || ta == Ty::DArr || ta == Ty::DArr2 || ta == Ty::DArr3 {
+                if ta == Ty::Str && pty == Some(Ty::StrOwn) {
+                    // A rodata string argument to an owned-string
+                    // parameter: the callee owns and frees its parameter,
+                    // so the call boundary hands over a fresh copy.
+                    out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                    // An owned (moved) DArr/DArr2/DArr3 argument: null the source
-                    // slot right after the copy, so the callee is the only
+                } else if ta == Ty::Str || ta == Ty::DArr || ta == Ty::DArr2 || ta == Ty::DArr3 || ta == Ty::DArrS || ta == Ty::StrOwn {
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    // An owned (moved) argument: null the source slot
+                    // right after the copy, so the callee is the only
                     // owner and the caller's later frees see null.
                     if let Expr::Var(src) = a {
-                        if ta == Ty::DArr || ta == Ty::DArr2 || ta == Ty::DArr3 {
-                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3)) {
+                        if matches!(ta, Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn) {
+                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn)) {
                                 out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                             }
                         }
@@ -3318,8 +3389,8 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 let mut flip = None;
                 if let Some(v) = env.iter_mut().find(|v| v.name == *id) {
                     if v.ty == Ty::DArrU {
-                        v.ty = if matches!(vt, Ty::DArr | Ty::DArrU) { Ty::DArr2 } else { Ty::DArr };
-                        flip = Some((v.off, (v.ty == Ty::DArr2) as u8));
+                        v.ty = if matches!(vt, Ty::DArr | Ty::DArrU) { Ty::DArr2 } else if matches!(vt, Ty::Str | Ty::StrOwn) { Ty::DArrS } else { Ty::DArr };
+                        flip = Some((v.off, if v.ty == Ty::DArr2 { 1 } else if v.ty == Ty::DArrS { 4 } else { 0 }));
                     }
                 }
                 if let Some((off, deep)) = flip {
@@ -3375,13 +3446,19 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
     match cond {
         // NIL against a string is always .F. under `=` (probe n1); only
         // `=` / `#` reach codegen (analysis rejects ordering NIL).
-        Expr::Cmp(op, a, b) if (matches!(**a, Expr::Nil) && expr_ty(b, env, sigs) == Ty::Str)
-            || (matches!(**b, Expr::Nil) && expr_ty(a, env, sigs) == Ty::Str) => {
+        Expr::Cmp(op, a, b) if (matches!(**a, Expr::Nil) && matches!(expr_ty(b, env, sigs), Ty::Str | Ty::StrOwn))
+            || (matches!(**b, Expr::Nil) && matches!(expr_ty(a, env, sigs), Ty::Str | Ty::StrOwn)) => {
             // The result is a constant, but BOTH operands still evaluate
             // left to right (a call may print; an index may raise a bound
             // error) - only the comparison itself is folded (probe n1).
+            // An owned temporary (e.g. keys[i]) is freed after evaluation.
+            let a_tmp = expr_ty(a, env, sigs) == Ty::StrOwn && !matches!(&**a, Expr::Var(_));
+            let b_tmp = expr_ty(b, env, sigs) == Ty::StrOwn && !matches!(&**b, Expr::Var(_));
             cg_value(a, env, sigs, strs, out, target);
+            if a_tmp { out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"); }
             cg_value(b, env, sigs, strs, out, target);
+            if b_tmp { out.push_str("    mov %rax, %rdi\n    mov $1, %esi\n    call hbc_free\n"); }
+            if a_tmp { out.push_str("    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    add $16, %rsp\n"); }
             if matches!(op, CmpOp::Ne) {
                 out.push_str(&format!("    jmp {}\n", true_label));
             }
@@ -3407,13 +3484,18 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
         Expr::Cmp(op, a, b) if expr_ty(a, env, sigs) == Ty::Dyn || expr_ty(b, env, sigs) == Ty::Dyn => {
             let ta = expr_ty(a, env, sigs);
             let tb = expr_ty(b, env, sigs);
-            if ta == Ty::Str || tb == Ty::Str {
+            if ta == Ty::Str || tb == Ty::Str || ta == Ty::StrOwn || tb == Ty::StrOwn {
                 // Dyn against a string: `=` is always .F., `#` always .T.
                 // (probe n1: "" = NIL is .F.). Analysis rejects ordering.
                 // The operands still evaluate left to right - only the
-                // comparison is folded.
+                // comparison is folded. An owned temporary is freed.
+                let a_tmp = ta == Ty::StrOwn && !matches!(&**a, Expr::Var(_));
+                let b_tmp = tb == Ty::StrOwn && !matches!(&**b, Expr::Var(_));
                 cg_value(a, env, sigs, strs, out, target);
+                if a_tmp { out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"); }
                 cg_value(b, env, sigs, strs, out, target);
+                if b_tmp { out.push_str("    mov %rax, %rdi\n    mov $1, %esi\n    call hbc_free\n"); }
+                if a_tmp { out.push_str("    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    add $16, %rsp\n"); }
                 if matches!(op, CmpOp::Ne) {
                     out.push_str(&format!("    jmp {}\n", true_label));
                 }
@@ -3467,10 +3549,15 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 }
             }
         }
-        Expr::Cmp(op, a, b) if expr_ty(a, env, sigs) == Ty::Str => {
+        Expr::Cmp(op, a, b) if matches!(expr_ty(a, env, sigs), Ty::Str | Ty::StrOwn)
+            && matches!(expr_ty(b, env, sigs), Ty::Str | Ty::StrOwn) => {
             // String equality/inequality: byte-compare via hbc_str_eq.
             // The lhs (ptr,len) pair is saved while the rhs is evaluated;
-            // the comparison borrows both operands (no move).
+            // the comparison borrows both operands (no move). Owned
+            // temporaries (reads like keys[i]) are freed AFTER the call,
+            // with the result preserved across the frees.
+            let a_tmp = expr_ty(a, env, sigs) == Ty::StrOwn && !matches!(&**a, Expr::Var(_));
+            let b_tmp = expr_ty(b, env, sigs) == Ty::StrOwn && !matches!(&**b, Expr::Var(_));
             cg_value(a, env, sigs, strs, out, target);
             match target {
                 Target::Linux => out.push_str("    push %rax\n    push %rdx\n"),
@@ -3482,14 +3569,32 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 Target::Linux => out.push_str("    pop %rdx\n    pop %rax\n"),
                 Target::Windows => out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n"),
             }
+            if a_tmp || b_tmp {
+                // Stack above the compare (top first): result slot, then
+                // the b-temp pointer, then the a-temp pointer.
+                let nt = a_tmp as usize + b_tmp as usize;
+                out.push_str("    sub $16, %rsp\n");
+                if b_tmp { out.push_str("    sub $16, %rsp\n    mov %rcx, (%rsp)\n"); }
+                if a_tmp { out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"); }
+                match op {
+                    CmpOp::Eq | CmpOp::Ne => { out.push_str("    call hbc_str_eq\n"); }
+                    _ => { out.push_str("    call hbc_str_cmp\n"); }
+                }
+                out.push_str(&format!("    mov %rax, {}(%rsp)\n", 16 * nt));
+                if a_tmp { out.push_str(&format!("    mov {}(%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n", 16 * (b_tmp as usize))); }
+                if b_tmp { out.push_str("    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n"); }
+                out.push_str(&format!("    mov {}(%rsp), %rax\n    add ${}, %rsp\n", 16 * nt, 16 * (nt + 1)));
+            }
             let j = match op {
                 CmpOp::Eq | CmpOp::Ne => {
-                    out.push_str("    call hbc_str_eq\n    test %rax, %rax\n");
+                    if !a_tmp && !b_tmp { out.push_str("    call hbc_str_eq\n"); }
+                    out.push_str("    test %rax, %rax\n");
                     match op { CmpOp::Eq => "jnz", _ => "jz" }
                 }
                 _ => {
                     // hbc_str_cmp returns -1, 0 or 1 (byte-wise, like memcmp)
-                    out.push_str("    call hbc_str_cmp\n    cmp $0, %rax\n");
+                    if !a_tmp && !b_tmp { out.push_str("    call hbc_str_cmp\n"); }
+                    out.push_str("    cmp $0, %rax\n");
                     match op {
                         CmpOp::Lt => "jl", CmpOp::Le => "jle",
                         CmpOp::Gt => "jg", CmpOp::Ge => "jge",
@@ -3672,6 +3777,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 if expr_ty(e, env, sigs) == Ty::I64
                     && sigs.iter().any(|sg| sg.name == fname && sg.ret == Some(Ty::Dyn)) {
                     out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                }
+                // A rodata string returned under an owned-string signature
+                // (Str/StrOwn unification): the caller owns the result, so
+                // the return point hands over a fresh copy.
+                if expr_ty(e, env, sigs) == Ty::Str
+                    && sigs.iter().any(|sg| sg.name == fname && sg.ret == Some(Ty::StrOwn)) {
+                    out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
                 }
                 // Returning a dynamic array MOVES it to the caller: the
                 // source slot is nulled BEFORE the shared epilogue runs, so
@@ -3871,7 +3983,22 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
             Stmt::AAdd(_, id, e) => {
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
                 let vt = expr_ty(e, env, sigs);
-                if v.ty == Ty::DArr2 || (v.ty == Ty::DArrU && matches!(vt, Ty::DArr | Ty::DArrU)) {
+                if v.ty == Ty::DArrS || (v.ty == Ty::DArrU && matches!(vt, Ty::Str | Ty::StrOwn)) {
+                    // String element: a rodata value is copied (the array
+                    // owns the copy); an owned value moves in (its source
+                    // slot is nulled). The appended pair is {tag 2, ptr}.
+                    cg_value(e, env, sigs, strs, out, target);
+                    if vt == Ty::Str {
+                        out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                    }
+                    if let Expr::Var(src) = e {
+                        if let Some(sv) = env.iter().rev().find(|x| x.name == *src && x.ty == Ty::StrOwn) {
+                            out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
+                        }
+                    }
+                    out.push_str("    mov %rax, %r11\n    sub $16, %rsp\n    movq $2, (%rsp)\n    mov %r11, 8(%rsp)\n");
+                    out.push_str(&format!("    mov %rsp, %rdx\n    mov $16, %esi\n    lea -{}(%rbp), %rdi\n    call hbc_aadd\n    add $16, %rsp\n", v.off));
+                } else if v.ty == Ty::DArr2 || (v.ty == Ty::DArrU && matches!(vt, Ty::DArr | Ty::DArrU)) {
                     // Insert a dynamic array: the value MOVES into the
                     // parent (null the source right after the load).
                     cg_value(e, env, sigs, strs, out, target);
@@ -3895,7 +4022,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // Replicate the checker's pinning of `{}`.
                 if let Some(x) = env.iter_mut().find(|x| x.name == *id) {
                     if x.ty == Ty::DArrU {
-                        x.ty = if matches!(vt, Ty::DArr | Ty::DArrU) { Ty::DArr2 } else { Ty::DArr };
+                        x.ty = if matches!(vt, Ty::DArr | Ty::DArrU) { Ty::DArr2 } else if matches!(vt, Ty::Str | Ty::StrOwn) { Ty::DArrS } else { Ty::DArr };
                     }
                 }
             }
@@ -4037,6 +4164,29 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // free the old child (a Dyn-element array: shallow free)
                     out.push_str("    mov (%r10), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov $16, %esi\n    sub $16, %rsp\n    mov %r10, (%rsp)\n    call hbc_free\n    mov (%rsp), %r10\n    add $16, %rsp\n85:\n");
                     out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    mov %rax, (%r10)\n    mov %rdx, 8(%r10)\n    add $16, %rsp\n    jmp 86f\n89:\n    call hbc_bound_error\n86:\n");
+                } else if v.ty == Ty::DArrS {
+                    // Element overwrite on an array of strings: the value
+                    // evaluates FIRST (probe adv2's order), a rodata value
+                    // is copied and an owned one moves in; the OLD owned
+                    // copy is freed once, after the new one exists.
+                    cg_value(e, env, sigs, strs, out, target);
+                    if expr_ty(e, env, sigs) == Ty::Str {
+                        out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                    }
+                    if let Expr::Var(src) = e {
+                        if let Some(sv) = env.iter().rev().find(|x| x.name == *src && x.ty == Ty::StrOwn) {
+                            out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
+                        }
+                    }
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                    cg_expr(ie, env, sigs, strs, out, target);
+                    out.push_str("    mov %rax, %rcx\n");
+                    out.push_str(&format!("    cmp $1, %rcx\n    jl 89f\n    cmp -{}(%rbp), %rcx\n    jg 89f\n", v.off - 8));
+                    out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
+                    out.push_str("    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
+                    // free the old owned copy (payload at 8(entry); tag 2 stays)
+                    out.push_str("    mov 8(%r10), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov $1, %esi\n    sub $16, %rsp\n    mov %r10, (%rsp)\n    call hbc_free\n    mov (%rsp), %r10\n    add $16, %rsp\n85:\n");
+                    out.push_str("    mov (%rsp), %rax\n    mov %rax, 8(%r10)\n    add $16, %rsp\n    jmp 86f\n89:\n    call hbc_bound_error\n86:\n");
                 } else if v.ty == Ty::Hash {
                     // h[k] := v: value FIRST, then the key (probe h4).
                     // Both wait on the stack across hbc_hput, which copies
@@ -4271,6 +4421,12 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         if v.ty == Ty::DArr3 {
             darr_slots.push((v.off, 3));
         }
+        if v.ty == Ty::DArrS {
+            darr_slots.push((v.off, 4));
+        }
+        if v.ty == Ty::StrOwn {
+            darr_slots.push((v.off, 5));
+        }
     }
 
     out.push_str(&format!("hbc_fn_{}:\n", f.name));
@@ -4295,7 +4451,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     // A string argument occupies both words of its slot (pointer, length).
     for (k, v) in lenv[..nparams].iter().enumerate() {
         let src = 16 * (nparams - k);
-        if v.ty == Ty::Str || v.ty == Ty::DArr || v.ty == Ty::Dyn || v.ty == Ty::DArr2 || v.ty == Ty::DArr3 {
+        if v.ty == Ty::Str || v.ty == Ty::DArr || v.ty == Ty::Dyn || v.ty == Ty::DArr2 || v.ty == Ty::DArr3 || v.ty == Ty::DArrS || v.ty == Ty::StrOwn {
             out.push_str(&format!("    mov {}(%rbp), %rax\n    mov {}(%rbp), %rdx\n", src, src + 8));
             out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", v.off, v.off - 8));
         } else {
@@ -6291,14 +6447,7 @@ fn main() {
         // so the body check can surface a more specific error first; the pin
         // error is only reported if the body itself checks clean.
         let (ptys, pin_err) = match pin_params(f, &sigs) {
-            Ok(v) => {
-                let own = v.iter().any(|t| matches!(t, Ty::DArrS | Ty::StrOwn));
-                if own {
-                    (vec![Ty::I64; f.params.len()], Some("hb_HKeys results and owned strings cannot be function parameters in this increment".to_string()))
-                } else {
-                    (v, None)
-                }
-            }
+            Ok(v) => (v, None),
             Err(m) => (vec![Ty::I64; f.params.len()], Some(m)),
         };
         let mut env: Vec<Local> = Vec::new();
