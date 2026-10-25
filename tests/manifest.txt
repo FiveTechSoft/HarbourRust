@@ -403,3 +403,10 @@ neg tests/t405_neg_borrow_move_conflict.hb cannot also receive an owned array
 neg tests/t406_neg_borrow_reassign.hb is borrowed from its caller
 neg tests/t407_neg_borrow_argmove_later.hb no other argument of the same call may mention it
 neg tests/t408_neg_borrow_argmove_earlier.hb no other argument of the same call may mention it
+pos tests/t409_valtype_static.hb \nA\nA\nN\nN\nC\nU\nU\nN
+pos tests/t410_valtype_effects.hb \neval          1\nA\neval          2\nN
+pos tests/t411_valtype_cells.hb \nC\nU\nN\nU\n         0\n         0
+pos tests/t412_valtype_borrow.hb \nA\nN\n         0\n         0\n         0
+neg tests/t413_valtype_deep3.hb not measured in this PoC
+neg tests/t414_valtype_usercall.hb not measured in this PoC
+neg tests/t415_valtype_hash.hb not measured for this type
