@@ -905,6 +905,20 @@ Harbour core libraries only, `-gtstd`):
   static owned string cannot. Registered failure mode, same
   condition, not a compat success.
 
-Battery: 326/326 on Linux x86-64 and Wine, plus the ABI harness.
-No new helpers (the grow path reuses the flat NIL fill; the NIL
-read error is a stub like hbc_aadd_error).
+- Printing a WHOLE array or hash variable (`? h`, `? a`) prints
+  nothing, exactly like Harbour (oracles hk16/hk20/hk21/hk24;
+  t328, t329): the separators between items are still emitted
+  and QOut space-trims the END of the line (hk22/hk24/hk25),
+  so a trailing string item - literal, variable or string-array
+  element - loses its trailing spaces while interior spacing is
+  preserved byte for byte (t330, t331). Printing borrows the
+  variable (hk23: still usable afterwards). Two registered
+  limits of this increment, not general fidelity: only a
+  VARIABLE prints empty this way (a constructing temporary is a
+  named compile error, t332), and a trailing ALL-SPACES string
+  still leaves the separator before it - exact fidelity there
+  needs a buffered line.
+
+Battery: 330/330 on Linux x86-64 and Wine, plus the ABI harness.
+No new helpers (the empty-render path pushes a dead pair; the
+line-end trim is an inline backward scan before hbc_print_str).
