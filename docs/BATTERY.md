@@ -698,3 +698,24 @@ registered as pending: static literals are not materialized as dynamic
 children in this increment. Test-shape note: hb_memcheck must be
 printed by the CALLER after the owner function returns - printing it
 inside the owner always counts the still-owned arrays.
+
+## Iteration 33h additions (390 manifest cases): AAdd on the middle a[i]
+
+t387 (hk66 mirror: AAdd(a[1], {5,6}) materializes the static literal
+as a dynamic child - header plus tagged cells, the same shape as a
+nested-literal child; balance 0), t388 (hk67 mirror: the index
+evaluates FIRST, the value after - "eval" then "val"; mirrored with
+Array(2), dynamic), t389 (hk69 mirror: a dynamic call result moves
+in), t390 (hk70 shape under the MOVE contract: a variable element
+moves in and the source is nulled - Harbour SHARES it (b[1]:=99 reads
+back through a[1][2][1]), a registered D5/D7 difference pending the
+user's contract decision; this does NOT implement sharing), t391
+(reusing the moved source is the clean "use of moved value" error),
+t392 (a nested literal element - a fourth level - is a named compile
+error), t393 (AAdd on a NIL middle casilla is the registered
+BASE/1123-family failure mode, n6: "Argument error: AADD" exit 1).
+Codegen note: the middle casilla address feeds hbc_aadd directly (it
+is a {ptr, len} pair); the new element arm shares the existing
+bounds-walk and append tail with the scalar path (a first draft
+duplicated the tail with an early return that dropped the following
+statements - caught by the battery, fixed before publishing).
