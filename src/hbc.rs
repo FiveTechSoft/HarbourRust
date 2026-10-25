@@ -1697,6 +1697,9 @@ fn borrow_expr_ok(e: &Expr, pname: &str) -> bool {
             if is_builtin(id, "len") && args.len() == 1 && matches!(&args[0], Expr::Var(v) if v == pname) {
                 return true; // len(p) borrows for the length only
             }
+            if is_builtin(id, "valtype") && args.len() == 1 && matches!(&args[0], Expr::Var(v) if v == pname) {
+                return true; // ValType(p) reads the tag only (hk88)
+            }
             args.iter().all(|a| borrow_expr_ok(a, pname))
         }
         Expr::Index(_, ie) => borrow_expr_ok(ie, pname), // p[i] read: the base is the borrow itself
@@ -1802,6 +1805,51 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     }
                 }
                 return Ok(match args.len() { 1 => Ty::DArr, 2 => Ty::DArr2, _ => Ty::DArr3 });
+            }
+            if is_builtin(id, "valtype") {
+                // ValType(x): a one-character type tag (hk88-hk92). Borrows
+                // its argument; the argument evaluates fully with its
+                // effects (hk89). Only measured shapes: literals, plain
+                // variables, and one/two-level casillas of measured roots.
+                // Deeper indexing and other expressions are named
+                // rejections - unmeasured, never inferred across depths.
+                if args.len() != 1 {
+                    return Err(format!("line {}: `ValType` takes one argument", n));
+                }
+                match &args[0] {
+                    Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
+                    Expr::Index(v, _) => {
+                        match env.iter().rev().find(|x| x.name == *v).map(|x| x.ty.clone()) {
+                            Some(Ty::DArr) | Some(Ty::DArr2) | Some(Ty::DArrRef) | Some(Ty::DArrS) => {}
+                            _ => return Err(format!("line {}: `ValType` over this array depth is not measured in this PoC", n)),
+                        }
+                    }
+                    Expr::Index2(v, _, _) => {
+                        match env.iter().rev().find(|x| x.name == *v).map(|x| x.ty.clone()) {
+                            Some(Ty::DArr2) => {}
+                            _ => return Err(format!("line {}: `ValType` over this array depth is not measured in this PoC", n)),
+                        }
+                    }
+                    _ => return Err(format!("line {}: `ValType` over this expression is not measured in this PoC", n)),
+                }
+                match &args[0] {
+                    // a[i] on a DArr2 is a child-array casilla: ValType
+                    // reads its pointer only (hk90/hk91), never extracts
+                    // the subarray by value - so the generic Index typing
+                    // (which rejects that extraction) is bypassed here;
+                    // the index expression still must type as an integer.
+                    Expr::Index(v, ie) if matches!(env.iter().rev().find(|x| x.name == *v).map(|x| x.ty.clone()), Some(Ty::DArr2)) => {
+                        match type_expr(ie, env, sigs, n)? {
+                            Ty::I64 | Ty::Dyn => {}
+                            _ => return Err(format!("line {}: array index must be an integer", n)),
+                        }
+                    }
+                    e => match type_expr(e, env, sigs, n)? {
+                        Ty::I64 | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::DArrRef | Ty::Arr(_) | Ty::Dyn => {}
+                        _ => return Err(format!("line {}: `ValType` is not measured for this type in this PoC", n)),
+                    },
+                }
+                return Ok(Ty::Str);
             }
             if is_builtin(id, "len") {
                 // len(a): number of elements of an array (probe e4:
@@ -2422,7 +2470,7 @@ fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
                 // the callee a borrow it may grow through: the current
                 // element's Dyn view could dangle. Rejected like the
                 // direct mutations above (safe named rejection).
-                if !is_builtin(id, "len")
+                if !is_builtin(id, "len") && !is_builtin(id, "valtype")
                     && args.iter().any(|a| matches!(a, Expr::Index(r, _) | Expr::Index2(r, _, _) | Expr::Index3(r, _, _, _) if r == name))
                 {
                     return false;
@@ -3253,6 +3301,11 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 apply_moves(&args[0], env, sigs, false);
                 return;
             }
+            if is_builtin(id, "valtype") {
+                // ValType borrows its argument (hk88-hk92): nothing moves.
+                apply_moves(&args[0], env, sigs, false);
+                return;
+            }
             if is_builtin(id, "eval") {
                 // Block values are Copy pointers; arguments are integers:
                 // nothing moves (checked in analysis).
@@ -3330,6 +3383,98 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 // post-pass, so the second word never matters.
                 Ty::DArrRef => out.push_str(&format!("    mov -{}(%rbp), %rax\n    xor %edx, %edx\n", v.off)),
                 Ty::Arr(_) => unreachable!("whole-array values are emitted via cg_array_value"),
+            }
+        }
+        Expr::Call(id, args) if is_builtin(id, "valtype") => {
+            // ValType(x) (hk88-hk92): a one-character tag as a 1-byte
+            // string (rax=ptr, rdx=1). Static types classify at compile
+            // time; Dyn casillas at runtime: a scalar casilla {tag,
+            // payload} reads tag 0/1/2 as "N"/"U"/"C" (hk92), a child-array
+            // casilla {ptr, len} reads ptr 0/nonzero as "U"/"A"
+            // (hk90/hk91). Index arguments evaluate once, with their
+            // effects, before the walk (hk89). Borrows - never moves.
+            fn vt_letter(strs: &mut Vec<String>, out: &mut String, ch: &str) {
+                let idx = strs.len();
+                strs.push(ch.to_string());
+                out.push_str(&format!("    lea .Lstr{}(%rip), %rax\n    mov $1, %edx\n", idx));
+            }
+            // %r10 = scalar Dyn tag: 0 i64 -> "N", 1 NIL -> "U", 2 str -> "C"
+            fn vt_classify_scalar(strs: &mut Vec<String>, out: &mut String) {
+                out.push_str("    cmp $1, %r10\n    je 95f\n    cmp $2, %r10\n    je 96f\n");
+                vt_letter(strs, out, "N");
+                out.push_str("    jmp 97f\n95:\n");
+                vt_letter(strs, out, "U");
+                out.push_str("    jmp 97f\n96:\n");
+                vt_letter(strs, out, "C");
+                out.push_str("97:\n");
+            }
+            match &args[0] {
+                Expr::Int(_) => vt_letter(strs, out, "N"),
+                Expr::Str(_) => vt_letter(strs, out, "C"),
+                Expr::Nil => vt_letter(strs, out, "U"),
+                Expr::Var(v) => {
+                    let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                    match var.ty {
+                        Ty::I64 => vt_letter(strs, out, "N"),
+                        Ty::Str | Ty::StrOwn => vt_letter(strs, out, "C"),
+                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::DArrRef | Ty::Arr(_) => vt_letter(strs, out, "A"),
+                        Ty::Dyn => {
+                            // tag word of the stack pair (tag at -(off))
+                            out.push_str(&format!("    mov -{}(%rbp), %r10\n", var.off));
+                            vt_classify_scalar(strs, out);
+                        }
+                        _ => unreachable!("checked"),
+                    }
+                }
+                Expr::Index(v, ie) => {
+                    let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                    cg_expr(ie, env, sigs, strs, out, target);
+                    match var.ty {
+                        Ty::DArr | Ty::DArrS => {
+                            out.push_str(&format!("    cmp $1, %rax\n    jl 87f\n    cmp -{}(%rbp), %rax\n    jg 87f\n", var.off - 8));
+                            out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
+                            out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
+                            vt_classify_scalar(strs, out);
+                        }
+                        Ty::DArrRef => {
+                            // Borrowed middle array: bounds and base load
+                            // through the owner's cell address (hk86).
+                            out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmp $1, %rax\n    jl 87f\n    cmp 8(%r11), %rax\n    jg 87f\n", var.off));
+                            out.push_str("    mov (%r11), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
+                            vt_classify_scalar(strs, out);
+                        }
+                        Ty::DArr2 => {
+                            out.push_str(&format!("    cmp $1, %rax\n    jl 87f\n    cmp -{}(%rbp), %rax\n    jg 87f\n", var.off - 8));
+                            out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
+                            out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    test %r10, %r10\n    jz 85f\n    jmp 86f\n87:\n    call hbc_bound_error\n85:\n");
+                            vt_letter(strs, out, "U");
+                            out.push_str("    jmp 88f\n86:\n");
+                            vt_letter(strs, out, "A");
+                            out.push_str("88:\n");
+                        }
+                        _ => unreachable!("checked"),
+                    }
+                }
+                Expr::Index2(v, ie, ie2) => {
+                    // DArr2 two-level read (hk88): middle casilla {ptr,
+                    // len}, innermost {payload, tag}. A NIL middle cannot
+                    // be walked: Harbour's dialog hangs headless - the
+                    // registered clean bound-error failure mode, not a
+                    // compat success.
+                    let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                    cg_expr(ie, env, sigs, strs, out, target);
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                    cg_expr(ie2, env, sigs, strs, out, target);
+                    out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n");
+                    out.push_str(&format!("    cmp $1, %rcx\n    jl 87f\n    cmp -{}(%rbp), %rcx\n    jg 87f\n", var.off - 8));
+                    out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
+                    out.push_str("    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
+                    out.push_str("    mov (%r10), %r11\n    test %r11, %r11\n    jz 87f\n");
+                    out.push_str("    cmp $1, %rax\n    jl 87f\n    cmp 8(%r10), %rax\n    jg 87f\n");
+                    out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
+                    vt_classify_scalar(strs, out);
+                }
+                _ => unreachable!("checked"),
             }
         }
         Expr::Call(id, args) if is_builtin(id, "len") => {
@@ -3868,6 +4013,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "array") { return match args.len() { 1 => Ty::DArr, 2 => Ty::DArr2, _ => Ty::DArr3 }; }
             if is_builtin(id, "hb_hkeys") { return Ty::DArrS; }
             if is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") { return Ty::I64; }
+            if is_builtin(id, "valtype") { return Ty::Str; } // hk88-hk92
             sigs.iter().find(|v| v.name == *id).expect("checked").ret.expect("checked")
         }
         Expr::Cmp(..) => Ty::Bool,
