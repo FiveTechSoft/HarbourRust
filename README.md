@@ -1010,10 +1010,19 @@ Registered limits of this increment, not general fidelity:
   literals (a fourth level) stay a named compile error.
   Reading a[i] of a three-level array by value stays a
   named compile error.
+- `ValType(x)` returns the one-character type tag (hk88-hk92):
+  arrays "A", numbers "N", strings "C", NIL "U". Static types
+  classify at compile time; a Dyn casilla classifies at runtime
+  (scalar casilla tag 0/1/2 -> "N"/"U"/"C"; child-array casilla
+  null/non-null -> "U"/"A"). The argument evaluates once with its
+  effects and is borrowed, and it works through a borrowed
+  middle-array parameter (t409-t412). Unmeasured shapes are named
+  compile errors: a[i] of a three-level array, a user call result,
+  a hash (t413-t415).
 
 Robustness fix in passing: `hb_HKeys` with a non-variable
 argument used to panic the compiler; it is now the documented
 clean error (t345).
 
-Battery: 405/405 manifest cases on Linux x86-64 and Wine, plus
+Battery: 412/412 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
