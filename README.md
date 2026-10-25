@@ -1143,5 +1143,11 @@ clean error (t345).
   difference). t477-t479 pin the copy, the surviving source and
   balance 0.
 
-Battery: 475/475 manifest cases on Linux x86-64 and Wine, plus
+- ValType over first- and second-level casillas of a four-level
+  root (hk114, byte-measured with the hk117 marker probe): "A"
+  for a live child array at either level, with the index walk
+  evaluated once in order; byte-identical to the Harbour oracle
+  (t480). Deeper levels were already covered by hk103.
+
+Battery: 476/476 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
