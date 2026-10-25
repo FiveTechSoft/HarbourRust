@@ -598,3 +598,20 @@ Specificity tie: b47/b47b/b47c show that with equal literal counts
 Harbour keeps the LATEST definition (earlier note said earliest; b31
 only probed unequal counts). Comparator changed to >=; t118 MATCH.
 Battery: 121/121, Linux + Wine identical.
+
+QOut byte semantics + audit: Harbour `?` is QOut(items) - all items
+evaluated first, then one newline, items space-joined, integers
+right-aligned (probes b51-b59/q1-q6: positives max(10, digits+1),
+negatives 10 or 20), strings raw, no trailing newline, bare `?` = newline.
+Implemented for Linux+Windows; unary minus added (q1). Battery harness
+fixed to fail on build errors (it had run stale binaries, masking t61/t62
+compile failures: for-bound now pins i64; t62 pins via `x + 0`, reverse
+call-site inference registered as a limit). Oracle corrected to compiled
+-gtstd binaries (script mode runs only the first function). Categories:
+57 HB-EXACT byte-exact, 7 HB-ADAPT-MATCH (hoisted-LOCAL variants
+byte-exact), 4 MODEL (ownership/scoping by design), 2 DIVERGE-NUMERIC
+(t45/t46: Harbour loops forever at 2^63 double precision; HarbourRust
+bounded and exact). Battery: 125/125 (122 numbered + 3 fixtures),
+Linux + Wine identical. Versioned records: tests/manifest.txt,
+docs/BATTERY.md, docs/battery-categories.txt. Benchmark re-run post-fix:
+arith 200 runs 50ms vs Harbour 269ms, outputs byte-identical.
