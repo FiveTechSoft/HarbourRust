@@ -2705,7 +2705,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                     Some(k) => k,
                     None => return Err(format!("line {}: undeclared variable `{}`", n, id)),
                 };
-                if env[kp].ty != Ty::DArr2 {
+                if !matches!(env[kp].ty, Ty::DArr2 | Ty::DArr3) {
                     return Err(format!("line {}: `AAdd` on a[i] needs an array of arrays; `{}` is not one", n, id));
                 }
                 if type_expr(ie, env, sigs, *n)? != Ty::I64 {
@@ -2715,12 +2715,38 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 if env[kp].moved {
                     return Err(format!("line {}: use of moved value `{}`", n, id));
                 }
-                if type_expr(e, env, sigs, *n)? != Ty::I64 {
-                    return Err(format!("line {}: nested array elements must be integers in this increment", n));
-                }
-                apply_moves(e, env, sigs, false);
-                if env[kp].moved {
-                    return Err(format!("line {}: use of moved value `{}`", n, id));
+                if env[kp].ty == Ty::DArr3 {
+                    // Middle level of three levels (hk66/hk67/hk69): the
+                    // element is a FLAT dynamic array - a static literal
+                    // materializes as a dynamic child, a call result or a
+                    // variable MOVES in (the source is nulled; the move
+                    // contract of root AAdd extends here - Harbour would
+                    // SHARE a variable element, registered difference
+                    // D5/D7 pending the user's contract decision; this
+                    // does NOT implement sharing). Nested literals or
+                    // array-of-arrays elements would make a fourth level:
+                    // rejected.
+                    let t = type_expr(e, env, sigs, *n)?;
+                    if !matches!(t, Ty::Arr(_) | Ty::DArr | Ty::DArrU) {
+                        return Err(format!("line {}: the elements of the middle level of `{}` are flat dynamic arrays in this increment", n, id));
+                    }
+                    if let Expr::Var(v) = e {
+                        if v == id {
+                            return Err(format!("line {}: cannot insert `{}` into itself", n, id));
+                        }
+                    }
+                    apply_moves(e, env, sigs, true);
+                    if env[kp].moved {
+                        return Err(format!("line {}: use of moved value `{}`", n, id));
+                    }
+                } else {
+                    if type_expr(e, env, sigs, *n)? != Ty::I64 {
+                        return Err(format!("line {}: nested array elements must be integers in this increment", n));
+                    }
+                    apply_moves(e, env, sigs, false);
+                    if env[kp].moved {
+                        return Err(format!("line {}: use of moved value `{}`", n, id));
+                    }
                 }
             }
             Stmt::ASize(n, id, e) => {
@@ -4692,7 +4718,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     kind, v.off));
             }
             Stmt::AAddSub(_, id, ie, e) => {
-                // AAdd(a[i], x): index FIRST, then the value (probe m7).
+                // AAdd(a[i], x): index FIRST, then the value (probe m7;
+                // same order at the middle level, hk67).
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
                 if expr_ty(ie, env, sigs) == Ty::Dyn {
                     cg_expr(ie, env, sigs, strs, out, target);
@@ -4701,11 +4728,41 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     cg_expr(ie, env, sigs, strs, out, target);
                 }
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                if v.ty == Ty::DArr3 {
+                    // Array element: a static literal materializes as a
+                    // dynamic child (header + tagged cells, same shape as
+                    // cg_darr2_literal's inner block); a call result or a
+                    // variable MOVES in (source nulled right after the
+                    // load - the move contract of root AAdd, NOT Harbour
+                    // sharing; D5/D7 registered).
+                    if let Expr::ArrLit(inner) = e {
+                        let m = inner.len();
+                        out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + m * 16));
+                        out.push_str(&format!("    movq ${}, (%rax)\n    add $8, %rax\n    mov %rax, 8(%rsp)\n", m));
+                        for (p, xe) in inner.iter().enumerate() {
+                            cg_expr(xe, env, sigs, strs, out, target);
+                            if expr_ty(xe, env, sigs) == Ty::I64 {
+                                out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                            }
+                            out.push_str(&format!("    mov 8(%rsp), %r11\n    mov %rax, {}(%r11)\n    mov %rdx, {}(%r11)\n", p * 16, p * 16 + 8));
+                        }
+                        out.push_str(&format!("    mov 8(%rsp), %rax\n    mov ${}, %edx\n", m));
+                    } else {
+                        cg_value(e, env, sigs, strs, out, target);
+                        if let Expr::Var(src) = e {
+                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3)) {
+                                out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
+                            }
+                        }
+                    }
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                } else {
                 cg_expr(e, env, sigs, strs, out, target);
                 if expr_ty(e, env, sigs) == Ty::I64 {
                     out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
                 }
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                }
                 out.push_str("    mov 16(%rsp), %rcx\n");
                 out.push_str(&format!("    cmp $1, %rcx\n    jl 87f\n    cmp -{}(%rbp), %rcx\n    jg 87f\n", v.off - 8));
                 out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
