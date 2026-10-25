@@ -1417,18 +1417,24 @@ hbc_print_str:
     ret
 
 # hbc_str_eq: %rax = lhs ptr, %rdx = lhs len, %rcx = rhs ptr, %r8 = rhs len.
-# Returns %rax = 1 when the byte strings are equal, 0 otherwise. Leaf
-# routine: no calls, only volatile registers. Byte equality on (ptr,len)
-# values only - no allocation, no memory management of any kind.
+# Returns %rax = 1 when equal, 0 otherwise. Harbour default (SET EXACT
+# OFF) `=`: compare over the length of the RIGHT operand, left read
+# NUL-padded - "abcd" = "abc" is true, "abc" = "abcd" false, anything
+# = "" true (probe b23). Harbour's exact `==` is not in this grammar.
+# Leaf routine: no calls, only volatile registers.
 hbc_str_eq:
-    cmp %r8, %rdx
-    jne 90f
     xor %r9, %r9
 91:
-    cmp %rdx, %r9
+    cmp %r8, %r9
     jae 92f
-    movzbl (%rax,%r9), %r10d
-    movzbl (%rcx,%r9), %r11d
+    movzbl (%rcx,%r9), %r10d
+    cmp %rdx, %r9
+    jae 94f
+    movzbl (%rax,%r9), %r11d
+    jmp 93f
+94:
+    xor %r11d, %r11d
+93:
     cmp %r11b, %r10b
     jne 90f
     inc %r9
@@ -1567,18 +1573,24 @@ hbc_print_str:
     ret
 
 # hbc_str_eq: %rax = lhs ptr, %rdx = lhs len, %rcx = rhs ptr, %r8 = rhs len.
-# Returns %rax = 1 when the byte strings are equal, 0 otherwise. Leaf
-# routine: no calls, only volatile registers. Byte equality on (ptr,len)
-# values only - no allocation, no memory management of any kind.
+# Returns %rax = 1 when equal, 0 otherwise. Harbour default (SET EXACT
+# OFF) `=`: compare over the length of the RIGHT operand, left read
+# NUL-padded - "abcd" = "abc" is true, "abc" = "abcd" false, anything
+# = "" true (probe b23). Harbour's exact `==` is not in this grammar.
+# Leaf routine: no calls, only volatile registers.
 hbc_str_eq:
-    cmp %r8, %rdx
-    jne 90f
     xor %r9, %r9
 91:
-    cmp %rdx, %r9
+    cmp %r8, %r9
     jae 92f
-    movzbl (%rax,%r9), %r10d
-    movzbl (%rcx,%r9), %r11d
+    movzbl (%rcx,%r9), %r10d
+    cmp %rdx, %r9
+    jae 94f
+    movzbl (%rax,%r9), %r11d
+    jmp 93f
+94:
+    xor %r11d, %r11d
+93:
     cmp %r11b, %r10b
     jne 90f
     inc %r9
