@@ -1217,7 +1217,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
     fn str_evidence(e: &Expr, lit: &[(String, Ty)], sigs: &[Sig]) -> bool {
         match e {
             Expr::Str(_) => true,
-            Expr::Var(v) => lit.iter().any(|(x, t)| x == v && *t == Ty::Str),
+            Expr::Var(v) => lit.iter().any(|(x, t)| x == v && matches!(*t, Ty::Str | Ty::StrOwn)),
             Expr::Call(id, _) => sigs.iter().any(|s| s.name == *id && matches!(s.ret, Some(Ty::Str) | Some(Ty::StrOwn))),
             _ => false,
         }
@@ -1230,6 +1230,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                 Ty::Dyn => "a NIL-capable value",
                 Ty::StrOwn => "a string",
                 Ty::DArrS => "an array of strings",
+                Ty::Hash => "a hash",
                 _ => "a value of another type",
             }
         }
@@ -1259,6 +1260,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                 pin[idx] = Some(Ty::DArrS);
                 Ok(())
             }
+            // len(p) pins a flat dynamic array and a string key pins a
+            // hash; both layouts carry the count in the same word and
+            // len() of a hash is its pair count (oracle hk11), so the
+            // hash pin - the evidence that can tell the two apart - wins.
+            Some(t) if matches!((t, ty), (Ty::DArr, Ty::Hash) | (Ty::Hash, Ty::DArr)) => {
+                pin[idx] = Some(Ty::Hash);
+                Ok(())
+            }
             Some(t) => Err(format!("line {}: parameter used as both {} and {}", n, tname(t), tname(ty))),
         }
     }
@@ -1279,10 +1288,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
             Expr::ArrLit(es) => { for e in es { pin_vars(f, e, Ty::I64, pin, n)?; } Ok(()) }
             Expr::Index(id, ie) => {
                 if is_param(f, id).is_some() {
+                    // p["key"]: a literal string key pins a hash parameter
+                    // (oracles hk11/hk12).
+                    if matches!(**ie, Expr::Str(_)) {
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, n)?;
                     // p[i] in a string context (compared against a string
                     // or passed to a string parameter): the parameter is
                     // an array of strings (the hb_HKeys shape).
-                    if ty == Ty::StrOwn {
+                    } else if ty == Ty::StrOwn {
                         pin_vars(f, &Expr::Var(id.clone()), Ty::DArrS, pin, n)?;
                     } else {
                         return Err(format!("line {}: array parameters are not in this increment", n));
@@ -1383,9 +1396,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
             }
             Expr::Index(id, ie) => {
                 if is_param(f, id).is_some() {
-                    // Indexing a parameter pins it to a DYNAMIC array
-                    // (fixed arrays cannot be parameters in this increment).
-                    pin_vars(f, &Expr::Var(id.clone()), Ty::DArr, pin, n)?;
+                    // p["key"]: a string key pins a hash parameter
+                    // (oracles hk11/hk12); a numeric index pins a DYNAMIC
+                    // array (fixed arrays cannot be parameters here).
+                    if str_evidence(ie, lit, sigs) {
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, n)?;
+                    } else {
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::DArr, pin, n)?;
+                    }
                 }
                 pin_vars(f, ie, Ty::I64, pin, n)?;
                 walk(f, ie, sigs, lit, pin, n)
@@ -1469,8 +1487,12 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     walk_stmts(f, body, sigs, lit, pin, nil_ret)?;
                 }
                 Stmt::ArrSet(n, id, ie, e) => {
-                    // p[i] := "x": a string value pins an array of strings.
-                    if str_evidence(e, lit, sigs) {
+                    // p["key"] := v: a string key pins a hash parameter
+                    // (oracle hk11); p[i] := "x": a string value pins an
+                    // array of strings.
+                    if str_evidence(ie, lit, sigs) {
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
+                    } else if str_evidence(e, lit, sigs) {
                         pin_vars(f, &Expr::Var(id.clone()), Ty::DArrS, pin, *n)?;
                     }
                     pin_vars(f, ie, Ty::I64, pin, *n)?;
@@ -1711,9 +1733,6 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
 
                 if ta == Ty::DArrU {
                     return Err(format!("line {}: the element type of the argument is unknown until its first `AAdd` (pin it first)", n));
-                }
-                if ta == Ty::Hash {
-                    return Err(format!("line {}: hashes cannot be function parameters in this increment", n));
                 }
                 // A string argument moves out of its variable right away, so
                 // a second use later in the same expression (e.g. the other
@@ -2228,9 +2247,6 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
             }
             Stmt::Ret(n, Some(e)) => {
                 let t = type_expr(e, env, sigs, *n)?;
-                if t == Ty::Hash {
-                    return Err(format!("line {}: hashes cannot be returned in this increment", n));
-                }
                 if t == Ty::Bool {
                     return Err(format!("line {}: cannot return a boolean in this PoC", n));
                 }
@@ -2465,8 +2481,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 match env[kp].ty {
                     // DArr2 shrink frees the removed children recursively
                     // (they are owned by the parent); grow zero-fills, so
-                    // fresh children are the empty (null, 0) array.
-                    Ty::DArr | Ty::DArr2 => {}
+                    // fresh children are the empty (null, 0) array. DArrS
+                    // shrink frees the removed string copies; GROWING an
+                    // array of strings is a clean runtime error in this
+                    // increment (Harbour grows with NIL casillas, hk13).
+                    Ty::DArr | Ty::DArr2 | Ty::DArrS => {}
                     Ty::DArrU => return Err(format!("line {}: the element type of `{}` is unknown until its first `AAdd` (pin it first)", n, id)),
                     _ => return Err(format!("line {}: `ASize` applies to dynamic arrays (`{{}}`); `{}` is not one", n, id)),
                 }
@@ -2792,7 +2811,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             }
             let sig = sigs.iter().find(|v| v.name == *id).expect("checked");
             for (i, a) in args.iter().enumerate() {
-                let m = i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::StrOwn || sig.params[i] == Ty::DArr || sig.params[i] == Ty::DArr2 || sig.params[i] == Ty::DArr3 || sig.params[i] == Ty::DArrS);
+                let m = i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::StrOwn || sig.params[i] == Ty::DArr || sig.params[i] == Ty::DArr2 || sig.params[i] == Ty::DArr3 || sig.params[i] == Ty::DArrS || sig.params[i] == Ty::Hash);
                 apply_moves(a, env, sigs, m);
             }
         }
@@ -3024,14 +3043,14 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     // so the call boundary hands over a fresh copy.
                     out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                } else if ta == Ty::Str || ta == Ty::DArr || ta == Ty::DArr2 || ta == Ty::DArr3 || ta == Ty::DArrS || ta == Ty::StrOwn {
+                } else if ta == Ty::Str || ta == Ty::DArr || ta == Ty::DArr2 || ta == Ty::DArr3 || ta == Ty::DArrS || ta == Ty::StrOwn || ta == Ty::Hash {
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     // An owned (moved) argument: null the source slot
                     // right after the copy, so the callee is the only
                     // owner and the caller's later frees see null.
                     if let Expr::Var(src) = a {
-                        if matches!(ta, Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn) {
-                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn)) {
+                        if matches!(ta, Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn | Ty::Hash) {
+                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
                                 out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                             }
                         }
@@ -3790,7 +3809,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // the epilogue never frees the returned allocation (parent
                 // rule: move the return to the output before cleanup).
                 if let Expr::Var(src) = e {
-                    if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn)) {
+                    if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
                         out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                     }
                 }
@@ -4028,10 +4047,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
             }
             Stmt::ASize(_, id, e) => {
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
-                let deep = v.ty == Ty::DArr2;
+                // kind 0: flat (grow NIL). kind 1: arrays (grow the empty
+                // child; shrink frees children). kind 2: strings (shrink
+                // frees the copies; grow is a clean runtime error here -
+                // Harbour grows with NIL, oracle hk13).
+                let kind = if v.ty == Ty::DArr2 { 1 } else if v.ty == Ty::DArrS { 2 } else { 0 };
                 cg_expr(e, env, sigs, strs, out, target);
                 out.push_str(&format!("    mov %rax, %rsi\n    mov $16, %edx\n    mov ${}, %ecx\n    lea -{}(%rbp), %rdi\n    call hbc_asize\n",
-                    if deep { 1 } else { 0 }, v.off));
+                    kind, v.off));
             }
             Stmt::AAddSub(_, id, ie, e) => {
                 // AAdd(a[i], x): index FIRST, then the value (probe m7).
@@ -4427,6 +4450,9 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         if v.ty == Ty::StrOwn {
             darr_slots.push((v.off, 5));
         }
+        if v.ty == Ty::Hash {
+            darr_slots.push((v.off, 2));
+        }
     }
 
     out.push_str(&format!("hbc_fn_{}:\n", f.name));
@@ -4451,7 +4477,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     // A string argument occupies both words of its slot (pointer, length).
     for (k, v) in lenv[..nparams].iter().enumerate() {
         let src = 16 * (nparams - k);
-        if v.ty == Ty::Str || v.ty == Ty::DArr || v.ty == Ty::Dyn || v.ty == Ty::DArr2 || v.ty == Ty::DArr3 || v.ty == Ty::DArrS || v.ty == Ty::StrOwn {
+        if v.ty == Ty::Str || v.ty == Ty::DArr || v.ty == Ty::Dyn || v.ty == Ty::DArr2 || v.ty == Ty::DArr3 || v.ty == Ty::DArrS || v.ty == Ty::StrOwn || v.ty == Ty::Hash {
             out.push_str(&format!("    mov {}(%rbp), %rax\n    mov {}(%rbp), %rdx\n", src, src + 8));
             out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", v.off, v.off - 8));
         } else {
@@ -5390,6 +5416,18 @@ hbc_asize_neg:
     mov $1, %edi
     syscall
 
+# hbc_asize_sgrow: ASize grows an array of strings (noreturn). Harbour
+# grows with NIL casillas (hk13); this increment reports a clean error.
+hbc_asize_sgrow:
+    lea .Lasizegrowmsg(%rip), %rsi
+    mov $57, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 # hbc_len_error: len() of a NIL slot (noreturn). Harbour's BASE/1111
 # dialog hangs headless (oracle n2): this clean exit 1 is the registered
 # failure mode for the same error condition, not a compat success.
@@ -5623,6 +5661,10 @@ hbc_asize:
     mov 8(%rbx), %rcx
     cmp %rcx, %r12
     jle 59f
+    # kind 2 (array of strings) cannot grow here: Harbour grows with NIL
+    # casillas (hk13); this increment reports a clean error instead.
+    cmp $2, %r15
+    je hbc_asize_sgrow
     mov (%rbx), %r13
     xor %edx, %edx
     test %r13, %r13
@@ -5695,7 +5737,9 @@ hbc_asize:
     jmp 67b
 68: mov %r12, 8(%rbx)
     jmp 75f
-59: # shrink: free the removed children when deep
+59: # shrink: kind 2 frees the removed string copies, kind 1 the children
+    cmp $2, %r15
+    je 80f
     test %r15, %r15
     jz 76f
     mov (%rbx), %r13
@@ -5711,6 +5755,21 @@ hbc_asize:
     call hbc_free
 78: inc %r9
     jmp 77b
+80: mov (%rbx), %r13
+    mov %r12, %r9
+81: cmp 8(%rbx), %r9
+    jge 76f
+    mov %r9, %r10
+    shl $4, %r10
+    cmpq $2, (%r13,%r10)
+    jne 82f
+    mov 8(%r13,%r10), %rdi
+    test %rdi, %rdi
+    jz 82f
+    mov $1, %esi
+    call hbc_free
+82: inc %r9
+    jmp 81b
 76: mov %r12, 8(%rbx)
 75: pop %r15
     pop %r14
@@ -5762,6 +5821,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Lregbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,97,108,108,111,99,97,116,105,111,110,32,114,101,103,105,115,116,114,121,32,109,105,115,109,97,116,99,104,10\n");
     out.push_str(".Ltypemsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,78,73,76,32,117,115,101,100,32,97,115,32,97,32,110,117,109,98,101,114,10\n");
     out.push_str(".Lasizenegmsg:\n    .byte 65,83,105,122,101,58,32,110,101,103,97,116,105,118,101,32,115,105,122,101,10\n");
+    out.push_str(".Lasizegrowmsg:\n    .byte 65,83,105,122,101,58,32,99,97,110,110,111,116,32,103,114,111,119,32,97,110,32,97,114,114,97,121,32,111,102,32,115,116,114,105,110,103,115,32,105,110,32,116,104,105,115,32,105,110,99,114,101,109,101,110,116,10\n");
     // "Argument error: LEN\n" (20 bytes; Harbour BASE/1111 hangs headless - registered failure mode)
     out.push_str(".Llenerrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,76,69,78,10\n");
     // "Argument error: AADD\n" (21 bytes; Harbour BASE/1123 hangs headless, oracle n6)
@@ -6046,6 +6106,18 @@ hbc_asize_neg:
     mov $1, %ecx
     call ExitProcess
 
+# hbc_asize_sgrow: ASize grows an array of strings (noreturn); see hk13.
+hbc_asize_sgrow:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Lasizegrowmsg(%rip), %rax
+    mov $57, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
 # hbc_len_error: len() of a NIL slot (noreturn) - see the linux copy.
 hbc_len_error:
     push %rbp
@@ -6287,6 +6359,10 @@ hbc_asize:
     mov 8(%rbx), %rcx
     cmp %rcx, %r12
     jle 59f
+    # kind 2 (array of strings) cannot grow here: Harbour grows with NIL
+    # casillas (hk13); this increment reports a clean error instead.
+    cmp $2, %r15
+    je hbc_asize_sgrow
     mov (%rbx), %r13
     xor %edx, %edx
     test %r13, %r13
@@ -6356,8 +6432,11 @@ hbc_asize:
     jmp 67b
 68: mov %r12, 8(%rbx)
     jmp 75f
-59: # shrink: free the removed children when deep. The counter lives on the
-# stack: kernel32 may clobber the volatile r9 across the hbc_free call.
+59: # shrink: kind 2 frees the removed string copies, kind 1 the children.
+# The counter lives on the stack: kernel32 may clobber the volatile r9
+# across the hbc_free call.
+    cmp $2, %r15
+    je 80f
     test %r15, %r15
     jz 76f
     mov (%rbx), %r13
@@ -6374,6 +6453,22 @@ hbc_asize:
     call hbc_free
 78: incq -48(%rbp)
     jmp 77b
+80: mov (%rbx), %r13
+    mov %r12, -48(%rbp)
+81: mov -48(%rbp), %r9
+    cmp 8(%rbx), %r9
+    jge 76f
+    mov %r9, %r10
+    shl $4, %r10
+    cmpq $2, (%r13,%r10)
+    jne 82f
+    mov 8(%r13,%r10), %rdi
+    test %rdi, %rdi
+    jz 82f
+    mov $1, %esi
+    call hbc_free
+82: incq -48(%rbp)
+    jmp 81b
 76: mov %r12, 8(%rbx)
 75: add $56, %rsp
     pop %r15
