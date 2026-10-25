@@ -77,6 +77,11 @@ Probes c01-c04, a01-a06 (23 -> 30 total executed):
 - Empty-body `#define` is accepted by both.
 - Macro-name case sensitivity (above) was found in this round and fixed in
   our engine the same day; the test battery stayed 84/84.
+- F3a landed (scoped): #command / #xcommand (full-line, literal words +
+  <param> captures, chaining) and #translate in call form (inline, via the
+  function-like-define machinery). Behavioural basis: probes c01-c09
+  (keyword case-insensitivity, capture-until-literal, whole strings,
+  chaining, incomplete-pattern rejection). Scoped OUT: [...] optionals,
+  list captures, match markers, non-call translate forms, token pasting.
 - Still unprobed: parameter-substitution case sensitivity in function-like
-  defines, token pasting. F3 (#command/#translate implementation) NOT
-  started - it gets its own scoped round.
+  defines, token pasting.
