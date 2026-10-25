@@ -1047,3 +1047,22 @@ rejection of the comma form on a two-level root.
 
 472/472 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
+
+## Iteration 33w additions (475 manifest cases): static-array variables as whole-array values
+
+Ownership coverage probes (w1-w7) found a REAL compiler panic class:
+the checker accepted a static array held in a VARIABLE as a whole-array
+value (a[1] := b on a two-level root, AAdd(a, b) on a two-level root,
+AAdd(a[1], b) on a three-level root) but codegen only handled the
+literal path and hit unreachable (three sites, rc=101). Fixed: the
+static variable's cells are COPIED into a fresh dynamic child; the
+source keeps its values (copy contract of 33l/33m; Harbour SHARES -
+hk116: b[2]:=77 becomes visible through a[1][2] - registered D5/D7
+difference, NOT sharing here). t477 (a[1] := b, post-write divergence
+pinned: a[1][2]:=99 leaves b[2]=2), t478 (root AAdd), t479 (middle
+AAdd): all balance 0. Also probed clean: DArrS element overwrite frees
+the old string (w1), DArrS AAdd+ASize shrink frees (w2), same-size
+static reassign (w3b), StrOwn reassign-from-call (w5b).
+
+475/475 manifest cases + ABI harness green on Linux x86-64 and Wine
+(Wine is not real Windows).
