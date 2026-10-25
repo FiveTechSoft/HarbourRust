@@ -316,11 +316,23 @@ wine gen/hola.exe
 
 See [BUILDING.md](BUILDING.md) for the complete build recipe (Linux, Windows .exe output, cross-building `hbc.exe` itself, and running under Wine) and [dist/](dist/) for prebuilt, tested binaries with SHA-256 checksums.
 
-## Preprocessor: integrated (F1+F2)
+## Preprocessor: integrated (F1+F2+F3, scoped)
 
-hbc now runs our own MIT preprocessor automatically on every compile:
+hbc runs our own MIT preprocessor automatically on every compile:
 `#define` (object-like and function-like), `#undef`, `#ifdef` / `#ifndef` /
 `#else` / `#elif` / `#endif`, `#if` with integer conditions and `defined()`,
 `#include` (with `-I`), `#error`. Written from scratch against the
 behavioural baseline in docs/PP-F0.md; src/hpp.rs is a standalone debug
-frontend over the same engine. #command/#translate is future work (F3).
+frontend over the same engine.
+
+User-defined commands and translations are supported in a scoped form,
+probed against Harbour first: `#command` / `#xcommand` with literal words
+(case-insensitive), `<param>` captures, optional `[ ... ]` clauses and
+`<x,...>` list captures (inserted via the plain `<x>` result marker, as
+Harbour's own headers do), and chaining; `#translate` only in the call
+form `NAME( <p> ) => body`, which works inline in expressions. Macro
+names and parameter substitution are case-sensitive, directive names are
+not - matching Harbour's observed behaviour. NOT supported: match markers,
+non-call `#translate` forms, token pasting (`##`), the `&` macro operator,
+`#pragma`. This is not a complete preprocessor port; see docs/PP-F0.md for
+the probe record and the explicit out-of-scope list.
