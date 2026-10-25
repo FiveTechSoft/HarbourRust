@@ -319,6 +319,20 @@ the NIL literal itself has existed in expressions since iteration 15
 (`Array(3, 0)` rows are real empty arrays, never NIL) and t270
 (ASize shrink to 0: every child freed, registry balance 0).
 
+## Three levels of nesting (t275-t276, iteration 22)
+
+t275 mirrors oracle pr4 end to end: a {{{1, 2}}, {{3}}} literal,
+len at each of the three levels, and a three-level read. t276
+checks the ownership side on both targets: a three-level value
+built and freed inside one function (epilogue recursive free), and
+a three-level value returned by move into a caller whose epilogue
+frees it - registry balance 0 in both cases. The old t200 negative
+("depth 3 unsupported") was retired because depth 3 is supported.
+The ABI harness gained an hbc_rfree block: a live DArr2 wrapped in
+a pair block, freed recursively under canary and alignment checks.
+Explicit compile errors remain for ASize/AAdd/ArrSet at level 3,
+three-level parameters, a fourth index level and mixed literals.
+
 ## Nested arrays as parameters and returns (t271-t274, iteration 21)
 
 t271/t272 mirror oracles pr1/pr3 (parameter and return of an array
