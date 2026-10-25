@@ -34,6 +34,14 @@ mod pp;
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum Ty { I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2 }
 
+// NIL is an in-band tag: the i64 value -9223372036854775808 (i64::MIN) is
+// reserved as the NIL sentinel (probe n1: NIL prints "NIL", NIL == NIL is
+// .T., NIL == 0 is .F., `return nil` returns it, ASize-grown slots hold it).
+// Documented cost: that one extreme integer is unrepresentable, and
+// arithmetic / ordering on NIL evaluates numerically where Harbour raises a
+// (headless-unreachable) type error.
+const NIL_SENT: i64 = i64::MIN;
+
 #[derive(Clone, PartialEq, Debug)]
 enum Tok {
     Ident(String),
@@ -45,6 +53,7 @@ enum Tok {
     Assign,   // :=
     Question, // ?
     Eq,       // =
+    FatArrow, // =>
     Ne,       // <> or !=
     Lt, Le, Gt, Ge,
     KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElse, KwEndif, KwWhile, KwEnddo, KwExit, KwLoop,
@@ -135,7 +144,13 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                     _ => Tok::Ident(id),
                 });
             }
-            '=' => { toks.push(Tok::Eq); it.next(); }
+            '=' => {
+                it.next();
+                match it.peek() {
+                    Some(&(_, '>')) => { toks.push(Tok::FatArrow); it.next(); }
+                    _ => toks.push(Tok::Eq),
+                }
+            }
             '!' => {
                 it.next();
                 match it.peek() {
@@ -182,6 +197,10 @@ enum Expr {
     Index2(String, Box<Expr>, Box<Expr>), // a[i][j] / a[i,j] on a DArr2 (probe m1/m2)
     BlockLit(usize, Vec<String>, Vec<Expr>), // {|p1, p2| e1, e2} -> last (probes c1-c5)
     DArrNew,                     // {} : empty DYNAMIC array (probes d1, e4)
+    Nil,                         // NIL: tagged i64 sentinel (probes n1: prints NIL, NIL==NIL .T., NIL==0 .F.)
+    // Hash literal: string keys, i64 values (v1). {=>} is the empty
+    // hash; {} stays the empty dynamic array.
+    HashLit(Vec<(Expr, Expr)>),
 }
 
 #[derive(Debug)]
@@ -266,6 +285,7 @@ impl P {
                 }
             }
             Some(Tok::Str(s)) => Ok(Expr::Str(s)),
+            Some(Tok::KwNil) => Ok(Expr::Nil),
             Some(Tok::Ident(id)) => {
                 if self.peek() == Some(&Tok::LParen) {
                     self.pos += 1;
@@ -364,11 +384,39 @@ impl P {
                     self.pos += 1;
                     return Ok(Expr::DArrNew);
                 }
+                // {=>} is the EMPTY HASH (probe h2: len 0); {} above is
+                // the empty dynamic array - different types in Harbour too.
+                if self.peek() == Some(&Tok::FatArrow) {
+                    self.pos += 1;
+                    if self.bump() != Some(Tok::RBrace) {
+                        return Err(format!("line {}: expected `}}` after `{{=>`", self.n));
+                    }
+                    return Ok(Expr::HashLit(Vec::new()));
+                }
                 let mut items = Vec::new();
+                let first = self.expr()?;
+                if self.peek() == Some(&Tok::FatArrow) {
+                    // Hash literal {k => v, ...} (probes d4, h5).
+                    let mut pairs = Vec::new();
+                    let mut key = first;
+                    loop {
+                        if self.bump() != Some(Tok::FatArrow) {
+                            return Err(format!("line {}: expected `=>` after the hash key, got {:?}", self.n, self.peek()));
+                        }
+                        let val = self.expr()?;
+                        pairs.push((key, val));
+                        match self.bump() {
+                            Some(Tok::Comma) => { key = self.expr()?; continue; }
+                            Some(Tok::RBrace) => break,
+                            other => return Err(format!("line {}: expected `,` or `}}` in the hash literal, got {:?}", self.n, other)),
+                        }
+                    }
+                    return Ok(Expr::HashLit(pairs));
+                }
+                items.push(first);
                 loop {
-                    items.push(self.expr()?);
                     match self.bump() {
-                        Some(Tok::Comma) => continue,
+                        Some(Tok::Comma) => { items.push(self.expr()?); continue; }
                         Some(Tok::RBrace) => break,
                         other => return Err(format!("line {}: expected `,` or `}}` in the array literal, got {:?}", self.n, other)),
                     }
@@ -1144,7 +1192,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
             }
             match sig.ret {
                 Some(t) => Ok(t),
-                None => Err(format!("line {}: `{}` returns nothing (`return nil`); its result cannot be used in an expression in this PoC", n, id)),
+                None => Err(format!("line {}: `{}` never returns a value; its result cannot be used in an expression in this PoC", n, id)),
             }
         }
         Expr::Bin(_, a, b) => {
@@ -1155,9 +1203,23 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
             }
             Ok(Ty::I64)
         }
+        Expr::Nil => Ok(Ty::I64),
         Expr::Cmp(op, a, b) => {
             let ta = type_expr(a, env, sigs, n)?;
             let tb = type_expr(b, env, sigs, n)?;
+            // NIL against a string: Harbour answers .F. for `=` (probe n1:
+            // "" == NIL is .F., no error). Only `=` / `#` are accepted;
+            // ordering NIL is a Harbour runtime error (no headless oracle).
+            // Ordering a NIL literal is a Harbour type error (no headless
+            // oracle): reject it at compile time. A NIL held in a variable
+            // still compares numerically - the documented sentinel cost.
+            if (matches!(**a, Expr::Nil) || matches!(**b, Expr::Nil)) && !matches!(op, CmpOp::Eq | CmpOp::Ne) {
+                return Err(format!("line {}: NIL only compares with `=` or `#` in this PoC (Harbour raises a type error on ordering NIL)", n));
+            }
+            let nil_str = (matches!(**a, Expr::Nil) && tb == Ty::Str) || (matches!(**b, Expr::Nil) && ta == Ty::Str);
+            if nil_str {
+                return Ok(Ty::Bool);
+            }
             if let Ty::Arr(_) = ta {
                 return Err(format!("line {}: arrays do not compare in this increment", n));
             }
@@ -1287,6 +1349,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
             Ok(Ty::Block(params.len()))
         }
         Expr::DArrNew => Ok(Ty::DArrU),
+        // Hashes WIP: the lexer and parser accept the literal (and {=>});
+        // the semantics land next increment - reject cleanly until then.
+        Expr::HashLit(_) => Err(format!("line {}: hash literals (`{{k => v}}`, `{{=>}}`) land in the next increment (hashes in progress)", n)),
     }
 }
 
@@ -1311,6 +1376,7 @@ fn free_vars(e: &Expr, out: &mut Vec<String>) {
         Expr::ArrLit(es) => { for e in es { free_vars(e, out); } }
         Expr::Index(_, ie) => free_vars(ie, out),
         Expr::Index2(_, ie, ie2) => { free_vars(ie, out); free_vars(ie2, out); }
+        Expr::HashLit(ps) => { for (k, v) in ps { free_vars(k, out); free_vars(v, out); } }
         Expr::BlockLit(_, _, _) => {} // nested blocks: rejected by the integer-body rule
         _ => {}
     }
@@ -1325,6 +1391,19 @@ fn free_vars(e: &Expr, out: &mut Vec<String>) {
 // path exits via return / exit / loop). `loop_pre` is Some(moved flags of
 // the outer env captured before the innermost `while`) inside a loop body;
 // `exits` collects the outer-env moved flags at each `exit` of that loop.
+// Does this statement list contain a `return <expr>` anywhere (nested
+// blocks included)? Used to keep main value-free: main's own `return nil`
+// returns NIL like any function (probe n1c) but must not yield a value.
+fn has_value_return(stmts: &[Stmt]) -> bool {
+    stmts.iter().any(|s| match s {
+        Stmt::Ret(_, Some(_)) => true,
+        Stmt::If(_, _, t, e) => has_value_return(t) || has_value_return(e),
+        Stmt::While(_, _, b) => has_value_return(b),
+        Stmt::For(_, _, _, _, _, b) => has_value_return(b),
+        _ => false,
+    })
+}
+
 fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Option<Ty>, loop_pre: Option<&Vec<bool>>, exits: &mut Vec<Vec<bool>>) -> Result<bool, String> {
     let mut falls = true;
     for s in stmts {
@@ -1385,8 +1464,15 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 falls = false;
             }
             Stmt::Ret(n, None) => {
-                if ret.is_some() {
-                    return Err(format!("line {}: `return nil` in a function that returns a value elsewhere (all returns must agree)", n));
+                // `return` / `return nil` return NIL (probe n1c: `? f()`
+                // prints NIL, ValType "U"). NIL is the tagged i64 sentinel,
+                // so this unifies with i64 returns; against any other return
+                // type the static typing still rejects (documented).
+                match *ret {
+                    Some(prev) if prev != Ty::I64 => {
+                        return Err(format!("line {}: return type mismatch (this function already returns {:?} elsewhere; all returns must agree)", n, prev));
+                    }
+                    _ => *ret = Some(Ty::I64),
                 }
                 falls = false;
             }
@@ -1811,6 +1897,11 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
         Expr::Int(v) => {
             out.push_str(&format!("    mov ${}, %rax\n", v));
         }
+        Expr::Nil => {
+            // NIL: the tagged i64 sentinel (probe n1). movabs: the immediate
+            // does not fit the sign-extended 32-bit form.
+            out.push_str(&format!("    movabs ${}, %rax\n", NIL_SENT));
+        }
         Expr::Str(_) => unreachable!("string literals are emitted via cg_str_ref"),
         Expr::Cmp(..) => unreachable!("comparisons are emitted via cg_cond_jump"),
         Expr::Var(id) => {
@@ -1858,6 +1949,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             // happens until the first AAdd (probe e4: len({}) == 0).
             out.push_str("    xor %eax, %eax\n    xor %edx, %edx\n");
         }
+        Expr::HashLit(_) => unreachable!("hash literals are rejected during checking (next increment)"),
         Expr::BlockLit(id, _, _) => {
             // The block's value is its code pointer (8 bytes, Copy).
             out.push_str(&format!("    lea hbc_blk_{}(%rip), %rax\n", id));
@@ -2065,7 +2157,7 @@ fn cg_array_value(e: &Expr, off: usize, env: &[CgLocal], sigs: &[Sig], strs: &mu
 
 fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
     match e {
-        Expr::Int(_) | Expr::Bin(_, _, _) => Ty::I64,
+        Expr::Int(_) | Expr::Bin(_, _, _) | Expr::Nil => Ty::I64,
         Expr::Str(_) => Ty::Str,
         Expr::Var(id) => env.iter().find(|v| v.name == *id).expect("checked").ty,
         Expr::Call(id, _) => {
@@ -2079,6 +2171,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::Index(_, _) | Expr::Index2(_, _, _) => Ty::I64,
         Expr::BlockLit(_, ps, _) => Ty::Block(ps.len()),
         Expr::DArrNew => Ty::DArrU,
+        Expr::HashLit(_) => unreachable!("hash literals are rejected during checking (next increment)"),
     }
 }
 
@@ -2159,6 +2252,15 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
 // in a 16-byte slot so a call inside either operand keeps ABI alignment.
 fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, true_label: &str) {
     match cond {
+        // NIL against a string is always .F. under `=` (probe n1); only
+        // `=` / `#` reach codegen (analysis rejects ordering NIL).
+        Expr::Cmp(op, a, b) if (matches!(**a, Expr::Nil) && expr_ty(b, env, sigs) == Ty::Str)
+            || (matches!(**b, Expr::Nil) && expr_ty(a, env, sigs) == Ty::Str) => {
+            if matches!(op, CmpOp::Ne) {
+                out.push_str(&format!("    jmp {}\n", true_label));
+            }
+            // Eq: the condition is never true - fall through.
+        }
         Expr::Cmp(op, a, b) if expr_ty(a, env, sigs) == Ty::Str => {
             // String equality/inequality: byte-compare via hbc_str_eq.
             // The lhs (ptr,len) pair is saved while the rhs is evaluated;
@@ -2302,6 +2404,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    jmp .Lret_{}\n", fname));
             }
             Stmt::Ret(_, None) => {
+                // `return` / `return nil` return NIL (probe n1c): the tagged
+                // sentinel travels like any i64 return value.
+                out.push_str(&format!("    movabs ${}, %rax\n    xor %edx, %edx\n", NIL_SENT));
                 out.push_str(&format!("    jmp .Lret_{}\n", fname));
             }
             Stmt::If(_, cond, then_s, else_s) => {
@@ -2846,6 +2951,18 @@ hbc_print_i64:
     push %rbp
     mov %rsp, %rbp
     sub $48, %rsp
+    # NIL sentinel: prints "NIL" with no field width (probe n1)
+    movabs $-9223372036854775808, %r11
+    cmp %r11, %rax
+    jne 0f
+    lea .Lnilmsg(%rip), %rsi
+    mov $3, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    leave
+    ret
+0:
     xor %r9d, %r9d
     test %rax, %rax
     jns 1f
@@ -3081,9 +3198,9 @@ hbc_aadd:
     ret
 
 # hbc_asize: rdi = slot address, rsi = new length, rdx = element size,
-# rcx = deep flag (1: free removed children on shrink). Grown slots read 0
-# (documented i64-model difference: Harbour grows with NIL, probe e1); for
-# a DArr2 the zero is the empty (null, 0) child.
+# rcx = deep flag (1: free removed children on shrink). Grown i64 slots
+# read NIL (probe e1: Harbour grows with NIL); a DArr2 grows with the empty
+# (null, 0) child.
 hbc_asize:
     push %rbx
     push %r12
@@ -3158,9 +3275,14 @@ hbc_asize:
     jge 68f
     mov %rcx, %r10
     imul %r14, %r10
-    movq $0, (%r13,%r10)
     cmp $16, %r14
-    jne 74f
+    je 79f
+    # i64 dynamic arrays grow with NIL (probe e1: grown slots read NIL)
+    movabs $-9223372036854775808, %r11
+    mov %r11, (%r13,%r10)
+    jmp 74f
+79: # a DArr2 grows with the empty child (null, 0) - m-probes, unchanged
+    movq $0, (%r13,%r10)
     movq $0, 8(%r13,%r10)
 74: inc %rcx
     jmp 67b
@@ -3211,6 +3333,8 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     }
     out.push_str(".Lnl:\n    .byte 10\n");
     out.push_str(".Lpad20:\n    .byte 32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32\n");
+    // "NIL" (3 bytes; the sentinel print form, probe n1)
+    out.push_str(".Lnilmsg:\n    .byte 78,73,76\n");
     // "Bound error: array access\n" (26 bytes; Harbour wording, probe a1)
     out.push_str(".Lboundmsg:\n    .byte 66,111,117,110,100,32,101,114,114,111,114,58,32,97,114,114,97,121,32,97,99,99,101,115,115,10\n");
     out.push_str(".Loommsg:\n    .byte 79,117,116,32,111,102,32,109,101,109,111,114,121,10\n");
@@ -3324,6 +3448,16 @@ hbc_print_i64:
     push %rbp
     mov %rsp, %rbp
     sub $64, %rsp
+    # NIL sentinel: prints "NIL" with no field width (probe n1)
+    movabs $-9223372036854775808, %r11
+    cmp %r11, %rax
+    jne 0f
+    lea .Lnilmsg(%rip), %rax
+    mov $3, %edx
+    call hbc_print_str
+    leave
+    ret
+0:
     xor %r9d, %r9d
     test %rax, %rax
     jns 1f
@@ -3546,7 +3680,8 @@ hbc_aadd:
     ret
 
 # hbc_asize: rdi = slot address, rsi = new length, rdx = element size,
-# rcx = deep flag (1: free removed children on shrink). Grown slots read 0.
+# rcx = deep flag (1: free removed children on shrink). Grown i64 slots
+# read NIL (probe e1); a DArr2 grows with the empty (null, 0) child.
 hbc_asize:
     push %rbp
     mov %rsp, %rbp
@@ -3616,9 +3751,14 @@ hbc_asize:
     jge 68f
     mov %rcx, %r10
     imul %r14, %r10
-    movq $0, (%r13,%r10)
     cmp $16, %r14
-    jne 74f
+    je 79f
+    # i64 dynamic arrays grow with NIL (probe e1: grown slots read NIL)
+    movabs $-9223372036854775808, %r11
+    mov %r11, (%r13,%r10)
+    jmp 74f
+79: # a DArr2 grows with the empty child (null, 0) - m-probes, unchanged
+    movq $0, (%r13,%r10)
     movq $0, 8(%r13,%r10)
 74: inc %rcx
     jmp 67b
@@ -3717,9 +3857,12 @@ fn main() {
             eprintln!("error: {}", m);
             process::exit(1);
         }
-        if f.name == "main" && ret.is_some() {
-            eprintln!("error: main must end with `return` or `return nil` in this PoC");
-            process::exit(1);
+        if f.name == "main" {
+            if has_value_return(&f.stmts) {
+                eprintln!("error: main must end with `return` or `return nil` in this PoC");
+                process::exit(1);
+            }
+            ret = None; // main's own `return nil` is NIL, never a usable value
         }
         if let Some(m) = pin_err {
             eprintln!("error: {}", m);
@@ -3750,4 +3893,3 @@ fn main() {
         .unwrap_or_else(|e| { eprintln!("cannot write {}: {}", args[2], e); process::exit(2); });
     println!("{} -> {} ({} functions)", args[1], args[2], funcs.len());
 }
-
