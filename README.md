@@ -551,4 +551,15 @@ BASE/1131); hbc rejects the first at compile time (t252) and answers
 the second with a clean "ASize: negative size" runtime error, exit 1
 (t250). Harbour supports three and more dimensions (oracle a3d);
 hbc rejects them with a compile error in this increment (t251).
-Battery: 255/255 green on Linux x86-64 and Wine.
+Constructor edges verified against oracles: zero rows (az0a, t255),
+zero columns (az0b, t256), dimensions evaluated left to right and
+exactly once (aevord, t257), AAdd appending at len+1 on a nested
+child (anadd, t258); the allocation-overflow guard is ours, without
+a headless oracle (t259). This iteration also fixed the internal
+helper ABI: the Windows hbc_free2 / hbc_aadd / hbc_asize clobbered
+callee-saved registers that every other helper (both targets)
+preserves; they now save and restore them, the ABI is documented in
+docs/BATTERY.md, and tests/abi_harness.sh (asm canaries across every
+helper route, wired into the battery, negative control verified)
+guards it. Battery: 261/261 green on Linux x86-64 and Wine, plus the
+ABI harness on both targets.
