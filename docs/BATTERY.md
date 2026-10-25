@@ -676,3 +676,25 @@ DArr3 is unsupported), so no execution test claims it; hk63
 measured Harbour's BASE/1068 dialog there (headless-hanging,
 registered failure mode). No new runtime helpers and no ABI
 harness entries.
+
+## Iteration 33g additions (383 manifest cases): ASize on three levels
+
+t380 (hk68 mirror: ASize grows a three-level ROOT with NIL casillas;
+shrinking back frees the removed children - balance 0), t381 (hk63
+mirror, now reachable: iterating a grown NIL root casilla at depth 3
+exits 1 with the BASE/1068 text), t382 (hk65 mirror: ASize grows the
+MIDDLE a[i] with NIL casillas; existing children survive), t383
+(iterating a grown NIL middle casilla exits 1 with the BASE/1068
+text), t384 (middle shrink frees removed innermost children - balance
+0), t385 (root shrink to zero frees everything - balance 0), t386
+(ASize on a NIL casilla is the registered BASE/2023-family failure
+mode, n7: clean exit 1). Design: hbc_asize gains kind 3 - grow
+zero-fills like kind 1, shrink frees removed children RECURSIVELY via
+hbc_rfree depth 2 (kind 1 only does a flat free, which would leak
+grandchildren). No new helpers; the existing hbc_asize ABI canaries
+stand, and the new kind is exercised by t380/t384/t385 on both
+targets. Middle AAdd with array elements (hk66/hk67) is measured and
+registered as pending: static literals are not materialized as dynamic
+children in this increment. Test-shape note: hb_memcheck must be
+printed by the CALLER after the owner function returns - printing it
+inside the owner always counts the still-owned arrays.
