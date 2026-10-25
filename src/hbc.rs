@@ -580,13 +580,23 @@ fn type_expr(e: &Expr, env: &[Local], sigs: &[(String, Ty)], n: usize) -> Result
             }
             Ok(Ty::I64)
         }
-        Expr::Cmp(_, a, b) => {
+        Expr::Cmp(op, a, b) => {
             let ta = type_expr(a, env, sigs, n)?;
             let tb = type_expr(b, env, sigs, n)?;
-            if ta != Ty::I64 || tb != Ty::I64 {
-                return Err(format!("line {}: comparisons require integers (string comparison is not in the PoC yet)", n));
+            if ta == Ty::I64 && tb == Ty::I64 {
+                return Ok(Ty::Bool);
             }
-            Ok(Ty::Bool)
+            if ta == Ty::Str && tb == Ty::Str {
+                // Comparison BORROWS both operands (nothing is moved).
+                return match op {
+                    CmpOp::Eq | CmpOp::Ne => Ok(Ty::Bool),
+                    _ => Err(format!("line {}: comparisons require integers (on strings only `=` and `<>` are in this PoC)", n)),
+                };
+            }
+            if ta != tb {
+                return Err(format!("line {}: cannot compare a string with an integer in this PoC", n));
+            }
+            Err(format!("line {}: comparisons require integers (on strings only `=` and `<>` are in this PoC)", n))
         }
     }
 }
@@ -902,8 +912,31 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[(String, Ty)], 
 // Emits the comparison and jumps to true_label when it holds.
 // rcx = lhs, rax = rhs; cmp computes lhs - rhs. On Windows the lhs is kept
 // in a 16-byte slot so a call inside either operand keeps ABI alignment.
-fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], out: &mut String, target: Target, true_label: &str) {
+fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], strs: &mut Vec<String>, out: &mut String, target: Target, true_label: &str) {
     match cond {
+        Expr::Cmp(op, a, b) if expr_ty(a, env, sigs) == Ty::Str => {
+            // String equality/inequality: byte-compare via hbc_str_eq.
+            // The lhs (ptr,len) pair is saved while the rhs is evaluated;
+            // the comparison borrows both operands (no move).
+            cg_value(a, env, sigs, strs, out, target);
+            match target {
+                Target::Linux => out.push_str("    push %rax\n    push %rdx\n"),
+                Target::Windows => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n"),
+            }
+            cg_value(b, env, sigs, strs, out, target);
+            out.push_str("    mov %rax, %rcx\n    mov %rdx, %r8\n");
+            match target {
+                Target::Linux => out.push_str("    pop %rdx\n    pop %rax\n"),
+                Target::Windows => out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n"),
+            }
+            out.push_str("    call hbc_str_eq\n    test %rax, %rax\n");
+            let j = match op {
+                CmpOp::Eq => "jnz",
+                CmpOp::Ne => "jz",
+                _ => unreachable!("analysis rejects ordering comparisons on strings"),
+            };
+            out.push_str(&format!("    {} {}\n", j, true_label));
+        }
         Expr::Cmp(op, a, b) => {
             cg_expr(a, env, sigs, out, target);
             match target {
@@ -963,7 +996,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[(
             Stmt::If(_, cond, then_s, else_s) => {
                 let id = *label;
                 *label += 1;
-                cg_cond_jump(cond, env, sigs, out, target, &format!(".Lthen_{}_{}", fname, id));
+                cg_cond_jump(cond, env, sigs, strs, out, target, &format!(".Lthen_{}_{}", fname, id));
                 out.push_str(&format!("    jmp .Lelse_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lthen_{}_{}:\n", fname, id));
                 let mark = env.len();
@@ -979,7 +1012,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[(
                 let id = *label;
                 *label += 1;
                 out.push_str(&format!(".Lwhile_{}_{}:\n", fname, id));
-                cg_cond_jump(cond, env, sigs, out, target, &format!(".Lbody_{}_{}", fname, id));
+                cg_cond_jump(cond, env, sigs, strs, out, target, &format!(".Lbody_{}_{}", fname, id));
                 out.push_str(&format!("    jmp .Lendw_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lbody_{}_{}:\n", fname, id));
                 let mark = env.len();
@@ -1132,6 +1165,30 @@ hbc_print_str:
     syscall
     ret
 
+# hbc_str_eq: %rax = lhs ptr, %rdx = lhs len, %rcx = rhs ptr, %r8 = rhs len.
+# Returns %rax = 1 when the byte strings are equal, 0 otherwise. Leaf
+# routine: no calls, only volatile registers. Byte equality on (ptr,len)
+# values only - no allocation, no memory management of any kind.
+hbc_str_eq:
+    cmp %r8, %rdx
+    jne 90f
+    xor %r9, %r9
+91:
+    cmp %rdx, %r9
+    jae 92f
+    movzbl (%rax,%r9), %r10d
+    movzbl (%rcx,%r9), %r11d
+    cmp %r11b, %r10b
+    jne 90f
+    inc %r9
+    jmp 91b
+92:
+    mov $1, %eax
+    ret
+90:
+    xor %eax, %eax
+    ret
+
 # hbc_print_i64: %rax = signed value. Prints decimal + newline.
 hbc_print_i64:
     push %rbp
@@ -1222,6 +1279,30 @@ hbc_print_str:
     movq $0, 32(%rsp)
     call WriteFile
     leave
+    ret
+
+# hbc_str_eq: %rax = lhs ptr, %rdx = lhs len, %rcx = rhs ptr, %r8 = rhs len.
+# Returns %rax = 1 when the byte strings are equal, 0 otherwise. Leaf
+# routine: no calls, only volatile registers. Byte equality on (ptr,len)
+# values only - no allocation, no memory management of any kind.
+hbc_str_eq:
+    cmp %r8, %rdx
+    jne 90f
+    xor %r9, %r9
+91:
+    cmp %rdx, %r9
+    jae 92f
+    movzbl (%rax,%r9), %r10d
+    movzbl (%rcx,%r9), %r11d
+    cmp %r11b, %r10b
+    jne 90f
+    inc %r9
+    jmp 91b
+92:
+    mov $1, %eax
+    ret
+90:
+    xor %eax, %eax
     ret
 
 # hbc_print_i64: %rax = signed value. Prints decimal + newline.
