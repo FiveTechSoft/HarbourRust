@@ -392,7 +392,9 @@ frees it - registry balance 0 in both cases. The old t200 negative
 The ABI harness gained an hbc_rfree block: a live DArr2 wrapped in
 a pair block, freed recursively under canary and alignment checks.
 Explicit compile errors remain for ASize/AAdd/ArrSet at level 3,
-three-level parameters, a fourth index level and mixed literals.
+a fourth index level and mixed literals
+(three-level parameters entered in iteration 27 under the move
+contract).
 
 ## Nested arrays as parameters and returns (t271-t274, iteration 21)
 
