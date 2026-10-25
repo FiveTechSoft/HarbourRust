@@ -152,6 +152,9 @@ recorded, not denied.
   + <y>]` -> `+ 5 +`, which Harbour then rejects E0030); a bracket with
   NO bound marker is dropped whole, comma included (b36b/b36d and
   std.ch's `[, <clr>]` case). t105 positive, t106 negative.
+- #include <file> angle form (b38): searches the -I paths ONLY (Harbour
+  F0029 without -I even with the file beside the source); the quoted
+  form checks the including file's directory first, then -I. t109/t110.
 - #uncommand / #untranslate (b32, b37a-f): exact-match removal - pattern
   tokens (literals case-insensitive, markers exact) AND identical result
   text (b37b); removes ONE instance of a stacked duplicate (b37f);
