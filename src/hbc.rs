@@ -588,15 +588,14 @@ fn type_expr(e: &Expr, env: &[Local], sigs: &[(String, Ty)], n: usize) -> Result
             }
             if ta == Ty::Str && tb == Ty::Str {
                 // Comparison BORROWS both operands (nothing is moved).
-                return match op {
-                    CmpOp::Eq | CmpOp::Ne => Ok(Ty::Bool),
-                    _ => Err(format!("line {}: comparisons require integers (on strings only `=` and `<>` are in this PoC)", n)),
-                };
+                // Ordering is byte-wise (memcmp-like): no collation.
+                let _ = op;
+                return Ok(Ty::Bool);
             }
             if ta != tb {
                 return Err(format!("line {}: cannot compare a string with an integer in this PoC", n));
             }
-            Err(format!("line {}: comparisons require integers (on strings only `=` and `<>` are in this PoC)", n))
+            Err(format!("line {}: comparisons require integers", n))
         }
     }
 }
@@ -929,11 +928,20 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], strs: &mut 
                 Target::Linux => out.push_str("    pop %rdx\n    pop %rax\n"),
                 Target::Windows => out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n"),
             }
-            out.push_str("    call hbc_str_eq\n    test %rax, %rax\n");
             let j = match op {
-                CmpOp::Eq => "jnz",
-                CmpOp::Ne => "jz",
-                _ => unreachable!("analysis rejects ordering comparisons on strings"),
+                CmpOp::Eq | CmpOp::Ne => {
+                    out.push_str("    call hbc_str_eq\n    test %rax, %rax\n");
+                    match op { CmpOp::Eq => "jnz", _ => "jz" }
+                }
+                _ => {
+                    // hbc_str_cmp returns -1, 0 or 1 (byte-wise, like memcmp)
+                    out.push_str("    call hbc_str_cmp\n    cmp $0, %rax\n");
+                    match op {
+                        CmpOp::Lt => "jl", CmpOp::Le => "jle",
+                        CmpOp::Gt => "jg", CmpOp::Ge => "jge",
+                        _ => unreachable!(),
+                    }
+                }
             };
             out.push_str(&format!("    {} {}\n", j, true_label));
         }
@@ -1189,6 +1197,37 @@ hbc_str_eq:
     xor %eax, %eax
     ret
 
+# hbc_str_cmp: same inputs as hbc_str_eq. Returns %rax = -1, 0 or 1,
+# byte-wise lexicographic (like memcmp): the first differing byte
+# decides (unsigned); a strict prefix is less than its extension. No
+# collation, no Unicode awareness. Leaf: no calls, volatile registers.
+hbc_str_cmp:
+    xor %r9d, %r9d
+    mov %rdx, %r11
+    cmp %r8, %r11
+    cmova %r8, %r11
+95:
+    cmp %r11, %r9
+    jae 96f
+    movzbl (%rax,%r9), %r10d
+    cmp %r10b, (%rcx,%r9)
+    jb 98f
+    ja 97f
+    inc %r9
+    jmp 95b
+96:
+    cmp %r8, %rdx
+    jb 97f
+    ja 98f
+    xor %eax, %eax
+    ret
+98:
+    mov $1, %eax
+    ret
+97:
+    mov $-1, %rax
+    ret
+
 # hbc_print_i64: %rax = signed value. Prints decimal + newline.
 hbc_print_i64:
     push %rbp
@@ -1303,6 +1342,37 @@ hbc_str_eq:
     ret
 90:
     xor %eax, %eax
+    ret
+
+# hbc_str_cmp: same inputs as hbc_str_eq. Returns %rax = -1, 0 or 1,
+# byte-wise lexicographic (like memcmp): the first differing byte
+# decides (unsigned); a strict prefix is less than its extension. No
+# collation, no Unicode awareness. Leaf: no calls, volatile registers.
+hbc_str_cmp:
+    xor %r9d, %r9d
+    mov %rdx, %r11
+    cmp %r8, %r11
+    cmova %r8, %r11
+95:
+    cmp %r11, %r9
+    jae 96f
+    movzbl (%rax,%r9), %r10d
+    cmp %r10b, (%rcx,%r9)
+    jb 98f
+    ja 97f
+    inc %r9
+    jmp 95b
+96:
+    cmp %r8, %rdx
+    jb 97f
+    ja 98f
+    xor %eax, %eax
+    ret
+98:
+    mov $1, %eax
+    ret
+97:
+    mov $-1, %rax
     ret
 
 # hbc_print_i64: %rax = signed value. Prints decimal + newline.
