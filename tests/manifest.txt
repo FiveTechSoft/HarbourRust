@@ -357,3 +357,8 @@ posx tests/t359_foreach_strord_nil.hb 1 Argument error: >\n
 pos tests/t360_foreach_strord_multi.hb \nmenor-e-igual\nigual\nmenor-e-igual\nmenor\nigual-ab\nigual-ab\nigual-ab\nmayor-ab
 pos tests/t361_foreach_strord_right.hb \nb-mayor\nb-mayor\nb-mayor
 pos tests/t362_foreach_strcmp_shorter.hb \ndistinta\nne\ndistinta\nne
+pos tests/t363_foreach_temp.hb \nes-b\nes-a\nes-k\n         3\n         0
+pos tests/t364_foreach_temp_reentry.hb \n         7\n         7\n         7\n         4\n         0
+pos tests/t365_foreach_temp_exitret.hb \n         1\n         0
+pos tests/t366_foreach_temp_arrayn.hb \nnil\nnil\n         1\n         0
+neg tests/t367_neg_foreach_index.hb cannot extract the subarray
