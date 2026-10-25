@@ -342,8 +342,9 @@ probed against Harbour first: `#command` / `#xcommand` with literal words
 (case-insensitive), `<param>` captures, optional `[ ... ]` clauses (nesting included) and
 `<x,...>` list captures (inserted via the plain `<x>` result marker, as
 Harbour's own headers do), the parenthesized-expression marker `<(x)>`,
-and chaining; `#translate` only in the call
-form `NAME( <p> ) => body`, which works inline in expressions. Macro
+and chaining; `#translate` / `#xtranslate` only in the
+call form `NAME( <p> ) => body`, which works inline in expressions, plus
+non-call forms at statement start. Macro
 names and parameter substitution are case-sensitive, directive names are
 not - matching Harbour's observed behaviour. NOT supported: the marker
 forms Harbour itself rejects (`<"x">`, `<#x>`), non-call `#translate`
