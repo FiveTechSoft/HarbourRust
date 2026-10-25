@@ -316,10 +316,11 @@ wine gen/hola.exe
 
 See [BUILDING.md](BUILDING.md) for the complete build recipe (Linux, Windows .exe output, cross-building `hbc.exe` itself, and running under Wine) and [dist/](dist/) for prebuilt, tested binaries with SHA-256 checksums.
 
-## Iteration 11b: string parameters
+## Preprocessor: integrated (F1+F2)
 
-Functions now take string parameters too: passing a string moves it (the
-caller hands over ownership, like a Rust String), integers copy. Parameter
-types are pinned from how the body uses them; anything ambiguous is
-rejected with a clear "cannot infer" error. See EVIDENCIA.md for the exact
-pinning rules and the registered Harbour divergence.
+hbc now runs our own MIT preprocessor automatically on every compile:
+`#define` (object-like and function-like), `#undef`, `#ifdef` / `#ifndef` /
+`#else` / `#elif` / `#endif`, `#if` with integer conditions and `defined()`,
+`#include` (with `-I`), `#error`. Written from scratch against the
+behavioural baseline in docs/PP-F0.md; src/hpp.rs is a standalone debug
+frontend over the same engine. #command/#translate is future work (F3).
