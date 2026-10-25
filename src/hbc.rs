@@ -1000,7 +1000,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                             }
                         }
                         _ if matches!(head.first(), Some(Tok::Ident(_)))
-                            && head.len() >= 7
+                            && head.len() >= 6
                             && matches!(head[1], Tok::LBracket)
                             && matches!(head[head.len() - 1], Tok::RBracket) => {
                             // AAdd/ASize on a[i][j]: split the two bracket
@@ -3249,6 +3249,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if env[kp].moved {
                     return Err(format!("line {}: use of moved value `{}`", n, id));
                 }
+                if env[kp].ty == Ty::DArr4 {
+                    return Err(format!("line {}: `AAdd` on the root of a four-level array is not in this increment", n));
+                }
                 if !matches!(env[kp].ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArrS) {
                     return Err(format!("line {}: `AAdd` applies to dynamic arrays (`{{}}`); `{}` is not one", n, id));
                 }
@@ -3315,6 +3318,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     Some(k) => k,
                     None => return Err(format!("line {}: undeclared variable `{}`", n, id)),
                 };
+                if env[kp].ty == Ty::DArr4 {
+                    return Err(format!("line {}: `AAdd` on a[i] of a four-level array is not in this increment", n));
+                }
                 if !matches!(env[kp].ty, Ty::DArr2 | Ty::DArr3) {
                     return Err(format!("line {}: `AAdd` on a[i] needs an array of arrays; `{}` is not one", n, id));
                 }
@@ -3376,6 +3382,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     // increment (Harbour grows with NIL casillas, hk13).
                     Ty::DArr | Ty::DArr2 | Ty::DArrS | Ty::DArr3 => {}
                     Ty::DArrU => return Err(format!("line {}: the element type of `{}` is unknown until its first `AAdd` (pin it first)", n, id)),
+                    Ty::DArr4 => return Err(format!("line {}: `ASize` on the root of a four-level array is not in this increment", n)),
                     _ => return Err(format!("line {}: `ASize` applies to dynamic arrays (`{{}}`); `{}` is not one", n, id)),
                 }
                 let t = type_expr(e, env, sigs, *n)?;
@@ -3397,6 +3404,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 // DArr3 root: the middle child resizes in place (hk65:
                 // grow with NIL casillas; shrink frees removed innermost
                 // children).
+                if env[kp].ty == Ty::DArr4 {
+                    return Err(format!("line {}: `ASize` on a[i] of a four-level array is not in this increment", n));
+                }
                 if !matches!(env[kp].ty, Ty::DArr2 | Ty::DArr3) {
                     return Err(format!("line {}: `ASize` on a[i] needs an array of arrays; `{}` is not one", n, id));
                 }
@@ -3609,6 +3619,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     }
                     Ty::DArrU => {
                         return Err(format!("line {}: the element type of `{}` is unknown until its first `AAdd` (pin it first)", n, id));
+                    }
+                    Ty::DArr4 => {
+                        return Err(format!("line {}: assigning into an element of a four-level array is not in this increment", n));
                     }
                     _ => return Err(format!("line {}: indexed assignment applies to arrays; `{}` is not an array", n, id)),
                 }
