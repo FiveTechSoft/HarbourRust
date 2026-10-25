@@ -720,6 +720,25 @@ bounds-walk and append tail with the scalar path (a first draft
 duplicated the tail with an early return that dropped the following
 statements - caught by the battery, fixed before publishing).
 
+## Iteration 33n additions (435 manifest cases): string arrays as arguments and returns
+
+DArrS (arrays of strings) follow the established MOVE contract on
+arguments and returns - no code change was needed: the call-site
+check, the boundary push with source nulling, and the epilogue free
+(kind 2, owned strings) already covered the type; this iteration
+measures and registers it (oracles hk101, compiled hbmk2 -gtstd:
+Harbour SHARES the string array - the callee's write and growth are
+visible in the caller - so the move is a registered D5/D7-family
+difference pending the user's contract decision, NOT sharing; the
+callee's reads of string casillas match hk101 exactly). Tests: t435
+(callee reads, writes and grows the moved array, balance 0), t437
+(DArrS return moves to the caller, balance 0). Named compile errors:
+t436 (caller reuse after the move - "use of moved value"), t438 (a
+read-only callee pins a FLAT dynamic array, so the string array is
+rejected by name - same registered pin pattern as ASize-only: string
+evidence like AAdd(x, "s") or a string operation on x[i] pins DArrS).
+No new helpers, no new ABI harness entries.
+
 ## Iteration 33m additions (431 manifest cases): static array returns
 
 return a on a STATIC array materializes a dynamic COPY the caller owns
