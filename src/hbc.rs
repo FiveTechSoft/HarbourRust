@@ -2030,6 +2030,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         if let Some(x) = env.iter_mut().find(|x| x.name == *v && matches!(x.ty, Ty::Str | Ty::StrOwn)) { x.moved = true; }
                     }
                 }
+                // A hash LITERAL argument has no emission path in
+                // argument position (33o): only variables move into a
+                // hash parameter. Named rejection instead of the cg
+                // unreachable.
+                if ta == Ty::Hash && !matches!(a, Expr::Var(_)) {
+                    return Err(format!("line {}: a hash argument is a variable in this increment (assign the literal first)", n));
+                }
                 let ok = ta == sig_params[i]
                     || (ta == Ty::Dyn && sig_params[i] == Ty::I64)  // runtime extract (nil -> clean type error)
                     || (ta == Ty::I64 && sig_params[i] == Ty::Dyn) // tagged at the call
