@@ -57,7 +57,7 @@ borrowing/references/lifetimes are not covered (see README).
 tests/t01_injection_colons.hb   error: line 2: ':' without '=' (col 10)
 tests/t02_injection_unsafe.hb   error: line 2: character not allowed `{` (U+007B)
 tests/t03_injection_macro.hb    error: line 2: character not allowed `;` (U+003B)
-tests/t04_unicode_ident.hb      error: line 2: character not allowed `ñ` (U+00F1)   (no panic)
+tests/t04_unicode_ident.hb      error: line 2: character not allowed `Ã±` (U+00F1)   (no panic)
 tests/t05_keyword_boundary.hb   error: line 2: statement not in the subset (Ident("localfoo"))
 tests/t06_undefined_var.hb      error: line 2: undefined variable `y`
 tests/t08_type_error.hb         error: line 3: arithmetic requires integers
@@ -67,7 +67,7 @@ integer literal 9223372036854775808
                                 (iteration 1 delegated this to rustc; now hbc checks it)
 
 ## Unicode string accepted and runs
-tests/t07_unicode_string.hb  `? "olá, año 🦀"`  ->  prints: olá, año 🦀
+tests/t07_unicode_string.hb  `? "olÃ¡, aÃ±o ð¦"`  ->  prints: olÃ¡, aÃ±o ð¦
 (strings are emitted as raw UTF-8 .byte sequences; no assembler escaping)
 
 ## Known limits observed
@@ -123,7 +123,7 @@ positive (compiled and RUN on linux ELF and on windows PE under Wine):
   ejemplos/hola.hb            PASS  (32 + greeting, identical)
   tests/t10_int_copy.hb       PASS  (5 / 5 / -5, identical)
   tests/t11_print_borrows.hb  PASS  (hola / hola / 7, identical)
-  tests/t07_unicode_string.hb PASS  (olá, año 🦀, identical)
+  tests/t07_unicode_string.hb PASS  (olÃ¡, aÃ±o ð¦, identical)
   arithmetic (14/20/14/i64::MAX) PASS (identical)
 negative (hbc itself rejects before codegen, target-independent):
   ejemplos/prestamo_roto.hb   PASS  error: line 5: use of moved value `a`  (both targets)
@@ -244,7 +244,29 @@ t05 keeps its original error wording (the identifier-led-line rejection
 absorbs it).
 
 ## What this does NOT show
-- `exit` / `loop` statements, `for` loops, early returns.
+- `for` loops, early returns.
+
+# Iteration 6: exit / loop (2026-10-25)
+
+Harbour's `exit` / `loop` (Rust's `break` / `continue`) inside `while`.
+The move checker became control-flow aware: blocks report whether they
+can fall through, `exit` records the move state at its site, and the
+post-loop state joins pre-loop + fall-through + every exit site.
+
+positive (byte-identical output on Linux x86-64 and under Wine):
+- tests/t28_exit_loop.hb - exit at i = 3 prints "1 2 salido"; two `loop`
+  skips print "1 3 5 fin"
+- tests/t31_exit_move_ok.hb - move on an exit-only path is accepted
+  (prints "hola fuera")
+
+negative (rejected by hbc itself before codegen, exit 1, both targets):
+- tests/t29_exit_outside.hb - "exit outside a `while` loop"
+- tests/t30_loop_move.hb - moved before `loop`, no reassignment
+- tests/t32_exit_move_use.hb - the exit path counts as moved after the loop
+
+Full 32-case battery re-run after the change: 32/32 pass, `hola` Linux
+ELF still 8,984 bytes. Not yet: `for` loops, early returns.
+
 - Full Rust assignment semantics: assignment re-lives a moved variable and
   cannot change its type; there is still no Drop (strings are read-only
   literals).
