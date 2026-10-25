@@ -475,3 +475,14 @@ Probe b18: Harbour nests [...] groups ([TO <y> [BY <z>]] at three use
 depths). The matcher was rewritten recursive to match. t94 positive.
 Full battery: 97/97 (94 numbered + 3 fixtures), Linux + Wine identical.
 Differential vs Harbour: t94 MATCH.
+
+### String ordering aligned to Harbour's default; non-call #translate
+
+Probe b22 (both directions, EXACT ON/OFF): Harbour's default orders
+strings over the RIGHT operand's length (asymmetric prefix rule); the
+PoC's byte-wise rule was Harbour's EXACT ON variant and was corrected.
+hbc_str_cmp rewritten on both targets; t55 updated and now MATCHes
+Harbour. Non-call #translate implemented at statement start via the
+command machinery (probes b19-b21); t95/t96 positive. Full battery:
+99/99 (96 numbered + 3 fixtures), Linux + Wine identical. Differential:
+t55, t95, t96 MATCH.
