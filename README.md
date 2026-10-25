@@ -655,8 +655,8 @@ its own ABI canary block in the harness. t285 mirrors pr7 with
 registry balance 0 after the owner returns. Battery: 287/287
 green on Linux x86-64 and Wine, plus the ABI harness on both
 targets.
-Out of scope, all explicit compile errors: three-level parameters,
-a fourth index level or dimension, mixed literals.
+Out of scope, all explicit compile errors: three-level parameters
+(until iteration 27), a fourth index level or dimension, mixed literals.
 
 ## Iteration 24 - AAdd and ASize at the third level
 
@@ -677,8 +677,8 @@ index expressions (an index containing brackets, `a[b[1]]`, still
 parses as the two-level form - t192 keeps that pinned). Battery:
 283/283 green on Linux x86-64 and Wine, plus the ABI harness on
 both targets. Out of scope, all explicit compile errors:
-three-level parameters, Array() with three dimensions, a fourth
-index level, mixed literals.
+three-level parameters (until iteration 27), Array() with three
+dimensions, a fourth index level, mixed literals.
 
 ## Iteration 23 - writes at the third level and a return chain
 
@@ -696,8 +696,8 @@ the final owner frees, with a read after each transfer and
 registry balance 0 on both targets. Battery: 279/279 green on
 Linux x86-64 and Wine, plus the ABI harness on both targets.
 Out of scope, all explicit compile errors: AAdd/ASize at level 3,
-three-level parameters, Array() with three dimensions, a fourth
-index level, mixed literals.
+three-level parameters (until iteration 27), Array() with three
+dimensions, a fourth index level, mixed literals.
 
 ## Iteration 22 - three levels of nesting (arrays of arrays of arrays)
 
@@ -712,9 +712,10 @@ frees the whole value, registry balance 0 on both targets).
 Two implementation decisions worth naming:
 
 - The type is an explicit `DArr3` variant, not a recursive type:
-  the checker knows the depth statically, so a fourth index level
-  and passing a three-level value as a parameter are compile errors
-  with named limits, not silent misbehavior. A generic recursive
+  the checker knows the depth statically, so a fourth index level is a
+  compile error with a named limit, not silent misbehavior (a
+  three-level parameter compiles since iteration 27, under the move
+  contract). A generic recursive
   structure was considered and set aside for this PoC: it would
   need runtime depth tracking the current slot model does not have.
 - The FREE side is generic: one new helper `hbc_rfree(ptr, len,
