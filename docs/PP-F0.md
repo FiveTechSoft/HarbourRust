@@ -136,5 +136,10 @@ recorded, not denied.
   scoped the same day via the command machinery (t95/t96). Harbour also
   applies them after its own `?` command through std.ch chaining; this
   PoC does not emulate that indirect path (scoped difference).
+- #if expressions: Harbour accepts relational operators, .AND./.OR.,
+  unary !, arithmetic and #elif chains (probes b24/b25). Our eval_if
+  already had relational/.AND./.OR./.NOT.; extended with !, + - * / %
+  (wrapping, zero-division rejected) the same day. t98/t99.
+
 - Still scoped OUT: rejected marker forms (<"x">, <#x>), token
   pasting. No claim of general #command/#translate compatibility.
