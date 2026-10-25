@@ -1051,5 +1051,15 @@ Robustness fix in passing: `hb_HKeys` with a non-variable
 argument used to panic the compiler; it is now the documented
 clean error (t345).
 
-Battery: 440/440 manifest cases on Linux x86-64 and Wine, plus
+- Codeblocks pass as user-function parameters: `eval` in the callee
+  pins the parameter to a block of that arity (hk102: Harbour prints
+  42 and returns 44 - our t444 matches exactly; a two-parameter
+  shape, t445). A block argument of a different arity and a block
+  fed to an integer parameter are named compile errors (t446: the
+  conservative exact-arity pin rejects where Harbour would ignore
+  extra arguments, probes c7/c7b - registered limitation; t447).
+  The block VALUE is copied at the call boundary, so the caller's
+  variable stays reusable (t444 prints 10 and balance 0).
+
+Battery: 444/444 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
