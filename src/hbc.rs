@@ -268,7 +268,8 @@ impl P {
                 }
                 Ok(e)
             }
-            other => Err(format!("line {}: unexpected token {:?}", self.n, other)),
+            None => Err(format!("line {}: incomplete expression (operand or ) missing)", self.n)),
+            Some(t) => Err(format!("line {}: unexpected token {:?} in expression", self.n, t)),
         }
     }
     fn peek_cmp(&self) -> Option<CmpOp> {
@@ -587,7 +588,9 @@ fn parse(src: &str) -> Result<Vec<Func>, String> {
 struct Sig {
     name: String,
     params: Vec<Ty>,
-    ret: Ty,
+    // None when the function ends in `return nil` (void): its result cannot
+    // be used in an expression in this PoC.
+    ret: Option<Ty>,
 }
 
 // Semantic analysis: types + ownership/move tracking. This pass is OURS:
@@ -751,7 +754,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                         if ta == Ty::I64 { "an integer" } else { "a string" }));
                 }
             }
-            Ok(sig.ret)
+            match sig.ret {
+                Some(t) => Ok(t),
+                None => Err(format!("line {}: `{}` returns nothing (`return nil`); its result cannot be used in an expression in this PoC", n, id)),
+            }
         }
         Expr::Bin(_, a, b) => {
             let ta = type_expr(a, env, sigs, n)?;
@@ -1085,7 +1091,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::Int(_) | Expr::Bin(_, _, _) => Ty::I64,
         Expr::Str(_) => Ty::Str,
         Expr::Var(id) => env.iter().find(|v| v.name == *id).expect("checked").ty,
-        Expr::Call(id, _) => sigs.iter().find(|v| v.name == *id).expect("checked").ret,
+        Expr::Call(id, _) => sigs.iter().find(|v| v.name == *id).expect("checked").ret.expect("checked"),
         Expr::Cmp(..) => Ty::Bool,
     }
 }
@@ -1745,9 +1751,7 @@ fn main() {
             eprintln!("error: {}", m);
             process::exit(1);
         }
-        if let Some(t) = ret {
-            sigs.push(Sig { name: f.name.clone(), params: ptys.clone(), ret: t });
-        }
+        sigs.push(Sig { name: f.name.clone(), params: ptys.clone(), ret });
         f.ret = ret;
     }
     if !has_main {
