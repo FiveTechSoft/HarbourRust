@@ -138,6 +138,79 @@ hbc_abi_test:
     mov $2, %edx
     call hbc_rfree
     call abi_check
+    # hbc_hkeys on a 2-entry hash: keys come out in insertion order, each
+    # an owned copy; hbc_strcpy makes an independent copy of one;
+    # hbc_sfree frees the array, hbc_hfree the hash.
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    lea .Labi_k1(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $1, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea .Labi_k2(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $1, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $2, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea -96(%rbp), %rdi
+    call hbc_hkeys
+    # Save the result BEFORE abi_check: the canary check clobbers rax.
+    mov %rax, -32(%rbp)
+    mov %rdx, -24(%rbp)
+    call abi_check
+    cmpq $2, -24(%rbp)
+    jne abi_fail_hk
+    mov -32(%rbp), %rax
+    cmpq $2, (%rax)
+    jne abi_fail_hk
+    mov 8(%rax), %rcx
+    cmpq $2, -8(%rcx)
+    jne abi_fail_hk
+    cmpw $0x6261, (%rcx)
+    jne abi_fail_hk
+    cmpq $2, 16(%rax)
+    jne abi_fail_hk
+    mov 24(%rax), %rcx
+    cmpq $1, -8(%rcx)
+    jne abi_fail_hk
+    cmpb $0x63, (%rcx)
+    jne abi_fail_hk
+    mov 8(%rax), %rdi
+    mov -8(%rdi), %rsi
+    call hbc_strcpy
+    # Save the copy pointer BEFORE abi_check (it clobbers rax).
+    mov %rax, -16(%rbp)
+    call abi_check
+    mov -16(%rbp), %rcx
+    cmpq $2, -8(%rcx)
+    jne abi_fail_hk
+    cmpw $0x6261, (%rcx)
+    jne abi_fail_hk
+    mov %rcx, %rdi
+    mov $1, %esi
+    call hbc_free
+    call abi_check
+    mov -32(%rbp), %rdi
+    mov $2, %esi
+    call hbc_sfree
+    call abi_check
+    mov -96(%rbp), %rdi
+    mov $2, %esi
+    call hbc_hfree
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -208,6 +281,10 @@ abi_fail_align:
     lea .Labi_f_aln(%rip), %rax
     mov $14, %edx
     jmp abi_fail_common
+abi_fail_hk:
+    lea .Labi_f_hk(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
 abi_fail_common:
     call hbc_print_str
 ASM_EOF
@@ -235,6 +312,9 @@ ASM_EOF
 .Labi_f_r15: .ascii "ABI FAIL r15\n"
 .Labi_f_stk: .ascii "ABI FAIL stk\n"
 .Labi_f_aln: .ascii "ABI FAIL align\n"
+.Labi_f_hk:  .ascii "ABI FAIL hk\n"
+.Labi_k1:    .ascii "ab"
+.Labi_k2:    .ascii "c"
 ASM_EOF
 }
 
