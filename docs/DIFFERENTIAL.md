@@ -185,3 +185,7 @@ includes rejected by both via depth caps (F0031-class, probe b29).
 Function-like arity mismatch: Harbour leaves the call unexpanded
 (link-time failure), HarbourRust rejects at compile time - registered
 as the same static-vs-dynamic class as t82 (probe b27).
+
+t102 (most-specific command rule wins, both definition orders): MATCH
+(probes b31/b31b; our first-defined-wins order was a real divergence,
+found and fixed the same day).
