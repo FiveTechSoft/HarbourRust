@@ -441,3 +441,19 @@ battery: 90/90 (87 numbered + 3 fixtures), Linux + Wine identical.
 Differential vs Harbour: t84, t85, t86 MATCH. A UTF-8 tokenization panic
 (t04) and a depth-comparison bug on closing parens were caught by the
 battery/probes and fixed before this record.
+
+### F3b: optional clauses, list captures, case-sensitive parameters
+
+Probe-driven (a07, b01-b03 against Harbour): parameter substitution in
+function-like defines is case-sensitive (a07; our engine was wrong and was
+fixed, regression t88), optional [...] clauses work (b01), <x,...> list
+captures work (b02), ## token pasting is accepted by Harbour but its
+semantics are unprobed and unimplemented (b03). List insertion uses the
+plain <x> result marker - Harbour rejects <x,...> in results (E0009) and
+its own std.ch uses the plain form; ours matches.
+
+New tests t88 (neg: unsubstituted X rejected), t89 (optional clause),
+t90 (list capture). Full battery: 93/93 (90 numbered + 3 fixtures),
+Linux + Wine identical. Differential vs Harbour: t89, t90 MATCH; t88 is
+the registered static-vs-dynamic rejection difference (compile-time vs
+BASE/1003 at runtime, same class as t82).
