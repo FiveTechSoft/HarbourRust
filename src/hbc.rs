@@ -32,7 +32,7 @@ use std::process;
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2, Dyn, Hash }
+enum Ty { I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2, DArr3, Dyn, Hash }
 
 // Dyn is the tagged-union value for any route that can carry NIL (probes
 // n1/n2/n3): a 16-byte {tag, payload} pair, tag 0 = i64 payload, tag 1 =
@@ -193,7 +193,8 @@ enum Expr {
     Cmp(CmpOp, Box<Expr>, Box<Expr>), // i64 operands only (checked in analysis)
     ArrLit(Vec<Expr>),             // {e1, ..., eN}; i64 elements, fixed size
     Index(String, Box<Expr>),      // a[i]; Harbour base 1 (probe a1)
-    Index2(String, Box<Expr>, Box<Expr>), // a[i][j] / a[i,j] on a DArr2 (probe m1/m2)
+    Index2(String, Box<Expr>, Box<Expr>),
+    Index3(String, Box<Expr>, Box<Expr>, Box<Expr>), // a[i][j] / a[i,j] on a DArr2 (probe m1/m2)
     BlockLit(usize, Vec<String>, Vec<Expr>), // {|p1, p2| e1, e2} -> last (probes c1-c5)
     DArrNew,                     // {} : empty DYNAMIC array (probes d1, e4)
     Nil,                         // NIL: tagged i64 sentinel (probes n1: prints NIL, NIL==NIL .T., NIL==0 .F.)
@@ -328,7 +329,15 @@ impl P {
                             return Err(format!("line {}: expected `]` after the second array index", self.n));
                         }
                         if self.peek() == Some(&Tok::LBracket) {
-                            return Err(format!("line {}: more than two index levels are not in this increment", self.n));
+                            self.pos += 1;
+                            let idx3 = self.expr()?;
+                            if self.bump() != Some(Tok::RBracket) {
+                                return Err(format!("line {}: expected `]` after the third array index", self.n));
+                            }
+                            if self.peek() == Some(&Tok::LBracket) {
+                                return Err(format!("line {}: more than three index levels are not in this increment", self.n));
+                            }
+                            return Ok(Expr::Index3(id, Box::new(idx), Box::new(idx2), Box::new(idx3)));
                         }
                         return Ok(Expr::Index2(id, Box::new(idx), Box::new(idx2)));
                     }
@@ -957,6 +966,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                 pin_vars(f, ie, Ty::I64, pin, n)?;
                 pin_vars(f, ie2, Ty::I64, pin, n)
             }
+            Expr::Index3(id, ie, ie2, ie3) => {
+                if is_param(f, id).is_some() {
+                    return Err(format!("line {}: arrays of arrays of arrays cannot be function parameters in this increment", n));
+                }
+                pin_vars(f, ie, Ty::I64, pin, n)?;
+                pin_vars(f, ie2, Ty::I64, pin, n)?;
+                pin_vars(f, ie3, Ty::I64, pin, n)
+            }
             _ => Ok(()),
         }
     }
@@ -1043,6 +1060,17 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                 pin_vars(f, ie2, Ty::I64, pin, n)?;
                 walk(f, ie, sigs, lit, pin, n)?;
                 walk(f, ie2, sigs, lit, pin, n)
+            }
+            Expr::Index3(id, ie, ie2, ie3) => {
+                if is_param(f, id).is_some() {
+                    return Err(format!("line {}: arrays of arrays of arrays cannot be function parameters in this increment", n));
+                }
+                pin_vars(f, ie, Ty::I64, pin, n)?;
+                pin_vars(f, ie2, Ty::I64, pin, n)?;
+                pin_vars(f, ie3, Ty::I64, pin, n)?;
+                walk(f, ie, sigs, lit, pin, n)?;
+                walk(f, ie2, sigs, lit, pin, n)?;
+                walk(f, ie3, sigs, lit, pin, n)
             }
             Expr::DArrNew => Ok(()),
             _ => Ok(()),
@@ -1209,14 +1237,26 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                         }
                         return match env.iter().find(|v| v.name == *id) {
                             Some(v) if v.ty == Ty::DArr2 && !v.moved => Ok(Ty::I64),
-                            Some(v) if v.ty == Ty::DArr2 => Err(format!("line {}: use of moved value `{}`", n, id)),
+                            Some(v) if v.ty == Ty::DArr3 && !v.moved => Ok(Ty::I64),
+                            Some(v) if v.ty == Ty::DArr2 || v.ty == Ty::DArr3 => Err(format!("line {}: use of moved value `{}`", n, id)),
                             _ => Err(format!("line {}: `len` of a[i] needs an array of arrays", n)),
+                        };
+                    }
+                    Expr::Index2(id, ie, ie2) => {
+                        // len(a[i][j]): borrow two levels (oracle pr4).
+                        if type_expr(ie, env, sigs, n)? != Ty::I64 || type_expr(ie2, env, sigs, n)? != Ty::I64 {
+                            return Err(format!("line {}: array indices must be integers", n));
+                        }
+                        return match env.iter().find(|v| v.name == *id) {
+                            Some(v) if v.ty == Ty::DArr3 && !v.moved => Ok(Ty::I64),
+                            Some(v) if v.ty == Ty::DArr3 => Err(format!("line {}: use of moved value `{}`", n, id)),
+                            _ => Err(format!("line {}: `len` of a[i][j] needs an array of arrays of arrays", n)),
                         };
                     }
                     _ => {}
                 }
                 return match type_expr(&args[0], env, sigs, n)? {
-                    Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::Arr(_) | Ty::Hash => Ok(Ty::I64),
+                    Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Arr(_) | Ty::Hash => Ok(Ty::I64),
                     _ => return Err(format!("line {}: `len` expects an array", n)),
                 };
             }
@@ -1374,6 +1414,33 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
             Err(format!("line {}: comparisons require integers", n))
         }
         Expr::ArrLit(es) => {
+            let deep3 = es.iter().any(|e| matches!(e, Expr::ArrLit(inner) if inner.iter().any(|x| matches!(x, Expr::ArrLit(_) | Expr::DArrNew))));
+            if deep3 {
+                // {{{1,2}},{{3}}}: a DArr3 (oracle pr4). Elements of the
+                // innermost arrays are tagged scalars (integer or NIL).
+                for e in es {
+                    match e {
+                        Expr::ArrLit(inner) => {
+                            for ie in inner {
+                                match ie {
+                                    Expr::ArrLit(innermost) => {
+                                        for xe in innermost {
+                                            if !matches!(type_expr(xe, env, sigs, n)?, Ty::I64 | Ty::Dyn) {
+                                                return Err(format!("line {}: nested array elements are tagged scalars (integer or NIL)", n));
+                                            }
+                                        }
+                                    }
+                                    Expr::DArrNew => {}
+                                    _ => return Err(format!("line {}: array elements cannot mix integers and arrays in this increment", n)),
+                                }
+                            }
+                        }
+                        Expr::DArrNew => {}
+                        _ => return Err(format!("line {}: array elements cannot mix integers and arrays in this increment", n)),
+                    }
+                }
+                return Ok(Ty::DArr3);
+            }
             let nested = es.iter().any(|e| matches!(e, Expr::ArrLit(_) | Expr::DArrNew));
             if nested {
                 // {{1,2},{3,4}}: a DArr2 - dynamic array of dynamic arrays
@@ -1475,6 +1542,21 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                 Some(_) => Err(format!("line {}: two-level indexing needs an array of arrays; `{}` is not one", n, id)),
             }
         }
+        Expr::Index3(id, ie, ie2, ie3) => {
+            // a[i][j][k]: three transient indexed borrows then a tagged
+            // scalar read (oracle pr4). Child blocks are never moved out.
+            if !matches!(type_expr(ie, env, sigs, n)?, Ty::I64 | Ty::Dyn)
+                || !matches!(type_expr(ie2, env, sigs, n)?, Ty::I64 | Ty::Dyn)
+                || !matches!(type_expr(ie3, env, sigs, n)?, Ty::I64 | Ty::Dyn) {
+                return Err(format!("line {}: array indices must be integers", n));
+            }
+            match env.iter().find(|v| v.name == *id) {
+                None => Err(format!("line {}: undefined variable `{}`", n, id)),
+                Some(v) if v.moved => Err(format!("line {}: use of moved value `{}`", n, id)),
+                Some(v) if v.ty == Ty::DArr3 => Ok(Ty::Dyn),
+                Some(_) => Err(format!("line {}: three-level indexing needs an array of arrays of arrays; `{}` is not one", n, id)),
+            }
+        }
         Expr::BlockLit(_, params, body) => {
             // v1: no captures - the body sees ONLY its parameters (probe
             // c3 captures a function local in Harbour; that is the next
@@ -1522,6 +1604,7 @@ fn ty_name(t: Ty) -> &'static str {
         Ty::I64 => "an integer",
         Ty::Str => "a string",
         Ty::Bool => "a boolean",
+        Ty::DArr3 => "an array of arrays of arrays",
         Ty::DArrU => "a dynamic array",
         Ty::DArr2 => "an array of arrays",
         Ty::Arr(_) => "an array",
@@ -1540,6 +1623,7 @@ fn free_vars(e: &Expr, out: &mut Vec<String>) {
         Expr::ArrLit(es) => { for e in es { free_vars(e, out); } }
         Expr::Index(_, ie) => free_vars(ie, out),
         Expr::Index2(_, ie, ie2) => { free_vars(ie, out); free_vars(ie2, out); }
+        Expr::Index3(_, ie, ie2, ie3) => { free_vars(ie, out); free_vars(ie2, out); free_vars(ie3, out); }
         Expr::HashLit(ps) => { for (k, v) in ps { free_vars(k, out); free_vars(v, out); } }
         Expr::BlockLit(_, _, _) => {} // nested blocks: rejected by the integer-body rule
         _ => {}
@@ -2127,7 +2211,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
     match e {
         Expr::Var(id) => {
             if moving {
-                if let Some(v) = env.iter_mut().find(|v| v.name == *id && matches!(v.ty, Ty::Str | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::Hash)) { v.moved = true; }
+                if let Some(v) = env.iter_mut().find(|v| v.name == *id && matches!(v.ty, Ty::Str | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Hash)) { v.moved = true; }
             }
         }
         Expr::Bin(_, a, b) => { apply_moves(a, env, sigs, false); apply_moves(b, env, sigs, false); }
@@ -2160,6 +2244,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
         Expr::ArrLit(es) => { for e in es { apply_moves(e, env, sigs, false); } }
         Expr::Index(_, ie) => apply_moves(ie, env, sigs, false),
         Expr::Index2(_, ie, ie2) => { apply_moves(ie, env, sigs, false); apply_moves(ie2, env, sigs, false); }
+        Expr::Index3(_, ie, ie2, ie3) => { apply_moves(ie, env, sigs, false); apply_moves(ie2, env, sigs, false); apply_moves(ie3, env, sigs, false); }
         Expr::BlockLit(_, _, _) => {}
         _ => {}
     }
@@ -2173,7 +2258,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 // ---------------------------------------------------------------------------
 
 fn size_of(t: Ty) -> usize {
-    match t { Ty::I64 => 8, Ty::Str => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::Dyn | Ty::Hash => 16, Ty::Bool => unreachable!("booleans rejected in analysis") }
+    match t { Ty::I64 => 8, Ty::Str => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Dyn | Ty::Hash => 16, Ty::Bool => unreachable!("booleans rejected in analysis") }
 }
 
 #[derive(Clone)]
@@ -2198,7 +2283,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
             match v.ty {
                 Ty::I64 | Ty::Block(_) => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
-                Ty::Str | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::Dyn | Ty::Hash => {
+                Ty::Str | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Dyn | Ty::Hash => {
                     // ptr at -(off), len at -(off-8) — same layout as the store
                     out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
                     out.push_str(&format!("    mov -{}(%rbp), %rdx\n", v.off - 8));
@@ -2213,7 +2298,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 Expr::Var(v) => {
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                     match var.ty {
-                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::Hash => out.push_str(&format!("    mov -{}(%rbp), %rax\n", var.off - 8)),
+                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Hash => out.push_str(&format!("    mov -{}(%rbp), %rax\n", var.off - 8)),
                         Ty::Arr(k) => out.push_str(&format!("    mov ${}, %rax\n", k)),
                         _ => unreachable!("checked"),
                     }
@@ -2230,6 +2315,23 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     cg_expr(ie, env, sigs, strs, out, target);
                     out.push_str(&format!("    cmp $1, %rax\n    jl 87f\n    cmp -{}(%rbp), %rax\n    jg 87f\n", var.off - 8));
                     out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
+                    out.push_str("    dec %rax\n    shl $4, %rax\n    mov 0(%r11,%rax), %r10\n    test %r10, %r10\n    jz hbc_len_error\n    mov 8(%r11,%rax), %rax\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
+                }
+                Expr::Index2(v, ie, ie2) => {
+                    // len(a[i][j]): borrow two levels (oracle pr4). A null
+                    // child at either level is the NIL casilla: Harbour's
+                    // BASE/1111 dialog hangs headless, so this is the same
+                    // registered clean "Argument error: LEN" failure mode.
+                    let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                    cg_expr(ie, env, sigs, strs, out, target);
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                    cg_expr(ie2, env, sigs, strs, out, target);
+                    out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n");
+                    out.push_str(&format!("    cmp $1, %rcx\n    jl 87f\n    cmp -{}(%rbp), %rcx\n    jg 87f\n", var.off - 8));
+                    out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
+                    out.push_str("    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
+                    out.push_str("    mov (%r10), %r11\n    test %r11, %r11\n    jz hbc_len_error\n");
+                    out.push_str("    cmp $1, %rax\n    jl 87f\n    cmp 8(%r10), %rax\n    jg 87f\n");
                     out.push_str("    dec %rax\n    shl $4, %rax\n    mov 0(%r11,%rax), %r10\n    test %r10, %r10\n    jz hbc_len_error\n    mov 8(%r11,%rax), %rax\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
                 }
                 _ => unreachable!("len() of a non-variable in this increment"),
@@ -2335,7 +2437,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     // owner and the caller's later frees see null.
                     if let Expr::Var(src) = a {
                         if ta == Ty::DArr || ta == Ty::DArr2 {
-                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2)) {
+                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3)) {
                                 out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                             }
                         }
@@ -2420,6 +2522,44 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             out.push_str("    cmp $1, %rax\n    jl 81f\n    cmp 8(%r10), %rax\n    jg 81f\n");
             out.push_str("    mov (%r10), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r11\n    mov 8(%rax), %rdx\n    mov %r11, %rax\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
         }
+        Expr::Index3(id, ie, ie2, ie3) => {
+            // a[i][j][k] read: three transient borrows; indices evaluate
+            // left to right, every level bounds-checked. A null child has
+            // length 0, so indexing it is a clean bound error (same
+            // registered failure mode as the two-level read).
+            let var = env.iter().rev().find(|v| v.name == *id).expect("checked");
+            if expr_ty(ie, env, sigs) == Ty::Dyn {
+                cg_expr(ie, env, sigs, strs, out, target);
+                out.push_str("    call hbc_dyn_to_i64\n");
+            } else {
+                cg_expr(ie, env, sigs, strs, out, target);
+            }
+            out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+            if expr_ty(ie2, env, sigs) == Ty::Dyn {
+                cg_expr(ie2, env, sigs, strs, out, target);
+                out.push_str("    call hbc_dyn_to_i64\n");
+            } else {
+                cg_expr(ie2, env, sigs, strs, out, target);
+            }
+            out.push_str("    mov %rax, 8(%rsp)\n");
+            if expr_ty(ie3, env, sigs) == Ty::Dyn {
+                cg_expr(ie3, env, sigs, strs, out, target);
+                out.push_str("    call hbc_dyn_to_i64\n");
+            } else {
+                cg_expr(ie3, env, sigs, strs, out, target);
+            }
+            // (%rsp)=i, 8(%rsp)=j, rax=k
+            out.push_str(&format!("    mov (%rsp), %rcx\n    cmp $1, %rcx\n    jl 81f\n    cmp -{}(%rbp), %rcx\n    jg 81f\n", var.off - 8));
+            out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
+            out.push_str("    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
+            // r10 = level-2 child slot; bounds-check j against its length
+            out.push_str("    mov 8(%rsp), %rcx\n    cmp $1, %rcx\n    jl 81f\n    cmp 8(%r10), %rcx\n    jg 81f\n");
+            out.push_str("    mov (%r10), %r11\n    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
+            // r10 = level-3 child slot; bounds-check k against its length
+            out.push_str("    cmp $1, %rax\n    jl 81f\n    cmp 8(%r10), %rax\n    jg 81f\n");
+            out.push_str("    mov (%r10), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r11\n    mov 8(%rax), %rdx\n    mov %r11, %rax\n");
+            out.push_str("    add $16, %rsp\n    jmp 82f\n81:\n    add $16, %rsp\n    call hbc_bound_error\n82:\n");
+        }
         Expr::Bin(op, a, b) => {
             // Operands are i64 or Dyn (checked in analysis): a Dyn operand
             // is extracted with the runtime tag check (NIL payload -> clean
@@ -2468,6 +2608,30 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
 // equals the length (later AAdd growth doubles). On OOM the process aborts
 // via hbc_oom; partially built children die with the process (no unwinding
 // in this PoC - documented).
+fn cg_darr3_literal(es: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    // Parent block of (ptr, len) pairs; each child is emitted by the
+    // two-level literal emitter, which leaves the child in rax/rdx and
+    // keeps rsp balanced, so the parent pointer survives in scratch.
+    let k = es.len();
+    out.push_str("    sub $16, %rsp\n"); // (%rsp)=outer ptr
+    out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + k * 16));
+    out.push_str(&format!("    movq ${}, (%rax)\n    add $8, %rax\n    mov %rax, (%rsp)\n", k));
+    for (j, child) in es.iter().enumerate() {
+        match child {
+            Expr::DArrNew => {
+                out.push_str("    mov $8, %rdi\n    call hbc_alloc\n    movq $0, (%rax)\n    add $8, %rax\n");
+                out.push_str(&format!("    mov (%rsp), %r11\n    mov %rax, {}(%r11)\n    movq $0, {}(%r11)\n", j * 16, j * 16 + 8));
+            }
+            Expr::ArrLit(inner) => {
+                cg_darr2_literal(inner, env, sigs, strs, out, target);
+                out.push_str(&format!("    mov (%rsp), %r11\n    mov %rax, {}(%r11)\n    mov %rdx, {}(%r11)\n", j * 16, j * 16 + 8));
+            }
+            _ => unreachable!("checked"),
+        }
+    }
+    out.push_str(&format!("    mov (%rsp), %rax\n    mov ${}, %edx\n    add $16, %rsp\n", k));
+}
+
 fn cg_darr2_literal(es: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     let k = es.len();
     out.push_str("    sub $48, %rsp\n"); // (%rsp)=outer ptr, 8(%rsp)=child ptr
@@ -2505,6 +2669,9 @@ fn cg_darr2_literal(es: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<S
 // .rodata slot, so they are handled here with a label table.
 fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     if let Expr::ArrLit(es) = e {
+        if es.iter().any(|x| matches!(x, Expr::ArrLit(inner) if inner.iter().any(|y| matches!(y, Expr::ArrLit(_) | Expr::DArrNew)))) {
+            return cg_darr3_literal(es, env, sigs, strs, out, target);
+        }
         if es.iter().any(|x| matches!(x, Expr::ArrLit(_) | Expr::DArrNew)) {
             return cg_darr2_literal(es, env, sigs, strs, out, target);
         }
@@ -2557,13 +2724,15 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         }
         Expr::Cmp(..) => Ty::Bool,
         Expr::ArrLit(es) => {
-            if es.iter().any(|e| matches!(e, Expr::ArrLit(_) | Expr::DArrNew)) { Ty::DArr2 } else { Ty::Arr(es.len()) }
+            if es.iter().any(|e| matches!(e, Expr::ArrLit(inner) if inner.iter().any(|x| matches!(x, Expr::ArrLit(_) | Expr::DArrNew)))) { Ty::DArr3 }
+            else if es.iter().any(|e| matches!(e, Expr::ArrLit(_) | Expr::DArrNew)) { Ty::DArr2 } else { Ty::Arr(es.len()) }
         }
         Expr::Index(id, _) => match env.iter().find(|v| v.name == *id).map(|v| v.ty) {
             Some(Ty::Arr(_)) => Ty::I64,
             _ => Ty::Dyn,
         },
         Expr::Index2(_, _, _) => Ty::Dyn,
+        Expr::Index3(_, _, _, _) => Ty::Dyn,
         Expr::BlockLit(_, ps, _) => Ty::Block(ps.len()),
         Expr::DArrNew => Ty::DArrU,
         Expr::HashLit(_) => Ty::Hash,
@@ -2585,8 +2754,8 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 if t == Ty::I64 && dyn_names.contains(id) { t = Ty::Dyn; }
                 *frame += size_of(t);
                 env.push(CgLocal { name: id.clone(), ty: t, off: *frame });
-                if matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::Hash) {
-                    darr_slots.push((*frame, if t == Ty::Hash { 2 } else { (t == Ty::DArr2) as u8 }));
+                if matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Hash) {
+                    darr_slots.push((*frame, if t == Ty::Hash { 2 } else if t == Ty::DArr3 { 3 } else { (t == Ty::DArr2) as u8 }));
                 }
             }
             Stmt::AAdd(_, id, e) => {
@@ -2841,7 +3010,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         // A moved-out DArr SOURCE slot is nulled right after
                         // the load: every allocation keeps exactly one owner.
                         if let Expr::Var(src) = e {
-                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::Hash)) {
+                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Hash)) {
                                 out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                             }
                         }
@@ -2851,7 +3020,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
                             }
-                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::Hash => {
+                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Hash => {
                                 // The slot can hold a live value when a
                                 // `local` re-declares inside a loop body:
                                 // free the old allocation first (null-safe).
@@ -2861,6 +3030,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                                 if class == 1 {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_free2\n85:\n", off, off - 8));
+                                } else if class == 3 {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    mov $2, %edx\n    call hbc_rfree\n85:\n", off, off - 8));
                                 } else if class == 2 {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_hfree\n85:\n", off, off - 8));
                                 } else {
@@ -2919,7 +3090,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         Ty::Bool => unreachable!("booleans rejected in analysis"),
                         Ty::Arr(_) => unreachable!("whole-array printing rejected in analysis"),
                         Ty::Block(_) => unreachable!("codeblock printing rejected in analysis"),
-                        Ty::DArr | Ty::DArrU | Ty::DArr2 => unreachable!("whole-array printing rejected in analysis"),
+                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 => unreachable!("whole-array printing rejected in analysis"),
                         Ty::Hash => unreachable!("whole-hash printing rejected in analysis"),
                     }
                 }
@@ -2940,7 +3111,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // the epilogue never frees the returned allocation (parent
                 // rule: move the return to the output before cleanup).
                 if let Expr::Var(src) = e {
-                    if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2)) {
+                    if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3)) {
                         out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                     }
                 }
@@ -3062,7 +3233,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         // fully evaluated (parent rule: move transfers; the
                         // old slot must not free what it no longer owns).
                         if let Expr::Var(src) = e {
-                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::Hash)) {
+                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Hash)) {
                                 out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                             }
                         }
@@ -3089,7 +3260,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
                             }
-                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::Hash => {
+                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Hash => {
                                 // Free the OLD value after the RHS exists
                                 // (self-assignment `a := a` moved through a
                                 // temporary: the source was nulled above, so
@@ -3100,6 +3271,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                                 if cur_ty == Some(Ty::DArr2) {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov -{}(%rbp), %rsi\n    call hbc_free2\n86:\n", off, off - 8));
+                                } else if cur_ty == Some(Ty::DArr3) {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov -{}(%rbp), %rsi\n    mov $2, %edx\n    call hbc_rfree\n86:\n", off, off - 8));
                                 } else if cur_ty == Some(Ty::Hash) {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov -{}(%rbp), %rsi\n    call hbc_hfree\n86:\n", off, off - 8));
                                 } else {
@@ -3126,7 +3299,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // parent (null the source right after the load).
                     cg_value(e, env, sigs, strs, out, target);
                     if let Expr::Var(src) = e {
-                        if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2)) {
+                        if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3)) {
                             out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                         }
                     }
@@ -3221,7 +3394,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         cg_value(e, env, sigs, strs, out, target);
                     }
                     if let Expr::Var(src) = e {
-                        if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2)) {
+                        if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3)) {
                             out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                         }
                     }
@@ -3467,6 +3640,10 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
             2 => {
                 // Hash: free each live key copy, then the block.
                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov -{}(%rbp), %rsi\n    call hbc_hfree\n91{}:\n", off, i, off - 8, i));
+            }
+            3 => {
+                // DArr3: recursive free, two pair-levels (rdx = depth).
+                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov -{}(%rbp), %rsi\n    mov $2, %edx\n    call hbc_rfree\n91{}:\n", off, i, off - 8, i));
             }
             _ => {
                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov $16, %esi\n    call hbc_free\n91{}:\n", off, i, i));
@@ -4253,6 +4430,48 @@ hbc_free2:
     pop %rbx
     ret
 
+# hbc_rfree: rdi = block of (ptr,len) pairs, rsi = pair count, rdx =
+# pair-levels (>= 2). Generic recursive free: a child of a block with
+# more than two pair-levels is freed by hbc_rfree at one level less; a
+# child at exactly two pair-levels is a DArr2 block, freed by the tested
+# hbc_free2. Depth 4+ needs no new helper. Callee-saved registers are
+# preserved (rbx/r12-r14); the extra sub keeps rsp 16-aligned at calls.
+hbc_rfree:
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    sub $8, %rsp
+    mov %rdi, %rbx
+    mov %rsi, %r12
+    mov %rdx, %r14
+    xor %r13, %r13
+71: cmp %r12, %r13
+    jge 72f
+    mov %r13, %rax
+    shl $4, %rax
+    mov (%rbx,%rax), %rdi
+    test %rdi, %rdi
+    jz 73f
+    mov 8(%rbx,%rax), %rsi
+    cmp $2, %r14
+    je 74f
+    lea -1(%r14), %rdx
+    call hbc_rfree
+    jmp 73f
+74: call hbc_free2
+73: inc %r13
+    jmp 71b
+72: mov %rbx, %rdi
+    mov $16, %esi
+    call hbc_free
+    add $8, %rsp
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    ret
+
 # hbc_aadd: rdi = slot address (ptr,len), rsi = element size (8 or 16),
 # rdx = pointer to the new element. Grows in place; a failed allocation
 # leaves the old block and the slot untouched (the slot is replaced only
@@ -4859,6 +5078,47 @@ hbc_free2:
     mov $16, %esi
     call hbc_free
     add $56, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_rfree: rdi = block of (ptr,len) pairs, rsi = pair count, rdx =
+# pair-levels (>= 2). Same generic recursive free as the SysV helper.
+hbc_rfree:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    sub $48, %rsp
+    mov %rdi, %rbx
+    mov %rsi, %r12
+    mov %rdx, %r14
+    xor %r13, %r13
+71: cmp %r12, %r13
+    jge 72f
+    mov %r13, %rax
+    shl $4, %rax
+    mov (%rbx,%rax), %rdi
+    test %rdi, %rdi
+    jz 73f
+    mov 8(%rbx,%rax), %rsi
+    cmp $2, %r14
+    je 74f
+    lea -1(%r14), %rdx
+    call hbc_rfree
+    jmp 73f
+74: call hbc_free2
+73: inc %r13
+    jmp 71b
+72: mov %rbx, %rdi
+    mov $16, %esi
+    call hbc_free
+    add $48, %rsp
+    pop %r14
     pop %r13
     pop %r12
     pop %rbx
