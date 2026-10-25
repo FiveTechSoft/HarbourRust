@@ -1091,5 +1091,11 @@ binaries (entry adaptation: `local x := 0`, bare `local x` is not in
 the subset). Named rejections: reseat (t483), grow (t484); restore
 after natural completion and `exit` (t485).
 
-481/481 manifest cases + ABI harness green on Linux x86-64 and Wine
+t486 (iteration 33z): nested FOR EACH over two middles of the same
+four-level root (oracle hk120) - the inner loop over a[1,1] and the
+outer over a[1,2] write through independently; a[2,1,1,1] stays NIL.
+Byte-identical to the hk120 oracle binary (same local-initialisation
+adaptation).
+
+482/482 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
