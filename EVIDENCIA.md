@@ -426,7 +426,8 @@ parameters.
 between the parentheses. Semantics, checked against rustc 1.99.1 behavior:
 an i64 argument COPIES at the call (Rust i64 is Copy), so the caller keeps
 its value; the parameter is an owned local inside the callee and can be
-reassigned. Returning moves the value out, unchanged from before.
+reassigned. Returning transfers the value to the caller: a copy for i64
+(Copy type), a move for strings (unchanged from before).
 
 Restrictions in this increment (explicit errors, not silent):
 - Parameters are i64 only: passing a string is a compile-time type error
@@ -435,10 +436,12 @@ Restrictions in this increment (explicit errors, not silent):
 - No shadowing: a local cannot reuse a parameter name ("duplicate local").
 - Calls still require the callee to be defined before use (unchanged).
 
-Calling convention (ours, internal): arguments are pushed in reverse order,
-each in a 16-byte slot (keeps rsp 16-aligned on both targets); the callee
-copies them into its frame after the prologue. Argument expressions are
-pure, so right-to-left evaluation is unobservable.
+Calling convention (ours, internal): arguments are evaluated and pushed
+LEFT TO RIGHT, each in a 16-byte slot (keeps rsp 16-aligned on both
+targets); the callee copies them into its frame after the prologue.
+Evaluation order is observable when an argument expression can fail (e.g.
+integer division by zero): Harbour also evaluates arguments left to right,
+so the first failing argument is the same on both sides.
 
 10 new tests (t57-t66): 6 positive (basic, reassignment, three params,
 nested calls, parameter as for bound, i64 copy usable twice), 4 negative
