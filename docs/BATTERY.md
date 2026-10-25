@@ -906,7 +906,14 @@ t444 (hk102 shape - 42/44, caller's block variable reused after
 the call: Copy semantics, prints 10, balance 0), t445 (two
 codeblock parameters), t446 (a block of arity 2 fed to a Block(1)
 parameter is a named compile rejection - conservative exact-arity
-pin vs Harbour ignoring extra arguments, probes c7/c7b; the
-message reads "must be a codeblock, got a codeblock", awkward but
-named and registered), t447 (a block fed to an integer parameter:
+pin vs Harbour ignoring extra arguments, probes c7/c7b), t447 (a block fed to an integer parameter:
 "must be an integer, got a codeblock"). No new runtime helpers.
+
+## Iteration 33q additions (444 manifest cases): codeblock-arity diagnostic
+
+Parent-reported defect on t446: two codeblocks of different arity
+used to read "must be a codeblock, got a codeblock". The call-site
+rejection now names both arities ("must be a codeblock of 1
+argument(s), got a codeblock of 2 argument(s)"). No semantic
+change; manifest substring updated. Battery re-run: 444/444 +
+ABI harness green on Linux and Wine.
