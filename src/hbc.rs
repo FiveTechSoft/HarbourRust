@@ -1281,6 +1281,24 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
         }
         Expr::Nil => Ok(Ty::Dyn),
         Expr::Cmp(op, a, b) => {
+            // A grown casilla of an array of arrays compares against NIL
+            // with `=` / `#` (oracle n4): the borrow reads the child
+            // pointer, it never extracts the subarray. A real empty child
+            // ({}) owns a block and is NOT NIL.
+            if matches!(op, CmpOp::Eq | CmpOp::Ne) {
+                let cas = |e: &Expr| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArr2));
+                let idx = if cas(a) && matches!(**b, Expr::Nil) {
+                    if let Expr::Index(_, ie) = &**a { Some(ie) } else { None }
+                } else if cas(b) && matches!(**a, Expr::Nil) {
+                    if let Expr::Index(_, ie) = &**b { Some(ie) } else { None }
+                } else { None };
+                if let Some(ie) = idx {
+                    if type_expr(ie, env, sigs, n)? != Ty::I64 {
+                        return Err(format!("line {}: array index must be an integer", n));
+                    }
+                    return Ok(Ty::Bool);
+                }
+            }
             let ta = type_expr(a, env, sigs, n)?;
             let tb = type_expr(b, env, sigs, n)?;
             // NIL against a string: Harbour answers .F. for `=` (probe n1:
@@ -2631,6 +2649,23 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 out.push_str(&format!("    jmp {}\n", true_label));
             }
             // Eq: the condition is never true - fall through.
+        }
+        Expr::Cmp(op, a, b) if {
+            let cas = |e: &Expr| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArr2));
+            matches!(op, CmpOp::Eq | CmpOp::Ne) && ((cas(a) && matches!(**b, Expr::Nil)) || (cas(b) && matches!(**a, Expr::Nil)))
+        } => {
+            // Casilla = NIL (oracle n4): the index evaluates ONCE
+            // (bounds-checked); the child pointer 0 is the NIL casilla.
+            // The NIL literal emits nothing.
+            let (v, ie) = if let Expr::Index(v, ie) = &**a { (v, ie) } else if let Expr::Index(v, ie) = &**b { (v, ie) } else { unreachable!("guarded") };
+            let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+            cg_expr(ie, env, sigs, strs, out, target);
+            out.push_str(&format!("    cmp $1, %rax\n    jl 97f\n    cmp -{}(%rbp), %rax\n    jg 97f\n", var.off - 8));
+            out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
+            out.push_str("    dec %rax\n    shl $4, %rax\n    mov 0(%r11,%rax), %rax\n");
+            out.push_str("    test %rax, %rax\n    jmp 98f\n97:\n    call hbc_bound_error\n98:\n");
+            let j = match op { CmpOp::Eq => "jz", _ => "jnz" };
+            out.push_str(&format!("    {} {}\n", j, true_label));
         }
         Expr::Cmp(op, a, b) if expr_ty(a, env, sigs) == Ty::Dyn || expr_ty(b, env, sigs) == Ty::Dyn => {
             let ta = expr_ty(a, env, sigs);
