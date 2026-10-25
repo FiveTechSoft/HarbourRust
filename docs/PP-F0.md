@@ -109,12 +109,15 @@ Probes a07, b01-b03 (30 -> 34 total executed):
 ## Match-marker / token-paste round (2026-10-25, fourth batch)
 
 Probes b04-b10c (34 -> 42 total executed):
-- Match markers in this Harbour build (3.2.1dev r2610242111): <(x)>
-  accepted (b07, normalizes nothing visible in our check), <x> and
+- Match markers in this Harbour build (3.2.1dev r2610242111): <x> and
   <x,...> accepted, [...] optionals accepted including an optional list
   group [<x,...>] (b09: SHOW 1, 2 prints both; bare SHOW prints empty).
+  <(x)> requires a PARENTHESIZED expression in the source (b14/b16:
+  unparenthesized use errors E0030) and captures its inner tokens; in
+  the result, <x> inserts them plain and <(x)> re-parenthesized
+  (b15/b17). IMPLEMENTED scoped the same day (t91-t93).
   <"x"> and <#x> are REJECTED (E0010 "Bad match marker") in both
-  #command and #translate (b05, b05b, b06, b08).
+  #command and #translate (b05, b05b, b06, b08) - NOT implemented.
 - ## : see above - not C-style pasting; unimplemented.
 
 Provenance note (corrected): this file records BEHAVIOURAL probes against
@@ -125,6 +128,6 @@ implementation code (C or .ch bodies) is copied or translated into this
 MIT project; reading published rules/headers to learn behaviour is
 recorded, not denied.
 
-- Still scoped OUT: match markers as a general mechanism, non-call
+- Still scoped OUT: rejected marker forms (<"x">, <#x>), non-call
   #translate forms, token pasting. No claim of general
   #command/#translate compatibility.
