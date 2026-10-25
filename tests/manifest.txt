@@ -274,14 +274,13 @@ pos tests/t275_deep3_literal.hb \n         2\n         1\n         2\n         2
 pos tests/t276_deep3_balance.hb \n         2\n         0\n         2\n         0\n         0
 pos tests/t277_deep3_write.hb \n        99\n         1\n         2\n         1\n         2
 neg tests/t278_deep3_neg_wrset2.hb three-level assignment needs an array of arrays of arrays
-neg tests/t279_deep3_neg_wr4.hb idx2][idx3]
+neg tests/t279_deep3_neg_wr4.hb four-level assignment needs an array of arrays of arrays of arrays
 pos tests/t280_deep3_return_chain.hb \n         2\n         2\n         2\n         0\n         0
 pos tests/t281_deep3_aadd_asize.hb \neval-i\neval-j\neval-v\n         3\n         9\n         2\n         1\n         1\n         1\n         3\n         1\n         0\n         0
 neg tests/t282_deep3_neg_aaddsub2.hb `AAdd` on a[i][j] needs an array of arrays of arrays
 neg tests/t283_deep3_neg_asizesub2.hb `ASize` on a[i][j] needs an array of arrays of arrays
 pos tests/t284_deep3_asize_order.hb \neval-i\neval-j\neval-n\n         3\n         1\n         0\n         0
 pos tests/t285_array3d.hb \n         2\n         2\n         3\n         7\n         1\n         1\n         0\n         0
-neg tests/t286_neg_array4d.hb `Array` with more than three dimensions
 pos tests/t287_array3d_zero.hb \n         0\n         2\n         0\n         0\n         2\n         3\n         0\n         0\n         0
 pos tests/t288_array3d_order.hb \ndim-1\ndim-2\ndim-3\n         2\n         3\n         1\n         0\n         0
 posx tests/t289_posx_array3d_negdim.hb 1 ASize: negative size
@@ -442,3 +441,10 @@ pos tests/t444_block_param.hb \n        42\n        44\n        10\n         0\n
 pos tests/t445_block_two_params.hb \n        12\n        11\n         0\n         0
 neg tests/t446_neg_block_arity.hb must be a codeblock of 1 argument(s), got a codeblock of 2 argument(s)
 neg tests/t447_neg_block_numeric.hb must be an integer, got a codeblock
+
+pos tests/t448_four_levels.hb \n         2\n         2\n         2\n         2\nNIL\n        99\nNIL\nA\nU\n         0\n         0
+pos tests/t449_four_write_order.hb \nV\nI1\nI2\nI3\nI4\n        99\n         0\n         0
+pos tests/t450_four_read_order.hb \nI1\nI2\nI3\nI4\n        99\n         0\n         0
+neg tests/t451_neg_five_indices.hb more than four index levels are not in this increment
+neg tests/t452_neg_aadd_level3.hb trailing tokens after expression
+neg tests/t286_neg_array4d.hb `Array` with more than four dimensions is not in this increment
