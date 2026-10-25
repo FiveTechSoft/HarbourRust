@@ -996,6 +996,12 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     for a in args { walk(f, a, sigs, lit, pin, n)?; }
                     return Ok(());
                 }
+                if is_builtin(id, "array") {
+                    // Array(n[, m]) dimensions are integers (oracles
+                    // m3/m10); a parameter used as a dimension pins I64.
+                    for a in args { pin_vars(f, a, Ty::I64, pin, n)?; walk(f, a, sigs, lit, pin, n)?; }
+                    return Ok(());
+                }
                 if let Some(sig) = sigs.iter().find(|v| v.name == *id) {
                     for (i, a) in args.iter().enumerate() {
                         if i < sig.params.len() { pin_vars(f, a, sig.params[i], pin, n)?; }
@@ -1150,6 +1156,26 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                     return Err(format!("line {}: `hb_memcheck` takes no arguments", n));
                 }
                 return Ok(Ty::I64);
+            }
+            if is_builtin(id, "array") {
+                // Array(n[, m]) constructor (oracles m3/m10/a0/avar).
+                // Harbour accepts more dimensions and answers Array() /
+                // Array(-1) with dialogs that hang headless (BASE/1111,
+                // BASE/1131): arity errors are compile errors here and a
+                // negative dimension is a clean runtime error - registered
+                // failure modes, same error conditions.
+                if args.is_empty() {
+                    return Err(format!("line {}: `Array` needs at least one dimension", n));
+                }
+                if args.len() > 2 {
+                    return Err(format!("line {}: `Array` with more than two dimensions is not in this increment", n));
+                }
+                for a in args {
+                    if !matches!(type_expr(a, env, sigs, n)?, Ty::I64 | Ty::Dyn) {
+                        return Err(format!("line {}: `Array` dimensions are integers", n));
+                    }
+                }
+                return Ok(if args.len() == 1 { Ty::DArr } else { Ty::DArr2 });
             }
             if is_builtin(id, "len") {
                 // len(a): number of elements of an array (probe e4:
@@ -2072,6 +2098,11 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
+            if is_builtin(id, "array") {
+                // Integer dimensions: borrowed, never moved.
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
             let sig = sigs.iter().find(|v| v.name == *id).expect("checked");
             for (i, a) in args.iter().enumerate() {
                 let m = i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::DArr);
@@ -2149,6 +2180,35 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     out.push_str("    dec %rax\n    shl $4, %rax\n    mov 8(%r11,%rax), %rax\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
                 }
                 _ => unreachable!("len() of a non-variable in this increment"),
+            }
+        }
+        Expr::Call(id, args) if is_builtin(id, "array") => {
+            // Array(n): Dyn-element array with n NIL slots (oracle m10).
+            // Array(n, m): n children of m NILs each (oracle m3). The
+            // dimensions evaluate left to right; the value comes back as
+            // {ptr, len} from a temporary slot (the caller owns the move).
+            if args.len() == 1 {
+                cg_expr(&args[0], env, sigs, strs, out, target);
+                if expr_ty(&args[0], env, sigs) == Ty::Dyn {
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                }
+                out.push_str("    sub $16, %rsp\n    movq $0, (%rsp)\n    movq $0, 8(%rsp)\n");
+                out.push_str("    mov %rax, %rsi\n    mov %rsp, %rdi\n    mov $16, %edx\n    xor %ecx, %ecx\n    call hbc_asize\n");
+                out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
+            } else {
+                cg_expr(&args[0], env, sigs, strs, out, target);
+                if expr_ty(&args[0], env, sigs) == Ty::Dyn {
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                }
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                cg_expr(&args[1], env, sigs, strs, out, target);
+                if expr_ty(&args[1], env, sigs) == Ty::Dyn {
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                }
+                out.push_str("    mov %rax, %rdx\n    mov (%rsp), %rsi\n    add $16, %rsp\n");
+                out.push_str("    sub $16, %rsp\n    movq $0, (%rsp)\n    movq $0, 8(%rsp)\n");
+                out.push_str("    mov %rsp, %rdi\n    call hbc_arraym\n");
+                out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
             }
         }
         Expr::Call(id, _) if is_builtin(id, "hb_memcheck") => {
@@ -2431,7 +2491,8 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::Nil => Ty::Dyn,
         Expr::Str(_) => Ty::Str,
         Expr::Var(id) => env.iter().find(|v| v.name == *id).expect("checked").ty,
-        Expr::Call(id, _) => {
+        Expr::Call(id, args) => {
+            if is_builtin(id, "array") { return if args.len() == 1 { Ty::DArr } else { Ty::DArr2 }; }
             if is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") { return Ty::I64; }
             sigs.iter().find(|v| v.name == *id).expect("checked").ret.expect("checked")
         }
@@ -3411,6 +3472,50 @@ hbc_reg_base:   .skip 131072
 hbc_reg_size:   .skip 131072
 ";
 
+const CTOR_HELPERS: &str = r"
+# --- Array(n, m) constructor -------------------------------------------
+# hbc_arraym: rdi = parent slot address (zeroed by the caller), rsi =
+# rows, rdx = cols. Builds n children, each a Dyn-element array of m NIL
+# slots (oracle m3), via hbc_asize + hbc_aadd. A negative dimension
+# aborts via hbc_asize_neg (Harbour's BASE/1131 dialog hangs headless -
+# registered failure mode); OOM aborts via hbc_oom with the entries
+# already appended staying a valid shorter array. Target-independent
+# logic: all OS contact goes through hbc_alloc/hbc_free inside the
+# called helpers.
+# State lives on the frame: the per-target hbc_asize/hbc_aadd variants
+# may clobber the callee-saved registers (the Windows ones do).
+hbc_arraym:
+    push %rbp
+    mov %rsp, %rbp
+    sub $64, %rsp
+    mov %rdi, -8(%rbp)
+    mov %rsi, -16(%rbp)
+    mov %rdx, -24(%rbp)
+    movq $0, -32(%rbp)
+    test %rsi, %rsi
+    js hbc_asize_neg
+    test %rdx, %rdx
+    js hbc_asize_neg
+22: mov -32(%rbp), %rax
+    cmp -16(%rbp), %rax
+    jae 23f
+    movq $0, -48(%rbp)
+    movq $0, -40(%rbp)
+    lea -48(%rbp), %rdi
+    mov -24(%rbp), %rsi
+    mov $16, %edx
+    xor %ecx, %ecx
+    call hbc_asize
+    mov -8(%rbp), %rdi
+    mov $16, %esi
+    lea -48(%rbp), %rdx
+    call hbc_aadd
+    incq -32(%rbp)
+    jmp 22b
+23: leave
+    ret
+";
+
 const HASH_HELPERS: &str = r"
 # --- hashes (v1): insertion-ordered, string-keyed maps -----------------
 # The slot holds {data pointer, live pair count}; null/0 is the empty
@@ -3653,6 +3758,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
     match target {
         Target::Windows => {
             out.push_str(WIN_HELPERS);
+            out.push_str(CTOR_HELPERS);
             out.push_str(HASH_HELPERS);
             out.push_str("\n    .section .rdata,\"r\"\n");
             emit_strings(&mut out, &strs);
@@ -4176,6 +4282,7 @@ hbc_mem_allocs: .quad 0
 hbc_mem_frees:  .quad 0
 @REG_DATA@    .text
 "#);
+    out.push_str(CTOR_HELPERS);
     out.push_str(HASH_HELPERS);
     out.push_str("\n    .section .rodata\n");
     emit_strings(&mut out, &strs);
