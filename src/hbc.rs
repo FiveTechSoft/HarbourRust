@@ -920,8 +920,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                 if ta != sig.params[i] {
                     return Err(format!("line {}: argument {} of `{}` must be {}, got {}",
                         n, i + 1, id,
-                        if sig.params[i] == Ty::I64 { "an integer" } else { "a string" },
-                        if ta == Ty::I64 { "an integer" } else { "a string" }));
+                        ty_name(sig.params[i]), ty_name(ta)));
                 }
             }
             match sig.ret {
@@ -1021,6 +1020,16 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
 }
 
 // Free VARIABLE names used inside an expression (callees are not variables).
+fn ty_name(t: Ty) -> &'static str {
+    match t {
+        Ty::I64 => "an integer",
+        Ty::Str => "a string",
+        Ty::Bool => "a boolean",
+        Ty::Arr(_) => "an array",
+        Ty::Block(_) => "a codeblock",
+    }
+}
+
 fn free_vars(e: &Expr, out: &mut Vec<String>) {
     match e {
         Expr::Var(id) => { if !out.iter().any(|x| x == id) { out.push(id.clone()); } }
