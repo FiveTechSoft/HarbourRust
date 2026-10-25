@@ -3482,8 +3482,12 @@ const CTOR_HELPERS: &str = r"
 # already appended staying a valid shorter array. Target-independent
 # logic: all OS contact goes through hbc_alloc/hbc_free inside the
 # called helpers.
-# State lives on the frame: the per-target hbc_asize/hbc_aadd variants
-# may clobber the callee-saved registers (the Windows ones do).
+# State lives on the frame. (Internal helper ABI, audited in iteration
+# 18: every helper preserves rbx/rbp/r12-r15 on both targets - the
+# Windows hbc_free2/hbc_aadd/hbc_asize were fixed to save what they use;
+# generated code holds live state on the stack and in volatile registers
+# only. Frame-held state keeps this helper correct even if a future
+# helper regresses.)
 hbc_arraym:
     push %rbp
     mov %rsp, %rbp
@@ -4624,7 +4628,10 @@ hbc_os_bad:
 hbc_free2:
     push %rbp
     mov %rsp, %rbp
-    sub $48, %rsp
+    push %rbx
+    push %r12
+    push %r13
+    sub $56, %rsp
     mov %rdi, %rbx
     mov %rsi, %r12
     xor %r13, %r13
@@ -4642,7 +4649,11 @@ hbc_free2:
 72: mov %rbx, %rdi
     mov $16, %esi
     call hbc_free
-    leave
+    add $56, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
     ret
 
 # hbc_aadd: rdi = slot address (ptr,len), rsi = element size (8 or 16),
@@ -4651,6 +4662,10 @@ hbc_free2:
 hbc_aadd:
     push %rbp
     mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
     sub $48, %rsp
     mov %rdi, %rbx
     mov %rsi, %r14
@@ -4669,15 +4684,15 @@ hbc_aadd:
 52: mov $0x2000000000000000, %rdx
     cmp %rdx, %rax
     jae hbc_oom
-    mov %rcx, 32(%rsp)
-    mov %rax, 40(%rsp)
+    mov %rcx, -40(%rbp)
+    mov %rax, -48(%rbp)
     mov %rax, %rdi
     imul %r14, %rdi
     jo hbc_oom
     add $8, %rdi
     jc hbc_oom
     call hbc_alloc
-    mov 40(%rsp), %rdx
+    mov -48(%rbp), %rdx
     mov %rdx, (%rax)
     test %r13, %r13
     jz 53f
@@ -4695,11 +4710,11 @@ hbc_aadd:
     mov %rcx, 16(%rax,%r10)
 57: inc %r9
     jmp 55b
-56: mov %rax, 32(%rsp)
+56: mov %rax, -40(%rbp)
     mov %r13, %rdi
     mov %r14, %rsi
     call hbc_free
-    mov 32(%rsp), %rax
+    mov -40(%rbp), %rax
 53: add $8, %rax
     mov %rax, (%rbx)
     mov %rax, %r13
@@ -4714,7 +4729,12 @@ hbc_aadd:
     mov %rax, 8(%r13,%r10)
 58: inc %rcx
     mov %rcx, 8(%rbx)
-    leave
+    add $48, %rsp
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
     ret
 
 # hbc_asize: rdi = slot address, rsi = new length, rdx = element size,
@@ -4723,7 +4743,12 @@ hbc_aadd:
 hbc_asize:
     push %rbp
     mov %rsp, %rbp
-    sub $48, %rsp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $56, %rsp
     mov %rdi, %rbx
     mov %rsi, %r12
     mov %rdx, %r14
@@ -4750,15 +4775,15 @@ hbc_asize:
 64: mov $0x2000000000000000, %r8
     cmp %r8, %rax
     jae hbc_oom
-    mov %rdx, 32(%rsp)
-    mov %rax, 40(%rsp)
+    mov %rdx, -48(%rbp)
+    mov %rax, -56(%rbp)
     mov %rax, %rdi
     imul %r14, %rdi
     jo hbc_oom
     add $8, %rdi
     jc hbc_oom
     call hbc_alloc
-    mov 40(%rsp), %rdx
+    mov -56(%rbp), %rdx
     mov %rdx, (%rax)
     mov 8(%rbx), %r8
     test %r13, %r13
@@ -4776,11 +4801,11 @@ hbc_asize:
     mov %rcx, 16(%rax,%r10)
 60: inc %r9
     jmp 66b
-69: mov %rax, 32(%rsp)
+69: mov %rax, -48(%rbp)
     mov %r13, %rdi
     mov %r14, %rsi
     call hbc_free
-    mov 32(%rsp), %rax
+    mov -48(%rbp), %rax
 65: add $8, %rax
     mov %rax, (%rbx)
     mov %rax, %r13
@@ -4807,8 +4832,8 @@ hbc_asize:
     test %r15, %r15
     jz 76f
     mov (%rbx), %r13
-    mov %r12, 32(%rsp)
-77: mov 32(%rsp), %r9
+    mov %r12, -48(%rbp)
+77: mov -48(%rbp), %r9
     cmp 8(%rbx), %r9
     jge 76f
     mov %r9, %r10
@@ -4818,10 +4843,16 @@ hbc_asize:
     jz 78f
     mov $16, %esi
     call hbc_free
-78: incq 32(%rsp)
+78: incq -48(%rbp)
     jmp 77b
 76: mov %r12, 8(%rbx)
-75: leave
+75: add $56, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
     ret
 
     .data
