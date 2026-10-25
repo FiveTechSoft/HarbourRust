@@ -103,8 +103,12 @@ The numeric prefixes are an artifact of the upload tool used to publish
 the files; the contents are exactly the verified builds described here.
 
 SHA-256 of each file is listed in `dist/SHA256SUMS`. These binaries were
-built from the source tree as of commit
-`1b24443ebcd9834a2b9b43531832e2fb093c1080` and verified by running them
+built from `src/hbc.rs` at commit
+`a8c8aed7efb87587e239eecd77dfa9ab7dc75173` and `src/pp.rs` at commit
+`3e78dfddb797f8d65d6dfadc453add63efe877d5` (that exact source state is
+also visible at the dist upload commit
+`1b24443ebcd9834a2b9b43531832e2fb093c1080`, which only added the
+binaries), and verified by running them
 (Linux natively, Windows under Wine 10.20, not real Windows): `2-hbc.exe`
 and `1-hbc` emit byte-identical assembly for the same input, and `3-hola.exe`
 prints its expected output. `dist/compile.sh` (Linux) and `dist/compile.bat` (Windows) chain the three
