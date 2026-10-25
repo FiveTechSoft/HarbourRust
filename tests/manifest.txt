@@ -429,3 +429,7 @@ pos tests/t431_static_return_mutate.hb \n        99\n         4\n         7\n   
 pos tests/t432_static_return_shrink.hb \n         1\n         1\n         0\n         0
 neg tests/t433_neg_static_return_literal.hb a static array return is a variable in this increment
 neg tests/t434_neg_len_temp.hb `len` of an array temporary is not in this increment
+pos tests/t435_darrs_arg_move.hb \n         2\nuno\ntres\n         3\n         0\n         0\n         0
+pos tests/t437_darrs_return.hb \n         2\ndos\n         0\n         0
+neg tests/t436_neg_darrs_arg_moved.hb use of moved value `a`
+neg tests/t438_neg_darrs_arg_readonly.hb must be a dynamic array, got an array of strings
