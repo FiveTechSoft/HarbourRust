@@ -410,3 +410,11 @@ pos tests/t412_valtype_borrow.hb \nA\nN\n         0\n         0\n         0
 neg tests/t413_valtype_deep3.hb not measured in this PoC
 neg tests/t414_valtype_usercall.hb not measured in this PoC
 neg tests/t415_valtype_hash.hb not measured for this type
+pos tests/t416_borrow3_read.hb \n         2\n         2\n         1\n         0\n         0\n         0
+pos tests/t417_borrow3_grow.hb \n         0\n         3\n         2\n         8\n         0\n         0
+pos tests/t418_borrow3_write.hb \n         0\n        42\n         0\n         0
+pos tests/t419_borrow3_shrink.hb \n         2\n         0\n         1\n         2\n         0\n         0
+pos tests/t420_borrow3_order.hb \neval\n         2\n         2\n         0\n         0\n         0
+posx tests/t423_borrow3_nil_casilla.hb 1 Argument error: PARAM\n
+neg tests/t421_neg_borrow3_return.hb is borrowed from its caller
+neg tests/t422_neg_borrow3_overlap.hb no other argument of the same call may mention it
