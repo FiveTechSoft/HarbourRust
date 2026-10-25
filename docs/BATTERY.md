@@ -720,6 +720,39 @@ bounds-walk and append tail with the scalar path (a first draft
 duplicated the tail with an early return that dropped the following
 statements - caught by the battery, fixed before publishing).
 
+## Iteration 33k additions (420 manifest cases): borrowed middles at THREE levels
+
+f(a[i]) on a three-level array passes the middle cell's ADDRESS; the
+callee borrows it exclusively (oracles hk93-hk96, compiled hbmk2
+-gtstd: reads len(x)/len(x[1])/x[1][1], growth AAdd(x, {9,8}),
+element write x[1][2] := 42, shrink ASize(x, 1) - every mutation
+reads back in the caller exactly like Harbour's sharing, while
+single ownership stays intact: the borrow ends at the return and
+escapes are compile errors; NOT Harbour sharing - registered D5/D7
+family pending the user's contract decision). The borrowed
+parameter pins to DArr2 (its cells are child arrays) and gets the
+new codegen-only Ty::DArrRef2: one address word; bounds, base,
+reads, writes, AAdd (with static-literal materialization, same
+shape as the middle arm) and ASize (kind 3, recursive free) all
+load through the owner's cell. The caller walk and the NIL-casilla
+failure mode (clean exit 1 "Argument error: PARAM", hbc_param_error
+- no new helpers, no new ABI harness entries) are shared with the
+two-level borrow. Tests: t416 (hk93 mirror: reads, balance 0), t417
+(hk94 mirror: grow visible, materialized literal child, balance 0),
+t418 (hk95 mirror: two-level write visible), t419 (hk96 mirror:
+shrink visible, recursive free, balance 0), t420 (the index
+expression evaluates exactly ONCE - "eval" prints once), t423 (NIL
+casilla -> "Argument error: PARAM" exit 1, registered failure
+mode). Named compile errors: t421 (returning the borrowed
+parameter), t422 (two borrows of the same root in one call). The
+pin rules learned one shape: AAdd(p, {1,2}) with a literal array
+element pins the parameter one level deeper. Registered pin
+limitation: ASize as the ONLY evidence pins a flat array (the deep
+shape is ambiguous), so a shrink-only callee needs extra DArr2
+evidence (e.g. len(x[1])) - without it the call is a named
+rejection, never an inference. Reading a[i] of the borrowed middle
+BY VALUE stays a named compile error (child extraction).
+
 ## Iteration 33j additions (412 manifest cases): ValType
 
 `ValType(x)` returns the one-character type tag (oracles hk88-hk92,
