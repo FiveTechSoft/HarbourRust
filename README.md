@@ -585,6 +585,25 @@ tested paths (t191). `Array(n, 0)` children are real empty arrays
 (az0b, t256). Battery: 266/266 green on Linux x86-64 and Wine, plus
 the ABI harness on both targets.
 
+## Iteration 23 - writes at the third level and a return chain
+
+`a[i][j][k] := v` now compiles for an array of arrays of arrays
+(oracle pr6: after `a[1][1][2] := 99` on {{{1, 2}}, {{3}}}, the read
+is 99 and every length is unchanged; t277 mirrors it). The value
+evaluates first, then the indices left to right (probe m7 order);
+each level is bounds checked and a null child pointer is a clean
+bound error, the same rule as reads. Writes to a two-level value
+through three indices are a compile error naming the depth (t278),
+as is a fourth index level (t279). t280 pins the ownership rule for
+a chain of returns (mk -> mid -> use): a function that RETURNS a
+three-level value never frees it (the move nulls its slot), only
+the final owner frees, with a read after each transfer and
+registry balance 0 on both targets. Battery: 279/279 green on
+Linux x86-64 and Wine, plus the ABI harness on both targets.
+Out of scope, all explicit compile errors: AAdd/ASize at level 3,
+three-level parameters, Array() with three dimensions, a fourth
+index level, mixed literals.
+
 ## Iteration 22 - three levels of nesting (arrays of arrays of arrays)
 
 Literals like `{{{1, 2}}, {{3}}}` now compile to a third nesting
