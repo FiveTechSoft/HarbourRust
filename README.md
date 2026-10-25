@@ -142,3 +142,5 @@ x86_64-w64-mingw32-ld -o gen/hola.exe gen/hola_win.o -e _start --subsystem conso
 wine gen/hola.exe
 ```
 
+
+See [BUILDING.md](BUILDING.md) for the complete build recipe (Linux, Windows .exe output, cross-building `hbc.exe` itself, and running under Wine) and [dist/](dist/) for prebuilt, tested binaries with SHA-256 checksums.
