@@ -182,3 +182,28 @@ neg tests/t179_dyn_neg_loop_stmt.hb moved inside the `while` body
 neg tests/t180_dyn_neg_exit_path.hb moved inside the `for` body
 neg tests/t181_dyn_neg_aadd_moved.hb use of moved value
 neg tests/t182_dyn_neg_asize_moved.hb use of moved value
+pos tests/t183_md_lit_read.hb \n         1\n         2\n         3\n         4
+pos tests/t184_md_comma_read.hb \n         1\n         4
+pos tests/t185_md_write.hb \n         1\n         9\n         7\n         4
+pos tests/t186_md_len.hb \n         2\n         2
+pos tests/t187_md_aadd_sub.hb \n         3\n         5
+pos tests/t188_md_insert_move.hb \n       308\n         0
+pos tests/t189_md_overwrite_child.hb \n       701\n         0
+pos tests/t190_md_shrink.hb \n       101\n         0
+pos tests/t191_md_grow_null_child.hb \n       405\n         0
+pos tests/t192_md_eval_order.hb \n         9\n         1\n         2\n         2\n         7\n         9\n         7
+pos tests/t193_dyn_index_write.hb \n      4202\n         0
+pos tests/t194_md_loop_redecl.hb \n        10\n        20\n        30\n         2\n         5
+pos tests/t195_md_pin_assign.hb \n       105\n         0
+pos tests/t196_md_selfmove.hb \n         2\n         0
+neg tests/t197_md_neg_extract.hb cannot extract the subarray
+neg tests/t198_md_neg_selfinsert.hb the elements of `a` are dynamic arrays
+neg tests/t199_md_neg_mixed.hb cannot mix integers and arrays
+neg tests/t200_md_neg_depth3.hb nested array elements must be integers
+neg tests/t201_md_neg_param.hb needs an array of arrays
+neg tests/t202_md_neg_return.hb arrays of arrays cannot be returned
+neg tests/t203_md_neg_asize_unpinned.hb unknown until its first `AAdd`
+neg tests/t204_md_neg_twolevel_flat.hb two-level indexing needs an array of arrays
+neg tests/t205_md_neg_parent_moved.hb use of moved value
+neg tests/t206_md_neg_aaddsub_flat.hb needs an array of arrays
+posx tests/t207_md_neg_null_child.hb 1 Bound error: array access
