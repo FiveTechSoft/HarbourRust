@@ -1066,3 +1066,15 @@ static reassign (w3b), StrOwn reassign-from-call (w5b).
 
 475/475 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
+
+## Iteration 33x additions (476 manifest cases): ValType on four-level casillas
+
+ValType(a[i]) and ValType(a[i][j]) on a DArr4 root now classify the
+child-array casilla {ptr, len} - "A" when live (hk114). Pinning detail:
+the first hk114 read looked like an empty first line; the hk117 marker
+probe (">" / "<" guards) showed Harbour's ? is newline-LEADING, so
+hk114 is A/A/A/U/N, and t480 is byte-identical to the oracle binary.
+A NIL middle is the registered clean bound-error failure mode.
+
+476/476 manifest cases + ABI harness green on Linux x86-64 and Wine
+(Wine is not real Windows).
