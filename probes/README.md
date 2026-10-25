@@ -27,4 +27,9 @@ the hang itself is the recorded result - never a compatibility success.
 | e6_mixed | mixed types | {1,"texto"} allowed |
 | e7_nested_aadd | nested growth | AAdd(a,{1,2}): a[1][2]=2 |
 | e9_param_alias | call aliasing | callee AAdd mutates caller's array |
-| c12_evalorder | eval order | block expression evaluated BEFORE arguments |
+| c12_evalorder | eval order | block expression evaluated BEFORE arguments || c13_cap_param | capture param + escape | works: 15 |
+| c14_cap_escape | capture local, outlives function | works: 42 (detached local) |
+| c15_cap_loop | loop var capture | ONE shared cell: all blocks print 4 |
+| c16_cap_mutate | capture is by reference | n:=99 after creation -> block prints 99 |
+| c17_cap_shared | two blocks share the cell | set via one, read via other: 7 |
+
