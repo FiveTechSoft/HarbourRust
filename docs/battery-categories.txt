@@ -84,3 +84,6 @@ t142_arr_bound_max DIVERGE-FAILMODE
 t143_arr_bound_min DIVERGE-FAILMODE
 t144_arr_copy_reverse MODEL
 t145_arr_reassign_same HB-EXACT
+t146_for_eval_order HB-EXACT
+t147_arrset_move_index HB-EXACT
+t148_arrset_move_value HB-EXACT
