@@ -11,7 +11,7 @@ if [ -z "$1" ]; then
 fi
 src="$1"
 out="${2:-${1%.*}}"
-HBC="${HBC:-$(dirname "$0")/8-hbc}"
+HBC="${HBC:-$(dirname "$0")/11-hbc}"
 "$HBC" "$src" "$out.s" --target=linux
 as -o "$out.o" "$out.s"
 ld -o "$out" "$out.o"
