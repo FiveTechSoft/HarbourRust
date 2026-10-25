@@ -69,3 +69,6 @@ t118_pp_tie_latest HB-EXACT
 t119_qout_fields HB-EXACT
 t120_qout_list_mixed HB-EXACT
 t121_qout_eval_order HB-EXACT
+
+# neg-MODEL (rejected by our ownership, accepted by Harbour; not part of the 71-pos universe):
+# t123_qout_move_two_uses, t124_qout_move_then_print, t125_qout_move_in_expr
