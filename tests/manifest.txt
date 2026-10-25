@@ -228,3 +228,5 @@ pos tests/t225_big_reassign.hb \n         7\n         0
 pos tests/t226_big_redeclare.hb \n         3\n         0
 pos tests/t227_big_child_overwrite.hb \n         7\n         0
 pos tests/t228_big_shrink_nested.hb \n         1\n         0
+pos tests/t229_registry_reuse.hb \n         1\n         0
+posx tests/t230_registry_guard.hb 1 Out of memory
