@@ -319,6 +319,16 @@ the NIL literal itself has existed in expressions since iteration 15
 (`Array(3, 0)` rows are real empty arrays, never NIL) and t270
 (ASize shrink to 0: every child freed, registry balance 0).
 
+## Third-level writes and the return chain (t277-t280, iteration 23)
+
+t277 mirrors oracle pr6 (write a[1][1][2] := 99, reads and lengths
+unchanged elsewhere). t278/t279 pin the compile errors: three-level
+write to a two-level value, and a fourth index level. t280 runs a
+three-level value through a return chain (mk -> mid -> use) with a
+read after each transfer: the returning function's epilogue skips
+the moved value, only the final owner frees, registry balance 0 on
+both targets.
+
 ## Three levels of nesting (t275-t276, iteration 22)
 
 t275 mirrors oracle pr4 end to end: a {{{1, 2}}, {{3}}} literal,
