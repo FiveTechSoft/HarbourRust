@@ -456,9 +456,10 @@ t208-t223). Design: docs/DESIGN-nil-tag.md.
   destructor frees children then parent - proven by alloc-identity
   (hb_memcheck balance 0 across function boundaries), not inferred from
   output.
-- Limit explicit: arrays of arrays are not function parameters, returns, or
-  print arguments in this increment; three-level nesting, mixed literals and
-  `ASize` before pinning are compile errors.
+- Limit explicit at that increment: arrays of arrays were not function
+  parameters, returns, or print arguments; they pass and return since
+  iteration 21 (move semantics). Three-level nesting, mixed literals,
+  direct printing and `ASize` before pinning remain compile errors.
 - Two v2a fixes landed with it: `a[i] := v` on flat dynamic arrays (a
   checker gap, never battery-tested before - now t193 differential) and the
   epilogue preserving the return value across frees (latent clobber).
