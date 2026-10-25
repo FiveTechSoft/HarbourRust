@@ -389,7 +389,17 @@ ignored (Harbour's behaviour, probed); missing arguments are a compile
 error. Capturing function locals is the next increment. Battery:
 t150-t160, seven byte-exact against compiled Harbour.
 
-## Iteration 15 - NIL as a tagged value (v2c)
+## Iteration 15 - NIL (v2c) - EXPERIMENTAL, IN REPAIR
+
+> HEAD is an experimental intermediate: the first v2c representation
+> (i64::MIN sentinel) collides with a valid integer and evaluates
+> NIL-held-in-a-variable operations numerically. It is being replaced
+> with a true tagged-union value ({tag, payload}, Ty::Dyn) per
+> docs/DESIGN-nil-tag.md; the n1/n2/n3 oracle battery stays as the
+> acceptance gate. This section describes the SENTINEL state, kept for
+> the record until the repair lands.
+
+
 
 NIL is now a real value, not the absence of one: the i64 sentinel
 -9223372036854775808 (i64::MIN) tags it (probes n1 against compiled
