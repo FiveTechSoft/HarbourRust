@@ -230,3 +230,17 @@ pos tests/t227_big_child_overwrite.hb \n         7\n         0
 pos tests/t228_big_shrink_nested.hb \n         1\n         0
 pos tests/t229_registry_reuse.hb \n         1\n         0
 posx tests/t230_registry_guard.hb 1 Out of memory
+pos tests/t231_hash_lit_read.hb \n         2\n         1\n         2
+pos tests/t232_hash_dup_lit.hb \n         1\n         2
+pos tests/t233_hash_empty.hb \n         0
+posx tests/t234_hash_miss.hb 1 Bound error: array access
+posx tests/t235_hash_case.hb 1 Bound error: array access
+pos tests/t236_hash_setorder.hb \nV\nK\n         9
+pos tests/t237_hash_litorder.hb \nK\nV\n         9
+pos tests/t238_hash_emptykey.hb \n         1\n         7
+pos tests/t239_hash_prefix.hb \n         2\n         1\n         2
+pos tests/t240_hash_nil.hb \nNIL\n         1
+neg tests/t241_hash_move.hb use of moved value
+pos tests/t242_hash_balance.hb \n         7\n        99\n         0
+pos tests/t243_hash_grow.hb \n         6\n         3
+pos tests/t244_hash_overwrite.hb \n         1\n         2
