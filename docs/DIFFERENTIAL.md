@@ -213,3 +213,8 @@ mismatched-result and unknown-rule silence, probes b32/b37a-f): MATCH.
 
 t108 (using a command after #uncommand): both reject (Harbour E0030;
 HarbourRust "statement not in the subset").
+
+t109 (angle-form #include <file> resolved via -I, probe b38): MATCH.
+
+t110 (angle-form include beside the source WITHOUT -I): both reject
+(Harbour F0029; HarbourRust "cannot find include").
