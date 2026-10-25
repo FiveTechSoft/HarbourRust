@@ -2504,8 +2504,15 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 // registered limitation.
                 let ct = type_expr(coll, env, sigs, *n)?;
                 apply_moves(coll, env, sigs, false);
-                if !matches!(coll, Expr::Var(_)) {
-                    return Err(format!("line {}: `for each` iterates a variable in this increment (assign the expression to a variable first)", n));
+                // A temporary collection (a call result: hb_HKeys(h),
+                // Array(n) or a user function returning an array or a
+                // hash; oracles hk52/hk55/hk56) is OWNED by the loop:
+                // it gets a registered slot, zeroed by the prologue,
+                // freed-if-nonnull on (re)entry and freed by the
+                // epilogue on every exit path (natural, `exit`,
+                // `return`). A variable collection is borrowed.
+                if !matches!(coll, Expr::Var(_) | Expr::Call(..)) {
+                    return Err(format!("line {}: `for each` iterates a variable or a function result in this increment (assign the expression to a variable first)", n));
                 }
                 if !matches!(ct, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArrS | Ty::Hash) {
                     return Err(format!("line {}: `for each` needs a flat or string array or a hash in this increment", n));
@@ -2514,9 +2521,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                     Some(k) => k,
                     None => return Err(format!("line {}: `for each` loop variable `{}` must be declared first (Harbour errors BASE/1003 on an undeclared one)", n, var)),
                 };
-                let cname = match coll { Expr::Var(cn) => cn.clone(), _ => unreachable!() };
-                if cname == *var {
-                    return Err(format!("line {}: `for each` loop variable cannot be the collection itself", n));
+                let cname = match coll { Expr::Var(cn) => Some(cn.clone()), _ => None };
+                if let Some(cn) = &cname {
+                    if cn == var {
+                        return Err(format!("line {}: `for each` loop variable cannot be the collection itself", n));
+                    }
                 }
                 let saved = (env[kp].ty, env[kp].ro);
                 env[kp].ty = Ty::Dyn;
@@ -2526,9 +2535,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 let mut env_body = env.clone();
                 let mut fexits: Vec<Vec<bool>> = Vec::new();
                 let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut fexits, dyn_names)?;
-                let kc = env.iter().position(|v| v.name == cname).expect("collection exists");
-                if env_body[kc].moved || !foreach_coll_untouched(body, &cname) {
-                    return Err(format!("line {}: the `for each` collection `{}` cannot be modified, moved or grown inside its own loop in this increment (the loop borrows it)", n, cname));
+                if let Some(cn) = &cname {
+                    let kc = env.iter().position(|v| v.name == *cn).expect("collection exists");
+                    if env_body[kc].moved || !foreach_coll_untouched(body, cn) {
+                        return Err(format!("line {}: the `for each` collection `{}` cannot be modified, moved or grown inside its own loop in this increment (the loop borrows it)", n, cn));
+                    }
                 }
                 if !foreach_lv_readonly(body, var) {
                     return Err(format!("line {}: the `for each` variable `{}` can only be printed, compared or used in arithmetic in this increment - its value borrows from the collection, so it cannot be returned, assigned, passed to a function or stored (registered limitation)", n, var));
@@ -3648,12 +3659,20 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 layout_locals(body, env, sigs, frame, darr_slots, dyn_names);
                 env.truncate(mark);
             }
-            Stmt::ForEach(_, var, _, body) => {
+            Stmt::ForEach(_, var, coll, body) => {
                 // No shadow push: several codegen lookups take the FIRST
                 // name match, so the existing local is RETYPED to Dyn and
                 // pointed at the hidden element slot for the body, then
                 // restored (the outer slot is never written).
-                *frame += 16; // hidden pair: collection (ptr, count), borrowed
+                *frame += 16; // hidden pair: collection (ptr, count)
+                if matches!(coll, Expr::Call(..)) {
+                    // A temporary collection (call result) is OWNED:
+                    // registered so the prologue zeroes it and the
+                    // epilogue frees it on every exit path.
+                    let t = expr_ty(coll, env, sigs);
+                    let class = if t == Ty::Hash { 2 } else if t == Ty::DArrS { 4 } else { 0 };
+                    darr_slots.push((*frame, class));
+                }
                 *frame += 8; // hidden slot: 1-based iteration index
                 *frame += 16; // loop variable: the current element as a Dyn
                 let kl = env.iter().position(|v| v.name == *var).expect("checker found the local");
@@ -4265,15 +4284,50 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let id = *label;
                 *label += 1;
                 let mark = env.len();
-                // The collection variable is evaluated ONCE into a hidden
-                // pair (borrowed, never freed here); the index is 1-based
-                // like Harbour. The current element is rebuilt as a Dyn
-                // pair on every iteration: {tag, payload} directly from
-                // the 16-byte array cells, the value words of the 32-byte
-                // hash entries, or a tag-0 pair for static i64 arrays.
-                cg_value(coll, env, sigs, strs, out, target);
+                // The collection is evaluated ONCE into a hidden pair.
+                // A VARIABLE is borrowed (never freed here); a CALL
+                // RESULT is an owned temporary in a registered slot:
+                // the prologue zeroed it and the epilogue frees it on
+                // every exit path (natural, `exit`, `return`), so a
+                // statement that runs again (an enclosing loop) must
+                // free the previous temporary first. The index is
+                // 1-based like Harbour. The current element is rebuilt
+                // as a Dyn pair on every iteration: {tag, payload}
+                // directly from the 16-byte array cells, the value
+                // words of the 32-byte hash entries, or a tag-0 pair
+                // for static i64 arrays.
                 *frame += 16;
                 let coll_off = *frame;
+                if matches!(coll, Expr::Call(..)) {
+                    let fl = fresh_lbl();
+                    match expr_ty(coll, env, sigs) {
+                        Ty::Hash => out.push_str(&format!("    mov -{}(%rbp), %rdi
+    test %rdi, %rdi
+    je .Lfetf{}
+    mov -{}(%rbp), %rsi
+    call hbc_hfree
+.Lfetf{}:
+    movq $0, -{}(%rbp)
+", coll_off, fl, coll_off - 8, fl, coll_off)),
+                        Ty::DArrS => out.push_str(&format!("    mov -{}(%rbp), %rdi
+    test %rdi, %rdi
+    je .Lfetf{}
+    mov -{}(%rbp), %rsi
+    call hbc_sfree
+.Lfetf{}:
+    movq $0, -{}(%rbp)
+", coll_off, fl, coll_off - 8, fl, coll_off)),
+                        _ => out.push_str(&format!("    mov -{}(%rbp), %rdi
+    test %rdi, %rdi
+    je .Lfetf{}
+    mov $16, %esi
+    call hbc_free
+.Lfetf{}:
+    movq $0, -{}(%rbp)
+", coll_off, fl, fl, coll_off)),
+                    }
+                }
+                cg_value(coll, env, sigs, strs, out, target);
                 out.push_str(&format!("    mov %rax, -{}(%rbp)
     mov %rdx, -{}(%rbp)
 ", coll_off, coll_off - 8));
