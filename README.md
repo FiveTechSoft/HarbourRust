@@ -333,7 +333,8 @@ See [BUILDING.md](BUILDING.md) for the complete build recipe (Linux, Windows .ex
 hbc runs our own MIT preprocessor automatically on every compile:
 `#define` (object-like and function-like), `#undef`, `#ifdef` / `#ifndef` /
 `#else` / `#elif` / `#endif`, `#if` with integer conditions and `defined()`,
-`#include` (with `-I`), `#error`. Written from scratch against the
+`#include` (quoted form, relative first, plus the angle form
+`<file>` resolved through the `-I` paths only, as in Harbour), `#error`. Written from scratch against the
 behavioural baseline in docs/PP-F0.md; src/hpp.rs is a standalone debug
 frontend over the same engine.
 
