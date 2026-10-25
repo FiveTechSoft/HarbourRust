@@ -575,7 +575,7 @@ against a string - hk33/hk34 measured, support pending), t345
 compiler panic), t346-t348 (escaping the borrowed element:
 return, copy to another local, store into a collection).
 
-## Iteration 33b additions (353 total): loop variable vs string
+## Iteration 33b additions (352 manifest cases): loop variable vs string
 
 t344 (hk33 mirror: real byte comparison `=`/`#`), t349 (hk37:
 xBase prefix rule - right-operand length, left NUL-padded),
@@ -590,7 +590,7 @@ hk34/hk38 disproved; it now uses a NIL casilla (hk35) and keeps
 its evaluation-effects purpose. Runtime dispatch on the Dyn tag
 (2: hbc_str_eq, 1: fold, 0: named error).
 
-## Iteration 33c additions (360 total): ordering vs string
+## Iteration 33c additions (359 manifest cases): ordering vs string
 
 t355-t357 (hk36/hk39/hk40/hk43: ordering a string casilla
 byte-wise over the right operand's length - "abcd" vs "abc"
@@ -607,3 +607,22 @@ exit). t353 (the old compile-time rejection of ordering)
 removed. Inline branch labels in emitted code now come from
 LBL_ID, a per-emission unique counter - fixed numeric labels
 caused two silent miscompares.
+
+## Iteration 33d additions (364 manifest cases): FOR EACH over temporaries
+
+t363 (hk52 mirror: a call result - user function returning a
+DArrS, or hb_HKeys(h) - iterated directly; owned by the loop,
+balance 0), t364 (statement re-entry inside a `while`: the
+previous temporary is freed before the new call, epilogue frees
+the last, balance 0), t365 (hk55/hk56 mirrors: `exit` and
+`return` inside the loop - the epilogue frees the temporary on
+both paths, balance 0), t366 (Array(2) temporary: the created
+NIL casillas iterate as NIL), t367 (nested collection a[i]
+still a named compile error - the pre-existing "cannot extract
+the subarray" rejection; hk53/hk57 measured, support pending;
+hk58/hk59: iterating a NIL or numeric casilla is Harbour's
+BASE/1068 dialog, headless-hanging - future registered failure
+mode). Design: a temporary collection gets a slot registered in
+darr_slots (layout_locals) - prologue zeroes it, the ForEach
+entry frees it if non-null (re-entry), the epilogue frees it on
+every path. No new helpers; harness unchanged.
