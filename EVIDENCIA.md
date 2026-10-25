@@ -135,3 +135,43 @@ negative (hbc itself rejects before codegen, target-independent):
   binutils (C tools) assemble and link.
 - Any new language surface: iteration 3 changes targets, not the subset.
   The ownership claims are exactly the iteration 2 claims, no wider.
+
+---
+
+# Iteration 3 fixes after external review (2026-10-25)
+
+Two real Win64 bugs were caught on review of the emitted assembly and are
+fixed and re-verified:
+
+1. hbc_print_i64 (Windows) used %rsi as the digit cursor. %rsi is
+   NONVOLATILE in the Win64 ABI and was not saved. Fixed: the cursor is now
+   %r10 (volatile); the helpers touch only volatile registers plus the
+   saved rbp.
+2. Expressions kept the left operand with `push %rax` while evaluating the
+   right operand. A call nested in the right operand (`1 + valor()`) then
+   broke 16-byte stack alignment for every Win64 call under it, even with a
+   16-byte-rounded frame. Fixed: on Windows the lhs goes into a 16-byte
+   stack slot (`sub $16, %rsp` / `mov %rax, (%rsp)`), so every call site
+   keeps ABI alignment. Linux codegen is unchanged (syscalls have no such
+   requirement; the ELF is still 8,984 bytes).
+
+Also: `_start` now aligns the stack explicitly (`and $-16, %rsp`) instead of
+assuming the loader's convention, and the kernel32 return values are
+documented as unchecked (no I/O error handling in this PoC).
+
+Regression test added: tests/t12_call_in_expr.hb (a printing function
+called inside arithmetic, both operand positions). Run on both targets:
+
+$ ./hbc tests/t12_call_in_expr.hb gen/t12.s --target=windows && x86_64-w64-mingw32-as -o gen/t12.o gen/t12.s && x86_64-w64-mingw32-ld -o gen/t12.exe gen/t12.o -e _start --subsystem console -lkernel32 && wine gen/t12.exe
+en valor
+41
+en valor
+41
+en valor
+80
+
+Linux ELF output byte-identical. Generated assembly checked: every nested
+call site now sits between `sub $16, %rsp` and `add $16, %rsp`. Full
+positive battery (hola, t10, t11, unicode, arithmetic) and the negative
+battery re-run after the fixes: identical outputs on both targets.
+hola.exe is still 5,499 bytes. Wine 10.20 wow64, exit code 0.
