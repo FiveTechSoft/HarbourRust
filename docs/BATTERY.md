@@ -170,7 +170,14 @@ inside a block, now a value return). Tags survive array reads
 (x := a[i]), parameters, returns and if/while joins (t214-t216, t221);
 `t211` is rewritten from probe n1c (NIL through a parameter and back;
 its sentinel-era `p + 0` case is Harbour's type error, covered by
-t218). t208-t210, t212 unchanged. New: t213 i64::MIN/NIL coexistence,
+t218). A latent defect from the i64 era is fixed in the same pass: four
+free sites (epilogue, re-declare/reassign, DArr2 child overwrite)
+still passed element size 8 to hbc_free, so munmap length was
+8+cap*8 against blocks mapped as 8+cap*16 - an under-unmap (leak)
+for blocks spanning more than one page. Single-page battery
+allocations were unaffected and hb_memcheck counts calls, not
+bytes, so the battery could not see it; all free sites now pass 16.
+t208-t210, t212 unchanged. New: t213 i64::MIN/NIL coexistence,
 t218 (posx) arithmetic on NIL prints "Type error: NIL used as a
 number" and exits 1 on both targets, t220 (posx) ordering a NIL held
 in a variable (the literal case stays compile-error t212), t221 loop
