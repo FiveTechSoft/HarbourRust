@@ -1630,6 +1630,19 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
             Stmt::Print(n, es) => {
                 // Printing borrows the value; it never moves it.
                 for e in es {
+                    // `? a[i]` on an array of arrays is allowed: a
+                    // NIL-grown casilla prints NIL (oracle n1) and a live
+                    // child prints nothing (oracle n5) - the dispatch is
+                    // at runtime, so the static type stays opaque here.
+                    if let Expr::Index(v, ie) = e {
+                        if let Some(var) = env.iter().find(|x| x.name == *v && x.ty == Ty::DArr2) {
+                            let _ = var;
+                            if type_expr(ie, env, sigs, *n)? != Ty::I64 && !matches!(type_expr(ie, env, sigs, *n)?, Ty::Dyn) {
+                                return Err(format!("line {}: array index must be an integer", n));
+                            }
+                            continue;
+                        }
+                    }
                     let t = type_expr(e, env, sigs, *n)?;
                     if t == Ty::Bool {
                         return Err(format!("line {}: cannot print a boolean in this PoC", n));
@@ -1973,7 +1986,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                         // MOVES in; the old child is freed once, AFTER the
                         // new value exists (parent rule).
                         let t = type_expr(e, env, sigs, *n)?;
-                        if !matches!(t, Ty::DArr | Ty::DArrU) {
+                        // An i64 literal converts to a Dyn-element child
+                        // (oracle n3: a[3] := {9, 9} works in Harbour).
+                        if !matches!(t, Ty::DArr | Ty::DArrU | Ty::Arr(_)) {
                             return Err(format!("line {}: the elements of `{}` are dynamic arrays; assign one (or `{{}}`)", n, id));
                         }
                         if let Expr::Var(v) = e {
@@ -2171,13 +2186,18 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     }
                 }
                 Expr::Index(v, ie) => {
-                    // len(a[i]): borrow the child slot (probe m6). A null
-                    // child (fresh ASize growth) reads length 0.
+                    // len(a[i]): borrow the child slot (probe m6). A
+                    // null child (fresh ASize growth) is Harbour's NIL
+                    // casilla: len() of it is Harbour's BASE/1111
+                    // (hangs headless, oracle n2) - here a clean
+                    // "Argument error: LEN", exit 1 (registered failure
+                    // mode). An EMPTY child ({}) owns a header block and
+                    // still reads 0 (oracle e4).
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                     cg_expr(ie, env, sigs, strs, out, target);
                     out.push_str(&format!("    cmp $1, %rax\n    jl 87f\n    cmp -{}(%rbp), %rax\n    jg 87f\n", var.off - 8));
                     out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
-                    out.push_str("    dec %rax\n    shl $4, %rax\n    mov 8(%r11,%rax), %rax\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
+                    out.push_str("    dec %rax\n    shl $4, %rax\n    mov 0(%r11,%rax), %r10\n    test %r10, %r10\n    jz hbc_len_error\n    mov 8(%r11,%rax), %rax\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
                 }
                 _ => unreachable!("len() of a non-variable in this increment"),
             }
@@ -2216,9 +2236,12 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             out.push_str("    mov hbc_mem_allocs(%rip), %rax\n    sub hbc_mem_frees(%rip), %rax\n");
         }
         Expr::DArrNew => {
-            // {} : the empty dynamic array is (null, 0) - no allocation
-            // happens until the first AAdd (probe e4: len({}) == 0).
-            out.push_str("    xor %eax, %eax\n    xor %edx, %edx\n");
+            // {} : the empty dynamic array owns a header-only block
+            // (cap 0), so it is distinguishable from a NIL slot left by
+            // ASize growth (null, 0) - Harbour types {} as ARRAY and the
+            // grown casillas as NIL (oracles e4, n1, n2). len({}) == 0
+            // either way.
+            out.push_str("    mov $8, %rdi\n    call hbc_alloc\n    movq $0, (%rax)\n    add $8, %rax\n    xor %edx, %edx\n");
         }
         Expr::HashLit(_) => unreachable!("hash literals are emitted in statement position (local/assign initializers)"),
         Expr::BlockLit(id, _, _) => {
@@ -2420,7 +2443,10 @@ fn cg_darr2_literal(es: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<S
     for (j, child) in es.iter().enumerate() {
         match child {
             Expr::DArrNew => {
-                out.push_str(&format!("    mov (%rsp), %r11\n    movq $0, {}(%r11)\n    movq $0, {}(%r11)\n", j * 16, j * 16 + 8));
+                // An empty child owns a header-only block too (see the
+                // DArrNew arm in cg_expr): NIL-grown slots stay (null, 0).
+                out.push_str("    mov $8, %rdi\n    call hbc_alloc\n    movq $0, (%rax)\n    add $8, %rax\n");
+                out.push_str(&format!("    mov (%rsp), %r11\n    mov %rax, {}(%r11)\n    movq $0, {}(%r11)\n", j * 16, j * 16 + 8));
             }
             Expr::ArrLit(inner) => {
                 let m = inner.len();
@@ -2805,7 +2831,21 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // newline), then the newline, then the items joined by one
                 // space; integers right-aligned in a 10-column field,
                 // strings raw; no trailing newline.
+                let darr2_child = |e: &Expr, env: &[CgLocal]| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArr2));
                 for e in es {
+                    if let Expr::Index(v, ie) = e {
+                        if darr2_child(e, env) {
+                            // Push the child pointer (0 marks a NIL
+                            // casilla); bounds-checked like len(a[i]).
+                            let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                            cg_expr(ie, env, sigs, strs, out, target);
+                            out.push_str(&format!("    cmp $1, %rax\n    jl 93f\n    cmp -{}(%rbp), %rax\n    jg 93f\n", var.off - 8));
+                            out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
+                            out.push_str("    dec %rax\n    shl $4, %rax\n    mov 0(%r11,%rax), %rax\n    jmp 94f\n93:\n    call hbc_bound_error\n94:\n");
+                            out.push_str("    xor %edx, %edx\n    push %rdx\n    push %rax\n");
+                            continue;
+                        }
+                    }
                     cg_value(e, env, sigs, strs, out, target);
                     out.push_str("    push %rdx\n    push %rax\n");
                 }
@@ -2814,6 +2854,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     let t = expr_ty(e, env, sigs);
                     let off = 16 * (es.len() - 1 - i);
                     if i > 0 { out.push_str("    call hbc_print_sep\n"); }
+                    if darr2_child(e, env) {
+                        // A NIL casilla prints NIL (n1); a live child
+                        // prints nothing (n5).
+                        out.push_str(&format!("    mov {}(%rsp), %rax\n", off));
+                        out.push_str("    test %rax, %rax\n    jz 95f\n    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
+                        continue;
+                    }
                     out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
                     match t {
                         Ty::I64 => out.push_str("    call hbc_print_i64\n"),
@@ -3078,6 +3125,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    cmp $1, %rcx\n    jl 87f\n    cmp -{}(%rbp), %rcx\n    jg 87f\n", v.off - 8));
                 out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
                 out.push_str("    mov %rcx, %rdi\n    dec %rdi\n    shl $4, %rdi\n    add %r11, %rdi\n");
+                // A NIL casilla (fresh ASize growth) is Harbour's
+                // BASE/1123 (hangs headless, oracle n6): clean error.
+                out.push_str("    mov (%rdi), %r10\n    test %r10, %r10\n    jz hbc_aadd_error\n");
                 out.push_str("    mov %rsp, %rdx\n    mov $16, %esi\n    call hbc_aadd\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
                 out.push_str("    add $32, %rsp\n");
             }
@@ -3091,6 +3141,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    cmp $1, %rcx\n    jl 87f\n    cmp -{}(%rbp), %rcx\n    jg 87f\n", v.off - 8));
                 out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
                 out.push_str("    mov %rcx, %rdi\n    dec %rdi\n    shl $4, %rdi\n    add %r11, %rdi\n");
+                // A NIL casilla is Harbour's BASE/2023 (hangs headless,
+                // oracle n7): clean error.
+                out.push_str("    mov (%rdi), %r10\n    test %r10, %r10\n    jz hbc_asize_error\n");
                 out.push_str("    mov %rax, %rsi\n    mov $16, %edx\n    xor %ecx, %ecx\n    call hbc_asize\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
             }
             Stmt::ArrSet(_, id, ie, e) => {
@@ -3099,7 +3152,24 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // Child overwrite: RHS (a dynamic array) moves in; the
                     // OLD child is freed once, AFTER the new value exists
                     // and the source was nulled (no double free).
-                    cg_value(e, env, sigs, strs, out, target);
+                    if let Expr::ArrLit(inner) = e {
+                        // i64 literal -> Dyn-element child (same shape as
+                        // nested-literal children; oracle n3).
+                        let m = inner.len();
+                        out.push_str("    sub $16, %rsp\n");
+                        out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + m * 16));
+                        out.push_str(&format!("    movq ${}, (%rax)\n    add $8, %rax\n    mov %rax, (%rsp)\n", m));
+                        for (p2, ie2) in inner.iter().enumerate() {
+                            cg_expr(ie2, env, sigs, strs, out, target);
+                            if expr_ty(ie2, env, sigs) == Ty::I64 {
+                                out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                            }
+                            out.push_str(&format!("    mov (%rsp), %r11\n    mov %rax, {}(%r11)\n    mov %rdx, {}(%r11)\n", p2 * 16, p2 * 16 + 8));
+                        }
+                        out.push_str(&format!("    mov (%rsp), %rax\n    add $16, %rsp\n    mov ${}, %rdx\n", m));
+                    } else {
+                        cg_value(e, env, sigs, strs, out, target);
+                    }
                     if let Expr::Var(src) = e {
                         if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2)) {
                             out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
@@ -3505,11 +3575,22 @@ hbc_arraym:
     jae 23f
     movq $0, -48(%rbp)
     movq $0, -40(%rbp)
-    lea -48(%rbp), %rdi
+    cmpq $0, -24(%rbp)
+    jne 24f
+    # Zero columns: the child is a real empty array (oracle az0b: len 0,
+    # not NIL), so it owns a header-only block like `{}`.
+    mov $8, %edi
+    call hbc_alloc
+    movq $0, (%rax)
+    add $8, %rax
+    mov %rax, -48(%rbp)
+    jmp 25f
+24: lea -48(%rbp), %rdi
     mov -24(%rbp), %rsi
     mov $16, %edx
     xor %ecx, %ecx
     call hbc_asize
+25: nop
     mov -8(%rbp), %rdi
     mov $16, %esi
     lea -48(%rbp), %rdx
@@ -4028,6 +4109,41 @@ hbc_asize_neg:
     mov $1, %edi
     syscall
 
+# hbc_len_error: len() of a NIL slot (noreturn). Harbour's BASE/1111
+# dialog hangs headless (oracle n2): this clean exit 1 is the registered
+# failure mode for the same error condition, not a compat success.
+hbc_len_error:
+    lea .Llenerrmsg(%rip), %rsi
+    mov $20, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
+# hbc_aadd_error / hbc_asize_error: AAdd/ASize on a NIL casilla
+# (noreturn). Harbour's BASE/1123 and BASE/2023 dialogs hang headless
+# (oracles n6/n7): clean exit 1, registered failure modes.
+hbc_aadd_error:
+    lea .Laadderrmsg(%rip), %rsi
+    mov $21, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+hbc_asize_error:
+    lea .Lasizeerrmsg(%rip), %rsi
+    mov $22, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 # hbc_free: rdi = data pointer (non-null), rsi = element size in bytes.
 # Header at -8 holds the capacity in elements; the mapped length is
 # 8 + cap*elemsize (munmap needs the allocation length).
@@ -4322,6 +4438,12 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Lregbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,97,108,108,111,99,97,116,105,111,110,32,114,101,103,105,115,116,114,121,32,109,105,115,109,97,116,99,104,10\n");
     out.push_str(".Ltypemsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,78,73,76,32,117,115,101,100,32,97,115,32,97,32,110,117,109,98,101,114,10\n");
     out.push_str(".Lasizenegmsg:\n    .byte 65,83,105,122,101,58,32,110,101,103,97,116,105,118,101,32,115,105,122,101,10\n");
+    // "Argument error: LEN\n" (20 bytes; Harbour BASE/1111 hangs headless - registered failure mode)
+    out.push_str(".Llenerrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,76,69,78,10\n");
+    // "Argument error: AADD\n" (21 bytes; Harbour BASE/1123 hangs headless, oracle n6)
+    out.push_str(".Laadderrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,65,65,68,68,10\n");
+    // "Argument error: ASIZE\n" (22 bytes; Harbour BASE/2023 hangs headless, oracle n7)
+    out.push_str(".Lasizeerrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,65,83,73,90,69,10\n");
 }
 
 // Win64 runtime helpers (ours): same internal convention as the linux ones
@@ -4588,6 +4710,40 @@ hbc_asize_neg:
     sub $48, %rsp
     lea .Lasizenegmsg(%rip), %rax
     mov $21, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+# hbc_len_error: len() of a NIL slot (noreturn) - see the linux copy.
+hbc_len_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Llenerrmsg(%rip), %rax
+    mov $20, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+# hbc_aadd_error / hbc_asize_error: see the linux copies.
+hbc_aadd_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Laadderrmsg(%rip), %rax
+    mov $21, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+hbc_asize_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Lasizeerrmsg(%rip), %rax
+    mov $22, %edx
     call hbc_print_str
     mov $1, %ecx
     call ExitProcess
