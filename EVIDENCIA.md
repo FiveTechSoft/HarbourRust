@@ -291,6 +291,39 @@ negative (rejected by hbc itself before codegen, exit 1, both targets):
 Full 36-case battery re-run after the change: 36/36 pass, `hola` Linux
 ELF still 8,984 bytes. Not yet: `for` loops.
 
+# Iteration 8: for / next (2026-10-25)
+
+Counted loops `for i := <start> to <end> [step <n>] ... next`. Bounds
+evaluate once into hidden slots; the step is restricted to a non-zero
+integer literal so the counting direction is fixed at compile time (one
+comparison in the emitted code, no runtime sign check). `exit` / `loop`
+inside `for` reuse the iteration-6 label threading, and the move checker
+treats the body exactly like a `while` body (join at `next` and at every
+`exit`). The joins are conservative by design: they may reject programs
+that would run fine.
+
+minor wording change (documented): the "`exit`/`loop` outside a `while`
+loop" errors now read "outside a `while` loop or `for` loop", absorbing
+the old pinned substrings so t29/t30 keep passing unchanged.
+
+8 new tests (none converted):
+positive (byte-identical output on Linux x86-64 and under Wine):
+- tests/t37_for_basic.hb - up, step 2, step -1 countdown, zero-trip
+- tests/t42_for_exit_loop.hb - loop skips i = 2, exit at i = 5
+
+negative (rejected by hbc itself before codegen, exit 1, both targets):
+- tests/t38_for_scope.hb - loop variable used after `next`
+- tests/t39_for_shadow.hb - loop variable reuses a name in scope
+- tests/t40_for_assign_var.hb - assignment to the loop variable
+- tests/t41_for_move.hb - moved in body, not reassigned before `next`
+- tests/t43_for_step_zero.hb - step 0
+- tests/t44_for_step_expr.hb - non-literal step
+
+Full 44-case battery re-run after the change: 44/44 pass, `hola` Linux
+ELF still 8,984 bytes. Not yet: string comparisons / first-class
+boolean, function parameters, expression step, shadowing.
+
+
 
 - Full Rust assignment semantics: assignment re-lives a moved variable and
   cannot change its type; there is still no Drop (strings are read-only
