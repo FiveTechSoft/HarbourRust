@@ -451,3 +451,24 @@ Registered divergence (model, not a bug): Harbour copies strings on call,
 so a variable stays usable after being passed; HarbourRust moves it (the
 agreed Rust model). Same observable results when the caller does not reuse
 the variable; reuse is a compile error here, valid code there.
+
+## Preprocessor F1: hpp (MIT, from scratch)
+
+src/hpp.rs is our own preprocessor, written from scratch in Rust against the
+behavioural baseline in docs/PP-F0.md (no Harbour code copied). F1 features:
+object-like #define / #undef (last definition wins), #ifdef / #ifndef /
+#else / #elif / #endif with nesting, #if over integer constants with ==,
+!=, <, <=, >, >=, .and./.or./.not., parentheses and defined(), #include
+(input-relative, then -I dirs, nesting capped at 16), #error, case-
+insensitive directive names, unknown directives rejected. Define expansion
+respects word boundaries and never touches string literals.
+
+Verified against the F0 probe expectations: 18/18 behavioural checks pass
+(define, undef isolation, include, #error, single-= rejected with a clear
+message, case-insensitivity, last-wins, if/elif selection, defined(),
+.and., string-literal protection, unknown directive, unterminated #if).
+Integration: hpp output feeds hbc directly - `hpp q20.prg | hbc` builds and
+prints two, `hpp p01` builds and prints 42 (Linux x86-64).
+
+Function-like #define is F2 (rejected in F1 with an explicit error);
+#command/#translate is F3 and needs its own behavioural round first.
