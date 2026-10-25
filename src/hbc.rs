@@ -2054,6 +2054,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     || (ta == Ty::I64 && sig_params[i] == Ty::Dyn) // tagged at the call
                     || (ta == Ty::Str && sig_params[i] == Ty::StrOwn); // rodata: copied at the call boundary
                 if !ok {
+                    // Two codeblocks of different arity: name both arities so
+                    // the diagnostic is not "must be a codeblock, got a
+                    // codeblock" (33q, parent-reported defect on t446).
+                    if let (Ty::Block(want), Ty::Block(got)) = (sig_params[i], ta) {
+                        return Err(format!("line {}: argument {} of `{}` must be a codeblock of {} argument(s), got a codeblock of {} argument(s)",
+                            n, i + 1, id, want, got));
+                    }
                     return Err(format!("line {}: argument {} of `{}` must be {}, got {}",
                         n, i + 1, id,
                         ty_name(sig_params[i]), ty_name(ta)));
