@@ -152,6 +152,11 @@ recorded, not denied.
   + <y>]` -> `+ 5 +`, which Harbour then rejects E0030); a bracket with
   NO bound marker is dropped whole, comma included (b36b/b36d and
   std.ch's `[, <clr>]` case). t105 positive, t106 negative.
+- #uncommand / #untranslate (b32, b37a-f): exact-match removal - pattern
+  tokens (literals case-insensitive, markers exact) AND identical result
+  text (b37b); removes ONE instance of a stacked duplicate (b37f);
+  unknown rule: silent (b37e). After removal, using the command is an
+  error again (b32: E0030). t107/t108.
 - Token pasting: no `##` anywhere in Harbour's own .ch headers;
   combined with b04/b10c/b10b there is no usable Harbour behaviour to
   match - left unimplemented.
