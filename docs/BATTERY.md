@@ -44,5 +44,7 @@ prints just the newline. Unary minus added (q1 needed `-7`).
 Registered `?` differences: no float literals, no `.T.`/`.F.` or NIL
 printing, trailing comma rejected (Harbour prints a NIL item - probe q4).
 
-Benchmark (fresh, post-QOut-fix, 200 runs of gen/arith): HarbourRust
-50ms, Harbour 269ms; outputs byte-identical (sha256 d62cc1e0...).
+Benchmark: the frozen three-program series (bench/RESULTS.md) was
+re-run after the QOut fix with unchanged configs; see the "Post-QOut
+re-run" table there. b2/b3 outputs byte-identical to Harbour; b1 is
+DIVERGE-NUMERIC by the registered numeric model.
