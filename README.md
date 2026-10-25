@@ -315,3 +315,12 @@ wine gen/hola.exe
 
 
 See [BUILDING.md](BUILDING.md) for the complete build recipe (Linux, Windows .exe output, cross-building `hbc.exe` itself, and running under Wine) and [dist/](dist/) for prebuilt, tested binaries with SHA-256 checksums.
+
+## Iteration 11: function parameters (integers)
+
+`function add(a, b)` now works: parameters are integers in this increment,
+copied at the call (Rust i64 is Copy), owned and reassignable inside the
+callee. Arity and types are checked at compile time; string parameters are
+rejected with a clear error for now. See EVIDENCIA.md for the exact
+restrictions, the internal calling convention and the differential results
+against harbour/core.
