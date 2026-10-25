@@ -262,3 +262,20 @@ successes. Harbour supports 3+ dimensions (oracle a3d prints
 2/2/2); hbc rejects them at compile time (t251). t253 checks the
 alloc/free balance across a function boundary under the instrumented
 registry (exact sizes verified on this tested path).
+
+## Internal helper ABI (audited in iteration 18)
+
+Internal helpers take arguments in rdi/rsi/rdx/rcx and return values in
+rax/rdx on BOTH targets (kernel32 wrappers adapt inside hbc_alloc /
+hbc_free / the print helpers). Every helper preserves the callee-saved
+registers it uses (rbx, rbp, r12-r15); the audit found the Windows
+hbc_free2 / hbc_aadd / hbc_asize clobbering them unsaved - the same
+bug class that broke hbc_arraym on Wine only - and they were fixed to
+save and restore what they use (locals moved to rbp-relative slots,
+frames re-aligned to 16 at every call). Generated code never emits
+callee-saved registers: live state sits on stack frames and in
+volatile registers, so the preserved-ABI rule is what keeps generated
+and hand-written callers interchangeable. t254 keeps live Harbour
+locals across hbc_arraym -> hbc_asize/hbc_aadd and direct AAdd/ASize
+calls as the regression guard; the full battery runs it on Linux and
+Wine.
