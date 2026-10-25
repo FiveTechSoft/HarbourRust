@@ -592,13 +592,23 @@ written for this increment: `len` is n/m/k at each level, the
 innermost slots read NIL, a later `a[i][j][k] := v` write works).
 The constructor composes: one new helper `hbc_array3m` builds n
 children, each a complete `Array(m, k)` from the existing
-`hbc_arraym`, so the zero-dimension and negative-dimension behavior
-is the 2D behavior recursively (a negative dimension is the
-registered clean error, t286 pins the compile error for a fourth
-dimension; t251, the old "3 dimensions unsupported" negative, is
-retired). Dimensions evaluate left to right. t285 mirrors pr7 with
-registry balance 0 after the owner returns. Battery: 284/284 green
-on Linux x86-64 and Wine, plus the ABI harness on both targets.
+`hbc_arraym`. The edge cases have their own oracles: a zero
+dimension in any of the three positions yields the same shape
+Harbour builds, including a real empty child array (len 0, not NIL)
+when the middle dimension is 0 (pr7b, t287); a negative interior
+dimension is the registered clean error even when the outer count
+is 0 (Harbour raises BASE/1131 there, its dialog hangs headless -
+pr7c, t289); the three dimension expressions evaluate once, left
+to right (pr7d, t288). A huge allocation dies by the OS OOM-killer
+in Harbour (pr7e, exit 137) while hbc fails cleanly through
+hbc_oom on allocation failure - same condition, different failure
+mode, no battery test (it needs real memory pressure). t286 pins
+the compile error for a fourth dimension; t251, the old "3
+dimensions unsupported" negative, is retired. `hbc_array3m` has
+its own ABI canary block in the harness. t285 mirrors pr7 with
+registry balance 0 after the owner returns. Battery: 287/287
+green on Linux x86-64 and Wine, plus the ABI harness on both
+targets.
 Out of scope, all explicit compile errors: three-level parameters,
 a fourth index level or dimension, mixed literals.
 
