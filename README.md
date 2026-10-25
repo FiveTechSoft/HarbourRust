@@ -389,6 +389,38 @@ ignored (Harbour's behaviour, probed); missing arguments are a compile
 error. Capturing function locals is the next increment. Battery:
 t150-t160, seven byte-exact against compiled Harbour.
 
+## Iteration 14 - arrays of dynamic arrays (v2b)
+
+- `local a := {{1, 2}, {3, 4}}` compiles: nested literals, two-level reads
+  `a[i][j]` and the Harbour comma form `a[i, j]` (identical in Harbour -
+  probe m2), two-level writes `a[i][j] := v`, `len` at both levels,
+  `AAdd(a[i], x)` / `ASize(a[i], n)` on a subarray, and `Array(2, 3)`
+  (Harbour m3 shows its slots are NIL; under the i64 model they read as 0 -
+  the registered NIL-vs-0 limitation).
+- Ownership: inserting `AAdd(a, b)` or assigning `a[1] := b` MOVES the child
+  into the parent - Harbour's `b := a[1]` extraction aliases the shared
+  subarray (probe m4) and `AAdd(a[1], x)` mutates what `b` sees (probe m5);
+  both are registered MODEL divergences. Extraction `b := a[1]` is rejected
+  in this increment (indexed borrows only: a[i][j], len(a[i]), AAdd/ASize on
+  a[i] - Harbour's aliasing has no single-owner equivalent yet).
+- Evaluation order is probe-matched (m7): a nested write evaluates the
+  value, then the outer index, then the inner index; AAdd/ASize on a[i]
+  evaluate the target index first. The parent cannot move while an index is
+  evaluated (static error), and overwriting a child frees the old one once,
+  after the new value exists (no double free).
+- ASize shrink drops the removed children observably (Harbour m8 shows the
+  reduction; it does not reveal Harbour's internal lifetime). Our recursive
+  destructor frees children then parent - proven by alloc-identity
+  (hb_memcheck balance 0 across function boundaries), not inferred from
+  output.
+- Limit explicit: arrays of arrays are not function parameters, returns, or
+  print arguments in this increment; three-level nesting, mixed literals and
+  `ASize` before pinning are compile errors.
+- Two v2a fixes landed with it: `a[i] := v` on flat dynamic arrays (a
+  checker gap, never battery-tested before - now t193 differential) and the
+  epilogue preserving the return value across frees (latent clobber).
+- Battery t183-t207; 209 tests green on Linux x86-64 and Wine (WoW64).
+
 ## Iteration 13: dynamic integer arrays (first heap)
 
 `local a := {}` creates a dynamic array of integers: `AAdd(a, x)` and
