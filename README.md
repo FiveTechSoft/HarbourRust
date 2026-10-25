@@ -1149,5 +1149,16 @@ clean error (t345).
   evaluated once in order; byte-identical to the Harbour oracle
   (t480). Deeper levels were already covered by hk103.
 
-Battery: 476/476 manifest cases on Linux x86-64 and Wine, plus
+- FOR EACH over a[i][j] of a four-level root (hk118/hk119,
+  byte-measured): the loop variable is a BORROWED flat child
+  array (checker types it DArr, codegen uses the DArrRef borrow
+  layout - the slot holds the current casilla address). x[j]
+  reads, x[j] := v writes THROUGH the shared casilla (visible in
+  the caller, hk119), ValType(x) is "A"; the outer variable is
+  restored after the loop, naturally or via `exit`. Reseat,
+  return, pass and grow are named compile-time rejections.
+  t481/t482 are byte-identical to the oracle binaries;
+  t483-t485 pin the restrictions and the restore.
+
+Battery: 481/481 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
