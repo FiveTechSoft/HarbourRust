@@ -585,6 +585,42 @@ tested paths (t191). `Array(n, 0)` children are real empty arrays
 (az0b, t256). Battery: 266/266 green on Linux x86-64 and Wine, plus
 the ABI harness on both targets.
 
+## Iteration 28 - hb_HKeys: hash keys as an owned array of strings
+
+`hb_HKeys(h)` returns the keys of a hash as a new array, in
+insertion order and with their original case (oracles hk4-hk6,
+written for this increment against the core libraries only, no
+contrib: insertion order and case preserved; an overwrite keeps its
+position and updates the value; keys that differ only in case are
+two keys - the case-sensitive dedup already registered in h3b/t235;
+an empty hash yields a zero-length array). HGetKeys from libxhb is
+a different surface and is NOT wired as an alias. The argument must
+be a hash; anything else is an explicit compile error.
+
+The result is a read-only array of strings (DArrS): each key is an
+owned copy, so it stays valid after the hash is destroyed and after
+the keys array is reassigned (t301: a kept element is compared
+against the hash again after freeing the array - no use-after-free).
+An element read `k[i]` yields an owned heap string (StrOwn,
+distinct from a read-only-data string) that its owner frees; prints
+of an element free the temporary copy, while an element still
+stored in the array is not freed by the print. The move rules are
+the established ones: use after move is a compile error (t302,
+t305), and a function that returns the keys array transfers
+ownership (t306, balance 0). Out of scope, all explicit compile
+errors: writing through the array (AAdd/ArrSet on it, t304) and
+passing it or a StrOwn as a parameter (t303 - the same precedent
+as hash parameters).
+
+Three new shared helpers, both targets, each with an entry in the
+ABI canary harness (callee-saved registers, stack balance and
+alignment checked after every call): `hbc_hkeys` builds the array,
+`hbc_sfree` frees it, `hbc_strcpy` copies one string. t298 mirrors
+hk4 and adds writes, reassignments and a registry balance of 0
+(wrap pattern); t299 mirrors hk5; t300 mirrors hk6. Battery:
+304/304 green on Linux x86-64 and Wine, plus the ABI harness on
+both targets.
+
 ## Iteration 27 - three-level arrays as parameters (move)
 
 A DArr3 can now be a function parameter or a return value, under the
