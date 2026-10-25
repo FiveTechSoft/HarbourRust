@@ -253,3 +253,4 @@ posx tests/t250_array_neg.hb 1 ASize: negative size
 neg tests/t251_array_3d.hb not in this increment
 neg tests/t252_array_0args.hb at least one dimension
 pos tests/t253_array_balance.hb \n         7\n         0
+pos tests/t254_array_abi_locals.hb \n        66\n        33\n         4\n         7
