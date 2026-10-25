@@ -9,7 +9,8 @@ Iteration 1 was a syntax front-end on top of the rustc backend: `hbc`
 emitted Rust source and rustc (via LLVM) did the type checking, the
 ownership checking and the machine code generation.
 
-In this iteration `hbc` does all of that itself for the supported subset:
+In this iteration `hbc` does all of that itself for the supported subset,
+up to generated assembly (assembling and linking stay with binutils):
 
 | Piece | Who does it | Status |
 |---|---|---|
@@ -19,12 +20,14 @@ In this iteration `hbc` does all of that itself for the supported subset:
 | x86-64 code generation | `hbc` (emits assembly) | Ours |
 | Assembler + linker | GNU binutils (`as`, `ld`) | Reused (C tools) |
 | Building `hbc` itself | `rustc` / LLVM | Reused (compiler implementation only) |
-| Runtime of produced executables | none - freestanding, direct Linux syscalls, no libc | Ours |
+| Runtime of produced executables | minimal and ours: two hand-written syscall print helpers. No VM, no libc, no external runtime | Ours |
 
-A Harbour program compiled with `hbc` never passes through rustc or LLVM.
-The produced executable is statically linked, has no dynamic section and
-carries no runtime (the `hola` example is ~9 KB of machine code plus string
-data).
+A Harbour program compiled with `hbc` never passes through rustc or LLVM:
+`hbc` stops at generated assembly and the system assembler and linker
+(binutils) produce the executable. The produced ELF is statically linked,
+has no dynamic section and needs no external runtime - only the two small
+print helpers that `hbc` emits into every binary. The `hola` example ELF
+file is 8,984 bytes on disk (file size, headers and alignment included).
 
 ## Ownership semantics (what "Rust rules" means here, precisely)
 
@@ -94,6 +97,7 @@ Integer literals are range-checked (i64).
 ## Reproduce
 
 ```sh
+mkdir -p gen          # gen/ is not part of the checkout
 rustc -O src/hbc.rs -o hbc
 ./hbc ejemplos/hola.hb gen/hola.s && as -o gen/hola.o gen/hola.s && ld -o gen/hola gen/hola.o && ./gen/hola
 ./hbc ejemplos/prestamo_roto.hb gen/prestamo.s    # rejected by hbc itself
