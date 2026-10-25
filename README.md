@@ -563,3 +563,23 @@ docs/BATTERY.md, and tests/abi_harness.sh (asm canaries across every
 helper route, wired into the battery, negative control verified)
 guards it. Battery: 261/261 green on Linux x86-64 and Wine, plus the
 ABI harness on both targets.
+
+## Iteration 19 - grown-casilla NIL repair
+
+The registered "Array parent grown NIL vs null" difference is
+repaired against oracles n1-n7. An ASize-grown casilla of an array of
+arrays is Harbour's NIL (not an empty child): it prints NIL (n1,
+t262), `a[i] == ...` of it stays out of scope, and len / AAdd / ASize
+on it are Harbour's BASE/1111, BASE/1123 and BASE/2023 dialogs, which
+hang headless (n2, n6, n7) - here they are clean errors
+"Argument error: LEN / AADD / ASIZE", exit 1 (t263-t265, registered
+failure modes, not compat successes). Assigning an array into the
+casilla works, including an i64 literal, which converts to a
+Dyn-element child (n3, t266, and the rewritten t191), and the sibling
+casilla stays NIL. To keep NIL casillas distinguishable from real
+empty arrays, `{}` and empty children now own a header-only block
+(cap 0) - observable behavior unchanged (len({}) == 0, e4) and the
+instrumented registry verifies the new allocation/free sizes on the
+tested paths (t191). `Array(n, 0)` children are real empty arrays
+(az0b, t256). Battery: 266/266 green on Linux x86-64 and Wine, plus
+the ABI harness on both targets.
