@@ -140,10 +140,18 @@ recorded, not denied.
   engine like #xcommand/#command (t100). Harbour's x- priority over a
   same-pattern plain rule is NOT emulated (documented difference) - so
   this is NOT complete #xtranslate support.
-- Rule specificity (b31/b31b): Harbour picks the MOST SPECIFIC matching
-  rule (most literal words) regardless of definition order; we used
-  first-defined-wins and were wrong - fixed the same day (t102). Ties
-  keep the earliest definition.
+- Rule specificity (b31/b31b): on the probed two-rule shapes, Harbour
+  picks the rule with MORE literal words regardless of definition order;
+  we used first-defined-wins and were wrong - fixed the same day (t102).
+  Observed scope only: ties keep the earliest definition; abbreviations,
+  wider rule shapes and the x- priority are NOT probed, so this is not
+  established as Harbour's universal selection rule.
+- Result-side [ ... ] in #command (b35, b36a-d): a bracket containing at
+  least one BOUND marker is kept and unbound markers inside it are
+  removed individually (b36a: `[+ <y> + <x>]` -> `+ 5`; b36c: `[+ <x>
+  + <y>]` -> `+ 5 +`, which Harbour then rejects E0030); a bracket with
+  NO bound marker is dropped whole, comma included (b36b/b36d and
+  std.ch's `[, <clr>]` case). t105 positive, t106 negative.
 - Token pasting: no `##` anywhere in Harbour's own .ch headers;
   combined with b04/b10c/b10b there is no usable Harbour behaviour to
   match - left unimplemented.
