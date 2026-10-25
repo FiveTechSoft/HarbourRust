@@ -173,7 +173,7 @@ enum Expr {
 #[derive(Debug)]
 enum Stmt {
     Local(usize, String, Expr),
-    Print(usize, Expr),
+    Print(usize, Vec<Expr>),
     Ret(usize, Option<Expr>),
     If(usize, Expr, Vec<Stmt>, Vec<Stmt>), // line, condition, then, else (possibly empty)
     While(usize, Expr, Vec<Stmt>), // line, condition, body
@@ -233,6 +233,12 @@ impl P {
     }
     fn factor(&mut self) -> Result<Expr, String> {
         match self.bump() {
+            // Harbour unary minus (probe q1: `? -7`): sugar for 0 - e, so
+            // the i64 typing/codegen path applies unchanged.
+            Some(Tok::Minus) => {
+                let e = self.factor()?;
+                Ok(Expr::Bin('-', Box::new(Expr::Int("0".to_string())), Box::new(e)))
+            }
             Some(Tok::Int(v)) => {
                 match v.parse::<u128>() {
                     Ok(k) if k <= i64::MAX as u128 => Ok(Expr::Int(v)),
@@ -485,8 +491,27 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 *i += 1;
             }
             Tok::Question => {
-                let e = parse_expr_tokens(toks[1..].to_vec(), n)?;
-                out.push(Stmt::Print(n, e));
+                // Harbour `?`: bare prints a blank line; otherwise a
+                // comma-separated expression list (probes b51/b57).
+                let rest = &toks[1..];
+                let mut exprs = Vec::new();
+                if !rest.is_empty() {
+                    let mut depth = 0i32;
+                    let mut start = 0usize;
+                    for (k, t) in rest.iter().enumerate() {
+                        match t {
+                            Tok::LParen => depth += 1,
+                            Tok::RParen => depth -= 1,
+                            Tok::Comma if depth == 0 => {
+                                exprs.push(parse_expr_tokens(rest[start..k].to_vec(), n)?);
+                                start = k + 1;
+                            }
+                            _ => {}
+                        }
+                    }
+                    exprs.push(parse_expr_tokens(rest[start..].to_vec(), n)?);
+                }
+                out.push(Stmt::Print(n, exprs));
                 *i += 1;
             }
             Tok::KwExit => {
@@ -691,7 +716,8 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                         _ => {}
                     }
                 }
-                Stmt::Assign(n, _, e) | Stmt::Print(n, e) => { walk(f, e, sigs, lit, pin, *n)?; }
+                Stmt::Assign(n, _, e) => { walk(f, e, sigs, lit, pin, *n)?; }
+                Stmt::Print(n, es) => { for e in es { walk(f, e, sigs, lit, pin, *n)?; } }
                 Stmt::Ret(n, Some(e)) => { walk(f, e, sigs, lit, pin, *n)?; }
                 Stmt::Ret(_, None) => {}
                 Stmt::If(n, c, a, b) => {
@@ -704,6 +730,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     walk_stmts(f, body, sigs, lit, pin)?;
                 }
                 Stmt::For(n, _, a, b, _, body) => {
+                    // for bounds are i64 by construction (integer counters
+                    // only): they pin a parameter used as a bound (t61).
+                    pin_vars(f, a, Ty::I64, pin, *n)?;
+                    pin_vars(f, b, Ty::I64, pin, *n)?;
                     walk(f, a, sigs, lit, pin, *n)?; walk(f, b, sigs, lit, pin, *n)?;
                     walk_stmts(f, body, sigs, lit, pin)?;
                 }
@@ -811,11 +841,13 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 apply_moves(e, env, sigs, true);
                 env.push(Local { name: id.clone(), ty: t, moved: false, ro: false });
             }
-            Stmt::Print(n, e) => {
+            Stmt::Print(n, es) => {
                 // Printing borrows the value; it never moves it.
-                let t = type_expr(e, env, sigs, *n)?;
-                if t == Ty::Bool {
-                    return Err(format!("line {}: cannot print a boolean in this PoC", n));
+                for e in es {
+                    let t = type_expr(e, env, sigs, *n)?;
+                    if t == Ty::Bool {
+                        return Err(format!("line {}: cannot print a boolean in this PoC", n));
+                    }
                 }
             }
             Stmt::Ret(n, Some(e)) => {
@@ -1210,13 +1242,31 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
                 env.push(CgLocal { name: id.clone(), ty: t, off });
             }
-            Stmt::Print(_, e) => {
-                let t = expr_ty(e, env, sigs);
-                cg_value(e, env, sigs, strs, out, target);
-                match t {
-                    Ty::I64 => out.push_str("    call hbc_print_i64\n"),
-                    Ty::Str => out.push_str("    call hbc_print_str\n"),
-                    Ty::Bool => unreachable!("booleans rejected in analysis"),
+            Stmt::Print(_, es) => {
+                // Harbour `?` is a QOut( <items> ) call (probes b51-b59,
+                // t12 vs -gtstd binary): ALL items are evaluated FIRST
+                // (side effects like prints inside calls happen before the
+                // newline), then the newline, then the items joined by one
+                // space; integers right-aligned in a 10-column field,
+                // strings raw; no trailing newline.
+                for e in es {
+                    cg_value(e, env, sigs, strs, out, target);
+                    out.push_str("    push %rdx\n    push %rax\n");
+                }
+                out.push_str("    call hbc_print_nl\n");
+                for (i, e) in es.iter().enumerate() {
+                    let t = expr_ty(e, env, sigs);
+                    let off = 16 * (es.len() - 1 - i);
+                    if i > 0 { out.push_str("    call hbc_print_sep\n"); }
+                    out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
+                    match t {
+                        Ty::I64 => out.push_str("    call hbc_print_i64\n"),
+                        Ty::Str => out.push_str("    call hbc_print_str\n"),
+                        Ty::Bool => unreachable!("booleans rejected in analysis"),
+                    }
+                }
+                if !es.is_empty() {
+                    out.push_str(&format!("    add ${}, %rsp\n", 16 * es.len()));
                 }
             }
             Stmt::Ret(_, Some(e)) => {
@@ -1409,18 +1459,24 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target) -> String {
         Target::Linux => {}
     }
     out.push_str(r#"
-# hbc_print_str: %rax = ptr, %rdx = len. Prints the bytes + newline.
+# hbc_print_str: %rax = ptr, %rdx = len. Writes the raw bytes, no newline:
+# Harbour `?` emits the newline BEFORE the items (probes b51-b57).
 hbc_print_str:
     mov %rax, %rsi
     mov $1, %eax
     mov $1, %edi
     syscall
-    lea .Lnl(%rip), %rsi
-    mov $1, %edx
-    mov $1, %eax
-    mov $1, %edi
-    syscall
     ret
+
+# hbc_print_nl / hbc_print_sep: the `?` leading newline / item separator.
+hbc_print_nl:
+    lea .Lnl(%rip), %rax
+    mov $1, %edx
+    jmp hbc_print_str
+hbc_print_sep:
+    lea .Lpad20(%rip), %rax
+    mov $1, %edx
+    jmp hbc_print_str
 
 # hbc_str_eq: %rax = lhs ptr, %rdx = lhs len, %rcx = rhs ptr, %r8 = rhs len.
 # Returns %rax = 1 when equal, 0 otherwise. Harbour default (SET EXACT
@@ -1512,15 +1568,35 @@ hbc_print_i64:
     movb $45, (%rsi)
     dec %rsi
 3:
-    lea 1(%rsi), %rsi
-    lea -1(%rbp), %rdx
-    sub %rsi, %rdx
-    inc %rdx
+    # Harbour `?` integer field (probes q1/q5/q6): positives right-align in
+    # max(10, digits+1); negatives in 10 when they fit, 20 otherwise.
+    lea 1(%rsi), %r9
+    lea -1(%rbp), %r10
+    sub %r9, %r10
+    inc %r10
+    cmpb $45, (%r9)
+    je 5f
+    lea 1(%r10), %rcx
+    mov $10, %rax
+    cmp %rax, %rcx
+    cmovae %rcx, %rax
+    jmp 6f
+5:
+    mov $10, %rax
+    cmp %rax, %r10
+    jbe 6f
+    mov $20, %rax
+6:
+    sub %r10, %rax
+    jle 7f
+    mov %rax, %rdx
+    lea .Lpad20(%rip), %rsi
     mov $1, %eax
     mov $1, %edi
     syscall
-    lea .Lnl(%rip), %rsi
-    mov $1, %edx
+7:
+    mov %r9, %rsi
+    mov %r10, %rdx
     mov $1, %eax
     mov $1, %edi
     syscall
@@ -1542,6 +1618,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
         }
     }
     out.push_str(".Lnl:\n    .byte 10\n");
+    out.push_str(".Lpad20:\n    .byte 32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32\n");
 }
 
 // Win64 runtime helpers (ours): same internal convention as the linux ones
@@ -1567,16 +1644,18 @@ hbc_print_str:
     lea -24(%rbp), %r9
     movq $0, 32(%rsp)
     call WriteFile
-    mov $-11, %ecx
-    call GetStdHandle
-    mov %rax, %rcx
-    lea .Lnl(%rip), %rdx
-    mov $1, %r8d
-    lea -24(%rbp), %r9
-    movq $0, 32(%rsp)
-    call WriteFile
     leave
     ret
+
+# hbc_print_nl / hbc_print_sep: the `?` leading newline / item separator.
+hbc_print_nl:
+    lea .Lnl(%rip), %rax
+    mov $1, %edx
+    jmp hbc_print_str
+hbc_print_sep:
+    lea .Lpad20(%rip), %rax
+    mov $1, %edx
+    jmp hbc_print_str
 
 # hbc_str_eq: %rax = lhs ptr, %rdx = lhs len, %rcx = rhs ptr, %r8 = rhs len.
 # Returns %rax = 1 when equal, 0 otherwise. Harbour default (SET EXACT
@@ -1670,10 +1749,35 @@ hbc_print_i64:
     movb $45, (%r10)
     dec %r10
 3:
+    # Harbour `?` integer field (probes q1/q5/q6): positives right-align in
+    # max(10, digits+1); negatives in 10 when they fit, 20 otherwise.
     lea 1(%r10), %rax
     mov %rbp, %rdx
     sub %r10, %rdx
     dec %rdx
+    cmpb $45, (%rax)
+    je 5f
+    lea 1(%rdx), %rcx
+    mov $10, %r8
+    cmp %r8, %rcx
+    cmovae %rcx, %r8
+    jmp 6f
+5:
+    mov $10, %r8
+    cmp %r8, %rdx
+    jbe 6f
+    mov $20, %r8
+6:
+    sub %rdx, %r8
+    jle 7f
+    mov %rax, -32(%rbp)
+    mov %rdx, -40(%rbp)
+    lea .Lpad20(%rip), %rax
+    mov %r8, %rdx
+    call hbc_print_str
+    mov -32(%rbp), %rax
+    mov -40(%rbp), %rdx
+7:
     call hbc_print_str
     leave
     ret
