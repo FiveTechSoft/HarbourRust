@@ -361,4 +361,10 @@ pos tests/t363_foreach_temp.hb \nes-b\nes-a\nes-k\n         3\n         0
 pos tests/t364_foreach_temp_reentry.hb \n         7\n         7\n         7\n         4\n         0
 pos tests/t365_foreach_temp_exitret.hb \n         1\n         0
 pos tests/t366_foreach_temp_arrayn.hb \nnil\nnil\n         1\n         0
-neg tests/t367_neg_foreach_index.hb cannot extract the subarray
+pos tests/t367_foreach_index.hb \n         1\n         2\n         3\n         4\n         2\n         1
+pos tests/t368_foreach_index_fx.hb \neval\n         3\n         4
+posx tests/t369_foreach_index_nil.hb 1 Argument error: array access\n
+neg tests/t370_neg_foreach_index_grow.hb cannot be modified, moved or grown inside its own loop
+neg tests/t371_neg_foreach_index_childgrow.hb cannot be modified, moved or grown inside its own loop
+neg tests/t372_neg_foreach_index_write.hb cannot be modified, moved or grown inside its own loop
+pos tests/t373_foreach_index_exitret.hb \n         1\n         0
