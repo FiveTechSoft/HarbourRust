@@ -378,3 +378,13 @@ only, fixed size from the literal, one index level, no array parameters or
 return values, no whole-array printing, no empty literal, no `len()`,
 no mixed types. Battery: tests t126-t139 (4 byte-exact vs compiled
 Harbour, 1 MODEL, 1 DIVERGE-FAILMODE, 8 negatives).
+
+## Iteration 12: codeblocks without captures
+
+`local b := {|x| x + 1}` creates a codeblock: a code pointer (no heap,
+no captures in this increment), invoked with the built-in `eval(b, 5)`.
+The body is a comma-separated expression list and returns its last
+expression, as Harbour does. Extra `eval` arguments are evaluated and
+ignored (Harbour's behaviour, probed); missing arguments are a compile
+error. Capturing function locals is the next increment. Battery:
+t150-t160, seven byte-exact against compiled Harbour.
