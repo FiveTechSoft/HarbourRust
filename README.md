@@ -398,10 +398,13 @@ Linux (failure = negative errno, checked), HeapAlloc on Windows, an
 8-byte capacity header before the data, doubling growth, checked
 overflow, OOM abort with a clean message. Ownership is Rust's model
 made physical: one owner per array; assignment, call and return MOVE
-and null the source slot; slots are zero-init and freeing is null-safe,
-so every allocation is freed exactly once at its owner's epilogue,
-overwrite or re-declaration - no GC, no reference counting, no path
-tracking, no shared aliases (Harbour's sharing, probes d6-d9/e9, is a
+and null the source slot; the checker tracks moved state statically
+(branch joins union the moved flags; a value moved inside a loop body
+and not reassigned is a compile error; use of a moved value - including
+as AAdd/ASize target - is rejected), and slots are zero-init with
+null-safe freeing, so codegen needs no path tracking and every
+allocation is freed exactly once at its owner's epilogue, overwrite or
+re-declaration - no GC, no reference counting, no shared aliases (Harbour's sharing, probes d6-d9/e9, is a
 registered MODEL difference). Grown slots read 0 (Harbour grows NIL -
 documented i64-model limit, not an equivalence claim). Nested dynamic
 arrays, hashes and codeblock captures are NOT in this increment.
