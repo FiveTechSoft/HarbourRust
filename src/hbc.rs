@@ -26,6 +26,11 @@ use std::env;
 use std::fs;
 use std::process;
 
+// The preprocessor is part of hbc: every compile runs it automatically
+// (shared engine in pp.rs; hpp is only a standalone debug frontend).
+#[path = "pp.rs"]
+mod pp;
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum Ty { I64, Str, Bool }
 
@@ -1655,20 +1660,35 @@ enum Target { Linux, Windows }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() != 3 && args.len() != 4 {
-        eprintln!("usage: hbc <input.hb> <output.s> [--target=linux|windows]");
+    let mut pos: Vec<&String> = Vec::new();
+    let mut target = Target::Linux;
+    let mut incdirs: Vec<String> = Vec::new();
+    let mut ai = 1;
+    while ai < args.len() {
+        let a = &args[ai];
+        match a.as_str() {
+            "--target=linux" => target = Target::Linux,
+            "--target=windows" => target = Target::Windows,
+            "-I" => { ai += 1; incdirs.push(args.get(ai).expect("-I needs a directory").clone()); }
+            _ if a.starts_with("-I") => incdirs.push(a[2..].to_string()),
+            _ if a.starts_with("--") => { eprintln!("usage: hbc <input.hb> <output.s> [--target=linux|windows] [-I dir]..."); process::exit(2); }
+            _ => pos.push(a),
+        }
+        ai += 1;
+    }
+    if pos.len() != 2 {
+        eprintln!("usage: hbc <input.hb> <output.s> [--target=linux|windows] [-I dir]...");
         process::exit(2);
     }
-    let target = match args.get(3).map(|s| s.as_str()) {
-        None | Some("--target=linux") => Target::Linux,
-        Some("--target=windows") => Target::Windows,
-        Some(_) => {
-            eprintln!("usage: hbc <input.hb> <output.s> [--target=linux|windows]");
-            process::exit(2);
-        }
-    };
-    let src = fs::read_to_string(&args[1])
-        .unwrap_or_else(|e| { eprintln!("cannot read {}: {}", args[1], e); process::exit(2); });
+    // Preprocessing runs automatically on every compile. Errors cite the
+    // line in the ORIGINAL file for the main input; lines injected by an
+    // #include report against that include file.
+    let mut pre = pp::Pp::new(incdirs);
+    let mut src = String::new();
+    if let Err(m) = pp::process(pos[0], &mut pre, &mut src, 0) {
+        eprintln!("error: {}", m);
+        process::exit(1);
+    }
 
     let mut funcs = match parse(&src) {
         Ok(f) => f,
@@ -1730,7 +1750,7 @@ fn main() {
     // Pass 2: generate x86-64 assembly from the validated AST only.
     let out = emit_asm(&funcs, &sigs, target);
 
-    fs::write(&args[2], out)
+    fs::write(pos[1], out)
         .unwrap_or_else(|e| { eprintln!("cannot write {}: {}", args[2], e); process::exit(2); });
     println!("{} -> {} ({} functions)", args[1], args[2], funcs.len());
 }
