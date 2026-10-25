@@ -1,0 +1,4 @@
+CREATE CLASS TA INHERIT TB, TC
+ENDCLASS
+function main()
+return
