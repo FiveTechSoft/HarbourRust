@@ -330,9 +330,13 @@ t288 mirrors pr7d: the three dimension expressions evaluate once,
 left to right. t289 is the pr7c failure mode: a negative interior
 dimension with outer count 0 errors cleanly in hbc where Harbour
 raises the BASE/1131 dialog (headless hang). pr7e registers the
-overflow condition: Harbour's Array(100000, 100000, 100000) is
-killed by the OS OOM-killer (exit 137); hbc fails cleanly via
-hbc_oom. hbc_array3m has its own ABI canary block. The old t251
+overflow condition: Harbour's Array(100000, 100000, 100000) ends
+killed by a signal (exit 137; exact cause unconfirmed without a
+kernel/cgroup log). hbc's clean failure is verified cheaply:
+hbc_asize's arithmetic guards (capacity cap, signed-multiply
+overflow) route to hbc_oom, and under a 256 MB address-space cap
+Array(40000, 40000, 40000) prints "Out of memory" and exits 1 in
+under a second. hbc_array3m has its own ABI canary block. The old t251
 negative ("3 dimensions unsupported") was retired because three
 dimensions are supported now.
 
