@@ -1083,5 +1083,18 @@ clean error (t345).
   hbc_aadd/hbc_asize operate on the walked level-4 slot; balance
   0 after the owner returns.
 
-Battery: 453/453 manifest cases on Linux x86-64 and Wine, plus
+- FOR EACH over `a[i][j][k]` on a four-level array borrows the
+  level-3 collection for the loop, in both head forms (hk109: the
+  elements iterate, the root and the borrowed child survive with
+  their lengths - t458, t460 bracket; hk110: the three indices
+  evaluate once, left to right, before the first element - t459;
+  same eval-once discipline measured for the shallower depths).
+  Mutating, moving or growing the root inside the body is a named
+  compile error (t462), a shallower root is the accurate named
+  rejection (t461), and an out-of-range index at any level is the
+  registered bound failure mode, exit 1 (t463; a NIL middle
+  casilla cannot occur in this increment's DArr4 - no operation
+  nulls one).
+
+Battery: 459/459 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
