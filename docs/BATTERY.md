@@ -119,7 +119,11 @@ constraint on the increment that introduces block-returning functions
 Arrays of dynamic arrays: `{{1, 2}, {3, 4}}`, reads `a[i][j]` and the
 comma form `a[i, j]` (Harbour m2: identical), writes, `len` at both
 levels, `AAdd(a[i], x)` / `ASize(a[i], n)` on subarrays, `Array(n, m)`
-(NIL slots read as 0 - the registered i64-model limitation).
+itself is not in the compiler (unknown function at compile time);
+probes m3/m10/m11 record Harbour's NIL-filled slots for contrast. The
+equivalent constructor path, `local a := {}` plus `ASize`, grows slots
+that read NIL since iter 15 (t211); they read 0 under the pre-iter-15
+i64 model.
 
 Categories: the value cases are HB-EXACT (probes m1/m2/m5/m6/m7). The
 ownership cases are OURS-ONLY: Harbour's `b := a[1]` aliases the shared
