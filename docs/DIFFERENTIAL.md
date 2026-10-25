@@ -189,3 +189,21 @@ as the same static-vs-dynamic class as t82 (probe b27).
 t102 (most-specific command rule wins, both definition orders): MATCH
 (probes b31/b31b; our first-defined-wins order was a real divergence,
 found and fixed the same day).
+
+t103 (void function - `return nil` - WITH parameters compiles; regression
+for a codegen panic: no signature entry was recorded for void functions):
+our PoC scope check (the function is never called; a void call cannot
+appear in our expressions, see t104).
+
+t104 (using a void function's result in an expression): DIVERGE (typed
+model). Harbour compiles and prints NIL at runtime (verified: compiled
+binary prints `3` then `NIL`; the script runner errors BASE/1081
+instead); HarbourRust rejects at compile time ("returns nothing ... its
+result cannot be used in an expression"). Same class as the other typed-
+model restrictions.
+
+t105 (optional result-side bracket; bound-marker-kept and no-bound-
+marker-dropped forms from probes b35/b36a-d): MATCH.
+
+t106 (kept bracket with an unbound marker leaves broken syntax): both
+reject (Harbour E0030; HarbourRust "incomplete expression").
