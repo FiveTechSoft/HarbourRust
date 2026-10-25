@@ -177,3 +177,5 @@ and SET EXACT are not implemented (registered, not claimed).
 
 t98 (#if relational/.AND./!/arithmetic) and t99 (#elif chain): 2/2 MATCH
 (probes b24/b25).
+
+t100 (#xtranslate, call form): MATCH (probe b26).
