@@ -478,3 +478,31 @@ with the callee, so a callee write or AAdd is visible in the
 caller; here the value moves and the caller cannot observe it
 (the caller's variable is gone). That sharing belongs to the
 standing ownership-contract decision, still pending.
+
+## Hash parameters/returns and ASize on string arrays (t315 repurposed, t316-t323, iteration 30)
+
+Oracles hk11-hk13 (Harbour core libraries only, `-gtstd`): a
+hash passed to a function is SHARED - the callee's write is
+visible to the caller without any return (hk11); a function
+returns a hash it built (hk12); ASize on the array from
+hb_HKeys shrinks keeping the first keys and grows with NIL
+casillas (hk13).
+
+Under the single-owner model the hash MOVES on call and return
+(t316-t318): byte-identical printed values to hk11 via the
+explicit move round-trip, the sharing itself stays the
+registered difference family D5/D7, pending the user's contract
+decision. Pinning: string-key evidence pins the hash, len()
+merges into it (t322); a pin conflict (array of strings vs
+hash) surfaces as the deterministic body error (t323).
+
+ASize on an array of strings: shrink frees the removed copies
+(t319, the shrink half of hk13), same-size is a no-op, shrink
+to 0 frees the rest (t320); grow is a clean runtime error with
+exit 1 (t321) - Harbour grows with NIL casillas (hk13), a
+registered limitation of this increment. ASize on the hash
+itself stays a named compile error (t315 repurposed).
+
+322/322 on Linux x86-64 and Wine; ABI harness PASS on both
+targets. No new helpers: hbc_asize gains kind 2 (string
+elements) reusing the already-canaried hbc_free.
