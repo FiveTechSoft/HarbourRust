@@ -138,7 +138,12 @@ recorded, not denied.
   PoC does not emulate that indirect path (scoped difference).
 - #xtranslate accepted by Harbour (b26); aliased to #translate in our
   engine like #xcommand/#command (t100). Harbour's x- priority over a
-  same-pattern plain rule is NOT emulated (documented difference).
+  same-pattern plain rule is NOT emulated (documented difference) - so
+  this is NOT complete #xtranslate support.
+- Rule specificity (b31/b31b): Harbour picks the MOST SPECIFIC matching
+  rule (most literal words) regardless of definition order; we used
+  first-defined-wins and were wrong - fixed the same day (t102). Ties
+  keep the earliest definition.
 - Token pasting: no `##` anywhere in Harbour's own .ch headers;
   combined with b04/b10c/b10b there is no usable Harbour behaviour to
   match - left unimplemented.
