@@ -2,9 +2,9 @@
 
 Supersedes the i64::MIN sentinel (published at cd8cf17, declared an
 experimental regression: it collided with a valid integer and evaluated
-NIL-held-in-a-variable operations numerically). Representation directed
-by the project owner on 2026-10-25: a real tag, no reserved integer,
-no hardcoding to print/compare paths only. Oracles: probes n1, n2, n3
+NIL-held-in-a-variable operations numerically). The representation
+uses a separate tag/payload pair: a real tag, no reserved integer, no
+hardcoding to print/compare paths only. Oracles: probes n1, n2, n3
 (+ e1 grown slots) against compiled Harbour (`hbmk2 -gtstd`).
 
 ## One representation: the tagged union `Ty::Dyn` (16 bytes)
