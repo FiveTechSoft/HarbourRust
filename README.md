@@ -389,40 +389,50 @@ ignored (Harbour's behaviour, probed); missing arguments are a compile
 error. Capturing function locals is the next increment. Battery:
 t150-t160, seven byte-exact against compiled Harbour.
 
-## Iteration 15 - NIL (v2c) - EXPERIMENTAL, IN REPAIR
+## Iteration 15 - NIL as a true tagged value (v2c)
 
-> HEAD is an experimental intermediate: the first v2c representation
-> (i64::MIN sentinel) collides with a valid integer and evaluates
-> NIL-held-in-a-variable operations numerically. It is being replaced
-> with a true tagged-union value ({tag, payload}, Ty::Dyn) per
-> docs/DESIGN-nil-tag.md; the n1/n2/n3 oracle battery stays as the
-> acceptance gate. This section describes the SENTINEL state, kept for
-> the record until the repair lands.
+NIL is a real value with its own tag: the tagged union `Ty::Dyn` -
+{tag, payload} in 16 bytes (tag 1 = NIL, tag 0 = an i64 payload;
+rax=tag, rdx=payload in registers). The first v2c representation
+(i64::MIN sentinel, published at cd8cf17) collided with a valid
+integer and evaluated NIL-held-in-a-variable operations numerically;
+it was rejected and replaced. No integer is reserved: i64::MIN is an
+ordinary value again and coexists with NIL in the same array (t213).
+All oracle-grounded (probes n1/n2/n3 against compiled Harbour):
 
-
-
-NIL is now a real value, not the absence of one: the i64 sentinel
--9223372036854775808 (i64::MIN) tags it (probes n1 against compiled
-Harbour). What changed, all oracle-grounded:
-
-- `x := NIL` stores the sentinel; `? x` prints `NIL` (no field padding).
-- `return nil` / `return NIL` RETURN NIL (n1c: `? f()` prints NIL), so a
-  function closing with `return nil` is usable in an expression - the old
-  void rejection is gone (t35/t104 re-purposed to the Harbour behaviour).
-- `ASize` grows i64 slots with NIL (e1: grown slots print `NIL`, compare
-  .F. against 0). A DArr2 still grows with the empty child (m-probes).
+- `x := NIL` stores {1, 0}; `? x` prints `NIL` (no field padding).
+  Reassignment flips the tag in place (`y := NIL` then `y := 5`).
+- `return nil` / `return NIL` RETURN NIL (n1c: `? f()` prints NIL).
+  A function closing with `return nil` is usable in an expression
+  (t35/t104 re-purposed). MIXED returns are supported: `return 7` in
+  one branch and `return nil` in another unify to the tagged union
+  (n2: g(1) is 7, g(0) is NIL, g(1)+2 is 9) in either source order
+  (t217/t219); an early `return nil` inside a block is a value return
+  now, like any other.
+- NIL flows through assignments out of arrays (`x := a[i]`),
+  parameters, returns and temporaries, and across if/while joins
+  without losing the tag (t214-t216, t221).
+- `ASize` grows flat dynamic arrays with NIL {1, 0} (e1: grown slots
+  print `NIL`, compare .F. against 0); a DArr2 still grows with the
+  empty child (m-probes).
+- Dynamic array elements are tagged {tag, payload}: reads are Dyn,
+  writes tag integers in ({0, v}) and copy Dyn values. Fixed-size
+  arrays stay tagless [i64; N] (t222).
 - Comparisons: `NIL = NIL` is .T., `NIL = 0` and `"" = NIL` are .F.,
-  `NIL != ""` is .T. (all n1). Ordering a NIL literal (`NIL < 1`) is a
-  compile error - Harbour raises a type error there (no headless oracle).
-- NIL survives parameters and returns (n1c): passed in, printed, returned.
+  `NIL != 0` and `NIL != ""` are .T. (n1). Equality on tagged values
+  dispatches on the tags at runtime (hbc_dyn_eq). `=` / `#` against a
+  string fold to .F./.T. but BOTH operands still evaluate left to
+  right (t223: calls run, effects preserved).
+- Arithmetic, ordering and indexing on a NIL VALUE are a Harbour type
+  error: its interactive dialog cannot be probed headless, so the PoC
+  prints "Type error: NIL used as a number" and exits 1 (t218, t220 -
+  registered failure-mode difference, same error condition, like the
+  bound-error dialog). Ordering a NIL LITERAL stays a compile error
+  (t212).
 
-Documented sentinel costs (registered, not claimed equivalent): the one
-extreme integer i64::MIN is unrepresentable (it reads, prints and compares
-as NIL), and arithmetic or ordering on NIL HELD IN A VARIABLE evaluates
-numerically where Harbour raises a type error.
-
-Battery: 214/214 green on Linux x86-64 and Wine (t35/t104/t165 updated to
-the Harbour behaviour, new t208-t212).
+Battery: 225/225 green on Linux x86-64 and Wine (t35/t104/t165 updated
+to the Harbour behaviour; t211 rewritten from probe n1c; new
+t208-t223). Design: docs/DESIGN-nil-tag.md.
 
 ## Iteration 14 - arrays of dynamic arrays (v2b)
 
