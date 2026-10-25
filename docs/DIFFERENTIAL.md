@@ -207,3 +207,9 @@ marker-dropped forms from probes b35/b36a-d): MATCH.
 
 t106 (kept bracket with an unbound marker leaves broken syntax): both
 reject (Harbour E0030; HarbourRust "incomplete expression").
+
+t107 (#uncommand / #untranslate: exact-match removal, stacked duplicates,
+mismatched-result and unknown-rule silence, probes b32/b37a-f): MATCH.
+
+t108 (using a command after #uncommand): both reject (Harbour E0030;
+HarbourRust "statement not in the subset").
