@@ -440,5 +440,5 @@ neg tests/t442_neg_hash_literal_arg.hb a hash argument is a variable in this inc
 neg tests/t443_neg_hash_arg_readonly.hb must be a dynamic array, got a hash
 pos tests/t444_block_param.hb \n        42\n        44\n        10\n         0\n         0
 pos tests/t445_block_two_params.hb \n        12\n        11\n         0\n         0
-neg tests/t446_neg_block_arity.hb argument 1 of `applyit` must be a codeblock, got a codeblock
+neg tests/t446_neg_block_arity.hb must be a codeblock of 1 argument(s), got a codeblock of 2 argument(s)
 neg tests/t447_neg_block_numeric.hb must be an integer, got a codeblock
