@@ -969,13 +969,18 @@ Registered limits of this increment, not general fidelity:
   emitted code now come from a per-emission unique counter
   (LBL_ID) - fixed numeric labels caused two silent
   miscompares.
-- Temporary collections and nested arrays are not iterable yet
-  (named compile errors).
+- Temporary collections work (call results: hb_HKeys(h),
+  Array(n) or a user function returning an array or a hash -
+  hk52/hk55/hk56, t363-t366): the temporary is OWNED by the
+  loop in a registered slot, zeroed by the prologue, freed if
+  non-null on statement re-entry and freed by the epilogue on
+  every exit path (natural, `exit`, `return`; balance 0,
+  t364/t365). Nested collections a[i] remain a named compile
+  error (t367; hk53/hk57 measured, support pending).
 
 Robustness fix in passing: `hb_HKeys` with a non-variable
 argument used to panic the compiler; it is now the documented
 clean error (t345).
 
-Battery: 360/360 on Linux x86-64 and Wine, plus the ABI harness
-(the new ordering error stubs are noreturn, so no new ABI
-canary entries).
+Battery: 364/364 manifest cases on Linux x86-64 and Wine, plus
+the ABI harness.
