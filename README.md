@@ -18,7 +18,8 @@ up to generated assembly (assembling and linking stay with binutils):
 | Type checking | `hbc` | Ours |
 | Ownership / move checking | `hbc` | Ours |
 | x86-64 code generation | `hbc` (emits assembly) | Ours |
-| Assembler + linker | GNU binutils (`as`, `ld`) | Reused (C tools) |
+| Assembler + linker (Linux ELF) | GNU binutils (`as`, `ld`) | Reused (C tools) |
+| Assembler + linker (Windows PE) | mingw-w64 binutils + `kernel32` import lib | Reused (C tools) |
 | Building `hbc` itself | `rustc` / LLVM | Reused (compiler implementation only) |
 | Runtime of produced executables | minimal and ours: two hand-written syscall print helpers. No VM, no libc, no external runtime | Ours |
 
@@ -28,6 +29,24 @@ A Harbour program compiled with `hbc` never passes through rustc or LLVM:
 has no dynamic section and needs no external runtime - only the two small
 print helpers that `hbc` emits into every binary. The `hola` example ELF
 file is 8,984 bytes on disk (file size, headers and alignment included).
+
+## Iteration 3: Windows x86-64 output
+
+`hbc --target=windows` emits Win64 assembly for the same subset: the same
+tokenizer, parser, type checking and ownership/move checking, the same
+internal value convention, and the same two print helpers - but I/O and
+process exit call kernel32 (`GetStdHandle` / `WriteFile` / `ExitProcess`)
+instead of Linux syscalls. Assembling and linking for Windows use the
+mingw-w64 build of GNU binutils (`x86_64-w64-mingw32-as` / `-ld`) with the
+`kernel32` import library - the same class of reused C tools as on Linux.
+No MSVC, no C runtime: the PE has no CRT startup; `_start` calls
+`hbc_fn_main` and then `ExitProcess`.
+
+The produced PE32+ executable runs: `ejemplos/hola.exe` prints `32` and the
+greeting under **Wine 10.20 (wow64 build)**, and the full test battery
+produces byte-identical output on the Linux and Windows builds of every
+program (see EVIDENCIA.md). Running under Wine is not the same as running
+on real Windows - that check is still pending.
 
 ## Ownership semantics (what "Rust rules" means here, precisely)
 
@@ -88,6 +107,9 @@ Integer literals are range-checked (i64).
   overflow checks.
 - Performance comparable to C/Rust on real programs: timings here are from
   a toy program.
+- Running on real Windows: the Windows build is verified under Wine 10.20
+  (wow64) on Linux only. Wine is a reimplementation of the Win32 API, not
+  Windows; a real-Windows run remains pending.
 - A pure-Rust toolchain end to end: the assembler and linker are GNU
   binutils (C), and `hbc` itself is built with rustc/LLVM. Cranelift or a
   self-hosted path remains open.
@@ -102,3 +124,15 @@ rustc -O src/hbc.rs -o hbc
 ./hbc ejemplos/hola.hb gen/hola.s && as -o gen/hola.o gen/hola.s && ld -o gen/hola gen/hola.o && ./gen/hola
 ./hbc ejemplos/prestamo_roto.hb gen/prestamo.s    # rejected by hbc itself
 ```
+
+Windows build (needs mingw-w64 binutils and the `kernel32` import library,
+e.g. Ubuntu packages `binutils-mingw-w64-x86-64` and `mingw-w64-x86-64-dev`;
+running the .exe on Linux needs Wine):
+
+```sh
+./hbc ejemplos/hola.hb gen/hola_win.s --target=windows
+x86_64-w64-mingw32-as -o gen/hola_win.o gen/hola_win.s
+x86_64-w64-mingw32-ld -o gen/hola.exe gen/hola_win.o -e _start --subsystem console -lkernel32
+wine gen/hola.exe
+```
+
