@@ -324,10 +324,12 @@ the NIL literal itself has existed in expressions since iteration 15
 t281 mirrors oracle pr8: AAdd(a[i][j], x) evaluates i, then j, then
 the value; the innermost grow keeps every other length; ASize
 shrink drops the tail and a later grow leaves fresh NIL slots;
-registry balance 0 after the owner returns. t282/t283 pin the
-compile errors on a two-level value. pr8 was written for this
-increment because the measured order (indices first, value last)
-differs from the two-level write order (m7: value first).
+registry balance 0 after the owner returns. t284 mirrors oracle
+pr8b: ASize(a[i][j], n) evaluates i, then j, then the size. Both
+orders match two-level AAdd/ASize (indices first); they were
+measured for this increment, not inferred - the two-level WRITE
+order (m7: value first) is a different operation, not a different
+depth. t282/t283 pin the compile errors on a two-level value.
 
 ## Third-level writes and the return chain (t277-t280, iteration 23)
 
