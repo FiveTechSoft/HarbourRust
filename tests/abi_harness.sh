@@ -1,0 +1,214 @@
+#!/bin/bash
+# ABI harness: assembles a canary test against the emitted runtime helpers
+# for both targets and runs it (natively on Linux, via Wine for Windows).
+# Verifies that hbc_asize / hbc_aadd / hbc_arraym / hbc_free / hbc_free2
+# preserve rbx/r12-r15, keep rsp 16-aligned at internal call boundaries
+# and leave the stack balanced. Prints "ABI OK" on success; any canary,
+# alignment or stack mismatch prints "ABI FAIL <what>" and exits 1.
+set -e
+cd "$(dirname "$0")/.."
+mkdir -p gen
+printf 'function main()\nreturn\n' > gen/abi_empty.hb
+./hbc gen/abi_empty.hb gen/abi_l.s --target=linux -I tests >/dev/null
+./hbc gen/abi_empty.hb gen/abi_w.s --target=windows -I tests >/dev/null
+
+inject() { # $1 = input .s, $2 = output .s, $3 = linux|windows
+  sed '0,/call hbc_fn_main/s//call hbc_abi_test/' "$1" > "$2"
+  cat >> "$2" <<'ASM_EOF'
+
+# --- hbc_abi_test: canary ABI harness (appended by tests/abi_harness.sh) ---
+    .text
+hbc_abi_test:
+    push %rbp
+    mov %rsp, %rbp
+    sub $96, %rsp
+    # entry invariant: caller aligned rsp to 16 before the call, so it is
+    # 8 here and 0 after push rbp.
+    mov %rsp, %rax
+    and $15, %rax
+    jnz abi_fail_align
+    mov %rsp, -8(%rbp)
+    call abi_canary_set
+    # hbc_asize: grow flat 0 -> 5 (elemsize 16, shallow), then shrink 5 -> 2
+    movq $0, -32(%rbp)
+    movq $0, -24(%rbp)
+    lea -32(%rbp), %rdi
+    mov $5, %esi
+    mov $16, %edx
+    xor %ecx, %ecx
+    call hbc_asize
+    call abi_check
+    lea -32(%rbp), %rdi
+    mov $2, %esi
+    mov $16, %edx
+    xor %ecx, %ecx
+    call hbc_asize
+    call abi_check
+    mov -32(%rbp), %rdi
+    mov $16, %esi
+    call hbc_free
+    call abi_check
+    # hbc_aadd: 6 appends force a re-grow (cap 4 -> 8)
+    movq $0, -48(%rbp)
+    movq $0, -40(%rbp)
+    movq $1, -64(%rbp)
+    movq $7, -56(%rbp)
+    movq $0, -72(%rbp)
+90: cmpq $6, -72(%rbp)
+    jae 91f
+    lea -48(%rbp), %rdi
+    mov $16, %esi
+    lea -64(%rbp), %rdx
+    call hbc_aadd
+    call abi_check
+    incq -72(%rbp)
+    jmp 90b
+91: mov -48(%rbp), %rdi
+    mov $16, %esi
+    call hbc_free
+    call abi_check
+    # hbc_arraym (3x2) + hbc_free2 deep free
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    lea -96(%rbp), %rdi
+    mov $3, %esi
+    mov $2, %edx
+    call hbc_arraym
+    call abi_check
+    mov -96(%rbp), %rdi
+    mov $3, %esi
+    call hbc_free2
+    call abi_check
+    # hbc_asize deep shrink with a live child (child free route), then free2
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    lea -96(%rbp), %rdi
+    mov $2, %esi
+    mov $2, %edx
+    call hbc_arraym
+    call abi_check
+    lea -96(%rbp), %rdi
+    mov $1, %esi
+    mov $16, %edx
+    mov $1, %ecx
+    call hbc_asize
+    call abi_check
+    mov -96(%rbp), %rdi
+    mov $1, %esi
+    call hbc_free2
+    call abi_check
+    lea .Labi_ok(%rip), %rax
+    mov $7, %edx
+    call hbc_print_str
+    xor %eax, %eax
+    leave
+    ret
+
+abi_canary_set:
+    movabs $0x0B0B0B0B0B0B0B01, %rbx
+    movabs $0x1212121212121201, %r12
+    movabs $0x1313131313131301, %r13
+    movabs $0x1414141414141401, %r14
+    movabs $0x1515151515151501, %r15
+    ret
+
+# abi_check runs inside hbc_abi_test's frame (rbp intact): verifies the
+# canaries, the stack balance and the 16-alignment at the call boundary.
+abi_check:
+    movabs $0x0B0B0B0B0B0B0B01, %rax
+    cmp %rax, %rbx
+    jne abi_fail_rbx
+    movabs $0x1212121212121201, %rax
+    cmp %rax, %r12
+    jne abi_fail_r12
+    movabs $0x1313131313131301, %rax
+    cmp %rax, %r13
+    jne abi_fail_r13
+    movabs $0x1414141414141401, %rax
+    cmp %rax, %r14
+    jne abi_fail_r14
+    movabs $0x1515151515151501, %rax
+    cmp %rax, %r15
+    jne abi_fail_r15
+    lea 8(%rsp), %rax
+    cmp -8(%rbp), %rax
+    jne abi_fail_stk
+    mov %rsp, %rax
+    and $15, %rax
+    cmp $8, %rax
+    jne abi_fail_align
+    ret
+
+abi_fail_rbx:
+    lea .Labi_f_rbx(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
+abi_fail_r12:
+    lea .Labi_f_r12(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
+abi_fail_r13:
+    lea .Labi_f_r13(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
+abi_fail_r14:
+    lea .Labi_f_r14(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
+abi_fail_r15:
+    lea .Labi_f_r15(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
+abi_fail_stk:
+    lea .Labi_f_stk(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
+abi_fail_align:
+    lea .Labi_f_aln(%rip), %rax
+    mov $14, %edx
+    jmp abi_fail_common
+abi_fail_common:
+    call hbc_print_str
+ASM_EOF
+  if [ "$3" = linux ]; then
+    cat >> "$2" <<'ASM_EOF'
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+ASM_EOF
+  else
+    cat >> "$2" <<'ASM_EOF'
+    and $-16, %rsp
+    sub $48, %rsp
+    mov $1, %ecx
+    call ExitProcess
+ASM_EOF
+  fi
+  cat >> "$2" <<'ASM_EOF'
+    .section .rodata
+.Labi_ok:    .ascii "ABI OK\n"
+.Labi_f_rbx: .ascii "ABI FAIL rbx\n"
+.Labi_f_r12: .ascii "ABI FAIL r12\n"
+.Labi_f_r13: .ascii "ABI FAIL r13\n"
+.Labi_f_r14: .ascii "ABI FAIL r14\n"
+.Labi_f_r15: .ascii "ABI FAIL r15\n"
+.Labi_f_stk: .ascii "ABI FAIL stk\n"
+.Labi_f_aln: .ascii "ABI FAIL align\n"
+ASM_EOF
+}
+
+inject gen/abi_l.s gen/abi_l_t.s linux
+inject gen/abi_w.s gen/abi_w_t.s windows
+as -o gen/abi_l_t.o gen/abi_l_t.s
+ld -o gen/abi_l_t gen/abi_l_t.o
+"$M/x86_64-w64-mingw32-as" -o gen/abi_w_t.o gen/abi_w_t.s
+"$M/x86_64-w64-mingw32-ld" -o gen/abi_w_t.exe gen/abi_w_t.o -e _start --subsystem console -L"$MLIB" -lkernel32
+out_l=$(gen/abi_l_t) && rc_l=0 || rc_l=$?
+out_w=$("$WINE" gen/abi_w_t.exe 2>/dev/null) && rc_w=0 || rc_w=$?
+echo "linux: $out_l (exit $rc_l)"
+echo "wine:  $out_w (exit $rc_w)"
+if [ "$out_l" = "ABI OK" ] && [ "$out_w" = "ABI OK" ] && [ $rc_l -eq 0 ] && [ $rc_w -eq 0 ]; then
+  echo "ABI HARNESS PASS"
+else
+  echo "ABI HARNESS FAIL"; exit 1
+fi
