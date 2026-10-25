@@ -599,10 +599,15 @@ when the middle dimension is 0 (pr7b, t287); a negative interior
 dimension is the registered clean error even when the outer count
 is 0 (Harbour raises BASE/1131 there, its dialog hangs headless -
 pr7c, t289); the three dimension expressions evaluate once, left
-to right (pr7d, t288). A huge allocation dies by the OS OOM-killer
-in Harbour (pr7e, exit 137) while hbc fails cleanly through
-hbc_oom on allocation failure - same condition, different failure
-mode, no battery test (it needs real memory pressure). t286 pins
+to right (pr7d, t288). A huge allocation ends the Harbour
+process with a kill signal (pr7e, exit 137; the cause - OOM-killer
+or another limit - is not confirmed without a kernel/cgroup log,
+so the probe registers only "process killed"). hbc fails cleanly
+on the same condition, verified without real memory pressure: the
+arithmetic guards in hbc_asize (capacity cap and signed-multiply
+overflow both route to hbc_oom) and a bounded process (address
+space capped at 256 MB: Array(40000, 40000, 40000) prints "Out
+of memory" and exits 1 in under a second). t286 pins
 the compile error for a fourth dimension; t251, the old "3
 dimensions unsupported" negative, is retired. `hbc_array3m` has
 its own ABI canary block in the harness. t285 mirrors pr7 with
