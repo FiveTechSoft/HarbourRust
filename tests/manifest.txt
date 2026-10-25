@@ -465,3 +465,9 @@ pos tests/t467_param4_chain.hb \n         9\n         0\n         0\n         0\
 pos tests/t468_param4_print.hb \n\nsep\n         2
 neg tests/t469_neg_param4_callee_reuse.hb use of moved value `p`
 pos tests/t470_param4_reassign.hb \n         2\n         9\n         0\n         0
+pos tests/t471_aaddsub2_comma.hb \n         3\n         9\n         1\nNIL\n         0\n         0
+neg tests/t472_neg_aaddsub2_comma_darr2.hb needs an array of arrays of arrays
+neg tests/t473_neg_arrset_elem4.hb assigning into an element of a four-level array is not in this increment
+neg tests/t474_neg_aaddsub4.hb `AAdd` on a[i] of a four-level array is not in this increment
+neg tests/t475_neg_asize_root4.hb `ASize` on the root of a four-level array is not in this increment
+neg tests/t476_neg_aadd_root4.hb `AAdd` on the root of a four-level array is not in this increment
