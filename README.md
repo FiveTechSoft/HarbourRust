@@ -163,6 +163,26 @@ after a review of the first `for` implementation found that
 (the counter wrapped to i64::MIN and the loop kept going). See
 EVIDENCIA.md for the reproduction.
 
+## Iteration 9: string equality in conditions
+
+`=` and `<>` now work on two strings inside `if` / `while` conditions
+(`tests/t52_str_eq.hb`). The comparison is byte equality over the
+(ptr, len) values, done by a leaf assembly routine (`hbc_str_eq`): no
+allocation, no memory management, no collation or Unicode awareness of
+any kind - "olá" and "olá" compare equal only byte for byte. This is
+NOT general string handling; strings remain immutable (ptr, len) values
+that move on assignment/return and are borrowed by printing and now by
+comparison.
+
+- Ordering (`<`, `<=`, `>`, `>=`) on strings stays rejected
+  (`tests/t17_if_str_cmp.hb`, converted: it used to pin `=` failing).
+- Comparing a string with an integer is a type error
+  (`tests/t53_mixed_cmp.hb`).
+- Comparing borrows both operands: they stay usable and movable after
+  (`tests/t54_str_eq_borrows.hb`).
+- Cost note: `hbc_str_eq` is emitted into every binary (no dead-code
+  elimination in this PoC), so `hola` grew from 8,984 to 9,024 bytes.
+
 ## Ownership semantics (what "Rust rules" means here, precisely)
 
 - Strings are `(ptr, len)` values that **move** on assignment and on
@@ -258,8 +278,8 @@ Integer literals are range-checked (i64).
 - The path joins in the move checker are branch-insensitive: a move on
   one branch of an `if` taints the join even when that branch returns.
   Rust accepts some of these programs; this PoC rejects them on purpose.
-- String comparisons and a first-class boolean: conditions compare
-  integers only.
+- Ordering comparisons on strings and a first-class boolean: `=` and
+  `<>` work on strings in conditions, nothing else does.
 - The safety of any grammar extension beyond this subset: each extension
   must re-establish the closed-emission property.
 
