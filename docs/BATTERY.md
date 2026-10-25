@@ -1020,3 +1020,30 @@ a misleading "`len` expects an array" - the merges now resolve
 it. No new runtime helpers; no ABI harness additions. Battery:
 466/466 manifest cases + ABI harness green on Linux x86-64 and
 Wine.
+
+## Iteration 33v additions (472 manifest cases): ownership audit + diagnostic fixes
+
+Parent-directed audit of ownership transitions across all supported
+collection types, grounded in execution probes (sondas
+auditoria33v/, az1-az3, ax1-ax7, ay1-ay2): no soundness hole found
+outside the DArr4 routes fixed at 33u. Reassignment-from-call frees
+the old value for DArr3/DArrS/Hash/DArr4 (memcheck counts exactly the
+live array: 15 blocks for a live DArr4, 30 would mean a leak); the
+print-move hole is a named compile error for Hash and DArrS;
+self-assignment works on DArr2.
+
+Three diagnostic defects found by the audit and fixed: the four-level
+root (and its a[i]) in AAdd / ASize / indexed assignment now produce a
+named limit message instead of the misleading "`a` is not an array"
+family (au1-au4 -> t473-t476), and the comma form of a two-index
+AAdd/ASize head a[i, j] no longer dies with "trailing tokens after
+expression" (au5/au6): the parse guard written for the bracket form
+(head.len() >= 7) excluded the 6-token comma head; lowered to >= 6 it
+routes into the existing single-group comma split. Oracle hk115
+(hbmk2 -gtstd, exit 0) measures Harbour: AAdd(a[1, 2], 9) grows the
+subarray to len 3 with the 9 in place; ASize(a[1, 2], 1) shrinks it
+leaving NIL. t471 mirrors hk115 with balance 0; t472 pins the named
+rejection of the comma form on a two-level root.
+
+472/472 manifest cases + ABI harness green on Linux x86-64 and Wine
+(Wine is not real Windows).
