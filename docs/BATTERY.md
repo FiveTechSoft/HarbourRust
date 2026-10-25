@@ -938,3 +938,27 @@ runtime helper hbc_array4m (canaried in the ABI harness with an
 rfree depth-3 cycle); DArr4 slots free via hbc_rfree at depth 3,
 balance 0. No impossibility claims: four levels compile, five are
 the named edge of this increment.
+
+## Iteration 33s additions (453 manifest cases): AAdd/ASize at the third level of a four-level array
+
+hk105 (exit 0): on Array(2,2,2,2), AAdd(a[1, 2, 1], 8) takes
+len(a[1,2,1]) from 2 to 3 with a[1,2,1,3] reading 8; ASize(a[1,
+2, 1], 1) shrinks to 1 and preserves a[1,2,1,1] = 7 (comma head
+form measured). hk108: AAdd on that shape evaluates the three
+indices left to right, THEN the value (I1, I2, I3, V) - the same
+indices-before-value order measured for the one- and two-level
+forms (pr8), measured here, not inferred. Tests: t454 (hk105
+shape + balance 0), t455 (hk108 order), t456 (bracket head form
+a[1][2][1]), t457 (a three-level root is the named compile
+error). t452 repurposed: its old comma-head parse rejection is
+now accepted, so it pins the new named edge - AAdd with four
+index levels is "on more than three index levels is not in this
+increment". Parser fix in passing: the AAdd/ASize statement head
+split took the first comma WITHOUT bracket-depth tracking, so the
+comma head form `AAdd(a[1, 2, 1], 8)` mis-split inside the index
+group ("trailing tokens after expression"); the split now scans
+for the first depth-0 comma. No new runtime helpers: the generic
+hbc_aadd/hbc_asize operate on the walked level-4 slot, so the ABI
+harness needs no new entries; execution coverage is via t454-t456
+on both targets. Battery: 453/453 manifest cases + ABI harness
+green on Linux x86-64 and Wine.
