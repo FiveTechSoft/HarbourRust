@@ -74,6 +74,27 @@ Every new test runs on both targets with byte-identical output, and the
 iteration 2/3 battery still passes unchanged (the `hola` Linux ELF is
 still 8,984 bytes).
 
+## Iteration 5: while / enddo and assignment
+
+`while <condition> ... enddo` adds loops, and `x := <expr>` adds assignment
+to an already-declared local (the loop companion: conditions otherwise
+never change). Assignment keeps the declared type, makes a moved variable
+live again (as in Rust), and assigning to an undeclared name is a compile
+error - new variables still require `local`.
+
+Loop semantics:
+
+- The condition is an integer comparison, as in `if`, re-evaluated on
+  every iteration; calls are allowed inside it.
+- Body locals are scoped to the body (`tests/t26_while_scope.hb`).
+- A variable moved inside the body must be live again at `enddo` (that is,
+  reassigned); otherwise the next iteration would use a moved value, so
+  `hbc` rejects it (`tests/t24_while_move.hb`, rejected, versus
+  `tests/t25_while_move_reassign.hb`, accepted).
+- After the loop, move states join the pre-loop and end-of-body states:
+  the body may have run zero times.
+- `return` stays at the function top level (`tests/t27_while_return.hb`).
+
 ## Ownership semantics (what "Rust rules" means here, precisely)
 
 - Strings are `(ptr, len)` values that **move** on assignment and on
@@ -92,8 +113,10 @@ still 8,984 bytes).
 ```
 function name()            opens a function (main is the entry point)
     local x := <expr>      local variable, type inferred
+    x := <expr>            assignment to an existing local (same type)
     ? <expr>               prints
     if <cond> ... endif    conditional, optional else, nestable
+    while <cond> ... enddo loop, re-evaluates the condition each iteration
 return <expr> | return nil closes the function  (top level only)
 // comment
 ```
@@ -125,6 +148,8 @@ Integer literals are range-checked (i64).
 5. Conditional execution with branch-scoped locals and move checking
    across branch joins (`tests/t13`-`t19`, positive and rejection cases,
    run on the Linux and Windows builds).
+6. Loops and assignment with Rust-like move rules across iterations
+   (`tests/t20`-`t27`, positive and rejection cases, both builds).
 
 ## What is NOT demonstrated
 
@@ -150,8 +175,8 @@ Integer literals are range-checked (i64).
 - A pure-Rust toolchain end to end: the assembler and linker are GNU
   binutils (C), and `hbc` itself is built with rustc/LLVM. Cranelift or a
   self-hosted path remains open.
-- Loops and early returns: `if`/`else`/`endif` is the only control flow
-  beyond calls, and `return` stays at the function top level.
+- `exit`/`loop` statements, `for` loops and early returns: `while` runs
+  to its condition, and `return` stays at the function top level.
 - String comparisons and a first-class boolean: conditions compare
   integers only.
 - The safety of any grammar extension beyond this subset: each extension
