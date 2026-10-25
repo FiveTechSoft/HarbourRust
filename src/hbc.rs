@@ -27,7 +27,7 @@ use std::fs;
 use std::process;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { I64, Str }
+enum Ty { I64, Str, Bool }
 
 #[derive(Clone, PartialEq, Debug)]
 enum Tok {
@@ -38,8 +38,14 @@ enum Tok {
     LParen, RParen,
     Assign,   // :=
     Question, // ?
-    KwFunction, KwLocal, KwReturn, KwNil,
+    Eq,       // =
+    Ne,       // <> or !=
+    Lt, Le, Gt, Ge,
+    KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElse, KwEndif,
 }
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+enum CmpOp { Eq, Ne, Lt, Le, Gt, Ge }
 
 fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
     let mut toks = Vec::new();
@@ -104,8 +110,34 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                     "local" => Tok::KwLocal,
                     "return" => Tok::KwReturn,
                     "nil" => Tok::KwNil,
+                    "if" => Tok::KwIf,
+                    "else" => Tok::KwElse,
+                    "endif" => Tok::KwEndif,
                     _ => Tok::Ident(id),
                 });
+            }
+            '=' => { toks.push(Tok::Eq); it.next(); }
+            '!' => {
+                it.next();
+                match it.peek() {
+                    Some(&(_, '=')) => { toks.push(Tok::Ne); it.next(); }
+                    _ => return Err(format!("line {}: '!' without '=' (col {})", n, i + 1)),
+                }
+            }
+            '<' => {
+                it.next();
+                match it.peek() {
+                    Some(&(_, '=')) => { toks.push(Tok::Le); it.next(); }
+                    Some(&(_, '>')) => { toks.push(Tok::Ne); it.next(); }
+                    _ => toks.push(Tok::Lt),
+                }
+            }
+            '>' => {
+                it.next();
+                match it.peek() {
+                    Some(&(_, '=')) => { toks.push(Tok::Ge); it.next(); }
+                    _ => toks.push(Tok::Gt),
+                }
             }
             o => return Err(format!("line {}: character not allowed `{}` (U+{:04X})", n, o, o as u32)),
         }
@@ -120,6 +152,7 @@ enum Expr {
     Var(String),
     Call(String), // 0-arg only
     Bin(char, Box<Expr>, Box<Expr>),
+    Cmp(CmpOp, Box<Expr>, Box<Expr>), // i64 operands only (checked in analysis)
 }
 
 #[derive(Debug)]
@@ -127,6 +160,7 @@ enum Stmt {
     Local(usize, String, Expr),
     Print(usize, Expr),
     Ret(usize, Option<Expr>),
+    If(usize, Expr, Vec<Stmt>, Vec<Stmt>), // line, condition, then, else (possibly empty)
 }
 
 struct Func {
@@ -206,6 +240,28 @@ impl P {
             other => Err(format!("line {}: unexpected token {:?}", self.n, other)),
         }
     }
+    fn peek_cmp(&self) -> Option<CmpOp> {
+        match self.peek() {
+            Some(Tok::Eq) => Some(CmpOp::Eq),
+            Some(Tok::Ne) => Some(CmpOp::Ne),
+            Some(Tok::Lt) => Some(CmpOp::Lt),
+            Some(Tok::Le) => Some(CmpOp::Le),
+            Some(Tok::Gt) => Some(CmpOp::Gt),
+            Some(Tok::Ge) => Some(CmpOp::Ge),
+            _ => None,
+        }
+    }
+    // Comparison level: at most one comparison, non-associative. Produces a
+    // Bool that only `if` accepts (locals/prints/returns reject it later).
+    fn cmp_expr(&mut self) -> Result<Expr, String> {
+        let lhs = self.expr()?;
+        if let Some(op) = self.peek_cmp() {
+            self.pos += 1;
+            let rhs = self.expr()?;
+            return Ok(Expr::Cmp(op, Box::new(lhs), Box::new(rhs)));
+        }
+        Ok(lhs)
+    }
     fn done(&self) -> Result<(), String> {
         if self.pos != self.toks.len() {
             Err(format!("line {}: trailing tokens after expression", self.n))
@@ -237,39 +293,59 @@ fn parse_expr_tokens(toks: Vec<Tok>, n: usize) -> Result<Expr, String> {
         return Err(format!("line {}: missing expression", n));
     }
     let mut p = P { toks, pos: 0, n };
-    let e = p.expr()?;
+    let e = p.cmp_expr()?;
     p.done()?;
     Ok(e)
 }
 
-fn parse(src: &str) -> Result<Vec<Func>, String> {
-    let mut funcs: Vec<Func> = Vec::new();
-    let mut cur: Option<Func> = None;
+const MAX_DEPTH: usize = 64;
 
-    for (idx, raw) in src.lines().enumerate() {
-        let n = idx + 1;
-        let toks = tokenize(raw, n)?;
-        if toks.is_empty() { continue; }
-
-        if toks[0] == Tok::KwFunction {
-            if cur.is_some() {
-                return Err(format!("line {}: function inside function", n));
-            }
-            let name = match toks.as_slice() {
-                [Tok::KwFunction, Tok::Ident(id), Tok::LParen, Tok::RParen] => {
-                    check_ident(id, n)?;
-                    id.clone()
-                }
-                _ => return Err(format!("line {}: expected `function name()`", n)),
-            };
-            cur = Some(Func { name, ret: None, stmts: Vec::new() });
-            continue;
-        }
-
-        let f = cur.as_mut()
-            .ok_or_else(|| format!("line {}: code outside a function", n))?;
-
+// Parses statements until a line starting with else / endif / return /
+// function (left unconsumed) or the end of input. Branch bodies recurse;
+// locals declared inside a branch are scoped to that branch.
+fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, depth: usize) -> Result<(), String> {
+    if depth > MAX_DEPTH {
+        return Err("nesting too deep (64 levels max)".to_string());
+    }
+    while *i < lines.len() {
+        let (n, toks) = &lines[*i];
+        let n = *n;
         match toks[0].clone() {
+            Tok::KwReturn | Tok::KwFunction => return Ok(()),
+            Tok::KwElse | Tok::KwEndif => {
+                if depth == 0 {
+                    return Err(format!("line {}: `else`/`endif` without `if`", n));
+                }
+                return Ok(());
+            }
+            Tok::KwIf => {
+                if toks.len() < 2 {
+                    return Err(format!("line {}: expected `if <expr> <comparison> <expr>`", n));
+                }
+                let cond = parse_expr_tokens(toks[1..].to_vec(), n)?;
+                *i += 1;
+                let mut then_stmts = Vec::new();
+                parse_stmts(lines, i, &mut then_stmts, depth + 1)?;
+                let mut else_stmts = Vec::new();
+                if *i < lines.len() && lines[*i].1[0] == Tok::KwElse {
+                    if lines[*i].1.len() != 1 {
+                        return Err(format!("line {}: `else` takes no expression", lines[*i].0));
+                    }
+                    *i += 1;
+                    parse_stmts(lines, i, &mut else_stmts, depth + 1)?;
+                }
+                if *i < lines.len() && lines[*i].1[0] == Tok::KwReturn {
+                    return Err(format!("line {}: return inside an `if` block is not in the PoC yet (return closes the function at its top level)", lines[*i].0));
+                }
+                if *i >= lines.len() || lines[*i].1[0] != Tok::KwEndif {
+                    return Err(format!("line {}: `if` without `endif`", n));
+                }
+                if lines[*i].1.len() != 1 {
+                    return Err(format!("line {}: `endif` takes no expression", lines[*i].0));
+                }
+                *i += 1;
+                out.push(Stmt::If(n, cond, then_stmts, else_stmts));
+            }
             Tok::KwLocal => {
                 if toks.len() < 4 {
                     return Err(format!("line {}: expected `local name := expr`", n));
@@ -282,27 +358,57 @@ fn parse(src: &str) -> Result<Vec<Func>, String> {
                     return Err(format!("line {}: expected :=", n));
                 }
                 let e = parse_expr_tokens(toks[3..].to_vec(), n)?;
-                f.stmts.push(Stmt::Local(n, id, e));
+                out.push(Stmt::Local(n, id, e));
+                *i += 1;
             }
             Tok::Question => {
                 let e = parse_expr_tokens(toks[1..].to_vec(), n)?;
-                f.stmts.push(Stmt::Print(n, e));
-            }
-            Tok::KwReturn => {
-                let stmt = match toks.len() {
-                    1 => Stmt::Ret(n, None),
-                    2 if toks[1] == Tok::KwNil => Stmt::Ret(n, None),
-                    _ => Stmt::Ret(n, Some(parse_expr_tokens(toks[1..].to_vec(), n)?)),
-                };
-                f.stmts.push(stmt);
-                funcs.push(cur.take().unwrap());
+                out.push(Stmt::Print(n, e));
+                *i += 1;
             }
             t => return Err(format!("line {}: statement not in the subset ({:?})", n, t)),
         }
     }
+    Ok(())
+}
 
-    if cur.is_some() {
-        return Err("function without closing return".to_string());
+fn parse(src: &str) -> Result<Vec<Func>, String> {
+    let mut lines: Vec<(usize, Vec<Tok>)> = Vec::new();
+    for (idx, raw) in src.lines().enumerate() {
+        let n = idx + 1;
+        let toks = tokenize(raw, n)?;
+        if !toks.is_empty() { lines.push((n, toks)); }
+    }
+
+    let mut funcs: Vec<Func> = Vec::new();
+    let mut i = 0usize;
+    while i < lines.len() {
+        let (n, toks) = &lines[i];
+        if toks[0] != Tok::KwFunction {
+            return Err(format!("line {}: code outside a function", n));
+        }
+        let name = match toks.as_slice() {
+            [Tok::KwFunction, Tok::Ident(id), Tok::LParen, Tok::RParen] => {
+                check_ident(id, *n)?;
+                id.clone()
+            }
+            _ => return Err(format!("line {}: expected `function name()`", n)),
+        };
+        i += 1;
+        let mut f = Func { name, ret: None, stmts: Vec::new() };
+        parse_stmts(&lines, &mut i, &mut f.stmts, 0)?;
+        if i >= lines.len() || lines[i].1[0] != Tok::KwReturn {
+            return Err(format!("function `{}` without closing return", f.name));
+        }
+        let (n, toks) = &lines[i];
+        let stmt = match toks.len() {
+            1 => Stmt::Ret(*n, None),
+            2 if toks[1] == Tok::KwNil => Stmt::Ret(*n, None),
+            _ => Stmt::Ret(*n, Some(parse_expr_tokens(toks[1..].to_vec(), *n)?)),
+        };
+        f.stmts.push(stmt);
+        funcs.push(f);
+        i += 1;
     }
     if funcs.is_empty() {
         return Err("no functions found".to_string());
@@ -318,6 +424,7 @@ fn parse(src: &str) -> Result<Vec<Func>, String> {
 // Rust String); integers are Copy (like a Rust i64). Printing borrows.
 // ---------------------------------------------------------------------------
 
+#[derive(Clone)]
 struct Local {
     name: String,
     ty: Ty,
@@ -344,7 +451,69 @@ fn type_expr(e: &Expr, env: &[Local], sigs: &[(String, Ty)], n: usize) -> Result
             }
             Ok(Ty::I64)
         }
+        Expr::Cmp(_, a, b) => {
+            let ta = type_expr(a, env, sigs, n)?;
+            let tb = type_expr(b, env, sigs, n)?;
+            if ta != Ty::I64 || tb != Ty::I64 {
+                return Err(format!("line {}: comparisons require integers (string comparison is not in the PoC yet)", n));
+            }
+            Ok(Ty::Bool)
+        }
     }
+}
+
+// Recursive statement checker: types + ownership/move tracking, including
+// branch joining for `if`. Rust-like rule: a value moved on ANY reachable
+// path counts as moved at the join (union of moved flags); a local declared
+// inside a branch is scoped to that branch (sibling branches may reuse a
+// name). This pass is OURS; nothing is delegated to another compiler.
+fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[(String, Ty)], ret: &mut Option<Ty>) -> Result<(), String> {
+    for s in stmts {
+        match s {
+            Stmt::Local(n, id, e) => {
+                if env.iter().any(|v| v.name == *id) {
+                    return Err(format!("line {}: duplicate local `{}`", n, id));
+                }
+                let t = type_expr(e, env, sigs, *n)?;
+                if t == Ty::Bool {
+                    return Err(format!("line {}: booleans only exist in `if` conditions in this PoC", n));
+                }
+                apply_moves(e, t, env);
+                env.push(Local { name: id.clone(), ty: t, moved: false });
+            }
+            Stmt::Print(n, e) => {
+                // Printing borrows the value; it never moves it.
+                let t = type_expr(e, env, sigs, *n)?;
+                if t == Ty::Bool {
+                    return Err(format!("line {}: cannot print a boolean in this PoC", n));
+                }
+            }
+            Stmt::Ret(n, Some(e)) => {
+                let t = type_expr(e, env, sigs, *n)?;
+                if t == Ty::Bool {
+                    return Err(format!("line {}: cannot return a boolean in this PoC", n));
+                }
+                apply_moves(e, t, env);
+                *ret = Some(t);
+            }
+            Stmt::Ret(_, None) => {}
+            Stmt::If(n, cond, then_s, else_s) => {
+                let ct = type_expr(cond, env, sigs, *n)?;
+                if ct != Ty::Bool {
+                    return Err(format!("line {}: `if` needs a comparison (e.g. `if x >= 1`); a bare value is not a condition in this PoC", n));
+                }
+                let outer = env.len();
+                let mut env_then = env.clone();
+                check_stmts(then_s, &mut env_then, sigs, ret)?;
+                let mut env_else = env.clone();
+                check_stmts(else_s, &mut env_else, sigs, ret)?;
+                for k in 0..outer {
+                    env[k].moved = env_then[k].moved || env_else[k].moved;
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 // If `e` is a plain variable of type Str, using it as an initializer or a
@@ -366,7 +535,7 @@ fn apply_moves(e: &Expr, t: Ty, env: &mut [Local]) {
 // ---------------------------------------------------------------------------
 
 fn size_of(t: Ty) -> usize {
-    match t { Ty::I64 => 8, Ty::Str => 16 }
+    match t { Ty::I64 => 8, Ty::Str => 16, Ty::Bool => unreachable!("booleans rejected in analysis") }
 }
 
 struct CgLocal {
@@ -381,8 +550,9 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], out: &mut String, t
             out.push_str(&format!("    mov ${}, %rax\n", v));
         }
         Expr::Str(_) => unreachable!("string literals are emitted via cg_str_ref"),
+        Expr::Cmp(..) => unreachable!("comparisons are emitted via cg_cond_jump"),
         Expr::Var(id) => {
-            let v = env.iter().find(|v| v.name == *id).expect("checked");
+            let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
             match v.ty {
                 Ty::I64 => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
                 Ty::Str => {
@@ -390,6 +560,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], out: &mut String, t
                     out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
                     out.push_str(&format!("    mov -{}(%rbp), %rdx\n", v.off - 8));
                 }
+                Ty::Bool => unreachable!("booleans rejected in analysis"),
             }
         }
         Expr::Call(id) => {
@@ -449,22 +620,118 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)]) -> Ty {
         Expr::Str(_) => Ty::Str,
         Expr::Var(id) => env.iter().find(|v| v.name == *id).expect("checked").ty,
         Expr::Call(id) => sigs.iter().find(|(v, _)| v == id).expect("checked").1,
+        Expr::Cmp(..) => Ty::Bool,
+    }
+}
+
+// Layout pass: assigns stack slots in declaration order and computes the
+// total frame size. Branch locals get their own slots and are scoped: the
+// env is truncated at each branch join. The codegen walk below rebuilds
+// the exact same env, so offsets match.
+fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[(String, Ty)], frame: &mut usize) {
+    for s in stmts {
+        match s {
+            Stmt::Local(_, id, e) => {
+                let t = expr_ty(e, env, sigs);
+                *frame += size_of(t);
+                env.push(CgLocal { name: id.clone(), ty: t, off: *frame });
+            }
+            Stmt::If(_, _, then_s, else_s) => {
+                let mark = env.len();
+                layout_locals(then_s, env, sigs, frame);
+                env.truncate(mark);
+                layout_locals(else_s, env, sigs, frame);
+                env.truncate(mark);
+            }
+            _ => {}
+        }
+    }
+}
+
+// Emits the comparison and jumps to true_label when it holds.
+// rcx = lhs, rax = rhs; cmp computes lhs - rhs. On Windows the lhs is kept
+// in a 16-byte slot so a call inside either operand keeps ABI alignment.
+fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], out: &mut String, target: Target, true_label: &str) {
+    match cond {
+        Expr::Cmp(op, a, b) => {
+            cg_expr(a, env, sigs, out, target);
+            match target {
+                Target::Linux => out.push_str("    push %rax\n"),
+                Target::Windows => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"),
+            }
+            cg_expr(b, env, sigs, out, target);
+            match target {
+                Target::Linux => out.push_str("    pop %rcx\n"),
+                Target::Windows => out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n"),
+            }
+            out.push_str("    cmp %rax, %rcx\n");
+            let j = match op {
+                CmpOp::Lt => "jl", CmpOp::Le => "jle", CmpOp::Gt => "jg",
+                CmpOp::Ge => "jge", CmpOp::Eq => "je", CmpOp::Ne => "jne",
+            };
+            out.push_str(&format!("    {} {}\n", j, true_label));
+        }
+        _ => unreachable!("analysis requires a comparison as the `if` condition"),
+    }
+}
+
+fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[(String, Ty)], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize) {
+    for s in stmts {
+        match s {
+            Stmt::Local(_, id, e) => {
+                let t = expr_ty(e, env, sigs);
+                cg_value(e, env, sigs, strs, out, target);
+                *frame += size_of(t);
+                let off = *frame;
+                match t {
+                    Ty::I64 => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
+                    Ty::Str => {
+                        out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
+                        out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
+                    }
+                    Ty::Bool => unreachable!("booleans rejected in analysis"),
+                }
+                env.push(CgLocal { name: id.clone(), ty: t, off });
+            }
+            Stmt::Print(_, e) => {
+                let t = expr_ty(e, env, sigs);
+                cg_value(e, env, sigs, strs, out, target);
+                match t {
+                    Ty::I64 => out.push_str("    call hbc_print_i64\n"),
+                    Ty::Str => out.push_str("    call hbc_print_str\n"),
+                    Ty::Bool => unreachable!("booleans rejected in analysis"),
+                }
+            }
+            Stmt::Ret(_, Some(e)) => {
+                cg_value(e, env, sigs, strs, out, target);
+                out.push_str(&format!("    jmp .Lret_{}\n", fname));
+            }
+            Stmt::Ret(_, None) => {
+                out.push_str(&format!("    jmp .Lret_{}\n", fname));
+            }
+            Stmt::If(_, cond, then_s, else_s) => {
+                let id = *label;
+                *label += 1;
+                cg_cond_jump(cond, env, sigs, out, target, &format!(".Lthen_{}_{}", fname, id));
+                out.push_str(&format!("    jmp .Lelse_{}_{}\n", fname, id));
+                out.push_str(&format!(".Lthen_{}_{}:\n", fname, id));
+                let mark = env.len();
+                cg_stmts(then_s, env, frame, sigs, strs, out, target, fname, label);
+                env.truncate(mark);
+                out.push_str(&format!("    jmp .Lend_{}_{}\n", fname, id));
+                out.push_str(&format!(".Lelse_{}_{}:\n", fname, id));
+                cg_stmts(else_s, env, frame, sigs, strs, out, target, fname, label);
+                env.truncate(mark);
+                out.push_str(&format!(".Lend_{}_{}:\n", fname, id));
+            }
+        }
     }
 }
 
 fn cg_func(f: &Func, sigs: &[(String, Ty)], strs: &mut Vec<String>, out: &mut String, target: Target) {
-    // Layout pass: assign stack slots in declaration order.
-    // i64 local: value at -(off). Str local: ptr at -(off), len at -(off-8)
-    // (off grew by 16 for a Str, so the len slot is 8 bytes above the ptr).
-    let mut env: Vec<CgLocal> = Vec::new();
+    let mut lenv: Vec<CgLocal> = Vec::new();
     let mut frame = 0usize;
-    for s in &f.stmts {
-        if let Stmt::Local(_, id, e) = s {
-            let t = expr_ty(e, &env, sigs);
-            frame += size_of(t);
-            env.push(CgLocal { name: id.clone(), ty: t, off: frame });
-        }
-    }
+    layout_locals(&f.stmts, &mut lenv, sigs, &mut frame);
 
     out.push_str(&format!("hbc_fn_{}:\n", f.name));
     out.push_str("    push %rbp\n    mov %rsp, %rbp\n");
@@ -475,36 +742,10 @@ fn cg_func(f: &Func, sigs: &[(String, Ty)], strs: &mut Vec<String>, out: &mut St
     if frame > 0 {
         out.push_str(&format!("    sub ${}, %rsp\n", frame));
     }
-    for s in &f.stmts {
-        match s {
-            Stmt::Local(_, id, e) => {
-                let v = env.iter().find(|v| v.name == *id).expect("layout");
-                cg_value(e, &env, sigs, strs, out, target);
-                match v.ty {
-                    Ty::I64 => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", v.off)),
-                    Ty::Str => {
-                        out.push_str(&format!("    mov %rax, -{}(%rbp)\n", v.off));
-                        out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", v.off - 8));
-                    }
-                }
-            }
-            Stmt::Print(_, e) => {
-                let t = expr_ty(e, &env, sigs);
-                cg_value(e, &env, sigs, strs, out, target);
-                match t {
-                    Ty::I64 => out.push_str("    call hbc_print_i64\n"),
-                    Ty::Str => out.push_str("    call hbc_print_str\n"),
-                }
-            }
-            Stmt::Ret(_, Some(e)) => {
-                cg_value(e, &env, sigs, strs, out, target);
-                out.push_str(&format!("    jmp .Lret_{}\n", f.name));
-            }
-            Stmt::Ret(_, None) => {
-                out.push_str(&format!("    jmp .Lret_{}\n", f.name));
-            }
-        }
-    }
+    let mut env: Vec<CgLocal> = Vec::new();
+    let mut walk_frame = 0usize;
+    let mut label = 0usize;
+    cg_stmts(&f.stmts, &mut env, &mut walk_frame, sigs, strs, out, target, &f.name, &mut label);
     out.push_str(&format!(".Lret_{}:\n", f.name));
     out.push_str("    leave\n    ret\n\n");
 }
@@ -728,39 +969,9 @@ fn main() {
         if f.name == "main" { has_main = true; }
         let mut env: Vec<Local> = Vec::new();
         let mut ret = None;
-        for s in &f.stmts {
-            match s {
-                Stmt::Local(n, id, e) => {
-                    if env.iter().any(|v| v.name == *id) {
-                        eprintln!("error: line {}: duplicate local `{}`", n, id);
-                        process::exit(1);
-                    }
-                    match type_expr(e, &env, &sigs, *n) {
-                        Ok(t) => {
-                            apply_moves(e, t, &mut env);
-                            env.push(Local { name: id.clone(), ty: t, moved: false });
-                        }
-                        Err(m) => { eprintln!("error: {}", m); process::exit(1); }
-                    }
-                }
-                Stmt::Print(n, e) => {
-                    // Printing borrows the value; it never moves it.
-                    if let Err(m) = type_expr(e, &env, &sigs, *n) {
-                        eprintln!("error: {}", m);
-                        process::exit(1);
-                    }
-                }
-                Stmt::Ret(n, Some(e)) => {
-                    match type_expr(e, &env, &sigs, *n) {
-                        Ok(t) => {
-                            apply_moves(e, t, &mut env);
-                            ret = Some(t);
-                        }
-                        Err(m) => { eprintln!("error: {}", m); process::exit(1); }
-                    }
-                }
-                Stmt::Ret(_, None) => {}
-            }
+        if let Err(m) = check_stmts(&f.stmts, &mut env, &sigs, &mut ret) {
+            eprintln!("error: {}", m);
+            process::exit(1);
         }
         if f.name == "main" && ret.is_some() {
             eprintln!("error: main must end with `return` or `return nil` in this PoC");
