@@ -582,11 +582,28 @@ xBase prefix rule - right-operand length, left NUL-padded),
 t350 (hk35: NIL casilla `=` .F., `#` .T.), t351/t352 (hk34/hk38:
 numeric element vs string is Harbour's BASE/1071/1072 dialog,
 headless-hanging - clean "Argument error: ="/"Argument error:
-<>" exit 1, registered failure modes), t353 (ordering rejected
-by name; hk36 measured, pending), t354 (string on the LEFT and
-an owned temporary k[1] as the string side, freed after the
+<>" exit 1, registered failure modes), t354 (string on the LEFT
+and an owned temporary k[1] as the string side, freed after the
 comparison). t223 repurposed: its third case assumed the old
 always-.T. fold for a NUMBER casilla vs string, which
 hk34/hk38 disproved; it now uses a NIL casilla (hk35) and keeps
 its evaluation-effects purpose. Runtime dispatch on the Dyn tag
-(2: hbc_str_eq, 1: fold, 0: named error) - no new helpers.
+(2: hbc_str_eq, 1: fold, 0: named error).
+
+## Iteration 33c additions (360 total): ordering vs string
+
+t355-t357 (hk36/hk39/hk40/hk43: ordering a string casilla
+byte-wise over the right operand's length - "abcd" vs "abc"
+compares EQUAL, "ab" < "abc" by NUL padding), t361 (hk51: Dyn
+as the RIGHT operand, same rule), t360 (several comparisons
+together and nested - pins the unique-label scheme), t358/t359
+(hk42/hk47: ordering a numeric or NIL casilla against a string
+is Harbour's BASE/1073-1076 dialog, headless-hanging - clean
+"Argument error: <"/"Argument error: >" exit 1, registered
+failure modes), t362 (hk48: left shorter than right under `=`
+is .F.). hbc_str_cmp (b22) reused as-is; new noreturn stubs
+hbc_dyncmp_lt/gt/le/ge_error (no ABI canary entries - they
+exit). t353 (the old compile-time rejection of ordering)
+removed. Inline branch labels in emitted code now come from
+LBL_ID, a per-emission unique counter - fixed numeric labels
+caused two silent miscompares.
