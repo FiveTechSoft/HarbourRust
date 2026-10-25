@@ -584,6 +584,27 @@ tested paths (t191). `Array(n, 0)` children are real empty arrays
 (az0b, t256). Battery: 266/266 green on Linux x86-64 and Wine, plus
 the ABI harness on both targets.
 
+## Iteration 21 - nested arrays as parameters and returns
+
+Arrays of arrays now pass as function arguments and return from
+functions, under the existing ownership contract (oracles pr1-pr5):
+a parameter MOVEs - the caller's variable is moved out at the call
+(use after the call is a compile error, t273) and the callee owns
+and frees the value (t271 mirrors pr1: `len(a)` and `len(a[1])` in
+the callee); a returned nested array transfers ownership to the
+caller, whose epilogue frees it (t272 mirrors pr3). The callee can
+mutate its own moved value, including AAdd on a child (t274, with
+registry balance 0 across param consumption and return). Parameter
+inference pins an array of arrays from `p[i][j]`, `len(p[i])`,
+AAdd/ASize on `p[i]` or writes; whole-array evidence (`len(p)`)
+merges with nested evidence into the nested type (pr1). Harbour
+SHARES the reference instead (pr2: a callee write `a[1][1] := 99`
+is visible in the caller; pr5: a callee AAdd is visible in the
+caller) - that sharing is the standing deliberate model difference,
+registered, with the user's contract decision still pending; it is
+not implemented here. Battery: 274/274 green on Linux x86-64 and
+Wine, plus the ABI harness on both targets.
+
 ## Iteration 20 - casilla vs NIL comparison
 
 The pending n4 comparison is repaired: a grown casilla compares
