@@ -720,6 +720,35 @@ bounds-walk and append tail with the scalar path (a first draft
 duplicated the tail with an early return that dropped the following
 statements - caught by the battery, fixed before publishing).
 
+## Iteration 33j additions (412 manifest cases): ValType
+
+`ValType(x)` returns the one-character type tag (oracles hk88-hk92,
+compiled hbmk2 -gtstd, native Linux): arrays at the supported depths
+"A", numbers "N", strings "C", NIL "U" (hk88). Static types classify
+at compile time; a Dyn casilla classifies at runtime: a scalar
+casilla {tag, payload} reads tag 0/1/2 as "N"/"U"/"C" (hk92:
+AAdd'ed string and integer casillas, ASize-grown NIL casillas), a
+child-array casilla {ptr, len} reads ptr null/non-null as "U"/"A"
+(hk90/hk91, Array(2) and Array(2,2)). The argument evaluates fully
+with its effects before the walk (hk89: the index's "eval" prints,
+then the tag) and is BORROWED - nothing moves. Works through a
+borrowed middle-array parameter: ValType(p) is "A" and ValType(p[1])
+reads the owner's casilla through the cell address. Named compile
+errors, all unmeasured rather than inferred: ValType over a[i] of a
+THREE-level array (t413), over a user call result (t414), over a
+hash (t415). A NIL middle in a[i][j] cannot be walked: Harbour's
+dialog hangs headless, so it is the registered clean bound-error
+failure mode, not a compat success. No new runtime helpers - the
+classification is inline over rodata letters and the bound error is
+the existing canaried stub - so the ABI harness needed no new
+entries. Tests: t409 (hk88 mirror: static shapes plus a Dyn variable
+as NIL and as integer), t410 (hk89 mirror: effects order,
+byte-compared), t411 (hk92 shapes split by element type, balance 0),
+t412 (borrowed parameter, balance 0), t413-t415 (named rejections).
+Note: our dialect pins dynamic-array element types, so hk92's MIXED
+string+integer array runs here as one array per element type - the
+already-pinned AAdd pin limitation, not a ValType difference.
+
 ## Iteration 33i additions (405 manifest cases): middle arrays as BORROWED arguments
 
 f(a[i]) on an array of arrays passes the child cell's ADDRESS; the
