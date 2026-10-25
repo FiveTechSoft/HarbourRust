@@ -1102,5 +1102,11 @@ casillas (oracle hk121) - x[1] := 8 through the loop variable is
 visible reading a[1,2,1,1] directly mid-loop, persists, and the
 untouched branch stays NIL. Byte-identical to the hk121 binary.
 
-483/483 manifest cases + ABI harness green on Linux x86-64 and Wine
+t488/t489 (iteration 35): `exit` inside the inner of two nested
+middle loops (oracle hk122) - only the first inner element is
+written, the outer loop completes both iterations; and a second
+FOR EACH over the same middle re-borrows it after the first loop
+ends and sees the writes (oracle hk123). Both byte-identical.
+
+485/485 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
