@@ -1567,13 +1567,15 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
             Stmt::ArrSet(_, id, ie, e) => {
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
                 let k = match v.ty { Ty::Arr(k) => k, _ => unreachable!("checked") };
-                // Index first, kept in a 16-byte stack slot (ABI-safe on
-                // both targets if the value expression calls); then the
-                // value, then a runtime bounds check, then the store.
-                cg_expr(ie, env, sigs, strs, out, target);
-                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                // Value FIRST, then the index: both Harbour (probe adv2,
+                // `a[idx()] := give()` prints give's side effect first)
+                // and Rust (`a[i] = v` evaluates the RHS before the place)
+                // use this order. The value waits in a 16-byte stack slot
+                // (ABI-safe on both targets if the index expression calls).
                 cg_expr(e, env, sigs, strs, out, target);
-                out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n");
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                cg_expr(ie, env, sigs, strs, out, target);
+                out.push_str("    mov %rax, %rcx\n    mov (%rsp), %rax\n    add $16, %rsp\n");
                 out.push_str(&format!("    cmp $1, %rcx\n    jl 83f\n    cmp ${}, %rcx\n    jg 83f\n", k));
                 out.push_str(&format!("    lea -{}(%rbp), %r11\n    mov %rax, -8(%r11,%rcx,8)\n    jmp 84f\n", v.off));
                 out.push_str("83:\n    call hbc_bound_error\n84:\n");
