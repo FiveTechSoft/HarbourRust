@@ -1114,5 +1114,23 @@ clean error (t345).
   crashed or silently mis-ran; those paths had no execution
   tests at 33r - they do now).
 
-Battery: 466/466 manifest cases on Linux x86-64 and Wine, plus
+- Ownership-transition audit across every supported collection
+  type (execution-grounded): reassignment-from-call freeing the
+  old value verified live for DArr3, DArrS, Hash and DArr4
+  (balance exactly one live array in each probe, Linux and
+  Wine); the print-move hole is a named compile error for Hash
+  and DArrS; self-assignment `a := a` works on DArr2. No
+  soundness hole found outside the DArr4 routes fixed at 33u.
+  The audit also closed three DIAGNOSTIC gaps it found: AAdd,
+  ASize and indexed assignment on a four-level root (or its
+  a[i]) now name the actual limit instead of the misleading
+  "`a` is not an array" (t473-t476), and the comma form of a
+  two-index AAdd/ASize head, a[1, 2], compiles - measured in
+  Harbour (hk115: AAdd(a[1, 2], 9) grows the subarray, ASize
+  shrinks it) and routed to the existing, tested AAddSub2 /
+  ASizeSub2 machinery (t471 mirrors hk115 with balance 0; t472
+  pins the named rejection on a two-level root). The comma form
+  previously died with "trailing tokens after expression".
+
+Battery: 472/472 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
