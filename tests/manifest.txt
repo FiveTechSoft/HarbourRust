@@ -249,7 +249,6 @@ pos tests/t247_array_ctor0.hb \n         0
 pos tests/t248_array_ctorvar.hb \n         3\nNIL
 pos tests/t249_array_ctor_aadd.hb \n         3\n         5\nNIL
 posx tests/t250_array_neg.hb 1 ASize: negative size
-neg tests/t251_array_3d.hb not in this increment
 neg tests/t252_array_0args.hb at least one dimension
 pos tests/t253_array_balance.hb \n         7\n         0
 pos tests/t254_array_abi_locals.hb \n        66\n        33\n         4\n         7
@@ -281,3 +280,5 @@ pos tests/t281_deep3_aadd_asize.hb \neval-i\neval-j\neval-v\n         3\n       
 neg tests/t282_deep3_neg_aaddsub2.hb `AAdd` on a[i][j] needs an array of arrays of arrays
 neg tests/t283_deep3_neg_asizesub2.hb `ASize` on a[i][j] needs an array of arrays of arrays
 pos tests/t284_deep3_asize_order.hb \neval-i\neval-j\neval-n\n         3\n         1\n         0\n         0
+pos tests/t285_array3d.hb \n         2\n         2\n         3\n         7\n         1\n         1\n         0\n         0
+neg tests/t286_neg_array4d.hb `Array` with more than three dimensions
