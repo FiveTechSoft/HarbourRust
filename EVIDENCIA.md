@@ -522,3 +522,13 @@ Probe b26: Harbour accepts #xtranslate; aliased to #translate in our
 engine (x- priority not emulated, documented). t100 positive. Full
 battery: 103/103 (100 numbered + 3 fixtures), Linux + Wine identical.
 Differential: t100 MATCH.
+
+### Include nesting, arity phase, conditional commands
+
+Probes b27-b30: nested define-call values match (b28); linear include
+nesting works in both (b29b) and circular chains are rejected by both
+via depth caps (b29, F0031-class); function-like arity mismatch is a
+compile-time rejection here vs link-time there (b27, registered);
+commands in dead branches register in neither (b30). t101 positive.
+Full battery: 104/104 (101 numbered + 3 fixtures), Linux + Wine
+identical. Differential: t101 MATCH.
