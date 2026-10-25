@@ -166,16 +166,21 @@ EVIDENCIA.md for the reproduction.
 ## Iteration 9: string equality in conditions
 
 `=` and `<>` now work on two strings inside `if` / `while` conditions
-(`tests/t52_str_eq.hb`). The comparison is byte equality over the
-(ptr, len) values, done by a leaf assembly routine (`hbc_str_eq`): no
-allocation, no memory management, no collation or Unicode awareness of
-any kind - "olá" and "olá" compare equal only byte for byte. This is
-NOT general string handling; strings remain immutable (ptr, len) values
-that move on assignment/return and are borrowed by printing and now by
-comparison.
+(`tests/t52_str_eq.hb`, `tests/t97_str_eq_rightlen.hb`). The rule is
+Harbour's default `=` (SET EXACT OFF), verified by probe b23: the
+comparison runs over the length of the RIGHT operand, with the left
+operand read NUL-padded - "abcd" = "abc" is true, "abc" = "abcd" is
+false, anything = "" is true; `<>` is its negation. Done by a leaf
+assembly routine (`hbc_str_eq`): no allocation, no memory management, no
+collation or Unicode awareness of any kind. Harbour's exact `==` is not
+in this grammar; SET EXACT is a runtime setting this PoC does not have.
+(An earlier revision used exact byte equality - Harbour's EXACT ON rule;
+corrected to the default on 2026-10-25.) This is NOT general string
+handling; strings remain immutable (ptr, len) values that move on
+assignment/return and are borrowed by printing and now by comparison.
 
-- Ordering (`<`, `<=`, `>`, `>=`) works since iteration 10, byte-wise
-  (see below). Comparing a string with an integer is a type error
+- Ordering (`<`, `<=`, `>`, `>=`) works since iteration 10, with the
+  same right-operand-length rule (see below). Comparing a string with an integer is a type error
   (`tests/t53_mixed_cmp.hb`).
 
 ## Iteration 10: string ordering (Harbour's default semantics)
