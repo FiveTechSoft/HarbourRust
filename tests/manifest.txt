@@ -374,3 +374,10 @@ neg tests/t376_neg_foreach_index2_childgrow.hb cannot be modified, moved or grow
 neg tests/t377_neg_foreach_index2_write.hb cannot be modified, moved or grown inside its own loop
 neg tests/t378_neg_foreach_index2_move.hb cannot be modified, moved or grown inside its own loop
 pos tests/t379_foreach_index2_exitret.hb \n         1\n         0
+pos tests/t380_asize3_root.hb \n         3\n         1\n         1\n         0\n         0
+posx tests/t381_asize3_root_nil.hb 1 Argument error: array access\n
+pos tests/t382_asize3_mid.hb \n         1\n         3\n         2\n         1\n         2\n         0\n         0
+posx tests/t383_asize3_mid_nil.hb 1 Argument error: array access\n
+pos tests/t384_asize3_mid_shrink.hb \n         1\n         1\n         0\n         0
+pos tests/t385_asize3_root_zero.hb \n         0\n         0\n         0
+posx tests/t386_asize3_nil_casilla.hb 1 Argument error: ASIZE\n
