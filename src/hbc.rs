@@ -865,11 +865,12 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], out: &mut String, target: Ta
         }
         Expr::Call(id, args) => {
             let _ = sigs;
-            // Arguments are pushed in reverse order, each in a 16-byte slot
-            // (keeps rsp 16-aligned on both targets); arg k then sits at
-            // 16*(k+1)(%rbp) in the callee after its prologue. Pure
-            // expressions only, so right-to-left evaluation is unobservable.
-            for a in args.iter().rev() {
+            // Arguments are evaluated and pushed LEFT TO RIGHT (Harbour
+            // order; it matters if an argument expression fails, e.g. an
+            // integer division by zero), each in a 16-byte slot (keeps rsp
+            // 16-aligned on both targets); arg k then sits at
+            // 16*(n-k)(%rbp) in the callee after its prologue.
+            for a in args.iter() {
                 cg_expr(a, env, sigs, out, target);
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
             }
@@ -1178,10 +1179,10 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         out.push_str(&format!("    sub ${}, %rsp\n", frame));
     }
     // Copy incoming arguments from the caller's stack into the parameter
-    // slots: arg k was pushed into a 16-byte slot and sits at 16*(k+1)(%rbp)
-    // after this prologue.
+    // slots: arguments were pushed left to right, so arg k sits at
+    // 16*(n-k)(%rbp) after this prologue (the last argument is nearest).
     for (k, v) in lenv[..nparams].iter().enumerate() {
-        out.push_str(&format!("    mov {}(%rbp), %rax\n", 16 * (k + 1)));
+        out.push_str(&format!("    mov {}(%rbp), %rax\n", 16 * (nparams - k)));
         out.push_str(&format!("    mov %rax, -{}(%rbp)\n", v.off));
     }
     let mut env: Vec<CgLocal> = lenv[..nparams].to_vec();
