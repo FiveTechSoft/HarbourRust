@@ -329,10 +329,11 @@ User-defined commands and translations are supported in a scoped form,
 probed against Harbour first: `#command` / `#xcommand` with literal words
 (case-insensitive), `<param>` captures, optional `[ ... ]` clauses and
 `<x,...>` list captures (inserted via the plain `<x>` result marker, as
-Harbour's own headers do), and chaining; `#translate` only in the call
+Harbour's own headers do), the parenthesized-expression marker `<(x)>`,
+and chaining; `#translate` only in the call
 form `NAME( <p> ) => body`, which works inline in expressions. Macro
 names and parameter substitution are case-sensitive, directive names are
-not - matching Harbour's observed behaviour. NOT supported: match markers,
-non-call `#translate` forms, token pasting (`##`), the `&` macro operator,
-`#pragma`. This is not a complete preprocessor port; see docs/PP-F0.md for
+not - matching Harbour's observed behaviour. NOT supported: the marker
+forms Harbour itself rejects (`<"x">`, `<#x>`), non-call `#translate`
+forms, token pasting (`##`), the `&` macro operator, `#pragma`. This is not a complete preprocessor port; see docs/PP-F0.md for
 the probe record and the explicit out-of-scope list.
