@@ -41,7 +41,7 @@ enum Tok {
     Eq,       // =
     Ne,       // <> or !=
     Lt, Le, Gt, Ge,
-    KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElse, KwEndif,
+    KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElse, KwEndif, KwWhile, KwEnddo,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -113,6 +113,8 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                     "if" => Tok::KwIf,
                     "else" => Tok::KwElse,
                     "endif" => Tok::KwEndif,
+                    "while" => Tok::KwWhile,
+                    "enddo" => Tok::KwEnddo,
                     _ => Tok::Ident(id),
                 });
             }
@@ -161,6 +163,8 @@ enum Stmt {
     Print(usize, Expr),
     Ret(usize, Option<Expr>),
     If(usize, Expr, Vec<Stmt>, Vec<Stmt>), // line, condition, then, else (possibly empty)
+    While(usize, Expr, Vec<Stmt>), // line, condition, body
+    Assign(usize, String, Expr),   // x := expr on an already-declared local
 }
 
 struct Func {
@@ -318,6 +322,32 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 }
                 return Ok(());
             }
+            Tok::KwEnddo => {
+                if depth == 0 {
+                    return Err(format!("line {}: `enddo` without `while`", n));
+                }
+                return Ok(());
+            }
+            Tok::KwWhile => {
+                if toks.len() < 2 {
+                    return Err(format!("line {}: expected `while <expr> <comparison> <expr>`", n));
+                }
+                let cond = parse_expr_tokens(toks[1..].to_vec(), n)?;
+                *i += 1;
+                let mut body = Vec::new();
+                parse_stmts(lines, i, &mut body, depth + 1)?;
+                if *i < lines.len() && lines[*i].1[0] == Tok::KwReturn {
+                    return Err(format!("line {}: return inside a `while` block is not in the PoC yet (return closes the function at its top level)", lines[*i].0));
+                }
+                if *i >= lines.len() || lines[*i].1[0] != Tok::KwEnddo {
+                    return Err(format!("line {}: `while` without `enddo`", n));
+                }
+                if lines[*i].1.len() != 1 {
+                    return Err(format!("line {}: `enddo` takes no expression", lines[*i].0));
+                }
+                *i += 1;
+                out.push(Stmt::While(n, cond, body));
+            }
             Tok::KwIf => {
                 if toks.len() < 2 {
                     return Err(format!("line {}: expected `if <expr> <comparison> <expr>`", n));
@@ -364,6 +394,15 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
             Tok::Question => {
                 let e = parse_expr_tokens(toks[1..].to_vec(), n)?;
                 out.push(Stmt::Print(n, e));
+                *i += 1;
+            }
+            Tok::Ident(id) => {
+                if toks.len() < 3 || toks[1] != Tok::Assign {
+                    return Err(format!("line {}: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)", n));
+                }
+                check_ident(&id, n)?;
+                let e = parse_expr_tokens(toks[2..].to_vec(), n)?;
+                out.push(Stmt::Assign(n, id, e));
                 *i += 1;
             }
             t => return Err(format!("line {}: statement not in the subset ({:?})", n, t)),
@@ -511,6 +550,44 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[(String, Ty)], ret:
                     env[k].moved = env_then[k].moved || env_else[k].moved;
                 }
             }
+            Stmt::While(n, cond, body) => {
+                let ct = type_expr(cond, env, sigs, *n)?;
+                if ct != Ty::Bool {
+                    return Err(format!("line {}: `while` needs a comparison (e.g. `while x >= 1`); a bare value is not a condition in this PoC", n));
+                }
+                let outer = env.len();
+                let mut env_body = env.clone();
+                check_stmts(body, &mut env_body, sigs, ret)?;
+                // A variable moved inside the body must be live again at
+                // `enddo`: the next iteration would otherwise use a moved
+                // value (same rule as Rust's borrow checker for loops).
+                for k in 0..outer {
+                    if !env[k].moved && env_body[k].moved {
+                        return Err(format!("line {}: `{}` is moved inside the `while` body and not reassigned before `enddo` (the next iteration would use a moved value)", n, env[k].name));
+                    }
+                }
+                // The body may run zero times: join pre-loop with end-of-body.
+                for k in 0..outer {
+                    env[k].moved = env[k].moved || env_body[k].moved;
+                }
+            }
+            Stmt::Assign(n, id, e) => {
+                // RHS is evaluated first; a Str source variable moves.
+                let t = type_expr(e, env, sigs, *n)?;
+                if t == Ty::Bool {
+                    return Err(format!("line {}: booleans only exist in conditions in this PoC", n));
+                }
+                apply_moves(e, t, env);
+                let idx = match env.iter().position(|v| v.name == *id) {
+                    Some(k) => k,
+                    None => return Err(format!("line {}: assignment to undeclared variable `{}` (declare it with `local` first)", n, id)),
+                };
+                if env[idx].ty != t {
+                    return Err(format!("line {}: type mismatch in assignment to `{}`", n, id));
+                }
+                // Reassignment makes a moved variable live again (Rust too).
+                env[idx].moved = false;
+            }
         }
     }
     Ok(())
@@ -643,6 +720,11 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[(String, Ty)], 
                 layout_locals(else_s, env, sigs, frame);
                 env.truncate(mark);
             }
+            Stmt::While(_, _, body) => {
+                let mark = env.len();
+                layout_locals(body, env, sigs, frame);
+                env.truncate(mark);
+            }
             _ => {}
         }
     }
@@ -723,6 +805,32 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[(
                 cg_stmts(else_s, env, frame, sigs, strs, out, target, fname, label);
                 env.truncate(mark);
                 out.push_str(&format!(".Lend_{}_{}:\n", fname, id));
+            }
+            Stmt::While(_, cond, body) => {
+                let id = *label;
+                *label += 1;
+                out.push_str(&format!(".Lwhile_{}_{}:\n", fname, id));
+                cg_cond_jump(cond, env, sigs, out, target, &format!(".Lbody_{}_{}", fname, id));
+                out.push_str(&format!("    jmp .Lendw_{}_{}\n", fname, id));
+                out.push_str(&format!(".Lbody_{}_{}:\n", fname, id));
+                let mark = env.len();
+                cg_stmts(body, env, frame, sigs, strs, out, target, fname, label);
+                env.truncate(mark);
+                out.push_str(&format!("    jmp .Lwhile_{}_{}\n", fname, id));
+                out.push_str(&format!(".Lendw_{}_{}:\n", fname, id));
+            }
+            Stmt::Assign(_, id, e) => {
+                let t = expr_ty(e, env, sigs);
+                cg_value(e, env, sigs, strs, out, target);
+                let l = env.iter().find(|v| v.name == *id).expect("analysis checked the local exists");
+                match t {
+                    Ty::I64 => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", l.off)),
+                    Ty::Str => {
+                        out.push_str(&format!("    mov %rax, -{}(%rbp)\n", l.off));
+                        out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", l.off - 8));
+                    }
+                    Ty::Bool => unreachable!("booleans rejected in analysis"),
+                }
             }
         }
     }
