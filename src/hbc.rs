@@ -1079,14 +1079,17 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 falls = false;
             }
             Stmt::ArrSet(n, id, ie, e) => {
-                if type_expr(ie, env, sigs, *n)? != Ty::I64 {
-                    return Err(format!("line {}: array index must be an integer", n));
-                }
+                // Value first, then the index: the runtime order (probe
+                // adv2, shared by Harbour and Rust) decides which of two
+                // consuming expressions is the use-after-move.
                 if type_expr(e, env, sigs, *n)? != Ty::I64 {
                     return Err(format!("line {}: array elements must be integers in this increment", n));
                 }
-                apply_moves(ie, env, sigs, false);
+                if type_expr(ie, env, sigs, *n)? != Ty::I64 {
+                    return Err(format!("line {}: array index must be an integer", n));
+                }
                 apply_moves(e, env, sigs, true);
+                apply_moves(ie, env, sigs, false);
                 let v = match env.iter().find(|v| v.name == *id) {
                     Some(v) => v,
                     None => return Err(format!("line {}: assignment to undeclared variable `{}` (declare it with `local` first)", n, id)),
@@ -1503,18 +1506,20 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let id = *label;
                 *label += 1;
                 let mark = env.len();
-                // Evaluate the end bound once into a hidden slot (bounds
-                // evaluate once, as in Rust ranges), then the start into
-                // the loop variable. The step is a non-zero literal, so
-                // the counting direction is fixed here at compile time.
-                cg_value(end, env, sigs, strs, out, target);
-                *frame += 8;
-                let end_off = *frame;
-                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", end_off));
+                // Evaluate the START first, then the END into a hidden
+                // slot: Harbour's observed order (probe c11: the start's
+                // side effects print first) and Rust's `a..b` order agree.
+                // Bounds evaluate once, as in Rust ranges. The step is a
+                // non-zero literal, so the counting direction is fixed
+                // here at compile time.
                 cg_value(start, env, sigs, strs, out, target);
                 *frame += 8;
                 let i_off = *frame;
                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", i_off));
+                cg_value(end, env, sigs, strs, out, target);
+                *frame += 8;
+                let end_off = *frame;
+                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", end_off));
                 env.push(CgLocal { name: var.clone(), ty: Ty::I64, off: i_off });
                 out.push_str(&format!(".Lforc_{}_{}:\n", fname, id));
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n", i_off));
@@ -1571,7 +1576,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // `a[idx()] := give()` prints give's side effect first)
                 // and Rust (`a[i] = v` evaluates the RHS before the place)
                 // use this order. The value waits in a 16-byte stack slot
-                // (ABI-safe on both targets if the index expression calls).
+                // (keeps rsp 16-aligned for the Win64 ABI if the index
+                // expression calls; the Linux path needs no alignment).
                 cg_expr(e, env, sigs, strs, out, target);
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
                 cg_expr(ie, env, sigs, strs, out, target);
