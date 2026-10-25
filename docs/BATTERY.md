@@ -917,3 +917,24 @@ rejection now names both arities ("must be a codeblock of 1
 argument(s), got a codeblock of 2 argument(s)"). No semantic
 change; manifest substring updated. Battery re-run: 444/444 +
 ABI harness green on Linux and Wine.
+
+## Iteration 33r additions (449 manifest cases): Array() fourth level
+
+hk103 (exit 0): Array(2,2,2,2) - len 2 at each of the four levels,
+NIL innermost casillas, write/read at the fourth level,
+valtype(a[1,2,1]) = "A", valtype(a[1,2,1,1]) = "U". hk104: a
+four-level write evaluates the VALUE first, then the indices left
+to right (V, I1-I4). hk106: a four-level read evaluates indices
+left to right. hk107: the bracket form a[1][2][1][2] works the
+same. Tests: t448 (hk103 shape + balance 0), t449 (write order),
+t450 (read order), t451 (a fifth index is a named parse
+rejection), t452 (AAdd on the third level: clean rejection -
+"trailing tokens after expression"; hk105 measured AAdd/ASize at
+that level, scheduled for the next increment), t286 repurposed
+(five dimensions are the named rejection now that four compile).
+t279's old parse rejection is now the checker's named "four-level
+assignment needs an array of arrays of arrays of arrays". New
+runtime helper hbc_array4m (canaried in the ABI harness with an
+rfree depth-3 cycle); DArr4 slots free via hbc_rfree at depth 3,
+balance 0. No impossibility claims: four levels compile, five are
+the named edge of this increment.
