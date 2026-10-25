@@ -261,7 +261,15 @@ registered failure modes for the same error conditions, not compat
 successes. Harbour supports 3+ dimensions (oracle a3d prints
 2/2/2); hbc rejects them at compile time (t251). t253 checks the
 alloc/free balance across a function boundary under the instrumented
-registry (exact sizes verified on this tested path).
+registry (exact sizes verified on this tested path). t255-t258 cover
+the constructor edges against oracles: zero rows (az0a), zero columns
+(az0b), dimension evaluation left to right and exactly once (aevord;
+the helpers print f and g) and AAdd appending at len+1 on a nested
+child (anadd). t259 exercises our allocation-overflow guard
+(1e18 * 16 bytes overflows i64 in hbc_asize: clean "Out of memory",
+exit 1); there is no headless oracle for it - Harbour would attempt
+the allocation - so it is registered as our guard, not a compat
+claim.
 
 ## Internal helper ABI (audited in iteration 18)
 
@@ -273,9 +281,17 @@ hbc_free2 / hbc_aadd / hbc_asize clobbering them unsaved - the same
 bug class that broke hbc_arraym on Wine only - and they were fixed to
 save and restore what they use (locals moved to rbp-relative slots,
 frames re-aligned to 16 at every call). Generated code never emits
-callee-saved registers: live state sits on stack frames and in
-volatile registers, so the preserved-ABI rule is what keeps generated
-and hand-written callers interchangeable. t254 keeps live Harbour
-locals across hbc_arraym -> hbc_asize/hbc_aadd and direct AAdd/ASize
-calls as the regression guard; the full battery runs it on Linux and
-Wine.
+callee-saved registers (verified by sweeping the emitter): live state
+sits on stack frames and in volatile registers, so the preserved-ABI
+rule is what keeps generated and hand-written callers
+interchangeable. The ABI evidence is the code audit plus
+tests/abi_harness.sh (wired into the battery): an asm canary test
+that loads rbx/r12-r15 with sentinels, calls hbc_asize (grow, shrink,
+deep shrink freeing a live child), hbc_aadd (including the re-grow),
+hbc_arraym, hbc_free and hbc_free2, and after every call checks the
+canaries, the stack balance and the 16-alignment at the call
+boundary, on Linux and Wine. Negative control verified: removing one
+pop from the Windows hbc_free2 makes the harness fail (the Wine run
+crashes with rbp holding a canary value). t254 adds a Harbour-level
+functional regression (live locals across helper calls); it does not
+by itself prove register preservation, the harness does.
