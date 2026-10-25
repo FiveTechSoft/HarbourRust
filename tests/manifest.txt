@@ -123,3 +123,6 @@ pos tests/t119_qout_fields.hb \n\n         1\n 12345678901\n        -7
 pos tests/t120_qout_list_mixed.hb \nhola          7 x\náéí🦀         42
 pos tests/t121_qout_eval_order.hb \nf          1\nf          2\n         2          4
 neg tests/t122_qout_trailing_comma.hb missing expression
+neg tests/t123_qout_move_two_uses.hb use of moved value
+neg tests/t124_qout_move_then_print.hb use of moved value
+neg tests/t125_qout_move_in_expr.hb use of moved value
