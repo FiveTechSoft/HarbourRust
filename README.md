@@ -975,12 +975,22 @@ Registered limits of this increment, not general fidelity:
   loop in a registered slot, zeroed by the prologue, freed if
   non-null on statement re-entry and freed by the epilogue on
   every exit path (natural, `exit`, `return`; balance 0,
-  t364/t365). Nested collections a[i] remain a named compile
-  error (t367; hk53/hk57 measured, support pending).
+  t364/t365). Nested collections a[i] work (hk53/hk54): the
+  subarray is BORROWED from the root owner for the loop - the
+  index expression evaluates once, effects included (t368),
+  the cell is bounds-checked and loaded, and the root stays
+  alive after the loop (t367). Mutating, growing or moving
+  the root or the borrowed child inside the loop is a named
+  compile error (t370-t372). Iterating a NIL casilla exits
+  with Harbour's BASE/1068 text "Argument error: array
+  access" (t369; in Harbour the dialog hangs headless - a
+  registered failure mode, not exact equivalence).
+  `exit`/`return` inside the loop own nothing; the epilogue
+  frees the root as usual (t373, balance 0).
 
 Robustness fix in passing: `hb_HKeys` with a non-variable
 argument used to panic the compiler; it is now the documented
 clean error (t345).
 
-Battery: 364/364 manifest cases on Linux x86-64 and Wine, plus
+Battery: 370/370 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
