@@ -58,3 +58,16 @@ rejected as use of moved value - moves ARE applied between QOut items and
 inside expressions, matching the Rust ownership contract. Harbour accepts
 all three (no ownership); the difference is the registered MODEL
 category, not a bug.
+
+## Arrays (t126-t139)
+
+Fixed-size i64 arrays with Harbour base-1 indexing (probes a1-a5).
+t126-t129 HB-EXACT against compiled Harbour (-gtstd) binaries. t130
+MODEL: assignment copies (Rust [i64; N] is Copy, rustc-verified); Harbour
+shares a reference. t133 DIVERGE-FAILMODE: a runtime out-of-bounds index
+prints the Harbour wording and exits 1; Harbour opens an interactive
+error dialog and hangs (no oracle bytes exist). Constant out-of-range
+indexes are compile errors (t131/t132). The t02 injection negative moved
+one layer up: '{' is grammar now, so the rejection comes from the parser
+("trailing tokens") instead of the lexer (U+007B) - same construct, still
+rejected.
