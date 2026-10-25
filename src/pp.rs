@@ -505,12 +505,28 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
     let src = cmd_tokens(line);
     if src.is_empty() { return Ok(None); }
     let mut starts = false;
-    for c in cmds {
+    // Harbour picks the MOST SPECIFIC matching rule (most literal words),
+    // regardless of definition order (probes b31/b31b); ties keep the
+    // earliest definition.
+    let mut best: Option<(usize, usize)> = None; // (literal count, index)
+    let mut best_caps: Vec<String> = Vec::new();
+    for (ci, c) in cmds.iter().enumerate() {
         let first = match c.pattern.first() { Some(f) => f, None => continue };
         if first.starts_with('<') { continue; }
         if !src[0].eq_ignore_ascii_case(first) { continue; }
         starts = true;
         if let Some(caps) = cmd_match(&c.pattern, &src) {
+            let lits = c.pattern.iter().filter(|t| !(t.starts_with('<') && t.ends_with('>')) && t.as_str() != "[" && t.as_str() != "]").count();
+            if best.map(|(bl, _)| lits > bl).unwrap_or(true) {
+                best = Some((lits, ci));
+                best_caps = caps;
+            }
+        }
+    }
+    if let Some((_, ci)) = best {
+        let c = &cmds[ci];
+        let caps = best_caps;
+        {
             let mut out = c.result.clone();
             let mut pi = 0usize;
             for t in &c.pattern {
