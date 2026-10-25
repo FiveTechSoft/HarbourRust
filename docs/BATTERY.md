@@ -86,3 +86,17 @@ rejected as use-after-move (t149, neg-MODEL) while one-sided consumers
 t147/t148 compile and match Harbour byte-exactly. `for i := a to b`
 evaluates the start before the end (Harbour probe c11; Rust `a..b`
 agrees); t146 pins the side-effect order byte-exactly.
+
+## Codeblocks v1 (t150-t160)
+
+`{|p1, p2| e1, ..., eN}` with NO captures: the value is a code pointer
+(8 bytes, Copy), invoked via the built-in `eval(b, args)`. The body is a
+comma-separated expression list returning the LAST one (probe c4).
+t150-t156 HB-EXACT against compiled Harbour: one/two/zero parameters,
+reuse inside an expression, copy-on-assignment, and extra eval arguments
+evaluated (side effects run) and ignored (probes c7/c7b). Fewer
+arguments than parameters are a compile error (Harbour fails at runtime
+with an interactive dialog, probe c8 - t158 neg). Captures are out of
+this increment (Harbour accepts them, probe c3 - t157 neg, next
+increment). Bodies are integer expressions only (t159 neg); codeblock
+values do not print (t160 neg). No heap is involved.
