@@ -890,3 +890,23 @@ epilogue never frees a borrowed parameter. Parent-requested edge
 safe by evaluation order - the walk reads the nulled slots and exits
 with the clean bound error (verified live: "Bound error: array
 access", exit 1).
+
+## Iteration 33p additions (444 manifest cases): codeblocks as user-function parameters
+
+hk102 (Harbour oracle, hbmk2 -gtstd, exit 0): a function taking a
+codeblock parameter and calling `eval(b, x)` twice prints 42 and
+returns 44. The pin pass now pins the first argument of `eval` to
+`Block(args.len()-1)` and its extra arguments to I64 (matching the
+existing checker contract). Bug found and fixed during the
+increment: when `eval` was the ONLY evidence and sat in a `return`
+or an assignment, the parameter's other arguments went unpinned,
+the pin pass errored silently and the placeholder env surfaced the
+misleading "eval expects a codeblock" body error instead. Tests:
+t444 (hk102 shape - 42/44, caller's block variable reused after
+the call: Copy semantics, prints 10, balance 0), t445 (two
+codeblock parameters), t446 (a block of arity 2 fed to a Block(1)
+parameter is a named compile rejection - conservative exact-arity
+pin vs Harbour ignoring extra arguments, probes c7/c7b; the
+message reads "must be a codeblock, got a codeblock", awkward but
+named and registered), t447 (a block fed to an integer parameter:
+"must be an integer, got a codeblock"). No new runtime helpers.
