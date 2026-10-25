@@ -95,18 +95,18 @@ Under `dist/`:
 
 | File          | Platform            | Description                               |
 | ------------- | ------------------- | ----------------------------------------- |
-| `11-hbc`      | Linux x86-64        | The compiler                              |
-| `12-hbc.exe`  | Windows x86-64      | The compiler, cross-built as in section 4 |
-| `hola.exe`    | Windows x86-64      | `ejemplos/hola.hb` compiled as in section 3 |
+| `1-hbc`     | Linux x86-64        | The compiler                              |
+| `2-hbc.exe` | Windows x86-64      | The compiler, cross-built as in section 4 |
+| `3-hola.exe` | Windows x86-64      | `ejemplos/hola.hb` compiled as in section 3 |
 
 The numeric prefixes are an artifact of the upload tool used to publish
 the files; the contents are exactly the verified builds described here.
 
 SHA-256 of each file is listed in `dist/SHA256SUMS`. These binaries were
-built from `src/hbc.rs` as of commit
-`99f32d8df23893996e413b1a0d2a8e395a1eeba5` and verified by running them
-(Linux natively, Windows under Wine 10.20, not real Windows): `12-hbc.exe`
-and `11-hbc` emit byte-identical assembly for the same input, and `hola.exe`
+built from the source tree as of commit
+`1b24443ebcd9834a2b9b43531832e2fb093c1080` and verified by running them
+(Linux natively, Windows under Wine 10.20, not real Windows): `2-hbc.exe`
+and `1-hbc` emit byte-identical assembly for the same input, and `3-hola.exe`
 prints its expected output. `dist/compile.sh` (Linux) and `dist/compile.bat` (Windows) chain the three
 steps for one program (`hbc` -> `as` -> `ld`) and stop at the first failing
 step. compile.sh was verified end-to-end on Linux; compile.bat chains the
