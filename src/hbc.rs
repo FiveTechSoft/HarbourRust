@@ -3438,6 +3438,16 @@ hbc_alloc:
     mov $-4096, %rcx
     cmp %rcx, %rax
     ja hbc_oom
+    # harness registry: record (base, requested bytes) so hbc_free can
+    # verify the exact unmap length (not just call balance).
+    mov hbc_reg_count(%rip), %rcx
+    cmp $16384, %rcx
+    jae hbc_oom
+    lea hbc_reg_base(%rip), %r10
+    mov %rax, (%r10,%rcx,8)
+    lea hbc_reg_size(%rip), %r10
+    mov %rsi, (%r10,%rcx,8)
+    incq hbc_reg_count(%rip)
     incq hbc_mem_allocs(%rip)
     ret
 
@@ -3471,10 +3481,48 @@ hbc_free:
     imul %rsi, %rax
     lea 8(%rax), %rsi
     sub $8, %rdi
+    # harness registry: the computed unmap length must equal the recorded
+    # allocation size, and the block must be live (double free = absent).
+    # Callers keep loop state in r9/r10 (hbc_asize shrink) and possibly
+    # rdx across this call: preserve them; r11 is syscall-clobbered anyway.
+    push %rdx
+    push %r9
+    push %r10
+    mov hbc_reg_count(%rip), %rcx
+    lea hbc_reg_base(%rip), %r10
+    lea hbc_reg_size(%rip), %r11
+31: test %rcx, %rcx
+    jz hbc_reg_bad
+    dec %rcx
+    cmp %rdi, (%r10,%rcx,8)
+    jne 31b
+    cmp %rsi, (%r11,%rcx,8)
+    jne hbc_reg_bad
+    mov hbc_reg_count(%rip), %rdx
+    dec %rdx
+    mov (%r10,%rdx,8), %r9
+    mov %r9, (%r10,%rcx,8)
+    mov (%r11,%rdx,8), %r9
+    mov %r9, (%r11,%rcx,8)
+    mov %rdx, hbc_reg_count(%rip)
+    pop %r10
+    pop %r9
+    pop %rdx
     mov $11, %eax
     syscall
     incq hbc_mem_frees(%rip)
     ret
+
+# hbc_reg_bad: registry mismatch or unknown/double free (noreturn).
+hbc_reg_bad:
+    lea .Lregbadmsg(%rip), %rsi
+    mov $45, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
 
 # hbc_free2: rdi = outer data pointer (non-null), rsi = outer length.
 # Frees each live child (i64 arrays in this increment) then the outer block.
@@ -3704,6 +3752,11 @@ hbc_asize:
     .align 8
 hbc_mem_allocs: .quad 0
 hbc_mem_frees:  .quad 0
+hbc_reg_count:  .quad 0
+    .bss
+    .align 8
+hbc_reg_base:   .skip 131072
+hbc_reg_size:   .skip 131072
     .text
 "#);
     out.push_str("\n    .section .rodata\n");
@@ -3727,6 +3780,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Lboundmsg:\n    .byte 66,111,117,110,100,32,101,114,114,111,114,58,32,97,114,114,97,121,32,97,99,99,101,115,115,10\n");
     out.push_str(".Loommsg:\n    .byte 79,117,116,32,111,102,32,109,101,109,111,114,121,10\n");
     // "Type error: NIL used as a number\n" (33 bytes; registered failure mode)
+    out.push_str(".Lregbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,97,108,108,111,99,97,116,105,111,110,32,114,101,103,105,115,116,114,121,32,109,105,115,109,97,116,99,104,10\n");
     out.push_str(".Ltypemsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,78,73,76,32,117,115,101,100,32,97,115,32,97,32,110,117,109,98,101,114,10\n");
     out.push_str(".Lasizenegmsg:\n    .byte 65,83,105,122,101,58,32,110,101,103,97,116,105,118,101,32,115,105,122,101,10\n");
 }
@@ -3963,12 +4017,24 @@ hbc_alloc:
     mov %rsp, %rbp
     sub $48, %rsp
     mov %rdi, %r8
+    mov %rdi, 32(%rsp)
     call GetProcessHeap
     mov %rax, %rcx
     xor %edx, %edx
     call HeapAlloc
     test %rax, %rax
     jz hbc_oom
+    # harness registry: record (base, requested bytes) so hbc_free can
+    # verify the exact block size (not just call balance).
+    mov hbc_reg_count(%rip), %rcx
+    cmp $16384, %rcx
+    jae hbc_oom
+    lea hbc_reg_base(%rip), %r10
+    mov %rax, (%r10,%rcx,8)
+    mov 32(%rsp), %rdx
+    lea hbc_reg_size(%rip), %r10
+    mov %rdx, (%r10,%rcx,8)
+    incq hbc_reg_count(%rip)
     incq hbc_mem_allocs(%rip)
     leave
     ret
@@ -4004,7 +4070,29 @@ hbc_free:
     push %rbp
     mov %rsp, %rbp
     sub $48, %rsp
+    # harness registry: computed 8 + cap*elemsize must equal the recorded
+    # allocation size, and the block must be live (double free = absent).
+    mov -8(%rdi), %rax
+    imul %rsi, %rax
+    add $8, %rax
     sub $8, %rdi
+    mov hbc_reg_count(%rip), %rcx
+    lea hbc_reg_base(%rip), %r10
+    lea hbc_reg_size(%rip), %r11
+31: test %rcx, %rcx
+    jz hbc_reg_bad
+    dec %rcx
+    cmp %rdi, (%r10,%rcx,8)
+    jne 31b
+    cmp %rax, (%r11,%rcx,8)
+    jne hbc_reg_bad
+    mov hbc_reg_count(%rip), %rdx
+    dec %rdx
+    mov (%r10,%rdx,8), %r9
+    mov %r9, (%r10,%rcx,8)
+    mov (%r11,%rdx,8), %r9
+    mov %r9, (%r11,%rcx,8)
+    mov %rdx, hbc_reg_count(%rip)
     mov %rdi, %r8
     call GetProcessHeap
     mov %rax, %rcx
@@ -4013,6 +4101,19 @@ hbc_free:
     incq hbc_mem_frees(%rip)
     leave
     ret
+
+# hbc_reg_bad: registry mismatch or unknown/double free (noreturn).
+# Entered via a conditional JUMP: force 16-byte alignment explicitly.
+hbc_reg_bad:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Lregbadmsg(%rip), %rax
+    mov $45, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
 
 # hbc_free2: rdi = outer data pointer (non-null), rsi = outer length.
 hbc_free2:
@@ -4222,6 +4323,11 @@ hbc_asize:
     .align 8
 hbc_mem_allocs: .quad 0
 hbc_mem_frees:  .quad 0
+hbc_reg_count:  .quad 0
+    .bss
+    .align 8
+hbc_reg_base:   .skip 131072
+hbc_reg_size:   .skip 131072
     .text
 "#;
 
