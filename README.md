@@ -588,20 +588,21 @@ the ABI harness on both targets.
 ## Iteration 24 - AAdd and ASize at the third level
 
 `AAdd(a[i][j], x)` and `ASize(a[i][j], n)` grow and resize the
-innermost subarray in place (oracle pr8, written for this
-increment: the evaluation order is i, then j, then the value -
-indices BEFORE the value, which is NOT the two-level write order
-and was measured, not inferred). t281 mirrors pr8 end to end: the
+innermost subarray in place (oracles pr8/pr8b, written for this
+increment: AAdd evaluates i, then j, then the value; ASize
+evaluates i, then j, then the size - indices BEFORE the value,
+the same order as two-level AAdd/ASize; measured, not inferred).
+t281 mirrors pr8 and t284 mirrors pr8b: the
 grow makes `len(a[1][1])` 3 with the new value in place and every
 other length unchanged, the shrink drops the tail, a later grow
 leaves the fresh slots reading NIL, and the registry balance is 0
-after the owning function returns. A null child at either level is
+after the owning function returns (t284 adds the ASize order). A null child at either level is
 the clean AAdd/ASize error; out-of-range indices are the clean
 bound error. t282/t283 pin the compile errors on a two-level
 value. The statement surface accepts `a[i][j]` heads with full
 index expressions (an index containing brackets, `a[b[1]]`, still
 parses as the two-level form - t192 keeps that pinned). Battery:
-282/282 green on Linux x86-64 and Wine, plus the ABI harness on
+283/283 green on Linux x86-64 and Wine, plus the ABI harness on
 both targets. Out of scope, all explicit compile errors:
 three-level parameters, Array() with three dimensions, a fourth
 index level, mixed literals.
