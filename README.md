@@ -110,6 +110,12 @@ Integer literals are range-checked (i64).
 - Running on real Windows: the Windows build is verified under Wine 10.20
   (wow64) on Linux only. Wine is a reimplementation of the Win32 API, not
   Windows; a real-Windows run remains pending.
+- I/O error handling on Windows: the return values of `GetStdHandle` /
+  `WriteFile` are not checked; a failed write goes unreported.
+- Full Win64 ABI conformance: the alignment and register discipline is
+  exercised by the test battery (including a call nested inside an
+  arithmetic expression, `tests/t12_call_in_expr.hb`), not proven in
+  general.
 - A pure-Rust toolchain end to end: the assembler and linker are GNU
   binutils (C), and `hbc` itself is built with rustc/LLVM. Cranelift or a
   self-hosted path remains open.
