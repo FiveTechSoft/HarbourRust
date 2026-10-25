@@ -78,3 +78,9 @@ t128_arr_expr_index HB-EXACT
 t129_arr_loop HB-EXACT
 t130_arr_copy_model MODEL
 t133_arr_runtime_oob DIVERGE-FAILMODE
+t140_arr_call_index HB-EXACT
+t141_arr_set_order HB-EXACT
+t142_arr_bound_max DIVERGE-FAILMODE
+t143_arr_bound_min DIVERGE-FAILMODE
+t144_arr_copy_reverse MODEL
+t145_arr_reassign_same HB-EXACT
