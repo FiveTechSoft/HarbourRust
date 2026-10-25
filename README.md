@@ -1036,10 +1036,15 @@ Registered limits of this increment, not general fidelity:
   for the measured shape, t430-t432, balance 0; literal returns and
   array temporaries in expression position are named compile
   errors, t433/t434).
+- String arrays move as arguments and returns under the same
+  contract (hk101 shows Harbour would SHARE them - registered
+  D5/D7-family difference, t435/t437, balance 0; caller reuse after
+  the move and read-only callee pins are named compile errors,
+  t436/t438).
 
 Robustness fix in passing: `hb_HKeys` with a non-variable
 argument used to panic the compiler; it is now the documented
 clean error (t345).
 
-Battery: 431/431 manifest cases on Linux x86-64 and Wine, plus
+Battery: 435/435 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
