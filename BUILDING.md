@@ -104,9 +104,16 @@ the files; the contents are exactly the verified builds described here.
 
 SHA-256 of each file is listed in `dist/SHA256SUMS`. These binaries were
 built from `src/hbc.rs` as of commit
-`552bd2af3d6bc3683612b4b914984e7e339bbbdc` and verified by running them
+`99f32d8df23893996e413b1a0d2a8e395a1eeba5` and verified by running them
 (Linux natively, Windows under Wine 10.20, not real Windows): `7-hbc.exe`
 and `8-hbc` emit byte-identical assembly for the same input, and `hola.exe`
-prints its expected output. If `src/hbc.rs` at HEAD is newer than that
+prints its expected output. `dist/compile.sh` (Linux) and `dist/compile.bat` (Windows) chain the three
+steps for one program (`hbc` -> `as` -> `ld`) and stop at the first failing
+step. compile.sh was verified end-to-end on Linux; compile.bat chains the
+exact commands of section 3 and needs MinGW-w64 binutils on PATH on real
+Windows (not exercised under Wine, where our as/ld are Linux binaries).
+
+If `src/hbc.rs` at HEAD is newer than that
 commit, the prebuilt binaries correspond to the older source; rebuild from
 the current source (sections 1-4) for binaries matching HEAD.
+
