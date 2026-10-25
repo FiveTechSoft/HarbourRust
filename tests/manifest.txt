@@ -475,3 +475,8 @@ pos tests/t477_arrset_static_var.hb \n         2\n         2\n         2\n      
 pos tests/t478_aadd_static_var.hb \n         2\n         1\n         1\n         0\n         0
 pos tests/t479_aaddsub_static_var.hb \n         8\n         8\n         0\n         0
 pos tests/t480_valtype_darr4_casillas.hb \nA\nA\nA\nU\nN
+pos tests/t481_foreach_darr4_middle.hb \nA\nA\n         5\nNIL
+pos tests/t482_foreach_darr4_write.hb \n         9\n         9\nNIL
+neg tests/t483_neg_foreach_darr4_reseat.hb cannot assign to the `for` loop variable
+neg tests/t484_neg_foreach_darr4_grow.hb borrows an element array from the collection
+pos tests/t485_foreach_darr4_restore.hb \n         7\nA\nA\n         7
