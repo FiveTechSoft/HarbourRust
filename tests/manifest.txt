@@ -481,3 +481,4 @@ neg tests/t483_neg_foreach_darr4_reseat.hb cannot assign to the `for` loop varia
 neg tests/t484_neg_foreach_darr4_grow.hb borrows an element array from the collection
 pos tests/t485_foreach_darr4_restore.hb \n         7\nA\nA\n         7
 pos tests/t486_foreach_mid_nested.hb \n         4\n         3\nNIL
+pos tests/t487_foreach_mid_alias.hb \n         8\n         8\n         8\nNIL
