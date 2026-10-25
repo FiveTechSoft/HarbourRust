@@ -319,7 +319,19 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
         let (n, toks) = &lines[*i];
         let n = *n;
         match toks[0].clone() {
-            Tok::KwReturn | Tok::KwFunction => return Ok(()),
+            Tok::KwFunction => return Ok(()),
+            Tok::KwReturn if depth == 0 => return Ok(()),
+            Tok::KwReturn => {
+                // Early return inside an if/while block: an expression is
+                // required, so every early exit carries a typed value.
+                let stmt = match toks.len() {
+                    1 => return Err(format!("line {}: an early `return` inside a block needs a value (`return <expr>`); only the closing top-level return may be bare or `nil`", n)),
+                    2 if toks[1] == Tok::KwNil => return Err(format!("line {}: an early `return nil` inside a block is not in the PoC (it would leave the return value undefined); use `return <expr>`", n)),
+                    _ => Stmt::Ret(n, Some(parse_expr_tokens(toks[1..].to_vec(), n)?)),
+                };
+                out.push(stmt);
+                *i += 1;
+            }
             Tok::KwElse | Tok::KwEndif => {
                 if depth == 0 {
                     return Err(format!("line {}: `else`/`endif` without `if`", n));
@@ -340,9 +352,6 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 *i += 1;
                 let mut body = Vec::new();
                 parse_stmts(lines, i, &mut body, depth + 1)?;
-                if *i < lines.len() && lines[*i].1[0] == Tok::KwReturn {
-                    return Err(format!("line {}: return inside a `while` block is not in the PoC yet (return closes the function at its top level)", lines[*i].0));
-                }
                 if *i >= lines.len() || lines[*i].1[0] != Tok::KwEnddo {
                     return Err(format!("line {}: `while` without `enddo`", n));
                 }
@@ -367,9 +376,6 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     }
                     *i += 1;
                     parse_stmts(lines, i, &mut else_stmts, depth + 1)?;
-                }
-                if *i < lines.len() && lines[*i].1[0] == Tok::KwReturn {
-                    return Err(format!("line {}: return inside an `if` block is not in the PoC yet (return closes the function at its top level)", lines[*i].0));
                 }
                 if *i >= lines.len() || lines[*i].1[0] != Tok::KwEndif {
                     return Err(format!("line {}: `if` without `endif`", n));
@@ -556,10 +562,20 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[(String, Ty)], ret:
                     return Err(format!("line {}: cannot return a boolean in this PoC", n));
                 }
                 apply_moves(e, t, env);
-                *ret = Some(t);
+                match *ret {
+                    Some(prev) if prev != t => {
+                        return Err(format!("line {}: return type mismatch (this function already returns {:?} elsewhere; all returns must agree)", n, prev));
+                    }
+                    _ => *ret = Some(t),
+                }
                 falls = false;
             }
-            Stmt::Ret(_, None) => { falls = false; }
+            Stmt::Ret(n, None) => {
+                if ret.is_some() {
+                    return Err(format!("line {}: `return nil` in a function that returns a value elsewhere (all returns must agree)", n));
+                }
+                falls = false;
+            }
             Stmt::If(n, cond, then_s, else_s) => {
                 let ct = type_expr(cond, env, sigs, *n)?;
                 if ct != Ty::Bool {
