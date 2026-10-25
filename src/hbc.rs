@@ -1440,7 +1440,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
             // pointer, it never extracts the subarray. A real empty child
             // ({}) owns a block and is NOT NIL.
             if matches!(op, CmpOp::Eq | CmpOp::Ne) {
-                let cas = |e: &Expr| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArr2));
+                let cas = |e: &Expr| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArr2 | Ty::DArr3)));
                 let idx = if cas(a) && matches!(**b, Expr::Nil) {
                     if let Expr::Index(_, ie) = &**a { Some(ie) } else { None }
                 } else if cas(b) && matches!(**a, Expr::Nil) {
@@ -3034,7 +3034,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             // Eq: the condition is never true - fall through.
         }
         Expr::Cmp(op, a, b) if {
-            let cas = |e: &Expr| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArr2));
+            let cas = |e: &Expr| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArr2 | Ty::DArr3)));
             matches!(op, CmpOp::Eq | CmpOp::Ne) && ((cas(a) && matches!(**b, Expr::Nil)) || (cas(b) && matches!(**a, Expr::Nil)))
         } => {
             // Casilla = NIL (oracle n4): the index evaluates ONCE
@@ -4153,6 +4153,17 @@ hbc_array3m:
     mov -24(%rbp), %rsi
     mov -32(%rbp), %rdx
     call hbc_arraym
+    # Zero rows: hbc_arraym leaves the slot null, but as a CHILD of the
+    # 3D value Harbour materializes a real empty array (oracle pr7b:
+    # len(b[1]) = 0 and b[1] = NIL is .F., not a NIL casilla).
+    cmpq $0, -56(%rbp)
+    jne 25f
+    mov $8, %edi
+    call hbc_alloc
+    movq $0, (%rax)
+    add $8, %rax
+    mov %rax, -56(%rbp)
+25: nop
     mov -8(%rbp), %rdi
     mov $16, %esi
     lea -56(%rbp), %rdx
