@@ -42,6 +42,7 @@ enum Tok {
     Ne,       // <> or !=
     Lt, Le, Gt, Ge,
     KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElse, KwEndif, KwWhile, KwEnddo, KwExit, KwLoop,
+    KwFor, KwTo, KwStep, KwNext,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -117,6 +118,10 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                     "enddo" => Tok::KwEnddo,
                     "exit" => Tok::KwExit,
                     "loop" => Tok::KwLoop,
+                    "for" => Tok::KwFor,
+                    "to" => Tok::KwTo,
+                    "step" => Tok::KwStep,
+                    "next" => Tok::KwNext,
                     _ => Tok::Ident(id),
                 });
             }
@@ -167,8 +172,9 @@ enum Stmt {
     If(usize, Expr, Vec<Stmt>, Vec<Stmt>), // line, condition, then, else (possibly empty)
     While(usize, Expr, Vec<Stmt>), // line, condition, body
     Assign(usize, String, Expr),   // x := expr on an already-declared local
-    Exit(usize),                 // exit: leave the innermost while
-    Loop(usize),                 // loop: jump to the next iteration of the innermost while
+    Exit(usize),                 // exit: leave the innermost loop
+    Loop(usize),                 // loop: jump to the next iteration of the innermost loop
+    For(usize, String, Expr, Expr, i64, Vec<Stmt>), // line, var, start, end, step (non-zero literal), body
 }
 
 struct Func {
@@ -344,6 +350,65 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 }
                 return Ok(());
             }
+            Tok::KwNext => {
+                if depth == 0 {
+                    return Err(format!("line {}: `next` without `for`", n));
+                }
+                return Ok(());
+            }
+            Tok::KwFor => {
+                // for i := <start> to <end> [step <n>]
+                // The step must be a non-zero integer literal in this PoC:
+                // the counting direction is then fixed at compile time.
+                let id = match toks.get(1) {
+                    Some(Tok::Ident(id)) => { check_ident(id, n)?; id.clone() }
+                    _ => return Err(format!("line {}: expected `for i := <start> to <end> [step <n>]`", n)),
+                };
+                if toks.len() < 6 || toks[2] != Tok::Assign {
+                    return Err(format!("line {}: expected `for i := <start> to <end> [step <n>]`", n));
+                }
+                let to_pos = match toks[3..].iter().position(|t| *t == Tok::KwTo) {
+                    Some(p) => p + 3,
+                    None => return Err(format!("line {}: expected `for i := <start> to <end> [step <n>]`", n)),
+                };
+                let step_pos = toks[to_pos + 1..].iter().position(|t| *t == Tok::KwStep).map(|p| p + to_pos + 1);
+                let end_slice_end = step_pos.unwrap_or(toks.len());
+                if to_pos == 3 || end_slice_end == to_pos + 1 {
+                    return Err(format!("line {}: expected `for i := <start> to <end> [step <n>]`", n));
+                }
+                let start = parse_expr_tokens(toks[3..to_pos].to_vec(), n)?;
+                let end = parse_expr_tokens(toks[to_pos + 1..end_slice_end].to_vec(), n)?;
+                let step = match step_pos {
+                    None => 1,
+                    Some(p) => {
+                        let (neg, vtok) = match &toks[p + 1..] {
+                            [Tok::Int(v)] => (false, v),
+                            [Tok::Minus, Tok::Int(v)] => (true, v),
+                            _ => return Err(format!("line {}: the `for` step must be a non-zero integer literal in this PoC", n)),
+                        };
+                        let mag = match vtok.parse::<u128>() {
+                            Ok(k) if k <= i64::MAX as u128 => k as i64,
+                            _ => return Err(format!("line {}: integer literal out of range (i64)", n)),
+                        };
+                        let s = if neg { -mag } else { mag };
+                        if s == 0 {
+                            return Err(format!("line {}: the `for` step must be a non-zero integer literal in this PoC", n));
+                        }
+                        s
+                    }
+                };
+                *i += 1;
+                let mut body = Vec::new();
+                parse_stmts(lines, i, &mut body, depth + 1)?;
+                if *i >= lines.len() || lines[*i].1[0] != Tok::KwNext {
+                    return Err(format!("line {}: `for` without `next`", n));
+                }
+                if lines[*i].1.len() != 1 {
+                    return Err(format!("line {}: `next` takes no expression", n));
+                }
+                *i += 1;
+                out.push(Stmt::For(n, id, start, end, step, body));
+            }
             Tok::KwWhile => {
                 if toks.len() < 2 {
                     return Err(format!("line {}: expected `while <expr> <comparison> <expr>`", n));
@@ -492,6 +557,7 @@ struct Local {
     name: String,
     ty: Ty,
     moved: bool,
+    ro: bool, // read-only: the `for` loop variable cannot be assigned
 }
 
 fn type_expr(e: &Expr, env: &[Local], sigs: &[(String, Ty)], n: usize) -> Result<Ty, String> {
@@ -547,7 +613,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[(String, Ty)], ret:
                     return Err(format!("line {}: booleans only exist in `if` conditions in this PoC", n));
                 }
                 apply_moves(e, t, env);
-                env.push(Local { name: id.clone(), ty: t, moved: false });
+                env.push(Local { name: id.clone(), ty: t, moved: false, ro: false });
             }
             Stmt::Print(n, e) => {
                 // Printing borrows the value; it never moves it.
@@ -616,10 +682,37 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[(String, Ty)], ret:
                     env[k].moved = pre[k] || (fb && env_body[k].moved) || wexits.iter().any(|xs| xs[k]);
                 }
             }
+            Stmt::For(n, var, start, end, _step, body) => {
+                let ts = type_expr(start, env, sigs, *n)?;
+                let te = type_expr(end, env, sigs, *n)?;
+                if ts != Ty::I64 || te != Ty::I64 {
+                    return Err(format!("line {}: `for` bounds must be integers", n));
+                }
+                if env.iter().any(|v| v.name == *var) {
+                    return Err(format!("line {}: `for` loop variable `{}` is already declared in this scope (this PoC does not shadow)", n, var));
+                }
+                env.push(Local { name: var.clone(), ty: Ty::I64, moved: false, ro: true });
+                let outer = env.len();
+                let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
+                let mut env_body = env.clone();
+                let mut fexits: Vec<Vec<bool>> = Vec::new();
+                let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut fexits)?;
+                if fb {
+                    for k in 0..outer {
+                        if !pre[k] && env_body[k].moved {
+                            return Err(format!("line {}: `{}` is moved inside the `for` body and not reassigned before `next` (the next iteration would use a moved value)", n, env[k].name));
+                        }
+                    }
+                }
+                for k in 0..outer {
+                    env[k].moved = pre[k] || (fb && env_body[k].moved) || fexits.iter().any(|xs| xs[k]);
+                }
+                env.truncate(outer - 1);
+            }
             Stmt::Exit(n) => {
                 let pre = match loop_pre {
                     Some(p) => p,
-                    None => return Err(format!("line {}: `exit` outside a `while` loop", n)),
+                    None => return Err(format!("line {}: `exit` outside a `while` loop or `for` loop", n)),
                 };
                 exits.push(env[..pre.len()].iter().map(|v| v.moved).collect());
                 falls = false;
@@ -627,7 +720,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[(String, Ty)], ret:
             Stmt::Loop(n) => {
                 let pre = match loop_pre {
                     Some(p) => p,
-                    None => return Err(format!("line {}: `loop` outside a `while` loop", n)),
+                    None => return Err(format!("line {}: `loop` outside a `while` loop or `for` loop", n)),
                 };
                 for k in 0..pre.len() {
                     if !pre[k] && env[k].moved {
@@ -647,6 +740,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[(String, Ty)], ret:
                     Some(k) => k,
                     None => return Err(format!("line {}: assignment to undeclared variable `{}` (declare it with `local` first)", n, id)),
                 };
+                if env[idx].ro {
+                    return Err(format!("line {}: cannot assign to the `for` loop variable `{}` (it advances only via the loop itself)", n, id));
+                }
                 if env[idx].ty != t {
                     return Err(format!("line {}: type mismatch in assignment to `{}`", n, id));
                 }
@@ -790,6 +886,14 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[(String, Ty)], 
                 layout_locals(body, env, sigs, frame);
                 env.truncate(mark);
             }
+            Stmt::For(_, var, _, _, _, body) => {
+                let mark = env.len();
+                *frame += 8; // hidden slot holding the evaluated end bound
+                *frame += 8;
+                env.push(CgLocal { name: var.clone(), ty: Ty::I64, off: *frame });
+                layout_locals(body, env, sigs, frame);
+                env.truncate(mark);
+            }
             _ => {}
         }
     }
@@ -884,6 +988,41 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[(
                 env.truncate(mark);
                 out.push_str(&format!("    jmp .Lwhile_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lendw_{}_{}:\n", fname, id));
+            }
+            Stmt::For(_, var, start, end, step, body) => {
+                let id = *label;
+                *label += 1;
+                let mark = env.len();
+                // Evaluate the end bound once into a hidden slot (bounds
+                // evaluate once, as in Rust ranges), then the start into
+                // the loop variable. The step is a non-zero literal, so
+                // the counting direction is fixed here at compile time.
+                cg_value(end, env, sigs, strs, out, target);
+                *frame += 8;
+                let end_off = *frame;
+                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", end_off));
+                cg_value(start, env, sigs, strs, out, target);
+                *frame += 8;
+                let i_off = *frame;
+                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", i_off));
+                env.push(CgLocal { name: var.clone(), ty: Ty::I64, off: i_off });
+                out.push_str(&format!(".Lforc_{}_{}:\n", fname, id));
+                out.push_str(&format!("    mov -{}(%rbp), %rax\n", i_off));
+                out.push_str(&format!("    cmp -{}(%rbp), %rax\n", end_off));
+                if *step > 0 {
+                    out.push_str(&format!("    jg .Lfore_{}_{}\n", fname, id));
+                } else {
+                    out.push_str(&format!("    jl .Lfore_{}_{}\n", fname, id));
+                }
+                let inner = Some((format!(".Lforn_{}_{}", fname, id), format!(".Lfore_{}_{}", fname, id)));
+                cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner);
+                env.truncate(mark);
+                out.push_str(&format!(".Lforn_{}_{}:\n", fname, id));
+                out.push_str(&format!("    mov -{}(%rbp), %rax\n", i_off));
+                out.push_str(&format!("    add ${}, %rax\n", step));
+                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", i_off));
+                out.push_str(&format!("    jmp .Lforc_{}_{}\n", fname, id));
+                out.push_str(&format!(".Lfore_{}_{}:\n", fname, id));
             }
             Stmt::Exit(_) => {
                 let (_, end) = ll.as_ref().expect("analysis checked `exit` is inside a loop");
