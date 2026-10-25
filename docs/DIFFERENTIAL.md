@@ -57,3 +57,8 @@ Negative cases, verified against real Harbour behaviour:
   rejection; message text differs.
 - t66 (local shadows parameter): Harbour also rejects (E0003). Equivalent
   rejection; message text differs.
+
+Note on argument evaluation order (iteration 11): HarbourRust evaluates and
+pushes arguments left to right, the same order as Harbour. This is
+observable only through failing argument expressions (e.g. integer
+division by zero); both sides then fail on the same argument first.
