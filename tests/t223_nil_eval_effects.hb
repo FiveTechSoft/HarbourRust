@@ -1,6 +1,9 @@
-// Constant-folded comparisons still evaluate both operands left to
-// right: `f() = NIL` (string vs NIL is always .F., probe n1) must call
-// f, and a Dyn-side call inside `!= ""` (always .T.) must run too.
+// Comparisons with a constant answer still evaluate both operands left
+// to right: `f() = NIL` (string vs NIL is always .F., probe n1) must
+// call f, and a Dyn-side call inside `!= ""` must run too. The third
+// case uses a NIL casilla: NIL != "" is .T. (hk35). A NUMBER casilla
+// against a string instead errors - hk34/hk38 (BASE/1071/1072)
+// disproved the old always-.T. fold; t351/t352 cover it.
 function f()
    ? "called"
 return "x"
@@ -25,7 +28,10 @@ if NIL != f()
 else
    ? "BAD2"
 endif
-if show(a[1]) != ""
+local b := {}
+AAdd(b, 1)
+ASize(b, 2)
+if show(b[2]) != ""
    ? "ok3"
 else
    ? "BAD3"
