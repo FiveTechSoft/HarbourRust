@@ -1441,6 +1441,12 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                 pin[idx] = Some(Ty::DArr3);
                 Ok(())
             }
+            // Four-level evidence (p[i][j][k][l], len(p[i][j][k])) merges
+            // with every shallower whole-array evidence (hk111).
+            Some(t) if matches!((t, ty), (Ty::DArr, Ty::DArr4) | (Ty::DArr4, Ty::DArr) | (Ty::DArr2, Ty::DArr4) | (Ty::DArr4, Ty::DArr2) | (Ty::DArr3, Ty::DArr4) | (Ty::DArr4, Ty::DArr3)) => {
+                pin[idx] = Some(Ty::DArr4);
+                Ok(())
+            }
             // Whole-array evidence (len(p) pins DArr) merges with
             // string-element evidence (AAdd(p, "x"), p[i] := "x", p[i] in
             // a string context): an array of strings (hb_HKeys shape).
@@ -1566,6 +1572,11 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                             // len(p[i][j]) borrows two levels: the parameter
                             // is an array of arrays of arrays (oracle pr9).
                             pin_vars(f, &Expr::Var(v.clone()), Ty::DArr3, pin, n)?;
+                        }
+                        Expr::Index3(v, _, _, _) if is_param(f, v).is_some() => {
+                            // len(p[i][j][k]) borrows three levels: the
+                            // parameter is a four-level array (hk111).
+                            pin_vars(f, &Expr::Var(v.clone()), Ty::DArr4, pin, n)?;
                         }
                         _ => pin_vars(f, &args[0], Ty::DArr, pin, n)?,
                     }
@@ -2309,7 +2320,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 // An owned array variable moves into the parameter (the
                 // established contract): exclusive with the borrow mode.
-                if matches!(ta, Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArrS) {
+                if matches!(ta, Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS) {
                     if sig_borrowed[i] {
                         return Err(format!("line {}: parameter {} of `{}` already borrows `a[i]` elsewhere; it cannot also receive an owned array", n, i + 1, id));
                     }
@@ -2711,7 +2722,7 @@ fn prescan_dyn(f: &Func, sigs: &[Sig], ptys: &[Ty]) -> std::collections::HashSet
     let mut darr_names: HashSet<String> = HashSet::new();
     for (i, p) in f.params.iter().enumerate() {
         if ptys[i] == Ty::Dyn { dyn_names.insert(p.clone()); }
-        if matches!(ptys[i], Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3) { darr_names.insert(p.clone()); }
+        if matches!(ptys[i], Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4) { darr_names.insert(p.clone()); }
     }
     // dynamic arrays declared in the body ({} or a nested literal)
     fn scan_darr(stmts: &[Stmt], darr: &mut HashSet<String>) {
@@ -2914,7 +2925,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     if let Ty::Block(_) = t {
                         return Err(format!("line {}: cannot print a codeblock in this increment", n));
                     }
-                    if matches!(t, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Hash) {
+                    if matches!(t, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash) {
                         // Whole dynamic arrays and hashes print EMPTY in
                         // Harbour (oracles hk16/hk20/hk21/hk24: QOut
                         // renders an array or hash value as nothing) and
@@ -3783,7 +3794,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 // A static array argument is COPIED at the boundary (33l):
                 // the source variable keeps its value.
                 let copy = matches!(a, Expr::Var(v) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::Arr(_))));
-                let m = !copy && i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::StrOwn || sig.params[i] == Ty::DArr || sig.params[i] == Ty::DArr2 || sig.params[i] == Ty::DArr3 || sig.params[i] == Ty::DArrS || sig.params[i] == Ty::Hash);
+                let m = !copy && i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::StrOwn || sig.params[i] == Ty::DArr || sig.params[i] == Ty::DArr2 || sig.params[i] == Ty::DArr3 || sig.params[i] == Ty::DArr4 || sig.params[i] == Ty::DArrS || sig.params[i] == Ty::Hash);
                 apply_moves(a, env, sigs, m);
             }
         }
@@ -4279,14 +4290,14 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     // so the call boundary hands over a fresh copy.
                     out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                } else if ta == Ty::Str || ta == Ty::DArr || ta == Ty::DArr2 || ta == Ty::DArr3 || ta == Ty::DArrS || ta == Ty::StrOwn || ta == Ty::Hash {
+                } else if ta == Ty::Str || ta == Ty::DArr || ta == Ty::DArr2 || ta == Ty::DArr3 || ta == Ty::DArr4 || ta == Ty::DArrS || ta == Ty::StrOwn || ta == Ty::Hash {
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     // An owned (moved) argument: null the source slot
                     // right after the copy, so the callee is the only
                     // owner and the caller's later frees see null.
                     if let Expr::Var(src) = a {
-                        if matches!(ta, Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn | Ty::Hash) {
-                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
+                        if matches!(ta, Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash) {
+                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
                                 out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                             }
                         }
@@ -5133,7 +5144,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         // A moved-out DArr SOURCE slot is nulled right after
                         // the load: every allocation keeps exactly one owner.
                         if let Expr::Var(src) = e {
-                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
+                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
                                 out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                             }
                         }
@@ -5185,7 +5196,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let darrs_elem = |e: &Expr, env: &[CgLocal]| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArrS));
                 // A whole array/hash VARIABLE renders empty
                 // (hk16/hk20/hk24): only borrowed, never consumed.
-                let renders_empty = |e: &Expr| matches!(expr_ty(e, env, sigs), Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Hash | Ty::DArrRef | Ty::DArrRef2);
+                let renders_empty = |e: &Expr| matches!(expr_ty(e, env, sigs), Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash | Ty::DArrRef | Ty::DArrRef2);
                 for e in es {
                     if let Expr::Index(v, ie) = e {
                         if darr2_child(e, env) {
@@ -5337,7 +5348,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // the epilogue never frees the returned allocation (parent
                 // rule: move the return to the output before cleanup).
                 if let Expr::Var(src) = e {
-                    if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
+                    if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
                         out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                     }
                 }
@@ -5737,7 +5748,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         // fully evaluated (parent rule: move transfers; the
                         // old slot must not free what it no longer owns).
                         if let Expr::Var(src) = e {
-                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
+                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
                                 out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                             }
                         }
@@ -5772,7 +5783,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov $1, %esi\n    call hbc_free\n86:\n", off));
                                 out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
                             }
-                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Hash => {
+                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash => {
                                 // Free the OLD value after the RHS exists
                                 // (self-assignment `a := a` moved through a
                                 // temporary: the source was nulled above, so
@@ -6474,7 +6485,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     // A string argument occupies both words of its slot (pointer, length).
     for (k, v) in lenv[..nparams].iter().enumerate() {
         let src = 16 * (nparams - k);
-        if v.ty == Ty::Str || v.ty == Ty::DArr || v.ty == Ty::Dyn || v.ty == Ty::DArr2 || v.ty == Ty::DArr3 || v.ty == Ty::DArrS || v.ty == Ty::StrOwn || v.ty == Ty::Hash {
+        if v.ty == Ty::Str || v.ty == Ty::DArr || v.ty == Ty::Dyn || v.ty == Ty::DArr2 || v.ty == Ty::DArr3 || v.ty == Ty::DArr4 || v.ty == Ty::DArrS || v.ty == Ty::StrOwn || v.ty == Ty::Hash {
             out.push_str(&format!("    mov {}(%rbp), %rax\n    mov {}(%rbp), %rdx\n", src, src + 8));
             out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", v.off, v.off - 8));
         } else {
