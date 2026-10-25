@@ -373,6 +373,23 @@ fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
         let mut si = 0usize;
         while pi < pat.len() {
             let p = &pat[pi];
+            if p.starts_with("<(") && p.ends_with(")>") {
+                // <(x)> match marker: source must be a parenthesized
+                // expression (probe b14/b16); capture the inner tokens
+                if si >= src.len() || src[si] != "(" { return None; }
+                let mut depth = 0i32;
+                let mut k = si;
+                while k < src.len() {
+                    if src[k] == "(" { depth += 1; } else if src[k] == ")" { depth -= 1; if depth == 0 { break; } }
+                    k += 1;
+                }
+                if k >= src.len() { return None; } // unbalanced
+                caps.push(src[si + 1..k].join(" "));
+                if caps.last().map(|c| c.is_empty()).unwrap_or(true) { return None; }
+                si = k + 1;
+                pi += 1;
+                continue;
+            }
             if p.starts_with('<') && p.ends_with('>') {
                 // <x,...> list markers follow the same termination rule as
                 // plain <x> captures; their name keeps the ",..." suffix
@@ -486,20 +503,27 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
                     let name = &t[1..t.len() - 1];
                     // Harbour result-side markers use the plain name: a list
                     // captured as <x,...> is inserted via <x> (see std.ch:
-                    // #command ? [<explist,...>] => QOut( <explist> ))
-                    let base = name.strip_suffix(",...").unwrap_or(name);
-                    // substitute <name> in the result (case-insensitive marker)
-                    let low = out.to_lowercase();
-                    let needle = format!("<{}>", base.to_lowercase());
-                    let mut rebuilt = String::new();
-                    let mut at = 0usize;
-                    while let Some(k) = low[at..].find(&needle) {
-                        rebuilt.push_str(&out[at..at + k]);
-                        rebuilt.push_str(&caps[pi]);
-                        at += k + needle.len();
+                    // #command ? [<explist,...>] => QOut( <explist> )); a
+                    // parenthesized capture <(x)> is inserted via <x> plain or
+                    // <(x)> re-parenthesized (probes b15-b17)
+                    let is_paren = name.starts_with('(') && name.ends_with(')');
+                    let inner = if is_paren { &name[1..name.len() - 1] } else { name };
+                    let base = inner.strip_suffix(",...").unwrap_or(inner);
+                    for (needle, insertion) in [
+                        (format!("<{}>", base.to_lowercase()), caps[pi].clone()),
+                        (format!("<({})>", base.to_lowercase()), format!("( {} )", caps[pi])),
+                    ] {
+                        let low = out.to_lowercase();
+                        let mut rebuilt = String::new();
+                        let mut at = 0usize;
+                        while let Some(k) = low[at..].find(&needle) {
+                            rebuilt.push_str(&out[at..at + k]);
+                            rebuilt.push_str(&insertion);
+                            at += k + needle.len();
+                        }
+                        rebuilt.push_str(&out[at..]);
+                        out = rebuilt;
                     }
-                    rebuilt.push_str(&out[at..]);
-                    out = rebuilt;
                     pi += 1;
                 }
             }
