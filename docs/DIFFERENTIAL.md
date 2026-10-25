@@ -15,14 +15,18 @@ Harbour 3.2.1dev, built locally with gcc 11.4.0.
 - 9 cases: MATCH (identical values both sides).
 - 6 cases: Harbour REJECTS, HarbourRust accepts. Harbour error E0004 "LOCAL
   declaration follows executable statement": Harbour requires all LOCAL
-  declarations before any executable statement; HarbourRust lets you declare
-  a local where it is needed (Rust-style scoping). Cases: t13_if_else,
-  t15_if_move_both, t20_assign, t23_while_count, t25_while_move_reassign,
-  t31_exit_move_ok. Category: deliberate HarbourRust extension, documented.
+  declarations before any executable statement; HarbourRust currently lets
+  you declare a local where it is used. Cases: t13_if_else, t15_if_move_both,
+  t20_assign, t23_while_count, t25_while_move_reassign, t31_exit_move_ok.
+  Category: current PoC syntax divergence (implementer choice). It is NOT
+  required by Rust ownership; keeping or dropping it is a pending decision,
+  not a settled deliberate difference.
 - 1 case: DIVERGE t45_for_overflow_up. When the FOR counter passes the
   int64 limit, Harbour silently continues in double precision (prints
-  9223372036854776000); HarbourRust exits the loop (no silent wrap, no
-  silent type change). Category: deliberate difference, Rust-model safety.
+  9223372036854776000); HarbourRust currently exits the loop. Category:
+  current PoC policy (implementer choice), not a Rust-safety property -
+  Rust itself panics on overflow in debug and wraps in release. Whether
+  exiting is the settled policy for HarbourRust is a pending decision.
 
 ## Negative battery cases
 
