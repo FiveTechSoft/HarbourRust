@@ -962,3 +962,27 @@ hbc_aadd/hbc_asize operate on the walked level-4 slot, so the ABI
 harness needs no new entries; execution coverage is via t454-t456
 on both targets. Battery: 453/453 manifest cases + ABI harness
 green on Linux x86-64 and Wine.
+
+## Iteration 33t additions (459 manifest cases): FOR EACH over a level-3 collection of a four-level array
+
+hk109 (exit 0): on Array(2,2,2,2), `for each x in a[1, 2, 1]`
+(comma head) iterates the level-4 elements (7, 8), the borrowed
+child keeps its length (2), the root keeps its length (2) and
+a[1,2,1,1] still reads 7 after the loop. hk110 (exit 0): the
+three index expressions evaluate ONCE, left to right (I1, I2,
+I3), before the first element - the same eval-once discipline
+measured at the shallower depths (hk53/hk60), measured here, not
+inferred. Tests: t458 (hk109 shape + balance 0), t459 (hk110
+order), t460 (bracket head form), t461 (a three-level root is the
+accurate named rejection - the form gate now lets an Index3
+collection fall through to the generic typing so the error names
+the real problem, fixing a misleading-diagnostic defect of the
+t446 class), t462 (mutating the root inside the body is the
+named borrow rejection), t463 posx (an out-of-range index is the
+registered bound failure mode, exit 1). Registered fact: a NIL
+middle casilla cannot occur in this increment's DArr4 (no
+operation nulls one), so the arracc walk path at levels 1-3 is
+compiled but has no reachable test here. No new runtime helpers,
+no ABI harness additions; the walk reuses hbc_bound_error /
+hbc_arracc_error (noreturn stubs). Battery: 459/459 manifest
+cases + ABI harness green on Linux x86-64 and Wine.
