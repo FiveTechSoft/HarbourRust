@@ -53,6 +53,7 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
     enum T {
         Num(i64),
         Op(String),
+        Arith(String),
         LP,
         RP,
         Not,
@@ -121,6 +122,12 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
             i += 1;
             continue;
         }
+        if c == '+' || c == '-' || c == '*' || c == '/' || c == '%' {
+            toks.push(T::Arith(c.to_string()));
+            i += 1;
+            continue;
+        }
+        if c == '!' { toks.push(T::Not); i += 1; continue; }
         return Err(format!("line {}: error in #if expression (use ==, not =)", line));
     }
     // Recursive descent: or := and (.or.); and := not (.and.); comparison.
@@ -150,12 +157,42 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
         }
         parse_cmp(t, p, line)
     }
+    fn parse_expr(t: &[T], p: &mut usize, line: usize) -> Result<i64, String> {
+        let mut l = parse_term(t, p, line)?;
+        while *p < t.len() {
+            if let T::Arith(op) = &t[*p] {
+                if op != "+" && op != "-" { break; }
+                let op = op.clone();
+                *p += 1;
+                let r = parse_term(t, p, line)?;
+                l = if op == "+" { l.wrapping_add(r) } else { l.wrapping_sub(r) };
+            } else { break; }
+        }
+        Ok(l)
+    }
+    fn parse_term(t: &[T], p: &mut usize, line: usize) -> Result<i64, String> {
+        let mut l = parse_atom(t, p, line)?;
+        while *p < t.len() {
+            if let T::Arith(op) = &t[*p] {
+                if op != "*" && op != "/" && op != "%" { break; }
+                let op = op.clone();
+                *p += 1;
+                let r = parse_term(t, p, line)?;
+                l = match op.as_str() {
+                    "*" => l.wrapping_mul(r),
+                    "/" => if r == 0 { return Err(format!("line {}: division by zero in #if", line)); } else { l.wrapping_div(r) },
+                    _ => if r == 0 { return Err(format!("line {}: division by zero in #if", line)); } else { l.wrapping_rem(r) },
+                };
+            } else { break; }
+        }
+        Ok(l)
+    }
     fn parse_cmp(t: &[T], p: &mut usize, line: usize) -> Result<i64, String> {
-        let l = parse_atom(t, p, line)?;
+        let l = parse_expr(t, p, line)?;
         if *p < t.len() {
             if let T::Op(op) = &t[*p] {
                 *p += 1;
-                let r = parse_atom(t, p, line)?;
+                let r = parse_expr(t, p, line)?;
                 return Ok(match op.as_str() {
                     "==" => (l == r) as i64,
                     "!=" => (l != r) as i64,
@@ -591,18 +628,28 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
             }
             "TRANSLATE" => {
                 if emitting {
-                    // Scoped: only the call form NAME( <p>, ... ) => body,
-                    // which is exactly a function-like define (inline use in
-                    // expressions). Other translate forms are not this PoC.
                     let arrow = arg.find("=>").ok_or_else(|| format!("line {}: #translate needs `pattern => result`", line))?;
                     let pat = arg[..arrow].trim();
                     let result = arg[arrow + 2..].trim().to_string();
-                    let (name, params, _) = parse_define(pat, line)
-                        .map_err(|_| format!("line {}: only the call form `#translate NAME( <p> ) => result` in this PoC", line))?;
-                    if params.is_empty() && !pat.contains('(') {
-                        return Err(format!("line {}: only the call form `#translate NAME( <p> ) => result` in this PoC", line));
+                    match parse_define(pat, line) {
+                        // Call form NAME( <p>, ... ) => body: exactly a
+                        // function-like define (inline use in expressions).
+                        Ok((name, params, _)) if !(params.is_empty() && !pat.contains('(')) => {
+                            pp.defs.insert(name, Def { params, body: result });
+                        }
+                        // Non-call form: statement-start rule, same machinery
+                        // as #command (probes b19-b21: Harbour applies it at
+                        // statement start - and after its own `?` command via
+                        // std.ch chaining, which this PoC does not emulate -
+                        // but rejects it inside an expression, E0030).
+                        _ => {
+                            let pattern = cmd_tokens(pat);
+                            if pattern.is_empty() || result.is_empty() {
+                                return Err(format!("line {}: #translate needs `pattern => result`", line));
+                            }
+                            pp.cmds.push(Cmd { pattern, result });
+                        }
                     }
-                    pp.defs.insert(name, Def { params, body: result });
                 }
             }
             "UNDEF" => { if emitting { pp.defs.remove(&arg); } }
