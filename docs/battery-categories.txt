@@ -94,3 +94,13 @@ t153_cb_list HB-EXACT
 t154_cb_reuse HB-EXACT
 t155_cb_copy HB-EXACT
 t156_cb_extra_evaluated HB-EXACT
+t164_dyn_aadd HB-EXACT
+t165_dyn_asize DIVERGE-MODEL (grown slots 0 vs NIL; len/shrink exact)
+t166_dyn_balance OURS-ONLY (memcheck harness)
+t167_dyn_return HB-EXACT
+t168_dyn_param_move HB-EXACT (values; Harbour aliases, we move)
+t169_dyn_selfmove OURS-ONLY
+t170_dyn_exit_outer HB-EXACT
+t171_dyn_branch_local OURS-ONLY
+t172_dyn_loop_redecl OURS-ONLY
+t176_dyn_asize_neg DIVERGE-FAILMODE
