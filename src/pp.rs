@@ -298,7 +298,7 @@ fn subst_param(text: &str, name: &str, val: &str) -> String {
         if !c.is_ascii() { out.push(c); i += 1; continue; } // UTF-8 passthrough
         if in_str.is_none() && (c == b'"' || c == b'\'') { in_str = Some(c); out.push(c); i += 1; continue; }
         if in_str == Some(c) { in_str = None; out.push(c); i += 1; continue; }
-        if in_str.is_none() && i + nb.len() <= b.len() && b[i..i + nb.len()].eq_ignore_ascii_case(nb) {
+        if in_str.is_none() && i + nb.len() <= b.len() && &b[i..i + nb.len()] == nb { // param substitution is case-sensitive too (probe a07)
             let before = i == 0 || !(b[i - 1] as char).is_ascii_alphanumeric() && b[i - 1] != b'_';
             let after = i + nb.len() == b.len() || !(b[i + nb.len()] as char).is_ascii_alphanumeric() && b[i + nb.len()] != b'_';
             if before && after {
@@ -359,41 +359,106 @@ fn cmd_tokens(text: &str) -> Vec<String> {
 }
 
 // Try to match source tokens against a command pattern. On success returns
-// the captured params (pattern order). A <param> captures tokens up to the
-// next literal (at paren depth 0), or the rest of the line when last.
+// the captured params (pattern order; optionals that did not fire capture
+// as empty). A <param> captures tokens up to the next literal (at paren
+// depth 0), or the rest of the line when last. F3b adds: [ ... ] optional
+// groups (Harbour probe b01) and <x,...> list captures (probe b02); both
+// scoped to a single non-nested group / rest-of-line list.
 fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
-    let mut caps: Vec<String> = Vec::new();
-    let mut pi = 0usize;
-    let mut si = 0usize;
-    while pi < pat.len() {
-        let p = &pat[pi];
-        if p.starts_with('<') && p.ends_with('>') {
-            let next_lit = pat[pi + 1..].iter().find(|t| !(t.starts_with('<') && t.ends_with('>')));
-            let start = si;
-            match next_lit {
-                None => { si = src.len(); }
-                Some(lit) => {
-                    let mut depth = 0i32;
-                    let mut found = None;
-                    let mut k = si;
-                    while k < src.len() {
-                        let t = &src[k];
-                        // the terminating literal is compared BEFORE it can
-                        // change the depth (a ")" at depth 0 ends the capture)
-                        if depth == 0 && t.eq_ignore_ascii_case(lit) { found = Some(k); break; }
-                        if t == "(" { depth += 1; } else if t == ")" { depth -= 1; }
-                        k += 1;
+    // Helper over one pattern segment (no optional groups inside). `term`
+    // is the first literal of the NEXT segment: a trailing capture stops at
+    // it (at paren depth 0) so following groups can still match.
+    fn plain_match(pat: &[String], src: &[String], caps: &mut Vec<String>, term: Option<&str>) -> Option<usize> {
+        let mut pi = 0usize;
+        let mut si = 0usize;
+        while pi < pat.len() {
+            let p = &pat[pi];
+            if p.starts_with('<') && p.ends_with('>') {
+                // <x,...> list markers follow the same termination rule as
+                // plain <x> captures; their name keeps the ",..." suffix
+                let next_lit = pat[pi + 1..].iter().find(|t| !(t.starts_with('<') && t.ends_with('>')) && t.as_str() != "[" && t.as_str() != "]").map(|s| s.as_str()).or(term);
+                let start = si;
+                match next_lit {
+                    None => { si = src.len(); }
+                    Some(lit) => {
+                        let mut depth = 0i32;
+                        let mut found = None;
+                        let mut k = si;
+                        while k < src.len() {
+                            let t = &src[k];
+                            // the terminating literal is compared BEFORE it can
+                            // change the depth (a ")" at depth 0 ends the capture)
+                            if depth == 0 && t.eq_ignore_ascii_case(lit) { found = Some(k); break; }
+                            if t == "(" { depth += 1; } else if t == ")" { depth -= 1; }
+                            k += 1;
+                        }
+                        match found {
+                            Some(k) => si = k,
+                            // terminator from a following (optional) segment
+                            // may be absent: capture the rest and let that
+                            // segment match empty
+                            None => { if term.is_some() { si = src.len(); } else { return None } }
+                        }
                     }
-                    match found { Some(k) => si = k, None => return None }
+                }
+                caps.push(src[start..si].join(" "));
+                if caps.last().map(|c| c.is_empty()).unwrap_or(true) { return None; } // empty capture: no match
+                pi += 1;
+            } else {
+                if si >= src.len() || !src[si].eq_ignore_ascii_case(p) { return None; }
+                si += 1;
+                pi += 1;
+            }
+        }
+        Some(si)
+    }
+    // Optional groups: split the pattern at top-level [ ... ] groups. For
+    // each group, try to match it at the current source position; on
+    // failure the group is skipped (its params capture as empty).
+    let mut caps: Vec<String> = Vec::new();
+    let mut groups: Vec<(bool, Vec<String>)> = Vec::new(); // (optional, tokens)
+    let mut cur: Vec<String> = Vec::new();
+    let mut i = 0usize;
+    while i < pat.len() {
+        if pat[i] == "[" {
+            if !cur.is_empty() { groups.push((false, std::mem::take(&mut cur))); }
+            let mut depth = 1;
+            let mut g: Vec<String> = Vec::new();
+            i += 1;
+            while i < pat.len() && depth > 0 {
+                if pat[i] == "[" { depth += 1; } else if pat[i] == "]" { depth -= 1; if depth == 0 { break; } }
+                g.push(pat[i].clone());
+                i += 1;
+            }
+            groups.push((true, g));
+        } else if pat[i] != "]" {
+            cur.push(pat[i].clone());
+        }
+        i += 1;
+    }
+    if !cur.is_empty() { groups.push((false, cur)); }
+    let mut si = 0usize;
+    for (gi, (opt, g)) in groups.iter().enumerate() {
+        // first literal of the next segment, used as capture terminator
+        let term = groups.get(gi + 1).and_then(|(_, ng)| {
+            ng.iter().find(|t| !(t.starts_with('<') && t.ends_with('>')) && t.as_str() != "[" && t.as_str() != "]").map(|s| s.as_str())
+        });
+        let gsrc = &src[si..];
+        let mut gcaps: Vec<String> = Vec::new();
+        match plain_match(g, gsrc, &mut gcaps, term) {
+            Some(consumed) => {
+                // a plain segment must consume exactly up to the next group;
+                // approximate: consumed tokens, continue
+                si += consumed;
+                caps.extend(gcaps);
+            }
+            None => {
+                if !opt { return None; }
+                // optional group absent: its params capture as empty
+                for t in g {
+                    if t.starts_with('<') && t.ends_with('>') { caps.push(String::new()); }
                 }
             }
-            caps.push(src[start..si].join(" "));
-            if caps.last().map(|c| c.is_empty()).unwrap_or(true) { return None; } // empty capture: no match
-            pi += 1;
-        } else {
-            if si >= src.len() || !src[si].eq_ignore_ascii_case(p) { return None; }
-            si += 1;
-            pi += 1;
         }
     }
     if si != src.len() { return None; } // trailing tokens: no match
@@ -419,9 +484,13 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
             for t in &c.pattern {
                 if t.starts_with('<') && t.ends_with('>') {
                     let name = &t[1..t.len() - 1];
+                    // Harbour result-side markers use the plain name: a list
+                    // captured as <x,...> is inserted via <x> (see std.ch:
+                    // #command ? [<explist,...>] => QOut( <explist> ))
+                    let base = name.strip_suffix(",...").unwrap_or(name);
                     // substitute <name> in the result (case-insensitive marker)
                     let low = out.to_lowercase();
-                    let needle = format!("<{}>", name.to_lowercase());
+                    let needle = format!("<{}>", base.to_lowercase());
                     let mut rebuilt = String::new();
                     let mut at = 0usize;
                     while let Some(k) = low[at..].find(&needle) {
