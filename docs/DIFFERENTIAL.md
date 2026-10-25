@@ -179,3 +179,9 @@ t98 (#if relational/.AND./!/arithmetic) and t99 (#elif chain): 2/2 MATCH
 (probes b24/b25).
 
 t100 (#xtranslate, call form): MATCH (probe b26).
+
+t101 (nested #include chain, 3 levels): MATCH (probe b29b). Circular
+includes rejected by both via depth caps (F0031-class, probe b29).
+Function-like arity mismatch: Harbour leaves the call unexpanded
+(link-time failure), HarbourRust rejects at compile time - registered
+as the same static-vs-dynamic class as t82 (probe b27).
