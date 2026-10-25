@@ -152,6 +152,12 @@ recorded, not denied.
   + <y>]` -> `+ 5 +`, which Harbour then rejects E0030); a bracket with
   NO bound marker is dropped whole, comma included (b36b/b36d and
   std.ch's `[, <clr>]` case). t105 positive, t106 negative.
+- Keyword abbreviation (b45/b45b-e): a source word matches a pattern
+  literal when equal (case-insensitive) or a PREFIX of at least 4
+  characters; DIS fails against DISPLAY, DISPLAYY fails too, BYE matches
+  only exactly. Applies to the first word and to capture terminators.
+  t115/t116. Unknown result marker: define-time error (b46, Harbour
+  E0008). t117.
 - Empty #command / #translate result (b40/b44): legal; the matched
   statement is deleted. Zero-parameter function-like #define (b42):
   expands only in call form `NAME()`. Marker validation (b41): only
