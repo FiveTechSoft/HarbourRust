@@ -69,6 +69,13 @@ enum CmpOp { Eq, EqEq, Ne, Lt, Le, Gt, Ge } // EqEq: == object identity (oracles
 static BLOCK_ID: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 fn new_block_id() -> usize { BLOCK_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst) }
 
+// Unique-label counter for inline branches emitted by codegen: every
+// emission of the same construct gets a fresh id, so two comparisons in
+// one function (or one construct emitted twice) can never collide.
+// Fixed numeric labels caused two silent miscompares (iteration 33b).
+static LBL_ID: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+fn fresh_lbl() -> usize { LBL_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst) }
+
 fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
     let mut toks = Vec::new();
     let mut it = line.char_indices().peekable();
@@ -1871,14 +1878,18 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
             if matches!(ta, Ty::Dyn | Ty::I64) && matches!(tb, Ty::Dyn | Ty::I64) {
                 return Ok(Ty::Bool);
             }
-            // Dyn against a string: `=` is always .F. in Harbour (probe n1:
-            // "" = NIL is .F.), `#` always .T.; ordering is a Harbour type
-            // error, rejected here at compile time.
+            // Dyn against a string: runtime dispatch on the Dyn tag.
+            // `=`/`#`: xBase prefix rule over the right operand's length
+            // (hk33/hk37); a NIL casilla is .F./.T. (hk35); a numeric
+            // casilla is a clean named exit 1 (hk34/hk38). Ordering:
+            // byte-wise over the right operand's length for string
+            // casillas (hk36/hk39/hk40/hk43/hk51); NIL or numeric
+            // casillas are a clean named exit 1 mirroring Harbour's
+            // BASE/1073-1076 error condition (hk41/hk42/hk44-hk50,
+            // dialogs that hang headless) - registered failure modes,
+            // not exact equivalence.
             if (ta == Ty::Dyn && matches!(tb, Ty::Str | Ty::StrOwn)) || (matches!(ta, Ty::Str | Ty::StrOwn) && tb == Ty::Dyn) {
-                return match op {
-                    CmpOp::Eq | CmpOp::Ne => Ok(Ty::Bool),
-                    _ => Err(format!("line {}: cannot order a string against a number in this PoC (Harbour raises a type error)", n)),
-                };
+                return Ok(Ty::Bool);
             }
             if ta != tb {
                 return Err(format!("line {}: cannot compare a string with an integer in this PoC", n));
@@ -3704,19 +3715,23 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             let ta = expr_ty(a, env, sigs);
             let tb = expr_ty(b, env, sigs);
             if ta == Ty::Str || tb == Ty::Str || ta == Ty::StrOwn || tb == Ty::StrOwn {
-                // Dyn against a string under `=` / `#` (analysis rejects
-                // ordering, hk36 measured-pending): runtime dispatch on
-                // the Dyn tag. tag 2 (string element, e.g. the FOR EACH
+                // Dyn against a string: runtime dispatch on the Dyn
+                // tag. tag 2 (string element, e.g. the FOR EACH
                 // variable over hb_HKeys): a REAL Harbour comparison -
-                // hbc_str_eq compares over the right operand's length
-                // with the left NUL-padded (xBase prefix rule; oracles
-                // hk33/hk37, same helper as b23). tag 1 (NIL): `=` .F.,
-                // `#` .T. (hk35, n1). tag 0 (a number): Harbour raises
-                // BASE/1071 for `=` and BASE/1072 for `#` (hk34/hk38,
-                // error dialogs that hang headless) - a clean named
-                // exit 1 here (registered failure mode). Both operands
-                // evaluate left to right; an owned string temporary is
-                // freed after the comparison.
+                // `=`/`#` via hbc_str_eq and ordering via hbc_str_cmp,
+                // both over the right operand's length with the left
+                // NUL-padded (xBase prefix rule; oracles hk33/hk37 and
+                // hk36/hk39/hk40/hk43/hk51, same helpers as b23/b22).
+                // tag 1 (NIL): `=` .F., `#` .T. (hk35, n1); ordering
+                // raises Harbour's error condition. tag 0 (a number):
+                // Harbour raises BASE/1071 `=`, BASE/1072 `#`,
+                // BASE/1073 `<`, 1075 `>`, 1074 `<=`, 1076 `>=`
+                // (hk34/hk38/hk42/hk44-hk46; hk41/hk47/hk49/hk50 for
+                // NIL; error dialogs that hang headless) - clean named
+                // exit 1 here (registered failure modes, not exact
+                // equivalence). Both operands evaluate left to right;
+                // an owned string temporary is freed after the
+                // comparison.
                 let a_tmp = ta == Ty::StrOwn && !matches!(&**a, Expr::Var(_));
                 let b_tmp = tb == Ty::StrOwn && !matches!(&**b, Expr::Var(_));
                 let tmp = a_tmp || b_tmp;
@@ -3739,16 +3754,37 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 } else {
                     out.push_str("    mov %rcx, %r10\n    mov %r8, %r11\n");
                 }
-                out.push_str("    cmp $2, %r10\n    je 991f\n    cmp $0, %r10\n    je 992f\n");
-                // tag 1 (NIL) or any other tag: the previous fold -
-                // `=` is .F., `#` is .T. (hk35, n1).
-                if tmp { out.push_str("    mov %rax, %rdi\n    mov $1, %esi\n    call hbc_free\n"); }
-                if matches!(op, CmpOp::Ne) {
-                    out.push_str(&format!("    jmp {}\n", true_label));
+                let lid = fresh_lbl();
+                out.push_str(&format!("    cmp $2, %r10\n    je .Ldys{}\n", lid));
+                match op {
+                    CmpOp::Eq | CmpOp::Ne => {
+                        out.push_str(&format!("    cmp $0, %r10\n    je .Ldyn{}\n", lid));
+                        // tag 1 (NIL) or any other tag: the previous
+                        // fold - `=` is .F., `#` is .T. (hk35, n1).
+                        if tmp { out.push_str("    mov %rax, %rdi\n    mov $1, %esi\n    call hbc_free\n"); }
+                        if matches!(op, CmpOp::Ne) {
+                            out.push_str(&format!("    jmp {}\n", true_label));
+                        }
+                        out.push_str(&format!("    jmp .Ldye{}\n", lid));
+                    }
+                    _ => {
+                        // Ordering: NIL (tag 1) and numeric (tag 0)
+                        // casillas raise Harbour's error condition
+                        // (BASE/1073-1076, hk41-hk50) - clean named
+                        // exit 1, registered failure mode.
+                        match op {
+                            CmpOp::Lt => out.push_str("    call hbc_dyncmp_lt_error\n"),
+                            CmpOp::Gt => out.push_str("    call hbc_dyncmp_gt_error\n"),
+                            CmpOp::Le => out.push_str("    call hbc_dyncmp_le_error\n"),
+                            CmpOp::Ge => out.push_str("    call hbc_dyncmp_ge_error\n"),
+                            _ => unreachable!("Eq/Ne handled above"),
+                        }
+                    }
                 }
-                out.push_str("    jmp 993f\n991:\n");
-                // tag 2: byte comparison. hbc_str_eq compares over the
-                // RIGHT operand's length, so operand order matters.
+                out.push_str(&format!(".Ldys{}:\n", lid));
+                // tag 2: byte comparison. hbc_str_eq (=/#) and
+                // hbc_str_cmp (ordering) both compare over the RIGHT
+                // operand's length, so operand order matters.
                 out.push_str("    sub $16, %rsp\n");
                 if tmp { out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"); }
                 if ta == Ty::Dyn {
@@ -3758,23 +3794,37 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                     // Dyn is the RIGHT operand: rhs = dyn string.
                     out.push_str("    mov %r11, %rcx\n    mov -8(%r11), %r8\n");
                 }
-                out.push_str("    call hbc_str_eq\n");
+                match op {
+                    CmpOp::Eq | CmpOp::Ne => out.push_str("    call hbc_str_eq\n"),
+                    _ => out.push_str("    call hbc_str_cmp\n"),
+                }
                 if tmp {
                     out.push_str("    mov %rax, 16(%rsp)\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    add $16, %rsp\n");
                 } else {
                     out.push_str("    mov %rax, (%rsp)\n");
                 }
-                out.push_str("    mov (%rsp), %rax\n    add $16, %rsp\n    test %rax, %rax\n");
-                let j = match op { CmpOp::Eq => "jnz", _ => "jz" };
-                out.push_str(&format!("    {} {}\n", j, true_label));
-                out.push_str("    jmp 993f\n992:\n");
-                // tag 0: number against a string - Harbour's BASE/1071
-                // for `=` (hk34) and BASE/1072 for `#` (hk38).
+                out.push_str("    mov (%rsp), %rax\n    add $16, %rsp\n");
                 match op {
-                    CmpOp::Eq => out.push_str("    call hbc_dyncmp_eq_error\n"),
-                    _ => out.push_str("    call hbc_dyncmp_ne_error\n"),
+                    CmpOp::Eq | CmpOp::Ne => {
+                        out.push_str("    test %rax, %rax\n");
+                        let j = match op { CmpOp::Eq => "jnz", _ => "jz" };
+                        out.push_str(&format!("    {} {}\n", j, true_label));
+                        out.push_str(&format!("    jmp .Ldye{}\n.Ldyn{}:\n", lid, lid));
+                        // tag 0: number against a string - Harbour's
+                        // BASE/1071 for `=` (hk34) and BASE/1072 for
+                        // `#` (hk38); clean named exit 1.
+                        match op {
+                            CmpOp::Eq => out.push_str("    call hbc_dyncmp_eq_error\n"),
+                            _ => out.push_str("    call hbc_dyncmp_ne_error\n"),
+                        }
+                    }
+                    CmpOp::Lt => out.push_str(&format!("    test %rax, %rax\n    js {}\n", true_label)),
+                    CmpOp::Gt => out.push_str(&format!("    test %rax, %rax\n    jg {}\n", true_label)),
+                    CmpOp::Le => out.push_str(&format!("    test %rax, %rax\n    jle {}\n", true_label)),
+                    CmpOp::Ge => out.push_str(&format!("    test %rax, %rax\n    jns {}\n", true_label)),
+                    _ => unreachable!("CmpOp variants"),
                 }
-                out.push_str("993:\n");
+                out.push_str(&format!(".Ldye{}:\n", lid));
             } else {
                 match op {
                     CmpOp::Eq | CmpOp::Ne => {
@@ -5866,6 +5916,52 @@ hbc_dyncmp_ne_error:
     mov $1, %edi
     syscall
 
+# hbc_dyncmp_lt/gt/le/ge_error: a NIL or numeric Dyn ordered against
+# a string (noreturn). Harbour raises BASE/1073 "Argument error: <",
+# BASE/1075 "Argument error: >", BASE/1074 "Argument error: <=" and
+# BASE/1076 "Argument error: >=" (hk41/hk42/hk44-hk50, dialogs that
+# hang headless) - clean named exit 1 here, registered failure mode,
+# same error condition.
+hbc_dyncmp_lt_error:
+    lea .Ldyncmpltmsg(%rip), %rsi
+    mov $18, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
+hbc_dyncmp_gt_error:
+    lea .Ldyncmpgtmsg(%rip), %rsi
+    mov $18, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
+hbc_dyncmp_le_error:
+    lea .Ldyncmplemsg(%rip), %rsi
+    mov $19, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
+hbc_dyncmp_ge_error:
+    lea .Ldyncmpgemsg(%rip), %rsi
+    mov $19, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 hbc_aadd_error:
     lea .Laadderrmsg(%rip), %rsi
     mov $21, %edx
@@ -6247,6 +6343,10 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Lsnilmsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,101,120,112,101,99,116,101,100,32,97,32,115,116,114,105,110,103,32,101,108,101,109,101,110,116,44,32,103,111,116,32,78,73,76,10\n");
     out.push_str(".Ldyncmpeqmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,61,10\n");
     out.push_str(".Ldyncmpnemsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,60,62,10\n");
+    out.push_str(".Ldyncmpltmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,60,10\n");
+    out.push_str(".Ldyncmpgtmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,62,10\n");
+    out.push_str(".Ldyncmplemsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,60,61,10\n");
+    out.push_str(".Ldyncmpgemsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,62,61,10\n");
     // "Argument error: ASIZE\n" (22 bytes; Harbour BASE/2023 hangs headless, oracle n7)
     out.push_str(".Lasizeerrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,65,83,73,90,69,10\n");
 }
@@ -6568,6 +6668,50 @@ hbc_dyncmp_ne_error:
     and $-16, %rsp
     sub $48, %rsp
     lea .Ldyncmpnemsg(%rip), %rax
+    mov $19, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+hbc_dyncmp_lt_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Ldyncmpltmsg(%rip), %rax
+    mov $18, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+hbc_dyncmp_gt_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Ldyncmpgtmsg(%rip), %rax
+    mov $18, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+hbc_dyncmp_le_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Ldyncmplemsg(%rip), %rax
+    mov $19, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+hbc_dyncmp_ge_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Ldyncmpgemsg(%rip), %rax
     mov $19, %edx
     call hbc_print_str
     mov $1, %ecx
