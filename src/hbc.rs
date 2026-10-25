@@ -2060,14 +2060,19 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 match &args[0] {
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
                     Expr::Index(v, _) => {
+                        // DArr4 first level: child-array casilla -
+                        // "A" (hk114, byte-measured via hk117 markers).
                         match env.iter().rev().find(|x| x.name == *v).map(|x| x.ty.clone()) {
-                            Some(Ty::DArr) | Some(Ty::DArr2) | Some(Ty::DArrRef) | Some(Ty::DArrS) => {}
+                            Some(Ty::DArr) | Some(Ty::DArr2) | Some(Ty::DArrRef) | Some(Ty::DArrS) | Some(Ty::DArr4) => {}
                             _ => return Err(format!("line {}: `ValType` over this array depth is not measured in this PoC", n)),
                         }
                     }
                     Expr::Index2(v, _, _) => {
+                        // DArr4 second level: child-array casilla - "A"
+                        // (hk114); a NIL middle is the registered clean
+                        // bound-error failure mode.
                         match env.iter().rev().find(|x| x.name == *v).map(|x| x.ty.clone()) {
-                            Some(Ty::DArr2) => {}
+                            Some(Ty::DArr2) | Some(Ty::DArr4) => {}
                             _ => return Err(format!("line {}: `ValType` over this array depth is not measured in this PoC", n)),
                         }
                     }
@@ -2092,6 +2097,28 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         match type_expr(ie, env, sigs, n)? {
                             Ty::I64 | Ty::Dyn => {}
                             _ => return Err(format!("line {}: array index must be an integer", n)),
+                        }
+                    }
+                    Expr::Index(v, ie) if matches!(env.iter().rev().find(|x| x.name == *v).map(|x| x.ty.clone()), Some(Ty::DArr4)) => {
+                        // hk114: the first-level casilla of a four-level
+                        // root classifies as the EMPTY string by pointer
+                        // shape, never extracted - bypass the generic
+                        // Index typing (which rejects that extraction).
+                        match type_expr(ie, env, sigs, n)? {
+                            Ty::I64 | Ty::Dyn => {}
+                            _ => return Err(format!("line {}: array index must be an integer", n)),
+                        }
+                    }
+                    Expr::Index2(v, ie, ie2) if matches!(env.iter().rev().find(|x| x.name == *v).map(|x| x.ty.clone()), Some(Ty::DArr4)) => {
+                        // Second-level casilla is a child-array {ptr,
+                        // len}, classified by pointer (hk114) - bypass
+                        // the generic Index2 typing (which rejects the
+                        // extraction).
+                        for ie in [ie, ie2] {
+                            match type_expr(ie, env, sigs, n)? {
+                                Ty::I64 | Ty::Dyn => {}
+                                _ => return Err(format!("line {}: array index must be an integer", n)),
+                            }
                         }
                     }
                     Expr::Index3(v, ie, ie2, ie3) if matches!(env.iter().rev().find(|x| x.name == *v).map(|x| x.ty.clone()), Some(Ty::DArr4)) => {
@@ -3938,7 +3965,10 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                             vt_letter(strs, out, "A");
                             out.push_str("88:\n");
                         }
-                        Ty::DArr2 => {
+                        Ty::DArr2 | Ty::DArr4 => {
+                            // Child-array casilla {ptr, len}: null ptr is
+                            // "U", non-null "A" (hk90/hk91 on DArr2;
+                            // hk114 on DArr4, byte-measured).
                             out.push_str(&format!("    cmp $1, %rax\n    jl 87f\n    cmp -{}(%rbp), %rax\n    jg 87f\n", var.off - 8));
                             out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
                             out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    test %r10, %r10\n    jz 85f\n    jmp 86f\n87:\n    call hbc_bound_error\n85:\n");
@@ -3974,8 +4004,18 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     }
                     out.push_str("    mov (%r10), %r11\n    test %r11, %r11\n    jz 87f\n");
                     out.push_str("    cmp $1, %rax\n    jl 87f\n    cmp 8(%r10), %rax\n    jg 87f\n");
-                    out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
-                    vt_classify_scalar(strs, out);
+                    if var.ty == Ty::DArr4 {
+                        // Final casilla is a child-array {ptr, len}:
+                        // null ptr is "U", non-null "A" (hk114).
+                        out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    test %r10, %r10\n    jz 85f\n    jmp 86f\n87:\n    call hbc_bound_error\n85:\n");
+                        vt_letter(strs, out, "U");
+                        out.push_str("    jmp 88f\n86:\n");
+                        vt_letter(strs, out, "A");
+                        out.push_str("88:\n");
+                    } else {
+                        out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
+                        vt_classify_scalar(strs, out);
+                    }
                 }
                 Expr::Index3(v, ie, ie2, ie3) => {
                     // ValType(a[i][j][k]) on a four-level root: the level-3
