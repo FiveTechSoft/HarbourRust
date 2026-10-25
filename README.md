@@ -993,15 +993,21 @@ Registered limits of this increment, not general fidelity:
   (t374), growing the borrowed child, writing through the
   root or moving it inside the loop are named compile errors
   (t376-t378), and `exit`/`return` own nothing (t379,
-  balance 0). A NIL middle casilla cannot be built in this
-  PoC yet (middle-level growth is unsupported), so the
-  depth-3 BASE/1068 path is defensive only; hk63 measured
-  the Harbour dialog (headless-hanging, registered failure
-  mode).
+  balance 0).
+- ASize grows a three-level root and the middle a[i] with
+  NIL casillas (hk65/hk68, t380-t386): shrink frees the
+  removed children RECURSIVELY (new hbc_asize kind 3 calling
+  hbc_rfree; balance 0), and iterating a grown NIL casilla
+  at depth 3 is the BASE/1068-text clean exit 1 (t381/t383;
+  in Harbour the dialog hangs headless - a registered
+  failure mode, not exact equivalence). AAdd on the middle
+  with array elements (hk66/hk67 measured) stays pending.
+  Reading a[i] of a three-level array by value stays a
+  named compile error.
 
 Robustness fix in passing: `hb_HKeys` with a non-variable
 argument used to panic the compiler; it is now the documented
 clean error (t345).
 
-Battery: 376/376 manifest cases on Linux x86-64 and Wine, plus
+Battery: 383/383 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
