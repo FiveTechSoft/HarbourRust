@@ -223,3 +223,8 @@ posx tests/t220_nil_order_var_err.hb 1 Type error: NIL used as a number
 pos tests/t221_nil_loop_join.hb \nNIL\n        30\nok1\nNIL
 pos tests/t222_nil_min_fixed.hb \n-9223372036854775808\nok1\nok2
 pos tests/t223_nil_eval_effects.hb \ncalled\nok1\ncalled\nok2\n         7\nnum-in\nok3
+pos tests/t224_big_epilogue.hb \n      1000\n         0
+pos tests/t225_big_reassign.hb \n         7\n         0
+pos tests/t226_big_redeclare.hb \n         3\n         0
+pos tests/t227_big_child_overwrite.hb \n         7\n         0
+pos tests/t228_big_shrink_nested.hb \n         1\n         0
