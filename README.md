@@ -389,14 +389,37 @@ ignored (Harbour's behaviour, probed); missing arguments are a compile
 error. Capturing function locals is the next increment. Battery:
 t150-t160, seven byte-exact against compiled Harbour.
 
+## Iteration 15 - NIL as a tagged value (v2c)
+
+NIL is now a real value, not the absence of one: the i64 sentinel
+-9223372036854775808 (i64::MIN) tags it (probes n1 against compiled
+Harbour). What changed, all oracle-grounded:
+
+- `x := NIL` stores the sentinel; `? x` prints `NIL` (no field padding).
+- `return nil` / `return NIL` RETURN NIL (n1c: `? f()` prints NIL), so a
+  function closing with `return nil` is usable in an expression - the old
+  void rejection is gone (t35/t104 re-purposed to the Harbour behaviour).
+- `ASize` grows i64 slots with NIL (e1: grown slots print `NIL`, compare
+  .F. against 0). A DArr2 still grows with the empty child (m-probes).
+- Comparisons: `NIL = NIL` is .T., `NIL = 0` and `"" = NIL` are .F.,
+  `NIL != ""` is .T. (all n1). Ordering a NIL literal (`NIL < 1`) is a
+  compile error - Harbour raises a type error there (no headless oracle).
+- NIL survives parameters and returns (n1c): passed in, printed, returned.
+
+Documented sentinel costs (registered, not claimed equivalent): the one
+extreme integer i64::MIN is unrepresentable (it reads, prints and compares
+as NIL), and arithmetic or ordering on NIL HELD IN A VARIABLE evaluates
+numerically where Harbour raises a type error.
+
+Battery: 214/214 green on Linux x86-64 and Wine (t35/t104/t165 updated to
+the Harbour behaviour, new t208-t212).
+
 ## Iteration 14 - arrays of dynamic arrays (v2b)
 
 - `local a := {{1, 2}, {3, 4}}` compiles: nested literals, two-level reads
   `a[i][j]` and the Harbour comma form `a[i, j]` (identical in Harbour -
   probe m2), two-level writes `a[i][j] := v`, `len` at both levels,
-  `AAdd(a[i], x)` / `ASize(a[i], n)` on a subarray, and `Array(2, 3)`
-  (Harbour m3 shows its slots are NIL; under the i64 model they read as 0 -
-  the registered NIL-vs-0 limitation).
+  `AAdd(a[i], x)` / `ASize(a[i], n)` on a subarray.
 - Ownership: inserting `AAdd(a, b)` or assigning `a[1] := b` MOVES the child
   into the parent - Harbour's `b := a[1]` extraction aliases the shared
   subarray (probe m4) and `AAdd(a[1], x)` mutates what `b` sees (probe m5);
@@ -437,8 +460,7 @@ as AAdd/ASize target - is rejected), and slots are zero-init with
 null-safe freeing, so codegen needs no path tracking and every
 allocation is freed exactly once at its owner's epilogue, overwrite or
 re-declaration - no GC, no reference counting, no shared aliases (Harbour's sharing, probes d6-d9/e9, is a
-registered MODEL difference). Grown slots read 0 (Harbour grows NIL -
-documented i64-model limit, not an equivalence claim). Nested dynamic
+registered MODEL difference). Nested dynamic
 arrays, hashes and codeblock captures are NOT in this increment.
 Battery: t164-t176 (178/178 green on Linux and Wine), including
 alloc/free balance 0 across function boundaries (t166) and the pinned
