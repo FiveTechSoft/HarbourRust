@@ -48,6 +48,32 @@ produces byte-identical output on the Linux and Windows builds of every
 program (see EVIDENCIA.md). Running under Wine is not the same as running
 on real Windows - that check is still pending.
 
+## Iteration 4: if / else / endif
+
+The subset grows conditional execution: `if <condition> ... [else ...]
+endif`, with integer comparisons (`=  <>  !=  <  <=  >  >=`) and arbitrary
+nesting. Conditions are expressions, so a call can appear inside them
+(`if valor() >= 40`, `tests/t18_if_call_cond.hb`).
+
+Branching keeps the same ownership rules, resolved at compile time:
+
+- Locals declared inside a branch are scoped to that branch; sibling
+  branches may reuse a name, and using a branch local after `endif` is a
+  compile error (`tests/t19_if_scope.hb`).
+- A string moved in one branch counts as moved at the join (like Rust):
+  using it after `endif` is rejected (`tests/t14_if_move_after.hb`).
+- A string moved in both branches is moved at the join as well
+  (`tests/t15_if_move_both.hb`).
+- `return` stays at the function top level: a `return` inside an `if`
+  block is rejected (`tests/t16_if_return.hb`).
+- Comparisons are integer-only in this iteration: comparing strings is
+  rejected (`tests/t17_if_str_cmp.hb`). The condition's boolean value
+  cannot be stored, printed or returned.
+
+Every new test runs on both targets with byte-identical output, and the
+iteration 2/3 battery still passes unchanged (the `hola` Linux ELF is
+still 8,984 bytes).
+
 ## Ownership semantics (what "Rust rules" means here, precisely)
 
 - Strings are `(ptr, len)` values that **move** on assignment and on
@@ -67,12 +93,14 @@ on real Windows - that check is still pending.
 function name()            opens a function (main is the entry point)
     local x := <expr>      local variable, type inferred
     ? <expr>               prints
-return <expr> | return nil closes the function
+    if <cond> ... endif    conditional, optional else, nestable
+return <expr> | return nil closes the function  (top level only)
 // comment
 ```
 
 Expressions: integer literals, string literals (escapes `\"` and `\\` only),
-identifiers, `+ - * /`, parentheses, 0-argument calls `name()`.
+identifiers, `+ - * /`, parentheses, 0-argument calls `name()`. Conditions: the same
+expressions combined with `= <> != < <= > >=` (integers only).
 Anything outside this grammar is rejected by `hbc` itself. Only a validated
 AST is ever analyzed or emitted; no raw user text ever reaches the output.
 Integer literals are range-checked (i64).
@@ -94,6 +122,9 @@ Integer literals are range-checked (i64).
    injections and out-of-grammar input, with real line numbers. Unicode
    works inside string literals and is rejected in identifiers without
    panicking.
+5. Conditional execution with branch-scoped locals and move checking
+   across branch joins (`tests/t13`-`t19`, positive and rejection cases,
+   run on the Linux and Windows builds).
 
 ## What is NOT demonstrated
 
@@ -119,6 +150,10 @@ Integer literals are range-checked (i64).
 - A pure-Rust toolchain end to end: the assembler and linker are GNU
   binutils (C), and `hbc` itself is built with rustc/LLVM. Cranelift or a
   self-hosted path remains open.
+- Loops and early returns: `if`/`else`/`endif` is the only control flow
+  beyond calls, and `return` stays at the function top level.
+- String comparisons and a first-class boolean: conditions compare
+  integers only.
 - The safety of any grammar extension beyond this subset: each extension
   must re-establish the closed-emission property.
 
