@@ -324,8 +324,17 @@ the NIL literal itself has existed in expressions since iteration 15
 t285 mirrors oracle pr7: Array(2, 2, 3) gives len 2/2/3, innermost
 slots read NIL, a later third-level write works, registry balance 0
 after the owner returns. t286 pins the compile error for a fourth
-dimension. The old t251 negative ("3 dimensions unsupported") was
-retired because three dimensions are supported now.
+dimension. t287 mirrors pr7b: zero dimension in any position,
+including the real empty child (len 0, not NIL) of Array(2, 0, 3).
+t288 mirrors pr7d: the three dimension expressions evaluate once,
+left to right. t289 is the pr7c failure mode: a negative interior
+dimension with outer count 0 errors cleanly in hbc where Harbour
+raises the BASE/1131 dialog (headless hang). pr7e registers the
+overflow condition: Harbour's Array(100000, 100000, 100000) is
+killed by the OS OOM-killer (exit 137); hbc fails cleanly via
+hbc_oom. hbc_array3m has its own ABI canary block. The old t251
+negative ("3 dimensions unsupported") was retired because three
+dimensions are supported now.
 
 ## AAdd/ASize at the third level (t281-t283, iteration 24)
 
