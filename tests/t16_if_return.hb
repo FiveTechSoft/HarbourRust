@@ -1,7 +1,12 @@
-// return inside an if block is rejected (return closes the function at its top level)
-function main()
-    if 1 < 2
-        ? "x"
-        return nil
+// since iteration 7: an early `return <expr>` inside an if block closes the
+// function at once; the closing top-level return is still required
+function pick()
+    local x := 5
+    if x > 1
+        return 100
     endif
+    x := x + 1
+    return x
+function main()
+    ? pick()
 return nil
