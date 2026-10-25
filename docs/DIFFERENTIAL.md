@@ -126,16 +126,24 @@ normalized for whitespace.
   statement": Harbour requires LOCAL declarations before any executable
   statement; HarbourRust's documented PoC policy accepts late LOCAL.
   This is the known pending policy difference (Antonio's decision), now
-  quantified: t11, t13, t15, t17, t20, t23, t25, t28, t31, t48, t52,
-  t54.
+  quantified: t11, t13, t15, t20, t23, t25, t28, t31, t48, t52, t54.
+  (First publication of this list wrongly included t17, which MATCHes;
+  corrected the same day.)
 - 3 DIVERGE:
-  - t45/t46 (FOR bound overflow): the known pending FOR-overflow policy
-    difference; Harbour wraps into extra iterations, HarbourRust stops.
-  - t55 (string ordering) - NEW FINDING: Harbour orders strings by the
-    length of the RIGHT operand: "abc" < "abcd" is TRUE but "abcd" >
-    "abc" is FALSE (asymmetric prefix handling, xBase-style). The PoC's
-    documented byte-wise ordering makes the longer prefix greater both
-    ways. Category: needs Antonio's decision (align to Harbour's
-    asymmetric rule or keep the documented symmetric byte-wise rule).
-    Until decided, README/EVIDENCIA keep describing the current
-    byte-wise behaviour as ours, not Harbour's.
+  - t45/t46 (FOR bound overflow): the known pending FOR-overflow
+    difference; Harbour wraps into extra iterations (double semantics),
+    HarbourRust stops (i64 semantics). Category: numeric model
+    difference, registered.
+  - t55 (string ordering) - found here, FIXED the same day: Harbour's
+    default (SET EXACT OFF) orders over the length of the RIGHT operand
+    (probe b22, both directions, EXACT ON/OFF). Not a Rust-model
+    conflict, so HarbourRust was aligned: hbc_str_cmp now implements the
+    asymmetric rule, t55 updated and MATCHes; SET EXACT is a runtime
+    setting this PoC does not have (documented in README).
+
+## Run of 2026-10-25 (non-call #translate at statement start)
+
+t95 (non-call #translate, statement start) and t96 (non-call #translate
+with literals and two captures): 2/2 MATCH (probes b19-b21; Harbour also
+applies non-call translate after its own `?` command via std.ch
+chaining, which this PoC does not emulate - scoped difference).
