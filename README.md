@@ -1158,7 +1158,9 @@ clean error (t345).
   restored after the loop, naturally or via `exit`. Reseat,
   return, pass and grow are named compile-time rejections.
   t481/t482 are byte-identical to the oracle binaries;
-  t483-t485 pin the restrictions and the restore.
+  t483-t485 pin the restrictions and the restore. Nested loops
+  over two middles of the same root write through independently
+  (t486, byte-identical to oracle hk120).
 
-Battery: 481/481 manifest cases on Linux x86-64 and Wine, plus
+Battery: 482/482 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
