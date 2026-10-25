@@ -213,6 +213,7 @@ enum Stmt {
     Assign(usize, String, Expr),   // x := expr on an already-declared local
     ArrSet(usize, String, Expr, Expr), // a[i] := expr (index is 1-based)
     ArrSet2(usize, String, Expr, Expr, Expr), // a[i][j] := expr / a[i,j] := expr
+    ArrSet3(usize, String, Expr, Expr, Expr, Expr), // a[i][j][k] := expr
     AAdd(usize, String, Expr),  // AAdd(a, x): grow dynamic array in place (probe d1)
     AAddSub(usize, String, Expr, Expr), // AAdd(a[i], x): grow the subarray (probe m5)
     ASizeSub(usize, String, Expr, Expr), // ASize(a[i], n): resize the subarray
@@ -742,7 +743,35 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                                 _ => {}
                             }
                         }
-                        if rb2 == 0 || toks.len() <= rb2 + 1 || toks[rb2 + 1] != Tok::Assign {
+                        if rb2 == 0 || toks.len() <= rb2 + 1 {
+                            return Err(format!("line {}: expected `name[idx][idx2] := expr`", n));
+                        }
+                        if toks[rb2 + 1] == Tok::LBracket {
+                            // a[i][j][k] := v
+                            let mut depth3 = 0i32;
+                            let mut rb3 = 0usize;
+                            for (p, t) in toks.iter().enumerate().skip(rb2 + 1) {
+                                match t {
+                                    Tok::LBracket | Tok::LParen => depth3 += 1,
+                                    Tok::RBracket | Tok::RParen => {
+                                        depth3 -= 1;
+                                        if depth3 == 0 { rb3 = p; break; }
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            if rb3 == 0 || toks.len() <= rb3 + 1 || toks[rb3 + 1] != Tok::Assign {
+                                return Err(format!("line {}: expected `name[idx][idx2][idx3] := expr`", n));
+                            }
+                            let i1 = parse_expr_tokens(toks[2..rb].to_vec(), n)?;
+                            let i2 = parse_expr_tokens(toks[rb + 2..rb2].to_vec(), n)?;
+                            let i3 = parse_expr_tokens(toks[rb2 + 2..rb3].to_vec(), n)?;
+                            let e = parse_expr_tokens(toks[rb3 + 2..].to_vec(), n)?;
+                            out.push(Stmt::ArrSet3(n, id, i1, i2, i3, e));
+                            *i += 1;
+                            continue;
+                        }
+                        if toks[rb2 + 1] != Tok::Assign {
                             return Err(format!("line {}: expected `name[idx][idx2] := expr`", n));
                         }
                         let i1 = parse_expr_tokens(toks[2..rb].to_vec(), n)?;
@@ -1160,6 +1189,19 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     pin_vars(f, e, Ty::I64, pin, *n)?;
                     walk(f, ie, sigs, lit, pin, *n)?;
                     walk(f, ie2, sigs, lit, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, *n)?;
+                }
+                Stmt::ArrSet3(n, _id, ie, ie2, ie3, e) => {
+                    // a[i][j][k] := v: indices and value pin i64 (oracle
+                    // pr6). Three-level parameters stay rejected, so no
+                    // parameter pinning here.
+                    pin_vars(f, ie, Ty::I64, pin, *n)?;
+                    pin_vars(f, ie2, Ty::I64, pin, *n)?;
+                    pin_vars(f, ie3, Ty::I64, pin, *n)?;
+                    pin_vars(f, e, Ty::I64, pin, *n)?;
+                    walk(f, ie, sigs, lit, pin, *n)?;
+                    walk(f, ie2, sigs, lit, pin, *n)?;
+                    walk(f, ie3, sigs, lit, pin, *n)?;
                     walk(f, e, sigs, lit, pin, *n)?;
                 }
                 Stmt::Exit(_) | Stmt::Loop(_) => {}
@@ -2161,6 +2203,33 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 apply_moves(e, env, sigs, true);
                 apply_moves(ie, env, sigs, false);
                 apply_moves(ie2, env, sigs, false);
+                if env[kp].moved {
+                    return Err(format!("line {}: use of moved value `{}`", n, id));
+                }
+            }
+            Stmt::ArrSet3(n, id, ie, ie2, ie3, e) => {
+                // a[i][j][k] := v: value first, then the indices (probe
+                // m7 order); three transient indexed borrows (oracle pr6).
+                let kp = match env.iter().position(|v| v.name == *id) {
+                    Some(k) => k,
+                    None => return Err(format!("line {}: assignment to undeclared variable `{}` (declare it with `local` first)", n, id)),
+                };
+                if env[kp].ro {
+                    return Err(format!("line {}: cannot assign through the `for` loop variable `{}`", n, id));
+                }
+                if env[kp].ty != Ty::DArr3 {
+                    return Err(format!("line {}: three-level assignment needs an array of arrays of arrays; `{}` is not one", n, id));
+                }
+                if type_expr(e, env, sigs, *n)? != Ty::I64 {
+                    return Err(format!("line {}: nested array elements must be integers in this increment", n));
+                }
+                if type_expr(ie, env, sigs, *n)? != Ty::I64 || type_expr(ie2, env, sigs, *n)? != Ty::I64 || type_expr(ie3, env, sigs, *n)? != Ty::I64 {
+                    return Err(format!("line {}: array indices must be integers", n));
+                }
+                apply_moves(e, env, sigs, true);
+                apply_moves(ie, env, sigs, false);
+                apply_moves(ie2, env, sigs, false);
+                apply_moves(ie3, env, sigs, false);
                 if env[kp].moved {
                     return Err(format!("line {}: use of moved value `{}`", n, id));
                 }
@@ -3491,6 +3560,42 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str("    cmp $1, %r9\n    jl 90f\n    cmp 8(%r10), %r9\n    jg 90f\n");
                 out.push_str("    mov (%r10), %r11\n    dec %r9\n    shl $4, %r9\n    add %r11, %r9\n    mov %rax, (%r9)\n    mov %rdx, 8(%r9)\n    jmp 92f\n90:\n    call hbc_bound_error\n92:\n");
             }
+            Stmt::ArrSet3(_, id, ie, ie2, ie3, e) => {
+                // a[i][j][k] := v: value first, then the indices left to
+                // right (probe m7 order); every level bounds checked; a
+                // null child pointer is a bound error (same as reads).
+                let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
+                cg_expr(e, env, sigs, strs, out, target);
+                if expr_ty(e, env, sigs) == Ty::I64 {
+                    out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                }
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                for iex in [ie, ie2] {
+                    if expr_ty(iex, env, sigs) == Ty::Dyn {
+                        cg_expr(iex, env, sigs, strs, out, target);
+                        out.push_str("    call hbc_dyn_to_i64\n");
+                    } else {
+                        cg_expr(iex, env, sigs, strs, out, target);
+                    }
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                }
+                if expr_ty(ie3, env, sigs) == Ty::Dyn {
+                    cg_expr(ie3, env, sigs, strs, out, target);
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                } else {
+                    cg_expr(ie3, env, sigs, strs, out, target);
+                }
+                // rax = k; pop j -> rcx, i -> r10, value -> rax(tag)/rdx(payload)
+                out.push_str("    mov %rax, %r9\n    mov (%rsp), %rcx\n    add $16, %rsp\n    mov (%rsp), %r10\n    add $16, %rsp\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
+                // level 1: i in r10 against the outer length
+                out.push_str(&format!("    cmp $1, %r10\n    jl 90f\n    cmp -{}(%rbp), %r10\n    jg 90f\n", v.off - 8));
+                out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
+                out.push_str("    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
+                // level 2: j in rcx against the child length
+                out.push_str("    cmp $1, %rcx\n    jl 90f\n    cmp 8(%r10), %rcx\n    jg 90f\n    mov (%r10), %r11\n    test %r11, %r11\n    jz 90f\n    dec %rcx\n    shl $4, %rcx\n    add %r11, %rcx\n");
+                // level 3: k in r9 against the innermost length
+                out.push_str("    cmp $1, %r9\n    jl 90f\n    cmp 8(%rcx), %r9\n    jg 90f\n    mov (%rcx), %r11\n    test %r11, %r11\n    jz 90f\n    dec %r9\n    shl $4, %r9\n    add %r11, %r9\n    mov %rax, (%r9)\n    mov %rdx, 8(%r9)\n    jmp 92f\n90:\n    call hbc_bound_error\n92:\n");
+            }
         }
     }
 }
@@ -3519,6 +3624,7 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
             Stmt::Ret(_, None) | Stmt::Exit(_) | Stmt::Loop(_) => {}
             Stmt::AAdd(_, _, e) | Stmt::ASize(_, _, e) => collect_blocks_expr(e, out),
             Stmt::ArrSet2(_, _, ie, ie2, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(ie2, out); collect_blocks_expr(e, out); }
+            Stmt::ArrSet3(_, _, ie, ie2, ie3, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(ie2, out); collect_blocks_expr(ie3, out); collect_blocks_expr(e, out); }
             Stmt::AAddSub(_, _, ie, e) | Stmt::ASizeSub(_, _, ie, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(e, out); }
             Stmt::If(_, c, a, b) => { collect_blocks_expr(c, out); collect_blocks_stmts(a, out); collect_blocks_stmts(b, out); }
             Stmt::While(_, c, body) => { collect_blocks_expr(c, out); collect_blocks_stmts(body, out); }
