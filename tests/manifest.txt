@@ -289,3 +289,7 @@ neg tests/t290_neg_class_gate.hb classes are not in this increment yet
 neg tests/t291_neg_class_multi.hb multiple inheritance is not in this increment
 neg tests/t292_neg_class_scope.hb class scopes
 neg tests/t293_neg_eqeq.hb identity comparison is not in this increment yet
+pos tests/t294_params3.hb \n         2\n         1\n         2\n        99\n         0\n         0\n         0
+neg tests/t295_neg_params3_moved.hb use of moved value
+pos tests/t296_params3_chain.hb \n         0\n         0\n         0\n         0
+neg tests/t297_neg_print_move.hb use of moved value
