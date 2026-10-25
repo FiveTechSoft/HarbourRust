@@ -318,3 +318,16 @@ the NIL literal itself has existed in expressions since iteration 15
 (t219: `g(1) = NIL` through Dyn). Empty-vs-NIL is covered by t269
 (`Array(3, 0)` rows are real empty arrays, never NIL) and t270
 (ASize shrink to 0: every child freed, registry balance 0).
+
+## Nested arrays as parameters and returns (t271-t274, iteration 21)
+
+t271/t272 mirror oracles pr1/pr3 (parameter and return of an array
+of arrays under move semantics; the callee frees a consumed
+parameter, the caller frees a returned value). t273 pins the
+use-after-move compile error. t274 checks mutation of the owned
+parameter inside the callee with registry balance 0. Registered
+difference (probes pr2/pr5): Harbour shares the array reference
+with the callee, so a callee write or AAdd is visible in the
+caller; here the value moves and the caller cannot observe it
+(the caller's variable is gone). That sharing belongs to the
+standing ownership-contract decision, still pending.
