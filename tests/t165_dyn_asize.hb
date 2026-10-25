@@ -1,4 +1,4 @@
-// len/shrink HB-EXACT (e2/e3); grown slots read 0: documented i64-model difference (Harbour grows NIL, e1)
+// len/shrink HB-EXACT (e2/e3); grown slots read NIL (probe e1): the tagged sentinel prints "NIL"
 function main()
 local a := {}
 AAdd(a, 1)
