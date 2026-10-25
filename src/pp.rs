@@ -19,6 +19,10 @@ use std::fs;
 struct Def {
     params: Vec<String>, // empty: object-like
     body: String,
+    // Identical rules stack in Harbour (b37f): one #untranslate removes ONE
+    // instance, the rest stay active. Only #translate/#xtranslate call-form
+    // rules use this count; plain #define replaces, as before.
+    dup: u32,
 }
 
 pub struct Pp {
@@ -577,6 +581,30 @@ fn resolve_result_brackets(text: &str, bound: &std::collections::HashSet<String>
     out
 }
 
+
+// Exact-match rule removal for #uncommand / #untranslate (probes b37a-f):
+// the pattern must match token by token (literal words case-insensitively,
+// markers exactly) AND the result text must be identical (b37b: a
+// different result removes nothing); one directive removes ONE instance of
+// a duplicated rule (b37f); removing a never-defined rule is silent
+// (b37e). Returns true when a rule was removed.
+fn remove_rule(cmds: &mut Vec<Cmd>, pattern: &[String], result: &str) -> bool {
+    if let Some(pos) = cmds.iter().rposition(|c| {
+        c.pattern.len() == pattern.len()
+            && c.pattern.iter().zip(pattern.iter()).all(|(a, b)| {
+                let am = a.starts_with('<') && a.ends_with('>');
+                let bm = b.starts_with('<') && b.ends_with('>');
+                if am || bm { a == b } else { a.eq_ignore_ascii_case(b) }
+            })
+            && c.result == result
+    }) {
+        cmds.remove(pos);
+        true
+    } else {
+        false
+    }
+}
+
 fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<String>, String> {
     let src = cmd_tokens(line);
     if src.is_empty() { return Ok(None); }
@@ -724,7 +752,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
             "DEFINE" => {
                 if emitting {
                     let (name, params, body) = parse_define(&arg, line)?;
-                    pp.defs.insert(name, Def { params, body });
+                    pp.defs.insert(name, Def { params, body, dup: 1 });
                 }
             }
             "COMMAND" | "XCOMMAND" => {
@@ -747,7 +775,12 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                         // Call form NAME( <p>, ... ) => body: exactly a
                         // function-like define (inline use in expressions).
                         Ok((name, params, _)) if !(params.is_empty() && !pat.contains('(')) => {
-                            pp.defs.insert(name, Def { params, body: result });
+                            // Identical translate rules stack (probe b37f);
+                            // a differing one replaces, like #define.
+                            match pp.defs.get_mut(&name) {
+                                Some(d) if d.params == params && d.body.trim() == result.trim() => { d.dup += 1; }
+                                _ => { pp.defs.insert(name, Def { params, body: result, dup: 1 }); }
+                            }
                         }
                         // Non-call form: statement-start rule, same machinery
                         // as #command (probes b19-b21: Harbour applies it at
@@ -760,6 +793,37 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                                 return Err(format!("line {}: #translate needs `pattern => result`", line));
                             }
                             pp.cmds.push(Cmd { pattern, result });
+                        }
+                    }
+                }
+            }
+            "UNCOMMAND" | "UXCOMMAND" => {
+                if emitting {
+                    let arrow = arg.find("=>").ok_or_else(|| format!("line {}: #{} needs `pattern => result`", line, dir.to_lowercase()))?;
+                    let pattern = cmd_tokens(arg[..arrow].trim());
+                    let result = arg[arrow + 2..].trim().to_string();
+                    remove_rule(&mut pp.cmds, &pattern, &result);
+                }
+            }
+            "UNTRANSLATE" | "UXTRANSLATE" => {
+                if emitting {
+                    let arrow = arg.find("=>").ok_or_else(|| format!("line {}: #untranslate needs `pattern => result`", line))?;
+                    let pat = arg[..arrow].trim();
+                    let result = arg[arrow + 2..].trim().to_string();
+                    match parse_define(pat, line) {
+                        // Call form: the rule lives in the define table;
+                        // name, parameter names and body must all match.
+                        Ok((name, params, _)) if !(params.is_empty() && !pat.contains('(')) => {
+                            // Pop ONE instance of a stacked rule (b37f).
+                            let pop = pp.defs.get(&name).map(|d| d.params == params && d.body.trim() == result).unwrap_or(false);
+                            if pop {
+                                if let Some(d) = pp.defs.get_mut(&name) { d.dup = d.dup.saturating_sub(1); }
+                                if pp.defs.get(&name).map(|d| d.dup == 0).unwrap_or(false) { pp.defs.remove(&name); }
+                            }
+                        }
+                        _ => {
+                            let pattern = cmd_tokens(pat);
+                            remove_rule(&mut pp.cmds, &pattern, &result);
                         }
                     }
                 }
