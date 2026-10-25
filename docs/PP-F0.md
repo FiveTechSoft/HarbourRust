@@ -4,11 +4,17 @@ Goal of our own preprocessor (MIT, written from scratch in Rust): support the
 directive surface Harbour programs need, matching OBSERVED behaviour. This
 document records only what we measured by feeding probe programs to the
 Harbour toolchain (hbmk2, harbour/core @ 694428e1, built locally) and
-watching what compiles, what is rejected, and what prints. No Harbour C
-source was read, copied or translated for this document; it is a behavioural
-specification, not a description of their implementation.
+watching what compiles, what is rejected, and what prints. The probes are
+our own small programs, designed and executed purely by observed behaviour;
+no Harbour code was copied or translated into this document or into the
+implementation that follows it. (During the earlier licence evaluation the
+GPL notices of Harbour's src/pp files were read; that is a different,
+disclosed activity - this specification is behavioural, not a description
+of their implementation.)
 
-Probe set: /tmp/pp_probe p01-p18, q13-q20 (kept locally; each <20 lines).
+Probe set: /tmp/pp_probe, 23 probes executed (p01-p18, q13, q14, q18-q20;
+each <20 lines, kept locally). q13/q14/q18 supersede p13/p14/p18, whose
+test statements sat outside a function and therefore did not run.
 
 ## Observed to WORK (accepted, output verified)
 
@@ -47,6 +53,8 @@ Probe set: /tmp/pp_probe p01-p18, q13-q20 (kept locally; each <20 lines).
   headers). Needs its own behavioural round before any commitment.
 - Out of scope: `&` macro operator (runtime memvar feature), `#pragma`.
 
-Open decision (user): what our predefined version symbol should be and its
-value (we are not Harbour; publishing `__HARBOUR__ = 197121` would claim
-compatibility we have not earned).
+Version identity: we do NOT predefine `__HARBOUR__` with Harbour's value
+(197121) - we are not Harbour, and that value would claim a compatibility
+we have not earned. Whether and when our own identity/version symbol
+appears is deferred until a real compatibility need arises; it does not
+block F1.
