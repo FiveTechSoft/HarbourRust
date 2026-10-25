@@ -583,3 +583,13 @@ at define time (b41: <{b}> rejected, Harbour E0010; same class as
 `NAME()` defines). t113 positive (MATCH), t114 negative (both reject).
 Full battery: 117/117 (114 numbered + 3 fixtures), Linux + Wine
 identical.
+
+Keyword abbreviation + result-marker validation: Harbour matches a
+source word to a pattern literal when equal (case-insensitive) or a
+prefix of >= 4 characters (b45/b45b-e; DIS and DISPLAYY fail, BYE
+matches only exactly) - implemented in the matcher, the first-word gate
+and capture terminators; a real gap (we required full equality). Result
+markers not present in the pattern are now a define-time error (b46,
+Harbour E0008; we previously failed later at the use site). t115
+positive (MATCH), t116/t117 negative (both reject). Full battery:
+120/120 (117 numbered + 3 fixtures), Linux + Wine identical.
