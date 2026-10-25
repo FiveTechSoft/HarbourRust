@@ -99,8 +99,32 @@ Probes a07, b01-b03 (30 -> 34 total executed):
   the result with E0009, and its own std.ch inserts lists via the plain
   marker (`#command ? [<explist,...>] => QOut( <explist> )`); our engine
   does the same (behavioural reference, no code copied).
-- Token pasting (##) is accepted by Harbour (b03 compiles and runs);
-  the pasting semantics themselves remain unprobed and are NOT
-  implemented.
-- Still scoped OUT: match markers, non-call #translate forms, token
-  pasting. No claim of general #command/#translate compatibility.
+- Token pasting (##): b03 only checked acceptance (PASTE never used).
+  Follow-up probes: `a ## b` inside a function-like define FAILS at use
+  (E0030, b04); `<n>##<i>` attached in a #command result also fails at
+  use (E0030, b10c); spaced `? <a> ## <b>` compiles but produced empty
+  output (b10/b10b) - whatever Harbour does here, it is NOT C-style
+  token pasting and the semantics remain unclear. NOT implemented.
+
+## Match-marker / token-paste round (2026-10-25, fourth batch)
+
+Probes b04-b10c (34 -> 42 total executed):
+- Match markers in this Harbour build (3.2.1dev r2610242111): <(x)>
+  accepted (b07, normalizes nothing visible in our check), <x> and
+  <x,...> accepted, [...] optionals accepted including an optional list
+  group [<x,...>] (b09: SHOW 1, 2 prints both; bare SHOW prints empty).
+  <"x"> and <#x> are REJECTED (E0010 "Bad match marker") in both
+  #command and #translate (b05, b05b, b06, b08).
+- ## : see above - not C-style pasting; unimplemented.
+
+Provenance note (corrected): this file records BEHAVIOURAL probes against
+the Harbour binaries, and - stated where it happens - consultation of
+Harbour's own .ch header rules (std.ch) as existing specification (e.g.
+the plain <x> result marker for list insertion in F3b). No Harbour
+implementation code (C or .ch bodies) is copied or translated into this
+MIT project; reading published rules/headers to learn behaviour is
+recorded, not denied.
+
+- Still scoped OUT: match markers as a general mechanism, non-call
+  #translate forms, token pasting. No claim of general
+  #command/#translate compatibility.
