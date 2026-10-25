@@ -224,3 +224,10 @@ b39/b39b/b39e): MATCH.
 
 t112 (text after the continuation `;`): both reject (Harbour E0030;
 HarbourRust "character not allowed").
+
+t113 (empty #command/#translate result b40/b44; zero-param function-like
+define b42): MATCH.
+
+t114 (<{b}> match marker; b41): both reject (Harbour E0010; HarbourRust
+"bad match marker"). #include with a macro name (b43): both reject
+(Harbour F0030; HarbourRust "cannot find include").
