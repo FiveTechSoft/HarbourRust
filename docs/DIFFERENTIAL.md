@@ -240,3 +240,7 @@ t116 (3-letter prefix DIS): both reject (Harbour E0030; HarbourRust
 
 t117 (result marker absent from the pattern): both reject at define time
 (Harbour E0008; HarbourRust "unknown result marker").
+
+t118 (specificity tie, equal literal counts: the LATEST definition wins;
+probes b47/b47b/b47c): MATCH. Corrects the earlier tie note (b31 probed
+only unequal counts; ties were untested).
