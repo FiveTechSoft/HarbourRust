@@ -76,3 +76,13 @@ Constant out-of-range indexes are compile errors (t131/t132). The t02 injection 
 one layer up: '{' is grammar now, so the rejection comes from the parser
 ("trailing tokens") instead of the lexer (U+007B) - same construct, still
 rejected.
+
+## Evaluation-order fixes (t146-t149)
+
+`a[i] := v` checks and generates value-first, then index (Harbour probe
+adv2; Rust's `a[i] = v` order agrees). The checker applies moves in the
+same order, so `a[take(v)] := take(v)` (take consumes a String) is
+rejected as use-after-move (t149, neg-MODEL) while one-sided consumers
+t147/t148 compile and match Harbour byte-exactly. `for i := a to b`
+evaluates the start before the end (Harbour probe c11; Rust `a..b`
+agrees); t146 pins the side-effect order byte-exactly.
