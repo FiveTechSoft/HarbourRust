@@ -1031,10 +1031,15 @@ Registered limits of this increment, not general fidelity:
   would SHARE it - registered D5/D7-family difference pending the
   user's decision, t424-t427, balance 0; deeper pins and literal
   arguments are named compile errors, t428/t429).
+- A static root array can be RETURNED: the boundary materializes a
+  dynamic COPY the caller owns (hk99; matches Harbour observably
+  for the measured shape, t430-t432, balance 0; literal returns and
+  array temporaries in expression position are named compile
+  errors, t433/t434).
 
 Robustness fix in passing: `hb_HKeys` with a non-variable
 argument used to panic the compiler; it is now the documented
 clean error (t345).
 
-Battery: 426/426 manifest cases on Linux x86-64 and Wine, plus
+Battery: 431/431 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
