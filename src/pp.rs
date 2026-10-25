@@ -441,6 +441,60 @@ fn validate_markers(pattern: &[String], line: usize) -> Result<(), String> {
     Ok(())
 }
 
+
+// Harbour keyword abbreviation (probes b45/b45b/b45c/b45d/b45e): a source
+// word matches a pattern literal when it is EQUAL (case-insensitive) or a
+// PREFIX of at least 4 characters; shorter prefixes and longer words do
+// not match (DIS fails against DISPLAY; BYE matches only exactly).
+fn lit_match(src: &str, lit: &str) -> bool {
+    if src.eq_ignore_ascii_case(lit) { return true; }
+    src.len() >= 4
+        && lit.len() > src.len()
+        && src.is_ascii() && lit.is_ascii()
+        && lit[..src.len()].eq_ignore_ascii_case(src)
+}
+
+
+// Harbour E0008 (probe b46): a <marker> in the RESULT that does not exist
+// in the pattern is an error at define time.
+fn validate_result_markers(pattern: &[String], result: &str, line: usize) -> Result<(), String> {
+    let mut names: Vec<String> = Vec::new();
+    for t in pattern {
+        if t.starts_with('<') && t.ends_with('>') && t.len() > 2 {
+            let inner = &t[1..t.len() - 1];
+            let base = if inner.starts_with('(') && inner.ends_with(')') {
+                &inner[1..inner.len() - 1]
+            } else if let Some(p) = inner.strip_suffix(",...") {
+                p
+            } else {
+                inner
+            };
+            names.push(base.to_lowercase());
+        }
+    }
+    let rc: Vec<char> = result.chars().collect();
+    let mut k = 0usize;
+    while k < rc.len() {
+        if rc[k] == '<' {
+            if let Some(rel) = rc[k..].iter().position(|&c| c == '>') {
+                let inner: String = rc[k + 1..k + rel].iter().collect();
+                let base: &str = if inner.starts_with('(') && inner.ends_with(')') {
+                    &inner[1..inner.len() - 1]
+                } else {
+                    &inner
+                };
+                if !names.contains(&base.to_lowercase()) {
+                    return Err(format!("line {}: unknown result marker <{}> (Harbour: E0008)", line, inner));
+                }
+                k += rel + 1;
+                continue;
+            }
+        }
+        k += 1;
+    }
+    Ok(())
+}
+
 fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
     // First literal token at or after pat[i], looking through markers and
     // group brackets; used as the terminator for captures.
@@ -462,7 +516,7 @@ fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
                     let t = &src[k];
                     // the terminating literal is compared BEFORE it can
                     // change the depth (a ")" at depth 0 ends the capture)
-                    if depth == 0 && t.eq_ignore_ascii_case(l) { return Some(k); }
+                    if depth == 0 && lit_match(t, l) { return Some(k); }
                     if t == "(" { depth += 1; } else if t == ")" { depth -= 1; }
                     k += 1;
                 }
@@ -527,7 +581,7 @@ fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
                 si = end;
                 pi += 1;
             } else {
-                if si >= src.len() || !src[si].eq_ignore_ascii_case(p) { return None; }
+                if si >= src.len() || !lit_match(&src[si], p) { return None; }
                 si += 1;
                 pi += 1;
             }
@@ -652,7 +706,7 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
     for (ci, c) in cmds.iter().enumerate() {
         let first = match c.pattern.first() { Some(f) => f, None => continue };
         if first.starts_with('<') { continue; }
-        if !src[0].eq_ignore_ascii_case(first) { continue; }
+        if !lit_match(&src[0], first) { continue; }
         starts = true;
         if let Some(caps) = cmd_match(&c.pattern, &src) {
             let lits = c.pattern.iter().filter(|t| !(t.starts_with('<') && t.ends_with('>')) && t.as_str() != "[" && t.as_str() != "]").count();
@@ -832,6 +886,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     }
                     validate_markers(&pattern, line)?;
                     let result = arg[arrow + 2..].trim().to_string();
+                    validate_result_markers(&pattern, &result, line)?;
                     pp.cmds.push(Cmd { pattern, result });
                 }
             }
@@ -863,6 +918,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                                 return Err(format!("line {}: #translate needs `pattern => result`", line));
                             }
                             validate_markers(&pattern, line)?;
+                            validate_result_markers(&pattern, &result, line)?;
                             pp.cmds.push(Cmd { pattern, result });
                         }
                     }
