@@ -17,7 +17,11 @@ use std::fs;
 
 #[derive(Clone)]
 struct Def {
-    params: Vec<String>, // empty: object-like
+    params: Vec<String>,
+    // true: function-like (the `(` touched the name at define time);
+    // false: object-like. Distinct even with zero params (probe b42:
+    // `#define PI2() 6` expands only as `PI2()`).
+    funclike: bool,
     body: String,
     // Identical rules stack in Harbour (b37f): one #untranslate removes ONE
     // instance, the rest stay active. Only #translate/#xtranslate call-form
@@ -263,7 +267,7 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
             while j < b.len() && ((b[j] as char).is_ascii_alphanumeric() || b[j] == b'_') { j += 1; }
             let word = &line[i..j];
             match defs.get(word) {
-                Some(d) if d.params.is_empty() => {
+                Some(d) if !d.funclike => {
                     // object-like: the body itself may contain macro calls
                     outb.extend_from_slice(expand_depth(&d.body.clone(), defs, line_no, depth + 1)?.as_bytes());
                 }
@@ -303,6 +307,7 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
                     }
                     if m >= b.len() { return Err(format!("line {}: unterminated macro call {}", line_no, word)); }
                     args.push(String::from_utf8_lossy(&curb).trim().to_string());
+                    if d.params.is_empty() && args.len() == 1 && args[0].is_empty() { args.clear(); }
                     if args.len() != d.params.len() {
                         return Err(format!("line {}: macro {} takes {} argument(s), got {}", line_no, word, d.params.len(), args.len()));
                     }
@@ -406,6 +411,36 @@ fn cmd_tokens(text: &str) -> Vec<String> {
 // markers (all probed against Harbour first): <x>, <x,...> list captures,
 // <(x)> parenthesized-expression captures, and [ ... ] optional groups
 // including nesting (probe b18).
+
+// Harbour accepts only these match-marker forms: <x>, <(x)> and <x,...>
+// (identifier = [A-Za-z_][A-Za-z0-9_]*). It rejects <"x">, <#x> and <{x}>
+// with E0010 (probe b41 and Harbour's own behaviour); we reject them at
+// define time too.
+fn validate_markers(pattern: &[String], line: usize) -> Result<(), String> {
+    let ok_ident = |s: &str| {
+        let b = s.as_bytes();
+        !b.is_empty()
+            && ((b[0] as char).is_ascii_alphabetic() || b[0] == b'_')
+            && b[1..].iter().all(|&c| (c as char).is_ascii_alphanumeric() || c == b'_')
+    };
+    for t in pattern {
+        if t.starts_with('<') && t.ends_with('>') && t.len() > 2 {
+            let inner = &t[1..t.len() - 1];
+            let name = if inner.starts_with('(') && inner.ends_with(')') {
+                &inner[1..inner.len() - 1]
+            } else if let Some(p) = inner.strip_suffix(",...") {
+                p
+            } else {
+                inner
+            };
+            if !ok_ident(name) {
+                return Err(format!("line {}: bad match marker {} in #command/#translate (Harbour: E0010)", line, t));
+            }
+        }
+    }
+    Ok(())
+}
+
 fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
     // First literal token at or after pat[i], looking through markers and
     // group brackets; used as the terminator for captures.
@@ -693,7 +728,7 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
 
 // `#define NAME body` or `#define NAME(p1, p2) body`; the '(' must touch the
 // name to make it function-like.
-pub fn parse_define(arg: &str, line: usize) -> Result<(String, Vec<String>, String), String> {
+pub fn parse_define(arg: &str, line: usize) -> Result<(String, Vec<String>, String, bool), String> {
     let bytes = arg.as_bytes();
     let mut i = 0usize;
     while i < bytes.len() && ((bytes[i] as char).is_ascii_alphanumeric() || bytes[i] == b'_') { i += 1; }
@@ -710,10 +745,10 @@ pub fn parse_define(arg: &str, line: usize) -> Result<(String, Vec<String>, Stri
         if params.iter().any(|p| p.is_empty()) {
             return Err(format!("line {}: empty parameter name in #define", line));
         }
-        return Ok((name, params.clone(), arg[close + 1..].trim().to_string()));
+        return Ok((name, params.clone(), arg[close + 1..].trim().to_string(), true));
     }
     let body = arg[i..].trim().to_string();
-    Ok((name, Vec::new(), body))
+    Ok((name, Vec::new(), body, false))
 }
 
 pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Result<(), String> {
@@ -782,18 +817,21 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
         match dir.as_str() {
             "DEFINE" => {
                 if emitting {
-                    let (name, params, body) = parse_define(&arg, line)?;
-                    pp.defs.insert(name, Def { params, body, dup: 1 });
+                    let (name, params, body, funclike) = parse_define(&arg, line)?;
+                    pp.defs.insert(name, Def { params, funclike, body, dup: 1 });
                 }
             }
             "COMMAND" | "XCOMMAND" => {
                 if emitting {
                     let arrow = arg.find("=>").ok_or_else(|| format!("line {}: #{} needs `pattern => result`", line, dir.to_lowercase()))?;
                     let pattern = cmd_tokens(arg[..arrow].trim());
-                    let result = arg[arrow + 2..].trim().to_string();
-                    if pattern.is_empty() || result.is_empty() {
+                    // An empty RESULT is legal (probe b40: the statement is
+                    // deleted); an empty pattern is not.
+                    if pattern.is_empty() {
                         return Err(format!("line {}: #{} needs `pattern => result`", line, dir.to_lowercase()));
                     }
+                    validate_markers(&pattern, line)?;
+                    let result = arg[arrow + 2..].trim().to_string();
                     pp.cmds.push(Cmd { pattern, result });
                 }
             }
@@ -805,12 +843,12 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     match parse_define(pat, line) {
                         // Call form NAME( <p>, ... ) => body: exactly a
                         // function-like define (inline use in expressions).
-                        Ok((name, params, _)) if !(params.is_empty() && !pat.contains('(')) => {
+                        Ok((name, params, _, _)) if !(params.is_empty() && !pat.contains('(')) => {
                             // Identical translate rules stack (probe b37f);
                             // a differing one replaces, like #define.
                             match pp.defs.get_mut(&name) {
                                 Some(d) if d.params == params && d.body.trim() == result.trim() => { d.dup += 1; }
-                                _ => { pp.defs.insert(name, Def { params, body: result, dup: 1 }); }
+                                _ => { pp.defs.insert(name, Def { params, funclike: true, body: result, dup: 1 }); }
                             }
                         }
                         // Non-call form: statement-start rule, same machinery
@@ -819,10 +857,12 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                         // std.ch chaining, which this PoC does not emulate -
                         // but rejects it inside an expression, E0030).
                         _ => {
+                            // Empty result is legal here too (probe b44).
                             let pattern = cmd_tokens(pat);
-                            if pattern.is_empty() || result.is_empty() {
+                            if pattern.is_empty() {
                                 return Err(format!("line {}: #translate needs `pattern => result`", line));
                             }
+                            validate_markers(&pattern, line)?;
                             pp.cmds.push(Cmd { pattern, result });
                         }
                     }
@@ -844,7 +884,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     match parse_define(pat, line) {
                         // Call form: the rule lives in the define table;
                         // name, parameter names and body must all match.
-                        Ok((name, params, _)) if !(params.is_empty() && !pat.contains('(')) => {
+                        Ok((name, params, _, _)) if !(params.is_empty() && !pat.contains('(')) => {
                             // Pop ONE instance of a stacked rule (b37f).
                             let pop = pp.defs.get(&name).map(|d| d.params == params && d.body.trim() == result).unwrap_or(false);
                             if pop {
