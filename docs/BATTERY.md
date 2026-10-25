@@ -177,6 +177,19 @@ still passed element size 8 to hbc_free, so munmap length was
 for blocks spanning more than one page. Single-page battery
 allocations were unaffected and hb_memcheck counts calls, not
 bytes, so the battery could not see it; all free sites now pass 16.
+The fix has teeth now (t224-t228): hbc_alloc records (base, bytes)
+in a 16384-entry registry and hbc_free verifies the exact computed
+length and liveness - a wrong size, an unknown block or a double
+free prints "Internal error: allocation registry mismatch" and
+exits 1. Negative control: reverting one site to element size 8
+makes the harness fire. The five tests put >1-page and >2-page
+blocks through the four drop paths (epilogue, reassign, local
+re-declare in a loop, DArr2 child overwrite) plus shrink-nested;
+the work runs in callees because main's own locals are still owned
+when hb_memcheck() reads (its epilogue frees afterwards). The
+registry's first version clobbered r9/r10 and broke hbc_asize's
+shrink loop counter (caught by t190): hbc_free now preserves
+rdx/r9/r10 across the registry work.
 t208-t210, t212 unchanged. New: t213 i64::MIN/NIL coexistence,
 t218 (posx) arithmetic on NIL prints "Type error: NIL used as a
 number" and exits 1 on both targets, t220 (posx) ordering a NIL held
