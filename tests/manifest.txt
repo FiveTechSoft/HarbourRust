@@ -199,7 +199,7 @@ pos tests/t196_md_selfmove.hb \n         2\n         0
 neg tests/t197_md_neg_extract.hb cannot extract the subarray
 neg tests/t198_md_neg_selfinsert.hb the elements of `a` are dynamic arrays
 neg tests/t199_md_neg_mixed.hb cannot mix integers and arrays
-neg tests/t200_md_neg_depth3.hb nested array elements must be integers
+neg tests/t200_md_neg_depth3.hb nested array elements are tagged scalars
 neg tests/t201_md_neg_param.hb needs an array of arrays
 neg tests/t202_md_neg_return.hb arrays of arrays cannot be returned
 neg tests/t203_md_neg_asize_unpinned.hb unknown until its first `AAdd`
@@ -210,5 +210,16 @@ posx tests/t207_md_neg_null_child.hb 1 Bound error: array access
 pos tests/t208_nil_literal.hb \nNIL\nNIL\n         5\nNIL
 pos tests/t209_nil_return.hb \nNIL\nNIL
 pos tests/t210_nil_compare.hb \nok1\nok2\nok3\nok4\nok5\nok6
-pos tests/t211_nil_param.hb \nNIL\nNIL
+pos tests/t211_nil_param.hb \nis-nil\nNIL\nNIL
 neg tests/t212_nil_neg_order.hb NIL only compares
+pos tests/t213_nil_min_coexist.hb \n-9223372036854775808\nNIL\n-9223372036854775808\nok1\nok2\nok3\nok4\n-9223372036854775808
+pos tests/t214_nil_mixed_branch.hb \nNIL\nok1\n         9\nok2
+pos tests/t215_nil_reassign.hb \nNIL\n         5\nNIL\n         3\nok1
+pos tests/t216_nil_forward_call.hb \nNIL\nnil-in\nNIL\n         4\nnum-in\n         4
+pos tests/t217_nil_mixed_return.hb \n         7\nNIL\nok1\nok2\n         9
+posx tests/t218_nil_typeerr.hb 1 Type error: NIL used as a number
+pos tests/t219_nil_mixed_return_rev.hb \nNIL\n         7\nok1\nok2\nok3\nok4\n         9
+posx tests/t220_nil_order_var_err.hb 1 Type error: NIL used as a number
+pos tests/t221_nil_loop_join.hb \nNIL\n        30\nok1\nNIL
+pos tests/t222_nil_min_fixed.hb \n-9223372036854775808\nok1\nok2
+pos tests/t223_nil_eval_effects.hb \ncalled\nok1\ncalled\nok2\n         7\nnum-in\nok3
