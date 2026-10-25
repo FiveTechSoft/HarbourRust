@@ -116,6 +116,9 @@ Probes b04-b10c (34 -> 42 total executed):
   unparenthesized use errors E0030) and captures its inner tokens; in
   the result, <x> inserts them plain and <(x)> re-parenthesized
   (b15/b17). IMPLEMENTED scoped the same day (t91-t93).
+  Optional groups NEST (b18: [TO <y> [BY <z>]] works at all three
+  depths); the matcher is recursive like Harbour's behaviour.
+  IMPLEMENTED (t94).
   <"x"> and <#x> are REJECTED (E0010 "Bad match marker") in both
   #command and #translate (b05, b05b, b06, b08) - NOT implemented.
 - ## : see above - not C-style pasting; unimplemented.
