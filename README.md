@@ -585,6 +585,23 @@ tested paths (t191). `Array(n, 0)` children are real empty arrays
 (az0b, t256). Battery: 266/266 green on Linux x86-64 and Wine, plus
 the ABI harness on both targets.
 
+## Iteration 25 - Array() with three dimensions
+
+`Array(n, m, k)` now builds a full three-level value (oracle pr7,
+written for this increment: `len` is n/m/k at each level, the
+innermost slots read NIL, a later `a[i][j][k] := v` write works).
+The constructor composes: one new helper `hbc_array3m` builds n
+children, each a complete `Array(m, k)` from the existing
+`hbc_arraym`, so the zero-dimension and negative-dimension behavior
+is the 2D behavior recursively (a negative dimension is the
+registered clean error, t286 pins the compile error for a fourth
+dimension; t251, the old "3 dimensions unsupported" negative, is
+retired). Dimensions evaluate left to right. t285 mirrors pr7 with
+registry balance 0 after the owner returns. Battery: 284/284 green
+on Linux x86-64 and Wine, plus the ABI harness on both targets.
+Out of scope, all explicit compile errors: three-level parameters,
+a fourth index level or dimension, mixed literals.
+
 ## Iteration 24 - AAdd and ASize at the third level
 
 `AAdd(a[i][j], x)` and `ASize(a[i][j], n)` grow and resize the
