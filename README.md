@@ -1160,7 +1160,10 @@ clean error (t345).
   t481/t482 are byte-identical to the oracle binaries;
   t483-t485 pin the restrictions and the restore. Nested loops
   over two middles of the same root write through independently
-  (t486, byte-identical to oracle hk120).
+  (t486, byte-identical to oracle hk120). The borrow
+  aliases the root's casillas: a write through the loop
+  variable is visible reading the root directly, mid-loop
+  and after (t487, byte-identical to oracle hk121).
 
-Battery: 482/482 manifest cases on Linux x86-64 and Wine, plus
+Battery: 483/483 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
