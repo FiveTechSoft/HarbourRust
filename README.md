@@ -388,3 +388,23 @@ expression, as Harbour does. Extra `eval` arguments are evaluated and
 ignored (Harbour's behaviour, probed); missing arguments are a compile
 error. Capturing function locals is the next increment. Battery:
 t150-t160, seven byte-exact against compiled Harbour.
+
+## Iteration 13: dynamic integer arrays (first heap)
+
+`local a := {}` creates a dynamic array of integers: `AAdd(a, x)` and
+`ASize(a, n)` are built-in statements that grow/resize in place,
+`len(a)` reads the length. This is the compiler's first heap: mmap on
+Linux (failure = negative errno, checked), HeapAlloc on Windows, an
+8-byte capacity header before the data, doubling growth, checked
+overflow, OOM abort with a clean message. Ownership is Rust's model
+made physical: one owner per array; assignment, call and return MOVE
+and null the source slot; slots are zero-init and freeing is null-safe,
+so every allocation is freed exactly once at its owner's epilogue,
+overwrite or re-declaration - no GC, no reference counting, no path
+tracking, no shared aliases (Harbour's sharing, probes d6-d9/e9, is a
+registered MODEL difference). Grown slots read 0 (Harbour grows NIL -
+documented i64-model limit, not an equivalence claim). Nested dynamic
+arrays, hashes and codeblock captures are NOT in this increment.
+Battery: t164-t176 (178/178 green on Linux and Wine), including
+alloc/free balance 0 across function boundaries (t166) and the pinned
+compile-time rejections.
