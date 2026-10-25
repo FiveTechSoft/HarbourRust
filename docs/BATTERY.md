@@ -652,3 +652,27 @@ hbc_dyn_to_i64), bounds-checks it against the parent's length
 to the new noreturn stub hbc_arracc_error when the child
 pointer is null (NIL casilla). No ABI harness entries: the
 only new runtime helper is noreturn.
+
+## Iteration 33f additions (376 manifest cases): FOR EACH over a[i][j]
+
+t374 (hk60/hk61 mirror: `for each x in a[1][1]` / `a[2][1]` on a
+three-level array iterate the innermost child; the root survives
+with its length and cells), t375 (hk64 mirror: both collection
+index expressions evaluate ONCE - "eval" prints exactly twice for
+a[ni()][ni()]), t376-t378 (named compile errors inside the loop:
+AAdd(a[1][1], 9) grows the borrowed innermost child, a[1][1][1]
+:= 9 writes through the root, and passing the root to a function
+moves it - all rejected because the loop borrows the collection),
+t379 (hk62 mirror: `exit` and `return` inside the depth-3 loop -
+the loop owns nothing, the epilogue frees the root as usual,
+balance 0). Design: the codegen evaluates the first index once,
+bounds-checks it against the root length, loads the level-2 cell
+(null child -> hbc_arracc_error), preserves it on the stack while
+evaluating the second index once, bounds-checks against the
+level-2 length and loads the innermost {ptr, len} cell. The
+depth-3 hbc_arracc_error path is defensive only: a NIL middle
+casilla cannot be built in this PoC (middle-level growth of a
+DArr3 is unsupported), so no execution test claims it; hk63
+measured Harbour's BASE/1068 dialog there (headless-hanging,
+registered failure mode). No new runtime helpers and no ABI
+harness entries.
