@@ -70,10 +70,13 @@ rewritten explicitly (e.g. return the array from the helper).
 - Overflow/OOM: `cap * elemsize + header` computed with checked
   arithmetic; on overflow or allocation failure the process prints a
   runtime error message and exits non-zero (no silent wraparound).
-- Grown slots (`ASize` grow, fresh capacity) are ZERO-FILLED.
-  DOCUMENTED MODEL DIFFERENCE: Harbour fills with NIL (e1); our arrays
-  are i64-only in this increment and NIL has no i64 analogue, so grown
-  elements read as 0. Not declared equivalent.
+- Grown slots (`ASize` grow, fresh capacity) are NIL-FILLED: NIL is the
+  tagged i64 sentinel i64::MIN (probes e1/n1: Harbour grows with NIL, a
+  grown slot prints "NIL" and compares .F. against 0). Cost, documented:
+  that one extreme integer is unrepresentable (reads/prints/compares as
+  NIL), and arithmetic or ordering on a NIL held in a variable evaluates
+  numerically where Harbour raises a type error (ordering a NIL LITERAL
+  is a compile error).
 - Nested/multidimensional dynamic arrays: NOT in this increment
   (elements are i64 only). When added, the parent owns its element
   arrays and frees them recursively; move semantics keep reference
@@ -135,6 +138,7 @@ bytes). Semantics, all probe-checked (m1-m8):
   preserved across those frees.
 - Not in this increment (compile errors): arrays of arrays as parameters,
   returns or print arguments; three-level nesting; mixed literals; `ASize`
-  before pinning. Growth zero-fills; Harbour grows NIL (e1/m3) and a null
-  child here reads len 0 and indexes to a clean bound error - the
-  registered i64-model limitation, not a Rust constraint.
+  before pinning. i64 elements grow as NIL (sentinel, e1); a DArr2 grows
+  with the EMPTY (null, 0) child, which reads len 0 and indexes to a clean
+  bound error - Harbour grows NIL there too (m3), a registered
+  nested-model limitation, not a Rust constraint.
