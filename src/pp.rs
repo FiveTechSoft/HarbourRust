@@ -22,13 +22,21 @@ struct Def {
 }
 
 pub struct Pp {
-    pub defs: HashMap<String, Def>, // key: UPPERCASE name (directives are case-insensitive)
+    pub defs: HashMap<String, Def>, // key: exact name (macro names are case-sensitive)
+    pub cmds: Vec<Cmd>,             // #command / #xcommand / #translate rules, in order
     pub incdirs: Vec<String>,
+}
+
+// A command rule: pattern tokens (literal words or <param>) => result template.
+// Scoped F3a: no optional [...] clauses, no <x,...> lists, no match markers.
+pub struct Cmd {
+    pattern: Vec<String>, // tokens; "<name>" marks a capture
+    result: String,
 }
 
 impl Pp {
     pub fn new(incdirs: Vec<String>) -> Self {
-        Pp { defs: HashMap::new(), incdirs }
+        Pp { defs: HashMap::new(), cmds: Vec::new(), incdirs }
     }
 }
 
@@ -305,6 +313,136 @@ fn subst_param(text: &str, name: &str, val: &str) -> String {
     String::from_utf8_lossy(&out).into_owned()
 }
 
+// Tokenize a command pattern or source line: words, <param> markers, and
+// single non-word characters (parens, commas) as separate tokens. Keywords
+// match case-insensitively (probe c05); captures keep their original text.
+fn cmd_tokens(text: &str) -> Vec<String> {
+    let b = text.as_bytes();
+    let mut out: Vec<String> = Vec::new();
+    let mut i = 0usize;
+    while i < b.len() {
+        let c = b[i] as char;
+        if c.is_whitespace() { i += 1; continue; }
+        if c == '<' {
+            let mut j = i;
+            while j < b.len() && b[j] != b'>' { j += 1; }
+            if j < b.len() { out.push(text[i..=j].to_string()); i = j + 1; } else { out.push("<".to_string()); i += 1; }
+            continue;
+        }
+        if c == '"' || c == '\'' {
+            let mut j = i + 1;
+            while j < b.len() && b[j] != c as u8 { j += 1; }
+            let end = if j < b.len() { j + 1 } else { j };
+            out.push(text[i..end].to_string());
+            i = end;
+            continue;
+        }
+        if !((c as u8).is_ascii()) {
+            // UTF-8 lead byte: copy the whole sequence into a word token
+            let mut j = i + 1;
+            while j < b.len() && !b[j].is_ascii() { j += 1; }
+            out.push(text[i..j].to_string());
+            i = j;
+            continue;
+        }
+        if c.is_ascii_alphanumeric() || c == '_' {
+            let mut j = i;
+            while j < b.len() && ((b[j] as char).is_ascii_alphanumeric() || b[j] == b'_' || !b[j].is_ascii()) { j += 1; }
+            out.push(text[i..j].to_string());
+            i = j;
+            continue;
+        }
+        out.push(text[i..i + 1].to_string());
+        i += 1;
+    }
+    out
+}
+
+// Try to match source tokens against a command pattern. On success returns
+// the captured params (pattern order). A <param> captures tokens up to the
+// next literal (at paren depth 0), or the rest of the line when last.
+fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
+    let mut caps: Vec<String> = Vec::new();
+    let mut pi = 0usize;
+    let mut si = 0usize;
+    while pi < pat.len() {
+        let p = &pat[pi];
+        if p.starts_with('<') && p.ends_with('>') {
+            let next_lit = pat[pi + 1..].iter().find(|t| !(t.starts_with('<') && t.ends_with('>')));
+            let start = si;
+            match next_lit {
+                None => { si = src.len(); }
+                Some(lit) => {
+                    let mut depth = 0i32;
+                    let mut found = None;
+                    let mut k = si;
+                    while k < src.len() {
+                        let t = &src[k];
+                        // the terminating literal is compared BEFORE it can
+                        // change the depth (a ")" at depth 0 ends the capture)
+                        if depth == 0 && t.eq_ignore_ascii_case(lit) { found = Some(k); break; }
+                        if t == "(" { depth += 1; } else if t == ")" { depth -= 1; }
+                        k += 1;
+                    }
+                    match found { Some(k) => si = k, None => return None }
+                }
+            }
+            caps.push(src[start..si].join(" "));
+            if caps.last().map(|c| c.is_empty()).unwrap_or(true) { return None; } // empty capture: no match
+            pi += 1;
+        } else {
+            if si >= src.len() || !src[si].eq_ignore_ascii_case(p) { return None; }
+            si += 1;
+            pi += 1;
+        }
+    }
+    if si != src.len() { return None; } // trailing tokens: no match
+    Some(caps)
+}
+
+// Apply the first matching command rule to a source line. Returns:
+// Ok(Some(expanded)) matched, Ok(None) no command starts here,
+// Err when the leading keyword matches but the pattern does not complete
+// (Harbour rejects this too: E0020 incomplete statement, probe c09).
+fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<String>, String> {
+    let src = cmd_tokens(line);
+    if src.is_empty() { return Ok(None); }
+    let mut starts = false;
+    for c in cmds {
+        let first = match c.pattern.first() { Some(f) => f, None => continue };
+        if first.starts_with('<') { continue; }
+        if !src[0].eq_ignore_ascii_case(first) { continue; }
+        starts = true;
+        if let Some(caps) = cmd_match(&c.pattern, &src) {
+            let mut out = c.result.clone();
+            let mut pi = 0usize;
+            for t in &c.pattern {
+                if t.starts_with('<') && t.ends_with('>') {
+                    let name = &t[1..t.len() - 1];
+                    // substitute <name> in the result (case-insensitive marker)
+                    let low = out.to_lowercase();
+                    let needle = format!("<{}>", name.to_lowercase());
+                    let mut rebuilt = String::new();
+                    let mut at = 0usize;
+                    while let Some(k) = low[at..].find(&needle) {
+                        rebuilt.push_str(&out[at..at + k]);
+                        rebuilt.push_str(&caps[pi]);
+                        at += k + needle.len();
+                    }
+                    rebuilt.push_str(&out[at..]);
+                    out = rebuilt;
+                    pi += 1;
+                }
+            }
+            return Ok(Some(out));
+        }
+    }
+    if starts {
+        return Err(format!("line {}: incomplete statement for the command used here (Harbour: E0020)", line_no));
+    }
+    Ok(None)
+}
+
 // `#define NAME body` or `#define NAME(p1, p2) body`; the '(' must touch the
 // name to make it function-like.
 pub fn parse_define(arg: &str, line: usize) -> Result<(String, Vec<String>, String), String> {
@@ -339,7 +477,24 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
         let line = li + 1;
         let t = raw.trim_start();
         if !t.starts_with('#') {
-            if emitting { out.push_str(&expand(raw, &pp.defs, line)?); out.push('\n'); }
+            if emitting {
+                // commands can expand into other commands (probe c04):
+                // re-match the result, capped like macro expansion
+                let mut cur = t.to_string();
+                let mut depth = 0usize;
+                loop {
+                    match apply_commands(&cur, &pp.cmds, line)? {
+                        Some(x) => {
+                            depth += 1;
+                            if depth > 16 { return Err(format!("line {}: command expansion too deep (recursive command?)", line)); }
+                            cur = x;
+                        }
+                        None => break,
+                    }
+                }
+                out.push_str(&expand(&cur, &pp.defs, line)?);
+                out.push('\n');
+            }
             continue;
         }
         let rest = t[1..].trim_start();
@@ -350,6 +505,33 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                 if emitting {
                     let (name, params, body) = parse_define(&arg, line)?;
                     pp.defs.insert(name, Def { params, body });
+                }
+            }
+            "COMMAND" | "XCOMMAND" => {
+                if emitting {
+                    let arrow = arg.find("=>").ok_or_else(|| format!("line {}: #{} needs `pattern => result`", line, dir.to_lowercase()))?;
+                    let pattern = cmd_tokens(arg[..arrow].trim());
+                    let result = arg[arrow + 2..].trim().to_string();
+                    if pattern.is_empty() || result.is_empty() {
+                        return Err(format!("line {}: #{} needs `pattern => result`", line, dir.to_lowercase()));
+                    }
+                    pp.cmds.push(Cmd { pattern, result });
+                }
+            }
+            "TRANSLATE" => {
+                if emitting {
+                    // Scoped: only the call form NAME( <p>, ... ) => body,
+                    // which is exactly a function-like define (inline use in
+                    // expressions). Other translate forms are not this PoC.
+                    let arrow = arg.find("=>").ok_or_else(|| format!("line {}: #translate needs `pattern => result`", line))?;
+                    let pat = arg[..arrow].trim();
+                    let result = arg[arrow + 2..].trim().to_string();
+                    let (name, params, _) = parse_define(pat, line)
+                        .map_err(|_| format!("line {}: only the call form `#translate NAME( <p> ) => result` in this PoC", line))?;
+                    if params.is_empty() && !pat.contains('(') {
+                        return Err(format!("line {}: only the call form `#translate NAME( <p> ) => result` in this PoC", line));
+                    }
+                    pp.defs.insert(name, Def { params, body: result });
                 }
             }
             "UNDEF" => { if emitting { pp.defs.remove(&arg); } }
