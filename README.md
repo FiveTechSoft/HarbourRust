@@ -344,7 +344,9 @@ probed against Harbour first: `#command` / `#xcommand` with literal words
 Harbour's own headers do), the parenthesized-expression marker `<(x)>`,
 and chaining; `#translate` / `#xtranslate` only in the
 call form `NAME( <p> ) => body`, which works inline in expressions, plus
-non-call forms at statement start. Macro
+non-call forms at statement start (`#xtranslate` is accepted and behaves
+like `#translate`; Harbour's x- priority over a same-pattern plain rule
+is NOT emulated, so this is not complete `#xtranslate` support). Macro
 names and parameter substitution are case-sensitive, directive names are
 not - matching Harbour's observed behaviour. NOT supported: the marker
 forms Harbour itself rejects (`<"x">`, `<#x>`), non-call `#translate`
