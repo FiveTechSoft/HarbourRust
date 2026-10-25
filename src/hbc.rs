@@ -32,7 +32,7 @@ use std::process;
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2, DArr3, DArrS, StrOwn, Dyn, Hash }
+enum Ty { I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2, DArr3, DArrS, StrOwn, Dyn, Hash, DArrRef }
 
 // Dyn is the tagged-union value for any route that can carry NIL (probes
 // n1/n2/n3): a 16-byte {tag, payload} pair, tag 0 = i64 payload, tag 1 =
@@ -1218,6 +1218,14 @@ struct Sig {
     // None when the function ends in `return nil` (void): its result cannot
     // be used in an expression in this PoC.
     ret: Option<Ty>,
+    // Per-parameter calling-convention flags for array parameters.
+    // borrowed[i]: some call site passes a[i] (a MIDDLE cell of an array of
+    // arrays) - the callee receives the cell's ADDRESS and borrows it for
+    // the call (oracles hk73/hk78/hk86/hk87). arr_moved[i]: some call site
+    // moves an owned array variable in (the established contract). The two
+    // modes exclude each other for the same parameter.
+    borrowed: Vec<bool>,
+    arr_moved: Vec<bool>,
 }
 
 // Semantic analysis: types + ownership/move tracking. This pass is OURS:
@@ -1532,11 +1540,15 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                 Stmt::ArrSet(n, id, ie, e) => {
                     // p["key"] := v: a string key pins a hash parameter
                     // (oracle hk11); p[i] := "x": a string value pins an
-                    // array of strings.
+                    // array of strings; a scalar value pins a flat dynamic
+                    // array (a borrowed middle array writes scalars this
+                    // way - oracle hk86).
                     if str_evidence(ie, lit, sigs) {
                         pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
                     } else if str_evidence(e, lit, sigs) {
                         pin_vars(f, &Expr::Var(id.clone()), Ty::DArrS, pin, *n)?;
+                    } else if is_param(f, id).is_some() {
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::DArr, pin, *n)?;
                     }
                     pin_vars(f, ie, Ty::I64, pin, *n)?;
                     walk(f, ie, sigs, lit, pin, *n)?;
@@ -1651,7 +1663,109 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
     Ok(pin.into_iter().map(|x| x.unwrap()).collect())
 }
 
-fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, String> {
+// Does expression `e` mention variable `name` anywhere (including index
+// positions)? Used by the borrowed-argument aliasing check.
+fn expr_mentions(e: &Expr, name: &str) -> bool {
+    match e {
+        Expr::Var(v) => v == name,
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => expr_mentions(a, name) || expr_mentions(b, name),
+        Expr::Call(_, args) => args.iter().any(|a| expr_mentions(a, name)),
+        Expr::Index(id, i) => id == name || expr_mentions(i, name),
+        Expr::Index2(id, i, j) => id == name || expr_mentions(i, name) || expr_mentions(j, name),
+        Expr::Index3(id, i, j, k) => id == name || expr_mentions(i, name) || expr_mentions(j, name) || expr_mentions(k, name),
+        Expr::ArrLit(es) => es.iter().any(|e| expr_mentions(e, name)),
+        _ => false,
+    }
+}
+
+// Borrowed-parameter escape post-pass (iteration 33i). A parameter that
+// some call site feeds as `a[i]` is BORROWED: the callee holds the child
+// cell's address only for the duration of the call. It may be read
+// (len(p), p[i], printing), written (p[i] := v) and resized (AAdd/ASize)
+// in place - everything Harbour shows through its sharing (oracles
+// hk73/hk78/hk86/hk87) - but it must NOT escape or be aliased: returning
+// it, reassigning it, declaring over it, iterating it with FOR EACH
+// (deferred) or passing it on to another function would outlive or
+// duplicate the borrow. The body already type-checked under the owned
+// shape (same allowed operations); this pass rejects the rest by
+// whitelist.
+fn borrow_expr_ok(e: &Expr, pname: &str) -> bool {
+    match e {
+        Expr::Var(v) => v != pname,
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => borrow_expr_ok(a, pname) && borrow_expr_ok(b, pname),
+        Expr::Call(id, args) => {
+            if is_builtin(id, "len") && args.len() == 1 && matches!(&args[0], Expr::Var(v) if v == pname) {
+                return true; // len(p) borrows for the length only
+            }
+            args.iter().all(|a| borrow_expr_ok(a, pname))
+        }
+        Expr::Index(_, ie) => borrow_expr_ok(ie, pname), // p[i] read: the base is the borrow itself
+        Expr::Index2(_, a, b) => borrow_expr_ok(a, pname) && borrow_expr_ok(b, pname),
+        Expr::Index3(_, a, b, c) => borrow_expr_ok(a, pname) && borrow_expr_ok(b, pname) && borrow_expr_ok(c, pname),
+        Expr::ArrLit(es) => es.iter().all(|e| borrow_expr_ok(e, pname)),
+        _ => true,
+    }
+}
+
+fn borrow_stmts_ok(stmts: &[Stmt], pname: &str) -> Option<usize> {
+    for s in stmts {
+        let bad = match s {
+            Stmt::Local(n, id, e) => {
+                if id == pname || !borrow_expr_ok(e, pname) { Some(*n) } else { None }
+            }
+            Stmt::Print(n, items) => {
+                let ok = items.iter().all(|i| matches!(i, Expr::Var(v) if v == pname) || borrow_expr_ok(i, pname));
+                if ok { None } else { Some(*n) }
+            }
+            Stmt::Ret(n, Some(e)) => if borrow_expr_ok(e, pname) { None } else { Some(*n) },
+            Stmt::Assign(n, id, e) => {
+                if id == pname || !borrow_expr_ok(e, pname) { Some(*n) } else { None }
+            }
+            Stmt::ArrSet(n, id, ie, e) => {
+                // p[i] := v writes THROUGH the borrow: allowed.
+                if !borrow_expr_ok(ie, pname) || !borrow_expr_ok(e, pname) || (id == pname && false) { Some(*n) } else { None }
+            }
+            Stmt::ArrSet2(n, id, a, b, e) | Stmt::ArrSet3(n, id, a, b, e, ..) => {
+                let _ = id;
+                if !borrow_expr_ok(a, pname) || !borrow_expr_ok(b, pname) || !borrow_expr_ok(e, pname) { Some(*n) } else { None }
+            }
+            Stmt::SelfSet(_, _, e) | Stmt::SendStmt(_, e) => if borrow_expr_ok(e, pname) { None } else { Some(0) },
+            Stmt::SendSet(n, r, _, e) => {
+                if !borrow_expr_ok(r, pname) || !borrow_expr_ok(e, pname) { Some(*n) } else { None }
+            }
+            Stmt::AAdd(_, _, e) | Stmt::ASize(_, _, e) | Stmt::AAddSub(_, _, _, e) | Stmt::ASizeSub(_, _, _, e) => {
+                if borrow_expr_ok(e, pname) { None } else { Some(0) }
+            }
+            Stmt::AAddSub2(_, _, a, b, e) | Stmt::ASizeSub2(_, _, a, b, e) => {
+                if borrow_expr_ok(a, pname) && borrow_expr_ok(b, pname) && borrow_expr_ok(e, pname) { None } else { Some(0) }
+            }
+            Stmt::If(n, c, a, b) => {
+                if !borrow_expr_ok(c, pname) { Some(*n) }
+                else if let Some(m) = borrow_stmts_ok(a, pname) { Some(m) }
+                else { borrow_stmts_ok(b, pname) }
+            }
+            Stmt::While(n, c, b) => {
+                if !borrow_expr_ok(c, pname) { Some(*n) } else { borrow_stmts_ok(b, pname) }
+            }
+            Stmt::For(n, lv, a, b, _, body) => {
+                if lv == pname || !borrow_expr_ok(a, pname) || !borrow_expr_ok(b, pname) { Some(*n) }
+                else { borrow_stmts_ok(body, pname) }
+            }
+            Stmt::ForEach(n, lv, coll, body) => {
+                // FOR EACH over (or into) a borrowed parameter: deferred.
+                if lv == pname || !borrow_expr_ok(coll, pname) { Some(*n) }
+                else { borrow_stmts_ok(body, pname) }
+            }
+            _ => None,
+        };
+        if let Some(m) = bad {
+            return Some(if m == 0 { 1 } else { m });
+        }
+    }
+    None
+}
+
+fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Result<Ty, String> {
     match e {
         Expr::Int(_) => Ok(Ty::I64),
         Expr::Str(_) => Ok(Ty::Str),
@@ -1763,12 +1877,59 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                 }
                 return Ok(Ty::I64);
             }
-            let sig = sigs.iter().find(|v| v.name == *id)
+            let si = sigs.iter().position(|v| v.name == *id)
                 .ok_or_else(|| format!("line {}: unknown function `{}` (must be defined before use)", n, id))?;
-            if sig.params.len() != args.len() {
-                return Err(format!("line {}: `{}` takes {} argument(s), got {}", n, id, sig.params.len(), args.len()));
+            let (sig_params, sig_borrowed, sig_arr_moved, sig_ret) = {
+                let s = &sigs[si];
+                (s.params.clone(), s.borrowed.clone(), s.arr_moved.clone(), s.ret)
+            };
+            if sig_params.len() != args.len() {
+                return Err(format!("line {}: `{}` takes {} argument(s), got {}", n, id, sig_params.len(), args.len()));
             }
             for (i, a) in args.iter().enumerate() {
+                // A MIDDLE cell as an argument: f(a[i]) on an array of
+                // arrays. Harbour SHARES the child with the callee
+                // (oracles hk73 reads, hk78 growth, hk86 element write,
+                // hk87 shrink - all visible back in the caller). This
+                // increment passes the child cell's ADDRESS: the callee
+                // borrows it exclusively for the call, so growth/shrink/
+                // writes land in the owner's cell and read back exactly
+                // like Harbour, while the single-owner model stays intact
+                // (the borrow ends at the return; escapes are rejected by
+                // the post-pass). NOT Harbour sharing: no alias survives
+                // the call (registered difference family D5/D7).
+                if let Expr::Index(rid, ie) = a {
+                    let root = env.iter().find(|v| v.name == *rid);
+                    if let Some(v) = root {
+                        if v.ty == Ty::DArr2 && sig_params[i] == Ty::DArr {
+                            if v.moved {
+                                return Err(format!("line {}: use of moved value `{}`", n, rid));
+                            }
+                            if sig_arr_moved[i] {
+                                return Err(format!("line {}: parameter {} of `{}` already receives an owned array elsewhere; it cannot also borrow `a[i]`", n, i + 1, id));
+                            }
+                            if type_expr(ie, env, sigs, n)? != Ty::I64 {
+                                return Err(format!("line {}: array index must be an integer", n));
+                            }
+                            // The index expression itself may have MOVED the
+                            // root (f(a[g(a)]): evaluated before the walk):
+                            // reject instead of borrowing nulled slots.
+                            if env.iter().find(|v| v.name == *rid).map(|v| v.moved).unwrap_or(true) {
+                                return Err(format!("line {}: the index expression moves `{}`; compute the index first", n, rid));
+                            }
+                            // No aliasing inside one call: no other argument
+                            // may mention the same root (two live borrows, or
+                            // a move while borrowed, are unsound).
+                            for (j, b) in args.iter().enumerate() {
+                                if j != i && expr_mentions(b, rid) {
+                                    return Err(format!("line {}: `{}` is borrowed by argument {}; no other argument of the same call may mention it", n, rid, i + 1));
+                                }
+                            }
+                            sigs[si].borrowed[i] = true;
+                            continue;
+                        }
+                    }
+                }
                 let ta = type_expr(a, env, sigs, n)?;
                 if let Ty::Arr(_) = ta {
                     return Err(format!("line {}: arrays cannot be passed as arguments in this increment", n));
@@ -1785,17 +1946,25 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                         if let Some(x) = env.iter_mut().find(|x| x.name == *v && matches!(x.ty, Ty::Str | Ty::StrOwn)) { x.moved = true; }
                     }
                 }
-                let ok = ta == sig.params[i]
-                    || (ta == Ty::Dyn && sig.params[i] == Ty::I64)  // runtime extract (nil -> clean type error)
-                    || (ta == Ty::I64 && sig.params[i] == Ty::Dyn) // tagged at the call
-                    || (ta == Ty::Str && sig.params[i] == Ty::StrOwn); // rodata: copied at the call boundary
+                let ok = ta == sig_params[i]
+                    || (ta == Ty::Dyn && sig_params[i] == Ty::I64)  // runtime extract (nil -> clean type error)
+                    || (ta == Ty::I64 && sig_params[i] == Ty::Dyn) // tagged at the call
+                    || (ta == Ty::Str && sig_params[i] == Ty::StrOwn); // rodata: copied at the call boundary
                 if !ok {
                     return Err(format!("line {}: argument {} of `{}` must be {}, got {}",
                         n, i + 1, id,
-                        ty_name(sig.params[i]), ty_name(ta)));
+                        ty_name(sig_params[i]), ty_name(ta)));
+                }
+                // An owned array variable moves into the parameter (the
+                // established contract): exclusive with the borrow mode.
+                if matches!(ta, Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArrS) {
+                    if sig_borrowed[i] {
+                        return Err(format!("line {}: parameter {} of `{}` already borrows `a[i]` elsewhere; it cannot also receive an owned array", n, i + 1, id));
+                    }
+                    sigs[si].arr_moved[i] = true;
                 }
             }
-            match sig.ret {
+            match sig_ret {
                 Some(t) => Ok(t),
                 None => Err(format!("line {}: `{}` never returns a value; its result cannot be used in an expression in this PoC", n, id)),
             }
@@ -2107,6 +2276,7 @@ fn ty_name(t: Ty) -> &'static str {
         Ty::Arr(_) => "an array",
         Ty::Block(_) => "a codeblock",
         Ty::DArr => "a dynamic array",
+        Ty::DArrRef => "a borrowed array",
         Ty::Dyn => "a dynamic value",
         Ty::Hash => "a hash",
     }
@@ -2248,6 +2418,15 @@ fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
                 {
                     return false;
                 }
+                // Passing a[i] of the loop's root to a user function hands
+                // the callee a borrow it may grow through: the current
+                // element's Dyn view could dangle. Rejected like the
+                // direct mutations above (safe named rejection).
+                if !is_builtin(id, "len")
+                    && args.iter().any(|a| matches!(a, Expr::Index(r, _) | Expr::Index2(r, _, _) | Expr::Index3(r, _, _, _) if r == name))
+                {
+                    return false;
+                }
                 args.iter().all(|a| expr_ok(a, name))
             }
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => expr_ok(a, name) && expr_ok(b, name),
@@ -2314,7 +2493,7 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     })
 }
 
-fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Option<Ty>, loop_pre: Option<&Vec<bool>>, exits: &mut Vec<Vec<bool>>, dyn_names: &std::collections::HashSet<String>) -> Result<bool, String> {
+fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &mut Option<Ty>, loop_pre: Option<&Vec<bool>>, exits: &mut Vec<Vec<bool>>, dyn_names: &std::collections::HashSet<String>) -> Result<bool, String> {
     let mut falls = true;
     for s in stmts {
         match s {
@@ -3114,7 +3293,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 // ---------------------------------------------------------------------------
 
 fn size_of(t: Ty) -> usize {
-    match t { Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Dyn | Ty::Hash => 16, Ty::Bool => unreachable!("booleans rejected in analysis") }
+    match t { Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef => 16, Ty::Bool => unreachable!("booleans rejected in analysis") }
 }
 
 #[derive(Clone)]
@@ -3146,6 +3325,10 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     out.push_str(&format!("    mov -{}(%rbp), %rdx\n", v.off - 8));
                 }
                 Ty::Bool => unreachable!("booleans rejected in analysis"),
+                // Only the address word is meaningful; value-position use
+                // of a borrowed parameter is rejected by the escape
+                // post-pass, so the second word never matters.
+                Ty::DArrRef => out.push_str(&format!("    mov -{}(%rbp), %rax\n    xor %edx, %edx\n", v.off)),
                 Ty::Arr(_) => unreachable!("whole-array values are emitted via cg_array_value"),
             }
         }
@@ -3156,6 +3339,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                     match var.ty {
                         Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Hash => out.push_str(&format!("    mov -{}(%rbp), %rax\n", var.off - 8)),
+                        Ty::DArrRef => out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov 8(%rax), %rax\n", var.off)),
                         Ty::Arr(k) => out.push_str(&format!("    mov ${}, %rax\n", k)),
                         _ => unreachable!("checked"),
                     }
@@ -3299,7 +3483,31 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             // 16-aligned on both targets); arg k then sits at
             // 16*(n-k)(%rbp) in the callee after its prologue.
             let psig = sigs.iter().find(|v| v.name == *id).map(|v| v.params.clone());
+            let pborrowed = sigs.iter().find(|v| v.name == *id).map(|v| v.borrowed.clone());
             for (ai, a) in args.iter().enumerate() {
+                // Borrowed argument: `a[i]` on an array of arrays. The
+                // index evaluates FIRST (Harbour order), then the bounds
+                // walk yields the child cell's ADDRESS; the callee borrows
+                // it for the call (oracles hk73/hk78/hk86/hk87). A NIL
+                // casilla is Harbour's BASE/1123-family condition (his
+                // dialog hangs headless - no oracle): clean exit 1 with
+                // "Argument error: PARAM" (registered failure mode).
+                if pborrowed.as_ref().and_then(|b| b.get(ai)).copied() == Some(true) {
+                    if let Expr::Index(rid, rie) = a {
+                        let rv = env.iter().rev().find(|x| x.name == *rid).expect("checked").clone();
+                        if expr_ty(rie, env, sigs) == Ty::Dyn {
+                            cg_expr(rie, env, sigs, strs, out, target);
+                            out.push_str("    call hbc_dyn_to_i64\n");
+                        } else {
+                            cg_expr(rie, env, sigs, strs, out, target);
+                        }
+                        out.push_str(&format!("    cmp $1, %rax\n    jl 81f\n    cmp -{}(%rbp), %rax\n    jg 81f\n", rv.off - 8));
+                        out.push_str(&format!("    mov -{}(%rbp), %r11\n", rv.off));
+                        out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r11\n    test %r11, %r11\n    jz hbc_param_error\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
+                        out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    movq $0, 8(%rsp)\n");
+                        continue;
+                    }
+                }
                 let ta = expr_ty(a, env, sigs);
                 let pty = psig.as_ref().and_then(|p| p.get(ai).copied());
                 cg_value(a, env, sigs, strs, out, target);
@@ -3385,6 +3593,22 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str(&format!("    cmp $1, %rax\n    jl 81f\n    cmp -{}(%rbp), %rax\n    jg 81f\n", v.off - 8));
                 out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
                 out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r11\n    mov 8(%rax), %rdx\n    mov %r11, %rax\n    jmp 82f\n");
+                out.push_str("81:\n    call hbc_bound_error\n82:\n");
+                return;
+            }
+            if v.ty == Ty::DArrRef {
+                // Borrowed middle array (a[i] passed to this function):
+                // the slot holds the child cell's ADDRESS; bounds and the
+                // element pointer load THROUGH it, so callee reads see the
+                // owner's current contents (oracle hk73).
+                if expr_ty(ie, env, sigs) == Ty::Dyn {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                } else {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                }
+                out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmp $1, %rax\n    jl 81f\n    cmp 8(%r11), %rax\n    jg 81f\n", v.off));
+                out.push_str("    mov (%r11), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r11\n    mov 8(%rax), %rdx\n    mov %r11, %rax\n    jmp 82f\n");
                 out.push_str("81:\n    call hbc_bound_error\n82:\n");
                 return;
             }
@@ -4140,7 +4364,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let darrs_elem = |e: &Expr, env: &[CgLocal]| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArrS));
                 // A whole array/hash VARIABLE renders empty
                 // (hk16/hk20/hk24): only borrowed, never consumed.
-                let renders_empty = |e: &Expr| matches!(expr_ty(e, env, sigs), Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Hash);
+                let renders_empty = |e: &Expr| matches!(expr_ty(e, env, sigs), Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Hash | Ty::DArrRef);
                 for e in es {
                     if let Expr::Index(v, ie) = e {
                         if darr2_child(e, env) {
@@ -4247,7 +4471,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         Ty::Bool => unreachable!("booleans rejected in analysis"),
                         Ty::Arr(_) => unreachable!("whole-array printing rejected in analysis"),
                         Ty::Block(_) => unreachable!("codeblock printing rejected in analysis"),
-                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS => unreachable!("whole-array printing rejected in analysis"),
+                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::DArrRef => unreachable!("whole-array printing rejected in analysis"),
                         Ty::Hash => unreachable!("whole-hash printing rejected in analysis"),
                     }
                 }
@@ -4660,6 +4884,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
             Stmt::AAdd(_, id, e) => {
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
                 let vt = expr_ty(e, env, sigs);
+                // DArrRef (borrowed middle array): the slot holds the child
+                // cell's ADDRESS - feed THAT to hbc_aadd exactly like the
+                // middle arm does, so growth reallocates through the
+                // owner's cell (oracle hk78).
+                let aptr = if v.ty == Ty::DArrRef { format!("mov -{}(%rbp), %rdi", v.off) } else { format!("lea -{}(%rbp), %rdi", v.off) };
                 if v.ty == Ty::DArrS || (v.ty == Ty::DArrU && matches!(vt, Ty::Str | Ty::StrOwn)) {
                     // String element: a rodata value is copied (the array
                     // owns the copy); an owned value moves in (its source
@@ -4674,7 +4903,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         }
                     }
                     out.push_str("    mov %rax, %r11\n    sub $16, %rsp\n    movq $2, (%rsp)\n    mov %r11, 8(%rsp)\n");
-                    out.push_str(&format!("    mov %rsp, %rdx\n    mov $16, %esi\n    lea -{}(%rbp), %rdi\n    call hbc_aadd\n    add $16, %rsp\n", v.off));
+                    out.push_str(&format!("    mov %rsp, %rdx\n    mov $16, %esi\n    {}\n    call hbc_aadd\n    add $16, %rsp\n", aptr));
                 } else if v.ty == Ty::DArr2 || (v.ty == Ty::DArrU && matches!(vt, Ty::DArr | Ty::DArrU)) {
                     // Insert a dynamic array: the value MOVES into the
                     // parent (null the source right after the load).
@@ -4685,7 +4914,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         }
                     }
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                    out.push_str(&format!("    mov %rsp, %rdx\n    mov $16, %esi\n    lea -{}(%rbp), %rdi\n    call hbc_aadd\n    add $16, %rsp\n", v.off));
+                    out.push_str(&format!("    mov %rsp, %rdx\n    mov $16, %esi\n    {}\n    call hbc_aadd\n    add $16, %rsp\n", aptr));
                 } else {
                     // Scalar element: tag it into the {tag, payload} pair
                     // (i64 -> {0, v}, NIL/Dyn -> copied pair).
@@ -4694,7 +4923,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
                     }
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                    out.push_str(&format!("    mov %rsp, %rdx\n    mov $16, %esi\n    lea -{}(%rbp), %rdi\n    call hbc_aadd\n    add $16, %rsp\n", v.off));
+                    out.push_str(&format!("    mov %rsp, %rdx\n    mov $16, %esi\n    {}\n    call hbc_aadd\n    add $16, %rsp\n", aptr));
                 }
                 // Replicate the checker's pinning of `{}`.
                 if let Some(x) = env.iter_mut().find(|x| x.name == *id) {
@@ -4713,9 +4942,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // shrink frees removed children RECURSIVELY via
                 // hbc_rfree - they own their own children).
                 let kind = if v.ty == Ty::DArr2 { 1 } else if v.ty == Ty::DArrS { 2 } else if v.ty == Ty::DArr3 { 3 } else { 0 };
+                // DArrRef: address of the owner's cell, like AAdd (hk87).
+                let aptr = if v.ty == Ty::DArrRef { format!("mov -{}(%rbp), %rdi", v.off) } else { format!("lea -{}(%rbp), %rdi", v.off) };
                 cg_expr(e, env, sigs, strs, out, target);
-                out.push_str(&format!("    mov %rax, %rsi\n    mov $16, %edx\n    mov ${}, %ecx\n    lea -{}(%rbp), %rdi\n    call hbc_asize\n",
-                    kind, v.off));
+                out.push_str(&format!("    mov %rax, %rsi\n    mov $16, %edx\n    mov ${}, %ecx\n    {}\n    call hbc_asize\n",
+                    kind, aptr));
             }
             Stmt::AAddSub(_, id, ie, e) => {
                 // AAdd(a[i], x): index FIRST, then the value (probe m7;
@@ -4929,10 +5160,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     } else {
                         out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov %rsp, %rcx\n    call hbc_hput\n    add $16, %rsp\n", v.off));
                     }
-                } else if v.ty == Ty::DArr {
+                } else if v.ty == Ty::DArr || v.ty == Ty::DArrRef {
                     // Dynamic array write: same value-first order; bounds
                     // 1..=len from the slot word. Elements are {tag,
                     // payload} pairs. Borrows `a` - never nulls.
+                    // DArrRef (a borrowed middle array): the slot holds the
+                    // child cell's ADDRESS; bounds and base load through it
+                    // so the write lands in the owner's cell (oracle hk86).
                     cg_expr(e, env, sigs, strs, out, target);
                     if expr_ty(e, env, sigs) == Ty::I64 {
                         out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
@@ -4945,8 +5179,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         cg_expr(ie, env, sigs, strs, out, target);
                     }
                     out.push_str("    mov %rax, %rcx\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
-                    out.push_str(&format!("    cmp $1, %rcx\n    jl 83f\n    cmp -{}(%rbp), %rcx\n    jg 83f\n", v.off - 8));
-                    out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
+                    if v.ty == Ty::DArrRef {
+                        out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmp $1, %rcx\n    jl 83f\n    cmp 8(%r11), %rcx\n    jg 83f\n", v.off));
+                        out.push_str("    mov (%r11), %r11\n");
+                    } else {
+                        out.push_str(&format!("    cmp $1, %rcx\n    jl 83f\n    cmp -{}(%rbp), %rcx\n    jg 83f\n", v.off - 8));
+                        out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
+                    }
                     out.push_str("    dec %rcx\n    shl $4, %rcx\n    add %r11, %rcx\n    mov %rax, (%rcx)\n    mov %rdx, 8(%rcx)\n    jmp 84f\n");
                     out.push_str("83:\n    call hbc_bound_error\n84:\n");
                 } else {
@@ -5125,7 +5364,10 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         let own_sig = sigs.iter().find(|v| v.name == f.name).expect("checked");
         for (i, p) in f.params.iter().enumerate() {
             frame += size_of(own_sig.params[i]);
-            lenv.push(CgLocal { name: p.clone(), ty: own_sig.params[i], off: frame });
+            // A parameter some caller feeds as `a[i]` arrives as the cell
+            // ADDRESS (one word): borrow shape, never freed here.
+            let pty = if own_sig.borrowed.get(i).copied().unwrap_or(false) && own_sig.params[i] == Ty::DArr { Ty::DArrRef } else { own_sig.params[i] };
+            lenv.push(CgLocal { name: p.clone(), ty: pty, off: frame });
         }
     }
     let nparams = lenv.len();
@@ -6128,6 +6370,19 @@ hbc_len_error:
     mov $1, %edi
     syscall
 
+# hbc_param_error: a NIL casilla passed as a borrowed a[i] argument
+# (noreturn). Harbour's dialog hangs headless (same family as BASE/1123,
+# oracle n6): clean exit 1, registered failure mode - not a compat success.
+hbc_param_error:
+    lea .Lparamerrmsg(%rip), %rsi
+    mov $22, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 # hbc_aadd_error / hbc_asize_error: AAdd/ASize on a NIL casilla
 # (noreturn). Harbour's BASE/1123 and BASE/2023 dialogs hang headless
 # (oracles n6/n7): clean exit 1, registered failure modes.
@@ -6628,6 +6883,8 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Llenerrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,76,69,78,10\n");
     // "Argument error: AADD\n" (21 bytes; Harbour BASE/1123 hangs headless, oracle n6)
     out.push_str(".Laadderrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,65,65,68,68,10\n");
+    // "Argument error: PARAM\n" (22 bytes; NIL casilla as a borrowed argument - registered failure mode, Harbour hangs headless)
+    out.push_str(".Lparamerrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,80,65,82,65,77,10\n");
     out.push_str(".Lsnilmsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,101,120,112,101,99,116,101,100,32,97,32,115,116,114,105,110,103,32,101,108,101,109,101,110,116,44,32,103,111,116,32,78,73,76,10\n");
     out.push_str(".Ldyncmpeqmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,61,10\n");
     out.push_str(".Ldyncmpnemsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,60,62,10\n");
@@ -6924,6 +7181,18 @@ hbc_len_error:
     sub $48, %rsp
     lea .Llenerrmsg(%rip), %rax
     mov $20, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+# hbc_param_error: see the linux copy.
+hbc_param_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Lparamerrmsg(%rip), %rax
+    mov $22, %edx
     call hbc_print_str
     mov $1, %ecx
     call ExitProcess
@@ -7458,7 +7727,7 @@ fn main() {
         let mut ret = None;
         let mut top_exits: Vec<Vec<bool>> = Vec::new();
         let dyn_names = prescan_dyn(f, &sigs, &ptys);
-        let res = check_stmts(&f.stmts, &mut env, &sigs, &mut ret, None, &mut top_exits, &dyn_names);
+        let res = check_stmts(&f.stmts, &mut env, &mut sigs, &mut ret, None, &mut top_exits, &dyn_names);
         f.dyn_names = dyn_names;
         if let Err(m) = res {
             eprintln!("error: {}", m);
@@ -7475,8 +7744,21 @@ fn main() {
             eprintln!("error: {}", m);
             process::exit(1);
         }
-        sigs.push(Sig { name: f.name.clone(), params: ptys.clone(), ret });
+        sigs.push(Sig { name: f.name.clone(), borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], params: ptys.clone(), ret });
         f.ret = ret;
+    }
+    // Borrowed-parameter escape post-pass (see borrow_stmts_ok).
+    for f in &funcs {
+        if let Some(s) = sigs.iter().find(|s| s.name == f.name) {
+            for (i, p) in f.params.iter().enumerate() {
+                if s.borrowed.get(i).copied().unwrap_or(false) {
+                    if let Some(m) = borrow_stmts_ok(&f.stmts, p) {
+                        eprintln!("error: line {}: parameter `{}` of `{}` is borrowed from its caller; it can be read, written and grown in place, but not returned, reassigned, iterated or passed on", m, p, f.name);
+                        process::exit(1);
+                    }
+                }
+            }
+        }
     }
     if !has_main {
         eprintln!("error: no main function");
