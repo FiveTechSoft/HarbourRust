@@ -57,7 +57,7 @@ borrowing/references/lifetimes are not covered (see README).
 tests/t01_injection_colons.hb   error: line 2: ':' without '=' (col 10)
 tests/t02_injection_unsafe.hb   error: line 2: character not allowed `{` (U+007B)
 tests/t03_injection_macro.hb    error: line 2: character not allowed `;` (U+003B)
-tests/t04_unicode_ident.hb      error: line 2: character not allowed `Ã±` (U+00F1)   (no panic)
+tests/t04_unicode_ident.hb      error: line 2: character not allowed `ñ` (U+00F1)   (no panic)
 tests/t05_keyword_boundary.hb   error: line 2: statement not in the subset (Ident("localfoo"))
 tests/t06_undefined_var.hb      error: line 2: undefined variable `y`
 tests/t08_type_error.hb         error: line 3: arithmetic requires integers
@@ -67,7 +67,7 @@ integer literal 9223372036854775808
                                 (iteration 1 delegated this to rustc; now hbc checks it)
 
 ## Unicode string accepted and runs
-tests/t07_unicode_string.hb  `? "olÃ¡, aÃ±o ð¦"`  ->  prints: olÃ¡, aÃ±o ð¦
+tests/t07_unicode_string.hb  `? "olá, año 🦀"`  ->  prints: olá, año 🦀
 (strings are emitted as raw UTF-8 .byte sequences; no assembler escaping)
 
 ## Known limits observed
@@ -123,7 +123,7 @@ positive (compiled and RUN on linux ELF and on windows PE under Wine):
   ejemplos/hola.hb            PASS  (32 + greeting, identical)
   tests/t10_int_copy.hb       PASS  (5 / 5 / -5, identical)
   tests/t11_print_borrows.hb  PASS  (hola / hola / 7, identical)
-  tests/t07_unicode_string.hb PASS  (olÃ¡, aÃ±o ð¦, identical)
+  tests/t07_unicode_string.hb PASS  (olá, año 🦀, identical)
   arithmetic (14/20/14/i64::MAX) PASS (identical)
 negative (hbc itself rejects before codegen, target-independent):
   ejemplos/prestamo_roto.hb   PASS  error: line 5: use of moved value `a`  (both targets)
