@@ -952,16 +952,23 @@ Registered limits of this increment, not general fidelity:
   escape: returning it, copying it to another local, passing it
   to a function or storing it into a collection are named
   compile errors (t346-t348).
-- Ordering the loop variable against a string is rejected for
-  now (t353): Harbour orders string elements byte-wise (hk36)
-  - measured, support pending. Equality/inequality against a
-  string works with Harbour's own prefix rule (hk33/hk37,
-  t344/t349, same hbc_str_eq as b23); a NIL casilla answers
-  .F./.T. (hk35, t350), and a NUMERIC element against a string
+- Ordering the loop variable against a string works byte-wise
+  over the right operand's length (hk36/hk39/hk40/hk43/hk51,
+  t355-t357/t360/t361, same hbc_str_cmp as b22), on either
+  operand side. Equality/inequality against a string works with
+  Harbour's own prefix rule (hk33/hk37, t344/t349/t362, same
+  hbc_str_eq as b23); a NIL casilla answers .F./.T. (hk35,
+  t350), and a NUMERIC element against a string
   is Harbour's BASE/1071/1072 (hk34/hk38, dialogs that hang
   headless) - here a clean "Argument error: =" / "Argument
-  error: <>" exit 1 (t351/t352, registered failure modes).
-  NIL and integer comparisons work (t337/t342).
+  error: <>" exit 1 (t351/t352, registered failure modes);
+  ordering a NIL or numeric casilla against a string is the
+  same kind of registered failure mode for BASE/1073-1076
+  (hk41/hk42/hk44-hk50, t358/t359). NIL and integer
+  comparisons work (t337/t342). Inline branch labels in
+  emitted code now come from a per-emission unique counter
+  (LBL_ID) - fixed numeric labels caused two silent
+  miscompares.
 - Temporary collections and nested arrays are not iterable yet
   (named compile errors).
 
@@ -969,5 +976,6 @@ Robustness fix in passing: `hb_HKeys` with a non-variable
 argument used to panic the compiler; it is now the documented
 clean error (t345).
 
-Battery: 353/353 on Linux x86-64 and Wine, plus the ABI harness
-(no new helpers, so no new ABI canary entries).
+Battery: 360/360 on Linux x86-64 and Wine, plus the ABI harness
+(the new ordering error stubs are noreturn, so no new ABI
+canary entries).
