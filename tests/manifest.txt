@@ -311,3 +311,11 @@ pos tests/t312_strparam_owned.hb \nhi\n         0\n         0\nback\n         0\
 neg tests/t313_neg_hkeys_strparam_moved.hb use of moved value
 pos tests/t314_strparam_mixedret.hb \nx\nfallback\n         0\n         0
 neg tests/t315_neg_hkeys_asize.hb `ASize` applies to dynamic arrays
+pos tests/t316_hash_param_move.hb \n         2\n         2\n         2
+pos tests/t317_hash_return.hb \n         1\n         7
+pos tests/t318_hash_param_free.hb \n         1\n         2\n         0
+pos tests/t319_hkeys_asize.hb \n         2\none\ntwo\n         2
+pos tests/t320_darrs_asize_zero.hb \n         3\n         1\na\n         0\n         0
+posx tests/t321_darrs_asize_grow.hb 1 ASize: cannot grow an array of strings in this increment
+pos tests/t322_hash_len_merge.hb \n         2\n         7
+neg tests/t323_neg_hash_pin_conflict.hb indexed assignment applies to arrays
