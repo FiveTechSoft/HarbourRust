@@ -319,6 +319,45 @@ the NIL literal itself has existed in expressions since iteration 15
 (`Array(3, 0)` rows are real empty arrays, never NIL) and t270
 (ASize shrink to 0: every child freed, registry balance 0).
 
+## Mutable string arrays and owned-string parameters (t303/t304 repurposed, t307-t315, iteration 29)
+
+Oracles hk7-hk9 (Harbour core libraries only, `-gtstd`): the array
+from hb_HKeys is mutable (AAdd grows it, element overwrite works,
+the source hash is unaffected - hk7); passed to a function it is
+SHARED, the callee's mutation visible to the caller (hk8); a string
+argument is usable by caller and callee alike (hk9). The last two
+register the deliberate move-vs-share difference, not targets to
+imitate: under the single-owner model the value MOVES.
+
+- t307 (pos): hk7 mirror, byte-exact - AAdd, element overwrite,
+  hash untouched.
+- t308 (pos): `{}` grown with strings pins an array of strings;
+  mutation and self-insert `AAdd(a, a[2])`; balance 0 (wrap).
+- t309 (pos): string-array parameter move round-trip
+  (`k := grow(k)`); the callee mutates and returns; balance 0.
+  Contrast with hk8 (sharing) is registered in the test comment.
+- t310 (neg): use of the array after it moved into the call.
+- t311 (pos): owned string read from the keys array moves into a
+  string parameter, is printed and returned; used as a hash key
+  after; balance 0.
+- t312 (pos): rodata argument (literal and literal-initialized
+  local) to an owned string parameter: copied at the call boundary,
+  freed by the callee; balance 0.
+- t313 (neg): use of the owned string after it moved into the call.
+- t314 (pos): mixed rodata/owned returns unify to owned; the
+  literal return point copies; balance 0.
+- t315 (neg): ASize on an array of strings.
+- t303 (neg, repurposed): a string array no longer fits a parameter
+  pinned to a flat integer array - a genuine type mismatch now.
+- t304 (neg, repurposed): AAdd with a non-string element onto an
+  array of strings.
+
+Also fixed in the sweep: comparisons against owned strings fell
+through to the numeric arm (pointer compare + leaked temporary);
+they now byte-compare and free temporaries on both targets. No new
+helpers, so the ABI harness needed no new entries; it still passes
+on both targets.
+
 ## hb_HKeys (t298-t306, iteration 28)
 
 Oracles hk4-hk6 (Harbour core libraries only, compiled with
