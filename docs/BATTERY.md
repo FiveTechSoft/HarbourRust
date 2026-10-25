@@ -46,5 +46,15 @@ printing, trailing comma rejected (Harbour prints a NIL item - probe q4).
 
 Benchmark: the frozen three-program series (bench/RESULTS.md) was
 re-run after the QOut fix with unchanged configs; see the "Post-QOut
-re-run" table there. b2/b3 outputs byte-identical to Harbour; b1 is
-DIVERGE-NUMERIC by the registered numeric model.
+re-run" table there. b2/b3 outputs byte-identical to Harbour. b1_int is
+WITHDRAWN as a speed comparison (Harbour runs its accumulator in double,
+HarbourRust in i64: different numeric work per iteration); the bounded
+replacement b1b_int_bounded.hb runs integer arithmetic on both models
+with byte-identical output. See bench/RESULTS.md.
+
+Ownership across QOut items (t123-t125, neg-MODEL): `? take(v), take(v)`,
+`? take(v), v` and `? take(v) + take(v)` (take consumes a String) are all
+rejected as use of moved value - moves ARE applied between QOut items and
+inside expressions, matching the Rust ownership contract. Harbour accepts
+all three (no ownership); the difference is the registered MODEL
+category, not a bug.
