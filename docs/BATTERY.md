@@ -150,18 +150,26 @@ across function boundaries via hb_memcheck(); t173-t175 pin the
 compile-time rejections; t176 pins ASize's negative-size runtime error
 (clean message + exit 1 vs Harbour's interactive hang).
 
-## NIL as a tagged value, v2c (t35/t104/t165 updated, t208-t212)
+## NIL as a true tagged value, v2c (t35/t104/t165 updated, t208-t223)
 
-NIL is the tagged i64 sentinel i64::MIN (probes n1 against compiled
-Harbour). `x := NIL` stores it and prints "NIL"; `return nil` RETURNS it
-(n1c), so the old void-function rejections are gone - t35 (mixed
-`return 5` / closing `return nil` now agree, both i64) and t104 (a
-`return nil` function's result is usable, prints the sum then NIL) are
-re-purposed to the Harbour behaviour; t165's grown slots now read NIL.
-New: t208 NIL literal through AAdd/read-back/overwrite, t209 `? f()` on
-`return nil`/`return NIL`, t210 comparisons (`NIL = NIL` .T., `NIL = 0`
-/`"" = NIL` .F., `NIL != ""` .T., NIL local keeps the sentinel), t211
-NIL through a pinned parameter and back, t212 (neg) ordering a NIL
-literal is a compile error. Registered sentinel costs: i64::MIN is
-unrepresentable (behaves as NIL), and arithmetic / ordering on NIL held
-in a variable evaluates numerically where Harbour raises a type error.
+NIL is the tagged union Ty::Dyn ({tag, payload}, 16 bytes; tag 1 = NIL,
+tag 0 = i64 payload) - the i64::MIN sentinel of the first v2c was
+rejected and replaced, so i64::MIN is an ordinary value again (t213
+coexistence in one array). `x := NIL` stores {1, 0} and prints "NIL";
+`return nil` RETURNS it (n1c), so the old void-function rejections are
+gone - t35 (mixed `return 5` / closing `return nil`) and t104 (a
+`return nil` function's result is usable) are re-purposed to the
+Harbour behaviour; t165's grown slots read NIL (fill {1, 0}).
+Mixed returns unify to the tagged union in either source order
+(t217 value-first, t219 nil-branch-first with an early `return nil`
+inside a block, now a value return). Tags survive array reads
+(x := a[i]), parameters, returns and if/while joins (t214-t216, t221);
+`t211` is rewritten from probe n1c (NIL through a parameter and back;
+its sentinel-era `p + 0` case is Harbour's type error, covered by
+t218). t208-t210, t212 unchanged. New: t213 i64::MIN/NIL coexistence,
+t218 (posx) arithmetic on NIL prints "Type error: NIL used as a
+number" and exits 1 on both targets, t220 (posx) ordering a NIL held
+in a variable (the literal case stays compile-error t212), t221 loop
+joins, t222 fixed arrays stay tagless [i64; N], t223 constant-folded
+string comparisons (`=`: .F., `#`: .T.) still evaluate both operands
+left to right.
