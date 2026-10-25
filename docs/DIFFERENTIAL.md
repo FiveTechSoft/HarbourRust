@@ -231,3 +231,12 @@ define b42): MATCH.
 t114 (<{b}> match marker; b41): both reject (Harbour E0010; HarbourRust
 "bad match marker"). #include with a macro name (b43): both reject
 (Harbour F0030; HarbourRust "cannot find include").
+
+t115 (keyword abbreviation: DISP/DISPLA/DISPLAY and exact short BYE;
+probes b45/b45d): MATCH.
+
+t116 (3-letter prefix DIS): both reject (Harbour E0030; HarbourRust
+"statement not in the subset").
+
+t117 (result marker absent from the pattern): both reject at define time
+(Harbour E0008; HarbourRust "unknown result marker").
