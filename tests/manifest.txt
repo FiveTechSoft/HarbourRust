@@ -35,7 +35,7 @@ pos tests/t31_exit_move_ok.hb \nhola\nfuera
 neg tests/t32_exit_move_use.hb use of moved value
 neg tests/t33_return_bare_block.hb an early `return` inside a block needs a value
 neg tests/t34_return_type_mix.hb return type mismatch
-neg tests/t35_return_nil_closing.hb `return nil` in a function that returns a value
+pos tests/t35_return_nil_closing.hb \n         5\nNIL
 neg tests/t36_return_move_join.hb use of moved value
 pos tests/t37_for_basic.hb \n         1\n         2\n         3\n         1\n         3\n         5\n         3\n         2\n         1\nfin
 neg tests/t38_for_scope.hb undefined variable `i`
@@ -104,7 +104,7 @@ pos tests/t100_pp_xtranslate.hb \n        42
 pos tests/t101_pp_include_nested.hb \n         3
 pos tests/t102_pp_cmd_specificity.hb \n         2\n         1
 pos tests/t103_voidfn_params.hb \n        42
-neg tests/t104_voidfn_call_neg.hb returns nothing
+pos tests/t104_voidfn_call_neg.hb \n         3\nNIL
 pos tests/t105_pp_cmd_optresult.hb \n         4\n         7\n         5
 neg tests/t106_pp_cmd_optres_neg.hb incomplete expression
 pos tests/t107_pp_uncommand.hb \n         1\n        42\n         6\n         6
@@ -164,7 +164,7 @@ neg tests/t161_cb_neg_arity_reassign.hb type mismatch in assignment
 neg tests/t162_cb_neg_as_arg.hb got a codeblock
 neg tests/t163_cb_neg_string_arg.hb must be integers
 pos tests/t164_dyn_aadd.hb \n         0\n         2\n        20
-pos tests/t165_dyn_asize.hb \n         8\n         0\n         2\n         2
+pos tests/t165_dyn_asize.hb \n         8\nNIL\n         2\n         2
 pos tests/t166_dyn_balance.hb \n         0
 pos tests/t167_dyn_return.hb \n         7\n         2
 pos tests/t168_dyn_param_move.hb \n         2\n        99
@@ -207,3 +207,8 @@ neg tests/t204_md_neg_twolevel_flat.hb two-level indexing needs an array of arra
 neg tests/t205_md_neg_parent_moved.hb use of moved value
 neg tests/t206_md_neg_aaddsub_flat.hb needs an array of arrays
 posx tests/t207_md_neg_null_child.hb 1 Bound error: array access
+pos tests/t208_nil_literal.hb \nNIL\nNIL\n         5\nNIL
+pos tests/t209_nil_return.hb \nNIL\nNIL
+pos tests/t210_nil_compare.hb \nok1\nok2\nok3\nok4\nok5\nok6
+pos tests/t211_nil_param.hb \nNIL\nNIL
+neg tests/t212_nil_neg_order.hb NIL only compares
