@@ -518,7 +518,10 @@ fn emit_asm(funcs: &[Func], sigs: &[(String, Ty)], target: Target) -> String {
             // the entry point); push rbp + sub 48 realigns to 16 and leaves
             // 32 bytes of shadow space for the Win64 calls.
             out.push_str("    .text\n    .globl _start\n_start:\n");
-            out.push_str("    push %rbp\n    mov %rsp, %rbp\n    sub $48, %rsp\n");
+            out.push_str("    push %rbp\n    mov %rsp, %rbp\n");
+            // The Win64 loader does not guarantee one specific rsp % 16 at
+            // the entry point; align explicitly instead of assuming.
+            out.push_str("    and $-16, %rsp\n    sub $48, %rsp\n");
             out.push_str("    call hbc_fn_main\n");
             out.push_str("    xor %ecx, %ecx\n");
             out.push_str("    call ExitProcess\n\n");
