@@ -152,6 +152,12 @@ recorded, not denied.
   + <y>]` -> `+ 5 +`, which Harbour then rejects E0030); a bracket with
   NO bound marker is dropped whole, comma included (b36b/b36d and
   std.ch's `[, <clr>]` case). t105 positive, t106 negative.
+- Empty #command / #translate result (b40/b44): legal; the matched
+  statement is deleted. Zero-parameter function-like #define (b42):
+  expands only in call form `NAME()`. Marker validation (b41): only
+  <x>, <(x)> and <x,...> are accepted; <{x}>, <"x">, <#x> are rejected
+  at define time (Harbour: E0010). #include does NOT expand macro names
+  (b43: Harbour F0030; we report "cannot find include"). t113/t114.
 - Line continuation with `;` (b39/b39b/b39c/b39e): joins when the `;` is
   the last non-whitespace character outside any string; text after it
   (even a comment) is a syntax error (b39c: E0030); chains work. The
