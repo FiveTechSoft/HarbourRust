@@ -197,3 +197,23 @@ in a variable (the literal case stays compile-error t212), t221 loop
 joins, t222 fixed arrays stay tagless [i64; N], t223 constant-folded
 string comparisons (`=`: .F., `#`: .T.) still evaluate both operands
 left to right.
+
+Instrumentation mode (t229, t230): the allocation registry is now
+emitted only with `--instrument`, which the battery uses for every
+test binary; binaries compiled without the flag carry no registry and
+no entry limit, so the harness adds no constraint to normal
+compilation. The registry reuses freed slots (t229: 20000 alloc/free
+cycles against one live entry, ending balanced) and stops clean when
+all 16384 entries are live (t230: AAdd over 17000 children prints
+"Out of memory" and exits 1 instead of writing past the table). OS
+free results are checked in every build, instrumented or not: a
+failed munmap or HeapFree prints "Internal error: OS free failed" and
+exits 1, so a registry match can no longer mask an OS-level failure.
+t230 also exposed a pre-existing off-by-one in the OOM path itself:
+both targets wrote 15 bytes for the 14-byte "Out of memory\n"
+message, leaking the first byte of whatever string followed it in
+.rodata. No earlier test had taken a real OOM exit, so the battery
+could not see it; both length constants are now 14. As before, the
+harness verifies exact size, liveness and OS results on the paths the
+battery actually exercises - it is not a proof of absence of leaks
+on unexercised paths.
