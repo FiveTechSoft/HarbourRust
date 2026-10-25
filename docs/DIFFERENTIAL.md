@@ -244,3 +244,10 @@ t117 (result marker absent from the pattern): both reject at define time
 t118 (specificity tie, equal literal counts: the LATEST definition wins;
 probes b47/b47b/b47c): MATCH. Corrects the earlier tie note (b31 probed
 only unequal counts; ties were untested).
+
+AUDIT CORRECTION (2026-10-25, QOut review): every MATCH label above this
+note was computed with whitespace normalization and, for multi-function
+tests, against a script-mode oracle that runs only the FIRST function.
+Those labels are superseded by the byte-exact categories in
+docs/BATTERY.md and docs/battery-categories.txt (oracle: Harbour compiled
+-gtstd). t115-t118 comparisons below were exact when written and stand.
