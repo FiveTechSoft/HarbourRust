@@ -1061,5 +1061,15 @@ clean error (t345).
   The block VALUE is copied at the call boundary, so the caller's
   variable stays reusable (t444 prints 10 and balance 0).
 
-Battery: 444/444 manifest cases on Linux x86-64 and Wine, plus
+- `Array(n, m, k, l)` builds a real four-level value (hk103): len
+  at every level, NIL innermost slots, integer reads/writes at the
+  fourth level in both the comma and bracket forms (hk104: the
+  write evaluates the value first, then the indices left to right;
+  hk106: reads left to right), ValType "A"/"U" on the measured
+  casillas, balance 0 (t448-t450; new helper hbc_array4m, canaried
+  in the ABI harness). Extraction rejections stay named, AAdd/ASize
+  at the third level are out of this increment (hk105 measured;
+  scheduled), and five dimensions are a named compile error.
+
+Battery: 449/449 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
