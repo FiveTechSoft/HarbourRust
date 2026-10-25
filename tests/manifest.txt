@@ -474,3 +474,4 @@ neg tests/t476_neg_aadd_root4.hb `AAdd` on the root of a four-level array is not
 pos tests/t477_arrset_static_var.hb \n         2\n         2\n         2\n         0\n         0
 pos tests/t478_aadd_static_var.hb \n         2\n         1\n         1\n         0\n         0
 pos tests/t479_aaddsub_static_var.hb \n         8\n         8\n         0\n         0
+pos tests/t480_valtype_darr4_casillas.hb \nA\nA\nA\nU\nN
