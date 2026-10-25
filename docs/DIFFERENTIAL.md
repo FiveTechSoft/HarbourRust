@@ -102,3 +102,12 @@ RUNTIME (BASE/1003, "Variable does not exist: X" - parameter substitution
 is case-sensitive, so X is NOT substituted); HarbourRust fails at COMPILE
 time (undefined variable `X`). Category: static vs dynamic checking, same
 rejection class - registered, consistent with t82.
+
+## Run of 2026-10-25 (preprocessor: parenthesized-expression marker)
+
+t91 (<(x)> pattern marker, plain result) and t92 (<(x)> result marker
+re-parenthesizes): 2/2 MATCH (values identical after whitespace
+normalization). t93 (unparenthesized use of a <(x)> pattern): Harbour
+fails at COMPILE time with E0030 at the use line; HarbourRust rejects
+with "incomplete statement" (E0020-class) - same compile-time rejection,
+different error code; registered, not claimed identical.
