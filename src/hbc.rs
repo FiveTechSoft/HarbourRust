@@ -682,7 +682,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], out: &mut String, t
             match v.ty {
                 Ty::I64 => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
                 Ty::Str => {
-                    // ptr at -(off), len at -(off-8) â same layout as the store
+                    // ptr at -(off), len at -(off-8) — same layout as the store
                     out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
                     out.push_str(&format!("    mov -{}(%rbp), %rdx\n", v.off - 8));
                 }
