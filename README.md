@@ -1026,10 +1026,15 @@ Registered limits of this increment, not general fidelity:
   0) while the borrow still dies at the return (t421/t422 are
   named compile errors; a NIL casilla is the registered
   "Argument error: PARAM" exit 1, t423).
+- A static root array can be passed as an argument: the boundary
+  materializes a dynamic COPY the callee owns (hk98 shows Harbour
+  would SHARE it - registered D5/D7-family difference pending the
+  user's decision, t424-t427, balance 0; deeper pins and literal
+  arguments are named compile errors, t428/t429).
 
 Robustness fix in passing: `hb_HKeys` with a non-variable
 argument used to panic the compiler; it is now the documented
 clean error (t345).
 
-Battery: 420/420 manifest cases on Linux x86-64 and Wine, plus
+Battery: 426/426 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
