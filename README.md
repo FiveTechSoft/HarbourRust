@@ -1019,10 +1019,17 @@ Registered limits of this increment, not general fidelity:
   middle-array parameter (t409-t412). Unmeasured shapes are named
   compile errors: a[i] of a three-level array, a user call result,
   a hash (t413-t415).
+- The borrowed-argument mechanism works one level deeper: f(a[i])
+  on a THREE-level array lends the middle cell's address and the
+  callee reads, writes, grows and shrinks through it, visible in
+  the caller like Harbour's sharing (hk93-hk96, t416-t419, balance
+  0) while the borrow still dies at the return (t421/t422 are
+  named compile errors; a NIL casilla is the registered
+  "Argument error: PARAM" exit 1, t423).
 
 Robustness fix in passing: `hb_HKeys` with a non-variable
 argument used to panic the compiler; it is now the documented
 clean error (t345).
 
-Battery: 412/412 manifest cases on Linux x86-64 and Wine, plus
+Battery: 420/420 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
