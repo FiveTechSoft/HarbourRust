@@ -328,3 +328,19 @@ pos tests/t330_print_rtrim.hb \nab\nab            5\nab\nab            3
 pos tests/t331_print_alive.hb \n\n         2\n\n         2\nab\ncd ab
 pos tests/t328_hash_print_empty.hb \n\n          5\n         5\n\n         5           6\nx  y
 neg tests/t332_neg_print_temp_hash.hb cannot print a temporary array or hash
+pos tests/t333_foreach_flat.hb \n         5\n         6\n         2\n        99\n         6
+pos tests/t334_foreach_hash_values.hb \n        20\n        10\nNIL\n         0
+pos tests/t335_foreach_empty.hb \n        42
+pos tests/t336_foreach_keys.hb \nb\na\n         2
+pos tests/t337_foreach_grown_nil.hb \n         1\n         7
+neg tests/t338_neg_for_in.hb Harbour requires EACH here
+neg tests/t339_neg_foreach_undeclared.hb must be declared first
+neg tests/t340_neg_foreach_assign.hb cannot assign to the `for` loop variable
+neg tests/t341_neg_foreach_grow.hb cannot be modified, moved or grown inside its own loop
+pos tests/t342_foreach_early_return.hb \n         7
+pos tests/t343_foreach_dyn_arith.hb \n        11\n        12
+neg tests/t344_neg_foreach_strcmp.hb comparing the `for each` variable
+neg tests/t345_neg_hkeys_literal.hb `hb_HKeys` expects a hash variable
+neg tests/t346_neg_foreach_ret_lv.hb cannot be returned, assigned, passed to a function or stored
+neg tests/t347_neg_foreach_assign_lv.hb cannot be returned, assigned, passed to a function or stored
+neg tests/t348_neg_foreach_store_lv.hb cannot be returned, assigned, passed to a function or stored
