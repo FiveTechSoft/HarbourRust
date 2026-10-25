@@ -298,7 +298,16 @@ pos tests/t299_hkeys_case.hb \n         2\none\n         9\nONE\n         0\n   
 pos tests/t300_hkeys_empty.hb \n         0\n         0\n         0
 pos tests/t301_hkeys_ownstr.hb \nx\n         5\nx\n         0\n         0
 neg tests/t302_neg_hkeys_moved.hb use of moved value
-neg tests/t303_neg_hkeys_param.hb cannot be function parameters
-neg tests/t304_neg_hkeys_aadd.hb `AAdd` applies to dynamic arrays
+neg tests/t303_neg_hkeys_param.hb must be a dynamic array, got an array of strings
+neg tests/t304_neg_hkeys_aadd.hb the elements of `k` are strings
 pos tests/t306_hkeys_return.hb \nx\nx\n         0\n         0
 neg tests/t305_neg_hkeys_strmoved.hb use of moved value
+pos tests/t307_hkeys_mutate.hb \n         2\n         3\ntres\nnueva\ntwo\n         2\n         1
+pos tests/t308_hkeys_darrs_aadd.hb \n         2\nx\nyy\nzzz\nyy\n         0\n         0
+pos tests/t309_hkeys_param.hb \nchanged\n         2\nchanged\ntwo\n         0\n         0
+neg tests/t310_neg_hkeys_param_moved.hb use of moved value
+pos tests/t311_hkeys_strparam.hb \nx\nx\n         5\n         0\n         0
+pos tests/t312_strparam_owned.hb \nhi\n         0\n         0\nback\n         0\n         0
+neg tests/t313_neg_hkeys_strparam_moved.hb use of moved value
+pos tests/t314_strparam_mixedret.hb \nx\nfallback\n         0\n         0
+neg tests/t315_neg_hkeys_asize.hb `ASize` applies to dynamic arrays
