@@ -626,7 +626,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     pp.cmds.push(Cmd { pattern, result });
                 }
             }
-            "TRANSLATE" => {
+            "TRANSLATE" | "XTRANSLATE" => {
                 if emitting {
                     let arrow = arg.find("=>").ok_or_else(|| format!("line {}: #translate needs `pattern => result`", line))?;
                     let pat = arg[..arrow].trim();
