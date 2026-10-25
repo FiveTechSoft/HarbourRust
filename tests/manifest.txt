@@ -264,3 +264,7 @@ posx tests/t263_nilslot_len.hb 1 Argument error: LEN
 posx tests/t264_nilslot_aadd.hb 1 Argument error: AADD
 posx tests/t265_nilslot_asize.hb 1 Argument error: ASIZE
 pos tests/t266_nilslot_assign.hb \n         9\n         2\nNIL\n         1\n         5
+pos tests/t267_nilslot_cmp.hb \ncasilla es nil\nhijo no nil\nvacio no nil
+pos tests/t268_nilslot_cmp2.hb \nizq nil\nhijo distinto\nllamada\nuna vez
+pos tests/t269_nilslot_arr0.hb \nfila vacia no nil\n         3\n         0\n         0\n         0
+pos tests/t270_nilslot_shrink.hb \n         0\n         0\n         0
