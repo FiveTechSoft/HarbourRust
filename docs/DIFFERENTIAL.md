@@ -62,3 +62,18 @@ Note on argument evaluation order (iteration 11): HarbourRust evaluates and
 pushes arguments left to right, the same order as Harbour. This is
 observable only through failing argument expressions (e.g. integer
 division by zero); both sides then fail on the same argument first.
+
+## Run of 2026-10-25 (iteration 11b: string parameters)
+
+Positive cases t67, t68, t71, t72, t74: 5/5 MATCH (pcode reference, values
+identical after whitespace normalization).
+
+Registered divergence (model difference, agreed direction, not a bug):
+Harbour copies a string when it is passed as an argument, so the caller's
+variable remains usable; HarbourRust MOVES it (Rust String model) and
+rejects later uses at compile time (t69, t75). Observable outputs are
+identical whenever the caller does not reuse the moved variable.
+
+Negative cases accepted by Harbour but rejected here remain as recorded in
+the iteration-11 run; t64/t70 now fail earlier with "cannot infer the type
+of parameter" (Harbour accepts: dynamic typing).
