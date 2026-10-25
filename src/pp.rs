@@ -51,8 +51,7 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
         And,
         Or,
     }
-    let up = expr.to_uppercase();
-    let b = up.as_bytes();
+    let b = expr.as_bytes();
     let mut i = 0usize;
     let mut toks: Vec<T> = Vec::new();
     while i < b.len() {
@@ -63,7 +62,7 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
         if c.is_ascii_digit() {
             let mut j = i;
             while j < b.len() && (b[j] as char).is_ascii_digit() { j += 1; }
-            let v: i64 = up[i..j].parse().map_err(|_| format!("line {}: bad number in #if", line))?;
+            let v: i64 = expr[i..j].parse().map_err(|_| format!("line {}: bad number in #if", line))?;
             toks.push(T::Num(v));
             i = j;
             continue;
@@ -71,9 +70,9 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
         if c.is_ascii_alphabetic() || c == '_' || c == '.' {
             let mut j = i;
             while j < b.len() && ((b[j] as char).is_ascii_alphanumeric() || b[j] == b'_' || b[j] == b'.') { j += 1; }
-            let w = &up[i..j];
+            let w = &expr[i..j];
             i = j;
-            match w {
+            match w.to_uppercase().as_str() {
                 ".AND." => toks.push(T::And),
                 ".OR." => toks.push(T::Or),
                 ".NOT." => toks.push(T::Not),
@@ -85,14 +84,15 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
                     while i < b.len() && (b[i] as char).is_whitespace() { i += 1; }
                     let k = i;
                     while i < b.len() && ((b[i] as char).is_ascii_alphanumeric() || b[i] == b'_') { i += 1; }
-                    let name = &up[k..i];
+                    let name = &expr[k..i];
                     while i < b.len() && (b[i] as char).is_whitespace() { i += 1; }
                     if i >= b.len() || b[i] != b')' { return Err(format!("line {}: expected ) after defined name", line)); }
                     i += 1;
                     toks.push(T::Num(if defs.contains_key(name) { 1 } else { 0 }));
                 }
                 _ => {
-                    // A defined macro expands to its body if numeric, else 0.
+                    // A defined macro expands to its body if numeric, else 0
+                    // (macro names are case-sensitive).
                     let v = defs.get(w).and_then(|d| d.body.trim().parse::<i64>().ok()).unwrap_or(0);
                     toks.push(T::Num(v));
                 }
@@ -101,7 +101,7 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
         }
         // operators: ==, !=, >=, <=, >, <
         if i + 1 < b.len() {
-            let two = &up[i..i + 2];
+            let two = &expr[i..i + 2];
             if ["==", "!=", ">=", "<="].contains(&two) {
                 toks.push(T::Op(two.to_string()));
                 i += 2;
@@ -213,8 +213,7 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
             let mut j = i;
             while j < b.len() && ((b[j] as char).is_ascii_alphanumeric() || b[j] == b'_') { j += 1; }
             let word = &line[i..j];
-            let up = word.to_uppercase();
-            match defs.get(&up) {
+            match defs.get(word) {
                 Some(d) if d.params.is_empty() => {
                     // object-like: the body itself may contain macro calls
                     outb.extend_from_slice(expand_depth(&d.body.clone(), defs, line_no, depth + 1)?.as_bytes());
@@ -313,14 +312,14 @@ pub fn parse_define(arg: &str, line: usize) -> Result<(String, Vec<String>, Stri
     let mut i = 0usize;
     while i < bytes.len() && ((bytes[i] as char).is_ascii_alphanumeric() || bytes[i] == b'_') { i += 1; }
     if i == 0 { return Err(format!("line {}: #define needs a name", line)); }
-    let name = arg[..i].to_uppercase();
+    let name = arg[..i].to_string();
     if i < bytes.len() && bytes[i] == b'(' {
         let close = arg[i..].find(')').ok_or_else(|| format!("line {}: unterminated parameter list in #define", line))? + i;
         let plist = &arg[i + 1..close];
         let params: Vec<String> = if plist.trim().is_empty() {
             Vec::new()
         } else {
-            plist.split(',').map(|p| p.trim().to_uppercase()).collect()
+            plist.split(',').map(|p| p.trim().to_string()).collect()
         };
         if params.iter().any(|p| p.is_empty()) {
             return Err(format!("line {}: empty parameter name in #define", line));
@@ -353,9 +352,9 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     pp.defs.insert(name, Def { params, body });
                 }
             }
-            "UNDEF" => { if emitting { pp.defs.remove(&arg.to_uppercase()); } }
+            "UNDEF" => { if emitting { pp.defs.remove(&arg); } }
             "IFDEF" | "IFNDEF" => {
-                let has = pp.defs.contains_key(&arg.to_uppercase());
+                let has = pp.defs.contains_key(&arg);
                 let cond = if dir == "IFDEF" { has } else { !has };
                 let act = emitting && cond;
                 conds.push(Cond { active: act, taken: cond });
