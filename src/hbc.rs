@@ -2738,7 +2738,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                     // shrink frees the removed string copies; GROWING an
                     // array of strings is a clean runtime error in this
                     // increment (Harbour grows with NIL casillas, hk13).
-                    Ty::DArr | Ty::DArr2 | Ty::DArrS => {}
+                    Ty::DArr | Ty::DArr2 | Ty::DArrS | Ty::DArr3 => {}
                     Ty::DArrU => return Err(format!("line {}: the element type of `{}` is unknown until its first `AAdd` (pin it first)", n, id)),
                     _ => return Err(format!("line {}: `ASize` applies to dynamic arrays (`{{}}`); `{}` is not one", n, id)),
                 }
@@ -2758,7 +2758,10 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                     Some(k) => k,
                     None => return Err(format!("line {}: undeclared variable `{}`", n, id)),
                 };
-                if env[kp].ty != Ty::DArr2 {
+                // DArr3 root: the middle child resizes in place (hk65:
+                // grow with NIL casillas; shrink frees removed innermost
+                // children).
+                if !matches!(env[kp].ty, Ty::DArr2 | Ty::DArr3) {
                     return Err(format!("line {}: `ASize` on a[i] needs an array of arrays; `{}` is not one", n, id));
                 }
                 if type_expr(ie, env, sigs, *n)? != Ty::I64 {
@@ -4680,7 +4683,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // child; shrink frees children). kind 2: strings (shrink
                 // frees the copies; grow is a clean runtime error here -
                 // Harbour grows with NIL, oracle hk13).
-                let kind = if v.ty == Ty::DArr2 { 1 } else if v.ty == Ty::DArrS { 2 } else { 0 };
+                // kind 3: three levels (grow NIL casillas like kind 1;
+                // shrink frees removed children RECURSIVELY via
+                // hbc_rfree - they own their own children).
+                let kind = if v.ty == Ty::DArr2 { 1 } else if v.ty == Ty::DArrS { 2 } else if v.ty == Ty::DArr3 { 3 } else { 0 };
                 cg_expr(e, env, sigs, strs, out, target);
                 out.push_str(&format!("    mov %rax, %rsi\n    mov $16, %edx\n    mov ${}, %ecx\n    lea -{}(%rbp), %rdi\n    call hbc_asize\n",
                     kind, v.off));
@@ -4723,7 +4729,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // A NIL casilla is Harbour's BASE/2023 (hangs headless,
                 // oracle n7): clean error.
                 out.push_str("    mov (%rdi), %r10\n    test %r10, %r10\n    jz hbc_asize_error\n");
-                out.push_str("    mov %rax, %rsi\n    mov $16, %edx\n    xor %ecx, %ecx\n    call hbc_asize\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
+                // DArr3 root: the middle child owns innermost arrays,
+                // so its shrink frees them (kind 1); a DArr2 subarray is
+                // flat (kind 0).
+                let kind = if v.ty == Ty::DArr3 { 1 } else { 0 };
+                out.push_str(&format!("    mov %rax, %rsi\n    mov $16, %edx\n    mov ${}, %ecx\n    call hbc_asize\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n", kind));
             }
             Stmt::AAddSub2(_, id, ie, ie2, e) => {
                 // AAdd(a[i][j], x): i first, then j, then the value
@@ -6441,6 +6451,8 @@ hbc_asize:
     shl $4, %r10
     cmp $1, %r15
     je 79f
+    cmp $3, %r15
+    je 79f
     # flat arrays and arrays of strings grow with NIL {1, 0} (probe e1;
     # hk13/hk14 for the string array: grown casillas read NIL)
     movq $1, (%r13,%r10)
@@ -6456,6 +6468,8 @@ hbc_asize:
 59: # shrink: kind 2 frees the removed string copies, kind 1 the children
     cmp $2, %r15
     je 80f
+    cmp $3, %r15
+    je 83f
     test %r15, %r15
     jz 76f
     mov (%rbx), %r13
@@ -6486,6 +6500,22 @@ hbc_asize:
     call hbc_free
 82: inc %r9
     jmp 81b
+    # kind 3: three levels - removed children own their own children,
+    # so they are freed RECURSIVELY (hbc_rfree depth 2)
+83: mov (%rbx), %r13
+    mov %r12, %r9
+84: cmp 8(%rbx), %r9
+    jge 76f
+    mov %r9, %r10
+    shl $4, %r10
+    mov (%r13,%r10), %rdi
+    test %rdi, %rdi
+    jz 85f
+    mov 8(%r13,%r10), %rsi
+    mov $2, %edx
+    call hbc_rfree
+85: inc %r9
+    jmp 84b
 76: mov %r12, 8(%rbx)
 75: pop %r15
     pop %r14
@@ -7216,6 +7246,8 @@ hbc_asize:
     shl $4, %r10
     cmp $1, %r15
     je 79f
+    cmp $3, %r15
+    je 79f
     # flat arrays and arrays of strings grow with NIL {1, 0} (probe e1;
     # hk13/hk14 for the string array: grown casillas read NIL)
     movq $1, (%r13,%r10)
@@ -7233,6 +7265,8 @@ hbc_asize:
 # across the hbc_free call.
     cmp $2, %r15
     je 80f
+    cmp $3, %r15
+    je 83f
     test %r15, %r15
     jz 76f
     mov (%rbx), %r13
@@ -7265,6 +7299,23 @@ hbc_asize:
     call hbc_free
 82: incq -48(%rbp)
     jmp 81b
+    # kind 3: three levels - recursive free of removed children
+    # (hbc_rfree depth 2); same stack-counter pattern as kind 1.
+83: mov (%rbx), %r13
+    mov %r12, -48(%rbp)
+84: mov -48(%rbp), %r9
+    cmp 8(%rbx), %r9
+    jge 76f
+    mov %r9, %r10
+    shl $4, %r10
+    mov (%r13,%r10), %rdi
+    test %rdi, %rdi
+    jz 85f
+    mov 8(%r13,%r10), %rsi
+    mov $2, %edx
+    call hbc_rfree
+85: incq -48(%rbp)
+    jmp 84b
 76: mov %r12, 8(%rbx)
 75: add $56, %rsp
     pop %r15
