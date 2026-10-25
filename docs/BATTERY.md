@@ -319,6 +319,37 @@ the NIL literal itself has existed in expressions since iteration 15
 (`Array(3, 0)` rows are real empty arrays, never NIL) and t270
 (ASize shrink to 0: every child freed, registry balance 0).
 
+## hb_HKeys (t298-t306, iteration 28)
+
+Oracles hk4-hk6 (Harbour core libraries only, compiled with
+`-gtstd`): hb_HKeys returns the keys in insertion order with their
+original case; an overwrite keeps its position and updates the
+value; keys differing only in case are two keys (confirms
+h3b/t235); an empty hash returns a zero-length array. HGetKeys
+(libxhb) is a different surface, not wired as an alias.
+
+- t298 (pos): hk4 mirror plus hash writes, reassignment of the keys
+  array and element re-reads; registry balance 0 (wrap pattern).
+- t299 (pos): hk5 mirror - case-sensitive dedup and overwrite
+  position.
+- t300 (pos): hk6 mirror - empty hash, len 0.
+- t301 (pos): a kept element `k := keys[1]` stays valid after the
+  keys array is destroyed and reassigned, and compares equal to a
+  fresh hash lookup - the key copies are owned, no use-after-free.
+- t302/t305 (neg): use after move on the keys array and on a moved
+  string element.
+- t303 (neg): DArrS/StrOwn parameters rejected (same precedent as
+  hash parameters).
+- t304 (neg): AAdd on the keys array rejected (read-only array).
+- t306 (pos): the keys array returned through a function transfers
+  ownership; registry balance 0.
+
+The three new shared helpers (hbc_hkeys, hbc_sfree, hbc_strcpy)
+have dedicated entries in tests/abi_harness.sh: a real hash is
+built, the keys are taken, copied and freed, with the canary
+registers, stack balance and alignment checked after every call, on
+both targets.
+
 ## Three-level parameters (t294-t297, iteration 27)
 
 t294 mirrors oracle pr9 minus the caller reuse: the callee reads
