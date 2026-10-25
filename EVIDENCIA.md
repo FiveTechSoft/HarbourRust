@@ -428,7 +428,9 @@ it (syntactic pre-pass): under arithmetic it is an integer, compared
 against a string literal (or a literal-initialized local) it is a string,
 passed to another function it takes that parameter's type. A parameter the
 body only prints, returns or copies is not pinnable: hbc reports "cannot
-infer the type of parameter ..." instead of guessing. A pin failure never
+infer the type of parameter ..." instead of guessing. This syntactic
+pinning is an IMPLEMENTATION LIMITATION of the current PoC, not a claim of
+full Rust-style type inference. A pin failure never
 masks a deeper error: the body check runs first and its error wins.
 
 Ownership, verified against rustc 1.99.1 (E0382): passing a string argument
