@@ -148,7 +148,20 @@ them stricter than the analogous Rust constructs:
 - The move checker applies the same join rules as in `while`: a variable
   moved in the body must be reassigned before `next`
   (`tests/t41_for_move.hb`). These joins are conservative: they can
-  reject programs that would run fine, which is intended.
+  reject programs that would run fine, which is intended
+  (`tests/t50_for_return_move.hb` is such a case).
+- Advancing the counter past the i64 range ends the loop instead of
+  wrapping it (`tests/t45_for_overflow_up.hb`,
+  `tests/t46_for_overflow_down.hb`). Without this rule the counter would
+  wrap and the loop would not terminate.
+- `for`, `to`, `step` and `next` are reserved words now; they can no
+  longer be used as identifiers.
+
+Adversarial review note (2026-10-25): the overflow rule above was added
+after a review of the first `for` implementation found that
+`for i := 9223372036854775806 to 9223372036854775807` did not terminate
+(the counter wrapped to i64::MIN and the loop kept going). See
+EVIDENCIA.md for the reproduction.
 
 ## Ownership semantics (what "Rust rules" means here, precisely)
 
@@ -239,6 +252,12 @@ Integer literals are range-checked (i64).
 - A `for` step given as an expression (Harbour allows it; this PoC
   takes only literals so the direction is known at compile time).
 - Shadowing: no name may be reused while it is in scope (Rust allows it).
+- Wrapping arithmetic: `+`/`-`/`*` on i64 wrap modulo 2^64 (two's
+  complement) with no error, so a hand-written `while` counter can
+  overflow into an infinite loop. Only the `for` increment is guarded.
+- The path joins in the move checker are branch-insensitive: a move on
+  one branch of an `if` taints the join even when that branch returns.
+  Rust accepts some of these programs; this PoC rejects them on purpose.
 - String comparisons and a first-class boolean: conditions compare
   integers only.
 - The safety of any grammar extension beyond this subset: each extension
