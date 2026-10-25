@@ -533,3 +533,22 @@ increment: hash parameters and returns, whole-hash printing, non-string
 keys, non-scalar values, hb_HKeys and iteration. Design notes and the
 oracle inventory: docs/DESIGN-hashes.md. Battery: 246/246 green on
 Linux x86-64 and Wine.
+
+## Iteration 18 - Array() constructor
+
+`Array(n)` and `Array(n, m)`, verified against compiled Harbour
+oracles (a0, avar, aadd, a3d, aneg, a0args). `Array(n)` builds a
+dynamic array of n NIL slots (t245/t247, single dimension from an
+expression in t248); `Array(n, m)` builds n children of m NILs each
+(t246 mirrors oracle avar, including a nested write and read back).
+The result follows the same ownership rules as array literals:
+assignment MOVES it, the epilogue frees it, and the alloc/free balance
+across a function boundary reads 0 under the instrumented registry
+(t253). `AAdd` keeps working on a constructed array (t249, oracle
+aadd). Registered failure modes, not compat claims: Harbour answers
+`Array()` and `Array(-1)` with dialogs that hang headless (BASE/1111,
+BASE/1131); hbc rejects the first at compile time (t252) and answers
+the second with a clean "ASize: negative size" runtime error, exit 1
+(t250). Harbour supports three and more dimensions (oracle a3d);
+hbc rejects them with a compile error in this increment (t251).
+Battery: 255/255 green on Linux x86-64 and Wine.
