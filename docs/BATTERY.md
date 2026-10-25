@@ -217,3 +217,30 @@ could not see it; both length constants are now 14. As before, the
 harness verifies exact size, liveness and OS results on the paths the
 battery actually exercises - it is not a proof of absence of leaks
 on unexercised paths.
+
+Hashes v1 (t231-t244): string-keyed hash maps with Harbour semantics
+verified against compiled oracles. `{k => v, ...}` and `{=>}` literals,
+`h[k] := v` writes (value evaluated before the key - probe h4),
+`h["k"]` reads, `len(h)`. Keys are case-sensitive byte strings
+compared with their length (h3b, h12: prefix keys stay distinct), the
+empty string is an ordinary key (h10), duplicate keys in one literal
+overwrite in place (h8: len 1, last wins) and each literal pair
+evaluates its key before its value (h9 - the opposite of `h[k] := v`).
+A missing-key read is Harbour's BASE/1132 dialog, which hangs
+headless (h3/h3c): the registered failure mode is a clean
+"Bound error: array access" with exit 1 (t234/t235). Values are tagged
+scalars (integer or NIL, t240). Assignment MOVES the hash; the source
+slot is nulled and use-after-move is a compile error (t241), the same
+ownership rule as dynamic arrays. The block grows from 4 pairs
+doubling, moving entries and freeing the old block shallow (t243);
+overwrite keeps the pair count (t244). Key bytes are copied into
+owned allocations on insert, so keys from string literals (rodata) and
+from evaluated expressions are both safe; no general heap-string
+lifetime is claimed. Insertion order is preserved internally by
+construction but is NOT claimed verified: without hb_HKeys or
+iteration there is no observable order, so no battery test asserts it.
+t242 checks the alloc/free balance across a function boundary (the
+callee's epilogue frees every key copy and the block, exact sizes
+verified by the instrumented registry). Rejected in this increment,
+all with clean errors: hash parameters, hash returns, whole-hash
+printing, non-string keys, non-scalar values, hb_HKeys and iteration.
