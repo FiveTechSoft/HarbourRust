@@ -720,6 +720,21 @@ bounds-walk and append tail with the scalar path (a first draft
 duplicated the tail with an early return that dropped the following
 statements - caught by the battery, fixed before publishing).
 
+## Iteration 33m additions (431 manifest cases): static array returns
+
+return a on a STATIC array materializes a dynamic COPY the caller owns
+and frees (33m; oracle hk99, compiled hbmk2 -gtstd: Harbour's local
+array survives the return and the caller reads, writes and grows it -
+a fresh owner matches that observably for the measured non-aliasing
+shape; no sharing involved). Tests: t430 (reads, balance 0), t431
+(write + growth on the returned copy), t432 (shrink, balance 0).
+Named compile errors: t433 (a literal return - only variables this
+increment), t434 (len of an array TEMPORARY in expression position -
+no free point here; the guard also closes a pre-existing compiler
+unreachable reachable via dynamic returns; t399/t421 keep testing the
+borrow escape through an assigned result). No new helpers, no new
+ABI harness entries.
+
 ## Iteration 33l additions (426 manifest cases): static arrays as arguments
 
 f(a) on a STATIC root array is allowed: the call boundary materializes
