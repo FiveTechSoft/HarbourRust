@@ -2513,6 +2513,12 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 // (that covers reseating a[i] and growing the borrowed
                 // child, which could reallocate the borrowed cells).
                 let sub = matches!(coll, Expr::Index(id, _) if matches!(env.iter().find(|v| v.name == *id).map(|v| v.ty), Some(Ty::DArr2)));
+                // Depth 3 (hk60-hk64): a[i][j] on an array of arrays of
+                // arrays borrows the innermost child the same way; both
+                // index expressions evaluate once, each level is
+                // bounds-checked, and a NIL casilla at either level is
+                // the BASE/1068 failure mode.
+                let sub2 = matches!(coll, Expr::Index2(id, _, _) if matches!(env.iter().find(|v| v.name == *id).map(|v| v.ty), Some(Ty::DArr3)));
                 let ct = if sub {
                     if let Expr::Index(id, ie) = coll {
                         if env.iter().find(|v| v.name == *id).map(|v| v.moved).unwrap_or(false) {
@@ -2521,6 +2527,19 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                         let it = type_expr(ie, env, sigs, *n)?;
                         if !matches!(it, Ty::I64 | Ty::Dyn) {
                             return Err(format!("line {}: array index must be an integer", n));
+                        }
+                    }
+                    Ty::DArr
+                } else if sub2 {
+                    if let Expr::Index2(id, ie, ie2) = coll {
+                        if env.iter().find(|v| v.name == *id).map(|v| v.moved).unwrap_or(false) {
+                            return Err(format!("line {}: use of moved value `{}`", n, id));
+                        }
+                        for ix in [ie, ie2] {
+                            let it = type_expr(ix, env, sigs, *n)?;
+                            if !matches!(it, Ty::I64 | Ty::Dyn) {
+                                return Err(format!("line {}: array index must be an integer", n));
+                            }
                         }
                     }
                     Ty::DArr
@@ -2534,7 +2553,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 // freed-if-nonnull on (re)entry and freed by the
                 // epilogue on every exit path (natural, `exit`,
                 // `return`). A variable collection is borrowed.
-                if !matches!(coll, Expr::Var(_) | Expr::Call(..)) && !sub {
+                if !matches!(coll, Expr::Var(_) | Expr::Call(..)) && !sub && !sub2 {
                     return Err(format!("line {}: `for each` iterates a variable or a function result in this increment (assign the expression to a variable first)", n));
                 }
                 if !matches!(ct, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArrS | Ty::Hash) {
@@ -2547,6 +2566,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 let cname = match coll {
                     Expr::Var(cn) => Some(cn.clone()),
                     Expr::Index(cn, _) if sub => Some(cn.clone()),
+                    Expr::Index2(cn, _, _) if sub2 => Some(cn.clone()),
                     _ => None,
                 };
                 if let Some(cn) = &cname {
@@ -4372,6 +4392,69 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         let fl2 = fresh_lbl();
                         out.push_str(&format!("    cmp $1, %rax\n    jl .Lfeb{}\n    cmp -{}(%rbp), %rax\n    jg .Lfeb{}\n", fl2, v.off - 8, fl2));
                         out.push_str(&format!("    mov -{}(%rbp), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov 8(%rax), %rdx\n    mov (%rax), %rcx\n    test %rcx, %rcx\n    je .Lfen{}\n    mov %rcx, %rax\n    jmp .Lfeo{}\n.Lfeb{}:\n    call hbc_bound_error\n.Lfen{}:\n    call hbc_arracc_error\n.Lfeo{}:\n", v.off, fl2, fl2, fl2, fl2, fl2));
+                    } else {
+                        cg_value(coll, env, sigs, strs, out, target);
+                    }
+                } else if let Expr::Index2(id, ie, ie2) = coll {
+                    if matches!(env.iter().rev().find(|v| v.name == *id).map(|v| v.ty), Some(Ty::DArr3)) {
+                        // Depth-3 borrow (hk60-hk64): evaluate each index
+                        // ONCE, bounds-check each level, load the level-2
+                        // then the level-1 cell; a NIL casilla at either
+                        // level is the BASE/1068 failure mode
+                        // (hbc_arracc_error). Nothing owned here.
+                        let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
+                        if expr_ty(ie, env, sigs) == Ty::Dyn {
+                            cg_expr(ie, env, sigs, strs, out, target);
+                            out.push_str("    call hbc_dyn_to_i64
+");
+                        } else {
+                            cg_expr(ie, env, sigs, strs, out, target);
+                        }
+                        let fl2 = fresh_lbl();
+                        out.push_str(&format!("    cmp $1, %rax
+    jl .Lfeb{}
+    cmp -{}(%rbp), %rax
+    jg .Lfeb{}
+", fl2, v.off - 8, fl2));
+                        out.push_str(&format!("    mov -{}(%rbp), %r11
+    dec %rax
+    shl $4, %rax
+    add %r11, %rax
+    mov 8(%rax), %rdx
+    mov (%rax), %rcx
+    test %rcx, %rcx
+    je .Lfen{}
+    push %rcx
+    push %rdx
+", v.off, fl2));
+                        if expr_ty(ie2, env, sigs) == Ty::Dyn {
+                            cg_expr(ie2, env, sigs, strs, out, target);
+                            out.push_str("    call hbc_dyn_to_i64
+");
+                        } else {
+                            cg_expr(ie2, env, sigs, strs, out, target);
+                        }
+                        out.push_str(&format!("    pop %rdx
+    pop %rcx
+    cmp $1, %rax
+    jl .Lfeb{}
+    cmp %rdx, %rax
+    jg .Lfeb{}
+    dec %rax
+    shl $4, %rax
+    add %rcx, %rax
+    mov 8(%rax), %rdx
+    mov (%rax), %rcx
+    test %rcx, %rcx
+    je .Lfen{}
+    mov %rcx, %rax
+    jmp .Lfeo{}
+.Lfeb{}:
+    call hbc_bound_error
+.Lfen{}:
+    call hbc_arracc_error
+.Lfeo{}:
+", fl2, fl2, fl2, fl2, fl2, fl2, fl2));
                     } else {
                         cg_value(coll, env, sigs, strs, out, target);
                     }
