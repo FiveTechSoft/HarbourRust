@@ -145,8 +145,23 @@ its owner's exit, reassignment or re-declaration). No GC, no reference
 counting, no shared aliases: Harbour's sharing patterns (probes d6-d9,
 e9) are registered MODEL divergences. Heap: mmap on Linux, HeapAlloc on
 Windows, capacity header before the data, doubling growth, checked
-overflow, OOM abort. Grown slots read 0 (Harbour grows NIL, probe e1 -
-documented i64-model difference). t166 proves alloc/free balance 0
+overflow, OOM abort. t166 proves alloc/free balance 0
 across function boundaries via hb_memcheck(); t173-t175 pin the
 compile-time rejections; t176 pins ASize's negative-size runtime error
 (clean message + exit 1 vs Harbour's interactive hang).
+
+## NIL as a tagged value, v2c (t35/t104/t165 updated, t208-t212)
+
+NIL is the tagged i64 sentinel i64::MIN (probes n1 against compiled
+Harbour). `x := NIL` stores it and prints "NIL"; `return nil` RETURNS it
+(n1c), so the old void-function rejections are gone - t35 (mixed
+`return 5` / closing `return nil` now agree, both i64) and t104 (a
+`return nil` function's result is usable, prints the sum then NIL) are
+re-purposed to the Harbour behaviour; t165's grown slots now read NIL.
+New: t208 NIL literal through AAdd/read-back/overwrite, t209 `? f()` on
+`return nil`/`return NIL`, t210 comparisons (`NIL = NIL` .T., `NIL = 0`
+/`"" = NIL` .F., `NIL != ""` .T., NIL local keeps the sentinel), t211
+NIL through a pinned parameter and back, t212 (neg) ordering a NIL
+literal is a compile error. Registered sentinel costs: i64::MIN is
+unrepresentable (behaves as NIL), and arithmetic / ordering on NIL held
+in a variable evaluates numerically where Harbour raises a type error.
