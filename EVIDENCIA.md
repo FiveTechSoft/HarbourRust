@@ -553,3 +553,10 @@ otherwise (t105 positive MATCH vs Harbour, t106 negative, both reject).
 Parse diagnostic "unexpected token None" replaced by "incomplete
 expression (operand or ) missing)". Full battery: 109/109 (106 numbered
 + 3 fixtures), Linux + Wine identical.
+
+#uncommand / #untranslate: exact-match rule removal implemented from
+probes b32/b37a-f (identical result text required; one instance popped
+from stacked duplicates - needed a dup counter for call-form rules;
+unknown rule silent). t107 positive MATCH vs Harbour, t108 negative
+(both reject). Full battery: 111/111 (108 numbered + 3 fixtures), Linux
++ Wine identical.
