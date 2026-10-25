@@ -136,6 +136,12 @@ recorded, not denied.
   scoped the same day via the command machinery (t95/t96). Harbour also
   applies them after its own `?` command through std.ch chaining; this
   PoC does not emulate that indirect path (scoped difference).
+- #xtranslate accepted by Harbour (b26); aliased to #translate in our
+  engine like #xcommand/#command (t100). Harbour's x- priority over a
+  same-pattern plain rule is NOT emulated (documented difference).
+- Token pasting: no `##` anywhere in Harbour's own .ch headers;
+  combined with b04/b10c/b10b there is no usable Harbour behaviour to
+  match - left unimplemented.
 - #if expressions: Harbour accepts relational operators, .AND./.OR.,
   unary !, arithmetic and #elif chains (probes b24/b25). Our eval_if
   already had relational/.AND./.OR./.NOT.; extended with !, + - * / %
