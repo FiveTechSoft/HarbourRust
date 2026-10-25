@@ -1,6 +1,6 @@
 pos ejemplos/hola.hb \nresultado de z:\n        32\nhola desde una funcion
 neg ejemplos/prestamo_roto.hb line 5: use of moved value
-neg tests/t01_injection_colons.hb ':' without '='
+neg tests/t01_injection_colons.hb trailing tokens after expression
 neg tests/t02_injection_unsafe.hb trailing tokens after expression
 neg tests/t03_injection_macro.hb U+003B
 neg tests/t04_unicode_ident.hb U+00F1
@@ -285,3 +285,7 @@ neg tests/t286_neg_array4d.hb `Array` with more than three dimensions
 pos tests/t287_array3d_zero.hb \n         0\n         2\n         0\n         0\n         2\n         3\n         0\n         0\n         0
 pos tests/t288_array3d_order.hb \ndim-1\ndim-2\ndim-3\n         2\n         3\n         1\n         0\n         0
 posx tests/t289_posx_array3d_negdim.hb 1 ASize: negative size
+neg tests/t290_neg_class_gate.hb classes are not in this increment yet
+neg tests/t291_neg_class_multi.hb multiple inheritance is not in this increment
+neg tests/t292_neg_class_scope.hb class scopes
+neg tests/t293_neg_eqeq.hb identity comparison is not in this increment yet
