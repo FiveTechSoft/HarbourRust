@@ -420,46 +420,32 @@ parameters.
 - Same caveat as before: the Windows side ran under Wine 10.20, not real
   Windows.
 
-## Iteration 11: function parameters (integers)
+## Iteration 11b: string parameters (move semantics)
 
-`function name(a, b)` declares integer parameters; calls pass arguments
-between the parentheses. Semantics, checked against rustc 1.99.1 behavior:
-an i64 argument COPIES at the call (Rust i64 is Copy), so the caller keeps
-its value; the parameter is an owned local inside the callee and can be
-reassigned. Returning transfers the value to the caller: a copy for i64
-(Copy type), a move for strings (unchanged from before).
+Parameters can now be strings. Since Harbour parameters are untyped and this
+PoC is statically typed, a parameter's type is PINNED by how the body uses
+it (syntactic pre-pass): under arithmetic it is an integer, compared
+against a string literal (or a literal-initialized local) it is a string,
+passed to another function it takes that parameter's type. A parameter the
+body only prints, returns or copies is not pinnable: hbc reports "cannot
+infer the type of parameter ..." instead of guessing. A pin failure never
+masks a deeper error: the body check runs first and its error wins.
 
-Restrictions in this increment (explicit errors, not silent):
-- Parameters are i64 only: passing a string is a compile-time type error
-  ("parameters are integers in this PoC; cannot pass a string to ...").
-- Arity must match exactly ("... takes N argument(s), got M").
-- No shadowing: a local cannot reuse a parameter name ("duplicate local").
-- Calls still require the callee to be defined before use (unchanged).
+Ownership, verified against rustc 1.99.1 (E0382): passing a string argument
+MOVES it out of the caller's variable (like a Rust String passed by value);
+using it afterwards is "use of moved value". Assignment re-lives it. A
+literal argument has no owner and does not move. Integer arguments copy.
+The move is applied left to right, so `f(v) + g(v)` with string parameters
+rejects the second use at compile time.
 
-Calling convention (ours, internal): arguments are evaluated and pushed
-LEFT TO RIGHT, each in a 16-byte slot (keeps rsp 16-aligned on both
-targets); the callee copies them into its frame after the prologue.
-Evaluation order is observable when an argument expression can fail (e.g.
-integer division by zero): Harbour also evaluates arguments left to right,
-so the first failing argument is the same on both sides.
+9 new tests (t67-t75): 5 positive (compare-pinned, move+revive, chained
+pin through a callee signature, mixed int+string params, literal args) and
+4 negative (use after move, unpinnable parameter, wrong argument type,
+double move in one expression). Full battery: 75/75 numbered tests pass
+(78/78 with fixtures), byte-identical on Linux x86-64 and under Wine.
 
-10 new tests (t57-t66): 6 positive (basic, reassignment, three params,
-nested calls, parameter as for bound, i64 copy usable twice), 4 negative
-(arity, string argument, duplicate parameter, local shadowing a parameter).
-Full battery re-run: 66/66 numbered tests pass (69/69 with fixtures),
-byte-identical output on Linux x86-64 and under Wine.
-
-Differential vs harbour/core @ 694428e1 (pcode): the 6 positive cases MATCH
-(value-identical after whitespace normalization). Negative cases, verified
-against real Harbour: arity errors are RUNTIME errors there (BASE/1081),
-string arguments are accepted (dynamic typing) - both registered in
-docs/DIFFERENTIAL.md as current PoC restrictions, not settled policy.
-Duplicate parameter and shadowing are rejected by Harbour too (E0003):
-equivalent rejection, different message text.
-
-Rust contrast (todo Rust-asm): the equivalent `fn add(a: i64, b: i64)`
-compiled with rustc gives the same value (42). rustc -O inlines and
-constant-folds the call; hbc emits a real frame and call (no optimizer).
-That is an optimization difference, not a semantic one; the call semantics
-(i64 Copy, ownership of returned value) match. No instruction-level
-identity is claimed.
+Differential vs harbour/core @ 694428e1: the 5 positive cases MATCH.
+Registered divergence (model, not a bug): Harbour copies strings on call,
+so a variable stays usable after being passed; HarbourRust moves it (the
+agreed Rust model). Same observable results when the caller does not reuse
+the variable; reuse is a compile error here, valid code there.
