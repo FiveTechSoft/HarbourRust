@@ -525,3 +525,33 @@ printing the same casilla prints NIL instead).
 
 326/326 on Linux x86-64 and Wine; ABI harness PASS on both
 targets. No new helpers.
+
+## Whole array/hash printing and the line-end trim (t328-t332, iteration 32)
+
+Oracles hk16, hk20-hk25 (Harbour core libraries only, `-gtstd`,
+byte-compared with cat -A): a whole hash OR dynamic array prints
+NOTHING (flat numeric, string-key array, nested array, empty hash
+alike); the separator between items is still emitted (`? h, 5`
+prints one space before the number; `? 5, h, 6` keeps both
+separators); QOut space-trims the END of the line, for literals
+and variables alike, while interior spacing is preserved exactly
+(`? "ab  ", 5` keeps all 12 spaces); a string-array element in
+last position is trimmed the same way (`? s[2], s[1]` prints
+"cd ab"); printing a whole hash/array BORROWS it (len works
+afterwards).
+
+Mirrors: t328 (hk16/hk20/hk21 hash forms), t329 (hk20/hk22/hk24
+array forms), t330 (hk22/hk24 line-end trim), t331 (hk23/hk25
+borrow + element trim). t332 is the named compile error for a
+constructing temporary in that position (registered limit; the
+static suffix analysis never drops operand effects - only
+side-effect-free variables render empty). Second registered
+limit: a trailing ALL-SPACES string still leaves its preceding
+separator in this PoC; exact fidelity there needs a buffered
+line, so no general rtrim-fidelity claim is made.
+
+Implementation: the checker admits whole array/hash printing for
+variables only (borrow, no move); codegen drops the static
+suffix of empty-rendering items with their preceding separators
+and right-trims a surviving trailing string with an inline
+backward scan (no new helper, so no new ABI canary entry).
