@@ -218,3 +218,9 @@ t109 (angle-form #include <file> resolved via -I, probe b38): MATCH.
 
 t110 (angle-form include beside the source WITHOUT -I): both reject
 (Harbour F0029; HarbourRust "cannot find include").
+
+t111 (line continuation with `;`: basic, inside-string, chained; probes
+b39/b39b/b39e): MATCH.
+
+t112 (text after the continuation `;`): both reject (Harbour E0030;
+HarbourRust "character not allowed").
