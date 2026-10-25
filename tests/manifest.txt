@@ -135,7 +135,7 @@ posx tests/t133_arr_runtime_oob.hb 1 \n        10Bound error: array access
 neg tests/t131_arr_neg_const_low.hb out of bounds
 neg tests/t132_arr_neg_const_high.hb out of bounds
 neg tests/t134_arr_neg_str_index.hb is not an array
-neg tests/t135_arr_neg_print_whole.hb cannot print an array directly
+neg tests/t135_arr_neg_print_whole.hb cannot print a temporary array or hash
 neg tests/t136_arr_neg_pass_arg.hb arrays cannot be passed as arguments
 neg tests/t137_arr_neg_size_mismatch.hb type mismatch in assignment
 neg tests/t139_arr_neg_mixed.hb array elements must be integers
@@ -174,7 +174,7 @@ pos tests/t171_dyn_branch_local.hb \n         9\n         1
 pos tests/t172_dyn_loop_redecl.hb \n        10\n        20\n        30
 neg tests/t173_dyn_neg_moved.hb use of moved value
 neg tests/t174_dyn_neg_aadd_fixed.hb AAdd` applies to dynamic arrays
-neg tests/t175_dyn_neg_print.hb cannot print a dynamic array
+neg tests/t175_dyn_neg_print.hb cannot print a temporary array or hash
 posx tests/t176_dyn_asize_neg.hb 1 ASize: negative size
 neg tests/t177_dyn_neg_branch_join.hb use of moved value
 neg tests/t178_dyn_neg_backedge.hb moved inside the `for` body
@@ -323,3 +323,8 @@ pos tests/t326_darrs_grow_aadd.hb \n         4\nx\nNIL
 pos tests/t327_darrs_grow_balance.hb \n         1\na\n         0
 pos tests/t322_hash_len_merge.hb \n         2\n         7
 neg tests/t323_neg_hash_pin_conflict.hb indexed assignment applies to arrays
+pos tests/t329_darr_print_empty.hb \n\n          7\n\n          9
+pos tests/t330_print_rtrim.hb \nab\nab            5\nab\nab            3
+pos tests/t331_print_alive.hb \n\n         2\n\n         2\nab\ncd ab
+pos tests/t328_hash_print_empty.hb \n\n          5\n         5\n\n         5           6\nx  y
+neg tests/t332_neg_print_temp_hash.hb cannot print a temporary array or hash
