@@ -319,6 +319,16 @@ the NIL literal itself has existed in expressions since iteration 15
 (`Array(3, 0)` rows are real empty arrays, never NIL) and t270
 (ASize shrink to 0: every child freed, registry balance 0).
 
+## AAdd/ASize at the third level (t281-t283, iteration 24)
+
+t281 mirrors oracle pr8: AAdd(a[i][j], x) evaluates i, then j, then
+the value; the innermost grow keeps every other length; ASize
+shrink drops the tail and a later grow leaves fresh NIL slots;
+registry balance 0 after the owner returns. t282/t283 pin the
+compile errors on a two-level value. pr8 was written for this
+increment because the measured order (indices first, value last)
+differs from the two-level write order (m7: value first).
+
 ## Third-level writes and the return chain (t277-t280, iteration 23)
 
 t277 mirrors oracle pr6 (write a[1][1][2] := 99, reads and lengths
