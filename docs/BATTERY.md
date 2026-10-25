@@ -295,3 +295,19 @@ pop from the Windows hbc_free2 makes the harness fail (the Wine run
 crashes with rbp holding a canary value). t254 adds a Harbour-level
 functional regression (live locals across helper calls); it does not
 by itself prove register preservation, the harness does.
+
+## Grown-casilla NIL repair (t191, t262-t266)
+
+A casilla created by growing an array of arrays with ASize is NIL in
+Harbour, not an empty subarray (oracles n1-n7). Repaired semantics:
+the casilla is (null, 0) internally and prints NIL (n1); len / AAdd /
+ASize on it map Harbour's headless-hanging dialogs BASE/1111, 1123
+and 2023 (n2, n6, n7) to clean "Argument error: LEN / AADD / ASIZE"
+exits (t263-t265, registered failure modes). Assignment into the
+casilla installs a new child, converting i64 literals to Dyn-element
+children (n3, t266). Real empty arrays (`{}`, empty children,
+`Array(n, 0)` children) own a header-only block so they stay
+distinguishable from NIL casillas (e4, az0b); the instrumented
+registry verifies their allocation/free sizes on the tested paths.
+Comparing a casilla against NIL (`a[i] == NIL`, n4) is not in the
+language yet (no NIL literal in expressions): pending.
