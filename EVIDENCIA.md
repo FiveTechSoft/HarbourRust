@@ -468,3 +468,10 @@ numbered + 3 fixtures), Linux + Wine identical. Differential vs Harbour:
 t91, t92 MATCH; t93 same compile-time rejection with different error
 code (E0030 vs E0020-class, registered). <"x"> and <#x> are rejected by
 Harbour itself (E0010) and are not implemented.
+
+### Nested optional clauses
+
+Probe b18: Harbour nests [...] groups ([TO <y> [BY <z>]] at three use
+depths). The matcher was rewritten recursive to match. t94 positive.
+Full battery: 97/97 (94 numbered + 3 fixtures), Linux + Wine identical.
+Differential vs Harbour: t94 MATCH.
