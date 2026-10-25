@@ -12,7 +12,7 @@ if "%~1"=="" (
 set "SRC=%~1"
 set "OUT=%~2"
 if "%OUT%"=="" set "OUT=%~n1"
-if "%HBC%"=="" set "HBC=%~dp012-hbc.exe"
+if "%HBC%"=="" set "HBC=%~dp02-hbc.exe"
 "%HBC%" "%SRC%" "%OUT%.s" --target=windows || exit /b 1
 x86_64-w64-mingw32-as -o "%OUT%.o" "%OUT%.s" || exit /b 1
 x86_64-w64-mingw32-ld -o "%OUT%.exe" "%OUT%.o" -e _start --subsystem console -lkernel32 || exit /b 1
