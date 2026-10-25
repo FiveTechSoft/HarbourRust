@@ -35,7 +35,7 @@ enum Tok {
     Int(String),
     Str(String), // already unescaped content
     Plus, Minus, Star, Slash,
-    LParen, RParen,
+    LParen, RParen, Comma,
     Assign,   // :=
     Question, // ?
     Eq,       // =
@@ -66,6 +66,7 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             '*' => { toks.push(Tok::Star); it.next(); }
             '(' => { toks.push(Tok::LParen); it.next(); }
             ')' => { toks.push(Tok::RParen); it.next(); }
+            ',' => { toks.push(Tok::Comma); it.next(); }
             '?' => { toks.push(Tok::Question); it.next(); }
             ':' => {
                 it.next();
@@ -159,7 +160,7 @@ enum Expr {
     Int(String),
     Str(String),
     Var(String),
-    Call(String), // 0-arg only
+    Call(String, Vec<Expr>),
     Bin(char, Box<Expr>, Box<Expr>),
     Cmp(CmpOp, Box<Expr>, Box<Expr>), // i64 operands only (checked in analysis)
 }
@@ -179,6 +180,7 @@ enum Stmt {
 
 struct Func {
     name: String,
+    params: Vec<String>,
     ret: Option<Ty>,
     stmts: Vec<Stmt>,
 }
@@ -236,10 +238,20 @@ impl P {
             Some(Tok::Ident(id)) => {
                 if self.peek() == Some(&Tok::LParen) {
                     self.pos += 1;
-                    if self.bump() != Some(Tok::RParen) {
-                        return Err(format!("line {}: calls take no arguments in this PoC", self.n));
+                    let mut args: Vec<Expr> = Vec::new();
+                    if self.peek() != Some(&Tok::RParen) {
+                        loop {
+                            args.push(self.expr()?);
+                            match self.bump() {
+                                Some(Tok::Comma) => continue,
+                                Some(Tok::RParen) => break,
+                                other => return Err(format!("line {}: expected `,` or `)` in call arguments, got {:?}", self.n, other)),
+                            }
+                        }
+                    } else {
+                        self.pos += 1;
                     }
-                    Ok(Expr::Call(id))
+                    Ok(Expr::Call(id, args))
                 } else {
                     Ok(Expr::Var(id))
                 }
@@ -515,15 +527,34 @@ fn parse(src: &str) -> Result<Vec<Func>, String> {
         if toks[0] != Tok::KwFunction {
             return Err(format!("line {}: code outside a function", n));
         }
-        let name = match toks.as_slice() {
+        let (name, params) = match toks.as_slice() {
             [Tok::KwFunction, Tok::Ident(id), Tok::LParen, Tok::RParen] => {
                 check_ident(id, *n)?;
-                id.clone()
+                (id.clone(), Vec::new())
             }
-            _ => return Err(format!("line {}: expected `function name()`", n)),
+            [Tok::KwFunction, Tok::Ident(id), Tok::LParen, rest @ .., Tok::RParen] if !rest.is_empty() => {
+                check_ident(id, *n)?;
+                let mut ps: Vec<String> = Vec::new();
+                for (k, t) in rest.iter().enumerate() {
+                    let want_ident = k % 2 == 0;
+                    match (want_ident, t) {
+                        (true, Tok::Ident(p)) => {
+                            check_ident(p, *n)?;
+                            if ps.iter().any(|q| q == p) {
+                                return Err(format!("line {}: duplicate parameter `{}`", n, p));
+                            }
+                            ps.push(p.clone());
+                        }
+                        (false, Tok::Comma) => {}
+                        _ => return Err(format!("line {}: expected `function name(a, b)` with comma-separated parameters", n)),
+                    }
+                }
+                (id.clone(), ps)
+            }
+            _ => return Err(format!("line {}: expected `function name(...)`", n)),
         };
         i += 1;
-        let mut f = Func { name, ret: None, stmts: Vec::new() };
+        let mut f = Func { name, params, ret: None, stmts: Vec::new() };
         parse_stmts(&lines, &mut i, &mut f.stmts, 0)?;
         if i >= lines.len() || lines[i].1[0] != Tok::KwReturn {
             return Err(format!("function `{}` without closing return", f.name));
@@ -545,6 +576,15 @@ fn parse(src: &str) -> Result<Vec<Func>, String> {
 }
 
 // ---------------------------------------------------------------------------
+// Function signature: name, parameter types (i64 only in this increment),
+// return type. Passing an integer argument COPIES it (Rust i64 is Copy);
+// passing a string is a type error at the call site in this increment.
+struct Sig {
+    name: String,
+    params: Vec<Ty>,
+    ret: Ty,
+}
+
 // Semantic analysis: types + ownership/move tracking. This pass is OURS:
 // nothing here is delegated to another compiler.
 //
@@ -560,7 +600,7 @@ struct Local {
     ro: bool, // read-only: the `for` loop variable cannot be assigned
 }
 
-fn type_expr(e: &Expr, env: &[Local], sigs: &[(String, Ty)], n: usize) -> Result<Ty, String> {
+fn type_expr(e: &Expr, env: &[Local], sigs: &[Sig], n: usize) -> Result<Ty, String> {
     match e {
         Expr::Int(_) => Ok(Ty::I64),
         Expr::Str(_) => Ok(Ty::Str),
@@ -570,8 +610,20 @@ fn type_expr(e: &Expr, env: &[Local], sigs: &[(String, Ty)], n: usize) -> Result
                 "line {}: use of moved value `{}` (strings move on assignment; they do not copy)", n, id)),
             Some(v) => Ok(v.ty),
         },
-        Expr::Call(id) => sigs.iter().find(|(v, _)| v == id).map(|(_, t)| *t)
-            .ok_or_else(|| format!("line {}: unknown function `{}` (must be defined before use)", n, id)),
+        Expr::Call(id, args) => {
+            let sig = sigs.iter().find(|v| v.name == *id)
+                .ok_or_else(|| format!("line {}: unknown function `{}` (must be defined before use)", n, id))?;
+            if sig.params.len() != args.len() {
+                return Err(format!("line {}: `{}` takes {} argument(s), got {}", n, id, sig.params.len(), args.len()));
+            }
+            for a in args {
+                let ta = type_expr(a, env, sigs, n)?;
+                if ta != Ty::I64 {
+                    return Err(format!("line {}: parameters are integers in this PoC; cannot pass a string to `{}`", n, id));
+                }
+            }
+            Ok(sig.ret)
+        }
         Expr::Bin(_, a, b) => {
             let ta = type_expr(a, env, sigs, n)?;
             let tb = type_expr(b, env, sigs, n)?;
@@ -609,7 +661,7 @@ fn type_expr(e: &Expr, env: &[Local], sigs: &[(String, Ty)], n: usize) -> Result
 // path exits via return / exit / loop). `loop_pre` is Some(moved flags of
 // the outer env captured before the innermost `while`) inside a loop body;
 // `exits` collects the outer-env moved flags at each `exit` of that loop.
-fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[(String, Ty)], ret: &mut Option<Ty>, loop_pre: Option<&Vec<bool>>, exits: &mut Vec<Vec<bool>>) -> Result<bool, String> {
+fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Option<Ty>, loop_pre: Option<&Vec<bool>>, exits: &mut Vec<Vec<bool>>) -> Result<bool, String> {
     let mut falls = true;
     for s in stmts {
         match s {
@@ -785,13 +837,14 @@ fn size_of(t: Ty) -> usize {
     match t { Ty::I64 => 8, Ty::Str => 16, Ty::Bool => unreachable!("booleans rejected in analysis") }
 }
 
+#[derive(Clone)]
 struct CgLocal {
     name: String,
     ty: Ty,
     off: usize, // offset below rbp of the FIRST slot (ptr for Str, value for i64)
 }
 
-fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], out: &mut String, target: Target) {
+fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], out: &mut String, target: Target) {
     match e {
         Expr::Int(v) => {
             out.push_str(&format!("    mov ${}, %rax\n", v));
@@ -810,9 +863,20 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], out: &mut String, t
                 Ty::Bool => unreachable!("booleans rejected in analysis"),
             }
         }
-        Expr::Call(id) => {
+        Expr::Call(id, args) => {
             let _ = sigs;
+            // Arguments are pushed in reverse order, each in a 16-byte slot
+            // (keeps rsp 16-aligned on both targets); arg k then sits at
+            // 16*(k+1)(%rbp) in the callee after its prologue. Pure
+            // expressions only, so right-to-left evaluation is unobservable.
+            for a in args.iter().rev() {
+                cg_expr(a, env, sigs, out, target);
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+            }
             out.push_str(&format!("    call hbc_fn_{}\n", id));
+            if !args.is_empty() {
+                out.push_str(&format!("    add ${}, %rsp\n", 16 * args.len()));
+            }
         }
         Expr::Bin(op, a, b) => {
             // arithmetic is i64-only (checked in analysis)
@@ -850,7 +914,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], out: &mut String, t
 
 // Evaluate any expression whose value might be a Str: string literals need a
 // .rodata slot, so they are handled here with a label table.
-fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], strs: &mut Vec<String>, out: &mut String, target: Target) {
+fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     if let Expr::Str(s) = e {
         let idx = strs.len();
         strs.push(s.clone());
@@ -861,12 +925,12 @@ fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], strs: &mut Vec<Str
     }
 }
 
-fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)]) -> Ty {
+fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
     match e {
         Expr::Int(_) | Expr::Bin(_, _, _) => Ty::I64,
         Expr::Str(_) => Ty::Str,
         Expr::Var(id) => env.iter().find(|v| v.name == *id).expect("checked").ty,
-        Expr::Call(id) => sigs.iter().find(|(v, _)| v == id).expect("checked").1,
+        Expr::Call(id, _) => sigs.iter().find(|v| v.name == *id).expect("checked").ret,
         Expr::Cmp(..) => Ty::Bool,
     }
 }
@@ -875,7 +939,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)]) -> Ty {
 // total frame size. Branch locals get their own slots and are scoped: the
 // env is truncated at each branch join. The codegen walk below rebuilds
 // the exact same env, so offsets match.
-fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[(String, Ty)], frame: &mut usize) {
+fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &mut usize) {
     for s in stmts {
         match s {
             Stmt::Local(_, id, e) => {
@@ -911,7 +975,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[(String, Ty)], 
 // Emits the comparison and jumps to true_label when it holds.
 // rcx = lhs, rax = rhs; cmp computes lhs - rhs. On Windows the lhs is kept
 // in a 16-byte slot so a call inside either operand keeps ABI alignment.
-fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], strs: &mut Vec<String>, out: &mut String, target: Target, true_label: &str) {
+fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, true_label: &str) {
     match cond {
         Expr::Cmp(op, a, b) if expr_ty(a, env, sigs) == Ty::Str => {
             // String equality/inequality: byte-compare via hbc_str_eq.
@@ -967,7 +1031,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], strs: &mut 
     }
 }
 
-fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[(String, Ty)], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, ll: &Option<(String, String)>) {
+fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, ll: &Option<(String, String)>) {
     for s in stmts {
         match s {
             Stmt::Local(_, id, e) => {
@@ -1093,9 +1157,15 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[(
     }
 }
 
-fn cg_func(f: &Func, sigs: &[(String, Ty)], strs: &mut Vec<String>, out: &mut String, target: Target) {
+fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     let mut lenv: Vec<CgLocal> = Vec::new();
     let mut frame = 0usize;
+    // Parameters occupy the first frame slots (i64, 8 bytes each).
+    for p in &f.params {
+        frame += 8;
+        lenv.push(CgLocal { name: p.clone(), ty: Ty::I64, off: frame });
+    }
+    let nparams = lenv.len();
     layout_locals(&f.stmts, &mut lenv, sigs, &mut frame);
 
     out.push_str(&format!("hbc_fn_{}:\n", f.name));
@@ -1107,15 +1177,22 @@ fn cg_func(f: &Func, sigs: &[(String, Ty)], strs: &mut Vec<String>, out: &mut St
     if frame > 0 {
         out.push_str(&format!("    sub ${}, %rsp\n", frame));
     }
-    let mut env: Vec<CgLocal> = Vec::new();
-    let mut walk_frame = 0usize;
+    // Copy incoming arguments from the caller's stack into the parameter
+    // slots: arg k was pushed into a 16-byte slot and sits at 16*(k+1)(%rbp)
+    // after this prologue.
+    for (k, v) in lenv[..nparams].iter().enumerate() {
+        out.push_str(&format!("    mov {}(%rbp), %rax\n", 16 * (k + 1)));
+        out.push_str(&format!("    mov %rax, -{}(%rbp)\n", v.off));
+    }
+    let mut env: Vec<CgLocal> = lenv[..nparams].to_vec();
+    let mut walk_frame = env.iter().map(|v| size_of(v.ty)).sum();
     let mut label = 0usize;
     cg_stmts(&f.stmts, &mut env, &mut walk_frame, sigs, strs, out, target, &f.name, &mut label, &None);
     out.push_str(&format!(".Lret_{}:\n", f.name));
     out.push_str("    leave\n    ret\n\n");
 }
 
-fn emit_asm(funcs: &[Func], sigs: &[(String, Ty)], target: Target) -> String {
+fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target) -> String {
     let mut out = String::new();
     out.push_str("# generated by hbc (PoC: Harbour syntax -> x86-64 assembly)\n");
     match target {
@@ -1438,11 +1515,15 @@ fn main() {
     };
 
     // Pass 1: semantic analysis - types, ownership/move, signatures.
-    let mut sigs: Vec<(String, Ty)> = Vec::new();
+    let mut sigs: Vec<Sig> = Vec::new();
     let mut has_main = false;
     for f in &mut funcs {
         if f.name == "main" { has_main = true; }
         let mut env: Vec<Local> = Vec::new();
+        // Parameters enter the frame as owned i64 locals (callers copy them).
+        for p in &f.params {
+            env.push(Local { name: p.clone(), ty: Ty::I64, moved: false, ro: false });
+        }
         let mut ret = None;
         let mut top_exits: Vec<Vec<bool>> = Vec::new();
         if let Err(m) = check_stmts(&f.stmts, &mut env, &sigs, &mut ret, None, &mut top_exits) {
@@ -1454,7 +1535,7 @@ fn main() {
             process::exit(1);
         }
         if let Some(t) = ret {
-            sigs.push((f.name.clone(), t));
+            sigs.push(Sig { name: f.name.clone(), params: vec![Ty::I64; f.params.len()], ret: t });
         }
         f.ret = ret;
     }
