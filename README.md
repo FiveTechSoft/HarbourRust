@@ -850,3 +850,37 @@ so `a[1] = NIL` is .F. (t269), and shrinking an array of arrays to
 length 0 with ASize frees every child with registry balance 0 - no
 leak, no double free (t270). Battery: 270/270 green on Linux x86-64
 and Wine, plus the ABI harness on both targets.
+
+## Iteration 30 - hashes as parameters and returns, ASize on string arrays
+
+Two more PoC limitations closed (scope, never ownership
+requirements):
+
+- Hashes pass as function parameters and return from functions.
+  The value MOVES: the caller's slot is nulled, the callee owns
+  the hash, frees it at exit, or hands it back with `return p`
+  (oracles hk11/hk12, Harbour core libraries only, `-gtstd`;
+  t316 prints byte-identical values to hk11 via the explicit
+  move round-trip; t317 mirrors hk12 exactly). Harbour SHARES
+  the hash on a call - the callee's writes are visible without
+  any return (hk11) - which stays the registered difference
+  family D5/D7, pending the user's contract decision. This is
+  the current limitation vs the sharing decision: two different
+  things. Pin evidence: a string key (`p["k"] := v`, `? p["k"]`)
+  pins the hash; `len(p)` alone would pin a flat array, and the
+  two merge to the hash pin - `len` of a hash is its pair count
+  (hk11; t322). A hash parameter the callee does not return is
+  freed at its exit (t318: balance 0).
+- `ASize` on an array of strings: shrink keeps the first
+  elements and frees the removed copies (t319 mirrors the
+  shrink half of oracle hk13); resizing to the same length is a
+  no-op and shrinking to 0 frees every copy (t320). GROWING an
+  array of strings is a clean runtime error in this increment -
+  Harbour grows with NIL casillas (hk13 prints NIL) - exit 1
+  with a named message (t321). ASize on the hash itself stays a
+  named compile error (t315 repurposed).
+
+Battery: 322/322 on Linux x86-64 and Wine, plus the ABI harness.
+No new helpers (the ASize change extends the existing hbc_asize
+kind flag; string frees go through the already-canaried
+hbc_free).
