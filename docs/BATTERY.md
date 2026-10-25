@@ -113,3 +113,20 @@ the arguments. Our v1 block expressions are side-effect-free literals
 and variable reads, so the order is unobservable today; it becomes a
 constraint on the increment that introduces block-returning functions
 (blocks cannot be returned in v1).
+
+## Dynamic arrays v2a (t164-t176)
+
+`{}` is the empty DYNAMIC array (t138's old rejection is superseded and
+its manifest entry removed): AAdd/ASize built-in statements grow/resize
+in place, `len(a)` reads the length, elements are i64. Ownership: a
+dynamic array has exactly one owner; assignment / call / return MOVE
+(the source slot is nulled, so each allocation is freed exactly once at
+its owner's exit, reassignment or re-declaration). No GC, no reference
+counting, no shared aliases: Harbour's sharing patterns (probes d6-d9,
+e9) are registered MODEL divergences. Heap: mmap on Linux, HeapAlloc on
+Windows, capacity header before the data, doubling growth, checked
+overflow, OOM abort. Grown slots read 0 (Harbour grows NIL, probe e1 -
+documented i64-model difference). t166 proves alloc/free balance 0
+across function boundaries via hb_memcheck(); t173-t175 pin the
+compile-time rejections; t176 pins ASize's negative-size runtime error
+(clean message + exit 1 vs Harbour's interactive hang).
