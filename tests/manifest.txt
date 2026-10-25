@@ -146,3 +146,7 @@ posx tests/t142_arr_bound_max.hb 1 Bound error: array access
 posx tests/t143_arr_bound_min.hb 1 Bound error: array access
 pos tests/t144_arr_copy_reverse.hb \n        10\n         5
 pos tests/t145_arr_reassign_same.hb \n         9          8
+pos tests/t146_for_eval_order.hb \n         1\n         2\n         1\n         2
+pos tests/t147_arrset_move_index.hb \n         5
+pos tests/t148_arrset_move_value.hb \n         0
+neg tests/t149_arrset_move_both.hb use of moved value
