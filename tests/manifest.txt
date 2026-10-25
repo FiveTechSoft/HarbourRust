@@ -221,7 +221,7 @@ pos tests/t219_nil_mixed_return_rev.hb \nNIL\n         7\nok1\nok2\nok3\nok4\n  
 posx tests/t220_nil_order_var_err.hb 1 Type error: NIL used as a number
 pos tests/t221_nil_loop_join.hb \nNIL\n        30\nok1\nNIL
 pos tests/t222_nil_min_fixed.hb \n-9223372036854775808\nok1\nok2
-pos tests/t223_nil_eval_effects.hb \ncalled\nok1\ncalled\nok2\n         7\nnum-in\nok3
+pos tests/t223_nil_eval_effects.hb \ncalled\nok1\ncalled\nok2\nNIL\nnil-in\nok3
 pos tests/t224_big_epilogue.hb \n      1000\n         0
 pos tests/t225_big_reassign.hb \n         7\n         0
 pos tests/t226_big_redeclare.hb \n         3\n         0
@@ -339,8 +339,14 @@ neg tests/t340_neg_foreach_assign.hb cannot assign to the `for` loop variable
 neg tests/t341_neg_foreach_grow.hb cannot be modified, moved or grown inside its own loop
 pos tests/t342_foreach_early_return.hb \n         7
 pos tests/t343_foreach_dyn_arith.hb \n        11\n        12
-neg tests/t344_neg_foreach_strcmp.hb comparing the `for each` variable
 neg tests/t345_neg_hkeys_literal.hb `hb_HKeys` expects a hash variable
 neg tests/t346_neg_foreach_ret_lv.hb cannot be returned, assigned, passed to a function or stored
 neg tests/t347_neg_foreach_assign_lv.hb cannot be returned, assigned, passed to a function or stored
 neg tests/t348_neg_foreach_store_lv.hb cannot be returned, assigned, passed to a function or stored
+pos tests/t344_foreach_strcmp.hb \ndistinta\nigual\nno-es-b
+pos tests/t349_foreach_strcmp_prefix.hb \ncorta-der-igual\nlarga-der-distinta\nexacta-igual
+pos tests/t350_foreach_strcmp_nil.hb \nigual-a\nno-a\ndistinto-de-a
+posx tests/t351_foreach_strcmp_num.hb 1 Argument error: =\n
+posx tests/t352_foreach_strcmp_num_ne.hb 1 Argument error: <>\n
+neg tests/t353_neg_foreach_strord.hb cannot order a string against a number
+pos tests/t354_foreach_strcmp_left.hb \nigual\nigual-temp
