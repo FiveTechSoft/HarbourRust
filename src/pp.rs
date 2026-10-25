@@ -721,8 +721,38 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
     let text = fs::read_to_string(path).map_err(|e| format!("cannot read {}: {}", path, e))?;
     let mut conds: Vec<Cond> = Vec::new();
     let mut emitting = true;
-    for (li, raw) in text.lines().enumerate() {
+    // Harbour line continuation (probes b39/b39c/b39e): a line whose last
+    // non-whitespace character is a `;` OUTSIDE any string literal joins
+    // with the next line (anything else after the `;`, even a comment, is
+    // a syntax error in Harbour - b39c). The joined statement reports its
+    // first line's number.
+    let raws: Vec<&str> = text.lines().collect();
+    let mut li = 0usize;
+    while li < raws.len() {
         let line = li + 1;
+        let mut joined = raws[li].to_string();
+        loop {
+            let mut in_str = false;
+            let mut q = '"';
+            let mut last_non_ws: Option<char> = None;
+            for ch in joined.chars() {
+                if in_str {
+                    if ch == q { in_str = false; }
+                } else if ch == '"' || ch == '\'' {
+                    in_str = true; q = ch;
+                }
+                if !ch.is_whitespace() { last_non_ws = Some(ch); }
+            }
+            if in_str || last_non_ws != Some(';') { break; }
+            if li + 1 >= raws.len() { break; } // dangling `;` at EOF: leave it; the lexer reports it
+            joined.pop(); // the ';' itself (it is the last char only if no trailing ws)
+            while joined.ends_with(|c: char| c.is_whitespace()) { joined.pop(); }
+            if joined.ends_with(';') { joined.pop(); }
+            joined.push(' ');
+            li += 1;
+            joined.push_str(raws[li].trim_start());
+        }
+        let raw = joined.as_str();
         let t = raw.trim_start();
         if !t.starts_with('#') {
             if emitting {
@@ -743,6 +773,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                 out.push_str(&expand(&cur, &pp.defs, line)?);
                 out.push('\n');
             }
+            li += 1;
             continue;
         }
         let rest = t[1..].trim_start();
@@ -892,6 +923,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
             "" => {}
             _ => return Err(format!("line {}: unknown directive #{} in this PoC", line, dir.to_lowercase())),
         }
+        li += 1;
     }
     if !conds.is_empty() { return Err(format!("{}: unterminated #if/#ifdef", path)); }
     Ok(())
