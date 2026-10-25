@@ -1,5 +1,8 @@
-// byte-wise string ordering: prefix rule, first-differing-byte rule,
-// empty string, byte values (Z = 0x5A sorts before a = 0x61)
+// Harbour default (SET EXACT OFF) string ordering: comparison runs over
+// the length of the RIGHT operand, left read NUL-padded: "abc" < "abcd"
+// true, "abcd" > "abc" false, "abcd" <= "abc" true (probe b22). First
+// differing byte decides unsigned; empty string; byte values
+// (Z = 0x5A sorts before a = 0x61)
 function main()
     local a := "abc"
     local b := "abd"
