@@ -114,3 +114,28 @@ different error code; registered, not claimed identical.
 
 t94 (nested optional clauses [TO <y> [BY <z>]], three use depths):
 MATCH (values identical after whitespace normalization).
+
+## Widened run of 2026-10-25 (all positive numbered tests vs Harbour)
+
+Every positive test in the battery was built and run under Harbour
+3.2.1dev (r2610242111) and HarbourRust: 52 programs compared, outputs
+normalized for whitespace.
+
+- 38 MATCH (identical values).
+- 11 HB-REJECT, ALL with E0004 "LOCAL declaration follows executable
+  statement": Harbour requires LOCAL declarations before any executable
+  statement; HarbourRust's documented PoC policy accepts late LOCAL.
+  This is the known pending policy difference (Antonio's decision), now
+  quantified: t11, t13, t15, t17, t20, t23, t25, t28, t31, t48, t52,
+  t54.
+- 3 DIVERGE:
+  - t45/t46 (FOR bound overflow): the known pending FOR-overflow policy
+    difference; Harbour wraps into extra iterations, HarbourRust stops.
+  - t55 (string ordering) - NEW FINDING: Harbour orders strings by the
+    length of the RIGHT operand: "abc" < "abcd" is TRUE but "abcd" >
+    "abc" is FALSE (asymmetric prefix handling, xBase-style). The PoC's
+    documented byte-wise ordering makes the longer prefix greater both
+    ways. Category: needs Antonio's decision (align to Harbour's
+    asymmetric rule or keep the documented symmetric byte-wise rule).
+    Until decided, README/EVIDENCIA keep describing the current
+    byte-wise behaviour as ours, not Harbour's.
