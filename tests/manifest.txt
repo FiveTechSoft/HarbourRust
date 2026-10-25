@@ -273,3 +273,7 @@ neg tests/t273_param_moved.hb use of moved value
 pos tests/t274_param_balance.hb \n         3\n         2\n         0\n         0
 pos tests/t275_deep3_literal.hb \n         2\n         1\n         2\n         2
 pos tests/t276_deep3_balance.hb \n         2\n         0\n         2\n         0\n         0
+pos tests/t277_deep3_write.hb \n        99\n         1\n         2\n         1\n         2
+neg tests/t278_deep3_neg_wrset2.hb three-level assignment needs an array of arrays of arrays
+neg tests/t279_deep3_neg_wr4.hb idx2][idx3]
+pos tests/t280_deep3_return_chain.hb \n         2\n         2\n         2\n         0\n         0
