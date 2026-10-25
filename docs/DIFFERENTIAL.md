@@ -40,3 +40,20 @@ Harbour is never passed off as equality.
     cp tests/tNN_test.hb /tmp/t.prg
     hbmk2 -quiet -gtstd -w0 /tmp/t.prg -o/tmp/t_hb && /tmp/t_hb
     # compare against the HarbourRust-compiled run, whitespace-normalized
+
+## Run of 2026-10-25 (iteration 11: function parameters)
+
+Positive cases t57-t62: 6/6 MATCH (pcode reference, values identical after
+whitespace normalization).
+
+Negative cases, verified against real Harbour behaviour:
+- t63 (wrong arity): Harbour COMPILES and fails at runtime (BASE/1081
+  Argument error); HarbourRust rejects at compile time. Category: static
+  vs dynamic checking, a current PoC restriction, not settled policy.
+- t64 (string argument): Harbour compiles and runs (dynamic typing);
+  HarbourRust rejects at compile time in this increment. Category: current
+  PoC restriction (implementer choice), pending string parameters.
+- t65 (duplicate parameter): Harbour also rejects (E0003). Equivalent
+  rejection; message text differs.
+- t66 (local shadows parameter): Harbour also rejects (E0003). Equivalent
+  rejection; message text differs.
