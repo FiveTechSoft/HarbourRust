@@ -485,3 +485,51 @@ arrays, hashes and codeblock captures are NOT in this increment.
 Battery: t164-t176 (178/178 green on Linux and Wine), including
 alloc/free balance 0 across function boundaries (t166) and the pinned
 compile-time rejections.
+
+## Iteration 16 - allocation registry harness and instrument mode
+
+The munmap length fix (all free sites pass the tagged element size 16;
+an under-unmap leak for blocks spanning more than one page) is pinned
+by an allocation registry: hbc_alloc records (base, bytes) and hbc_free
+verifies the exact unmap length and liveness, so a wrong size, an
+unknown block or a double free aborts with a clean message (t224-t228,
+negative control included). The registry is emitted only with
+`--instrument`, the battery's build mode: normal compilation carries no
+registry and no 16384-entry limit. Freed entries are reused (t229:
+20000 alloc/free cycles) and exhaustion stops clean (t230: "Out of
+memory", exit 1). OS free results are checked in every build: a failed
+munmap or HeapFree prints "Internal error: OS free failed" and exits 1,
+so a registry match can never mask an OS-level failure. t230 also
+exposed a pre-existing off-by-one in the OOM message length (15 vs 14
+bytes on both targets), fixed with t230 as its regression. The harness
+verifies exact size, liveness and OS results on the paths the battery
+exercises - it is not a proof of absence of leaks on unexercised paths.
+Battery: 232/232 green on Linux x86-64 and Wine.
+
+## Iteration 17 - hashes v1
+
+String-keyed hash maps: `{k => v, ...}` and `{=>}` literals, `h[k] := v`
+writes (value evaluated before the key - probe h4), `h["k"]` reads and
+`len(h)`, all verified against compiled Harbour oracles. Keys are
+case-sensitive byte strings compared with their length (h3b; prefix
+keys stay distinct, h12; the empty string is an ordinary key, h10).
+Duplicate keys in one literal overwrite in place (h8) and each literal
+pair evaluates its key before its value (h9 - the opposite of
+`h[k] := v`). A missing-key read is Harbour's BASE/1132 dialog, which
+hangs headless (h3/h3c): the registered failure mode is a clean
+"Bound error: array access" with exit 1 (t234/t235), not a compat
+success. Values are tagged scalars (integer or NIL). Ownership follows
+the same Rust model as arrays: assignment MOVES the hash and nulls the
+source (use-after-move is a compile error, t241); keys are copied into
+owned allocations on insert, the block grows doubling from 4 pairs
+(t243), and the epilogue frees every key copy and the block - balance 0
+across a function boundary under the instrumented registry (t242).
+Insertion order is preserved internally by construction but is NOT
+claimed verified: without hb_HKeys or iteration there is no observable
+order. Harbour accepts NUL-embedded keys via chr(0) (h11); hbc has no
+chr(), so NUL keys are not provable end-to-end - only the byte-with-
+length comparison is implemented. Rejected with clean errors in this
+increment: hash parameters and returns, whole-hash printing, non-string
+keys, non-scalar values, hb_HKeys and iteration. Design notes and the
+oracle inventory: docs/DESIGN-hashes.md. Battery: 246/246 green on
+Linux x86-64 and Wine.
