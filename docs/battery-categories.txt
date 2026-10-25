@@ -110,3 +110,28 @@ t179_dyn_neg_loop_stmt OURS-ONLY (static moved-check, LOOP statement)
 t180_dyn_neg_exit_path OURS-ONLY (conservative: rejected at the backedge even though the moving path exits)
 t181_dyn_neg_aadd_moved OURS-ONLY (AAdd on moved rejected)
 t182_dyn_neg_asize_moved OURS-ONLY (ASize on moved rejected)
+t183_md_lit_read HB-EXACT (m1)
+t184_md_comma_read HB-EXACT (m2)
+t185_md_write HB-EXACT (values; order m7)
+t186_md_len HB-EXACT (m6)
+t187_md_aadd_sub HB-EXACT (values; Harbour shares, we borrow-mut)
+t188_md_insert_move OURS-ONLY (move model)
+t189_md_overwrite_child OURS-ONLY
+t190_md_shrink OURS-ONLY (m8 observable only)
+t191_md_grow_null_child OURS-ONLY + DIVERGE-MODEL (NIL-vs-0)
+t192_md_eval_order HB-EXACT (m7 order)
+t193_dyn_index_write HB-EXACT (v2a gap fix, differential)
+t194_md_loop_redecl OURS-ONLY
+t195_md_pin_assign OURS-ONLY
+t196_md_selfmove OURS-ONLY
+t197_md_neg_extract OURS-ONLY (compile-time rejection)
+t198_md_neg_selfinsert OURS-ONLY (compile-time rejection)
+t199_md_neg_mixed OURS-ONLY (compile-time rejection)
+t200_md_neg_depth3 OURS-ONLY (compile-time rejection)
+t201_md_neg_param OURS-ONLY (compile-time rejection)
+t202_md_neg_return OURS-ONLY (compile-time rejection)
+t203_md_neg_asize_unpinned OURS-ONLY (compile-time rejection)
+t204_md_neg_twolevel_flat OURS-ONLY (compile-time rejection)
+t205_md_neg_parent_moved OURS-ONLY (compile-time rejection)
+t206_md_neg_aaddsub_flat OURS-ONLY (compile-time rejection)
+t207_md_neg_null_child DIVERGE-FAILMODE
