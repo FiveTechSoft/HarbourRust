@@ -699,7 +699,7 @@ children in this increment. Test-shape note: hb_memcheck must be
 printed by the CALLER after the owner function returns - printing it
 inside the owner always counts the still-owned arrays.
 
-## Iteration 33h additions (390 manifest cases): AAdd on the middle a[i]
+## Iteration 33h additions: AAdd on the middle a[i]
 
 t387 (hk66 mirror: AAdd(a[1], {5,6}) materializes the static literal
 as a dynamic child - header plus tagged cells, the same shape as a
@@ -719,3 +719,43 @@ is a {ptr, len} pair); the new element arm shares the existing
 bounds-walk and append tail with the scalar path (a first draft
 duplicated the tail with an early return that dropped the following
 statements - caught by the battery, fixed before publishing).
+
+## Iteration 33i additions (405 manifest cases): middle arrays as BORROWED arguments
+
+f(a[i]) on an array of arrays passes the child cell's ADDRESS; the
+callee borrows it exclusively for the call (oracles hk73 reads, hk78
+growth, hk86 element write, hk87 shrink - Harbour SHARES and every
+mutation reads back in the caller; the exclusive borrow reproduces
+exactly that observable behavior while single ownership stays intact:
+the borrow ends at the return and escapes are compile errors). NOT
+Harbour sharing - no alias survives the call (registered D5/D7 family,
+pending the user's contract decision). t407/t408 (an argument that moves the root AFTER or BEFORE the borrow is set up - f(a[i], g(a)) and f(g(a), a[i]) - is a named compile error: any argument that can reach the root mentions it, and mentions are rejected). Tests: t394 (hk73 mirror: len
+and element reads through the borrow, balance 0), t395 (hk78 mirror:
+AAdd in the callee grows the caller's child), t396 (the index
+expression evaluates exactly ONCE, before the walk - "eval" prints
+once), t397 (hk86 mirror: x[i] := v visible in the caller), t398
+(hk87 mirror: ASize in the callee shrinks the caller's child), t402
+(a NIL casilla as the borrowed argument: clean exit 1 "Argument
+error: PARAM" - registered failure mode of the BASE/1123 family;
+Harbour's dialog hangs headless, no oracle). Named compile errors:
+t399 (returning the borrowed parameter), t400 (passing it on to
+another function), t401 (another argument of the same call mentions
+the same root - aliasing), t403 (a[i] of a THREE-level array still
+cannot be extracted), t404 (a borrow-pass of the loop's root inside
+FOR EACH - the element view could dangle), t405 (a parameter that
+borrows elsewhere cannot also receive an owned array, and vice
+versa), t406 (reassigning the borrowed parameter). Checker: Sig
+carries per-parameter borrowed/arr_moved flags (exclusive modes);
+the callee body checks under the owned shape and an escape post-pass
+rejects the rest by whitelist. Codegen: the caller pushes the cell
+address (bounds walk shared with AAddSub; index first, effects
+included); the callee stores it in one slot word (Ty::DArrRef) and
+every operation loads through it - hbc_aadd/hbc_asize receive the
+cell address exactly like the middle arms, so growth/shrink/writes
+land in the owner's cell. No new helpers except hbc_param_error
+(noreturn failure-mode stub - no ABI harness entries needed); the
+epilogue never frees a borrowed parameter. Parent-requested edge
+(21:12): an index expression that MOVES the root (f(a[g(a)])) is
+safe by evaluation order - the walk reads the nulled slots and exits
+with the clean bound error (verified live: "Bound error: array
+access", exit 1).
