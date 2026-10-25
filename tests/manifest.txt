@@ -388,3 +388,18 @@ pos tests/t390_aadd3_mid_var.hb \n         2\n         7\n         8\n         0
 neg tests/t391_neg_aadd3_mid_moved.hb use of moved value
 neg tests/t392_neg_aadd3_mid_deep.hb the elements of the middle level of `a` are flat dynamic arrays in this increment
 posx tests/t393_aadd3_mid_nil.hb 1 Argument error: AADD\n
+pos tests/t394_borrow_param_read.hb \n         2\n         1\n         2\n         0\n         0\n         0
+pos tests/t395_borrow_param_grow.hb \n         0\n         3\n         9\n         0\n         0
+pos tests/t396_borrow_param_order.hb \neval\n         2\n         0\n         0\n         0
+pos tests/t397_borrow_param_write.hb \n         0\n        99\n         2\n         0\n         0
+pos tests/t398_borrow_param_shrink.hb \n         0\n         1\n         0\n         0
+neg tests/t399_neg_borrow_return.hb is borrowed from its caller
+neg tests/t400_neg_borrow_passon.hb is borrowed from its caller
+neg tests/t401_neg_borrow_overlap.hb no other argument of the same call may mention it
+posx tests/t402_borrow_nil_casilla.hb 1 Argument error: PARAM\n
+neg tests/t403_neg_borrow_darr3.hb indexing applies to arrays
+neg tests/t404_neg_borrow_foreach.hb cannot be modified, moved or grown inside its own loop
+neg tests/t405_neg_borrow_move_conflict.hb cannot also receive an owned array
+neg tests/t406_neg_borrow_reassign.hb is borrowed from its caller
+neg tests/t407_neg_borrow_argmove_later.hb no other argument of the same call may mention it
+neg tests/t408_neg_borrow_argmove_earlier.hb no other argument of the same call may mention it
