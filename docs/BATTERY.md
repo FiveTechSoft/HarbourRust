@@ -555,3 +555,22 @@ variables only (borrow, no move); codegen drops the static
 suffix of empty-rendering items with their preceding separators
 and right-trims a surviving trailing string with an inline
 backward scan (no new helper, so no new ABI canary entry).
+
+## Iteration 33 additions (347 total)
+
+t333 (flat numeric array: elements, len, alive after; hk17/hk26),
+t334 (hash values in insertion order, NIL casilla; hk18/hk31),
+t335 (empty array: zero iterations, variable restored; hk28/hk29),
+t336 (hb_HKeys string elements, keys array alive; hk17),
+t337 (grown NIL casillas iterate as NIL, `exit`; hk30/hk28),
+t342 (early `return` from inside the body: borrowed slots never
+freed, collection owned by the frame), t343 (Dyn+i64 arithmetic
+on the loop variable). Rejected by name: t338 (missing EACH -
+Harbour E0030), t339 (undeclared loop variable - BASE/1003),
+t340 (assignment to the loop variable - Harbour write-through
+hk32 not implemented), t341 (growing/modifying the borrowed
+collection inside its loop), t344 (loop variable compared
+against a string - hk33/hk34 measured, support pending), t345
+(`hb_HKeys` with a non-variable argument - clean error, was a
+compiler panic), t346-t348 (escaping the borrowed element:
+return, copy to another local, store into a collection).
