@@ -174,10 +174,21 @@ NOT general string handling; strings remain immutable (ptr, len) values
 that move on assignment/return and are borrowed by printing and now by
 comparison.
 
-- Ordering (`<`, `<=`, `>`, `>=`) on strings stays rejected
-  (`tests/t17_if_str_cmp.hb`, converted: it used to pin `=` failing).
-- Comparing a string with an integer is a type error
+- Ordering (`<`, `<=`, `>`, `>=`) works since iteration 10, byte-wise
+  (see below). Comparing a string with an integer is a type error
   (`tests/t53_mixed_cmp.hb`).
+
+## Iteration 10: byte-wise string ordering
+
+`<`, `<=`, `>`, `>=` on two strings, via a second leaf routine
+(`hbc_str_cmp`, returns -1/0/1 like memcmp): the first differing byte
+decides by unsigned byte value, and a strict prefix is less than its
+extension (`tests/t55_str_order.hb`). No collation, no locale, no
+Unicode awareness: "Z" (0x5A) sorts before "a" (0x61). Still not
+general string handling: same immutable (ptr, len) values, comparison
+borrows. `tests/t17_if_str_cmp.hb` was converted a second time (it now
+pins ordering working); `tests/t56_str_order_mixed.hb` pins mixed
+string/integer ordering as a type error.
 - Comparing borrows both operands: they stay usable and movable after
   (`tests/t54_str_eq_borrows.hb`).
 - Cost note: `hbc_str_eq` is emitted into every binary (no dead-code
@@ -278,8 +289,7 @@ Integer literals are range-checked (i64).
 - The path joins in the move checker are branch-insensitive: a move on
   one branch of an `if` taints the join even when that branch returns.
   Rust accepts some of these programs; this PoC rejects them on purpose.
-- Ordering comparisons on strings and a first-class boolean: `=` and
-  `<>` work on strings in conditions, nothing else does.
+- A first-class boolean: comparisons live in conditions only.
 - The safety of any grammar extension beyond this subset: each extension
   must re-establish the closed-emission property.
 
