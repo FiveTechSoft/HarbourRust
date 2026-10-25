@@ -471,3 +471,6 @@ neg tests/t473_neg_arrset_elem4.hb assigning into an element of a four-level arr
 neg tests/t474_neg_aaddsub4.hb `AAdd` on a[i] of a four-level array is not in this increment
 neg tests/t475_neg_asize_root4.hb `ASize` on the root of a four-level array is not in this increment
 neg tests/t476_neg_aadd_root4.hb `AAdd` on the root of a four-level array is not in this increment
+pos tests/t477_arrset_static_var.hb \n         2\n         2\n         2\n         0\n         0
+pos tests/t478_aadd_static_var.hb \n         2\n         1\n         1\n         0\n         0
+pos tests/t479_aaddsub_static_var.hb \n         8\n         8\n         0\n         0
