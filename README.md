@@ -1041,10 +1041,15 @@ Registered limits of this increment, not general fidelity:
   D5/D7-family difference, t435/t437, balance 0; caller reuse after
   the move and read-only callee pins are named compile errors,
   t436/t438).
+- Hashes move as arguments and returns under the same contract
+  (hk11 shows Harbour would SHARE them - registered D5/D7-family
+  difference, t439/t440, balance 0; caller reuse, hash literals as
+  arguments and read-only callee pins are named compile errors,
+  t441-t443).
 
 Robustness fix in passing: `hb_HKeys` with a non-variable
 argument used to panic the compiler; it is now the documented
 clean error (t345).
 
-Battery: 435/435 manifest cases on Linux x86-64 and Wine, plus
+Battery: 440/440 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
