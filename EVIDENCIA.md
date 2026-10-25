@@ -354,6 +354,32 @@ checked, no bug found:
 7 new tests (t45-t51, none converted). Full 51-case battery re-run
 after the fix: 51/51 pass, `hola` Linux ELF still 8,984 bytes.
 
+# Iteration 9: string equality in conditions (2026-10-25)
+
+`=` and `<>` on two strings inside `if` / `while`. Byte equality over
+(ptr, len) values via a new leaf routine hbc_str_eq (no allocation, no
+memory management, no collation - NOT general string handling).
+Comparisons borrow both operands.
+
+semantic change (documented, deliberate): tests/t17_if_str_cmp.hb
+pinned "string comparison is not in the PoC yet" for `=`; it now pins
+ordering (`<`) still being rejected. 1 converted, 3 new:
+
+positive (byte-identical output on Linux x86-64 and under Wine):
+- tests/t52_str_eq.hb - eq/ne matrix: literals, variables, lengths,
+  prefixes, empty strings, and a while condition
+- tests/t54_str_eq_borrows.hb - both operands usable and movable after
+
+negative (rejected by hbc itself before codegen, exit 1, both targets):
+- tests/t17_if_str_cmp.hb (converted) - ordering on strings
+- tests/t53_mixed_cmp.hb - string vs integer comparison
+
+Full 55-case battery re-run after the change: 55/55 pass. `hola` Linux
+ELF grew from 8,984 to 9,024 bytes because hbc_str_eq is emitted into
+every binary (no dead-code elimination in this PoC). Not yet: string
+ordering, first-class boolean, function parameters.
+
+
 
 
 
