@@ -95,6 +95,23 @@ Loop semantics:
   the body may have run zero times.
 - `return` stays at the function top level (`tests/t27_while_return.hb`).
 
+## Iteration 6: exit / loop
+
+`exit` leaves the innermost `while`, and `loop` skips to its next
+iteration (Harbour's names for `break` and `continue`). Both are
+compile errors outside a `while` (`tests/t29_exit_outside.hb`), and the
+move checker follows them:
+
+- A variable moved on a path that reaches the next iteration must be
+  reassigned before `enddo` **or before `loop`** (`tests/t30_loop_move.hb`,
+  rejected).
+- A move on a path that leaves via `exit` never reaches the next
+  iteration, so it needs no reassignment - Rust accepts the equivalent
+  too (`tests/t31_exit_move_ok.hb`, accepted).
+- After the loop, move states join the pre-loop state, the fall-through
+  end-of-body state, and the state at every `exit`: any of those paths
+  may be the one that ran (`tests/t32_exit_move_use.hb`, rejected).
+
 ## Ownership semantics (what "Rust rules" means here, precisely)
 
 - Strings are `(ptr, len)` values that **move** on assignment and on
@@ -117,6 +134,8 @@ function name()            opens a function (main is the entry point)
     ? <expr>               prints
     if <cond> ... endif    conditional, optional else, nestable
     while <cond> ... enddo loop, re-evaluates the condition each iteration
+    exit                     leaves the innermost while
+    loop                     skips to the next iteration of the innermost while
 return <expr> | return nil closes the function  (top level only)
 // comment
 ```
@@ -175,8 +194,8 @@ Integer literals are range-checked (i64).
 - A pure-Rust toolchain end to end: the assembler and linker are GNU
   binutils (C), and `hbc` itself is built with rustc/LLVM. Cranelift or a
   self-hosted path remains open.
-- `exit`/`loop` statements, `for` loops and early returns: `while` runs
-  to its condition, and `return` stays at the function top level.
+- `for` loops and early returns: `return` stays at the function top
+  level.
 - String comparisons and a first-class boolean: conditions compare
   integers only.
 - The safety of any grammar extension beyond this subset: each extension
