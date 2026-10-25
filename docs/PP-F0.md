@@ -29,6 +29,11 @@ test statements sat outside a function and therefore did not run.
 - `#include "defs.ch"` includes a sibling file; its defines apply.
 - `#error custom text` aborts compilation with an error.
 - Directives are case-insensitive: `#DEFINE`, `#IfDef`, `#EnDiF` accepted.
+  MACRO NAMES ARE CASE-SENSITIVE everywhere (verified with adversarial
+  probes a05/a06): `#define MiXeD 5` does NOT expand a use of `mixed`
+  (runtime BASE/1003), and `#ifdef LOWER` is false when only `lower` is
+  defined. Our engine matches this: directive lookup ignores case, macro
+  names are stored and matched exactly.
 - Redefinition without #undef is accepted; the last definition wins.
 - Predefined `__HARBOUR__` exists; prints 197121 (version-encoded integer).
 - `#command SAY <x> => QOut( <x> )` works: user-defined commands translate.
@@ -58,3 +63,20 @@ Version identity: we do NOT predefine `__HARBOUR__` with Harbour's value
 we have not earned. Whether and when our own identity/version symbol
 appears is deferred until a real compatibility need arises; it does not
 block F1.
+
+## Adversarial round (2026-10-25, second batch)
+
+Probes c01-c04, a01-a06 (23 -> 30 total executed):
+- `#command SHOW <x> AND <y> => QOut( <x> + <y> )` works (15); `#translate
+  DOUBLE( <x> ) => ( <x> * 2 )` works (42); `#xcommand` works; commands can
+  expand through other commands (chained, 4).
+- Circularity (`#define LOOP LOOP`) is rejected by Harbour (E0020); our
+  engine rejects by expansion-depth cap - equivalent rejection, different
+  mechanism and message (registered, not claimed identical).
+- Forward references expand at use time in both (`42`).
+- Empty-body `#define` is accepted by both.
+- Macro-name case sensitivity (above) was found in this round and fixed in
+  our engine the same day; the test battery stayed 84/84.
+- Still unprobed: parameter-substitution case sensitivity in function-like
+  defines, token pasting. F3 (#command/#translate implementation) NOT
+  started - it gets its own scoped round.
