@@ -2224,17 +2224,21 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                     if t == Ty::Bool {
                         return Err(format!("line {}: cannot print a boolean in this PoC", n));
                     }
-                    if let Ty::Arr(_) = t {
-                        return Err(format!("line {}: cannot print an array directly in this increment (print an element: `? a[i]`)", n));
-                    }
                     if let Ty::Block(_) = t {
                         return Err(format!("line {}: cannot print a codeblock in this increment", n));
                     }
-                    if t == Ty::DArr || t == Ty::DArrU || t == Ty::DArr2 || t == Ty::DArr3 || t == Ty::DArrS {
-                        return Err(format!("line {}: cannot print a dynamic array directly in this increment (print an element or `len(a)`)", n));
-                    }
-                    if t == Ty::Hash {
-                        return Err(format!("line {}: cannot print a hash directly in this increment (print an element or `len(h)`)", n));
+                    if matches!(t, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Hash) {
+                        // Whole dynamic arrays and hashes print EMPTY in
+                        // Harbour (oracles hk16/hk20/hk21/hk24: QOut
+                        // renders an array or hash value as nothing) and
+                        // the variable stays alive afterwards (hk23), so
+                        // the item is a plain borrow. This increment
+                        // accepts only a variable in this position:
+                        // printing a temporary (literal, call result) is
+                        // a registered PoC limitation.
+                        if !matches!(e, Expr::Var(_)) {
+                            return Err(format!("line {}: cannot print a temporary array or hash directly in this increment (assign it to a variable and print the variable)", n));
+                        }
                     }
                     // Printing the RESULT borrows it (moving=false at the
                     // root), but a call INSIDE the item moves the arguments
@@ -3737,6 +3741,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // strings raw; no trailing newline.
                 let darr2_child = |e: &Expr, env: &[CgLocal]| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArr2));
                 let darrs_elem = |e: &Expr, env: &[CgLocal]| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArrS));
+                // A whole array/hash VARIABLE renders empty
+                // (hk16/hk20/hk24): only borrowed, never consumed.
+                let renders_empty = |e: &Expr| matches!(expr_ty(e, env, sigs), Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Hash);
                 for e in es {
                     if let Expr::Index(v, ie) = e {
                         if darr2_child(e, env) {
@@ -3770,19 +3777,51 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             continue;
                         }
                     }
+                    if renders_empty(e) {
+                        // The pair is never consumed; the variable is
+                        // only borrowed (hk23: alive after printing).
+                        out.push_str("    xor %eax, %eax\n    push %rax\n    push %rax\n");
+                        continue;
+                    }
                     cg_value(e, env, sigs, strs, out, target);
                     out.push_str("    push %rdx\n    push %rax\n");
                 }
                 out.push_str("    call hbc_print_nl\n");
+                // Harbour renders a whole dynamic array or hash as
+                // NOTHING (oracles hk16/hk20/hk21/hk24) and QOut
+                // space-trims the END of the line (hk22/hk24/hk25);
+                // interior spacing is preserved exactly
+                // (`? "ab  ", 5` keeps the string's trailing spaces).
+                // The trim is reproduced by dropping the static suffix
+                // of empty-rendering items together with their preceding
+                // separators, and by right-trimming a surviving trailing
+                // string at runtime (numbers never trail spaces).
+                // Registered edge: a trailing ALL-SPACES string still
+                // leaves the separator before it in this PoC; exact
+                // fidelity there needs a buffered line.
+                let last_vis = es.iter().rposition(|e| !renders_empty(e));
+                // Right-trim spaces (0x20) off %rdx bytes at %rax.
+                let rtrim = "97:    cmp $0, %rdx\n    je 98f\n    cmpb $0x20, -1(%rax,%rdx)\n    jne 98f\n    dec %rdx\n    jmp 97b\n98:\n";
                 for (i, e) in es.iter().enumerate() {
+                    if last_vis.map_or(true, |lv| i > lv) { break; }
                     let t = expr_ty(e, env, sigs);
                     let off = 16 * (es.len() - 1 - i);
                     if i > 0 { out.push_str("    call hbc_print_sep\n"); }
+                    if renders_empty(e) { continue; }
+                    let is_last = last_vis == Some(i);
                     if darrs_elem(e, env) {
                         // A grown NIL casilla prints NIL (hk13); a string
                         // element prints its bytes, borrowed (no copy).
+                        // As the last visible item the string is trimmed
+                        // at the line end like any other string (hk25).
                         out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
-                        out.push_str("    cmp $2, %rdx\n    jne 95f\n    mov -8(%rax), %rdx\n    call hbc_print_str\n    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
+                        if is_last {
+                            out.push_str("    cmp $2, %rdx\n    jne 95f\n    mov -8(%rax), %rdx\n");
+                            out.push_str(rtrim);
+                            out.push_str("    call hbc_print_str\n    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
+                        } else {
+                            out.push_str("    cmp $2, %rdx\n    jne 95f\n    mov -8(%rax), %rdx\n    call hbc_print_str\n    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
+                        }
                         continue;
                     }
                     if darr2_child(e, env) {
@@ -3796,6 +3835,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     match t {
                         Ty::I64 => out.push_str("    call hbc_print_i64\n"),
                         Ty::Str | Ty::StrOwn => {
+                            // Line-end space trim (hk22/hk24): only the
+                            // LAST visible item can trail spaces.
+                            if is_last { out.push_str(rtrim); }
                             out.push_str("    call hbc_print_str\n");
                             if t == Ty::StrOwn && !matches!(e, Expr::Var(_)) {
                                 // A temporary copy (e.g. `? keys[i]`): the
