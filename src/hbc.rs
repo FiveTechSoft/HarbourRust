@@ -375,7 +375,7 @@ struct CgLocal {
     off: usize, // offset below rbp of the FIRST slot (ptr for Str, value for i64)
 }
 
-fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], out: &mut String) {
+fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], out: &mut String, target: Target) {
     match e {
         Expr::Int(v) => {
             out.push_str(&format!("    mov ${}, %rax\n", v));
@@ -398,10 +398,19 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], out: &mut String) {
         }
         Expr::Bin(op, a, b) => {
             // arithmetic is i64-only (checked in analysis)
-            cg_expr(a, env, sigs, out);
-            out.push_str("    push %rax\n");
-            cg_expr(b, env, sigs, out);
-            out.push_str("    pop %rcx\n"); // %rcx = lhs, %rax = rhs
+            cg_expr(a, env, sigs, out, target);
+            // Keep the lhs on the stack while evaluating the rhs. On Windows
+            // a plain push would break 16-byte alignment for any call inside
+            // the rhs (e.g. `1 + valor()`), so reserve a full 16-byte slot.
+            match target {
+                Target::Linux => out.push_str("    push %rax\n"),
+                Target::Windows => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"),
+            }
+            cg_expr(b, env, sigs, out, target);
+            match target {
+                Target::Linux => out.push_str("    pop %rcx\n"), // %rcx = lhs, %rax = rhs
+                Target::Windows => out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n"),
+            }
             match op {
                 '+' => out.push_str("    add %rcx, %rax\n"),
                 '-' => {
@@ -423,14 +432,14 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], out: &mut String) {
 
 // Evaluate any expression whose value might be a Str: string literals need a
 // .rodata slot, so they are handled here with a label table.
-fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], strs: &mut Vec<String>, out: &mut String) {
+fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], strs: &mut Vec<String>, out: &mut String, target: Target) {
     if let Expr::Str(s) = e {
         let idx = strs.len();
         strs.push(s.clone());
         out.push_str(&format!("    lea .Lstr{}(%rip), %rax\n", idx));
         out.push_str(&format!("    mov ${}, %edx\n", s.as_bytes().len()));
     } else {
-        cg_expr(e, env, sigs, out);
+        cg_expr(e, env, sigs, out, target);
     }
 }
 
@@ -470,7 +479,7 @@ fn cg_func(f: &Func, sigs: &[(String, Ty)], strs: &mut Vec<String>, out: &mut St
         match s {
             Stmt::Local(_, id, e) => {
                 let v = env.iter().find(|v| v.name == *id).expect("layout");
-                cg_value(e, &env, sigs, strs, out);
+                cg_value(e, &env, sigs, strs, out, target);
                 match v.ty {
                     Ty::I64 => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", v.off)),
                     Ty::Str => {
@@ -481,14 +490,14 @@ fn cg_func(f: &Func, sigs: &[(String, Ty)], strs: &mut Vec<String>, out: &mut St
             }
             Stmt::Print(_, e) => {
                 let t = expr_ty(e, &env, sigs);
-                cg_value(e, &env, sigs, strs, out);
+                cg_value(e, &env, sigs, strs, out, target);
                 match t {
                     Ty::I64 => out.push_str("    call hbc_print_i64\n"),
                     Ty::Str => out.push_str("    call hbc_print_str\n"),
                 }
             }
             Stmt::Ret(_, Some(e)) => {
-                cg_value(e, &env, sigs, strs, out);
+                cg_value(e, &env, sigs, strs, out, target);
                 out.push_str(&format!("    jmp .Lret_{}\n", f.name));
             }
             Stmt::Ret(_, None) => {
@@ -620,7 +629,9 @@ fn emit_strings(out: &mut String, strs: &[String]) {
 // (print_str takes ptr/len in rax/rdx, print_i64 takes the value in rax)
 // but I/O and exit go through kernel32. Win64 calling convention: args in
 // rcx, rdx, r8, r9, 32 bytes of shadow space, 16-byte stack alignment at
-// every call.
+// every call. Only VOLATILE registers (rax, rcx, rdx, r8-r11) are touched;
+// no callee-saved register needs preserving. Return values of kernel32
+// calls are not checked (no I/O error handling in this PoC).
 const WIN_HELPERS: &str = r#"
 # hbc_print_str: %rax = ptr, %rdx = len. Prints the bytes + newline.
 hbc_print_str:
@@ -661,24 +672,24 @@ hbc_print_i64:
     mov $1, %r9d
     neg %rax
 1:
-    lea -1(%rbp), %rsi
+    lea -1(%rbp), %r10
     mov $10, %r8
 2:
     xor %edx, %edx
     div %r8
     add $48, %dl
-    mov %dl, (%rsi)
-    dec %rsi
+    mov %dl, (%r10)
+    dec %r10
     test %rax, %rax
     jnz 2b
     test %r9d, %r9d
     jz 3f
-    movb $45, (%rsi)
-    dec %rsi
+    movb $45, (%r10)
+    dec %r10
 3:
-    lea 1(%rsi), %rax
+    lea 1(%r10), %rax
     mov %rbp, %rdx
-    sub %rsi, %rdx
+    sub %r10, %rdx
     dec %rdx
     call hbc_print_str
     leave
