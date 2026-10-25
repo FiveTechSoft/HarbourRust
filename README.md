@@ -987,10 +987,21 @@ Registered limits of this increment, not general fidelity:
   registered failure mode, not exact equivalence).
   `exit`/`return` inside the loop own nothing; the epilogue
   frees the root as usual (t373, balance 0).
+- Depth 3 works the same way (hk60-hk64): a[i][j] borrows the
+  innermost child, both index expressions evaluate once
+  (t375), each level is bounds-checked, the root survives
+  (t374), growing the borrowed child, writing through the
+  root or moving it inside the loop are named compile errors
+  (t376-t378), and `exit`/`return` own nothing (t379,
+  balance 0). A NIL middle casilla cannot be built in this
+  PoC yet (middle-level growth is unsupported), so the
+  depth-3 BASE/1068 path is defensive only; hk63 measured
+  the Harbour dialog (headless-hanging, registered failure
+  mode).
 
 Robustness fix in passing: `hb_HKeys` with a non-variable
 argument used to panic the compiler; it is now the documented
 clean error (t345).
 
-Battery: 370/370 manifest cases on Linux x86-64 and Wine, plus
+Battery: 376/376 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
