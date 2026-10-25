@@ -1236,6 +1236,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                 pin[idx] = Some(Ty::DArr2);
                 Ok(())
             }
+            Some(t) if matches!((t, ty), (Ty::DArr, Ty::DArr3) | (Ty::DArr3, Ty::DArr) | (Ty::DArr2, Ty::DArr3) | (Ty::DArr3, Ty::DArr2)) => {
+                pin[idx] = Some(Ty::DArr3);
+                Ok(())
+            }
             Some(t) => Err(format!("line {}: parameter used as both {} and {}", n, tname(t), tname(ty))),
         }
     }
@@ -1266,7 +1270,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
             }
             Expr::Index3(id, ie, ie2, ie3) => {
                 if is_param(f, id).is_some() {
-                    return Err(format!("line {}: arrays of arrays of arrays cannot be function parameters in this increment", n));
+                    // Reading p[i][j][k] pins the parameter to an array of
+                    // arrays of arrays (oracle pr9).
+                    pin_vars(f, &Expr::Var(id.clone()), Ty::DArr3, pin, n)?;
                 }
                 pin_vars(f, ie, Ty::I64, pin, n)?;
                 pin_vars(f, ie2, Ty::I64, pin, n)?;
@@ -1308,10 +1314,15 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                 }
                 if is_builtin(id, "len") && !args.is_empty() {
                     match &args[0] {
-                        Expr::Index(v, _) | Expr::Index2(v, _, _) if is_param(f, v).is_some() => {
+                        Expr::Index(v, _) if is_param(f, v).is_some() => {
                             // len(p[i]) borrows a child: the parameter is an
                             // array of arrays (oracle pr1).
                             pin_vars(f, &Expr::Var(v.clone()), Ty::DArr2, pin, n)?;
+                        }
+                        Expr::Index2(v, _, _) if is_param(f, v).is_some() => {
+                            // len(p[i][j]) borrows two levels: the parameter
+                            // is an array of arrays of arrays (oracle pr9).
+                            pin_vars(f, &Expr::Var(v.clone()), Ty::DArr3, pin, n)?;
                         }
                         _ => pin_vars(f, &args[0], Ty::DArr, pin, n)?,
                     }
@@ -1361,7 +1372,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
             }
             Expr::Index3(id, ie, ie2, ie3) => {
                 if is_param(f, id).is_some() {
-                    return Err(format!("line {}: arrays of arrays of arrays cannot be function parameters in this increment", n));
+                    // Reading p[i][j][k] pins the parameter to an array of
+                    // arrays of arrays (oracle pr9).
+                    pin_vars(f, &Expr::Var(id.clone()), Ty::DArr3, pin, n)?;
                 }
                 pin_vars(f, ie, Ty::I64, pin, n)?;
                 pin_vars(f, ie2, Ty::I64, pin, n)?;
@@ -1473,7 +1486,13 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     walk(f, o, sigs, lit, pin, *n)?;
                     walk(f, e, sigs, lit, pin, *n)?;
                 }
-                Stmt::AAddSub2(n, _id, ie, ie2, e) | Stmt::ASizeSub2(n, _id, ie, ie2, e) => {
+                Stmt::AAddSub2(n, id, ie, ie2, e) | Stmt::ASizeSub2(n, id, ie, ie2, e) => {
+                    if is_param(f, id).is_some() {
+                        // AAdd/ASize on p[i][j] pins the parameter to an
+                        // array of arrays of arrays; the callee owns the
+                        // moved value.
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::DArr3, pin, *n)?;
+                    }
                     // AAdd/ASize on a[i][j]: indices and value pin i64
                     // (oracle pr8: indices first, then the value).
                     pin_vars(f, ie, Ty::I64, pin, *n)?;
@@ -1483,7 +1502,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     walk(f, ie2, sigs, lit, pin, *n)?;
                     walk(f, e, sigs, lit, pin, *n)?;
                 }
-                Stmt::ArrSet3(n, _id, ie, ie2, ie3, e) => {
+                Stmt::ArrSet3(n, id, ie, ie2, ie3, e) => {
+                    if is_param(f, id).is_some() {
+                        // Writing p[i][j][k] pins the parameter to an array
+                        // of arrays of arrays; the callee owns the moved
+                        // value, so the caller cannot observe this write
+                        // (registered sharing difference, oracle pr9).
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::DArr3, pin, *n)?;
+                    }
                     // a[i][j][k] := v: indices and value pin i64 (oracle
                     // pr6). Three-level parameters stay rejected, so no
                     // parameter pinning here.
@@ -2007,7 +2033,7 @@ fn prescan_dyn(f: &Func, sigs: &[Sig], ptys: &[Ty]) -> std::collections::HashSet
     let mut darr_names: HashSet<String> = HashSet::new();
     for (i, p) in f.params.iter().enumerate() {
         if ptys[i] == Ty::Dyn { dyn_names.insert(p.clone()); }
-        if matches!(ptys[i], Ty::DArr | Ty::DArrU | Ty::DArr2) { darr_names.insert(p.clone()); }
+        if matches!(ptys[i], Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3) { darr_names.insert(p.clone()); }
     }
     // dynamic arrays declared in the body ({} or a nested literal)
     fn scan_darr(stmts: &[Stmt], darr: &mut HashSet<String>) {
@@ -2117,12 +2143,19 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                     if let Ty::Block(_) = t {
                         return Err(format!("line {}: cannot print a codeblock in this increment", n));
                     }
-                    if t == Ty::DArr || t == Ty::DArrU || t == Ty::DArr2 {
+                    if t == Ty::DArr || t == Ty::DArrU || t == Ty::DArr2 || t == Ty::DArr3 {
                         return Err(format!("line {}: cannot print a dynamic array directly in this increment (print an element or `len(a)`)", n));
                     }
                     if t == Ty::Hash {
                         return Err(format!("line {}: cannot print a hash directly in this increment (print an element or `len(h)`)", n));
                     }
+                    // Printing the RESULT borrows it (moving=false at the
+                    // root), but a call INSIDE the item moves the arguments
+                    // the callee owns - this arm must apply moves like any
+                    // other statement, or `? consume(a)` would leave `a`
+                    // usable after the callee took it (hole caught by the
+                    // pr9 mirror: 2-level arrays had it too).
+                    apply_moves(e, env, sigs, false);
                 }
             }
             Stmt::Ret(n, Some(e)) => {
@@ -2662,7 +2695,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             }
             let sig = sigs.iter().find(|v| v.name == *id).expect("checked");
             for (i, a) in args.iter().enumerate() {
-                let m = i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::DArr || sig.params[i] == Ty::DArr2);
+                let m = i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::DArr || sig.params[i] == Ty::DArr2 || sig.params[i] == Ty::DArr3);
                 apply_moves(a, env, sigs, m);
             }
         }
@@ -2877,13 +2910,13 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     continue;
                 }
-                if ta == Ty::Str || ta == Ty::DArr || ta == Ty::DArr2 {
+                if ta == Ty::Str || ta == Ty::DArr || ta == Ty::DArr2 || ta == Ty::DArr3 {
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                    // An owned (moved) DArr/DArr2 argument: null the source
+                    // An owned (moved) DArr/DArr2/DArr3 argument: null the source
                     // slot right after the copy, so the callee is the only
                     // owner and the caller's later frees see null.
                     if let Expr::Var(src) = a {
-                        if ta == Ty::DArr || ta == Ty::DArr2 {
+                        if ta == Ty::DArr || ta == Ty::DArr2 || ta == Ty::DArr3 {
                             if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3)) {
                                 out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                             }
@@ -4133,6 +4166,9 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         if v.ty == Ty::DArr2 {
             darr_slots.push((v.off, 1));
         }
+        if v.ty == Ty::DArr3 {
+            darr_slots.push((v.off, 3));
+        }
     }
 
     out.push_str(&format!("hbc_fn_{}:\n", f.name));
@@ -4157,7 +4193,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     // A string argument occupies both words of its slot (pointer, length).
     for (k, v) in lenv[..nparams].iter().enumerate() {
         let src = 16 * (nparams - k);
-        if v.ty == Ty::Str || v.ty == Ty::DArr || v.ty == Ty::Dyn || v.ty == Ty::DArr2 {
+        if v.ty == Ty::Str || v.ty == Ty::DArr || v.ty == Ty::Dyn || v.ty == Ty::DArr2 || v.ty == Ty::DArr3 {
             out.push_str(&format!("    mov {}(%rbp), %rax\n    mov {}(%rbp), %rdx\n", src, src + 8));
             out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", v.off, v.off - 8));
         } else {
