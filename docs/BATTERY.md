@@ -986,3 +986,37 @@ compiled but has no reachable test here. No new runtime helpers,
 no ABI harness additions; the walk reuses hbc_bound_error /
 hbc_arracc_error (noreturn stubs). Battery: 459/459 manifest
 cases + ABI harness green on Linux x86-64 and Wine.
+
+## Iteration 33u additions (466 manifest cases): four-level parameters and returns by move
+
+hk111 (exit 0): Harbour SHARES a four-level array on a call - the
+callee's write to a[1,2,1,1] is visible in the caller (42, 42).
+Registered D5/D7-family difference: here the value MOVES
+(pending the user's contract decision; same family as
+pr2/pr5/hk101). hk112 (exit 0): a returned DArr4 keeps len at
+every level, the written value and the NIL casillas. hk113
+(exit 0): `? a` on a four-level array renders empty (QOut rule,
+same as hk20 at shallower depths). Tests: t464 (callee view of
+the moved array: len at each level, level-4 write, balance 0),
+t465 (hk112 shape), t466 (caller reuse after the move is the
+named compile error), t467 (two-callee move chain, balance 0),
+t468 (hk113 shape), t469 (callee reuse after passing the
+parameter on is the named compile error), t470 (reassignment
+frees the old value after the RHS exists, balance 0).
+
+BUGS FIXED (33r left the DArr4 move machinery incomplete; none
+of these paths had execution tests): the return-path source-slot
+nulling missed DArr4 (a returned four-level array was freed by
+the callee epilogue and the caller held a dangling pointer -
+t465 SEGFAULTED before the fix); the local-assignment and
+call-argument nulling lists, the callee-side argument copy-in
+(a DArr4 parameter arrived with length 0), the caller-side move
+marking (reuse after the move was not rejected), the
+reassignment routing (a DArr4 RHS fell out of the free-old
+arm), the pin-resolution merges with DArr4, and the len() pin
+for len(p[i][j][k]) all missed DArr4 as well. The pin-failure
+fallback (i64 placeholders) also turned the real conflict into
+a misleading "`len` expects an array" - the merges now resolve
+it. No new runtime helpers; no ABI harness additions. Battery:
+466/466 manifest cases + ABI harness green on Linux x86-64 and
+Wine.
