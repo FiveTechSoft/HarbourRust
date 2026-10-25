@@ -178,13 +178,20 @@ comparison.
   (see below). Comparing a string with an integer is a type error
   (`tests/t53_mixed_cmp.hb`).
 
-## Iteration 10: byte-wise string ordering
+## Iteration 10: string ordering (Harbour's default semantics)
 
 `<`, `<=`, `>`, `>=` on two strings, via a second leaf routine
-(`hbc_str_cmp`, returns -1/0/1 like memcmp): the first differing byte
-decides by unsigned byte value, and a strict prefix is less than its
-extension (`tests/t55_str_order.hb`). No collation, no locale, no
-Unicode awareness: "Z" (0x5A) sorts before "a" (0x61). Still not
+(`hbc_str_cmp`, returns -1/0/1). The rule is Harbour's default
+(SET EXACT OFF), verified by probe b22 against Harbour itself: the
+comparison runs over the length of the RIGHT operand, with the left
+operand read NUL-padded past its end - so `"abc" < "abcd"` is true but
+`"abcd" > "abc"` is false and `"abcd" <= "abc"` is true (xBase's
+asymmetric prefix rule). The first differing byte decides by unsigned
+byte value. No collation, no locale, no Unicode awareness: "Z" (0x5A)
+sorts before "a" (0x61). (An earlier revision of this PoC used symmetric
+byte-wise ordering - Harbour's EXACT ON rule; corrected to the default
+on 2026-10-25. SET EXACT itself is a runtime setting this PoC does not
+have.) Still not
 general string handling: same immutable (ptr, len) values, comparison
 borrows. `tests/t17_if_str_cmp.hb` was converted a second time (it now
 pins ordering working); `tests/t56_str_order_mixed.hb` pins mixed
