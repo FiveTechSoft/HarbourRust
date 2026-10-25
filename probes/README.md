@@ -1,10 +1,13 @@
 # Harbour oracle probes (dynamics / hashes / eval order)
 
 Each `.prg` is compiled with `hbmk2 X.prg -gtstd -oX` (Harbour core
-694428e1) and run headless with a timeout. `.expected` holds the exact
-stdout bytes of a terminating run. Probes whose Harbour behaviour is an
-interactive error dialog HANG headless: they have no `.expected`, and
-the hang itself is the recorded result - never a compatibility success.
+694428e1) and run headless with a timeout. `expected.json` holds the byte-exact
+stdout of every terminating run as base64 + sha256 (QOut output carries
+no trailing LF; raw text files cannot survive editors that append one,
+so the exact bytes live ONLY in that JSON). Probes whose Harbour
+behaviour is an interactive error dialog HANG headless: they are marked
+`hang: true` in the JSON, and the hang itself is the recorded result -
+never a compatibility success.
 
 | probe | question | observed (Harbour) |
 | --- | --- | --- |
