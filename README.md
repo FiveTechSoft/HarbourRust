@@ -1015,5 +1015,5 @@ Robustness fix in passing: `hb_HKeys` with a non-variable
 argument used to panic the compiler; it is now the documented
 clean error (t345).
 
-Battery: 390/390 manifest cases on Linux x86-64 and Wine, plus
+Battery: 405/405 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
