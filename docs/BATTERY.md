@@ -309,5 +309,12 @@ children (n3, t266). Real empty arrays (`{}`, empty children,
 `Array(n, 0)` children) own a header-only block so they stay
 distinguishable from NIL casillas (e4, az0b); the instrumented
 registry verifies their allocation/free sizes on the tested paths.
-Comparing a casilla against NIL (`a[i] == NIL`, n4) is not in the
-language yet (no NIL literal in expressions): pending.
+Comparing a casilla against NIL was the last pending n-probe (n4);
+it is repaired in iteration 20 (t267/t268, oracle n8): the DArr2
+borrow-read path loads the child pointer and compares it against 0
+under `=`, with the index evaluated once and bounds-checked. The
+precise limitation before the repair was that borrow-read path only -
+the NIL literal itself has existed in expressions since iteration 15
+(t219: `g(1) = NIL` through Dyn). Empty-vs-NIL is covered by t269
+(`Array(3, 0)` rows are real empty arrays, never NIL) and t270
+(ASize shrink to 0: every child freed, registry balance 0).
