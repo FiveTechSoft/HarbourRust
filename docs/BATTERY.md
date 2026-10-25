@@ -244,3 +244,21 @@ callee's epilogue frees every key copy and the block, exact sizes
 verified by the instrumented registry). Rejected in this increment,
 all with clean errors: hash parameters, hash returns, whole-hash
 printing, non-string keys, non-scalar values, hb_HKeys and iteration.
+
+## Array() constructor (t245-t253)
+
+`Array(n)` builds a Dyn-element array of n NIL slots through hbc_asize
+(oracle a0: Array(0) is empty; m10: grown slots read NIL). `Array(n, m)`
+builds n children of m NILs each through a new target-independent
+helper, hbc_arraym (frame-held state only: the per-target
+hbc_asize/hbc_aadd variants may clobber callee-saved registers).
+t246 mirrors oracle avar (variable dimensions, nested write
+`a[2][3] := 9`, read back 9, untouched slot NIL). t249 mirrors oracle
+aadd (Array(2) then AAdd). Failure modes: Harbour's dialogs for
+`Array()` (BASE/1111) and `Array(-1)` (BASE/1131) hang headless, so
+hbc's compile error (t252) and clean runtime exit 1 (t250) are
+registered failure modes for the same error conditions, not compat
+successes. Harbour supports 3+ dimensions (oracle a3d prints
+2/2/2); hbc rejects them at compile time (t251). t253 checks the
+alloc/free balance across a function boundary under the instrumented
+registry (exact sizes verified on this tested path).
