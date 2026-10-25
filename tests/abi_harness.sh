@@ -1,8 +1,8 @@
 #!/bin/bash
 # ABI harness: assembles a canary test against the emitted runtime helpers
 # for both targets and runs it (natively on Linux, via Wine for Windows).
-# Verifies that hbc_asize / hbc_aadd / hbc_arraym / hbc_free / hbc_free2
-# preserve rbx/r12-r15, keep rsp 16-aligned at internal call boundaries
+# Verifies that hbc_asize / hbc_aadd / hbc_arraym / hbc_free / hbc_free2 /
+# hbc_rfree preserve rbx/r12-r15, keep rsp 16-aligned at internal call boundaries
 # and leave the stack balanced. Prints "ABI OK" on success; any canary,
 # alignment or stack mismatch prints "ABI FAIL <what>" and exits 1.
 set -e
@@ -96,6 +96,31 @@ hbc_abi_test:
     mov -96(%rbp), %rdi
     mov $1, %esi
     call hbc_free2
+    call abi_check
+    # hbc_rfree: outer pair block wrapping a live DArr2 (depth 2)
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    lea -96(%rbp), %rdi
+    mov $2, %esi
+    mov $2, %edx
+    call hbc_arraym
+    call abi_check
+    mov $24, %rdi
+    call hbc_alloc
+    mov %rax, -32(%rbp)
+    call abi_check
+    mov -32(%rbp), %rax
+    movq $1, (%rax)
+    add $8, %rax
+    mov %rax, -32(%rbp)
+    mov -96(%rbp), %rcx
+    mov %rcx, (%rax)
+    mov -88(%rbp), %rcx
+    mov %rcx, 8(%rax)
+    mov -32(%rbp), %rdi
+    mov $1, %esi
+    mov $2, %edx
+    call hbc_rfree
     call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
