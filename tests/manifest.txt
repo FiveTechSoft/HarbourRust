@@ -1,0 +1,125 @@
+pos ejemplos/hola.hb \nresultado de z:\n        32\nhola desde una funcion
+neg ejemplos/prestamo_roto.hb line 5: use of moved value
+neg tests/t01_injection_colons.hb ':' without '='
+neg tests/t02_injection_unsafe.hb U+007B
+neg tests/t03_injection_macro.hb U+003B
+neg tests/t04_unicode_ident.hb U+00F1
+neg tests/t05_keyword_boundary.hb statement not in the subset
+neg tests/t06_undefined_var.hb undefined variable
+pos tests/t07_unicode_string.hb \nolá, año 🦀
+neg tests/t08_type_error.hb arithmetic requires integers
+neg tests/t09_duplicate_local.hb duplicate local
+pos tests/t10_int_copy.hb \n         5\n         5\n        -5
+pos tests/t11_print_borrows.hb \nhola\nhola\n         7
+pos tests/t12_call_in_expr.hb \nen valor\n        41\nen valor\n        41\nen valor\n        80
+pos gen/arith.hb \n        14\n        20\n        14\n 9223372036854775807
+pos tests/t13_if_else.hb \nbig\nexactly seven\neq\nne\nne2 ok\nlt\n        42
+neg tests/t14_if_move_after.hb line 8: use of moved value
+pos tests/t15_if_move_both.hb \nhola\nfin
+pos tests/t16_if_return.hb \n       100
+pos tests/t17_if_str_cmp.hb \nlt
+pos tests/t18_if_call_cond.hb \nv\nsi
+neg tests/t19_if_scope.hb undefined variable `z`
+pos tests/t20_assign.hb \n         1\n         5\nhola\nadios\nde nuevo
+neg tests/t21_assign_undeclared.hb assignment to undeclared variable
+neg tests/t22_assign_type.hb type mismatch in assignment
+pos tests/t23_while_count.hb \n         1\n         2\ndos\n         3\nfin\ncero viajes
+neg tests/t24_while_move.hb not reassigned before `enddo`
+pos tests/t25_while_move_reassign.hb \nx\ny\ny
+neg tests/t26_while_scope.hb undefined variable `z`
+pos tests/t27_while_return.hb \n        21
+pos tests/t28_exit_loop.hb \n         1\n         2\nsalido\n         1\n         3\n         5\nfin
+neg tests/t29_exit_outside.hb outside a `while` loop
+neg tests/t30_loop_move.hb not reassigned before `loop`
+pos tests/t31_exit_move_ok.hb \nhola\nfuera
+neg tests/t32_exit_move_use.hb use of moved value
+neg tests/t33_return_bare_block.hb an early `return` inside a block needs a value
+neg tests/t34_return_type_mix.hb return type mismatch
+neg tests/t35_return_nil_closing.hb `return nil` in a function that returns a value
+neg tests/t36_return_move_join.hb use of moved value
+pos tests/t37_for_basic.hb \n         1\n         2\n         3\n         1\n         3\n         5\n         3\n         2\n         1\nfin
+neg tests/t38_for_scope.hb undefined variable `i`
+neg tests/t39_for_shadow.hb already declared in this scope
+neg tests/t40_for_assign_var.hb cannot assign to the `for` loop variable
+neg tests/t41_for_move.hb not reassigned before `next`
+pos tests/t42_for_exit_loop.hb \n         1\n         3\n         4\nfuera
+neg tests/t43_for_step_zero.hb non-zero integer literal
+neg tests/t44_for_step_expr.hb non-zero integer literal
+pos tests/t45_for_overflow_up.hb \n 9223372036854775806\n 9223372036854775807\nfin\n 9223372036854775806\nfin2
+pos tests/t46_for_overflow_down.hb \n-9223372036854775807\nfin
+pos tests/t47_for_zero_down.hb \nfin
+pos tests/t48_nested_exit.hb \n         1\n         1\n         1\n         2\n         1\n         1\n         1\n         2
+pos tests/t49_nested_loop.hb \n         1\n         3\n         1\n         1\n         3\n         2\n         1\n         3\n         3
+neg tests/t50_for_return_move.hb not reassigned before `next`
+pos tests/t51_for_return_allpaths.hb \nx
+pos tests/t52_str_eq.hb \neq1\neq2\nno\nno\nne1\neq3\neq4\nne2\ngo\nfin
+neg tests/t53_mixed_cmp.hb cannot compare a string with an integer
+pos tests/t54_str_eq_borrows.hb \neq\nhola\nhola\nhola
+pos tests/t55_str_order.hb \nlt1\nlt2\ngt1\nlt3\nle1\nge1\nbytewise\ngt3\nfin
+neg tests/t56_str_order_mixed.hb cannot compare a string with an integer
+pos tests/t57_params_basic.hb \n        42
+pos tests/t58_params_assign.hb \n        42
+pos tests/t59_params_three.hb \n        22
+pos tests/t60_params_nested.hb \n        10
+pos tests/t61_params_forbound.hb \n      5050
+pos tests/t62_params_copy.hb \n         9\n         9\n         9
+neg tests/t63_params_arity.hb takes 2 argument(s), got 1
+neg tests/t64_params_strarg.hb cannot infer the type of parameter
+neg tests/t70_strparam_nopin.hb cannot infer the type of parameter
+neg tests/t69_strparam_useaftermove.hb use of moved value `v`
+neg tests/t73_strparam_wrongty.hb argument 1 of `isab` must be a string
+neg tests/t75_strparam_movetwice.hb use of moved value `v`
+pos tests/t67_strparam_cmp.hb \n         1\n         0
+pos tests/t68_strparam_move_revive.hb \n         1\nzz
+pos tests/t71_strparam_chain.hb \n         1
+pos tests/t72_params_mixed.hb \n         7\n         0
+pos tests/t74_strparam_literal.hb \n         1\n         1
+neg tests/t65_params_dup.hb duplicate parameter `a`
+neg tests/t66_params_shadow.hb duplicate local `a`
+pos tests/t76_pp_define.hb \n        15
+pos tests/t77_pp_ifdef.hb \n         1
+pos tests/t78_pp_include.hb \n         7
+pos tests/t79_pp_funclike.hb \n        81\n        16
+neg tests/t80_pp_error.hb #error custom failure text
+neg tests/t81_pp_badif.hb use ==, not =
+neg tests/t82_pp_case_macro.hb undefined variable `mixed`
+pos tests/t83_pp_case_ifdef.hb \n         2
+pos tests/t84_pp_command.hb \n         6\n         7
+pos tests/t85_pp_command2.hb \n        15\n         6
+pos tests/t86_pp_translate.hb \n        42\n         6
+neg tests/t87_pp_command_bad.hb incomplete statement
+neg tests/t88_pp_case_param.hb undefined variable `X`
+pos tests/t89_pp_cmd_optional.hb \n         1\n         2
+pos tests/t90_pp_cmd_list.hb \n         6
+pos tests/t91_pp_cmd_parenexpr.hb \n         3
+pos tests/t92_pp_cmd_parenres.hb \n         6
+neg tests/t93_pp_cmd_parenreq.hb incomplete statement
+pos tests/t94_pp_cmd_nested_opt.hb \n         1\n         2\n         4
+pos tests/t95_pp_translate_stmt.hb \n        42
+pos tests/t96_pp_translate_multi.hb \n         7
+pos tests/t97_str_eq_rightlen.hb \neqA\neqC\neqE\nneF\nneH
+pos tests/t98_pp_if_expr.hb \ngt\nle\nand\nnot\narith
+pos tests/t99_pp_elif.hb \ntwo
+pos tests/t100_pp_xtranslate.hb \n        42
+pos tests/t101_pp_include_nested.hb \n         3
+pos tests/t102_pp_cmd_specificity.hb \n         2\n         1
+pos tests/t103_voidfn_params.hb \n        42
+neg tests/t104_voidfn_call_neg.hb returns nothing
+pos tests/t105_pp_cmd_optresult.hb \n         4\n         7\n         5
+neg tests/t106_pp_cmd_optres_neg.hb incomplete expression
+pos tests/t107_pp_uncommand.hb \n         1\n        42\n         6\n         6
+neg tests/t108_pp_uncommand_neg.hb statement not in the subset
+pos tests/t109_pp_include_angle.hb \n         9
+neg tests/t110_pp_include_angle_neg.hb cannot find include
+pos tests/t111_pp_semicolon.hb \n         3\na;b\n         6
+neg tests/t112_pp_semicolon_neg.hb character not allowed
+pos tests/t113_pp_empty_result.hb \n         6
+neg tests/t114_pp_bad_marker.hb bad match marker
+pos tests/t115_pp_abbrev.hb \n         1\n         2\n         3\n        14
+neg tests/t116_pp_abbrev_neg.hb statement not in the subset
+neg tests/t117_pp_bad_result_marker.hb unknown result marker
+pos tests/t118_pp_tie_latest.hb \n       201\n       402
+pos tests/t119_qout_fields.hb \n\n         1\n 12345678901\n        -7
+pos tests/t120_qout_list_mixed.hb \nhola          7 x\náéí🦀         42
+pos tests/t121_qout_eval_order.hb \nf          1\nf          2\n         2          4
+neg tests/t122_qout_trailing_comma.hb missing expression
