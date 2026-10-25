@@ -2873,6 +2873,55 @@ fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
 // this increment allows the variable only in reads that consume it
 // immediately: print items, comparisons, arithmetic. Everything else is
 // a named compile error (registered limitation).
+// Validator for the borrowed-ARRAY `for each` loop variable
+// (hk118/hk119): x may be indexed and read (x[j]), written through
+// (x[j] := v), and measured (len(x), ValType(x)); it may not be
+// assigned, returned, passed to a function, grown or shrunk.
+fn foreach_barr_lv_ok(stmts: &[Stmt], name: &str) -> bool {
+    fn mentions(e: &Expr, name: &str) -> bool {
+        match e {
+            Expr::Var(v) => v == name,
+            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => mentions(a, name) || mentions(b, name),
+            Expr::Call(_, args) => args.iter().any(|a| mentions(a, name)),
+            Expr::Index(id, i) | Expr::Index2(id, i, _) | Expr::Index3(id, i, _, _) | Expr::Index4(id, i, ..) => id == name || mentions(i, name),
+            _ => false,
+        }
+    }
+    // A print item may READ the borrowed array: an element read x[j],
+    // len(x) or ValType(x) - never the whole array and never x as a
+    // call argument.
+    fn print_ok(e: &Expr, name: &str) -> bool {
+        match e {
+            Expr::Index(id, ie) if id == name => !mentions(ie, name),
+            Expr::Call(f, args)
+                if (is_builtin(f, "valtype") || is_builtin(f, "len"))
+                    && args.len() == 1
+                    && matches!(&args[0], Expr::Var(v) if v == name) =>
+            {
+                true
+            }
+            _ => !mentions(e, name),
+        }
+    }
+    stmts.iter().all(|s| match s {
+        Stmt::Print(_, items) => items.iter().all(|i| print_ok(i, name)),
+        Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) => !mentions(e, name),
+        Stmt::ArrSet(_, _, ie, e) => !mentions(ie, name) && !mentions(e, name),
+        Stmt::ArrSet2(_, _, i1, i2, e) => !mentions(i1, name) && !mentions(i2, name) && !mentions(e, name),
+        Stmt::ArrSet3(_, _, i1, i2, i3, e) => !mentions(i1, name) && !mentions(i2, name) && !mentions(i3, name) && !mentions(e, name),
+        Stmt::ArrSet4(_, _, i1, i2, i3, i4, e) => !mentions(i1, name) && !mentions(i2, name) && !mentions(i3, name) && !mentions(i4, name) && !mentions(e, name),
+        Stmt::AAdd(_, id, e) | Stmt::ASize(_, id, e) => id != name && !mentions(e, name),
+        Stmt::AAddSub(_, id, i, e) | Stmt::ASizeSub(_, id, i, e) => id != name && !mentions(i, name) && !mentions(e, name),
+        Stmt::AAddSub2(_, id, i, j, e) | Stmt::ASizeSub2(_, id, i, j, e) => id != name && !mentions(i, name) && !mentions(j, name) && !mentions(e, name),
+        Stmt::AAddSub3(_, id, i, j, k, e) | Stmt::ASizeSub3(_, id, i, j, k, e) => id != name && !mentions(i, name) && !mentions(j, name) && !mentions(k, name) && !mentions(e, name),
+        Stmt::Local(_, _, e) => !mentions(e, name),
+        Stmt::If(_, _, a, b) => foreach_barr_lv_ok(a, name) && foreach_barr_lv_ok(b, name),
+        Stmt::While(_, _, b) => foreach_barr_lv_ok(b, name),
+        Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => foreach_barr_lv_ok(b, name),
+        _ => true,
+    })
+}
+
 fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     fn mentions(e: &Expr, name: &str) -> bool {
         match e {
@@ -3134,6 +3183,18 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 // each level is bounds-checked, and a NIL casilla at any
                 // level is the BASE/1068 failure mode.
                 let sub3 = matches!(coll, Expr::Index3(id, _, _, _) if matches!(env.iter().find(|v| v.name == *id).map(|v| v.ty), Some(Ty::DArr4)));
+                // Four-level root, MIDDLE collection (hk118/hk119):
+                // a[i][j] borrows the level-2 child; its elements are
+                // live flat child arrays, so the loop variable is a
+                // BORROWED FLAT ARRAY - typed DArr for checking and
+                // DArrRef (the param-borrow layout: slot = current
+                // casilla address) in codegen. x[j] reads and
+                // x[j] := v writes THROUGH the shared casilla (hk119);
+                // ValType(x) is "A" (hk118). Both indices evaluate
+                // once, each level is bounds-checked, and a NIL
+                // casilla at either level is the BASE/1068 failure
+                // mode.
+                let sub_mid = matches!(coll, Expr::Index2(id, _, _) if matches!(env.iter().find(|v| v.name == *id).map(|v| v.ty), Some(Ty::DArr4)));
                 let ct = if sub {
                     if let Expr::Index(id, ie) = coll {
                         if env.iter().find(|v| v.name == *id).map(|v| v.moved).unwrap_or(false) {
@@ -3146,6 +3207,19 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     }
                     Ty::DArr
                 } else if sub2 {
+                    if let Expr::Index2(id, ie, ie2) = coll {
+                        if env.iter().find(|v| v.name == *id).map(|v| v.moved).unwrap_or(false) {
+                            return Err(format!("line {}: use of moved value `{}`", n, id));
+                        }
+                        for ix in [ie, ie2] {
+                            let it = type_expr(ix, env, sigs, *n)?;
+                            if !matches!(it, Ty::I64 | Ty::Dyn) {
+                                return Err(format!("line {}: array index must be an integer", n));
+                            }
+                        }
+                    }
+                    Ty::DArr
+                } else if sub_mid {
                     if let Expr::Index2(id, ie, ie2) = coll {
                         if env.iter().find(|v| v.name == *id).map(|v| v.moved).unwrap_or(false) {
                             return Err(format!("line {}: use of moved value `{}`", n, id));
@@ -3185,7 +3259,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     // borrow falls through to type_expr: on a shallower
                     // root it types as an element read (Dyn) and the
                     // collection-type check below names the real problem.
-                    if !matches!(coll, Expr::Var(_) | Expr::Call(..) | Expr::Index3(..)) && !sub && !sub2 && !sub3 {
+                    if !matches!(coll, Expr::Var(_) | Expr::Call(..) | Expr::Index3(..)) && !sub && !sub2 && !sub3 && !sub_mid {
                     return Err(format!("line {}: `for each` iterates a variable or a function result in this increment (assign the expression to a variable first)", n));
                 }
                 if !matches!(ct, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArrS | Ty::Hash) {
@@ -3198,7 +3272,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let cname = match coll {
                     Expr::Var(cn) => Some(cn.clone()),
                     Expr::Index(cn, _) if sub => Some(cn.clone()),
-                    Expr::Index2(cn, _, _) if sub2 => Some(cn.clone()),
+                    Expr::Index2(cn, _, _) if sub2 || sub_mid => Some(cn.clone()),
                     Expr::Index3(cn, _, _, _) if sub3 => Some(cn.clone()),
                     _ => None,
                 };
@@ -3208,7 +3282,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     }
                 }
                 let saved = (env[kp].ty, env[kp].ro);
-                env[kp].ty = Ty::Dyn;
+                // The borrowed-array loop variable (sub_mid) checks as a
+                // flat DArr so indexed reads/writes type naturally; it
+                // stays read-only for PLAIN assignment (reseat), while
+                // element writes go through (hk119).
+                env[kp].ty = if sub_mid { Ty::DArr } else { Ty::Dyn };
                 env[kp].ro = true;
                 let outer = env.len();
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
@@ -3221,7 +3299,15 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         return Err(format!("line {}: the `for each` collection `{}` cannot be modified, moved or grown inside its own loop in this increment (the loop borrows it)", n, cn));
                     }
                 }
-                if !foreach_lv_readonly(body, var) {
+                let lv_ok = if sub_mid {
+                    foreach_barr_lv_ok(body, var)
+                } else {
+                    foreach_lv_readonly(body, var)
+                };
+                if !lv_ok {
+                    if sub_mid {
+                        return Err(format!("line {}: the `for each` variable `{}` borrows an element array from the collection: it can be indexed, read, written through and measured with len/ValType, but not assigned, returned, passed to a function or grown (registered limitation)", n, var));
+                    }
                     return Err(format!("line {}: the `for each` variable `{}` can only be printed, compared or used in arithmetic in this increment - its value borrows from the collection, so it cannot be returned, assigned, passed to a function or stored (registered limitation)", n, var));
                 }
 
@@ -3568,7 +3654,12 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     Some(k) => k,
                     None => return Err(format!("line {}: assignment to undeclared variable `{}` (declare it with `local` first)", n, id)),
                 };
-                if env[kp].ro {
+                // A read-only DArr local arises only as the `for each`
+                // borrowed-array loop variable (hk118/hk119): element
+                // writes go THROUGH to the shared casilla and are
+                // allowed; plain assignment to it stays rejected by the
+                // Assign check.
+                if env[kp].ro && env[kp].ty != Ty::DArr {
                     return Err(format!("line {}: cannot assign through the `for` loop variable `{}`", n, id));
                 }
                 let root_ty = env[kp].ty;
@@ -5552,8 +5643,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         cg_value(coll, env, sigs, strs, out, target);
                     }
                 } else if let Expr::Index2(id, ie, ie2) = coll {
-                    if matches!(env.iter().rev().find(|v| v.name == *id).map(|v| v.ty), Some(Ty::DArr3)) {
-                        // Depth-3 borrow (hk60-hk64): evaluate each index
+                    if matches!(env.iter().rev().find(|v| v.name == *id).map(|v| v.ty), Some(Ty::DArr3) | Some(Ty::DArr4)) {
+                        // Depth-3 borrow (hk60-hk64; the same two-level
+                        // walk borrows a[i][j] of a FOUR-level root for
+                        // the borrowed-array loop variable, hk118):
+                        // evaluate each index
                         // ONCE, bounds-check each level, load the level-2
                         // then the level-1 cell; a NIL casilla at either
                         // level is the BASE/1068 failure mode
@@ -5714,7 +5808,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let ct = expr_ty(coll, env, sigs);
                 let kl = env.iter().position(|v| v.name == *var).expect("checker found the local");
                 let saved_lv = (env[kl].ty, env[kl].off);
-                env[kl].ty = Ty::Dyn;
+                // a[i][j] of a four-level root (hk118/hk119): the loop
+                // variable is a borrowed FLAT child array - its slot
+                // holds the ADDRESS of the current {ptr, len} casilla
+                // (the DArrRef param layout), so reads, writes and
+                // len go through the shared memory.
+                let lv_borrow = matches!(coll, Expr::Index2(id2, _, _) if matches!(env.iter().rev().find(|v| v.name == *id2).map(|v| v.ty), Some(Ty::DArr4)));
+                env[kl].ty = if lv_borrow { Ty::DArrRef } else { Ty::Dyn };
                 env[kl].off = lv_off;
                 out.push_str(&format!(".Lfec_{}_{}:
 ", fname, id));
@@ -5726,6 +5826,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     mov -{}(%rbp), %rax
     dec %rax
 ", coll_off, idx_off));
+                if lv_borrow {
+                    // The slot holds the casilla ADDRESS (single word).
+                    out.push_str("    shl $4, %rax
+    add %r11, %rax
+");
+                    out.push_str(&format!("    mov %rax, -{}(%rbp)
+", lv_off));
+                } else {
                 match ct {
                     Ty::Arr(_) => out.push_str("    shl $3, %rax
     add %r11, %rax
@@ -5748,6 +5856,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    mov %rax, -{}(%rbp)
     mov %rdx, -{}(%rbp)
 ", lv_off, lv_off - 8));
+                }
                 let inner = Some((format!(".Lfen_{}_{}", fname, id), format!(".Lfee_{}_{}", fname, id)));
                 cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names);
                 env[kl].ty = saved_lv.0;
