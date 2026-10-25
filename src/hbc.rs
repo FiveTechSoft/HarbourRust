@@ -1440,28 +1440,31 @@ hbc_str_eq:
     xor %eax, %eax
     ret
 
-# hbc_str_cmp: same inputs as hbc_str_eq. Returns %rax = -1, 0 or 1,
-# byte-wise lexicographic (like memcmp): the first differing byte
-# decides (unsigned); a strict prefix is less than its extension. No
-# collation, no Unicode awareness. Leaf: no calls, volatile registers.
+# hbc_str_cmp: same inputs as hbc_str_eq. Returns %rax = -1, 0 or 1.
+# Harbour default (SET EXACT OFF) ordering: compare over the length of
+# the RIGHT operand only; the left operand is read NUL-padded past its
+# end, so "abc" < "abcd" is true but "abcd" > "abc" is false and
+# "abcd" <= "abc" is true (xBase asymmetric prefix rule, probe b22).
+# No collation, no Unicode awareness. Leaf: no calls, volatile regs.
 hbc_str_cmp:
     xor %r9d, %r9d
-    mov %rdx, %r11
-    cmp %r8, %r11
-    cmova %r8, %r11
 95:
-    cmp %r11, %r9
+    cmp %r8, %r9
     jae 96f
-    movzbl (%rax,%r9), %r10d
-    cmp %r10b, (%rcx,%r9)
+    movzbl (%rcx,%r9), %r10d
+    cmp %rdx, %r9
+    jae 94f
+    movzbl (%rax,%r9), %r11d
+    jmp 93f
+94:
+    xor %r11d, %r11d
+93:
+    cmp %r11b, %r10b
     jb 98f
     ja 97f
     inc %r9
     jmp 95b
 96:
-    cmp %r8, %rdx
-    jb 97f
-    ja 98f
     xor %eax, %eax
     ret
 98:
@@ -1587,28 +1590,31 @@ hbc_str_eq:
     xor %eax, %eax
     ret
 
-# hbc_str_cmp: same inputs as hbc_str_eq. Returns %rax = -1, 0 or 1,
-# byte-wise lexicographic (like memcmp): the first differing byte
-# decides (unsigned); a strict prefix is less than its extension. No
-# collation, no Unicode awareness. Leaf: no calls, volatile registers.
+# hbc_str_cmp: same inputs as hbc_str_eq. Returns %rax = -1, 0 or 1.
+# Harbour default (SET EXACT OFF) ordering: compare over the length of
+# the RIGHT operand only; the left operand is read NUL-padded past its
+# end, so "abc" < "abcd" is true but "abcd" > "abc" is false and
+# "abcd" <= "abc" is true (xBase asymmetric prefix rule, probe b22).
+# No collation, no Unicode awareness. Leaf: no calls, volatile regs.
 hbc_str_cmp:
     xor %r9d, %r9d
-    mov %rdx, %r11
-    cmp %r8, %r11
-    cmova %r8, %r11
 95:
-    cmp %r11, %r9
+    cmp %r8, %r9
     jae 96f
-    movzbl (%rax,%r9), %r10d
-    cmp %r10b, (%rcx,%r9)
+    movzbl (%rcx,%r9), %r10d
+    cmp %rdx, %r9
+    jae 94f
+    movzbl (%rax,%r9), %r11d
+    jmp 93f
+94:
+    xor %r11d, %r11d
+93:
+    cmp %r11b, %r10b
     jb 98f
     ja 97f
     inc %r9
     jmp 95b
 96:
-    cmp %r8, %rdx
-    jb 97f
-    ja 98f
     xor %eax, %eax
     ret
 98:
