@@ -32,7 +32,7 @@ use std::process;
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { I64, Str, Bool }
+enum Ty { I64, Str, Bool, Arr(usize) }
 
 #[derive(Clone, PartialEq, Debug)]
 enum Tok {
@@ -41,6 +41,7 @@ enum Tok {
     Str(String), // already unescaped content
     Plus, Minus, Star, Slash,
     LParen, RParen, Comma,
+    LBrace, RBrace, LBracket, RBracket,
     Assign,   // :=
     Question, // ?
     Eq,       // =
@@ -154,6 +155,10 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                     _ => toks.push(Tok::Gt),
                 }
             }
+            '{' => { toks.push(Tok::LBrace); it.next(); }
+            '}' => { toks.push(Tok::RBrace); it.next(); }
+            '[' => { toks.push(Tok::LBracket); it.next(); }
+            ']' => { toks.push(Tok::RBracket); it.next(); }
             o => return Err(format!("line {}: character not allowed `{}` (U+{:04X})", n, o, o as u32)),
         }
     }
@@ -168,6 +173,8 @@ enum Expr {
     Call(String, Vec<Expr>),
     Bin(char, Box<Expr>, Box<Expr>),
     Cmp(CmpOp, Box<Expr>, Box<Expr>), // i64 operands only (checked in analysis)
+    ArrLit(Vec<Expr>),             // {e1, ..., eN}; i64 elements, fixed size
+    Index(String, Box<Expr>),      // a[i]; Harbour base 1 (probe a1)
 }
 
 #[derive(Debug)]
@@ -178,6 +185,7 @@ enum Stmt {
     If(usize, Expr, Vec<Stmt>, Vec<Stmt>), // line, condition, then, else (possibly empty)
     While(usize, Expr, Vec<Stmt>), // line, condition, body
     Assign(usize, String, Expr),   // x := expr on an already-declared local
+    ArrSet(usize, String, Expr, Expr), // a[i] := expr (index is 1-based)
     Exit(usize),                 // exit: leave the innermost loop
     Loop(usize),                 // loop: jump to the next iteration of the innermost loop
     For(usize, String, Expr, Expr, i64, Vec<Stmt>), // line, var, start, end, step (non-zero literal), body
@@ -263,6 +271,14 @@ impl P {
                         self.pos += 1;
                     }
                     Ok(Expr::Call(id, args))
+                } else if self.peek() == Some(&Tok::LBracket) {
+                    // a[i] - one index level in this increment
+                    self.pos += 1;
+                    let idx = self.expr()?;
+                    if self.bump() != Some(Tok::RBracket) {
+                        return Err(format!("line {}: expected `]` after the array index", self.n));
+                    }
+                    Ok(Expr::Index(id, Box::new(idx)))
                 } else {
                     Ok(Expr::Var(id))
                 }
@@ -273,6 +289,23 @@ impl P {
                     return Err(format!("line {}: missing )", self.n));
                 }
                 Ok(e)
+            }
+            Some(Tok::LBrace) => {
+                // Array literal {e1, ..., eN}. The empty literal is out of
+                // this increment (registered limitation).
+                if self.peek() == Some(&Tok::RBrace) {
+                    return Err(format!("line {}: empty array literal {{}} is not in this increment", self.n));
+                }
+                let mut items = Vec::new();
+                loop {
+                    items.push(self.expr()?);
+                    match self.bump() {
+                        Some(Tok::Comma) => continue,
+                        Some(Tok::RBrace) => break,
+                        other => return Err(format!("line {}: expected `,` or `}}` in the array literal, got {:?}", self.n, other)),
+                    }
+                }
+                Ok(Expr::ArrLit(items))
             }
             None => Err(format!("line {}: incomplete expression (operand or ) missing)", self.n)),
             Some(t) => Err(format!("line {}: unexpected token {:?} in expression", self.n, t)),
@@ -313,7 +346,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "print_i64", "print_str",
+    "print_i64", "print_str", "bound_error",
 ];
 
 fn check_ident(id: &str, n: usize) -> Result<(), String> {
@@ -529,6 +562,22 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 *i += 1;
             }
             Tok::Ident(id) => {
+                if toks.len() >= 2 && toks[1] == Tok::LBracket {
+                    // a[i] := expr (one index level in this increment)
+                    check_ident(&id, n)?;
+                    let rb = match toks[2..].iter().position(|t| *t == Tok::RBracket) {
+                        Some(p) => p + 2,
+                        None => return Err(format!("line {}: expected `name[idx] := expr`", n)),
+                    };
+                    if rb == 2 || toks.len() <= rb + 1 || toks[rb + 1] != Tok::Assign {
+                        return Err(format!("line {}: expected `name[idx] := expr`", n));
+                    }
+                    let idx = parse_expr_tokens(toks[2..rb].to_vec(), n)?;
+                    let e = parse_expr_tokens(toks[rb + 2..].to_vec(), n)?;
+                    out.push(Stmt::ArrSet(n, id, idx, e));
+                    *i += 1;
+                    continue;
+                }
                 if toks.len() < 3 || toks[1] != Tok::Assign {
                     return Err(format!("line {}: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)", n));
                 }
@@ -665,6 +714,13 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
             Expr::Bin(_, a, b) => { pin_vars(f, a, Ty::I64, pin, n)?; pin_vars(f, b, Ty::I64, pin, n) }
             Expr::Cmp(_, a, b) => { pin_vars(f, a, ty, pin, n)?; pin_vars(f, b, ty, pin, n) }
             Expr::Call(_, _) => Ok(()), // call arguments pin via the callee's signature, not the outer context
+            Expr::ArrLit(es) => { for e in es { pin_vars(f, e, Ty::I64, pin, n)?; } Ok(()) }
+            Expr::Index(id, ie) => {
+                if is_param(f, id).is_some() {
+                    return Err(format!("line {}: array parameters are not in this increment", n));
+                }
+                pin_vars(f, ie, Ty::I64, pin, n)
+            }
             _ => Ok(()),
         }
     }
@@ -702,6 +758,17 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                 for a in args { walk(f, a, sigs, lit, pin, n)?; }
                 Ok(())
             }
+            Expr::ArrLit(es) => {
+                for e in es { pin_vars(f, e, Ty::I64, pin, n)?; walk(f, e, sigs, lit, pin, n)?; }
+                Ok(())
+            }
+            Expr::Index(id, ie) => {
+                if is_param(f, id).is_some() {
+                    return Err(format!("line {}: array parameters are not in this increment", n));
+                }
+                pin_vars(f, ie, Ty::I64, pin, n)?;
+                walk(f, ie, sigs, lit, pin, n)
+            }
             _ => Ok(()),
         }
     }
@@ -737,6 +804,11 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     walk(f, a, sigs, lit, pin, *n)?; walk(f, b, sigs, lit, pin, *n)?;
                     walk_stmts(f, body, sigs, lit, pin)?;
                 }
+                Stmt::ArrSet(n, _, ie, e) => {
+                    pin_vars(f, ie, Ty::I64, pin, *n)?;
+                    walk(f, ie, sigs, lit, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, *n)?;
+                }
                 Stmt::Exit(_) | Stmt::Loop(_) => {}
             }
         }
@@ -769,6 +841,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
             }
             for (i, a) in args.iter().enumerate() {
                 let ta = type_expr(a, env, sigs, n)?;
+                if let Ty::Arr(_) = ta {
+                    return Err(format!("line {}: arrays cannot be passed as arguments in this increment", n));
+                }
                 // A string argument moves out of its variable right away, so
                 // a second use later in the same expression (e.g. the other
                 // side of a `+`) is rejected like any other use-after-move.
@@ -800,6 +875,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
         Expr::Cmp(op, a, b) => {
             let ta = type_expr(a, env, sigs, n)?;
             let tb = type_expr(b, env, sigs, n)?;
+            if let Ty::Arr(_) = ta {
+                return Err(format!("line {}: arrays do not compare in this increment", n));
+            }
+            if let Ty::Arr(_) = tb {
+                return Err(format!("line {}: arrays do not compare in this increment", n));
+            }
             if ta == Ty::I64 && tb == Ty::I64 {
                 return Ok(Ty::Bool);
             }
@@ -813,6 +894,36 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                 return Err(format!("line {}: cannot compare a string with an integer in this PoC", n));
             }
             Err(format!("line {}: comparisons require integers", n))
+        }
+        Expr::ArrLit(es) => {
+            for e in es {
+                if type_expr(e, env, sigs, n)? != Ty::I64 {
+                    return Err(format!("line {}: array elements must be integers in this increment", n));
+                }
+            }
+            Ok(Ty::Arr(es.len()))
+        }
+        Expr::Index(id, ie) => {
+            // Arrays are [i64; N] in the Rust model: Copy elements, no
+            // moves, no ownership involvement (rustc-verified semantics).
+            if type_expr(ie, env, sigs, n)? != Ty::I64 {
+                return Err(format!("line {}: array index must be an integer", n));
+            }
+            match env.iter().find(|v| v.name == *id) {
+                None => Err(format!("line {}: undefined variable `{}`", n, id)),
+                Some(v) => match v.ty {
+                    Ty::Arr(k) => {
+                        if let Expr::Int(lit) = ie.as_ref() {
+                            let bad = lit.parse::<i64>().map(|x| x < 1 || x > k as i64).unwrap_or(true);
+                            if bad {
+                                return Err(format!("line {}: array index {} out of bounds (`{}` has {} element(s), base 1)", n, lit, id, k));
+                            }
+                        }
+                        Ok(Ty::I64)
+                    }
+                    _ => Err(format!("line {}: indexing applies to arrays in this increment; `{}` is not an array", n, id)),
+                },
+            }
         }
     }
 }
@@ -848,12 +959,18 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                     if t == Ty::Bool {
                         return Err(format!("line {}: cannot print a boolean in this PoC", n));
                     }
+                    if let Ty::Arr(_) = t {
+                        return Err(format!("line {}: cannot print an array directly in this increment (print an element: `? a[i]`)", n));
+                    }
                 }
             }
             Stmt::Ret(n, Some(e)) => {
                 let t = type_expr(e, env, sigs, *n)?;
                 if t == Ty::Bool {
                     return Err(format!("line {}: cannot return a boolean in this PoC", n));
+                }
+                if let Ty::Arr(_) = t {
+                    return Err(format!("line {}: arrays cannot be returned in this increment", n));
                 }
                 apply_moves(e, env, sigs, true);
                 match *ret {
@@ -961,6 +1078,34 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 }
                 falls = false;
             }
+            Stmt::ArrSet(n, id, ie, e) => {
+                if type_expr(ie, env, sigs, *n)? != Ty::I64 {
+                    return Err(format!("line {}: array index must be an integer", n));
+                }
+                if type_expr(e, env, sigs, *n)? != Ty::I64 {
+                    return Err(format!("line {}: array elements must be integers in this increment", n));
+                }
+                apply_moves(ie, env, sigs, false);
+                apply_moves(e, env, sigs, true);
+                let v = match env.iter().find(|v| v.name == *id) {
+                    Some(v) => v,
+                    None => return Err(format!("line {}: assignment to undeclared variable `{}` (declare it with `local` first)", n, id)),
+                };
+                if v.ro {
+                    return Err(format!("line {}: cannot assign through the `for` loop variable `{}`", n, id));
+                }
+                match v.ty {
+                    Ty::Arr(k) => {
+                        if let Expr::Int(lit) = ie {
+                            let bad = lit.parse::<i64>().map(|x| x < 1 || x > k as i64).unwrap_or(true);
+                            if bad {
+                                return Err(format!("line {}: array index {} out of bounds (`{}` has {} element(s), base 1)", n, lit, id, k));
+                            }
+                        }
+                    }
+                    _ => return Err(format!("line {}: indexed assignment applies to arrays; `{}` is not an array", n, id)),
+                }
+            }
             Stmt::Assign(n, id, e) => {
                 // RHS is evaluated first; a Str source variable moves.
                 let t = type_expr(e, env, sigs, *n)?;
@@ -1009,6 +1154,8 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 apply_moves(a, env, sigs, m);
             }
         }
+        Expr::ArrLit(es) => { for e in es { apply_moves(e, env, sigs, false); } }
+        Expr::Index(_, ie) => apply_moves(ie, env, sigs, false),
         _ => {}
     }
 }
@@ -1021,7 +1168,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 // ---------------------------------------------------------------------------
 
 fn size_of(t: Ty) -> usize {
-    match t { Ty::I64 => 8, Ty::Str => 16, Ty::Bool => unreachable!("booleans rejected in analysis") }
+    match t { Ty::I64 => 8, Ty::Str => 16, Ty::Arr(n) => 8 * n, Ty::Bool => unreachable!("booleans rejected in analysis") }
 }
 
 #[derive(Clone)]
@@ -1048,6 +1195,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     out.push_str(&format!("    mov -{}(%rbp), %rdx\n", v.off - 8));
                 }
                 Ty::Bool => unreachable!("booleans rejected in analysis"),
+                Ty::Arr(_) => unreachable!("whole-array values are emitted via cg_array_value"),
             }
         }
         Expr::Call(id, args) => {
@@ -1070,6 +1218,19 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             if !args.is_empty() {
                 out.push_str(&format!("    add ${}, %rsp\n", 16 * args.len()));
             }
+        }
+        Expr::ArrLit(_) => unreachable!("array literals are emitted via cg_array_value"),
+        Expr::Index(id, ie) => {
+            let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
+            let k = match v.ty { Ty::Arr(k) => k, _ => unreachable!("checked") };
+            cg_expr(ie, env, sigs, strs, out, target);
+            // Harbour base 1: valid indexes are 1..=k (probe a1). A runtime
+            // miss exits via hbc_bound_error (noreturn); Harbour instead
+            // opens an interactive error dialog (probes a1/a2) - a
+            // registered failure-mode difference, same error condition.
+            out.push_str(&format!("    cmp $1, %rax\n    jl 81f\n    cmp ${}, %rax\n    jg 81f\n", k));
+            out.push_str(&format!("    lea -{}(%rbp), %r11\n    mov -8(%r11,%rax,8), %rax\n    jmp 82f\n", v.off));
+            out.push_str("81:\n    call hbc_bound_error\n82:\n");
         }
         Expr::Bin(op, a, b) => {
             // arithmetic is i64-only (checked in analysis)
@@ -1118,6 +1279,31 @@ fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out
     }
 }
 
+// Emit an array-producing expression into a frame slot: a literal stores
+// each element left to right; a whole-array variable COPIES (Rust [i64; N]
+// is Copy - verified against rustc: mutating the copy leaves the source
+// intact; Harbour shares a reference instead, a registered MODEL
+// difference). Element k sits 8*k bytes below the first slot.
+fn cg_array_value(e: &Expr, off: usize, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    match e {
+        Expr::ArrLit(es) => {
+            for (k, item) in es.iter().enumerate() {
+                cg_expr(item, env, sigs, strs, out, target);
+                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off - 8 * k));
+            }
+        }
+        Expr::Var(id) => {
+            let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
+            let n = match v.ty { Ty::Arr(n) => n, _ => unreachable!("checked") };
+            for k in 0..n {
+                out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off - 8 * k));
+                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off - 8 * k));
+            }
+        }
+        _ => unreachable!("only literals and variables produce array values in this increment"),
+    }
+}
+
 fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
     match e {
         Expr::Int(_) | Expr::Bin(_, _, _) => Ty::I64,
@@ -1125,6 +1311,8 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::Var(id) => env.iter().find(|v| v.name == *id).expect("checked").ty,
         Expr::Call(id, _) => sigs.iter().find(|v| v.name == *id).expect("checked").ret.expect("checked"),
         Expr::Cmp(..) => Ty::Bool,
+        Expr::ArrLit(es) => Ty::Arr(es.len()),
+        Expr::Index(_, _) => Ty::I64,
     }
 }
 
@@ -1229,16 +1417,21 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
         match s {
             Stmt::Local(_, id, e) => {
                 let t = expr_ty(e, env, sigs);
-                cg_value(e, env, sigs, strs, out, target);
                 *frame += size_of(t);
                 let off = *frame;
                 match t {
-                    Ty::I64 => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
-                    Ty::Str => {
-                        out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
-                        out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
+                    Ty::Arr(_) => cg_array_value(e, off, env, sigs, strs, out, target),
+                    _ => {
+                        cg_value(e, env, sigs, strs, out, target);
+                        match t {
+                            Ty::I64 => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
+                            Ty::Str => {
+                                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
+                                out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
+                            }
+                            _ => unreachable!("booleans rejected in analysis"),
+                        }
                     }
-                    Ty::Bool => unreachable!("booleans rejected in analysis"),
                 }
                 env.push(CgLocal { name: id.clone(), ty: t, off });
             }
@@ -1263,6 +1456,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         Ty::I64 => out.push_str("    call hbc_print_i64\n"),
                         Ty::Str => out.push_str("    call hbc_print_str\n"),
                         Ty::Bool => unreachable!("booleans rejected in analysis"),
+                        Ty::Arr(_) => unreachable!("whole-array printing rejected in analysis"),
                     }
                 }
                 if !es.is_empty() {
@@ -1353,16 +1547,36 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
             }
             Stmt::Assign(_, id, e) => {
                 let t = expr_ty(e, env, sigs);
-                cg_value(e, env, sigs, strs, out, target);
                 let l = env.iter().find(|v| v.name == *id).expect("analysis checked the local exists");
+                let off = l.off;
                 match t {
-                    Ty::I64 => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", l.off)),
-                    Ty::Str => {
-                        out.push_str(&format!("    mov %rax, -{}(%rbp)\n", l.off));
-                        out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", l.off - 8));
+                    Ty::Arr(_) => cg_array_value(e, off, env, sigs, strs, out, target),
+                    _ => {
+                        cg_value(e, env, sigs, strs, out, target);
+                        match t {
+                            Ty::I64 => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
+                            Ty::Str => {
+                                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
+                                out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
+                            }
+                            _ => unreachable!("booleans rejected in analysis"),
+                        }
                     }
-                    Ty::Bool => unreachable!("booleans rejected in analysis"),
                 }
+            }
+            Stmt::ArrSet(_, id, ie, e) => {
+                let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
+                let k = match v.ty { Ty::Arr(k) => k, _ => unreachable!("checked") };
+                // Index first, kept in a 16-byte stack slot (ABI-safe on
+                // both targets if the value expression calls); then the
+                // value, then a runtime bounds check, then the store.
+                cg_expr(ie, env, sigs, strs, out, target);
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                cg_expr(e, env, sigs, strs, out, target);
+                out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n");
+                out.push_str(&format!("    cmp $1, %rcx\n    jl 83f\n    cmp ${}, %rcx\n    jg 83f\n", k));
+                out.push_str(&format!("    lea -{}(%rbp), %r11\n    mov %rax, -8(%r11,%rcx,8)\n    jmp 84f\n", v.off));
+                out.push_str("83:\n    call hbc_bound_error\n84:\n");
             }
         }
     }
@@ -1604,6 +1818,21 @@ hbc_print_i64:
     ret
 "#);
 
+    out.push_str(r#"
+# hbc_bound_error: array index outside 1..=n at runtime (noreturn). Prints
+# the Harbour wording and exits 1. Harbour itself opens an interactive
+# error dialog here (probes a1/a2 hang even with stdin at EOF): a clean
+# exit is the registered failure-mode difference, same error condition.
+hbc_bound_error:
+    lea .Lboundmsg(%rip), %rsi
+    mov $26, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+"#);
     out.push_str("\n    .section .rodata\n");
     emit_strings(&mut out, &strs);
     out
@@ -1619,6 +1848,8 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     }
     out.push_str(".Lnl:\n    .byte 10\n");
     out.push_str(".Lpad20:\n    .byte 32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32\n");
+    // "Bound error: array access\n" (26 bytes; Harbour wording, probe a1)
+    out.push_str(".Lboundmsg:\n    .byte 66,111,117,110,100,32,101,114,114,111,114,58,32,97,114,114,97,121,32,97,99,99,101,115,115,10\n");
 }
 
 // Win64 runtime helpers (ours): same internal convention as the linux ones
@@ -1781,6 +2012,18 @@ hbc_print_i64:
     call hbc_print_str
     leave
     ret
+
+# hbc_bound_error: array index outside 1..=n at runtime (noreturn). Same
+# wording as the linux helper; exit code 1 via ExitProcess.
+hbc_bound_error:
+    push %rbp
+    mov %rsp, %rbp
+    sub $48, %rsp
+    lea .Lboundmsg(%rip), %rax
+    mov $26, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
 "#;
 
 #[derive(Clone, Copy, PartialEq)]
