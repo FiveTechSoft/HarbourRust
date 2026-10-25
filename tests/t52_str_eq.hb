@@ -1,5 +1,7 @@
-// string equality/inequality in conditions: literals, variables,
-// different lengths, prefix relations, and a while condition
+// string equality/inequality in conditions: Harbour default (SET EXACT
+// OFF) `=` compares over the RIGHT operand's length: "hola" = "hol" and
+// "holaa" = "hol" are true, "hola" = "holaa" is false (probe b23).
+// Literals, variables, different lengths, prefix relations, while cond.
 function main()
     local a := "hola"
     local b := "hola"
