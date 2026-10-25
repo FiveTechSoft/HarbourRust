@@ -323,6 +323,38 @@ Full 44-case battery re-run after the change: 44/44 pass, `hola` Linux
 ELF still 8,984 bytes. Not yet: string comparisons / first-class
 boolean, function parameters, expression step, shadowing.
 
+# Adversarial review of the control flow (2026-10-25)
+
+Bounded review of iterations 5-8 before any further expansion.
+
+REAL BUG FOUND AND FIXED: `for` counter overflow. The first
+implementation advanced the counter with a plain `add` and rechecked the
+bound, so `for i := 9223372036854775806 to 9223372036854775807` wrapped
+the counter to i64::MIN after the last value and the loop did not
+terminate. Reproduced against the pre-fix compiler: the generated binary
+printed 9223372036854775806, 9223372036854775807, -9223372036854775808
+and kept going (killed after 5s, 2.4M lines of output). Fix: `jo` after
+the increment ends the loop on counter overflow, both directions
+(t45/t46, Linux + Wine). The bound comparisons themselves are exact:
+`cmp` + signed jumps handle i64 extremes correctly; the missing piece
+was only the increment.
+
+checked, no bug found:
+- zero-trip loops, both directions (t37, t47)
+- exit/loop binding to the innermost loop, for-in-while and
+  while-in-for (t48), loop-in-for-in-for (t49)
+- moves on return paths: a path that returns never reaches the next
+  iteration and needs no reassignment (t51); the join intentionally
+  taints when ANY branch moves without returning (t50, conservative
+  vs Rust, documented)
+- bound comparisons at i64 extremes (t45/t46 run at the limits)
+- hand-written `while` arithmetic: wrapping is user-level, documented
+  as a limit in README (only the `for` increment is guarded)
+
+7 new tests (t45-t51, none converted). Full 51-case battery re-run
+after the fix: 51/51 pass, `hola` Linux ELF still 8,984 bytes.
+
+
 
 
 - Full Rust assignment semantics: assignment re-lives a moved variable and
