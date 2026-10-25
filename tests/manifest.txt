@@ -254,3 +254,8 @@ neg tests/t251_array_3d.hb not in this increment
 neg tests/t252_array_0args.hb at least one dimension
 pos tests/t253_array_balance.hb \n         7\n         0
 pos tests/t254_array_abi_locals.hb \n        66\n        33\n         4\n         7
+pos tests/t255_array_zero_rows.hb \n         0
+pos tests/t256_array_zero_cols.hb \n         3\n         0
+pos tests/t257_array_eval_order.hb \nf\ng\n         2\n         3
+pos tests/t258_array_nested_aadd.hb \n         4\n         7\nNIL
+posx tests/t259_array_ovf.hb 1 Out of memory
