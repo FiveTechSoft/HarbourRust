@@ -32,7 +32,7 @@ use std::process;
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { I64, Str, Bool, Arr(usize) }
+enum Ty { I64, Str, Bool, Arr(usize), Block(usize) }
 
 #[derive(Clone, PartialEq, Debug)]
 enum Tok {
@@ -41,7 +41,7 @@ enum Tok {
     Str(String), // already unescaped content
     Plus, Minus, Star, Slash,
     LParen, RParen, Comma,
-    LBrace, RBrace, LBracket, RBracket,
+    LBrace, RBrace, LBracket, RBracket, Pipe,
     Assign,   // :=
     Question, // ?
     Eq,       // =
@@ -53,6 +53,9 @@ enum Tok {
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum CmpOp { Eq, Ne, Lt, Le, Gt, Ge }
+
+static BLOCK_ID: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+fn new_block_id() -> usize { BLOCK_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst) }
 
 fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
     let mut toks = Vec::new();
@@ -158,6 +161,7 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             '{' => { toks.push(Tok::LBrace); it.next(); }
             '}' => { toks.push(Tok::RBrace); it.next(); }
             '[' => { toks.push(Tok::LBracket); it.next(); }
+            '|' => { toks.push(Tok::Pipe); it.next(); }
             ']' => { toks.push(Tok::RBracket); it.next(); }
             o => return Err(format!("line {}: character not allowed `{}` (U+{:04X})", n, o, o as u32)),
         }
@@ -165,7 +169,7 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
     Ok(toks)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Expr {
     Int(String),
     Str(String),
@@ -175,6 +179,7 @@ enum Expr {
     Cmp(CmpOp, Box<Expr>, Box<Expr>), // i64 operands only (checked in analysis)
     ArrLit(Vec<Expr>),             // {e1, ..., eN}; i64 elements, fixed size
     Index(String, Box<Expr>),      // a[i]; Harbour base 1 (probe a1)
+    BlockLit(usize, Vec<String>, Vec<Expr>), // {|p1, p2| e1, e2} -> last (probes c1-c5)
 }
 
 #[derive(Debug)]
@@ -291,6 +296,41 @@ impl P {
                 Ok(e)
             }
             Some(Tok::LBrace) => {
+                if self.peek() == Some(&Tok::Pipe) {
+                    // Codeblock {|p1, p2| e1, ..., eN}: comma-separated
+                    // expressions, the value is the LAST one (probe c4).
+                    // No captures in this increment (v1).
+                    self.pos += 1;
+                    let mut params: Vec<String> = Vec::new();
+                    loop {
+                        match self.bump() {
+                            Some(Tok::Pipe) => break,
+                            Some(Tok::Ident(id)) => {
+                                check_ident(&id, self.n)?;
+                                if params.iter().any(|p| *p == id) {
+                                    return Err(format!("line {}: duplicate codeblock parameter `{}`", self.n, id));
+                                }
+                                params.push(id);
+                                match self.bump() {
+                                    Some(Tok::Comma) => continue,
+                                    Some(Tok::Pipe) => break,
+                                    other => return Err(format!("line {}: expected `,` or `|` in the codeblock parameters, got {:?}", self.n, other)),
+                                }
+                            }
+                            other => return Err(format!("line {}: expected codeblock parameters between `|`, got {:?}", self.n, other)),
+                        }
+                    }
+                    let mut body = Vec::new();
+                    loop {
+                        body.push(self.expr()?);
+                        match self.bump() {
+                            Some(Tok::Comma) => continue,
+                            Some(Tok::RBrace) => break,
+                            other => return Err(format!("line {}: expected `,` or `}}` in the codeblock body, got {:?}", self.n, other)),
+                        }
+                    }
+                    return Ok(Expr::BlockLit(new_block_id(), params, body));
+                }
                 // Array literal {e1, ..., eN}. The empty literal is out of
                 // this increment (registered limitation).
                 if self.peek() == Some(&Tok::RBrace) {
@@ -346,7 +386,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "print_i64", "print_str", "bound_error",
+    "print_i64", "print_str", "bound_error", "eval",
 ];
 
 fn check_ident(id: &str, n: usize) -> Result<(), String> {
@@ -834,6 +874,31 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
             Some(v) => Ok(v.ty),
         },
         Expr::Call(id, args) => {
+            if id == "eval" {
+                // eval(b, a1..an): b is a codeblock value. Extra arguments
+                // are evaluated and IGNORED, as Harbour does (probes c7 and
+                // c7b: side effects run, the result ignores them); fewer
+                // arguments than parameters are a COMPILE error here
+                // (Harbour fails at runtime with an interactive dialog -
+                // probe c8). Arguments are integers in this increment.
+                if args.is_empty() {
+                    return Err(format!("line {}: `eval` needs a codeblock as its first argument", n));
+                }
+                let t0 = type_expr(&args[0], env, sigs, n)?;
+                let k = match t0 {
+                    Ty::Block(k) => k,
+                    _ => return Err(format!("line {}: `eval` expects a codeblock as its first argument", n)),
+                };
+                if args.len() - 1 < k {
+                    return Err(format!("line {}: codeblock takes {} argument(s), `eval` got {}", n, k, args.len() - 1));
+                }
+                for a in &args[1..] {
+                    if type_expr(a, env, sigs, n)? != Ty::I64 {
+                        return Err(format!("line {}: codeblock arguments must be integers in this increment", n));
+                    }
+                }
+                return Ok(Ty::I64);
+            }
             let sig = sigs.iter().find(|v| v.name == *id)
                 .ok_or_else(|| format!("line {}: unknown function `{}` (must be defined before use)", n, id))?;
             if sig.params.len() != args.len() {
@@ -881,6 +946,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
             if let Ty::Arr(_) = tb {
                 return Err(format!("line {}: arrays do not compare in this increment", n));
             }
+            if let Ty::Block(_) = ta {
+                return Err(format!("line {}: codeblocks do not compare in this increment", n));
+            }
+            if let Ty::Block(_) = tb {
+                return Err(format!("line {}: codeblocks do not compare in this increment", n));
+            }
             if ta == Ty::I64 && tb == Ty::I64 {
                 return Ok(Ty::Bool);
             }
@@ -925,6 +996,40 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                 },
             }
         }
+        Expr::BlockLit(_, params, body) => {
+            // v1: no captures - the body sees ONLY its parameters (probe
+            // c3 captures a function local in Harbour; that is the next
+            // increment, not this one). Parameters are integers here.
+            for e in body {
+                let mut found = Vec::new();
+                free_vars(e, &mut found);
+                for v in found {
+                    if !params.iter().any(|p| *p == v) {
+                        return Err(format!("line {}: codeblock captures are not in this increment (`{}` is not a codeblock parameter)", n, v));
+                    }
+                }
+            }
+            let mut benv: Vec<Local> = params.iter().map(|p| Local { name: p.clone(), ty: Ty::I64, moved: false, ro: false }).collect();
+            for e in body {
+                if type_expr(e, &mut benv, sigs, n)? != Ty::I64 {
+                    return Err(format!("line {}: codeblock bodies are integer expressions in this increment", n));
+                }
+            }
+            Ok(Ty::Block(params.len()))
+        }
+    }
+}
+
+// Free VARIABLE names used inside an expression (callees are not variables).
+fn free_vars(e: &Expr, out: &mut Vec<String>) {
+    match e {
+        Expr::Var(id) => { if !out.iter().any(|x| x == id) { out.push(id.clone()); } }
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => { free_vars(a, out); free_vars(b, out); }
+        Expr::Call(_, args) => { for a in args { free_vars(a, out); } }
+        Expr::ArrLit(es) => { for e in es { free_vars(e, out); } }
+        Expr::Index(_, ie) => free_vars(ie, out),
+        Expr::BlockLit(_, _, _) => {} // nested blocks: rejected by the integer-body rule
+        _ => {}
     }
 }
 
@@ -962,6 +1067,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                     if let Ty::Arr(_) = t {
                         return Err(format!("line {}: cannot print an array directly in this increment (print an element: `? a[i]`)", n));
                     }
+                    if let Ty::Block(_) = t {
+                        return Err(format!("line {}: cannot print a codeblock in this increment", n));
+                    }
                 }
             }
             Stmt::Ret(n, Some(e)) => {
@@ -971,6 +1079,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 }
                 if let Ty::Arr(_) = t {
                     return Err(format!("line {}: arrays cannot be returned in this increment", n));
+                }
+                if let Ty::Block(_) = t {
+                    return Err(format!("line {}: codeblocks cannot be returned in this increment", n));
                 }
                 apply_moves(e, env, sigs, true);
                 match *ret {
@@ -1151,6 +1262,12 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
         Expr::Bin(_, a, b) => { apply_moves(a, env, sigs, false); apply_moves(b, env, sigs, false); }
         Expr::Cmp(_, a, b) => { apply_moves(a, env, sigs, false); apply_moves(b, env, sigs, false); }
         Expr::Call(id, args) => {
+            if id == "eval" {
+                // Block values are Copy pointers; arguments are integers:
+                // nothing moves (checked in analysis).
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
             let sig = sigs.iter().find(|v| v.name == *id).expect("checked");
             for (i, a) in args.iter().enumerate() {
                 let m = i < sig.params.len() && sig.params[i] == Ty::Str;
@@ -1159,6 +1276,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
         }
         Expr::ArrLit(es) => { for e in es { apply_moves(e, env, sigs, false); } }
         Expr::Index(_, ie) => apply_moves(ie, env, sigs, false),
+        Expr::BlockLit(_, _, _) => {}
         _ => {}
     }
 }
@@ -1171,7 +1289,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 // ---------------------------------------------------------------------------
 
 fn size_of(t: Ty) -> usize {
-    match t { Ty::I64 => 8, Ty::Str => 16, Ty::Arr(n) => 8 * n, Ty::Bool => unreachable!("booleans rejected in analysis") }
+    match t { Ty::I64 => 8, Ty::Str => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::Bool => unreachable!("booleans rejected in analysis") }
 }
 
 #[derive(Clone)]
@@ -1191,7 +1309,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
         Expr::Var(id) => {
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
             match v.ty {
-                Ty::I64 => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
+                Ty::I64 | Ty::Block(_) => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
                 Ty::Str => {
                     // ptr at -(off), len at -(off-8) — same layout as the store
                     out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
@@ -1199,6 +1317,29 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 }
                 Ty::Bool => unreachable!("booleans rejected in analysis"),
                 Ty::Arr(_) => unreachable!("whole-array values are emitted via cg_array_value"),
+            }
+        }
+        Expr::BlockLit(id, _, _) => {
+            // The block's value is its code pointer (8 bytes, Copy).
+            out.push_str(&format!("    lea hbc_blk_{}(%rip), %rax\n", id));
+        }
+        Expr::Call(id, args) if id == "eval" => {
+            // eval(b, a1..an): evaluate ALL arguments left to right (extras
+            // are discarded afterwards, matching probe c7b), push the first
+            // k as call arguments, then call the block pointer indirectly
+            // with the standard convention.
+            let k = match expr_ty(&args[0], env, sigs) { Ty::Block(k) => k, _ => unreachable!("checked") };
+            for a in &args[1..] {
+                cg_expr(a, env, sigs, strs, out, target);
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+            }
+            if args.len() - 1 > k {
+                out.push_str(&format!("    add ${}, %rsp\n", 16 * (args.len() - 1 - k)));
+            }
+            cg_expr(&args[0], env, sigs, strs, out, target);
+            out.push_str("    mov %rax, %r11\n    call *%r11\n");
+            if k > 0 {
+                out.push_str(&format!("    add ${}, %rsp\n", 16 * k));
             }
         }
         Expr::Call(id, args) => {
@@ -1312,10 +1453,14 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::Int(_) | Expr::Bin(_, _, _) => Ty::I64,
         Expr::Str(_) => Ty::Str,
         Expr::Var(id) => env.iter().find(|v| v.name == *id).expect("checked").ty,
-        Expr::Call(id, _) => sigs.iter().find(|v| v.name == *id).expect("checked").ret.expect("checked"),
+        Expr::Call(id, _) => {
+            if id == "eval" { return Ty::I64; }
+            sigs.iter().find(|v| v.name == *id).expect("checked").ret.expect("checked")
+        }
         Expr::Cmp(..) => Ty::Bool,
         Expr::ArrLit(es) => Ty::Arr(es.len()),
         Expr::Index(_, _) => Ty::I64,
+        Expr::BlockLit(_, ps, _) => Ty::Block(ps.len()),
     }
 }
 
@@ -1427,7 +1572,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     _ => {
                         cg_value(e, env, sigs, strs, out, target);
                         match t {
-                            Ty::I64 => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
+                            Ty::I64 | Ty::Block(_) => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
                             Ty::Str => {
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
@@ -1460,6 +1605,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         Ty::Str => out.push_str("    call hbc_print_str\n"),
                         Ty::Bool => unreachable!("booleans rejected in analysis"),
                         Ty::Arr(_) => unreachable!("whole-array printing rejected in analysis"),
+                        Ty::Block(_) => unreachable!("codeblock printing rejected in analysis"),
                     }
                 }
                 if !es.is_empty() {
@@ -1559,7 +1705,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     _ => {
                         cg_value(e, env, sigs, strs, out, target);
                         match t {
-                            Ty::I64 => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
+                            Ty::I64 | Ty::Block(_) => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
                             Ty::Str => {
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
@@ -1577,7 +1723,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // and Rust (`a[i] = v` evaluates the RHS before the place)
                 // use this order. The value waits in a 16-byte stack slot
                 // (keeps rsp 16-aligned for the Win64 ABI if the index
-                // expression calls; the Linux path needs no alignment).
+                // expression calls; the Linux side is our own freestanding
+                // syscall convention - it imposes no external ABI, but we
+                // claim no general System V compliance either).
                 cg_expr(e, env, sigs, strs, out, target);
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
                 cg_expr(ie, env, sigs, strs, out, target);
@@ -1588,6 +1736,67 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
             }
         }
     }
+}
+
+// Collect every block literal in a statement tree (deterministic order).
+fn collect_blocks_expr(e: &Expr, out: &mut Vec<(usize, Vec<String>, Vec<Expr>)>) {
+    match e {
+        Expr::BlockLit(id, ps, body) => {
+            out.push((*id, ps.clone(), body.clone()));
+        }
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => { collect_blocks_expr(a, out); collect_blocks_expr(b, out); }
+        Expr::Call(_, args) => { for a in args { collect_blocks_expr(a, out); } }
+        Expr::ArrLit(es) => { for e in es { collect_blocks_expr(e, out); } }
+        Expr::Index(_, ie) => collect_blocks_expr(ie, out),
+        _ => {}
+    }
+}
+fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<Expr>)>) {
+    for s in stmts {
+        match s {
+            Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) => collect_blocks_expr(e, out),
+            Stmt::ArrSet(_, _, ie, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(e, out); }
+            Stmt::Print(_, es) => { for e in es { collect_blocks_expr(e, out); } }
+            Stmt::Ret(_, Some(e)) => collect_blocks_expr(e, out),
+            Stmt::Ret(_, None) | Stmt::Exit(_) | Stmt::Loop(_) => {}
+            Stmt::If(_, c, a, b) => { collect_blocks_expr(c, out); collect_blocks_stmts(a, out); collect_blocks_stmts(b, out); }
+            Stmt::While(_, c, body) => { collect_blocks_expr(c, out); collect_blocks_stmts(body, out); }
+            Stmt::For(_, _, a, b, _, body) => { collect_blocks_expr(a, out); collect_blocks_expr(b, out); collect_blocks_stmts(body, out); }
+        }
+    }
+}
+
+// Emit one block as a function with the standard convention: parameters
+// copied from the caller's argument slots, body expressions evaluated in
+// order, the LAST one's value returned in %rax (probe c4). Integer
+// parameters and bodies only in this increment (checked in analysis), so
+// no strings, no drops, no heap.
+fn emit_block(id: usize, params: &[String], body: &[Expr], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    let mut lenv: Vec<CgLocal> = Vec::new();
+    let mut frame = 0usize;
+    for p in params {
+        frame += 8;
+        lenv.push(CgLocal { name: p.clone(), ty: Ty::I64, off: frame });
+    }
+    let n = lenv.len();
+    out.push_str(&format!("hbc_blk_{}:\n", id));
+    out.push_str("    push %rbp\n    mov %rsp, %rbp\n");
+    let frame = if target == Target::Windows { (frame + 15) & !15 } else { frame };
+    if frame > 0 {
+        out.push_str(&format!("    sub ${}, %rsp\n", frame));
+    }
+    for (k, v) in lenv.iter().enumerate() {
+        let src = 16 * (n - k);
+        out.push_str(&format!("    mov {}(%rbp), %rax\n", src));
+        out.push_str(&format!("    mov %rax, -{}(%rbp)\n", v.off));
+    }
+    for (i, e) in body.iter().enumerate() {
+        cg_expr(e, &lenv, sigs, strs, out, target);
+        if i + 1 < body.len() {
+            out.push_str("    # intermediate block expression: value discarded (probe c4)\n");
+        }
+    }
+    out.push_str("    leave\n    ret\n\n");
 }
 
 fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
@@ -1634,6 +1843,12 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     cg_stmts(&f.stmts, &mut env, &mut walk_frame, sigs, strs, out, target, &f.name, &mut label, &None);
     out.push_str(&format!(".Lret_{}:\n", f.name));
     out.push_str("    leave\n    ret\n\n");
+    // Block literals used by this function are emitted right after it.
+    let mut blocks = Vec::new();
+    collect_blocks_stmts(&f.stmts, &mut blocks);
+    for (id, ps, body) in blocks {
+        emit_block(id, &ps, &body, sigs, strs, out, target);
+    }
 }
 
 fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target) -> String {
