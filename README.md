@@ -1067,9 +1067,21 @@ clean error (t345).
   write evaluates the value first, then the indices left to right;
   hk106: reads left to right), ValType "A"/"U" on the measured
   casillas, balance 0 (t448-t450; new helper hbc_array4m, canaried
-  in the ABI harness). Extraction rejections stay named, AAdd/ASize
-  at the third level are out of this increment (hk105 measured;
-  scheduled), and five dimensions are a named compile error.
+  in the ABI harness). Extraction rejections stay named, and five dimensions are a
+  named compile error.
 
-Battery: 449/449 manifest cases on Linux x86-64 and Wine, plus
+- `AAdd(a[i][j][k], x)` / `ASize(a[i][j][k], n)` grow and resize
+  the level-3 subarray of a four-level value, in both the comma
+  and bracket head forms (hk105: AAdd takes len 2 to 3 with the
+  new value in place; ASize shrinking to 1 preserves the first
+  element - t454 mirrors it, t456 the bracket form; hk108: AAdd
+  evaluates i, then j, then k, then the value, the same
+  indices-before-value order measured for the shallower forms -
+  t455). Both reject a three-level root with a named compile
+  error (t457) and four index levels stay out of this increment
+  (t452, repurposed). No new runtime helpers: the generic
+  hbc_aadd/hbc_asize operate on the walked level-4 slot; balance
+  0 after the owner returns.
+
+Battery: 453/453 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
