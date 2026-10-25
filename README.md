@@ -342,7 +342,9 @@ probed against Harbour first: `#command` / `#xcommand` with literal words
 (case-insensitive), `<param>` captures, optional `[ ... ]` clauses (nesting included) and
 `<x,...>` list captures (inserted via the plain `<x>` result marker, as
 Harbour's own headers do), the parenthesized-expression marker `<(x)>`,
-and chaining; `#translate` / `#xtranslate` only in the
+and chaining, plus result-side `[ ... ]` optional parts (kept when a
+bound marker is inside, dropped whole otherwise, matching Harbour's
+observed behaviour); `#translate` / `#xtranslate` only in the
 call form `NAME( <p> ) => body`, which works inline in expressions, plus
 non-call forms at statement start (`#xtranslate` is accepted and behaves
 like `#translate`; Harbour's x- priority over a same-pattern plain rule
