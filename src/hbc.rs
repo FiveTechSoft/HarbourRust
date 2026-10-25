@@ -41,7 +41,7 @@ enum Tok {
     Eq,       // =
     Ne,       // <> or !=
     Lt, Le, Gt, Ge,
-    KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElse, KwEndif, KwWhile, KwEnddo,
+    KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElse, KwEndif, KwWhile, KwEnddo, KwExit, KwLoop,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -115,6 +115,8 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                     "endif" => Tok::KwEndif,
                     "while" => Tok::KwWhile,
                     "enddo" => Tok::KwEnddo,
+                    "exit" => Tok::KwExit,
+                    "loop" => Tok::KwLoop,
                     _ => Tok::Ident(id),
                 });
             }
@@ -165,6 +167,8 @@ enum Stmt {
     If(usize, Expr, Vec<Stmt>, Vec<Stmt>), // line, condition, then, else (possibly empty)
     While(usize, Expr, Vec<Stmt>), // line, condition, body
     Assign(usize, String, Expr),   // x := expr on an already-declared local
+    Exit(usize),                 // exit: leave the innermost while
+    Loop(usize),                 // loop: jump to the next iteration of the innermost while
 }
 
 struct Func {
@@ -396,6 +400,20 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 out.push(Stmt::Print(n, e));
                 *i += 1;
             }
+            Tok::KwExit => {
+                if toks.len() != 1 {
+                    return Err(format!("line {}: `exit` takes no expression", n));
+                }
+                out.push(Stmt::Exit(n));
+                *i += 1;
+            }
+            Tok::KwLoop => {
+                if toks.len() != 1 {
+                    return Err(format!("line {}: `loop` takes no expression", n));
+                }
+                out.push(Stmt::Loop(n));
+                *i += 1;
+            }
             Tok::Ident(id) => {
                 if toks.len() < 3 || toks[1] != Tok::Assign {
                     return Err(format!("line {}: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)", n));
@@ -506,7 +524,12 @@ fn type_expr(e: &Expr, env: &[Local], sigs: &[(String, Ty)], n: usize) -> Result
 // path counts as moved at the join (union of moved flags); a local declared
 // inside a branch is scoped to that branch (sibling branches may reuse a
 // name). This pass is OURS; nothing is delegated to another compiler.
-fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[(String, Ty)], ret: &mut Option<Ty>) -> Result<(), String> {
+// Returns whether the block can fall through to its end (false when every
+// path exits via return / exit / loop). `loop_pre` is Some(moved flags of
+// the outer env captured before the innermost `while`) inside a loop body;
+// `exits` collects the outer-env moved flags at each `exit` of that loop.
+fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[(String, Ty)], ret: &mut Option<Ty>, loop_pre: Option<&Vec<bool>>, exits: &mut Vec<Vec<bool>>) -> Result<bool, String> {
+    let mut falls = true;
     for s in stmts {
         match s {
             Stmt::Local(n, id, e) => {
@@ -534,8 +557,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[(String, Ty)], ret:
                 }
                 apply_moves(e, t, env);
                 *ret = Some(t);
+                falls = false;
             }
-            Stmt::Ret(_, None) => {}
+            Stmt::Ret(_, None) => { falls = false; }
             Stmt::If(n, cond, then_s, else_s) => {
                 let ct = type_expr(cond, env, sigs, *n)?;
                 if ct != Ty::Bool {
@@ -543,12 +567,13 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[(String, Ty)], ret:
                 }
                 let outer = env.len();
                 let mut env_then = env.clone();
-                check_stmts(then_s, &mut env_then, sigs, ret)?;
+                let ft = check_stmts(then_s, &mut env_then, sigs, ret, loop_pre, exits)?;
                 let mut env_else = env.clone();
-                check_stmts(else_s, &mut env_else, sigs, ret)?;
+                let fe = check_stmts(else_s, &mut env_else, sigs, ret, loop_pre, exits)?;
                 for k in 0..outer {
                     env[k].moved = env_then[k].moved || env_else[k].moved;
                 }
+                falls = ft || fe;
             }
             Stmt::While(n, cond, body) => {
                 let ct = type_expr(cond, env, sigs, *n)?;
@@ -556,20 +581,44 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[(String, Ty)], ret:
                     return Err(format!("line {}: `while` needs a comparison (e.g. `while x >= 1`); a bare value is not a condition in this PoC", n));
                 }
                 let outer = env.len();
+                let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_body = env.clone();
-                check_stmts(body, &mut env_body, sigs, ret)?;
-                // A variable moved inside the body must be live again at
-                // `enddo`: the next iteration would otherwise use a moved
-                // value (same rule as Rust's borrow checker for loops).
-                for k in 0..outer {
-                    if !env[k].moved && env_body[k].moved {
-                        return Err(format!("line {}: `{}` is moved inside the `while` body and not reassigned before `enddo` (the next iteration would use a moved value)", n, env[k].name));
+                let mut wexits: Vec<Vec<bool>> = Vec::new();
+                let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut wexits)?;
+                // A variable moved on a path that reaches the next
+                // iteration must be live again there (Rust's loop rule).
+                if fb {
+                    for k in 0..outer {
+                        if !pre[k] && env_body[k].moved {
+                            return Err(format!("line {}: `{}` is moved inside the `while` body and not reassigned before `enddo` (the next iteration would use a moved value)", n, env[k].name));
+                        }
                     }
                 }
-                // The body may run zero times: join pre-loop with end-of-body.
+                // Post-loop state: the body may run zero times, may fall
+                // through, and may leave via any `exit` - join them all.
                 for k in 0..outer {
-                    env[k].moved = env[k].moved || env_body[k].moved;
+                    env[k].moved = pre[k] || (fb && env_body[k].moved) || wexits.iter().any(|xs| xs[k]);
                 }
+            }
+            Stmt::Exit(n) => {
+                let pre = match loop_pre {
+                    Some(p) => p,
+                    None => return Err(format!("line {}: `exit` outside a `while` loop", n)),
+                };
+                exits.push(env[..pre.len()].iter().map(|v| v.moved).collect());
+                falls = false;
+            }
+            Stmt::Loop(n) => {
+                let pre = match loop_pre {
+                    Some(p) => p,
+                    None => return Err(format!("line {}: `loop` outside a `while` loop", n)),
+                };
+                for k in 0..pre.len() {
+                    if !pre[k] && env[k].moved {
+                        return Err(format!("line {}: `{}` is moved inside the `while` body and not reassigned before `loop` (the next iteration would use a moved value)", n, env[k].name));
+                    }
+                }
+                falls = false;
             }
             Stmt::Assign(n, id, e) => {
                 // RHS is evaluated first; a Str source variable moves.
@@ -590,7 +639,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[(String, Ty)], ret:
             }
         }
     }
-    Ok(())
+    Ok(falls)
 }
 
 // If `e` is a plain variable of type Str, using it as an initializer or a
@@ -633,7 +682,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], out: &mut String, t
             match v.ty {
                 Ty::I64 => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
                 Ty::Str => {
-                    // ptr at -(off), len at -(off-8) — same layout as the store
+                    // ptr at -(off), len at -(off-8) â same layout as the store
                     out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
                     out.push_str(&format!("    mov -{}(%rbp), %rdx\n", v.off - 8));
                 }
@@ -757,7 +806,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[(String, Ty)], out: &mut S
     }
 }
 
-fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[(String, Ty)], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize) {
+fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[(String, Ty)], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, ll: &Option<(String, String)>) {
     for s in stmts {
         match s {
             Stmt::Local(_, id, e) => {
@@ -798,11 +847,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[(
                 out.push_str(&format!("    jmp .Lelse_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lthen_{}_{}:\n", fname, id));
                 let mark = env.len();
-                cg_stmts(then_s, env, frame, sigs, strs, out, target, fname, label);
+                cg_stmts(then_s, env, frame, sigs, strs, out, target, fname, label, ll);
                 env.truncate(mark);
                 out.push_str(&format!("    jmp .Lend_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lelse_{}_{}:\n", fname, id));
-                cg_stmts(else_s, env, frame, sigs, strs, out, target, fname, label);
+                cg_stmts(else_s, env, frame, sigs, strs, out, target, fname, label, ll);
                 env.truncate(mark);
                 out.push_str(&format!(".Lend_{}_{}:\n", fname, id));
             }
@@ -814,10 +863,19 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[(
                 out.push_str(&format!("    jmp .Lendw_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lbody_{}_{}:\n", fname, id));
                 let mark = env.len();
-                cg_stmts(body, env, frame, sigs, strs, out, target, fname, label);
+                let inner = Some((format!(".Lwhile_{}_{}", fname, id), format!(".Lendw_{}_{}", fname, id)));
+                cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner);
                 env.truncate(mark);
                 out.push_str(&format!("    jmp .Lwhile_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lendw_{}_{}:\n", fname, id));
+            }
+            Stmt::Exit(_) => {
+                let (_, end) = ll.as_ref().expect("analysis checked `exit` is inside a loop");
+                out.push_str(&format!("    jmp {}\n", end));
+            }
+            Stmt::Loop(_) => {
+                let (cond, _) = ll.as_ref().expect("analysis checked `loop` is inside a loop");
+                out.push_str(&format!("    jmp {}\n", cond));
             }
             Stmt::Assign(_, id, e) => {
                 let t = expr_ty(e, env, sigs);
@@ -853,7 +911,7 @@ fn cg_func(f: &Func, sigs: &[(String, Ty)], strs: &mut Vec<String>, out: &mut St
     let mut env: Vec<CgLocal> = Vec::new();
     let mut walk_frame = 0usize;
     let mut label = 0usize;
-    cg_stmts(&f.stmts, &mut env, &mut walk_frame, sigs, strs, out, target, &f.name, &mut label);
+    cg_stmts(&f.stmts, &mut env, &mut walk_frame, sigs, strs, out, target, &f.name, &mut label, &None);
     out.push_str(&format!(".Lret_{}:\n", f.name));
     out.push_str("    leave\n    ret\n\n");
 }
@@ -1077,7 +1135,8 @@ fn main() {
         if f.name == "main" { has_main = true; }
         let mut env: Vec<Local> = Vec::new();
         let mut ret = None;
-        if let Err(m) = check_stmts(&f.stmts, &mut env, &sigs, &mut ret) {
+        let mut top_exits: Vec<Vec<bool>> = Vec::new();
+        if let Err(m) = check_stmts(&f.stmts, &mut env, &sigs, &mut ret, None, &mut top_exits) {
             eprintln!("error: {}", m);
             process::exit(1);
         }
