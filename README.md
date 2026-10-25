@@ -1163,7 +1163,11 @@ clean error (t345).
   (t486, byte-identical to oracle hk120). The borrow
   aliases the root's casillas: a write through the loop
   variable is visible reading the root directly, mid-loop
-  and after (t487, byte-identical to oracle hk121).
+  and after (t487, byte-identical to oracle hk121). `exit`
+  inside the inner of two nested middle loops still completes
+  the outer loop (t488, hk122), and a later loop over the same
+  middle re-borrows it and sees the writes (t489, hk123) -
+  both byte-identical to their oracles.
 
-Battery: 483/483 manifest cases on Linux x86-64 and Wine, plus
+Battery: 485/485 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
