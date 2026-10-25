@@ -922,3 +922,46 @@ Harbour core libraries only, `-gtstd`):
 Battery: 330/330 on Linux x86-64 and Wine, plus the ABI harness.
 No new helpers (the empty-render path pushes a dead pair; the
 line-end trim is an inline backward scan before hbc_print_str).
+
+## Iteration 33: for each / next
+
+`for each <var> in <collection> ... next` iterates a flat or
+string dynamic array, a static array or a hash (oracles
+hk17-hk32): array elements one by one, hash VALUES in insertion
+order, grown NIL casillas as NIL (t333-t337, t342, t343). The
+EACH keyword is required - `for x in a` is Harbour's E0030
+(t338) - and the loop variable must already exist, or Harbour
+stops with BASE/1003 (hk19, t339). Inside the body the variable
+is the current element as a tagged value (Dyn): printable,
+comparable against NIL and integers, usable in arithmetic
+(t343). The collection is a VARIABLE the loop borrows: it stays
+alive afterwards (hk26) and an early `return` from the body is
+safe (t342). The pre-loop value of the variable is restored
+when the loop ends, naturally or via `exit` (hk28/hk29) - the
+outer slot is never written.
+
+Registered limits of this increment, not general fidelity:
+
+- Harbour writes an assignment to the loop variable THROUGH to
+  the current element (hk32); here assigning to it is a named
+  compile error (t340).
+- The collection cannot be modified, moved or grown inside its
+  own loop - the borrowed (pointer, count) pair would dangle
+  (t341).
+- The element value borrows from the collection, so it cannot
+  escape: returning it, copying it to another local, passing it
+  to a function or storing it into a collection are named
+  compile errors (t346-t348).
+- Comparing the loop variable against a STRING is rejected for
+  now (t344): Harbour compares string elements byte-wise
+  (hk33) and raises BASE/1071 for numeric ones (hk34) - both
+  measured, support pending. NIL and integer comparisons work.
+- Temporary collections and nested arrays are not iterable yet
+  (named compile errors).
+
+Robustness fix in passing: `hb_HKeys` with a non-variable
+argument used to panic the compiler; it is now the documented
+clean error (t345).
+
+Battery: 347/347 on Linux x86-64 and Wine, plus the ABI harness
+(no new helpers, so no new ABI canary entries).
