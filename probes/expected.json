@@ -1,0 +1,128 @@
+{
+  "format": "Byte-exact expected stdout per probe. `b64` is base64 of the EXACT bytes (QOut output has no trailing LF). `sha256` over those exact bytes. Decode with: base64 -d. Probes marked hang:true have no oracle.",
+  "probes": {
+    "c12_evalorder": {
+      "sha256": "55da3d2d9e581a9b87ee283121e4d4780b1c2f624df134f96dd6ca37a87ea789",
+      "bytes": 33,
+      "b64": "CiAgICAgICAgIDEKICAgICAgICAgMgogICAgICAgICA2"
+    },
+    "c13_cap_param": {
+      "sha256": "3fc3bde21082f43e507a155f1c719ac812463c55339431d0d4edac8403fdc9da",
+      "bytes": 11,
+      "b64": "CiAgICAgICAgMTU="
+    },
+    "c14_cap_escape": {
+      "sha256": "a843aef8ac4772dcb14881e066ed15da582430ae572a2ce8d6923c405a0ef373",
+      "bytes": 11,
+      "b64": "CiAgICAgICAgNDI="
+    },
+    "c15_cap_loop": {
+      "sha256": "f294ea702103d39b4db5135f83896c9b0edeb04bf48ef84afc755a5f5568ccd5",
+      "bytes": 22,
+      "b64": "CiAgICAgICAgIDQKICAgICAgICAgNA=="
+    },
+    "c16_cap_mutate": {
+      "sha256": "973a0d21576d6ee1af3af423365fc9ecad3f8fb915b0bf171dc65958483602b3",
+      "bytes": 11,
+      "b64": "CiAgICAgICAgOTk="
+    },
+    "c17_cap_shared": {
+      "sha256": "188cb939db671dca6007f19505929e32ad7978c8f1c7ff446be99513fc291610",
+      "bytes": 11,
+      "b64": "CiAgICAgICAgIDc="
+    },
+    "d10_hash_intkey": {
+      "sha256": "1599d1f59c6501452212a6e24481d88fce7cc4914f8770cef2f09666a5db20f6",
+      "bytes": 11,
+      "b64": "CiAgICAgICAgMTA="
+    },
+    "d12_hash_keys": {
+      "sha256": "3cf1bb6ef1ac7eab82117646776d954522de034788883e574da539767ae1adfa",
+      "bytes": 4,
+      "b64": "CmIKYQ=="
+    },
+    "d1_aadd": {
+      "sha256": "fbe2732b392dee78f12d24baca3726ba6c22c51282e39d152010d437ce0abbeb",
+      "bytes": 22,
+      "b64": "CiAgICAgICAgIDIKICAgICAgICAyMA=="
+    },
+    "d2_multidim": {
+      "sha256": "ac9b6423ea2f0de2faf7dbe8d3638f4c9d8b2fcd9ea95543a1e8af493df97b4c",
+      "bytes": 33,
+      "b64": "CiAgICAgICAgIDIKICAgICAgICAgMgogICAgICAgICAy"
+    },
+    "d3_asize": {
+      "sha256": "2a55044cfcd542570f5601199487b430ba728eac096fd61a2b5a90fbf10ede69",
+      "bytes": 11,
+      "b64": "CiAgICAgICAgIDU="
+    },
+    "d4_hash": {
+      "sha256": "37248181ad8228caea2627dde92c58556e52d540fe99352bacc898ff2391d3e1",
+      "bytes": 22,
+      "b64": "CiAgICAgICAgIDEKICAgICAgICAgMg=="
+    },
+    "d5_hash_set": {
+      "sha256": "faccfcc18325fd665e2f4a9754d469e4c1ec69ea32856af2989df1650d986ddb",
+      "bytes": 22,
+      "b64": "CiAgICAgICAgIDIKICAgICAgICAgMw=="
+    },
+    "d6_hash_alias": {
+      "sha256": "a4216041d1697608fd3d0b747e6881afc7dc6f8359f8da6dbd00729c0eeeaa25",
+      "bytes": 11,
+      "b64": "CiAgICAgICAgIDk="
+    },
+    "d7_nested_alias": {
+      "sha256": "973a0d21576d6ee1af3af423365fc9ecad3f8fb915b0bf171dc65958483602b3",
+      "bytes": 11,
+      "b64": "CiAgICAgICAgOTk="
+    },
+    "d8_aadd_alias": {
+      "sha256": "e687e962e4fee5d39ddf4d6e7158eeaa4983824e9b52d2a0cb2065594bc420c6",
+      "bytes": 11,
+      "b64": "CiAgICAgICAgIDI="
+    },
+    "d9_multidim_write": {
+      "sha256": "973a0d21576d6ee1af3af423365fc9ecad3f8fb915b0bf171dc65958483602b3",
+      "bytes": 11,
+      "b64": "CiAgICAgICAgOTk="
+    },
+    "e1_asize_nil": {
+      "sha256": "e725520395ac33fb263dba03800aded6d38f128612cea01e76973008840b4883",
+      "bytes": 19,
+      "b64": "Ck5JTApOSUwKICAgICAgICAgNQ=="
+    },
+    "e2_asize_shrink": {
+      "sha256": "c3d3d16ed8bbb85e61c94f3cb4d791fec1302be486043b1ec728458ef3cc7744",
+      "bytes": 22,
+      "b64": "CiAgICAgICAgIDEKICAgICAgICAgMQ=="
+    },
+    "e4_len_empty": {
+      "sha256": "5200abafd60901507c385ee5b0fe437e0aa9b510dd0d2b7a5d0e65410068b986",
+      "bytes": 22,
+      "b64": "CiAgICAgICAgIDAKICAgICAgICAgMQ=="
+    },
+    "e6_mixed": {
+      "sha256": "9fd98228878822447c21046740c2743e91015f0e97a86bd501434ee9cfd183f7",
+      "bytes": 17,
+      "b64": "CnRleHRvCiAgICAgICAgIDE="
+    },
+    "e7_nested_aadd": {
+      "sha256": "bc7f8ea2cf2f5cc377bd57f86c298dbdd0ac0aff873387ff4dcad483f0d873a1",
+      "bytes": 22,
+      "b64": "CiAgICAgICAgIDIKICAgICAgICAgMg=="
+    },
+    "e9_param_alias": {
+      "sha256": "e687e962e4fee5d39ddf4d6e7158eeaa4983824e9b52d2a0cb2065594bc420c6",
+      "bytes": 11,
+      "b64": "CiAgICAgICAgIDI="
+    },
+    "d11_hash_missing": {
+      "hang": true,
+      "note": "Harbour interactive error dialog; no byte oracle"
+    },
+    "e5_aadd_ret": {
+      "hang": true,
+      "note": "Harbour interactive error dialog; no byte oracle"
+    }
+  }
+}
