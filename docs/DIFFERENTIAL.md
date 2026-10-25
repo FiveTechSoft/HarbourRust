@@ -134,9 +134,17 @@ normalized for whitespace.
   original assignments kept in place, sibling-branch locals renamed in
   t15, per-iteration reset preserved in t48) was run under Harbour and
   compared against HarbourRust running the ORIGINAL test: 11/11
-  RELOC-MATCH (identical values). The variants prove the programs mean
-  the same in Harbour; they do not hide that Harbour rejects the
-  original late-LOCAL form.
+  RELOC-MATCH (identical values in those runs - not a formal general
+  semantic equivalence). The variants do not hide that Harbour rejects
+  the original late-LOCAL form.
+
+Category reconciliation (disjoint, fixed to the current version):
+the widened universe was 52 positive programs (94 numbered tests existed
+at that moment). Of those 52: 39 MATCH (38 from the first pass plus t55
+after the ordering fix), 11 HB-REJECT (all 11 also RELOC-MATCH as the
+second category; t52 is one of the 11), 2 DIVERGE (t45/t46, numeric
+model). 39 + 11 + 2 = 52. t95, t96 and t97 are NEW tests added after
+that run (all MATCH); they are not part of the 52.
 - 3 DIVERGE:
   - t45/t46 (FOR bound overflow): the known pending FOR-overflow
     difference; Harbour wraps into extra iterations (double semantics),
