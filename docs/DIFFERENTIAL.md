@@ -111,3 +111,6 @@ normalization). t93 (unparenthesized use of a <(x)> pattern): Harbour
 fails at COMPILE time with E0030 at the use line; HarbourRust rejects
 with "incomplete statement" (E0020-class) - same compile-time rejection,
 different error code; registered, not claimed identical.
+
+t94 (nested optional clauses [TO <y> [BY <z>]], three use depths):
+MATCH (values identical after whitespace normalization).
