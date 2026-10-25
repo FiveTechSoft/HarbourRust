@@ -1993,7 +1993,19 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 let ta = type_expr(a, env, sigs, n)?;
                 if let Ty::Arr(_) = ta {
-                    return Err(format!("line {}: arrays cannot be passed as arguments in this increment", n));
+                    // A static root array argument is COPIED at the
+                    // boundary into a flat dynamic array the callee owns
+                    // and frees (33l). Oracle hk98: Harbour SHARES the
+                    // array (callee writes and growth are visible in the
+                    // caller), so the copy is a registered D5/D7-family
+                    // difference pending the user's contract decision -
+                    // NOT sharing. Only a variable argument and only a
+                    // flat dynamic-array parameter pin; anything deeper
+                    // stays a named rejection.
+                    if sig_params[i] != Ty::DArr || !matches!(a, Expr::Var(_)) {
+                        return Err(format!("line {}: a static array argument is copied at the boundary only into a flat dynamic-array parameter, from a variable, in this increment", n));
+                    }
+                    continue;
                 }
 
                 if ta == Ty::DArrU {
@@ -3343,7 +3355,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             }
             let sig = sigs.iter().find(|v| v.name == *id).expect("checked");
             for (i, a) in args.iter().enumerate() {
-                let m = i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::StrOwn || sig.params[i] == Ty::DArr || sig.params[i] == Ty::DArr2 || sig.params[i] == Ty::DArr3 || sig.params[i] == Ty::DArrS || sig.params[i] == Ty::Hash);
+                // A static array argument is COPIED at the boundary (33l):
+                // the source variable keeps its value.
+                let copy = matches!(a, Expr::Var(v) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::Arr(_))));
+                let m = !copy && i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::StrOwn || sig.params[i] == Ty::DArr || sig.params[i] == Ty::DArr2 || sig.params[i] == Ty::DArr3 || sig.params[i] == Ty::DArrS || sig.params[i] == Ty::Hash);
                 apply_moves(a, env, sigs, m);
             }
         }
@@ -3704,6 +3719,25 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 }
                 let ta = expr_ty(a, env, sigs);
                 let pty = psig.as_ref().and_then(|p| p.get(ai).copied());
+                if let Ty::Arr(k) = ta {
+                    // Static array argument: materialize the boundary
+                    // COPY as a dynamic array (header + tagged cells,
+                    // same shape as cg_darr2_literal's inner block); the
+                    // callee owns and frees it (33l).
+                    if let Expr::Var(src) = a {
+                        let sv = env.iter().rev().find(|x| x.name == *src).expect("checked").clone();
+                        out.push_str("    sub $16, %rsp\n");
+                        out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + k * 16));
+                        out.push_str(&format!("    movq ${}, (%rax)\n    add $8, %rax\n    mov %rax, (%rsp)\n", k));
+                        for p in 0..k {
+                            out.push_str(&format!("    mov -{}(%rbp), %r10\n", sv.off - 8 * p));
+                            out.push_str(&format!("    mov (%rsp), %r11\n    movq $0, {}(%r11)\n    mov %r10, {}(%r11)\n", p * 16, p * 16 + 8));
+                        }
+                        out.push_str(&format!("    mov (%rsp), %rax\n    mov ${}, %edx\n    add $16, %rsp\n", k));
+                        out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                        continue;
+                    }
+                }
                 cg_value(a, env, sigs, strs, out, target);
                 if ta == Ty::Dyn && pty == Some(Ty::I64) {
                     // Dyn argument to an i64 parameter: extract with the
