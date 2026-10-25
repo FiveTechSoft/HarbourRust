@@ -925,7 +925,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
         Expr::Var(id) => match env.iter().find(|v| v.name == *id) {
             None => Err(format!("line {}: undefined variable `{}`", n, id)),
             Some(v) if v.moved => Err(format!(
-                "line {}: use of moved value `{}` (strings move on assignment or when passed as an argument; they do not copy)", n, id)),
+                "line {}: use of moved value `{}` (heap values - strings and dynamic arrays - move on assignment, call or return; they do not copy)", n, id)),
             Some(v) => Ok(v.ty),
         },
         Expr::Call(id, args) => {
