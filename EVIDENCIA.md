@@ -420,14 +420,24 @@ parameters.
 - Same caveat as before: the Windows side ran under Wine 10.20, not real
   Windows.
 
-### Macro-name case sensitivity (adversarial round)
+### F3a: user-defined commands and translates (scoped)
 
-Harbour directive names are case-insensitive, but MACRO names are
-case-sensitive everywhere (probes a05/a06): `#define MiXeD 5` does not
-expand `mixed`; `#ifdef LOWER` is false when only `lower` exists. Our
-engine matches: directives compare case-insensitively, macro names are
-stored and matched exactly. Pinned by tests t82 (use of the wrong case is
-an "undefined variable" error at COMPILE time for us, vs Harbour's runtime
-BASE/1003 - different phase, both reject) and t83 (conditional selects the
-else branch, output matches Harbour). Circularity: Harbour rejects E0020;
-ours by depth cap (equivalent class, different message, registered).
+#command / #xcommand with literal words and <param> captures, and
+#translate in the call form NAME( <p> ) => body (routed to the tested
+function-like-define machinery, so it works inline in expressions).
+Verified against Harbour first (probes c01-c09): keywords match
+case-insensitively, a capture takes everything up to the next literal (at
+paren depth 0) or the rest of the line, strings stay whole, commands chain
+into commands (capped at 16), and a leading keyword whose pattern does not
+complete is an error (Harbour: E0020; ours: "incomplete statement").
+
+Scoped OUT of F3a (explicit, not silently dropped): optional [...]
+clauses, <x,...> list captures, match markers, non-call #translate forms,
+token pasting. Those need their own behavioural round.
+
+New tests t84-t87 (command basic + case-insensitive keyword, literal
+marker capture, translate inline, incomplete-pattern rejection). Full
+battery: 90/90 (87 numbered + 3 fixtures), Linux + Wine identical.
+Differential vs Harbour: t84, t85, t86 MATCH. A UTF-8 tokenization panic
+(t04) and a depth-comparison bug on closing parens were caught by the
+battery/probes and fixed before this record.
