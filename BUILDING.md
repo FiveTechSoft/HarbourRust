@@ -93,14 +93,20 @@ Wine 11.20 was also tried but does not start in constrained containers
 
 Under `dist/`:
 
-| File          | Platform            | Description                              |
-| ------------- | ------------------- | ---------------------------------------- |
-| `hbc`         | Linux x86-64        | The compiler                             |
-| `hbc.exe`     | Windows x86-64      | The compiler, cross-built as in section 4 |
+| File          | Platform            | Description                               |
+| ------------- | ------------------- | ----------------------------------------- |
+| `8-hbc`       | Linux x86-64        | The compiler                              |
+| `7-hbc.exe`   | Windows x86-64      | The compiler, cross-built as in section 4 |
 | `hola.exe`    | Windows x86-64      | `ejemplos/hola.hb` compiled as in section 3 |
 
+The `7-`/`8-` prefixes are an artifact of the upload tool used to publish
+the files; the contents are exactly the verified builds described here.
+
 SHA-256 of each file is listed in `dist/SHA256SUMS`. These binaries were
-built from the exact `src/hbc.rs` of this commit and verified by running them
-(Linux natively, Windows under Wine 10.20): `hbc.exe` and `hbc` emit
-byte-identical assembly for the same input, and `hola.exe` prints its
-expected output.
+built from `src/hbc.rs` as of commit
+`552bd2af3d6bc3683612b4b914984e7e339bbbdc` and verified by running them
+(Linux natively, Windows under Wine 10.20, not real Windows): `7-hbc.exe`
+and `8-hbc` emit byte-identical assembly for the same input, and `hola.exe`
+prints its expected output. If `src/hbc.rs` at HEAD is newer than that
+commit, the prebuilt binaries correspond to the older source; rebuild from
+the current source (sections 1-4) for binaries matching HEAD.
