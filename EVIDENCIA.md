@@ -504,3 +504,14 @@ Probes b24/b25: Harbour accepts relational operators, .AND./.OR., unary
 wrapping, zero-division rejected). t98/t99 positive. Full battery:
 102/102 (99 numbered + 3 fixtures), Linux + Wine identical.
 Differential: t98, t99 MATCH.
+
+### asm-vs-Rust check of the string helpers (todo: assembler comparison)
+
+The emitted hbc_str_eq / hbc_str_cmp assembly (Harbour EXACT-OFF
+semantics) was extracted from a compiled test and driven from C through
+register trampolines, against a Rust reference implementation of the
+same rule (right-operand length, NUL-padded left). 13 x 13 string pairs
+(169 cases: empties, prefixes both directions, embedded NUL bytes, case
+bytes) produce identical results. Optimization is NOT compared (our
+generator is naive on purpose); the behavioural rule is what was
+verified.
