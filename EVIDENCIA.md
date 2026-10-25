@@ -593,3 +593,8 @@ markers not present in the pattern are now a define-time error (b46,
 Harbour E0008; we previously failed later at the use site). t115
 positive (MATCH), t116/t117 negative (both reject). Full battery:
 120/120 (117 numbered + 3 fixtures), Linux + Wine identical.
+
+Specificity tie: b47/b47b/b47c show that with equal literal counts
+Harbour keeps the LATEST definition (earlier note said earliest; b31
+only probed unequal counts). Comparator changed to >=; t118 MATCH.
+Battery: 121/121, Linux + Wine identical.
