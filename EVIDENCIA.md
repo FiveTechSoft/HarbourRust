@@ -361,6 +361,13 @@ after the fix: 51/51 pass, `hola` Linux ELF still 8,984 bytes.
 memory management, no collation - NOT general string handling).
 Comparisons borrow both operands.
 
+count reconciliation (2026-10-25, flagged in review): iteration counts
+in this file number the tests/tXX files only and exclude the three
+fixture programs (ejemplos/hola.hb, ejemplos/prestamo_roto.hb,
+gen/arith.hb). The "55-case" line below was an arithmetic slip: the
+correct count after iteration 9 is 54 numbered tests (51 + 3 new;
+t17 was converted in place), i.e. 57 programs with the fixtures.
+
 semantic change (documented, deliberate): tests/t17_if_str_cmp.hb
 pinned "string comparison is not in the PoC yet" for `=`; it now pins
 ordering (`<`) still being rejected. 1 converted, 3 new:
@@ -374,10 +381,34 @@ negative (rejected by hbc itself before codegen, exit 1, both targets):
 - tests/t17_if_str_cmp.hb (converted) - ordering on strings
 - tests/t53_mixed_cmp.hb - string vs integer comparison
 
-Full 55-case battery re-run after the change: 55/55 pass. `hola` Linux
-ELF grew from 8,984 to 9,024 bytes because hbc_str_eq is emitted into
-every binary (no dead-code elimination in this PoC). Not yet: string
-ordering, first-class boolean, function parameters.
+Full battery re-run after the change: 54/54 numbered tests pass (57/57
+with fixtures). `hola` Linux ELF grew from 8,984 to 9,024 bytes because
+hbc_str_eq is emitted into every binary (no dead-code elimination in
+this PoC). Not yet: string ordering, first-class boolean, function
+parameters.
+
+# Iteration 10: byte-wise string ordering (2026-10-25)
+
+`<`, `<=`, `>`, `>=` on two strings via hbc_str_cmp (memcmp-style,
+-1/0/1): first differing byte decides by unsigned value; a strict
+prefix is less. No collation/locale/Unicode awareness.
+
+tests/t17_if_str_cmp.hb converted a second time (now positive: ordering
+works). 1 converted, 2 new:
+
+positive (byte-identical output on Linux x86-64 and under Wine):
+- tests/t17_if_str_cmp.hb (converted) - "abc" < "abd"
+- tests/t55_str_order.hb - prefix rule, differing-byte rule, empty
+  string, byte-value order ("Z" < "a"), <= and >= on equality
+
+negative (rejected by hbc itself before codegen, exit 1, both targets):
+- tests/t56_str_order_mixed.hb - string < integer
+
+Full battery re-run after the change: 56/56 numbered tests pass (59/59
+with fixtures). `hola` Linux ELF is now 9,056 bytes (hbc_str_cmp is
+emitted into every binary too). Not yet: first-class boolean, function
+parameters.
+
 
 
 
