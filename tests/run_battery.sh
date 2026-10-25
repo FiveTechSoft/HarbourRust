@@ -53,4 +53,9 @@ while IFS= read -r line; do
     *) echo "FAIL unknown manifest kind: $line"; fail=1;;
   esac
 done < tests/manifest.txt
+if ! bash tests/abi_harness.sh > gen/abi_harness.log 2>&1; then
+  echo "FAIL tests/abi_harness.sh (see gen/abi_harness.log)"; fail=1
+else
+  echo "PASS tests/abi_harness.sh"
+fi
 if [ $fail -eq 0 ]; then echo "ALL GREEN"; else echo "BATTERY FAILURES"; exit 1; fi
