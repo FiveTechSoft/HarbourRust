@@ -720,6 +720,26 @@ bounds-walk and append tail with the scalar path (a first draft
 duplicated the tail with an early return that dropped the following
 statements - caught by the battery, fixed before publishing).
 
+## Iteration 33l additions (426 manifest cases): static arrays as arguments
+
+f(a) on a STATIC root array is allowed: the call boundary materializes
+a COPY as a flat dynamic array (header + tagged cells) that the callee
+owns and frees - the same t312 strings pattern, one level up. Oracle
+hk98 (compiled hbmk2 -gtstd): Harbour SHARES the array (callee writes
+x[1] := 99 and growth AAdd(x, 7) are visible in the caller), so the
+copy is a registered D5/D7-family difference pending the user's
+contract decision, NOT sharing: the callee reads, writes, grows and
+shrinks its own copy and the caller's static array keeps its values
+(t425-t427 show both sides). Tests: t424 (reads through the copy,
+caller intact, balance 0), t425 (write on the copy invisible in the
+caller - Harbour would show it), t426 (growth on the copy, caller
+length unchanged), t427 (shrink on the copy, balance 0). Named
+compile errors: t428 (static argument into a deeper-pinned
+parameter), t429 (a literal argument - only variables this
+increment). The old t136 rejection keeps its shape (static array
+into an integer-pinned parameter) with the updated named message.
+No new helpers, no new ABI harness entries.
+
 ## Iteration 33k additions (420 manifest cases): borrowed middles at THREE levels
 
 f(a[i]) on a three-level array passes the middle cell's ADDRESS; the
