@@ -87,3 +87,10 @@ t145_arr_reassign_same HB-EXACT
 t146_for_eval_order HB-EXACT
 t147_arrset_move_index HB-EXACT
 t148_arrset_move_value HB-EXACT
+t150_cb_eval1 HB-EXACT
+t151_cb_eval2 HB-EXACT
+t152_cb_noparam HB-EXACT
+t153_cb_list HB-EXACT
+t154_cb_reuse HB-EXACT
+t155_cb_copy HB-EXACT
+t156_cb_extra_evaluated HB-EXACT
