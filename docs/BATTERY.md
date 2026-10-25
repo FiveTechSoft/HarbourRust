@@ -506,3 +506,22 @@ itself stays a named compile error (t315 repurposed).
 322/322 on Linux x86-64 and Wine; ABI harness PASS on both
 targets. No new helpers: hbc_asize gains kind 2 (string
 elements) reusing the already-canaried hbc_free.
+
+## ASize growth with NIL casillas on string arrays (t321 repurposed, t324-t327, iteration 31)
+
+Oracles hk13-hk15 (Harbour core libraries only, `-gtstd`): ASize
+grows the hb_HKeys array with NIL casillas (hk13), overwriting a
+grown casilla with a string works (hk14), AAdd after growth
+appends past the NIL casillas (hk15).
+
+Mirrors: t324 is byte-identical to hk14 (grow, overwrite, grow,
+shrink), t326 to hk15 (grow then AAdd). t325 prints NIL casillas
+and string elements mixed. t327 grows, shrinks and checks the
+balance is 0 (NIL casillas own nothing, live copies freed). The
+string-context read of a NIL casilla is the registered clean
+failure mode - Harbour yields NIL dynamically; the static owned
+string cannot - exit 1 with a named message (t321 repurposed;
+printing the same casilla prints NIL instead).
+
+326/326 on Linux x86-64 and Wine; ABI harness PASS on both
+targets. No new helpers.
