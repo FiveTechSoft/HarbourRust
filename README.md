@@ -327,7 +327,7 @@ frontend over the same engine.
 
 User-defined commands and translations are supported in a scoped form,
 probed against Harbour first: `#command` / `#xcommand` with literal words
-(case-insensitive), `<param>` captures, optional `[ ... ]` clauses and
+(case-insensitive), `<param>` captures, optional `[ ... ]` clauses (nesting included) and
 `<x,...>` list captures (inserted via the plain `<x>` result marker, as
 Harbour's own headers do), the parenthesized-expression marker `<(x)>`,
 and chaining; `#translate` only in the call
