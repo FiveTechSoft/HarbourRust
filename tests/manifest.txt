@@ -381,3 +381,10 @@ posx tests/t383_asize3_mid_nil.hb 1 Argument error: array access\n
 pos tests/t384_asize3_mid_shrink.hb \n         1\n         1\n         0\n         0
 pos tests/t385_asize3_root_zero.hb \n         0\n         0\n         0
 posx tests/t386_asize3_nil_casilla.hb 1 Argument error: ASIZE\n
+pos tests/t387_aadd3_mid_lit.hb \n         2\n         5\n         6\n         0\n         0
+pos tests/t388_aadd3_mid_order.hb \neval\nval\n         2
+pos tests/t389_aadd3_mid_call.hb \n         2\n         2\n         0\n         0
+pos tests/t390_aadd3_mid_var.hb \n         2\n         7\n         8\n         0\n         0
+neg tests/t391_neg_aadd3_mid_moved.hb use of moved value
+neg tests/t392_neg_aadd3_mid_deep.hb the elements of the middle level of `a` are flat dynamic arrays in this increment
+posx tests/t393_aadd3_mid_nil.hb 1 Argument error: AADD\n
