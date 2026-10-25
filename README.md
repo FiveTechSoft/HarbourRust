@@ -3,17 +3,41 @@
 **What this is:** a small proof of the idea - Harbour syntax, Rust rules,
 native executables. It is not a full compiler and does not claim to be one.
 
-## Technical transparency (what is ours, what is reused)
+## Iteration 2: the Harbour pipeline no longer touches rustc
 
-| Piece | What it is | Status |
+Iteration 1 was a syntax front-end on top of the rustc backend: `hbc`
+emitted Rust source and rustc (via LLVM) did the type checking, the
+ownership checking and the machine code generation.
+
+In this iteration `hbc` does all of that itself for the supported subset:
+
+| Piece | Who does it | Status |
 |---|---|---|
-| `src/hbc.rs` | Harbour-syntax front-end, written in Rust, compiled to a native binary | Ours, ~450 lines |
-| Type checking and ownership/move checking | Done by `rustc` | Reused (backend) |
-| Machine code generation | `rustc` via LLVM (LLVM is C++) | Reused (backend) |
+| Tokenizer, parser, AST | `hbc` | Ours |
+| Type checking | `hbc` | Ours |
+| Ownership / move checking | `hbc` | Ours |
+| x86-64 code generation | `hbc` (emits assembly) | Ours |
+| Assembler + linker | GNU binutils (`as`, `ld`) | Reused (C tools) |
+| Building `hbc` itself | `rustc` / LLVM | Reused (compiler implementation only) |
+| Runtime of produced executables | none - freestanding, direct Linux syscalls, no libc | Ours |
 
-Honest label: **a syntax front-end on top of the rustc backend**, not an
-independent compiler. The "all Rust" goal is not yet met in the backend:
-LLVM is C++. Pure routes (Cranelift, own backend) remain open.
+A Harbour program compiled with `hbc` never passes through rustc or LLVM.
+The produced executable is statically linked, has no dynamic section and
+carries no runtime (the `hola` example is ~9 KB of machine code plus string
+data).
+
+## Ownership semantics (what "Rust rules" means here, precisely)
+
+- Strings are `(ptr, len)` values that **move** on assignment and on
+  `return`: after `local b := a`, using `a` is a compile error
+  (`use of moved value`). Like Rust's `String`.
+- Integers are `i64` and **Copy**: after `local b := a`, both remain usable.
+  Like Rust's `i64`.
+- Printing **borrows**: `? a` leaves a string usable, and it can still be
+  moved afterwards.
+- All of this is enforced by `hbc` at compile time, with zero runtime cost:
+  a move is just a pointer+length copy whose source is invalidated by the
+  checker.
 
 ## Closed subset (deliberate, fail-closed)
 
@@ -27,48 +51,50 @@ return <expr> | return nil closes the function
 
 Expressions: integer literals, string literals (escapes `\"` and `\\` only),
 identifiers, `+ - * /`, parentheses, 0-argument calls `name()`.
-Anything outside this grammar is rejected by the front-end, before rustc.
-
-Type contract: integers are `i64` (emitted with the `i64` suffix), strings are
-owned `String` (they move; they do not copy).
-
-## Fail-closed design (what the review fixed)
-
-The front-end is a tokenizer + recursive-descent parser over a closed token
-set. Only a validated AST is ever emitted: identifiers are checked (charset,
-length, reserved Rust keywords), keywords match whole tokens (so `localfoo`
-or `functionevil` are rejected), string literals are re-escaped on emission,
-and no raw user text ever reaches the generated Rust. Injection attempts
-(raw Rust, `unsafe`, macros, `std::` paths) are rejected by `hbc` itself;
-rustc is a second line of defense, not the first. Undefined variables, unknown functions, duplicate `local` declarations
-and string arithmetic are also rejected by the front-end.
+Anything outside this grammar is rejected by `hbc` itself. Only a validated
+AST is ever analyzed or emitted; no raw user text ever reaches the output.
+Integer literals are range-checked (i64).
 
 ## What the tests demonstrate
 
-1. A Harbour-syntax program compiles to a native x86-64 ELF and runs
-   (`ejemplos/hola.hb` prints `32` and a greeting, zero warnings).
-2. A program that uses a variable after moving it is rejected at compile
-   time by the borrow checker: `error[E0382]: borrow of moved value`
-   (`ejemplos/prestamo_roto.hb`). This demonstrates the **ownership/move**
-   rule applied to Harbour syntax. It is a use-after-move case only - it does
-   NOT cover borrowing, references or lifetimes, which remain untested.
-3. Eight rejection tests (`tests/`) show the front-end itself rejecting
-   injections and out-of-grammar input before rustc, with real line numbers.
-4. Unicode works inside string literals and is rejected in identifiers
-   without panicking.
+1. A Harbour-syntax program compiles to a native x86-64 ELF and runs:
+   `ejemplos/hola.hb` prints `32` and a greeting
+   (`tests/t10_int_copy.hb`, `tests/t11_print_borrows.hb` also run).
+2. Use after move is rejected at compile time **by hbc itself**:
+   `ejemplos/prestamo_roto.hb` fails with
+   `error: line 5: use of moved value 'a'`. In iteration 1 this rejection
+   came from rustc's borrow checker; now it comes from our own analysis.
+   It is still a use-after-move case only - borrowing, references and
+   lifetimes beyond "printing borrows" are NOT covered.
+3. The Copy vs move distinction works in Harbour syntax
+   (`tests/t10_int_copy.hb`).
+4. Eight rejection tests (`tests/t01`-`t09`) show the front-end rejecting
+   injections and out-of-grammar input, with real line numbers. Unicode
+   works inside string literals and is rejected in identifiers without
+   panicking.
 
 ## What is NOT demonstrated
 
-Performance comparable to C/Rust on real programs (no representative
-benchmarks; timings here are from a toy program), coverage of the full Rust
-model (borrowing/lifetimes/traits/generics), a standalone backend, and the
-safety of any grammar extension beyond this subset - each extension must
-re-establish the closed-emission property.
+- Borrowing / references / lifetimes as language features (there is no
+  reference syntax yet).
+- Heap-allocated strings and `Drop`: all strings today are read-only
+  literals in `.rodata`; a move copies a pointer and a length, so there is
+  nothing to free yet.
+- Runtime safety checks: division by zero and `i64::MIN / -1` trap at
+  runtime (SIGFPE); arithmetic overflow wraps. There are no bounds or
+  overflow checks.
+- Performance comparable to C/Rust on real programs: timings here are from
+  a toy program.
+- A pure-Rust toolchain end to end: the assembler and linker are GNU
+  binutils (C), and `hbc` itself is built with rustc/LLVM. Cranelift or a
+  self-hosted path remains open.
+- The safety of any grammar extension beyond this subset: each extension
+  must re-establish the closed-emission property.
 
 ## Reproduce
 
 ```sh
 rustc -O src/hbc.rs -o hbc
-./hbc ejemplos/hola.hb gen/hola.rs && rustc -O gen/hola.rs -o gen/hola && ./gen/hola
-./hbc ejemplos/prestamo_roto.hb gen/prestamo_roto.rs && rustc gen/prestamo_roto.rs
+./hbc ejemplos/hola.hb gen/hola.s && as -o gen/hola.o gen/hola.s && ld -o gen/hola gen/hola.o && ./gen/hola
+./hbc ejemplos/prestamo_roto.hb gen/prestamo.s    # rejected by hbc itself
 ```
