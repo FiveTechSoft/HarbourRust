@@ -2502,8 +2502,31 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 // writes THROUGH to the element (hk32), a borrow of a
                 // mutable cell this increment does not implement -
                 // registered limitation.
-                let ct = type_expr(coll, env, sigs, *n)?;
                 apply_moves(coll, env, sigs, false);
+                // A nested collection a[i] whose root is an array of
+                // arrays is BORROWED from the root owner for the loop
+                // (hk53/hk54): the index expression is evaluated once,
+                // bounds-checked, and a NIL casilla (a null child)
+                // raises Harbour's BASE/1068 condition (hk58) - a clean
+                // named exit 1, registered failure mode. The root
+                // cannot be mutated, moved or grown inside the body
+                // (that covers reseating a[i] and growing the borrowed
+                // child, which could reallocate the borrowed cells).
+                let sub = matches!(coll, Expr::Index(id, _) if matches!(env.iter().find(|v| v.name == *id).map(|v| v.ty), Some(Ty::DArr2)));
+                let ct = if sub {
+                    if let Expr::Index(id, ie) = coll {
+                        if env.iter().find(|v| v.name == *id).map(|v| v.moved).unwrap_or(false) {
+                            return Err(format!("line {}: use of moved value `{}`", n, id));
+                        }
+                        let it = type_expr(ie, env, sigs, *n)?;
+                        if !matches!(it, Ty::I64 | Ty::Dyn) {
+                            return Err(format!("line {}: array index must be an integer", n));
+                        }
+                    }
+                    Ty::DArr
+                } else {
+                    type_expr(coll, env, sigs, *n)?
+                };
                 // A temporary collection (a call result: hb_HKeys(h),
                 // Array(n) or a user function returning an array or a
                 // hash; oracles hk52/hk55/hk56) is OWNED by the loop:
@@ -2511,7 +2534,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 // freed-if-nonnull on (re)entry and freed by the
                 // epilogue on every exit path (natural, `exit`,
                 // `return`). A variable collection is borrowed.
-                if !matches!(coll, Expr::Var(_) | Expr::Call(..)) {
+                if !matches!(coll, Expr::Var(_) | Expr::Call(..)) && !sub {
                     return Err(format!("line {}: `for each` iterates a variable or a function result in this increment (assign the expression to a variable first)", n));
                 }
                 if !matches!(ct, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArrS | Ty::Hash) {
@@ -2521,7 +2544,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                     Some(k) => k,
                     None => return Err(format!("line {}: `for each` loop variable `{}` must be declared first (Harbour errors BASE/1003 on an undeclared one)", n, var)),
                 };
-                let cname = match coll { Expr::Var(cn) => Some(cn.clone()), _ => None };
+                let cname = match coll {
+                    Expr::Var(cn) => Some(cn.clone()),
+                    Expr::Index(cn, _) if sub => Some(cn.clone()),
+                    _ => None,
+                };
                 if let Some(cn) = &cname {
                     if cn == var {
                         return Err(format!("line {}: `for each` loop variable cannot be the collection itself", n));
@@ -4327,7 +4354,30 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
 ", coll_off, fl, fl, coll_off)),
                     }
                 }
-                cg_value(coll, env, sigs, strs, out, target);
+                if let Expr::Index(id, ie) = coll {
+                    if matches!(env.iter().rev().find(|v| v.name == *id).map(|v| v.ty), Some(Ty::DArr2)) {
+                        // Borrow the child (ptr, len) from the root's
+                        // cell: the index evaluates ONCE and is
+                        // bounds-checked; a NIL casilla (null child)
+                        // is Harbour's BASE/1068 condition (hk58) -
+                        // hbc_arracc_error, a clean named exit 1,
+                        // registered failure mode. Nothing owned here.
+                        let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
+                        if expr_ty(ie, env, sigs) == Ty::Dyn {
+                            cg_expr(ie, env, sigs, strs, out, target);
+                            out.push_str("    call hbc_dyn_to_i64\n");
+                        } else {
+                            cg_expr(ie, env, sigs, strs, out, target);
+                        }
+                        let fl2 = fresh_lbl();
+                        out.push_str(&format!("    cmp $1, %rax\n    jl .Lfeb{}\n    cmp -{}(%rbp), %rax\n    jg .Lfeb{}\n", fl2, v.off - 8, fl2));
+                        out.push_str(&format!("    mov -{}(%rbp), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov 8(%rax), %rdx\n    mov (%rax), %rcx\n    test %rcx, %rcx\n    je .Lfen{}\n    mov %rcx, %rax\n    jmp .Lfeo{}\n.Lfeb{}:\n    call hbc_bound_error\n.Lfen{}:\n    call hbc_arracc_error\n.Lfeo{}:\n", v.off, fl2, fl2, fl2, fl2, fl2));
+                    } else {
+                        cg_value(coll, env, sigs, strs, out, target);
+                    }
+                } else {
+                    cg_value(coll, env, sigs, strs, out, target);
+                }
                 out.push_str(&format!("    mov %rax, -{}(%rbp)
     mov %rdx, -{}(%rbp)
 ", coll_off, coll_off - 8));
@@ -6016,6 +6066,20 @@ hbc_dyncmp_ge_error:
     mov $1, %edi
     syscall
 
+# hbc_arracc_error: a NIL casilla of an array of arrays iterated with
+# FOR EACH (noreturn). Harbour raises BASE/1068 "Argument error:
+# array access" (hk58, dialog hangs headless) - clean named exit 1
+# here, registered failure mode, same error condition.
+hbc_arracc_error:
+    lea .Larraccmsg(%rip), %rsi
+    mov $29, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 hbc_aadd_error:
     lea .Laadderrmsg(%rip), %rsi
     mov $21, %edx
@@ -6401,6 +6465,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Ldyncmpgtmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,62,10\n");
     out.push_str(".Ldyncmplemsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,60,61,10\n");
     out.push_str(".Ldyncmpgemsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,62,61,10\n");
+    out.push_str(".Larraccmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,97,114,114,97,121,32,97,99,99,101,115,115,10\n");
     // "Argument error: ASIZE\n" (22 bytes; Harbour BASE/2023 hangs headless, oracle n7)
     out.push_str(".Lasizeerrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,65,83,73,90,69,10\n");
 }
@@ -6767,6 +6832,17 @@ hbc_dyncmp_ge_error:
     sub $48, %rsp
     lea .Ldyncmpgemsg(%rip), %rax
     mov $19, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+hbc_arracc_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Larraccmsg(%rip), %rax
+    mov $29, %edx
     call hbc_print_str
     mov $1, %ecx
     call ExitProcess
