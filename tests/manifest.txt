@@ -424,3 +424,8 @@ pos tests/t426_static_arg_growcopy.hb \n         4\n         7\n         0\n    
 pos tests/t427_static_arg_shrinkcopy.hb \n         2\n         0\n         3\n         0\n         0
 neg tests/t428_neg_static_arg_deep.hb is copied at the boundary only into a flat dynamic-array parameter
 neg tests/t429_neg_static_arg_literal.hb is copied at the boundary only into a flat dynamic-array parameter
+pos tests/t430_static_return_basic.hb \n         3\n         1\n         2\n         3\n         0\n         0
+pos tests/t431_static_return_mutate.hb \n        99\n         4\n         7\n         0\n         0
+pos tests/t432_static_return_shrink.hb \n         1\n         1\n         0\n         0
+neg tests/t433_neg_static_return_literal.hb a static array return is a variable in this increment
+neg tests/t434_neg_len_temp.hb `len` of an array temporary is not in this increment
