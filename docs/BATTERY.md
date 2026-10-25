@@ -319,6 +319,15 @@ the NIL literal itself has existed in expressions since iteration 15
 (`Array(3, 0)` rows are real empty arrays, never NIL) and t270
 (ASize shrink to 0: every child freed, registry balance 0).
 
+## Class parser gate (t290-t293, iteration 26)
+
+t290 pins the post-parse rejection of a full class program (the
+runtime representation is pending). t291 pins the multiple
+inheritance error, t292 the class-scope error, t293 the `==`
+identity error. t01's pinned message moved from "':' without '='"
+to "trailing tokens after expression": `::` is a real token now,
+so the injection probe fails one stage later; it still fails.
+
 ## Array() with three dimensions (t285-t286, iteration 25)
 
 t285 mirrors oracle pr7: Array(2, 2, 3) gives len 2/2/3, innermost
