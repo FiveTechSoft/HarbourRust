@@ -129,6 +129,27 @@ the function at once with that value (`tests/t16_if_return.hb`,
 - A string moved into an early return stays moved on that path, so using
   it after the block fails at the join (`tests/t36_return_move_join.hb`).
 
+## Iteration 8: for / next
+
+`for i := <start> to <end> [step <n>] ... next` counts over an integer
+range (`tests/t37_for_basic.hb`: up, stepped, counted down with a
+negative step, zero-trip). `exit` and `loop` work inside it
+(`tests/t42_for_exit_loop.hb`). Deliberate PoC restrictions, several of
+them stricter than the analogous Rust constructs:
+
+- The step must be a **non-zero integer literal**, so the counting
+  direction is fixed at compile time (`tests/t43_for_step_zero.hb`,
+  `tests/t44_for_step_expr.hb`). Harbour allows any expression here.
+- Bounds are evaluated once before the loop and must be integers.
+- The loop variable is scoped to the loop (`tests/t38_for_scope.hb`),
+  may not reuse a name already in scope - this PoC does not shadow,
+  unlike Rust (`tests/t39_for_shadow.hb`) - and cannot be assigned
+  inside the body (`tests/t40_for_assign_var.hb`).
+- The move checker applies the same join rules as in `while`: a variable
+  moved in the body must be reassigned before `next`
+  (`tests/t41_for_move.hb`). These joins are conservative: they can
+  reject programs that would run fine, which is intended.
+
 ## Ownership semantics (what "Rust rules" means here, precisely)
 
 - Strings are `(ptr, len)` values that **move** on assignment and on
@@ -151,8 +172,10 @@ function name()            opens a function (main is the entry point)
     ? <expr>               prints
     if <cond> ... endif    conditional, optional else, nestable
     while <cond> ... enddo loop, re-evaluates the condition each iteration
-    exit                     leaves the innermost while
-    loop                     skips to the next iteration of the innermost while
+    for i := <a> to <b> [step <n>] ... next
+                             counted loop; n is a non-zero integer literal
+    exit                     leaves the innermost loop
+    loop                     skips to the next iteration of the innermost loop
     return <expr>            early return: closes the function with a value
 return <expr> | return nil closes the function  (a closing top-level return
                              is always required)
@@ -213,7 +236,9 @@ Integer literals are range-checked (i64).
 - A pure-Rust toolchain end to end: the assembler and linker are GNU
   binutils (C), and `hbc` itself is built with rustc/LLVM. Cranelift or a
   self-hosted path remains open.
-- `for` loops.
+- A `for` step given as an expression (Harbour allows it; this PoC
+  takes only literals so the direction is known at compile time).
+- Shadowing: no name may be reused while it is in scope (Rust allows it).
 - String comparisons and a first-class boolean: conditions compare
   integers only.
 - The safety of any grammar extension beyond this subset: each extension
