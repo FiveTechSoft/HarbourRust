@@ -200,8 +200,8 @@ neg tests/t197_md_neg_extract.hb cannot extract the subarray
 neg tests/t198_md_neg_selfinsert.hb the elements of `a` are dynamic arrays
 neg tests/t199_md_neg_mixed.hb cannot mix integers and arrays
 neg tests/t200_md_neg_depth3.hb nested array elements are tagged scalars
-neg tests/t201_md_neg_param.hb needs an array of arrays
-neg tests/t202_md_neg_return.hb arrays of arrays cannot be returned
+pos tests/t201_md_neg_param.hb \n         1
+pos tests/t202_md_neg_return.hb \n         1
 neg tests/t203_md_neg_asize_unpinned.hb unknown until its first `AAdd`
 neg tests/t204_md_neg_twolevel_flat.hb two-level indexing needs an array of arrays
 neg tests/t205_md_neg_parent_moved.hb use of moved value
@@ -268,3 +268,7 @@ pos tests/t267_nilslot_cmp.hb \ncasilla es nil\nhijo no nil\nvacio no nil
 pos tests/t268_nilslot_cmp2.hb \nizq nil\nhijo distinto\nllamada\nuna vez
 pos tests/t269_nilslot_arr0.hb \nfila vacia no nil\n         3\n         0\n         0\n         0
 pos tests/t270_nilslot_shrink.hb \n         0\n         0\n         0
+pos tests/t271_param_nested.hb \n         2\n         2
+pos tests/t272_return_nested.hb \n         2\n         4
+neg tests/t273_param_moved.hb use of moved value
+pos tests/t274_param_balance.hb \n         3\n         2\n         0\n         0
