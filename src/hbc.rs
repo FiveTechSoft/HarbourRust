@@ -3090,6 +3090,12 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 // bounds-checked, and a NIL casilla at either level is
                 // the BASE/1068 failure mode.
                 let sub2 = matches!(coll, Expr::Index2(id, _, _) if matches!(env.iter().find(|v| v.name == *id).map(|v| v.ty), Some(Ty::DArr3)));
+                // Depth 4 (hk109/hk110): a[i][j][k] on an array of four
+                // levels borrows the level-3 child the same way; the
+                // three index expressions evaluate once, left to right,
+                // each level is bounds-checked, and a NIL casilla at any
+                // level is the BASE/1068 failure mode.
+                let sub3 = matches!(coll, Expr::Index3(id, _, _, _) if matches!(env.iter().find(|v| v.name == *id).map(|v| v.ty), Some(Ty::DArr4)));
                 let ct = if sub {
                     if let Expr::Index(id, ie) = coll {
                         if env.iter().find(|v| v.name == *id).map(|v| v.moved).unwrap_or(false) {
@@ -3114,6 +3120,19 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         }
                     }
                     Ty::DArr
+                } else if sub3 {
+                    if let Expr::Index3(id, ie, ie2, ie3) = coll {
+                        if env.iter().find(|v| v.name == *id).map(|v| v.moved).unwrap_or(false) {
+                            return Err(format!("line {}: use of moved value `{}`", n, id));
+                        }
+                        for ix in [ie, ie2, ie3] {
+                            let it = type_expr(ix, env, sigs, *n)?;
+                            if !matches!(it, Ty::I64 | Ty::Dyn) {
+                                return Err(format!("line {}: array index must be an integer", n));
+                            }
+                        }
+                    }
+                    Ty::DArr
                 } else {
                     type_expr(coll, env, sigs, *n)?
                 };
@@ -3124,7 +3143,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 // freed-if-nonnull on (re)entry and freed by the
                 // epilogue on every exit path (natural, `exit`,
                 // `return`). A variable collection is borrowed.
-                if !matches!(coll, Expr::Var(_) | Expr::Call(..)) && !sub && !sub2 {
+                // An Index3 collection that is not a DArr4 level-3
+                    // borrow falls through to type_expr: on a shallower
+                    // root it types as an element read (Dyn) and the
+                    // collection-type check below names the real problem.
+                    if !matches!(coll, Expr::Var(_) | Expr::Call(..) | Expr::Index3(..)) && !sub && !sub2 && !sub3 {
                     return Err(format!("line {}: `for each` iterates a variable or a function result in this increment (assign the expression to a variable first)", n));
                 }
                 if !matches!(ct, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArrS | Ty::Hash) {
@@ -3138,6 +3161,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     Expr::Var(cn) => Some(cn.clone()),
                     Expr::Index(cn, _) if sub => Some(cn.clone()),
                     Expr::Index2(cn, _, _) if sub2 => Some(cn.clone()),
+                    Expr::Index3(cn, _, _, _) if sub3 => Some(cn.clone()),
                     _ => None,
                 };
                 if let Some(cn) = &cname {
@@ -5501,6 +5525,91 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
 ");
                         } else {
                             cg_expr(ie2, env, sigs, strs, out, target);
+                        }
+                        out.push_str(&format!("    pop %rdx
+    pop %rcx
+    cmp $1, %rax
+    jl .Lfeb{}
+    cmp %rdx, %rax
+    jg .Lfeb{}
+    dec %rax
+    shl $4, %rax
+    add %rcx, %rax
+    mov 8(%rax), %rdx
+    mov (%rax), %rcx
+    test %rcx, %rcx
+    je .Lfen{}
+    mov %rcx, %rax
+    jmp .Lfeo{}
+.Lfeb{}:
+    call hbc_bound_error
+.Lfen{}:
+    call hbc_arracc_error
+.Lfeo{}:
+", fl2, fl2, fl2, fl2, fl2, fl2, fl2));
+                    } else {
+                        cg_value(coll, env, sigs, strs, out, target);
+                    }
+                } else if let Expr::Index3(id, ie, ie2, ie3) = coll {
+                    if matches!(env.iter().rev().find(|v| v.name == *id).map(|v| v.ty), Some(Ty::DArr4)) {
+                        // Depth-4 borrow (hk109/hk110): evaluate each
+                        // index ONCE, left to right, bounds-check each
+                        // level, walk to the level-3 child; a NIL
+                        // casilla at any level is the BASE/1068 failure
+                        // mode (hbc_arracc_error). Nothing owned here.
+                        let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
+                        if expr_ty(ie, env, sigs) == Ty::Dyn {
+                            cg_expr(ie, env, sigs, strs, out, target);
+                            out.push_str("    call hbc_dyn_to_i64
+");
+                        } else {
+                            cg_expr(ie, env, sigs, strs, out, target);
+                        }
+                        let fl2 = fresh_lbl();
+                        out.push_str(&format!("    cmp $1, %rax
+    jl .Lfeb{}
+    cmp -{}(%rbp), %rax
+    jg .Lfeb{}
+    mov -{}(%rbp), %r11
+    dec %rax
+    shl $4, %rax
+    add %r11, %rax
+    mov 8(%rax), %rdx
+    mov (%rax), %rcx
+    test %rcx, %rcx
+    je .Lfen{}
+    push %rcx
+    push %rdx
+", fl2, v.off - 8, fl2, v.off, fl2));
+                        if expr_ty(ie2, env, sigs) == Ty::Dyn {
+                            cg_expr(ie2, env, sigs, strs, out, target);
+                            out.push_str("    call hbc_dyn_to_i64
+");
+                        } else {
+                            cg_expr(ie2, env, sigs, strs, out, target);
+                        }
+                        out.push_str(&format!("    pop %rdx
+    pop %rcx
+    cmp $1, %rax
+    jl .Lfeb{}
+    cmp %rdx, %rax
+    jg .Lfeb{}
+    dec %rax
+    shl $4, %rax
+    add %rcx, %rax
+    mov 8(%rax), %rdx
+    mov (%rax), %rcx
+    test %rcx, %rcx
+    je .Lfen{}
+    push %rcx
+    push %rdx
+", fl2, fl2, fl2));
+                        if expr_ty(ie3, env, sigs) == Ty::Dyn {
+                            cg_expr(ie3, env, sigs, strs, out, target);
+                            out.push_str("    call hbc_dyn_to_i64
+");
+                        } else {
+                            cg_expr(ie3, env, sigs, strs, out, target);
                         }
                         out.push_str(&format!("    pop %rdx
     pop %rcx
