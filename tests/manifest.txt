@@ -452,3 +452,9 @@ pos tests/t455_aaddsub3_order.hb \nI1\nI2\nI3\nV\n         3\n         8\n      
 pos tests/t456_aaddsub3_bracket.hb \n         3\n         8\n         0\n         0
 neg tests/t457_neg_aaddsub3_root.hb `AAdd` on a[i][j][k] needs an array of arrays of arrays of arrays
 neg tests/t286_neg_array4d.hb `Array` with more than four dimensions is not in this increment
+pos tests/t458_foreach_sub3.hb \n         7\n         8\n         2\n         2\n         7\n         0\n         0
+pos tests/t459_foreach_sub3_order.hb \nI1\nI2\nI3\n         5\nNIL\n         0\n         0
+pos tests/t460_foreach_sub3_bracket.hb \n         7\n         8\n         0\n         0
+neg tests/t461_neg_foreach_sub3_root.hb `for each` needs a flat or string array or a hash in this increment
+neg tests/t462_neg_foreach_sub3_touch.hb cannot be modified, moved or grown inside its own loop
+posx tests/t463_foreach_sub3_bound.hb 1 Bound error: array access
