@@ -32,15 +32,14 @@ use std::process;
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2 }
+enum Ty { I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2, Dyn }
 
-// NIL is an in-band tag: the i64 value -9223372036854775808 (i64::MIN) is
-// reserved as the NIL sentinel (probe n1: NIL prints "NIL", NIL == NIL is
-// .T., NIL == 0 is .F., `return nil` returns it, ASize-grown slots hold it).
-// Documented cost: that one extreme integer is unrepresentable, and
-// arithmetic / ordering on NIL evaluates numerically where Harbour raises a
-// (headless-unreachable) type error.
-const NIL_SENT: i64 = i64::MIN;
+// Dyn is the tagged-union value for any route that can carry NIL (probes
+// n1/n2/n3): a 16-byte {tag, payload} pair, tag 0 = i64 payload, tag 1 =
+// NIL. No integer is reserved - i64::MIN is an ordinary payload. Pure i64
+// stays 8 bytes wherever NIL is proven absent. In registers a Dyn travels
+// as rax=tag, rdx=payload (the Str ptr/len convention reused); on the
+// stack the tag is the first word, payload the second.
 
 #[derive(Clone, PartialEq, Debug)]
 enum Tok {
@@ -227,6 +226,9 @@ struct Func {
     params: Vec<String>,
     ret: Option<Ty>,
     stmts: Vec<Stmt>,
+    // Locals widened to Dyn by prescan (a later assignment can deliver a
+    // NIL-capable value, probe n2). Filled in the infer loop, used by cg.
+    dyn_names: std::collections::HashSet<String>,
 }
 
 struct P {
@@ -506,8 +508,12 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 // Early return inside an if/while block: an expression is
                 // required, so every early exit carries a typed value.
                 let stmt = match toks.len() {
-                    1 => return Err(format!("line {}: an early `return` inside a block needs a value (`return <expr>`); only the closing top-level return may be bare or `nil`", n)),
-                    2 if toks[1] == Tok::KwNil => return Err(format!("line {}: an early `return nil` inside a block is not in the PoC (it would leave the return value undefined); use `return <expr>`", n)),
+                    1 => return Err(format!("line {}: an early `return` inside a block needs a value (`return <expr>` or `return nil`); only the closing top-level return may be bare", n)),
+                    // `return nil` IS a value since v2c: NIL is a real
+                    // tagged value, so an early nil return unifies with the
+                    // other returns like any expression (probe n2 order-
+                    // independence).
+                    2 if toks[1] == Tok::KwNil => Stmt::Ret(n, None),
                     _ => Stmt::Ret(n, Some(parse_expr_tokens(toks[1..].to_vec(), n)?)),
                 };
                 out.push(stmt);
@@ -837,7 +843,7 @@ fn parse(src: &str) -> Result<Vec<Func>, String> {
             _ => return Err(format!("line {}: expected `function name(...)`", n)),
         };
         i += 1;
-        let mut f = Func { name, params, ret: None, stmts: Vec::new() };
+        let mut f = Func { name, params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
         parse_stmts(&lines, &mut i, &mut f.stmts, 0)?;
         if i >= lines.len() || lines[i].1[0] != Tok::KwReturn {
             return Err(format!("function `{}` without closing return", f.name));
@@ -902,12 +908,24 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
         f.params.iter().position(|p| p == id)
     }
     fn setpin(pin: &mut Vec<Option<Ty>>, idx: usize, ty: Ty, n: usize) -> Result<(), String> {
+        fn tname(t: Ty) -> &'static str {
+            match t {
+                Ty::I64 => "an integer",
+                Ty::Str => "a string",
+                Ty::Dyn => "a NIL-capable value",
+                _ => "a value of another type",
+            }
+        }
         match pin[idx] {
             None => { pin[idx] = Some(ty); Ok(()) }
             Some(t) if t == ty => Ok(()),
-            Some(t) => Err(format!("line {}: parameter used as both {} and {}", n,
-                if t == Ty::I64 { "an integer" } else { "a string" },
-                if ty == Ty::I64 { "an integer" } else { "a string" })),
+            // A parameter used numerically in one place and as NIL in
+            // another pins to the tagged union (probe n2: x := NIL / x := 9).
+            Some(t) if matches!((t, ty), (Ty::I64, Ty::Dyn) | (Ty::Dyn, Ty::I64)) => {
+                pin[idx] = Some(Ty::Dyn);
+                Ok(())
+            }
+            Some(t) => Err(format!("line {}: parameter used as both {} and {}", n, tname(t), tname(ty))),
         }
     }
     // Pin parameter vars appearing directly (not under a call) in e.
@@ -946,12 +964,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                 let ta = match a.as_ref() {
                     Expr::Str(_) => Some(Ty::Str),
                     Expr::Int(_) => Some(Ty::I64),
+                    Expr::Nil => Some(Ty::Dyn),
                     Expr::Var(v) => lit.iter().find(|(x, _)| x == v).map(|(_, t)| *t),
                     _ => None,
                 };
                 let tb = match b.as_ref() {
                     Expr::Str(_) => Some(Ty::Str),
                     Expr::Int(_) => Some(Ty::I64),
+                    Expr::Nil => Some(Ty::Dyn),
                     Expr::Var(v) => lit.iter().find(|(x, _)| x == v).map(|(_, t)| *t),
                     _ => None,
                 };
@@ -1010,7 +1030,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
             _ => Ok(()),
         }
     }
-    fn walk_stmts(f: &Func, stmts: &[Stmt], sigs: &[Sig], lit: &mut Vec<(String, Ty)>, pin: &mut Vec<Option<Ty>>) -> Result<(), String> {
+    fn walk_stmts(f: &Func, stmts: &[Stmt], sigs: &[Sig], lit: &mut Vec<(String, Ty)>, pin: &mut Vec<Option<Ty>>, nil_ret: bool) -> Result<(), String> {
         for st in stmts {
             match st {
                 Stmt::Local(n, name, e) => {
@@ -1021,18 +1041,30 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                         _ => {}
                     }
                 }
-                Stmt::Assign(n, _, e) => { walk(f, e, sigs, lit, pin, *n)?; }
+                Stmt::Assign(n, id, e) => {
+                    // `x := NIL` pins a parameter to the tagged union.
+                    if matches!(e, Expr::Nil) {
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::Dyn, pin, *n)?;
+                    }
+                    walk(f, e, sigs, lit, pin, *n)?;
+                }
                 Stmt::Print(n, es) => { for e in es { walk(f, e, sigs, lit, pin, *n)?; } }
-                Stmt::Ret(n, Some(e)) => { walk(f, e, sigs, lit, pin, *n)?; }
+                Stmt::Ret(n, Some(e)) => {
+                    // Mixed return (a value here, bare `return` / `return
+                    // nil` elsewhere): the value is tagged, so a returned
+                    // parameter pins Dyn (probe n2).
+                    if nil_ret { pin_vars(f, e, Ty::Dyn, pin, *n)?; }
+                    walk(f, e, sigs, lit, pin, *n)?;
+                }
                 Stmt::Ret(_, None) => {}
                 Stmt::If(n, c, a, b) => {
                     walk(f, c, sigs, lit, pin, *n)?;
-                    walk_stmts(f, a, sigs, lit, pin)?;
-                    walk_stmts(f, b, sigs, lit, pin)?;
+                    walk_stmts(f, a, sigs, lit, pin, nil_ret)?;
+                    walk_stmts(f, b, sigs, lit, pin, nil_ret)?;
                 }
                 Stmt::While(n, c, body) => {
                     walk(f, c, sigs, lit, pin, *n)?;
-                    walk_stmts(f, body, sigs, lit, pin)?;
+                    walk_stmts(f, body, sigs, lit, pin, nil_ret)?;
                 }
                 Stmt::For(n, _, a, b, _, body) => {
                     // for bounds are i64 by construction (integer counters
@@ -1040,7 +1072,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     pin_vars(f, a, Ty::I64, pin, *n)?;
                     pin_vars(f, b, Ty::I64, pin, *n)?;
                     walk(f, a, sigs, lit, pin, *n)?; walk(f, b, sigs, lit, pin, *n)?;
-                    walk_stmts(f, body, sigs, lit, pin)?;
+                    walk_stmts(f, body, sigs, lit, pin, nil_ret)?;
                 }
                 Stmt::ArrSet(n, _, ie, e) => {
                     pin_vars(f, ie, Ty::I64, pin, *n)?;
@@ -1083,7 +1115,16 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
         }
         Ok(())
     }
-    walk_stmts(f, &f.stmts, sigs, &mut lit, &mut pin)?;
+    fn any_nil_ret(stmts: &[Stmt]) -> bool {
+        stmts.iter().any(|s| match s {
+            Stmt::Ret(_, None) => true,
+            Stmt::If(_, _, a, b) => any_nil_ret(a) || any_nil_ret(b),
+            Stmt::While(_, _, b) | Stmt::For(_, _, _, _, _, b) => any_nil_ret(b),
+            _ => false,
+        })
+    }
+    let nil_ret = any_nil_ret(&f.stmts);
+    walk_stmts(f, &f.stmts, sigs, &mut lit, &mut pin, nil_ret)?;
     for (i, p) in f.params.iter().enumerate() {
         if pin[i].is_none() {
             return Err(format!("cannot infer the type of parameter `{}` of function `{}` (printing, returning or copying it is not enough; use it in arithmetic or compare it against a value of known type)", p, f.name));
@@ -1184,7 +1225,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                         if let Some(x) = env.iter_mut().find(|x| x.name == *v && x.ty == Ty::Str) { x.moved = true; }
                     }
                 }
-                if ta != sig.params[i] {
+                let ok = ta == sig.params[i]
+                    || (ta == Ty::Dyn && sig.params[i] == Ty::I64)  // runtime extract (nil -> clean type error)
+                    || (ta == Ty::I64 && sig.params[i] == Ty::Dyn); // tagged at the call
+                if !ok {
                     return Err(format!("line {}: argument {} of `{}` must be {}, got {}",
                         n, i + 1, id,
                         ty_name(sig.params[i]), ty_name(ta)));
@@ -1198,12 +1242,15 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
         Expr::Bin(_, a, b) => {
             let ta = type_expr(a, env, sigs, n)?;
             let tb = type_expr(b, env, sigs, n)?;
-            if ta != Ty::I64 || tb != Ty::I64 {
+            // Dyn operands are extracted at runtime: a NIL payload is a
+            // clean type error (Harbour's interactive dialog is the
+            // registered failure-mode difference, same condition).
+            if !matches!(ta, Ty::I64 | Ty::Dyn) || !matches!(tb, Ty::I64 | Ty::Dyn) {
                 return Err(format!("line {}: arithmetic requires integers", n));
             }
             Ok(Ty::I64)
         }
-        Expr::Nil => Ok(Ty::I64),
+        Expr::Nil => Ok(Ty::Dyn),
         Expr::Cmp(op, a, b) => {
             let ta = type_expr(a, env, sigs, n)?;
             let tb = type_expr(b, env, sigs, n)?;
@@ -1244,6 +1291,20 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                 let _ = op;
                 return Ok(Ty::Bool);
             }
+            // Dyn against a number: tag dispatch at runtime (nil = nil is
+            // .T., nil against a payload is .F. under `=`, payloads compare).
+            if matches!(ta, Ty::Dyn | Ty::I64) && matches!(tb, Ty::Dyn | Ty::I64) {
+                return Ok(Ty::Bool);
+            }
+            // Dyn against a string: `=` is always .F. in Harbour (probe n1:
+            // "" = NIL is .F.), `#` always .T.; ordering is a Harbour type
+            // error, rejected here at compile time.
+            if (ta == Ty::Dyn && tb == Ty::Str) || (ta == Ty::Str && tb == Ty::Dyn) {
+                return match op {
+                    CmpOp::Eq | CmpOp::Ne => Ok(Ty::Bool),
+                    _ => Err(format!("line {}: cannot order a string against a number in this PoC (Harbour raises a type error)", n)),
+                };
+            }
             if ta != tb {
                 return Err(format!("line {}: cannot compare a string with an integer in this PoC", n));
             }
@@ -1258,8 +1319,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                     match e {
                         Expr::ArrLit(inner) => {
                             for ie in inner {
-                                if type_expr(ie, env, sigs, n)? != Ty::I64 {
-                                    return Err(format!("line {}: nested array elements must be integers in this increment", n));
+                                if !matches!(type_expr(ie, env, sigs, n)?, Ty::I64 | Ty::Dyn) {
+                                    return Err(format!("line {}: nested array elements are tagged scalars (integer or NIL)", n));
                                 }
                             }
                         }
@@ -1279,7 +1340,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
         Expr::Index(id, ie) => {
             // Arrays are [i64; N] in the Rust model: Copy elements, no
             // moves, no ownership involvement (rustc-verified semantics).
-            if type_expr(ie, env, sigs, n)? != Ty::I64 {
+            let it = type_expr(ie, env, sigs, n)?;
+            if it != Ty::I64 && it != Ty::Dyn {
                 return Err(format!("line {}: array index must be an integer", n));
             }
             match env.iter().find(|v| v.name == *id) {
@@ -1288,7 +1350,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                     if v.moved {
                         return Err(format!("line {}: use of moved value `{}`", n, id));
                     }
-                    Ok(Ty::I64)
+                    // Elements are {tag, payload}: a read is a Dyn value
+                    // (probes n1/n2: a grown or NIL-stored slot reads NIL).
+                    Ok(Ty::Dyn)
                 }
                 Some(v) if v.ty == Ty::DArrU => {
                     Err(format!("line {}: the element type of `{}` is unknown until its first `AAdd` (pin it first)", n, id))
@@ -1301,6 +1365,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                 }
                 Some(v) => match v.ty {
                     Ty::Arr(k) => {
+                        if it != Ty::I64 {
+                            return Err(format!("line {}: array index must be an integer", n));
+                        }
                         if let Expr::Int(lit) = ie.as_ref() {
                             let bad = lit.parse::<i64>().map(|x| x < 1 || x > k as i64).unwrap_or(true);
                             if bad {
@@ -1316,13 +1383,14 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
         Expr::Index2(id, ie, ie2) => {
             // a[i][j]: a transient indexed BORROW of the subarray (probe
             // m1). Both indices are integers; the child is never moved out.
-            if type_expr(ie, env, sigs, n)? != Ty::I64 || type_expr(ie2, env, sigs, n)? != Ty::I64 {
+            if !matches!(type_expr(ie, env, sigs, n)?, Ty::I64 | Ty::Dyn)
+                || !matches!(type_expr(ie2, env, sigs, n)?, Ty::I64 | Ty::Dyn) {
                 return Err(format!("line {}: array indices must be integers", n));
             }
             match env.iter().find(|v| v.name == *id) {
                 None => Err(format!("line {}: undefined variable `{}`", n, id)),
                 Some(v) if v.moved => Err(format!("line {}: use of moved value `{}`", n, id)),
-                Some(v) if v.ty == Ty::DArr2 => Ok(Ty::I64),
+                Some(v) if v.ty == Ty::DArr2 => Ok(Ty::Dyn),
                 Some(v) if v.ty == Ty::DArrU => Err(format!("line {}: the element type of `{}` is unknown until its first `AAdd` (pin it first)", n, id)),
                 Some(_) => Err(format!("line {}: two-level indexing needs an array of arrays; `{}` is not one", n, id)),
             }
@@ -1365,6 +1433,7 @@ fn ty_name(t: Ty) -> &'static str {
         Ty::Arr(_) => "an array",
         Ty::Block(_) => "a codeblock",
         Ty::DArr => "a dynamic array",
+        Ty::Dyn => "a dynamic value",
     }
 }
 
@@ -1404,7 +1473,85 @@ fn has_value_return(stmts: &[Stmt]) -> bool {
     })
 }
 
-fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Option<Ty>, loop_pre: Option<&Vec<bool>>, exits: &mut Vec<Vec<bool>>) -> Result<bool, String> {
+// Pre-scan: which locals can ever hold a Dyn (NIL-capable) value? Seeds:
+// a NIL literal, a dynamic-array element read, or a call to a Dyn-returning
+// function on the RHS of any local/assign; propagation through plain Var
+// copies to a fixpoint (probe n2: a variable is re-tagged live, so the
+// width must be known before the frame is laid out). Params pinned Dyn by
+// the pin pass seed the set too. Only I64 declarations widen; strings,
+// arrays and codeblocks never change type.
+fn prescan_dyn(f: &Func, sigs: &[Sig], ptys: &[Ty]) -> std::collections::HashSet<String> {
+    use std::collections::HashSet;
+    let mut dyn_names: HashSet<String> = HashSet::new();
+    let mut darr_names: HashSet<String> = HashSet::new();
+    for (i, p) in f.params.iter().enumerate() {
+        if ptys[i] == Ty::Dyn { dyn_names.insert(p.clone()); }
+        if matches!(ptys[i], Ty::DArr | Ty::DArrU | Ty::DArr2) { darr_names.insert(p.clone()); }
+    }
+    // dynamic arrays declared in the body ({} or a nested literal)
+    fn scan_darr(stmts: &[Stmt], darr: &mut HashSet<String>) {
+        for st in stmts {
+            match st {
+                Stmt::Local(_, id, Expr::DArrNew) => { darr.insert(id.clone()); }
+                Stmt::Local(_, id, Expr::ArrLit(es)) if es.iter().any(|e| matches!(e, Expr::ArrLit(_) | Expr::DArrNew)) => { darr.insert(id.clone()); }
+                Stmt::If(_, _, t, e) => { scan_darr(t, darr); scan_darr(e, darr); }
+                Stmt::While(_, _, b) => scan_darr(b, darr),
+                Stmt::For(_, _, _, _, _, b) => scan_darr(b, darr),
+                _ => {}
+            }
+        }
+    }
+    scan_darr(&f.stmts, &mut darr_names);
+    // assignments/local inits as (name, expr) pairs, flattened
+    fn collect<'a>(stmts: &'a [Stmt], out: &mut Vec<(&'a String, &'a Expr)>) {
+        for st in stmts {
+            match st {
+                Stmt::Local(_, id, e) | Stmt::Assign(_, id, e) => out.push((id, e)),
+                Stmt::If(_, _, t, e) => { collect(t, out); collect(e, out); }
+                Stmt::While(_, _, b) => collect(b, out),
+                Stmt::For(_, _, _, _, _, b) => collect(b, out),
+                _ => {}
+            }
+        }
+    }
+    let mut pairs: Vec<(&String, &Expr)> = Vec::new();
+    collect(&f.stmts, &mut pairs);
+    let may_be_dyn = |e: &Expr, dyn_names: &HashSet<String>, darr: &HashSet<String>| -> bool {
+        match e {
+            Expr::Nil => true,
+            Expr::Index(id, _) | Expr::Index2(id, _, _) => darr.contains(id),
+            Expr::Var(v) => dyn_names.contains(v),
+            Expr::Call(id, _) if !is_builtin(id, "len") && !is_builtin(id, "eval") && !is_builtin(id, "hb_memcheck") => {
+                sigs.iter().find(|s| s.name == *id).map(|s| s.ret == Some(Ty::Dyn)).unwrap_or(false)
+            }
+            _ => false,
+        }
+    };
+    loop {
+        let before = dyn_names.len();
+        for (name, e) in &pairs {
+            if may_be_dyn(e, &dyn_names, &darr_names) {
+                dyn_names.insert((*name).clone());
+            }
+        }
+        if dyn_names.len() == before { break; }
+    }
+    dyn_names
+}
+
+// Return-type unification (probe n2): an i64 return and a NIL return in
+// the same function unify to Dyn ({tag,payload}); Harbour's mixed returns
+// are supported, not registered as a static-model difference.
+fn unify_ret(ret: Option<Ty>, t: Ty, n: usize) -> Result<Ty, String> {
+    match (ret, t) {
+        (None, t) => Ok(t),
+        (Some(p), t) if p == t => Ok(t),
+        (Some(Ty::I64), Ty::Dyn) | (Some(Ty::Dyn), Ty::I64) => Ok(Ty::Dyn),
+        (Some(p), _) => Err(format!("line {}: return type mismatch (this function already returns {:?} elsewhere; all returns must agree)", n, p)),
+    }
+}
+
+fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Option<Ty>, loop_pre: Option<&Vec<bool>>, exits: &mut Vec<Vec<bool>>, dyn_names: &std::collections::HashSet<String>) -> Result<bool, String> {
     let mut falls = true;
     for s in stmts {
         match s {
@@ -1417,6 +1564,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                     return Err(format!("line {}: booleans only exist in `if` conditions in this PoC", n));
                 }
                 apply_moves(e, env, sigs, true);
+                let t = if t == Ty::I64 && dyn_names.contains(id) { Ty::Dyn } else { t };
                 env.push(Local { name: id.clone(), ty: t, moved: false, ro: false });
             }
             Stmt::Print(n, es) => {
@@ -1455,25 +1603,15 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                     return Err(format!("line {}: cannot return an empty array whose element type was never pinned by `AAdd`", n));
                 }
                 apply_moves(e, env, sigs, true);
-                match *ret {
-                    Some(prev) if prev != t => {
-                        return Err(format!("line {}: return type mismatch (this function already returns {:?} elsewhere; all returns must agree)", n, prev));
-                    }
-                    _ => *ret = Some(t),
-                }
+                *ret = Some(unify_ret(*ret, t, *n)?);
                 falls = false;
             }
             Stmt::Ret(n, None) => {
-                // `return` / `return nil` return NIL (probe n1c: `? f()`
-                // prints NIL, ValType "U"). NIL is the tagged i64 sentinel,
-                // so this unifies with i64 returns; against any other return
-                // type the static typing still rejects (documented).
-                match *ret {
-                    Some(prev) if prev != Ty::I64 => {
-                        return Err(format!("line {}: return type mismatch (this function already returns {:?} elsewhere; all returns must agree)", n, prev));
-                    }
-                    _ => *ret = Some(Ty::I64),
-                }
+                // `return` / `return nil` return NIL (probe n1c): the Dyn
+                // value {tag=1}. Mixed `return 5` / `return nil` unifies to
+                // a Dyn return (probe n2) - Harbour behaviour, not a
+                // registered difference.
+                *ret = Some(unify_ret(*ret, Ty::Dyn, *n)?);
                 falls = false;
             }
             Stmt::If(n, cond, then_s, else_s) => {
@@ -1484,9 +1622,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 }
                 let outer = env.len();
                 let mut env_then = env.clone();
-                let ft = check_stmts(then_s, &mut env_then, sigs, ret, loop_pre, exits)?;
+                let ft = check_stmts(then_s, &mut env_then, sigs, ret, loop_pre, exits, dyn_names)?;
                 let mut env_else = env.clone();
-                let fe = check_stmts(else_s, &mut env_else, sigs, ret, loop_pre, exits)?;
+                let fe = check_stmts(else_s, &mut env_else, sigs, ret, loop_pre, exits, dyn_names)?;
                 for k in 0..outer {
                     env[k].moved = env_then[k].moved || env_else[k].moved;
                 }
@@ -1502,7 +1640,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_body = env.clone();
                 let mut wexits: Vec<Vec<bool>> = Vec::new();
-                let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut wexits)?;
+                let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut wexits, dyn_names)?;
                 // A variable moved on a path that reaches the next
                 // iteration must be live again there (Rust's loop rule).
                 if fb {
@@ -1543,7 +1681,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_body = env.clone();
                 let mut fexits: Vec<Vec<bool>> = Vec::new();
-                let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut fexits)?;
+                let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut fexits, dyn_names)?;
                 if fb {
                     for k in 0..outer {
                         if !pre[k] && env_body[k].moved {
@@ -1601,14 +1739,16 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 let moves = match env[kp].ty {
                     Ty::DArrU => {
                         match t {
-                            Ty::I64 => { env[kp].ty = Ty::DArr; false }
+                            Ty::I64 | Ty::Dyn => { env[kp].ty = Ty::DArr; false }
                             Ty::DArr | Ty::DArrU => { env[kp].ty = Ty::DArr2; true }
                             _ => return Err(format!("line {}: `AAdd` grows with integer or dynamic-array elements in this increment", n)),
                         }
                     }
                     Ty::DArr => {
-                        if t != Ty::I64 {
-                            return Err(format!("line {}: the elements of `{}` are integers", n, id));
+                        // Elements are tagged values: an i64 or a Dyn (NIL
+                        // included) both store with their tag.
+                        if !matches!(t, Ty::I64 | Ty::Dyn) {
+                            return Err(format!("line {}: the elements of `{}` are tagged scalars (integer or NIL)", n, id));
                         }
                         false
                     }
@@ -1726,7 +1866,18 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 }
                 let root_ty = env[kp].ty;
                 match root_ty {
-                    Ty::DArr | Ty::Arr(_) => {
+                    Ty::DArr => {
+                        let vt = type_expr(e, env, sigs, *n)?;
+                        if !matches!(vt, Ty::I64 | Ty::Dyn) {
+                            return Err(format!("line {}: dynamic-array elements are tagged scalars (integer or NIL)", n));
+                        }
+                        if type_expr(ie, env, sigs, *n)? != Ty::I64 {
+                            return Err(format!("line {}: array index must be an integer", n));
+                        }
+                        apply_moves(e, env, sigs, true);
+                        apply_moves(ie, env, sigs, false);
+                    }
+                    Ty::Arr(_) => {
                         if type_expr(e, env, sigs, *n)? != Ty::I64 {
                             return Err(format!("line {}: array elements must be integers in this increment", n));
                         }
@@ -1818,6 +1969,12 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 if env[idx].ty == Ty::DArrU && matches!(t, Ty::DArr | Ty::DArr2) {
                     // Assigning a pinned dynamic array pins the empty `{}`.
                     env[idx].ty = t;
+                } else if env[idx].ty == Ty::Dyn && matches!(t, Ty::I64 | Ty::Dyn) {
+                    // Dyn slot: an i64 is tagged in, a Dyn is copied (probe
+                    // n2: reassignment re-tags a live variable).
+                } else if env[idx].ty == Ty::I64 && t == Ty::Dyn {
+                    // i64 slot receiving a Dyn: the tag is checked at
+                    // runtime (NIL payload -> clean type error).
                 } else if env[idx].ty != t {
                     return Err(format!("line {}: type mismatch in assignment to `{}`", n, id));
                 }
@@ -1882,7 +2039,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 // ---------------------------------------------------------------------------
 
 fn size_of(t: Ty) -> usize {
-    match t { Ty::I64 => 8, Ty::Str => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 => 16, Ty::Bool => unreachable!("booleans rejected in analysis") }
+    match t { Ty::I64 => 8, Ty::Str => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::Dyn => 16, Ty::Bool => unreachable!("booleans rejected in analysis") }
 }
 
 #[derive(Clone)]
@@ -1898,9 +2055,8 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             out.push_str(&format!("    mov ${}, %rax\n", v));
         }
         Expr::Nil => {
-            // NIL: the tagged i64 sentinel (probe n1). movabs: the immediate
-            // does not fit the sign-extended 32-bit form.
-            out.push_str(&format!("    movabs ${}, %rax\n", NIL_SENT));
+            // NIL: the Dyn tag/payload pair (probe n1) - rax=tag, rdx=payload
+            out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");
         }
         Expr::Str(_) => unreachable!("string literals are emitted via cg_str_ref"),
         Expr::Cmp(..) => unreachable!("comparisons are emitted via cg_cond_jump"),
@@ -1908,7 +2064,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
             match v.ty {
                 Ty::I64 | Ty::Block(_) => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
-                Ty::Str | Ty::DArr | Ty::DArrU | Ty::DArr2 => {
+                Ty::Str | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::Dyn => {
                     // ptr at -(off), len at -(off-8) — same layout as the store
                     out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
                     out.push_str(&format!("    mov -{}(%rbp), %rdx\n", v.off - 8));
@@ -1980,9 +2136,27 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             // integer division by zero), each in a 16-byte slot (keeps rsp
             // 16-aligned on both targets); arg k then sits at
             // 16*(n-k)(%rbp) in the callee after its prologue.
-            for a in args.iter() {
+            let psig = sigs.iter().find(|v| v.name == *id).map(|v| v.params.clone());
+            for (ai, a) in args.iter().enumerate() {
                 let ta = expr_ty(a, env, sigs);
+                let pty = psig.as_ref().and_then(|p| p.get(ai).copied());
                 cg_value(a, env, sigs, strs, out, target);
+                if ta == Ty::Dyn && pty == Some(Ty::I64) {
+                    // Dyn argument to an i64 parameter: extract with the
+                    // runtime tag check (NIL -> clean type error).
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                    continue;
+                }
+                if ta == Ty::I64 && pty == Some(Ty::Dyn) {
+                    // i64 argument to a Dyn parameter: tag it in.
+                    out.push_str("    sub $16, %rsp\n    movq $0, (%rsp)\n    mov %rax, 8(%rsp)\n");
+                    continue;
+                }
+                if ta == Ty::Dyn {
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    continue;
+                }
                 if ta == Ty::Str || ta == Ty::DArr {
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     // An owned (moved) DArr argument: null the source slot
@@ -2008,11 +2182,18 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
         Expr::Index(id, ie) => {
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
             if v.ty == Ty::DArr {
-                // Dynamic array read: bounds are 1..=len (runtime word).
+                // Dynamic array read: bounds are 1..=len (runtime word);
+                // elements are {tag, payload} pairs (rax=tag, rdx=payload).
                 // Borrow only - nothing is moved or nulled.
-                cg_expr(ie, env, sigs, strs, out, target);
+                if expr_ty(ie, env, sigs) == Ty::Dyn {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                } else {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                }
                 out.push_str(&format!("    cmp $1, %rax\n    jl 81f\n    cmp -{}(%rbp), %rax\n    jg 81f\n", v.off - 8));
-                out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov -8(%r11,%rax,8), %rax\n    jmp 82f\n", v.off));
+                out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
+                out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r11\n    mov 8(%rax), %rdx\n    mov %r11, %rax\n    jmp 82f\n");
                 out.push_str("81:\n    call hbc_bound_error\n82:\n");
                 return;
             }
@@ -2033,9 +2214,19 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             // clean bound error (Harbour would show its dialog instead -
             // registered DIVERGE-FAILMODE).
             let var = env.iter().rev().find(|v| v.name == *id).expect("checked");
-            cg_expr(ie, env, sigs, strs, out, target);
+            if expr_ty(ie, env, sigs) == Ty::Dyn {
+                cg_expr(ie, env, sigs, strs, out, target);
+                out.push_str("    call hbc_dyn_to_i64\n");
+            } else {
+                cg_expr(ie, env, sigs, strs, out, target);
+            }
             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
-            cg_expr(ie2, env, sigs, strs, out, target);
+            if expr_ty(ie2, env, sigs) == Ty::Dyn {
+                cg_expr(ie2, env, sigs, strs, out, target);
+                out.push_str("    call hbc_dyn_to_i64\n");
+            } else {
+                cg_expr(ie2, env, sigs, strs, out, target);
+            }
             out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n");
             // rcx = i, rax = j
             out.push_str(&format!("    cmp $1, %rcx\n    jl 81f\n    cmp -{}(%rbp), %rcx\n    jg 81f\n", var.off - 8));
@@ -2043,11 +2234,16 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             out.push_str("    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
             // r10 = child slot; bounds-check j against the child length
             out.push_str("    cmp $1, %rax\n    jl 81f\n    cmp 8(%r10), %rax\n    jg 81f\n");
-            out.push_str("    mov (%r10), %r11\n    mov -8(%r11,%rax,8), %rax\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
+            out.push_str("    mov (%r10), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r11\n    mov 8(%rax), %rdx\n    mov %r11, %rax\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
         }
         Expr::Bin(op, a, b) => {
-            // arithmetic is i64-only (checked in analysis)
+            // Operands are i64 or Dyn (checked in analysis): a Dyn operand
+            // is extracted with the runtime tag check (NIL payload -> clean
+            // type error, Harbour's dialog is the registered difference).
             cg_expr(a, env, sigs, strs, out, target);
+            if expr_ty(a, env, sigs) == Ty::Dyn {
+                out.push_str("    call hbc_dyn_to_i64\n");
+            }
             // Keep the lhs on the stack while evaluating the rhs. On Windows
             // a plain push would break 16-byte alignment for any call inside
             // the rhs (e.g. `1 + valor()`), so reserve a full 16-byte slot.
@@ -2056,6 +2252,9 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 Target::Windows => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"),
             }
             cg_expr(b, env, sigs, strs, out, target);
+            if expr_ty(b, env, sigs) == Ty::Dyn {
+                out.push_str("    call hbc_dyn_to_i64\n");
+            }
             match target {
                 Target::Linux => out.push_str("    pop %rcx\n"), // %rcx = lhs, %rax = rhs
                 Target::Windows => out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n"),
@@ -2097,11 +2296,14 @@ fn cg_darr2_literal(es: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<S
             }
             Expr::ArrLit(inner) => {
                 let m = inner.len();
-                out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + m * 8));
+                out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + m * 16));
                 out.push_str(&format!("    movq ${}, (%rax)\n    add $8, %rax\n    mov %rax, 8(%rsp)\n", m));
                 for (p, ie) in inner.iter().enumerate() {
                     cg_expr(ie, env, sigs, strs, out, target);
-                    out.push_str(&format!("    mov 8(%rsp), %r11\n    mov %rax, {}(%r11)\n", p * 8));
+                    if expr_ty(ie, env, sigs) == Ty::I64 {
+                        out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                    }
+                    out.push_str(&format!("    mov 8(%rsp), %r11\n    mov %rax, {}(%r11)\n    mov %rdx, {}(%r11)\n", p * 16, p * 16 + 8));
                 }
                 out.push_str(&format!("    mov (%rsp), %r11\n    mov 8(%rsp), %rax\n    mov %rax, {}(%r11)\n    movq ${}, {}(%r11)\n", j * 16, m, j * 16 + 8));
             }
@@ -2157,7 +2359,8 @@ fn cg_array_value(e: &Expr, off: usize, env: &[CgLocal], sigs: &[Sig], strs: &mu
 
 fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
     match e {
-        Expr::Int(_) | Expr::Bin(_, _, _) | Expr::Nil => Ty::I64,
+        Expr::Int(_) | Expr::Bin(_, _, _) => Ty::I64,
+        Expr::Nil => Ty::Dyn,
         Expr::Str(_) => Ty::Str,
         Expr::Var(id) => env.iter().find(|v| v.name == *id).expect("checked").ty,
         Expr::Call(id, _) => {
@@ -2168,7 +2371,11 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::ArrLit(es) => {
             if es.iter().any(|e| matches!(e, Expr::ArrLit(_) | Expr::DArrNew)) { Ty::DArr2 } else { Ty::Arr(es.len()) }
         }
-        Expr::Index(_, _) | Expr::Index2(_, _, _) => Ty::I64,
+        Expr::Index(id, _) => match env.iter().find(|v| v.name == *id).map(|v| v.ty) {
+            Some(Ty::Arr(_)) => Ty::I64,
+            _ => Ty::Dyn,
+        },
+        Expr::Index2(_, _, _) => Ty::Dyn,
         Expr::BlockLit(_, ps, _) => Ty::Block(ps.len()),
         Expr::DArrNew => Ty::DArrU,
         Expr::HashLit(_) => unreachable!("hash literals are rejected during checking (next increment)"),
@@ -2179,11 +2386,15 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
 // total frame size. Branch locals get their own slots and are scoped: the
 // env is truncated at each branch join. The codegen walk below rebuilds
 // the exact same env, so offsets match.
-fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &mut usize, darr_slots: &mut Vec<(usize, bool)>) {
+fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &mut usize, darr_slots: &mut Vec<(usize, bool)>, dyn_names: &std::collections::HashSet<String>) {
     for s in stmts {
         match s {
             Stmt::Local(_, id, e) => {
-                let t = expr_ty(e, env, sigs);
+                let mut t = expr_ty(e, env, sigs);
+                // Same prescan widening as cg_stmts (probe n2): an i64
+                // initializer whose local later receives a Dyn value gets
+                // the 16-byte slot.
+                if t == Ty::I64 && dyn_names.contains(id) { t = Ty::Dyn; }
                 *frame += size_of(t);
                 env.push(CgLocal { name: id.clone(), ty: t, off: *frame });
                 if matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2) {
@@ -2224,14 +2435,14 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
             }
             Stmt::If(_, _, then_s, else_s) => {
                 let mark = env.len();
-                layout_locals(then_s, env, sigs, frame, darr_slots);
+                layout_locals(then_s, env, sigs, frame, darr_slots, dyn_names);
                 env.truncate(mark);
-                layout_locals(else_s, env, sigs, frame, darr_slots);
+                layout_locals(else_s, env, sigs, frame, darr_slots, dyn_names);
                 env.truncate(mark);
             }
             Stmt::While(_, _, body) => {
                 let mark = env.len();
-                layout_locals(body, env, sigs, frame, darr_slots);
+                layout_locals(body, env, sigs, frame, darr_slots, dyn_names);
                 env.truncate(mark);
             }
             Stmt::For(_, var, _, _, _, body) => {
@@ -2239,7 +2450,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 *frame += 8; // hidden slot holding the evaluated end bound
                 *frame += 8;
                 env.push(CgLocal { name: var.clone(), ty: Ty::I64, off: *frame });
-                layout_locals(body, env, sigs, frame, darr_slots);
+                layout_locals(body, env, sigs, frame, darr_slots, dyn_names);
                 env.truncate(mark);
             }
             _ => {}
@@ -2256,10 +2467,78 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
         // `=` / `#` reach codegen (analysis rejects ordering NIL).
         Expr::Cmp(op, a, b) if (matches!(**a, Expr::Nil) && expr_ty(b, env, sigs) == Ty::Str)
             || (matches!(**b, Expr::Nil) && expr_ty(a, env, sigs) == Ty::Str) => {
+            // The result is a constant, but BOTH operands still evaluate
+            // left to right (a call may print; an index may raise a bound
+            // error) - only the comparison itself is folded (probe n1).
+            cg_value(a, env, sigs, strs, out, target);
+            cg_value(b, env, sigs, strs, out, target);
             if matches!(op, CmpOp::Ne) {
                 out.push_str(&format!("    jmp {}\n", true_label));
             }
             // Eq: the condition is never true - fall through.
+        }
+        Expr::Cmp(op, a, b) if expr_ty(a, env, sigs) == Ty::Dyn || expr_ty(b, env, sigs) == Ty::Dyn => {
+            let ta = expr_ty(a, env, sigs);
+            let tb = expr_ty(b, env, sigs);
+            if ta == Ty::Str || tb == Ty::Str {
+                // Dyn against a string: `=` is always .F., `#` always .T.
+                // (probe n1: "" = NIL is .F.). Analysis rejects ordering.
+                // The operands still evaluate left to right - only the
+                // comparison is folded.
+                cg_value(a, env, sigs, strs, out, target);
+                cg_value(b, env, sigs, strs, out, target);
+                if matches!(op, CmpOp::Ne) {
+                    out.push_str(&format!("    jmp {}\n", true_label));
+                }
+                // Eq: the condition is never true - fall through.
+            } else {
+                match op {
+                    CmpOp::Eq | CmpOp::Ne => {
+                        // Tag-dispatch equality: NIL = NIL is .T., NIL
+                        // against a payload is .F., payloads compare
+                        // numerically (hbc_dyn_eq).
+                        cg_expr(a, env, sigs, strs, out, target);
+                        if ta == Ty::I64 { out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n"); }
+                        match target {
+                            Target::Linux => out.push_str("    push %rax\n    push %rdx\n"),
+                            Target::Windows => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n"),
+                        }
+                        cg_expr(b, env, sigs, strs, out, target);
+                        if tb == Ty::I64 { out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n"); }
+                        out.push_str("    mov %rax, %rcx\n    mov %rdx, %r8\n");
+                        match target {
+                            Target::Linux => out.push_str("    pop %rdx\n    pop %rax\n"),
+                            Target::Windows => out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n"),
+                        }
+                        out.push_str("    call hbc_dyn_eq\n    test %rax, %rax\n");
+                        let j = match op { CmpOp::Eq => "jnz", _ => "jz" };
+                        out.push_str(&format!("    {} {}\n", j, true_label));
+                    }
+                    _ => {
+                        // Ordering: NIL in an ordering comparison is a
+                        // Harbour type error; extraction raises it (clean
+                        // exit 1, registered failure mode).
+                        cg_expr(a, env, sigs, strs, out, target);
+                        if ta == Ty::Dyn { out.push_str("    call hbc_dyn_to_i64\n"); }
+                        match target {
+                            Target::Linux => out.push_str("    push %rax\n"),
+                            Target::Windows => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"),
+                        }
+                        cg_expr(b, env, sigs, strs, out, target);
+                        if tb == Ty::Dyn { out.push_str("    call hbc_dyn_to_i64\n"); }
+                        match target {
+                            Target::Linux => out.push_str("    pop %rcx\n"),
+                            Target::Windows => out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n"),
+                        }
+                        out.push_str("    cmp %rax, %rcx\n");
+                        let j = match op {
+                            CmpOp::Lt => "jl", CmpOp::Le => "jle", CmpOp::Gt => "jg",
+                            CmpOp::Ge => "jge", _ => unreachable!(),
+                        };
+                        out.push_str(&format!("    {} {}\n", j, true_label));
+                    }
+                }
+            }
         }
         Expr::Cmp(op, a, b) if expr_ty(a, env, sigs) == Ty::Str => {
             // String equality/inequality: byte-compare via hbc_str_eq.
@@ -2315,17 +2594,25 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
     }
 }
 
-fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, ll: &Option<(String, String)>, slots: &[(usize, bool)]) {
+fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, ll: &Option<(String, String)>, slots: &[(usize, bool)], dyn_names: &std::collections::HashSet<String>) {
     for s in stmts {
         match s {
             Stmt::Local(_, id, e) => {
-                let t = expr_ty(e, env, sigs);
+                let mut t = expr_ty(e, env, sigs);
+                // Prescan widening (probe n2): an i64 initializer whose
+                // local later receives a Dyn value gets the 16-byte slot;
+                // the i64 initializer is tagged in as {0, payload}.
+                let i64_init = t == Ty::I64 && dyn_names.contains(id);
+                if i64_init { t = Ty::Dyn; }
                 *frame += size_of(t);
                 let off = *frame;
                 match t {
                     Ty::Arr(_) => cg_array_value(e, off, env, sigs, strs, out, target),
                     _ => {
                         cg_value(e, env, sigs, strs, out, target);
+                        if i64_init {
+                            out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                        }
                         // A moved-out DArr SOURCE slot is nulled right after
                         // the load: every allocation keeps exactly one owner.
                         if let Expr::Var(src) = e {
@@ -2335,7 +2622,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         }
                         match t {
                             Ty::I64 | Ty::Block(_) => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
-                            Ty::Str => {
+                            Ty::Str | Ty::Dyn => {
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
                             }
@@ -2380,6 +2667,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     match t {
                         Ty::I64 => out.push_str("    call hbc_print_i64\n"),
                         Ty::Str => out.push_str("    call hbc_print_str\n"),
+                        Ty::Dyn => out.push_str("    call hbc_print_dyn\n"),
                         Ty::Bool => unreachable!("booleans rejected in analysis"),
                         Ty::Arr(_) => unreachable!("whole-array printing rejected in analysis"),
                         Ty::Block(_) => unreachable!("codeblock printing rejected in analysis"),
@@ -2392,6 +2680,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
             }
             Stmt::Ret(_, Some(e)) => {
                 cg_value(e, env, sigs, strs, out, target);
+                // Mixed int/NIL returns unify to Dyn (probe n2): an i64
+                // return expression is tagged into the {0, payload} pair.
+                if expr_ty(e, env, sigs) == Ty::I64
+                    && sigs.iter().any(|sg| sg.name == fname && sg.ret == Some(Ty::Dyn)) {
+                    out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                }
                 // Returning a dynamic array MOVES it to the caller: the
                 // source slot is nulled BEFORE the shared epilogue runs, so
                 // the epilogue never frees the returned allocation (parent
@@ -2404,9 +2698,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    jmp .Lret_{}\n", fname));
             }
             Stmt::Ret(_, None) => {
-                // `return` / `return nil` return NIL (probe n1c): the tagged
-                // sentinel travels like any i64 return value.
-                out.push_str(&format!("    movabs ${}, %rax\n    xor %edx, %edx\n", NIL_SENT));
+                // `return` / `return nil` return NIL (probes n1c/n2): the
+                // Dyn tag/payload pair travels like any 16-byte value.
+                out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");
                 out.push_str(&format!("    jmp .Lret_{}\n", fname));
             }
             Stmt::If(_, cond, then_s, else_s) => {
@@ -2416,11 +2710,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    jmp .Lelse_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lthen_{}_{}:\n", fname, id));
                 let mark = env.len();
-                cg_stmts(then_s, env, frame, sigs, strs, out, target, fname, label, ll, slots);
+                cg_stmts(then_s, env, frame, sigs, strs, out, target, fname, label, ll, slots, dyn_names);
                 env.truncate(mark);
                 out.push_str(&format!("    jmp .Lend_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lelse_{}_{}:\n", fname, id));
-                cg_stmts(else_s, env, frame, sigs, strs, out, target, fname, label, ll, slots);
+                cg_stmts(else_s, env, frame, sigs, strs, out, target, fname, label, ll, slots, dyn_names);
                 env.truncate(mark);
                 out.push_str(&format!(".Lend_{}_{}:\n", fname, id));
             }
@@ -2433,7 +2727,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!(".Lbody_{}_{}:\n", fname, id));
                 let mark = env.len();
                 let inner = Some((format!(".Lwhile_{}_{}", fname, id), format!(".Lendw_{}_{}", fname, id)));
-                cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots);
+                cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names);
                 env.truncate(mark);
                 out.push_str(&format!("    jmp .Lwhile_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lendw_{}_{}:\n", fname, id));
@@ -2466,7 +2760,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     out.push_str(&format!("    jl .Lfore_{}_{}\n", fname, id));
                 }
                 let inner = Some((format!(".Lforn_{}_{}", fname, id), format!(".Lfore_{}_{}", fname, id)));
-                cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots);
+                cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names);
                 env.truncate(mark);
                 out.push_str(&format!(".Lforn_{}_{}:\n", fname, id));
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n", i_off));
@@ -2490,6 +2784,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let t = expr_ty(e, env, sigs);
                 let l = env.iter().find(|v| v.name == *id).expect("analysis checked the local exists");
                 let off = l.off;
+                let lty = l.ty;
                 match t {
                     Ty::Arr(_) => cg_array_value(e, off, env, sigs, strs, out, target),
                     _ => {
@@ -2503,7 +2798,24 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             }
                         }
                         match t {
+                            Ty::I64 | Ty::Block(_) if lty == Ty::Dyn => {
+                                // Dyn slot, i64 value: tag it in (probe n2:
+                                // reassignment re-tags a live variable).
+                                out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
+                                out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
+                            }
                             Ty::I64 | Ty::Block(_) => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
+                            Ty::Dyn if lty == Ty::I64 => {
+                                // i64 slot receiving a Dyn: the tag is
+                                // checked at runtime (NIL -> clean error).
+                                out.push_str("    call hbc_dyn_to_i64\n");
+                                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
+                            }
+                            Ty::Dyn => {
+                                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
+                                out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
+                            }
                             Ty::Str => {
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
@@ -2550,9 +2862,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     out.push_str(&format!("    mov %rsp, %rdx\n    mov $16, %esi\n    lea -{}(%rbp), %rdi\n    call hbc_aadd\n    add $16, %rsp\n", v.off));
                 } else {
+                    // Scalar element: tag it into the {tag, payload} pair
+                    // (i64 -> {0, v}, NIL/Dyn -> copied pair).
                     cg_expr(e, env, sigs, strs, out, target);
-                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
-                    out.push_str(&format!("    mov %rsp, %rdx\n    mov $8, %esi\n    lea -{}(%rbp), %rdi\n    call hbc_aadd\n    add $16, %rsp\n", v.off));
+                    if expr_ty(e, env, sigs) == Ty::I64 {
+                        out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                    }
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    out.push_str(&format!("    mov %rsp, %rdx\n    mov $16, %esi\n    lea -{}(%rbp), %rdi\n    call hbc_aadd\n    add $16, %rsp\n", v.off));
                 }
                 // Replicate the checker's pinning of `{}`.
                 if let Some(x) = env.iter_mut().find(|x| x.name == *id) {
@@ -2565,21 +2882,29 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
                 let deep = v.ty == Ty::DArr2;
                 cg_expr(e, env, sigs, strs, out, target);
-                out.push_str(&format!("    mov %rax, %rsi\n    mov ${}, %edx\n    mov ${}, %ecx\n    lea -{}(%rbp), %rdi\n    call hbc_asize\n",
-                    if deep { 16 } else { 8 }, if deep { 1 } else { 0 }, v.off));
+                out.push_str(&format!("    mov %rax, %rsi\n    mov $16, %edx\n    mov ${}, %ecx\n    lea -{}(%rbp), %rdi\n    call hbc_asize\n",
+                    if deep { 1 } else { 0 }, v.off));
             }
             Stmt::AAddSub(_, id, ie, e) => {
                 // AAdd(a[i], x): index FIRST, then the value (probe m7).
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
-                cg_expr(ie, env, sigs, strs, out, target);
+                if expr_ty(ie, env, sigs) == Ty::Dyn {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                } else {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                }
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
                 cg_expr(e, env, sigs, strs, out, target);
-                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                if expr_ty(e, env, sigs) == Ty::I64 {
+                    out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                }
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 out.push_str("    mov 16(%rsp), %rcx\n");
                 out.push_str(&format!("    cmp $1, %rcx\n    jl 87f\n    cmp -{}(%rbp), %rcx\n    jg 87f\n", v.off - 8));
                 out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
                 out.push_str("    mov %rcx, %rdi\n    dec %rdi\n    shl $4, %rdi\n    add %r11, %rdi\n");
-                out.push_str("    mov %rsp, %rdx\n    mov $8, %esi\n    call hbc_aadd\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
+                out.push_str("    mov %rsp, %rdx\n    mov $16, %esi\n    call hbc_aadd\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
                 out.push_str("    add $32, %rsp\n");
             }
             Stmt::ASizeSub(_, id, ie, e) => {
@@ -2592,7 +2917,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    cmp $1, %rcx\n    jl 87f\n    cmp -{}(%rbp), %rcx\n    jg 87f\n", v.off - 8));
                 out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
                 out.push_str("    mov %rcx, %rdi\n    dec %rdi\n    shl $4, %rdi\n    add %r11, %rdi\n");
-                out.push_str("    mov %rax, %rsi\n    mov $8, %edx\n    xor %ecx, %ecx\n    call hbc_asize\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
+                out.push_str("    mov %rax, %rsi\n    mov $16, %edx\n    xor %ecx, %ecx\n    call hbc_asize\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
             }
             Stmt::ArrSet(_, id, ie, e) => {
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
@@ -2617,13 +2942,23 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    mov %rax, (%r10)\n    mov %rdx, 8(%r10)\n    add $16, %rsp\n    jmp 86f\n89:\n    call hbc_bound_error\n86:\n");
                 } else if v.ty == Ty::DArr {
                     // Dynamic array write: same value-first order; bounds
-                    // 1..=len from the slot word. Borrows `a` - never nulls.
+                    // 1..=len from the slot word. Elements are {tag,
+                    // payload} pairs. Borrows `a` - never nulls.
                     cg_expr(e, env, sigs, strs, out, target);
-                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
-                    cg_expr(ie, env, sigs, strs, out, target);
-                    out.push_str("    mov %rax, %rcx\n    mov (%rsp), %rax\n    add $16, %rsp\n");
+                    if expr_ty(e, env, sigs) == Ty::I64 {
+                        out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                    }
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    if expr_ty(ie, env, sigs) == Ty::Dyn {
+                        cg_expr(ie, env, sigs, strs, out, target);
+                        out.push_str("    call hbc_dyn_to_i64\n");
+                    } else {
+                        cg_expr(ie, env, sigs, strs, out, target);
+                    }
+                    out.push_str("    mov %rax, %rcx\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
                     out.push_str(&format!("    cmp $1, %rcx\n    jl 83f\n    cmp -{}(%rbp), %rcx\n    jg 83f\n", v.off - 8));
-                    out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov %rax, -8(%r11,%rcx,8)\n    jmp 84f\n", v.off));
+                    out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
+                    out.push_str("    dec %rcx\n    shl $4, %rcx\n    add %r11, %rcx\n    mov %rax, (%rcx)\n    mov %rdx, 8(%rcx)\n    jmp 84f\n");
                     out.push_str("83:\n    call hbc_bound_error\n84:\n");
                 } else {
                 let k = match v.ty { Ty::Arr(k) => k, _ => unreachable!("checked") };
@@ -2649,19 +2984,32 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // index (probe m7); both bounds checked; transient borrows.
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
                 cg_expr(e, env, sigs, strs, out, target);
+                if expr_ty(e, env, sigs) == Ty::I64 {
+                    out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                }
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                if expr_ty(ie, env, sigs) == Ty::Dyn {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                } else {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                }
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
-                cg_expr(ie, env, sigs, strs, out, target);
-                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
-                cg_expr(ie2, env, sigs, strs, out, target);
+                if expr_ty(ie2, env, sigs) == Ty::Dyn {
+                    cg_expr(ie2, env, sigs, strs, out, target);
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                } else {
+                    cg_expr(ie2, env, sigs, strs, out, target);
+                }
                 out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n");
                 // rax = value(sp), rcx = i, then j in rax below
-                out.push_str("    mov %rax, %r9\n    mov (%rsp), %rax\n    add $16, %rsp\n");
-                // rax = value, rcx = i, r9 = j
+                out.push_str("    mov %rax, %r9\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
+                // rax = value tag, rdx = payload, rcx = i, r9 = j
                 out.push_str(&format!("    cmp $1, %rcx\n    jl 90f\n    cmp -{}(%rbp), %rcx\n    jg 90f\n", v.off - 8));
                 out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
                 out.push_str("    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
                 out.push_str("    cmp $1, %r9\n    jl 90f\n    cmp 8(%r10), %r9\n    jg 90f\n");
-                out.push_str("    mov (%r10), %r11\n    mov %rax, -8(%r11,%r9,8)\n    jmp 92f\n90:\n    call hbc_bound_error\n92:\n");
+                out.push_str("    mov (%r10), %r11\n    dec %r9\n    shl $4, %r9\n    add %r11, %r9\n    mov %rax, (%r9)\n    mov %rdx, 8(%r9)\n    jmp 92f\n90:\n    call hbc_bound_error\n92:\n");
             }
         }
     }
@@ -2746,7 +3094,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     }
     let nparams = lenv.len();
     let mut darr_slots: Vec<(usize, bool)> = Vec::new();
-    layout_locals(&f.stmts, &mut lenv, sigs, &mut frame, &mut darr_slots);
+    layout_locals(&f.stmts, &mut lenv, sigs, &mut frame, &mut darr_slots, &f.dyn_names);
     // Dynamic-array parameters are owned by this function: their slots are
     // freed at the shared epilogue like any other DArr local.
     for v in &lenv[..lenv.len().min(f.params.len())] {
@@ -2777,7 +3125,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     // A string argument occupies both words of its slot (pointer, length).
     for (k, v) in lenv[..nparams].iter().enumerate() {
         let src = 16 * (nparams - k);
-        if v.ty == Ty::Str || v.ty == Ty::DArr {
+        if v.ty == Ty::Str || v.ty == Ty::DArr || v.ty == Ty::Dyn {
             out.push_str(&format!("    mov {}(%rbp), %rax\n    mov {}(%rbp), %rdx\n", src, src + 8));
             out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", v.off, v.off - 8));
         } else {
@@ -2788,7 +3136,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     let mut env: Vec<CgLocal> = lenv[..nparams].to_vec();
     let mut walk_frame = env.iter().map(|v| size_of(v.ty)).sum();
     let mut label = 0usize;
-    cg_stmts(&f.stmts, &mut env, &mut walk_frame, sigs, strs, out, target, &f.name, &mut label, &None, &darr_slots);
+    cg_stmts(&f.stmts, &mut env, &mut walk_frame, sigs, strs, out, target, &f.name, &mut label, &None, &darr_slots, &f.dyn_names);
     // Free every dynamic array still owned on this exit path. A slot is
     // null when its value was moved out (moves null the source, so each
     // allocation has exactly one freeing owner) or when it never held a
@@ -2951,18 +3299,6 @@ hbc_print_i64:
     push %rbp
     mov %rsp, %rbp
     sub $48, %rsp
-    # NIL sentinel: prints "NIL" with no field width (probe n1)
-    movabs $-9223372036854775808, %r11
-    cmp %r11, %rax
-    jne 0f
-    lea .Lnilmsg(%rip), %rsi
-    mov $3, %edx
-    mov $1, %eax
-    mov $1, %edi
-    syscall
-    leave
-    ret
-0:
     xor %r9d, %r9d
     test %rax, %rax
     jns 1f
@@ -3018,6 +3354,44 @@ hbc_print_i64:
     syscall
     leave
     ret
+
+# hbc_print_dyn: %rax = tag, %rdx = payload. Prints NIL (no field width,
+# probe n1) for tag 1; otherwise the numeric payload via hbc_print_i64.
+hbc_print_dyn:
+    test %rax, %rax
+    jz 8f
+    lea .Lnilmsg(%rip), %rsi
+    mov $3, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    ret
+8:  mov %rdx, %rax
+    jmp hbc_print_i64
+
+# hbc_dyn_to_i64: %rax = tag, %rdx = payload -> %rax = payload. NIL here is
+# a Harbour type error (arithmetic/ordering/indexing on NIL); its dialog
+# cannot be probed headless, so this fails cleanly - registered failure
+# mode alongside hbc_bound_error, NOT a compat success.
+hbc_dyn_to_i64:
+    test %rax, %rax
+    jnz hbc_type_error
+    mov %rdx, %rax
+    ret
+
+# hbc_dyn_eq: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload ->
+# %rax = 1/0. NIL = NIL is .T.; NIL against a payload is .F. (probes n1-n3).
+hbc_dyn_eq:
+    cmp %rcx, %rax
+    jne 8f
+    test %rax, %rax
+    jnz 9f
+    cmp %r8, %rdx
+    jne 8f
+9:  mov $1, %eax
+    ret
+8:  xor %eax, %eax
+    ret
 "#);
 
     out.push_str(r#"
@@ -3028,6 +3402,20 @@ hbc_print_i64:
 hbc_bound_error:
     lea .Lboundmsg(%rip), %rsi
     mov $26, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
+# hbc_type_error: NIL used as a number at runtime (arithmetic, ordering or
+# array indexing). Harbour raises a type-error dialog; headless probes
+# cannot capture it, so this PoC prints and exits 1 (registered failure
+# mode, same error condition).
+hbc_type_error:
+    lea .Ltypemsg(%rip), %rsi
+    mov $33, %edx
     mov $1, %eax
     mov $1, %edi
     syscall
@@ -3104,7 +3492,7 @@ hbc_free2:
     mov (%rbx,%rax), %rdi
     test %rdi, %rdi
     jz 73f
-    mov $8, %esi
+    mov $16, %esi
     call hbc_free
 73: inc %r13
     jmp 71b
@@ -3274,12 +3662,12 @@ hbc_asize:
 67: cmp %r12, %rcx
     jge 68f
     mov %rcx, %r10
-    imul %r14, %r10
-    cmp $16, %r14
-    je 79f
-    # i64 dynamic arrays grow with NIL (probe e1: grown slots read NIL)
-    movabs $-9223372036854775808, %r11
-    mov %r11, (%r13,%r10)
+    shl $4, %r10
+    test %r15, %r15
+    jnz 79f
+    # flat dynamic arrays grow with NIL {1, 0} (probe e1: grown slots read NIL)
+    movq $1, (%r13,%r10)
+    movq $0, 8(%r13,%r10)
     jmp 74f
 79: # a DArr2 grows with the empty child (null, 0) - m-probes, unchanged
     movq $0, (%r13,%r10)
@@ -3300,7 +3688,7 @@ hbc_asize:
     mov (%r13,%r10), %rdi
     test %rdi, %rdi
     jz 78f
-    mov $8, %esi
+    mov $16, %esi
     call hbc_free
 78: inc %r9
     jmp 77b
@@ -3333,11 +3721,13 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     }
     out.push_str(".Lnl:\n    .byte 10\n");
     out.push_str(".Lpad20:\n    .byte 32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32\n");
-    // "NIL" (3 bytes; the sentinel print form, probe n1)
+    // "NIL" (3 bytes; the NIL print form, probe n1)
     out.push_str(".Lnilmsg:\n    .byte 78,73,76\n");
     // "Bound error: array access\n" (26 bytes; Harbour wording, probe a1)
     out.push_str(".Lboundmsg:\n    .byte 66,111,117,110,100,32,101,114,114,111,114,58,32,97,114,114,97,121,32,97,99,99,101,115,115,10\n");
     out.push_str(".Loommsg:\n    .byte 79,117,116,32,111,102,32,109,101,109,111,114,121,10\n");
+    // "Type error: NIL used as a number\n" (33 bytes; registered failure mode)
+    out.push_str(".Ltypemsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,78,73,76,32,117,115,101,100,32,97,115,32,97,32,110,117,109,98,101,114,10\n");
     out.push_str(".Lasizenegmsg:\n    .byte 65,83,105,122,101,58,32,110,101,103,97,116,105,118,101,32,115,105,122,101,10\n");
 }
 
@@ -3448,16 +3838,6 @@ hbc_print_i64:
     push %rbp
     mov %rsp, %rbp
     sub $64, %rsp
-    # NIL sentinel: prints "NIL" with no field width (probe n1)
-    movabs $-9223372036854775808, %r11
-    cmp %r11, %rax
-    jne 0f
-    lea .Lnilmsg(%rip), %rax
-    mov $3, %edx
-    call hbc_print_str
-    leave
-    ret
-0:
     xor %r9d, %r9d
     test %rax, %rax
     jns 1f
@@ -3511,6 +3891,58 @@ hbc_print_i64:
     call hbc_print_str
     leave
     ret
+
+# hbc_print_dyn: %rax = tag, %rdx = payload. Prints NIL (no field width,
+# probe n1) for tag 1; otherwise the numeric payload via hbc_print_i64.
+hbc_print_dyn:
+    push %rbp
+    mov %rsp, %rbp
+    sub $48, %rsp
+    test %rax, %rax
+    jz 8f
+    lea .Lnilmsg(%rip), %rax
+    mov $3, %edx
+    call hbc_print_str
+    jmp 9f
+8:  mov %rdx, %rax
+    call hbc_print_i64
+9:  leave
+    ret
+
+# hbc_dyn_to_i64: %rax = tag, %rdx = payload -> %rax = payload. NIL here is
+# a Harbour type error; see the linux copy for the failure-mode note.
+hbc_dyn_to_i64:
+    test %rax, %rax
+    jnz hbc_type_error
+    mov %rdx, %rax
+    ret
+
+# hbc_dyn_eq: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload ->
+# %rax = 1/0. NIL = NIL is .T.; NIL against a payload is .F. (probes n1-n3).
+hbc_dyn_eq:
+    cmp %rcx, %rax
+    jne 8f
+    test %rax, %rax
+    jnz 9f
+    cmp %r8, %rdx
+    jne 8f
+9:  mov $1, %eax
+    ret
+8:  xor %eax, %eax
+    ret
+
+# hbc_type_error: NIL used as a number at runtime. Reached via a JUMP from
+# hbc_dyn_to_i64, so force 16-byte alignment before calling out (noreturn).
+hbc_type_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Ltypemsg(%rip), %rax
+    mov $33, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
 
 # hbc_bound_error: array index outside 1..=n at runtime (noreturn). Same
 # wording as the linux helper; exit code 1 via ExitProcess.
@@ -3597,7 +4029,7 @@ hbc_free2:
     mov (%rbx,%rax), %rdi
     test %rdi, %rdi
     jz 73f
-    mov $8, %esi
+    mov $16, %esi
     call hbc_free
 73: inc %r13
     jmp 71b
@@ -3750,12 +4182,12 @@ hbc_asize:
 67: cmp %r12, %rcx
     jge 68f
     mov %rcx, %r10
-    imul %r14, %r10
-    cmp $16, %r14
-    je 79f
-    # i64 dynamic arrays grow with NIL (probe e1: grown slots read NIL)
-    movabs $-9223372036854775808, %r11
-    mov %r11, (%r13,%r10)
+    shl $4, %r10
+    test %r15, %r15
+    jnz 79f
+    # flat dynamic arrays grow with NIL {1, 0} (probe e1: grown slots read NIL)
+    movq $1, (%r13,%r10)
+    movq $0, 8(%r13,%r10)
     jmp 74f
 79: # a DArr2 grows with the empty child (null, 0) - m-probes, unchanged
     movq $0, (%r13,%r10)
@@ -3778,7 +4210,7 @@ hbc_asize:
     mov (%r13,%r10), %rdi
     test %rdi, %rdi
     jz 78f
-    mov $8, %esi
+    mov $16, %esi
     call hbc_free
 78: incq 32(%rsp)
     jmp 77b
@@ -3853,7 +4285,10 @@ fn main() {
         }
         let mut ret = None;
         let mut top_exits: Vec<Vec<bool>> = Vec::new();
-        if let Err(m) = check_stmts(&f.stmts, &mut env, &sigs, &mut ret, None, &mut top_exits) {
+        let dyn_names = prescan_dyn(f, &sigs, &ptys);
+        let res = check_stmts(&f.stmts, &mut env, &sigs, &mut ret, None, &mut top_exits, &dyn_names);
+        f.dyn_names = dyn_names;
+        if let Err(m) = res {
             eprintln!("error: {}", m);
             process::exit(1);
         }
