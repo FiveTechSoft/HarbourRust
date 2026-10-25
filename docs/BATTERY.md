@@ -319,6 +319,15 @@ the NIL literal itself has existed in expressions since iteration 15
 (`Array(3, 0)` rows are real empty arrays, never NIL) and t270
 (ASize shrink to 0: every child freed, registry balance 0).
 
+## Three-level parameters (t294-t297, iteration 27)
+
+t294 mirrors oracle pr9 minus the caller reuse: the callee reads
+len(p)/len(p[1])/p[1][1][2] and writes p[1][1][2], balance 0 after
+the owner returns. t295 pins the use-after-move compile error.
+t296 moves through a two-callee chain with balance 0. t297 pins
+the print-move hole at two levels: `? consume(a)` now moves the
+argument like any other statement.
+
 ## Class parser gate (t290-t293, iteration 26)
 
 t290 pins the post-parse rejection of a full class program (the
