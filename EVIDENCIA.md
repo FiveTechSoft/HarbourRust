@@ -213,3 +213,40 @@ Full regression after the change (iteration 2 + 3 battery):
 - `return` remains top-level; early returns are rejected.
 - Same caveat as iteration 3: the Windows side ran under Wine 10.20, not
   real Windows.
+
+---
+
+# Iteration 5: while / enddo and assignment (2026-10-25)
+
+New surface: `while <cond> ... enddo` loops and `x := <expr>` assignment.
+Assignment requires an existing local, keeps its declared type, and makes a
+moved variable live again. Loop move rule: a variable moved in the body
+must be reassigned before `enddo` (the next iteration would otherwise use
+a moved value); post-loop state joins pre-loop and end-of-body.
+
+New tests (each compiled and run, or rejected, on BOTH targets - Linux ELF
+and Windows PE under Wine 10.20):
+
+positive (byte-identical output on both targets):
+  tests/t20_assign.hb              PASS  1 / 5 / hola / adios / de nuevo
+  tests/t23_while_count.hb         PASS  1 / 2 / dos / 3 / fin / cero viajes
+  tests/t25_while_move_reassign.hb PASS  x / y / y
+negative (rejected by hbc itself before codegen, exit 1, both targets):
+  tests/t21_assign_undeclared.hb   PASS  assignment to undeclared variable
+  tests/t22_assign_type.hb         PASS  type mismatch in assignment
+  tests/t24_while_move.hb          PASS  moved in body, not reassigned before enddo
+  tests/t26_while_scope.hb         PASS  undefined variable `z` (body local after enddo)
+  tests/t27_while_return.hb        PASS  return inside a `while` block rejected
+
+Full regression (iteration 2-4 battery, positive and negative): ALL PASS,
+byte-identical on both targets; the hola Linux ELF is still 8,984 bytes.
+t05 keeps its original error wording (the identifier-led-line rejection
+absorbs it).
+
+## What this does NOT show
+- `exit` / `loop` statements, `for` loops, early returns.
+- Full Rust assignment semantics: assignment re-lives a moved variable and
+  cannot change its type; there is still no Drop (strings are read-only
+  literals).
+- Same caveat as before: the Windows side ran under Wine 10.20, not real
+  Windows.
