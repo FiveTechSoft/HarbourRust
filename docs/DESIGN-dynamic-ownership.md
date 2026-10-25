@@ -102,3 +102,39 @@ rewritten explicitly (e.g. return the array from the helper).
    claims beyond what the harness shows.
 3. Every divergent Harbour pattern (d6-d9, e5, e9, d11) has a
    permanent battery test pinning OUR chosen behaviour.
+
+
+## Two levels: arrays of dynamic arrays (v2b)
+
+A variable is unpinned (`{}`), pinned flat (i64 elements) or pinned
+two-level (dynamic arrays of i64). The first `AAdd` pins: an integer pins
+flat, a dynamic array pins two-level and MOVES the child in. Assigning a
+pinned array into an unpinned one also pins. Loop joins propagate pins
+(monotonic narrowing of the unknown element type).
+
+Two-level slots are the same 16-byte ptr/len pair; the per-level heap
+capacity counts elements at that level (outer: 16-byte children, inner:
+bytes). Semantics, all probe-checked (m1-m8):
+
+- Reads `a[i][j]` / `a[i, j]` and `len(a[i])` are transient indexed
+  borrows; the subarray is never moved out. Extraction `b := a[1]` is a
+  compile error: Harbour aliases the shared reference there (m4), which
+  the single-owner model cannot represent yet.
+- `AAdd(a[i], x)` / `ASize(a[i], n)` mutate the subarray in place; the
+  target index is evaluated BEFORE the value (m7). A nested write
+  evaluates value, outer index, inner index (m7). Each index is evaluated
+  exactly once and the parent cannot move while an index runs (static
+  re-check after each evaluation).
+- Insert (`AAdd(a, b)`) and child overwrite (`a[1] := b`) transfer
+  ownership to the parent; the old child is destroyed once, after the new
+  value exists and the source was nulled. `AAdd(a, a)` is rejected.
+- Destruction is recursive and owner-scoped: children first, then the
+  parent; ASize shrink frees the removed children; loop-body
+  re-declaration deep-frees the old value; the epilogue frees each slot
+  still owned (deep or shallow by final type) with the return value
+  preserved across those frees.
+- Not in this increment (compile errors): arrays of arrays as parameters,
+  returns or print arguments; three-level nesting; mixed literals; `ASize`
+  before pinning. Growth zero-fills; Harbour grows NIL (e1/m3) and a null
+  child here reads len 0 and indexes to a clean bound error - the
+  registered i64-model limitation, not a Rust constraint.
