@@ -56,7 +56,7 @@ enum Tok {
     Ne,       // <> or !=
     Lt, Le, Gt, Ge,
     KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElse, KwEndif, KwWhile, KwEnddo, KwExit, KwLoop,
-    KwFor, KwTo, KwStep, KwNext,
+    KwFor, KwTo, KwStep, KwNext, KwEach, KwIn,
     EqEq,       // == (object identity, oracle cl7/cl19)
     Colon,      // : (message send, o:name)
     ColonColon, // :: (self member, inside a method)
@@ -142,6 +142,8 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                     "exit" => Tok::KwExit,
                     "loop" => Tok::KwLoop,
                     "for" => Tok::KwFor,
+                    "each" => Tok::KwEach,
+                    "in" => Tok::KwIn,
                     "to" => Tok::KwTo,
                     "step" => Tok::KwStep,
                     "next" => Tok::KwNext,
@@ -244,6 +246,7 @@ enum Stmt {
     Exit(usize),                 // exit: leave the innermost loop
     Loop(usize),                 // loop: jump to the next iteration of the innermost loop
     For(usize, String, Expr, Expr, i64, Vec<Stmt>), // line, var, start, end, step (non-zero literal), body
+    ForEach(usize, String, Expr, Vec<Stmt>), // line, var, collection (borrowed), body
 }
 
 struct Func {
@@ -612,6 +615,35 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 return Ok(());
             }
             Tok::KwFor => {
+                // `for each x in <collection>`: Harbour REQUIRES the EACH
+                // keyword - `for x in a` is its E0030 syntax error
+                // (oracle hk17). Iterates array elements and hash VALUES
+                // (hk17/hk18/hk26).
+                if toks.get(1) == Some(&Tok::KwEach) {
+                    let id = match toks.get(2) {
+                        Some(Tok::Ident(id)) => { check_ident(id, n)?; id.clone() }
+                        _ => return Err(format!("line {}: expected `for each <var> in <collection>`", n)),
+                    };
+                    if toks.get(3) != Some(&Tok::KwIn) || toks.len() < 5 {
+                        return Err(format!("line {}: expected `for each <var> in <collection>`", n));
+                    }
+                    let coll = parse_expr_tokens(toks[4..].to_vec(), n)?;
+                    *i += 1;
+                    let mut body = Vec::new();
+                    parse_stmts(lines, i, &mut body, depth + 1)?;
+                    if *i >= lines.len() || lines[*i].1[0] != Tok::KwNext {
+                        return Err(format!("line {}: `for each` without `next`", n));
+                    }
+                    if lines[*i].1.len() != 1 {
+                        return Err(format!("line {}: `next` takes no expression", n));
+                    }
+                    *i += 1;
+                    out.push(Stmt::ForEach(n, id, coll, body));
+                    continue;
+                }
+                if toks.iter().any(|t| *t == Tok::KwIn) {
+                    return Err(format!("line {}: Harbour requires EACH here: `for each <var> in <collection>` (without EACH it is its E0030 syntax error, oracle hk17)", n));
+                }
                 // for i := <start> to <end> [step <n>]
                 // The step must be a non-zero integer literal in this PoC:
                 // the counting direction is then fixed at compile time.
@@ -1486,6 +1518,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     walk(f, a, sigs, lit, pin, *n)?; walk(f, b, sigs, lit, pin, *n)?;
                     walk_stmts(f, body, sigs, lit, pin, nil_ret)?;
                 }
+                Stmt::ForEach(n, _, c, body) => {
+                    walk(f, c, sigs, lit, pin, *n)?;
+                    walk_stmts(f, body, sigs, lit, pin, nil_ret)?;
+                }
                 Stmt::ArrSet(n, id, ie, e) => {
                     // p["key"] := v: a string key pins a hash parameter
                     // (oracle hk11); p[i] := "x": a string value pins an
@@ -1594,7 +1630,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
         stmts.iter().any(|s| match s {
             Stmt::Ret(_, None) => true,
             Stmt::If(_, _, a, b) => any_nil_ret(a) || any_nil_ret(b),
-            Stmt::While(_, _, b) | Stmt::For(_, _, _, _, _, b) => any_nil_ret(b),
+            Stmt::While(_, _, b) | Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => any_nil_ret(b),
             _ => false,
         })
     }
@@ -1690,8 +1726,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                 if args.len() != 1 {
                     return Err(format!("line {}: `hb_HKeys` takes exactly one argument", n));
                 }
-                if type_expr(&args[0], env, sigs, n)? != Ty::Hash {
-                    return Err(format!("line {}: `hb_HKeys` expects a hash", n));
+                if !matches!(&args[0], Expr::Var(_)) || type_expr(&args[0], env, sigs, n)? != Ty::Hash {
+                    return Err(format!("line {}: `hb_HKeys` expects a hash variable (its slot is passed by address)", n));
                 }
                 return Ok(Ty::DArrS);
             }
@@ -2099,7 +2135,7 @@ fn has_value_return(stmts: &[Stmt]) -> bool {
         Stmt::Ret(_, Some(_)) => true,
         Stmt::If(_, _, t, e) => has_value_return(t) || has_value_return(e),
         Stmt::While(_, _, b) => has_value_return(b),
-        Stmt::For(_, _, _, _, _, b) => has_value_return(b),
+        Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => has_value_return(b),
         _ => false,
     })
 }
@@ -2127,7 +2163,7 @@ fn prescan_dyn(f: &Func, sigs: &[Sig], ptys: &[Ty]) -> std::collections::HashSet
                 Stmt::Local(_, id, Expr::ArrLit(es)) if es.iter().any(|e| matches!(e, Expr::ArrLit(_) | Expr::DArrNew)) => { darr.insert(id.clone()); }
                 Stmt::If(_, _, t, e) => { scan_darr(t, darr); scan_darr(e, darr); }
                 Stmt::While(_, _, b) => scan_darr(b, darr),
-                Stmt::For(_, _, _, _, _, b) => scan_darr(b, darr),
+                Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => scan_darr(b, darr),
                 _ => {}
             }
         }
@@ -2140,7 +2176,7 @@ fn prescan_dyn(f: &Func, sigs: &[Sig], ptys: &[Ty]) -> std::collections::HashSet
                 Stmt::Local(_, id, e) | Stmt::Assign(_, id, e) => out.push((id, e)),
                 Stmt::If(_, _, t, e) => { collect(t, out); collect(e, out); }
                 Stmt::While(_, _, b) => collect(b, out),
-                Stmt::For(_, _, _, _, _, b) => collect(b, out),
+                Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => collect(b, out),
                 _ => {}
             }
         }
@@ -2183,6 +2219,135 @@ fn unify_ret(ret: Option<Ty>, t: Ty, n: usize) -> Result<Ty, String> {
         (Some(Ty::Str), Ty::StrOwn) | (Some(Ty::StrOwn), Ty::Str) => Ok(Ty::StrOwn),
         (Some(p), _) => Err(format!("line {}: return type mismatch (this function already returns {:?} elsewhere; all returns must agree)", n, p)),
     }
+}
+
+// The FOR EACH collection is BORROWED for the whole loop: any body
+// statement that reassigns it, sets its elements, moves it (checked via
+// the moved flag) or grows it through the mutating builtins would
+// invalidate the borrowed (pointer, count) pair - a reallocation leaves
+// it dangling. This increment rejects all of them (registered
+// limitation; Harbour's own docs advise against mutating while
+// iterating).
+fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
+    fn expr_ok(e: &Expr, name: &str) -> bool {
+        match e {
+            Expr::Call(id, args) => {
+                if (is_builtin(id, "AAdd") || is_builtin(id, "ASize"))
+                    && matches!(args.first(), Some(Expr::Var(v)) if v == name)
+                {
+                    return false;
+                }
+                args.iter().all(|a| expr_ok(a, name))
+            }
+            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => expr_ok(a, name) && expr_ok(b, name),
+            _ => true,
+        }
+    }
+    stmts.iter().all(|s| match s {
+        Stmt::Assign(_, id, e) => id != name && expr_ok(e, name),
+        Stmt::ArrSet(_, id, ie, e) | Stmt::ArrSet2(_, id, ie, e, _) | Stmt::ArrSet3(_, id, ie, e, _, _) => id != name && expr_ok(ie, name) && expr_ok(e, name),
+        Stmt::AAdd(_, id, _) | Stmt::ASize(_, id, _) | Stmt::AAddSub(_, id, _, _) | Stmt::ASizeSub(_, id, _, _) | Stmt::AAddSub2(_, id, _, _, _) | Stmt::ASizeSub2(_, id, _, _, _) => id != name,
+        Stmt::SendStmt(_, e) => expr_ok(e, name),
+        Stmt::If(_, c, a, b) => expr_ok(c, name) && foreach_coll_untouched(a, name) && foreach_coll_untouched(b, name),
+        Stmt::While(_, c, b) => expr_ok(c, name) && foreach_coll_untouched(b, name),
+        Stmt::For(_, _, a, b, _, body) => expr_ok(a, name) && expr_ok(b, name) && foreach_coll_untouched(body, name),
+        Stmt::ForEach(_, _, c, body) => expr_ok(c, name) && foreach_coll_untouched(body, name),
+        Stmt::Print(_, items) => items.iter().all(|i| expr_ok(i, name)),
+        Stmt::Ret(_, Some(e)) => expr_ok(e, name),
+        _ => true,
+    })
+}
+
+// The FOR EACH loop variable is a Dyn view of the CURRENT ELEMENT: a
+// tag-2 payload is a pointer INTO the borrowed collection, owned by it.
+// That pointer must not escape the body: returning it (the collection is
+// freed at the epilogue), copying it to another local (survives the
+// iteration), passing it to a function or storing it into a collection
+// would all leave a dangling or doubly-owned pointer. Dyn owns nothing
+// anywhere in this PoC, so nobody ever copies or frees such a payload -
+// this increment allows the variable only in reads that consume it
+// immediately: print items, comparisons, arithmetic. Everything else is
+// a named compile error (registered limitation).
+fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
+    fn mentions(e: &Expr, name: &str) -> bool {
+        match e {
+            Expr::Var(v) => v == name,
+            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => mentions(a, name) || mentions(b, name),
+            Expr::Call(_, args) => args.iter().any(|a| mentions(a, name)),
+            Expr::Index(id, i) | Expr::Index2(id, i, _) | Expr::Index3(id, i, _, _) => id == name || mentions(i, name),
+            _ => false,
+        }
+    }
+    fn in_call(e: &Expr, name: &str) -> bool {
+        match e {
+            Expr::Call(_, args) => args.iter().any(|a| mentions(a, name)),
+            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => in_call(a, name) || in_call(b, name),
+            Expr::Index(_, i) | Expr::Index2(_, i, _) | Expr::Index3(_, i, _, _) => in_call(i, name),
+            _ => false,
+        }
+    }
+    stmts.iter().all(|s| match s {
+        Stmt::Print(_, items) => items.iter().all(|i| !in_call(i, name)),
+        Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) => !mentions(e, name),
+        Stmt::ArrSet(_, _, ie, e) => !mentions(ie, name) && !mentions(e, name),
+        Stmt::ArrSet2(_, _, i1, i2, e) => !mentions(i1, name) && !mentions(i2, name) && !mentions(e, name),
+        Stmt::ArrSet3(_, _, i1, i2, i3, e) => !mentions(i1, name) && !mentions(i2, name) && !mentions(i3, name) && !mentions(e, name),
+        Stmt::AAdd(_, _, e) | Stmt::ASize(_, _, e) => !mentions(e, name),
+        Stmt::AAddSub(_, _, i, e) | Stmt::ASizeSub(_, _, i, e) => !mentions(i, name) && !mentions(e, name),
+        Stmt::AAddSub2(_, _, i, j, e) | Stmt::ASizeSub2(_, _, i, j, e) => !mentions(i, name) && !mentions(j, name) && !mentions(e, name),
+        Stmt::Local(_, _, e) => !mentions(e, name),
+        Stmt::If(_, _, a, b) => foreach_lv_readonly(a, name) && foreach_lv_readonly(b, name),
+        Stmt::While(_, _, b) => foreach_lv_readonly(b, name),
+        Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => foreach_lv_readonly(b, name),
+        _ => true,
+    })
+}
+
+// Comparing the FOR EACH variable against a STRING would hit the
+// Dyn-vs-string fold (`=` always .F.): right for NIL casillas (n1),
+// wrong for string elements - Harbour compares byte-wise (hk33) - and
+// wrong for numeric ones - Harbour raises BASE/1071 (hk34). This
+// increment rejects the comparison by name instead of folding wrong.
+fn foreach_lv_no_strcmp(stmts: &[Stmt], name: &str, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<(), String> {
+    fn mentions(e: &Expr, name: &str) -> bool {
+        match e {
+            Expr::Var(v) => v == name,
+            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => mentions(a, name) || mentions(b, name),
+            Expr::Call(_, args) => args.iter().any(|a| mentions(a, name)),
+            Expr::Index(id, i) | Expr::Index2(id, i, _) | Expr::Index3(id, i, _, _) => id == name || mentions(i, name),
+            _ => false,
+        }
+    }
+    fn scan_expr(e: &Expr, name: &str, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<(), String> {
+        if let Expr::Cmp(_, a, b) = e {
+            if mentions(a, name) || mentions(b, name) {
+                let other = if mentions(a, name) { b } else { a };
+                if matches!(type_expr(other, env, sigs, n)?, Ty::Str | Ty::StrOwn) {
+                    return Err(format!("line {}: comparing the `for each` variable `{}` against a string is not in this increment - Harbour compares string elements byte-wise (hk33) and errors BASE/1071 on numeric ones (hk34); registered as pending", n, name));
+                }
+            }
+        }
+        match e {
+            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => { scan_expr(a, name, env, sigs, n)?; scan_expr(b, name, env, sigs, n)?; }
+            Expr::Call(_, args) => { for a in args { scan_expr(a, name, env, sigs, n)?; } }
+            Expr::Index(_, i) | Expr::Index2(_, i, _) | Expr::Index3(_, i, _, _) => scan_expr(i, name, env, sigs, n)?,
+            _ => {}
+        }
+        Ok(())
+    }
+    for s in stmts {
+        match s {
+            Stmt::Print(_, items) => { for i in items { scan_expr(i, name, env, sigs, n)?; } }
+            Stmt::If(_, c, a, b) => { scan_expr(c, name, env, sigs, n)?; foreach_lv_no_strcmp(a, name, env, sigs, n)?; foreach_lv_no_strcmp(b, name, env, sigs, n)?; }
+            Stmt::While(_, c, b) => { scan_expr(c, name, env, sigs, n)?; foreach_lv_no_strcmp(b, name, env, sigs, n)?; }
+            Stmt::For(_, _, a, b, _, body) => { scan_expr(a, name, env, sigs, n)?; scan_expr(b, name, env, sigs, n)?; foreach_lv_no_strcmp(body, name, env, sigs, n)?; }
+            Stmt::ForEach(_, _, c, body) => { scan_expr(c, name, env, sigs, n)?; foreach_lv_no_strcmp(body, name, env, sigs, n)?; }
+            Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) => scan_expr(e, name, env, sigs, n)?,
+            Stmt::ArrSet(_, _, ie, e) | Stmt::AAddSub(_, _, ie, e) | Stmt::ASizeSub(_, _, ie, e) => { scan_expr(ie, name, env, sigs, n)?; scan_expr(e, name, env, sigs, n)?; }
+            _ => {}
+        }
+    }
+    Ok(())
 }
 
 fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Option<Ty>, loop_pre: Option<&Vec<bool>>, exits: &mut Vec<Vec<bool>>, dyn_names: &std::collections::HashSet<String>) -> Result<bool, String> {
@@ -2358,6 +2523,68 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                     }
                 }
                 env.truncate(outer - 1);
+            }
+            Stmt::ForEach(n, var, coll, body) => {
+                // FOR EACH (oracles hk17-hk32): the collection is a
+                // VARIABLE, borrowed for the loop and alive afterwards
+                // (hk26). The loop variable must already exist - Harbour
+                // errors BASE/1003 on an undeclared one - and inside the
+                // body it is the CURRENT ELEMENT as a Dyn: i64/NIL for
+                // flat arrays (hk26/hk30), string-or-NIL for key arrays
+                // (hk17/hk27), value-or-NIL for hashes (hk18/hk31). The
+                // outer value is RESTORED after the loop, naturally or
+                // via `exit` (hk28/hk29): the outer slot is never
+                // touched. Assigning to it is rejected (ro): Harbour
+                // writes THROUGH to the element (hk32), a borrow of a
+                // mutable cell this increment does not implement -
+                // registered limitation.
+                let ct = type_expr(coll, env, sigs, *n)?;
+                apply_moves(coll, env, sigs, false);
+                if !matches!(coll, Expr::Var(_)) {
+                    return Err(format!("line {}: `for each` iterates a variable in this increment (assign the expression to a variable first)", n));
+                }
+                if !matches!(ct, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArrS | Ty::Hash) {
+                    return Err(format!("line {}: `for each` needs a flat or string array or a hash in this increment", n));
+                }
+                let kp = match env.iter().position(|v| v.name == *var) {
+                    Some(k) => k,
+                    None => return Err(format!("line {}: `for each` loop variable `{}` must be declared first (Harbour errors BASE/1003 on an undeclared one)", n, var)),
+                };
+                let cname = match coll { Expr::Var(cn) => cn.clone(), _ => unreachable!() };
+                if cname == *var {
+                    return Err(format!("line {}: `for each` loop variable cannot be the collection itself", n));
+                }
+                let saved = (env[kp].ty, env[kp].ro);
+                env[kp].ty = Ty::Dyn;
+                env[kp].ro = true;
+                let outer = env.len();
+                let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
+                let mut env_body = env.clone();
+                let mut fexits: Vec<Vec<bool>> = Vec::new();
+                let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut fexits, dyn_names)?;
+                let kc = env.iter().position(|v| v.name == cname).expect("collection exists");
+                if env_body[kc].moved || !foreach_coll_untouched(body, &cname) {
+                    return Err(format!("line {}: the `for each` collection `{}` cannot be modified, moved or grown inside its own loop in this increment (the loop borrows it)", n, cname));
+                }
+                if !foreach_lv_readonly(body, var) {
+                    return Err(format!("line {}: the `for each` variable `{}` can only be printed, compared or used in arithmetic in this increment - its value borrows from the collection, so it cannot be returned, assigned, passed to a function or stored (registered limitation)", n, var));
+                }
+                foreach_lv_no_strcmp(body, var, &mut env_body, sigs, *n)?;
+                if fb {
+                    for k in 0..outer {
+                        if !pre[k] && env_body[k].moved {
+                            return Err(format!("line {}: `{}` is moved inside the `for each` body and not reassigned before `next` (the next iteration would use a moved value)", n, env[k].name));
+                        }
+                    }
+                }
+                for k in 0..outer {
+                    env[k].moved = pre[k] || (fb && env_body[k].moved) || fexits.iter().any(|xs| xs[k]);
+                    if env[k].ty == Ty::DArrU && matches!(env_body[k].ty, Ty::DArr | Ty::DArr2) {
+                        env[k].ty = env_body[k].ty;
+                    }
+                }
+                env[kp].ty = saved.0;
+                env[kp].ro = saved.1;
             }
             Stmt::Exit(n) => {
                 let pre = match loop_pre {
@@ -3457,6 +3684,22 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 layout_locals(body, env, sigs, frame, darr_slots, dyn_names);
                 env.truncate(mark);
             }
+            Stmt::ForEach(_, var, _, body) => {
+                // No shadow push: several codegen lookups take the FIRST
+                // name match, so the existing local is RETYPED to Dyn and
+                // pointed at the hidden element slot for the body, then
+                // restored (the outer slot is never written).
+                *frame += 16; // hidden pair: collection (ptr, count), borrowed
+                *frame += 8; // hidden slot: 1-based iteration index
+                *frame += 16; // loop variable: the current element as a Dyn
+                let kl = env.iter().position(|v| v.name == *var).expect("checker found the local");
+                let saved = (env[kl].ty, env[kl].off);
+                env[kl].ty = Ty::Dyn;
+                env[kl].off = *frame;
+                layout_locals(body, env, sigs, frame, darr_slots, dyn_names);
+                env[kl].ty = saved.0;
+                env[kl].off = saved.1;
+            }
             _ => {}
         }
     }
@@ -3959,6 +4202,77 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    jmp .Lforc_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lfore_{}_{}:\n", fname, id));
             }
+            Stmt::ForEach(_, var, coll, body) => {
+                let id = *label;
+                *label += 1;
+                let mark = env.len();
+                // The collection variable is evaluated ONCE into a hidden
+                // pair (borrowed, never freed here); the index is 1-based
+                // like Harbour. The current element is rebuilt as a Dyn
+                // pair on every iteration: {tag, payload} directly from
+                // the 16-byte array cells, the value words of the 32-byte
+                // hash entries, or a tag-0 pair for static i64 arrays.
+                cg_value(coll, env, sigs, strs, out, target);
+                *frame += 16;
+                let coll_off = *frame;
+                out.push_str(&format!("    mov %rax, -{}(%rbp)
+    mov %rdx, -{}(%rbp)
+", coll_off, coll_off - 8));
+                *frame += 8;
+                let idx_off = *frame;
+                out.push_str(&format!("    movq $1, -{}(%rbp)
+", idx_off));
+                *frame += 16;
+                let lv_off = *frame;
+                let ct = expr_ty(coll, env, sigs);
+                let kl = env.iter().position(|v| v.name == *var).expect("checker found the local");
+                let saved_lv = (env[kl].ty, env[kl].off);
+                env[kl].ty = Ty::Dyn;
+                env[kl].off = lv_off;
+                out.push_str(&format!(".Lfec_{}_{}:
+", fname, id));
+                out.push_str(&format!("    mov -{}(%rbp), %rax
+    cmp -{}(%rbp), %rax
+    jg .Lfee_{}_{}
+", idx_off, coll_off - 8, fname, id));
+                out.push_str(&format!("    mov -{}(%rbp), %r11
+    mov -{}(%rbp), %rax
+    dec %rax
+", coll_off, idx_off));
+                match ct {
+                    Ty::Arr(_) => out.push_str("    shl $3, %rax
+    add %r11, %rax
+    mov (%rax), %rdx
+    xor %eax, %eax
+"),
+                    Ty::Hash => out.push_str("    shl $5, %rax
+    add %r11, %rax
+    mov 16(%rax), %rcx
+    mov 24(%rax), %rdx
+    mov %rcx, %rax
+"),
+                    _ => out.push_str("    shl $4, %rax
+    add %r11, %rax
+    mov (%rax), %rcx
+    mov 8(%rax), %rdx
+    mov %rcx, %rax
+"),
+                }
+                out.push_str(&format!("    mov %rax, -{}(%rbp)
+    mov %rdx, -{}(%rbp)
+", lv_off, lv_off - 8));
+                let inner = Some((format!(".Lfen_{}_{}", fname, id), format!(".Lfee_{}_{}", fname, id)));
+                cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names);
+                env[kl].ty = saved_lv.0;
+                env[kl].off = saved_lv.1;
+                env.truncate(mark);
+                out.push_str(&format!(".Lfen_{}_{}:
+    incq -{}(%rbp)
+    jmp .Lfec_{}_{}
+", fname, id, idx_off, fname, id));
+                out.push_str(&format!(".Lfee_{}_{}:
+", fname, id));
+            }
             Stmt::Exit(_) => {
                 let (_, end) = ll.as_ref().expect("analysis checked `exit` is inside a loop");
                 out.push_str(&format!("    jmp {}\n", end));
@@ -4451,6 +4765,7 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
             Stmt::If(_, c, a, b) => { collect_blocks_expr(c, out); collect_blocks_stmts(a, out); collect_blocks_stmts(b, out); }
             Stmt::While(_, c, body) => { collect_blocks_expr(c, out); collect_blocks_stmts(body, out); }
             Stmt::For(_, _, a, b, _, body) => { collect_blocks_expr(a, out); collect_blocks_expr(b, out); collect_blocks_stmts(body, out); }
+            Stmt::ForEach(_, _, c, body) => { collect_blocks_expr(c, out); collect_blocks_stmts(body, out); }
         }
     }
 }
