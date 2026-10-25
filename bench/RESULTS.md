@@ -2,11 +2,18 @@
 
 Execution time (ms):
 
-| program  | Harbour pcode | Harbour -gc3 | HarbourRust | vs pcode | vs -gc3 |
-|----------|---------------|--------------|-------------|----------|---------|
-| b1_int   | 12348         | 8214         | 198         | 62x      | 41x     |
-| b2_str   | 990           | 807          | 406         | 2.4x     | 2.0x    |
-| b3_call  | 1735          | 1136         | 38          | 46x      | 30x     |
+| program       | Harbour pcode | Harbour -gc3 | HarbourRust | vs pcode | vs -gc3 |
+|---------------|---------------|--------------|-------------|----------|---------|
+| b1_int        | withdrawn     | withdrawn    | withdrawn   | -        | -       |
+| b2_str        | 990           | 807          | 406         | 2.4x     | 2.0x    |
+| b3_call       | 1735          | 1136         | 38          | 46x      | 30x     |
+| b1b_int_bounded | 14050       | 14224        | 251         | 56x      | 57x     |
+
+b1_int is WITHDRAWN as a speed comparison (see the correction section
+below): Harbour runs its accumulator in double while HarbourRust runs it
+in i64, so the two sides do different numeric work per iteration and the
+timings are not comparable. b1b_int_bounded is the bounded replacement
+case with equal semantics on both models.
 
 Optimization contrast on the Harbour side (median ms; baseline already -O3):
 
@@ -37,17 +44,45 @@ from HEAD with the same hbc+as+ld path. Median of 5 runs, same machine.
 
 | program  | Harbour pcode | Harbour -gc3 | HarbourRust | vs pcode | vs -gc3 |
 |----------|---------------|--------------|-------------|----------|---------|
-| b1_int   | 11471         | 7533         | 171         | 67x      | 44x     |
+| b1_int   | 11471         | 7533         | 171         | withdrawn | withdrawn |
 | b2_str   | 865           | 745          | 520         | 1.7x     | 1.4x    |
 | b3_call  | 1591          | 972          | 33          | 48x      | 29x     |
 
 Correctness gates before timing: b2_str and b3_call outputs are
-BYTE-IDENTICAL to both Harbour configs (sha256 verified). b1_int is
-category DIVERGE-NUMERIC: the accumulator escapes int64 by design of the
-source (the once-per-iteration subtraction cannot bound it), Harbour
-continues in double (value rounding + 20-column float field) while
-HarbourRust wraps in i64 with the integer field rule - the timing
-comparison stands (same source text), the outputs differ by the
-registered numeric model. The earlier "200 runs of arith, 50ms vs 269ms"
-figure was a spot check, not part of this benchmark series; this table is
-the current benchmark data.
+BYTE-IDENTICAL to both Harbour configs (sha256 verified).
+
+b1_int correction (supersedes the earlier rationale, which claimed the
+accumulator "escapes int64" and HarbourRust "wraps in i64"): both claims
+were wrong. The accumulator reaches 4900499752500003, which fits in i64;
+no wrap occurs and both sides print the same 16 digits. The real
+divergence is the numeric type path: probe evidence (printing the value
+computed at runtime vs the same value as a literal) shows Harbour's
+runtime accumulator is a DOUBLE, printed in a 20-wide field, while the
+same digits as an integer literal print 17-wide; HarbourRust keeps i64
+and prints 17-wide. Because the two sides execute different arithmetic
+per iteration (double vs int64), the same source text does not make the
+timings comparable, and b1_int is withdrawn from all speedup claims.
+The earlier design note that described the accumulator as bounded below
+2e6 was also wrong: the once-per-iteration subtraction of 1000003 cannot
+keep up once the loop index exceeds 1000003, so the accumulator grows to
+about 4.9e15.
+
+Original source preserved unchanged: bench/b1_int.hb, sha256
+b2aa4c6cb0768dbd40da3ff16890ce892f71dec3af677c2030ec5559e4e6b101
+(frozen 2026-10-25 08:08 CET).
+
+## Replacement bounded case: b1b_int_bounded
+
+New versioned program bench/b1b_int_bounded.hb; the original b1_int.hb is
+untouched. A second reset guards the accumulator once the loop index
+exceeds the subtraction constant, so the accumulator stays below
+101000000 (< 2^31) at all times: Harbour and HarbourRust both run the
+whole loop in integer arithmetic with identical semantics. Output is
+byte-identical on all three binaries ("\n" + 9 spaces + "0", verified
+with od). Same frozen config and method as above: hbmk2 default (-O3
+baseline), HarbourRust rebuilt from HEAD, median of 5 runs, same
+machine. Results are in the first table.
+
+The earlier "200 runs of arith, 50ms vs 269ms" figure was a spot check,
+not part of this benchmark series; the tables above are the current
+benchmark data.
