@@ -131,7 +131,7 @@ pos tests/t127_arr_write.hb \n        99
 pos tests/t128_arr_expr_index.hb \n        20\n        20
 pos tests/t129_arr_loop.hb \n         1          4          9
 pos tests/t130_arr_copy_model.hb \n        10\n        99
-pos tests/t133_arr_runtime_oob.hb \n        10Bound error: array access
+posx tests/t133_arr_runtime_oob.hb 1 \n        10Bound error: array access
 neg tests/t131_arr_neg_const_low.hb out of bounds
 neg tests/t132_arr_neg_const_high.hb out of bounds
 neg tests/t134_arr_neg_str_index.hb is not an array
@@ -140,3 +140,9 @@ neg tests/t136_arr_neg_pass_arg.hb arrays cannot be passed as arguments
 neg tests/t137_arr_neg_size_mismatch.hb type mismatch in assignment
 neg tests/t138_arr_neg_empty.hb empty array literal
 neg tests/t139_arr_neg_mixed.hb array elements must be integers
+pos tests/t140_arr_call_index.hb \n        77\n        77\n        20
+pos tests/t141_arr_set_order.hb \n         2\n         1\n        99
+posx tests/t142_arr_bound_max.hb 1 Bound error: array access
+posx tests/t143_arr_bound_min.hb 1 Bound error: array access
+pos tests/t144_arr_copy_reverse.hb \n        10\n         5
+pos tests/t145_arr_reassign_same.hb \n         9          8
