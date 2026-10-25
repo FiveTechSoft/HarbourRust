@@ -319,6 +319,14 @@ the NIL literal itself has existed in expressions since iteration 15
 (`Array(3, 0)` rows are real empty arrays, never NIL) and t270
 (ASize shrink to 0: every child freed, registry balance 0).
 
+## Array() with three dimensions (t285-t286, iteration 25)
+
+t285 mirrors oracle pr7: Array(2, 2, 3) gives len 2/2/3, innermost
+slots read NIL, a later third-level write works, registry balance 0
+after the owner returns. t286 pins the compile error for a fourth
+dimension. The old t251 negative ("3 dimensions unsupported") was
+retired because three dimensions are supported now.
+
 ## AAdd/ASize at the third level (t281-t283, iteration 24)
 
 t281 mirrors oracle pr8: AAdd(a[i][j], x) evaluates i, then j, then
