@@ -176,3 +176,9 @@ neg tests/t173_dyn_neg_moved.hb use of moved value
 neg tests/t174_dyn_neg_aadd_fixed.hb AAdd` applies to dynamic arrays
 neg tests/t175_dyn_neg_print.hb cannot print a dynamic array
 posx tests/t176_dyn_asize_neg.hb 1 ASize: negative size
+neg tests/t177_dyn_neg_branch_join.hb use of moved value
+neg tests/t178_dyn_neg_backedge.hb moved inside the `for` body
+neg tests/t179_dyn_neg_loop_stmt.hb moved inside the `while` body
+neg tests/t180_dyn_neg_exit_path.hb moved inside the `for` body
+neg tests/t181_dyn_neg_aadd_moved.hb use of moved value
+neg tests/t182_dyn_neg_asize_moved.hb use of moved value
