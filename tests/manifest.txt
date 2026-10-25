@@ -161,3 +161,6 @@ neg tests/t157_cb_neg_capture.hb codeblock captures are not in this increment
 neg tests/t158_cb_neg_fewer_args.hb `eval` got 1
 neg tests/t159_cb_neg_string_body.hb integer expressions
 neg tests/t160_cb_neg_print.hb cannot print a codeblock
+neg tests/t161_cb_neg_arity_reassign.hb type mismatch in assignment
+neg tests/t162_cb_neg_as_arg.hb got a codeblock
+neg tests/t163_cb_neg_string_arg.hb must be integers
