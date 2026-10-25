@@ -420,55 +420,21 @@ parameters.
 - Same caveat as before: the Windows side ran under Wine 10.20, not real
   Windows.
 
-## Iteration 11b: string parameters (move semantics)
+### Integration evidence and F2
 
-Parameters can now be strings. Since Harbour parameters are untyped and this
-PoC is statically typed, a parameter's type is PINNED by how the body uses
-it (syntactic pre-pass): under arithmetic it is an integer, compared
-against a string literal (or a literal-initialized local) it is a string,
-passed to another function it takes that parameter's type. A parameter the
-body only prints, returns or copies is not pinnable: hbc reports "cannot
-infer the type of parameter ..." instead of guessing. This syntactic
-pinning is an IMPLEMENTATION LIMITATION of the current PoC, not a claim of
-full Rust-style type inference. A pin failure never
-masks a deeper error: the body check runs first and its error wins.
-
-Ownership, verified against rustc 1.99.1 (E0382): passing a string argument
-MOVES it out of the caller's variable (like a Rust String passed by value);
-using it afterwards is "use of moved value". Assignment re-lives it. A
-literal argument has no owner and does not move. Integer arguments copy.
-The move is applied left to right, so `f(v) + g(v)` with string parameters
-rejects the second use at compile time.
-
-9 new tests (t67-t75): 5 positive (compare-pinned, move+revive, chained
-pin through a callee signature, mixed int+string params, literal args) and
-4 negative (use after move, unpinnable parameter, wrong argument type,
-double move in one expression). Full battery: 75/75 numbered tests pass
-(78/78 with fixtures), byte-identical on Linux x86-64 and under Wine.
-
-Differential vs harbour/core @ 694428e1: the 5 positive cases MATCH.
-Registered divergence (model, not a bug): Harbour copies strings on call,
-so a variable stays usable after being passed; HarbourRust moves it (the
-agreed Rust model). Same observable results when the caller does not reuse
-the variable; reuse is a compile error here, valid code there.
-
-## Preprocessor F1: hpp (MIT, from scratch)
-
-src/hpp.rs is our own preprocessor, written from scratch in Rust against the
-behavioural baseline in docs/PP-F0.md (no Harbour code copied). F1 features:
-object-like #define / #undef (last definition wins), #ifdef / #ifndef /
-#else / #elif / #endif with nesting, #if over integer constants with ==,
-!=, <, <=, >, >=, .and./.or./.not., parentheses and defined(), #include
-(input-relative, then -I dirs, nesting capped at 16), #error, case-
-insensitive directive names, unknown directives rejected. Define expansion
-respects word boundaries and never touches string literals.
-
-Verified against the F0 probe expectations: 18/18 behavioural checks pass
-(define, undef isolation, include, #error, single-= rejected with a clear
-message, case-insensitivity, last-wins, if/elif selection, defined(),
-.and., string-literal protection, unknown directive, unterminated #if).
-Integration: hpp output feeds hbc directly - `hpp q20.prg | hbc` builds and
-prints two, `hpp p01` builds and prints 42 (Linux x86-64).
-
-Function-like #define is F2 (rejected in F1 with an explicit error);
-#command/#translate is F3 and needs its own behavioural round first.
+- Single-invocation proof: `hbc prog.hb out.s` preprocesses and compiles
+  with no separate step; `-I dir` adds include paths; diagnostics (#error,
+  bad #if, unknown directive, missing include) abort the compile with the
+  message and exit 1.
+- F2 (function-like #define) landed with the integration: `#define SQ(x)
+  x * x` expands textually with word-boundary, case-insensitive parameter
+  substitution; arguments may nest calls (SQ(SQ(2)) -> 16) and contain
+  strings; a parameter inside a quoted string is never substituted.
+- The engine is byte-safe: non-ASCII source (UTF-8 identifiers and strings,
+  tests t04/t07) passes through unmodified - a regression introduced by the
+  split was caught by the battery and fixed.
+- New tests t76-t81 (4 positive: define bound, #ifdef branch, #include,
+  function-like + nesting; 2 negative: #error aborts, single `=` in #if),
+  all through hbc alone. Full battery: 81/81 numbered tests (85/85 with
+  fixtures), Linux + Wine identical. Differential vs Harbour: t76-t79 all
+  MATCH. Fixture added: tests/t78_defs.ch.
