@@ -143,7 +143,7 @@ recorded, not denied.
 - Rule specificity (b31/b31b): on the probed two-rule shapes, Harbour
   picks the rule with MORE literal words regardless of definition order;
   we used first-defined-wins and were wrong - fixed the same day (t102).
-  Observed scope only: ties keep the earliest definition; abbreviations,
+  Observed scope only: ties keep the LATEST definition (b47/b47b/b47c); abbreviations,
   wider rule shapes and the x- priority are NOT probed, so this is not
   established as Harbour's universal selection rule.
 - Result-side [ ... ] in #command (b35, b36a-d): a bracket containing at
