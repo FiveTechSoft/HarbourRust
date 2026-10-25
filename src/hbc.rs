@@ -251,6 +251,8 @@ enum Stmt {
     ASizeSub(usize, String, Expr, Expr), // ASize(a[i], n): resize the subarray
     AAddSub2(usize, String, Expr, Expr, Expr), // AAdd(a[i][j], x): grow the innermost subarray (oracle pr8)
     ASizeSub2(usize, String, Expr, Expr, Expr), // ASize(a[i][j], n): resize the innermost subarray
+    AAddSub3(usize, String, Expr, Expr, Expr, Expr), // AAdd(a[i][j][k], x) on a DArr4 (hk105/hk108)
+    ASizeSub3(usize, String, Expr, Expr, Expr, Expr), // ASize(a[i][j][k], n) on a DArr4 (hk105)
     ASize(usize, String, Expr), // ASize(a, n): resize in place (probe d3)
     Exit(usize),                 // exit: leave the innermost loop
     Loop(usize),                 // loop: jump to the next iteration of the innermost loop
@@ -969,7 +971,20 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     // calls; the statement form is the PoC surface - probe
                     // e5's return value is out of scope, registered).
                     let inner = &toks[2..toks.len() - 1];
-                    let comma = match inner.iter().position(|t| *t == Tok::Comma) {
+                    // First comma at depth 0: commas inside the bracket
+                    // index group (a[i, j, k] comma form, hk105/hk108)
+                    // belong to the head, not to the head/value split.
+                    let mut d0 = 0i32;
+                    let mut comma: Option<usize> = None;
+                    for (p, t) in inner.iter().enumerate() {
+                        match t {
+                            Tok::LBracket | Tok::LParen => d0 += 1,
+                            Tok::RBracket | Tok::RParen => d0 -= 1,
+                            Tok::Comma if d0 == 0 => { comma = Some(p); break; }
+                            _ => {}
+                        }
+                    }
+                    let comma = match comma {
                         Some(p) => p,
                         None => return Err(format!("line {}: `{}` takes two arguments", n, id)),
                     };
@@ -1006,23 +1021,79 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                                 }
                             }
                             if rb == head.len() - 1 {
-                                // One bracket group whose index itself
-                                // contains brackets (a[b[1]]): AAddSub.
-                                let idx = parse_expr_tokens(head[2..rb].to_vec(), n)?;
-                                if is_builtin(&id, "aadd") {
-                                    out.push(Stmt::AAddSub(n, v, idx, e));
-                                } else {
-                                    out.push(Stmt::ASizeSub(n, v, idx, e));
+                                // One bracket group: a[i], a[i, j] or
+                                // a[i, j, k] in comma form (probe m2
+                                // extended; hk105/hk108 measured comma).
+                                let inner = &head[2..rb];
+                                let mut d2 = 0i32;
+                                let mut cs: Vec<usize> = Vec::new();
+                                for (p, tk) in inner.iter().enumerate() {
+                                    match tk {
+                                        Tok::LBracket | Tok::LParen => d2 += 1,
+                                        Tok::RBracket | Tok::RParen => d2 -= 1,
+                                        Tok::Comma if d2 == 0 => cs.push(p),
+                                        _ => {}
+                                    }
+                                }
+                                if cs.len() > 2 {
+                                    return Err(format!("line {}: `{}` on more than three index levels is not in this increment", n, id));
+                                }
+                                let mut idxs: Vec<Expr> = Vec::new();
+                                let mut start = 0usize;
+                                for &c in &cs {
+                                    idxs.push(parse_expr_tokens(inner[start..c].to_vec(), n)?);
+                                    start = c + 1;
+                                }
+                                idxs.push(parse_expr_tokens(inner[start..].to_vec(), n)?);
+                                let mut it = idxs.into_iter();
+                                let i1 = it.next().unwrap();
+                                match (it.next(), it.next()) {
+                                    (None, None) => {
+                                        if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub(n, v, i1, e)); } else { out.push(Stmt::ASizeSub(n, v, i1, e)); }
+                                    }
+                                    (Some(i2), None) => {
+                                        if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub2(n, v, i1, i2, e)); } else { out.push(Stmt::ASizeSub2(n, v, i1, i2, e)); }
+                                    }
+                                    (Some(i2), Some(i3)) => {
+                                        if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub3(n, v, i1, i2, i3, e)); } else { out.push(Stmt::ASizeSub3(n, v, i1, i2, i3, e)); }
+                                    }
+                                    _ => unreachable!(),
                                 }
                                 *i += 1;
                                 continue;
                             }
                             if rb <= 2 || rb + 1 >= head.len() - 1 || !matches!(head[rb + 1], Tok::LBracket) {
-                                return Err(format!("line {}: the first argument of `{}` must be a variable, a[i] or a[i][j]", n, id));
+                                return Err(format!("line {}: the first argument of `{}` must be a variable, a[i], a[i][j] or a[i][j][k]", n, id));
+                            }
+                            // Second group; a third may follow (hk105).
+                            let mut depth3 = 0i32;
+                            let mut rb2 = 0usize;
+                            for (p, tk) in head.iter().enumerate().skip(rb + 1) {
+                                match tk {
+                                    Tok::LBracket | Tok::LParen => depth3 += 1,
+                                    Tok::RBracket | Tok::RParen => {
+                                        depth3 -= 1;
+                                        if depth3 == 0 { rb2 = p; break; }
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            if rb2 == 0 {
+                                return Err(format!("line {}: the first argument of `{}` must be a variable, a[i], a[i][j] or a[i][j][k]", n, id));
                             }
                             let i1 = parse_expr_tokens(head[2..rb].to_vec(), n)?;
-                            let i2 = parse_expr_tokens(head[rb + 2..head.len() - 1].to_vec(), n)?;
-                            if is_builtin(&id, "aadd") {
+                            let i2 = parse_expr_tokens(head[rb + 2..rb2].to_vec(), n)?;
+                            if rb2 + 1 < head.len() - 1 {
+                                if !matches!(head[rb2 + 1], Tok::LBracket) {
+                                    return Err(format!("line {}: the first argument of `{}` must be a variable, a[i], a[i][j] or a[i][j][k]", n, id));
+                                }
+                                let i3 = parse_expr_tokens(head[rb2 + 2..head.len() - 1].to_vec(), n)?;
+                                if is_builtin(&id, "aadd") {
+                                    out.push(Stmt::AAddSub3(n, v, i1, i2, i3, e));
+                                } else {
+                                    out.push(Stmt::ASizeSub3(n, v, i1, i2, i3, e));
+                                }
+                            } else if is_builtin(&id, "aadd") {
                                 out.push(Stmt::AAddSub2(n, v, i1, i2, e));
                             } else {
                                 out.push(Stmt::ASizeSub2(n, v, i1, i2, e));
@@ -1719,6 +1790,19 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     walk(f, o, sigs, lit, pin, *n)?;
                     walk(f, e, sigs, lit, pin, *n)?;
                 }
+                Stmt::AAddSub3(n, id, ie, ie2, ie3, e) | Stmt::ASizeSub3(n, id, ie, ie2, ie3, e) => {
+                    if is_param(f, id).is_some() {
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::DArr4, pin, *n)?;
+                    }
+                    pin_vars(f, ie, Ty::I64, pin, *n)?;
+                    pin_vars(f, ie2, Ty::I64, pin, *n)?;
+                    pin_vars(f, ie3, Ty::I64, pin, *n)?;
+                    pin_vars(f, e, Ty::I64, pin, *n)?;
+                    walk(f, ie, sigs, lit, pin, *n)?;
+                    walk(f, ie2, sigs, lit, pin, *n)?;
+                    walk(f, ie3, sigs, lit, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, *n)?;
+                }
                 Stmt::AAddSub2(n, id, ie, ie2, e) | Stmt::ASizeSub2(n, id, ie, ie2, e) => {
                     if is_param(f, id).is_some() {
                         // AAdd/ASize on p[i][j] pins the parameter to an
@@ -1881,6 +1965,9 @@ fn borrow_stmts_ok(stmts: &[Stmt], pname: &str) -> Option<usize> {
             }
             Stmt::AAdd(_, _, e) | Stmt::ASize(_, _, e) | Stmt::AAddSub(_, _, _, e) | Stmt::ASizeSub(_, _, _, e) => {
                 if borrow_expr_ok(e, pname) { None } else { Some(0) }
+            }
+            Stmt::AAddSub3(n, _, a, b, c, e) | Stmt::ASizeSub3(n, _, a, b, c, e) => {
+                if !borrow_expr_ok(a, pname) || !borrow_expr_ok(b, pname) || !borrow_expr_ok(c, pname) || !borrow_expr_ok(e, pname) { Some(*n) } else { None }
             }
             Stmt::AAddSub2(_, _, a, b, e) | Stmt::ASizeSub2(_, _, a, b, e) => {
                 if borrow_expr_ok(a, pname) && borrow_expr_ok(b, pname) && borrow_expr_ok(e, pname) { None } else { Some(0) }
@@ -2726,7 +2813,7 @@ fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
     stmts.iter().all(|s| match s {
         Stmt::Assign(_, id, e) => id != name && expr_ok(e, name),
         Stmt::ArrSet(_, id, ie, e) | Stmt::ArrSet2(_, id, ie, e, _) | Stmt::ArrSet3(_, id, ie, e, _, _) | Stmt::ArrSet4(_, id, ie, e, ..) => id != name && expr_ok(ie, name) && expr_ok(e, name),
-        Stmt::AAdd(_, id, _) | Stmt::ASize(_, id, _) | Stmt::AAddSub(_, id, _, _) | Stmt::ASizeSub(_, id, _, _) | Stmt::AAddSub2(_, id, _, _, _) | Stmt::ASizeSub2(_, id, _, _, _) => id != name,
+        Stmt::AAdd(_, id, _) | Stmt::ASize(_, id, _) | Stmt::AAddSub(_, id, _, _) | Stmt::ASizeSub(_, id, _, _) | Stmt::AAddSub2(_, id, _, _, _) | Stmt::ASizeSub2(_, id, _, _, _) | Stmt::AAddSub3(_, id, ..) | Stmt::ASizeSub3(_, id, ..) => id != name,
         Stmt::SendStmt(_, e) => expr_ok(e, name),
         Stmt::If(_, c, a, b) => expr_ok(c, name) && foreach_coll_untouched(a, name) && foreach_coll_untouched(b, name),
         Stmt::While(_, c, b) => expr_ok(c, name) && foreach_coll_untouched(b, name),
@@ -2776,6 +2863,7 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
         Stmt::AAdd(_, _, e) | Stmt::ASize(_, _, e) => !mentions(e, name),
         Stmt::AAddSub(_, _, i, e) | Stmt::ASizeSub(_, _, i, e) => !mentions(i, name) && !mentions(e, name),
         Stmt::AAddSub2(_, _, i, j, e) | Stmt::ASizeSub2(_, _, i, j, e) => !mentions(i, name) && !mentions(j, name) && !mentions(e, name),
+        Stmt::AAddSub3(_, _, i, j, k, e) | Stmt::ASizeSub3(_, _, i, j, k, e) => !mentions(i, name) && !mentions(j, name) && !mentions(k, name) && !mentions(e, name),
         Stmt::Local(_, _, e) => !mentions(e, name),
         Stmt::If(_, _, a, b) => foreach_lv_readonly(a, name) && foreach_lv_readonly(b, name),
         Stmt::While(_, _, b) => foreach_lv_readonly(b, name),
@@ -3334,6 +3422,61 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
                 apply_moves(ie, env, sigs, false);
                 apply_moves(ie2, env, sigs, false);
+                if env[kp].moved {
+                    return Err(format!("line {}: use of moved value `{}`", n, id));
+                }
+                if type_expr(e, env, sigs, *n)? != Ty::I64 {
+                    return Err(format!("line {}: `ASize` takes an integer size", n));
+                }
+                apply_moves(e, env, sigs, false);
+                if env[kp].moved {
+                    return Err(format!("line {}: use of moved value `{}`", n, id));
+                }
+            }
+            Stmt::AAddSub3(n, id, ie, ie2, ie3, e) => {
+                // AAdd(a[i][j][k], x) on a four-level array: grows the
+                // level-4 subarray in place (hk105). Runtime order: i, j,
+                // k, then the value (hk108 measured; NOT inferred).
+                let kp = match env.iter().position(|v| v.name == *id) {
+                    Some(k) => k,
+                    None => return Err(format!("line {}: undeclared variable `{}`", n, id)),
+                };
+                if env[kp].ty != Ty::DArr4 {
+                    return Err(format!("line {}: `AAdd` on a[i][j][k] needs an array of arrays of arrays of arrays; `{}` is not one", n, id));
+                }
+                if type_expr(ie, env, sigs, *n)? != Ty::I64 || type_expr(ie2, env, sigs, *n)? != Ty::I64 || type_expr(ie3, env, sigs, *n)? != Ty::I64 {
+                    return Err(format!("line {}: array indices must be integers", n));
+                }
+                apply_moves(ie, env, sigs, false);
+                apply_moves(ie2, env, sigs, false);
+                apply_moves(ie3, env, sigs, false);
+                if env[kp].moved {
+                    return Err(format!("line {}: use of moved value `{}`", n, id));
+                }
+                if type_expr(e, env, sigs, *n)? != Ty::I64 {
+                    return Err(format!("line {}: nested array elements must be integers in this increment", n));
+                }
+                apply_moves(e, env, sigs, false);
+                if env[kp].moved {
+                    return Err(format!("line {}: use of moved value `{}`", n, id));
+                }
+            }
+            Stmt::ASizeSub3(n, id, ie, ie2, ie3, e) => {
+                // ASize(a[i][j][k], n) on a four-level array (hk105: grow
+                // leaves fresh slots NIL; shrink frees).
+                let kp = match env.iter().position(|v| v.name == *id) {
+                    Some(k) => k,
+                    None => return Err(format!("line {}: undeclared variable `{}`", n, id)),
+                };
+                if env[kp].ty != Ty::DArr4 {
+                    return Err(format!("line {}: `ASize` on a[i][j][k] needs an array of arrays of arrays of arrays; `{}` is not one", n, id));
+                }
+                if type_expr(ie, env, sigs, *n)? != Ty::I64 || type_expr(ie2, env, sigs, *n)? != Ty::I64 || type_expr(ie3, env, sigs, *n)? != Ty::I64 {
+                    return Err(format!("line {}: array indices must be integers", n));
+                }
+                apply_moves(ie, env, sigs, false);
+                apply_moves(ie2, env, sigs, false);
+                apply_moves(ie3, env, sigs, false);
                 if env[kp].moved {
                     return Err(format!("line {}: use of moved value `{}`", n, id));
                 }
@@ -5768,6 +5911,66 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str("    mov %rax, %rsi\n    mov $16, %edx\n    xor %ecx, %ecx\n    call hbc_asize\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
                 out.push_str("    add $32, %rsp\n");
             }
+            Stmt::AAddSub3(_, id, ie, ie2, ie3, e) => {
+                // AAdd(a[i][j][k], x): i, then j, then k, then the value
+                // (hk108). Three bounds-checked pair walks; a null child
+                // at any level is the clean AAdd error.
+                let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
+                for iex in [ie, ie2, ie3] {
+                    if expr_ty(iex, env, sigs) == Ty::Dyn {
+                        cg_expr(iex, env, sigs, strs, out, target);
+                        out.push_str("    call hbc_dyn_to_i64\n");
+                    } else {
+                        cg_expr(iex, env, sigs, strs, out, target);
+                    }
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                }
+                cg_expr(e, env, sigs, strs, out, target);
+                if expr_ty(e, env, sigs) == Ty::I64 {
+                    out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                }
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                // stack: [value 16][k 16][j 16][i 16]
+                out.push_str("    mov 48(%rsp), %rcx\n");
+                out.push_str(&format!("    cmp $1, %rcx\n    jl 87f\n    cmp -{}(%rbp), %rcx\n    jg 87f\n", v.off - 8));
+                out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
+                out.push_str("    mov %rcx, %rdi\n    dec %rdi\n    shl $4, %rdi\n    add %r11, %rdi\n");
+                out.push_str("    mov (%rdi), %r10\n    test %r10, %r10\n    jz hbc_aadd_error\n");
+                out.push_str("    mov 32(%rsp), %rcx\n    cmp $1, %rcx\n    jl 87f\n    cmp 8(%rdi), %rcx\n    jg 87f\n");
+                out.push_str("    mov %rcx, %rdi\n    dec %rdi\n    shl $4, %rdi\n    add %r10, %rdi\n");
+                out.push_str("    mov (%rdi), %r10\n    test %r10, %r10\n    jz hbc_aadd_error\n");
+                out.push_str("    mov 16(%rsp), %rcx\n    cmp $1, %rcx\n    jl 87f\n    cmp 8(%rdi), %rcx\n    jg 87f\n");
+                out.push_str("    mov %rcx, %rdi\n    dec %rdi\n    shl $4, %rdi\n    add %r10, %rdi\n");
+                out.push_str("    mov (%rdi), %r10\n    test %r10, %r10\n    jz hbc_aadd_error\n");
+                out.push_str("    mov %rsp, %rdx\n    mov $16, %esi\n    call hbc_aadd\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
+                out.push_str("    add $64, %rsp\n");
+            }
+            Stmt::ASizeSub3(_, id, ie, ie2, ie3, e) => {
+                // ASize(a[i][j][k], n): i, then j, then k, then the size
+                // (hk105). Grow zero-fills fresh slots; shrink frees.
+                let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
+                cg_expr(ie, env, sigs, strs, out, target);
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                cg_expr(ie2, env, sigs, strs, out, target);
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                cg_expr(ie3, env, sigs, strs, out, target);
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                cg_expr(e, env, sigs, strs, out, target);
+                // rax = size; stack: [k 16][j 16][i 16]
+                out.push_str("    mov 32(%rsp), %rcx\n");
+                out.push_str(&format!("    cmp $1, %rcx\n    jl 87f\n    cmp -{}(%rbp), %rcx\n    jg 87f\n", v.off - 8));
+                out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
+                out.push_str("    mov %rcx, %rdi\n    dec %rdi\n    shl $4, %rdi\n    add %r11, %rdi\n");
+                out.push_str("    mov (%rdi), %r10\n    test %r10, %r10\n    jz hbc_asize_error\n");
+                out.push_str("    mov 16(%rsp), %rcx\n    cmp $1, %rcx\n    jl 87f\n    cmp 8(%rdi), %rcx\n    jg 87f\n");
+                out.push_str("    mov %rcx, %rdi\n    dec %rdi\n    shl $4, %rdi\n    add %r10, %rdi\n");
+                out.push_str("    mov (%rdi), %r10\n    test %r10, %r10\n    jz hbc_asize_error\n");
+                out.push_str("    mov (%rsp), %rcx\n    cmp $1, %rcx\n    jl 87f\n    cmp 8(%rdi), %rcx\n    jg 87f\n");
+                out.push_str("    mov %rcx, %rdi\n    dec %rdi\n    shl $4, %rdi\n    add %r10, %rdi\n");
+                out.push_str("    mov (%rdi), %r10\n    test %r10, %r10\n    jz hbc_asize_error\n");
+                out.push_str("    mov %rax, %rsi\n    mov $16, %edx\n    xor %ecx, %ecx\n    call hbc_asize\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
+                out.push_str("    add $48, %rsp\n");
+            }
             Stmt::ArrSet(_, id, ie, e) => {
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
                 if v.ty == Ty::DArr2 {
@@ -6054,6 +6257,7 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
             Stmt::ArrSet4(_, _, ie, ie2, ie3, ie4, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(ie2, out); collect_blocks_expr(ie3, out); collect_blocks_expr(ie4, out); collect_blocks_expr(e, out); }
             Stmt::AAddSub(_, _, ie, e) | Stmt::ASizeSub(_, _, ie, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(e, out); }
             Stmt::AAddSub2(_, _, ie, ie2, e) | Stmt::ASizeSub2(_, _, ie, ie2, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(ie2, out); collect_blocks_expr(e, out); }
+            Stmt::AAddSub3(_, _, ie, ie2, ie3, e) | Stmt::ASizeSub3(_, _, ie, ie2, ie3, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(ie2, out); collect_blocks_expr(ie3, out); collect_blocks_expr(e, out); }
             Stmt::If(_, c, a, b) => { collect_blocks_expr(c, out); collect_blocks_stmts(a, out); collect_blocks_stmts(b, out); }
             Stmt::While(_, c, body) => { collect_blocks_expr(c, out); collect_blocks_stmts(body, out); }
             Stmt::For(_, _, a, b, _, body) => { collect_blocks_expr(a, out); collect_blocks_expr(b, out); collect_blocks_stmts(body, out); }
