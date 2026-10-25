@@ -433,3 +433,8 @@ pos tests/t435_darrs_arg_move.hb \n         2\nuno\ntres\n         3\n         0
 pos tests/t437_darrs_return.hb \n         2\ndos\n         0\n         0
 neg tests/t436_neg_darrs_arg_moved.hb use of moved value `a`
 neg tests/t438_neg_darrs_arg_readonly.hb must be a dynamic array, got an array of strings
+pos tests/t439_hash_arg_move.hb \n         1\n         2\n         2\n         0\n         0\n         0
+pos tests/t440_hash_return.hb \n         1\n         1\n         0\n         0
+neg tests/t441_neg_hash_arg_moved.hb use of moved value `h`
+neg tests/t442_neg_hash_literal_arg.hb a hash argument is a variable in this increment
+neg tests/t443_neg_hash_arg_readonly.hb must be a dynamic array, got a hash
