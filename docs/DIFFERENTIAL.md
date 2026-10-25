@@ -129,6 +129,14 @@ normalized for whitespace.
   quantified: t11, t13, t15, t20, t23, t25, t28, t31, t48, t52, t54.
   (First publication of this list wrongly included t17, which MATCHes;
   corrected the same day.)
+  SECOND CATEGORY (explicit): for each of the 11, a hand-written
+  Harbour-compatible variant (locals hoisted to the function top,
+  original assignments kept in place, sibling-branch locals renamed in
+  t15, per-iteration reset preserved in t48) was run under Harbour and
+  compared against HarbourRust running the ORIGINAL test: 11/11
+  RELOC-MATCH (identical values). The variants prove the programs mean
+  the same in Harbour; they do not hide that Harbour rejects the
+  original late-LOCAL form.
 - 3 DIVERGE:
   - t45/t46 (FOR bound overflow): the known pending FOR-overflow
     difference; Harbour wraps into extra iterations (double semantics),
