@@ -435,6 +435,6 @@ parameters.
   split was caught by the battery and fixed.
 - New tests t76-t81 (4 positive: define bound, #ifdef branch, #include,
   function-like + nesting; 2 negative: #error aborts, single `=` in #if),
-  all through hbc alone. Full battery: 81/81 numbered tests (85/85 with
-  fixtures), Linux + Wine identical. Differential vs Harbour: t76-t79 all
+  all through hbc alone. Full battery: 84/84 cases (81 numbered
+  tests + 3 fixtures), Linux + Wine identical. Differential vs Harbour: t76-t79 all
   MATCH. Fixture added: tests/t78_defs.ch.
