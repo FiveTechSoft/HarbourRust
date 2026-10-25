@@ -32,7 +32,7 @@ use std::process;
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2, DArr3, Dyn, Hash }
+enum Ty { I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2, DArr3, DArrS, StrOwn, Dyn, Hash }
 
 // Dyn is the tagged-union value for any route that can carry NIL (probes
 // n1/n2/n3): a 16-byte {tag, payload} pair, tag 0 = i64 payload, tag 1 =
@@ -1616,9 +1616,21 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                     _ => {}
                 }
                 return match type_expr(&args[0], env, sigs, n)? {
-                    Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Arr(_) | Ty::Hash => Ok(Ty::I64),
+                    Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Arr(_) | Ty::Hash => Ok(Ty::I64),
                     _ => return Err(format!("line {}: `len` expects an array", n)),
                 };
+            }
+            if is_builtin(id, "hb_hkeys") {
+                // hb_HKeys(h): NEW array of owned key strings in insertion
+                // order (oracles hk4/hk5/hk6, core hb_HKeys). The hash is
+                // borrowed; the result is a DArrS the caller owns.
+                if args.len() != 1 {
+                    return Err(format!("line {}: `hb_HKeys` takes exactly one argument", n));
+                }
+                if type_expr(&args[0], env, sigs, n)? != Ty::Hash {
+                    return Err(format!("line {}: `hb_HKeys` expects a hash", n));
+                }
+                return Ok(Ty::DArrS);
             }
             if is_builtin(id, "eval") {
                 // eval(b, a1..an): b is a codeblock value. Extra arguments
@@ -1662,12 +1674,15 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                 if ta == Ty::Hash {
                     return Err(format!("line {}: hashes cannot be function parameters in this increment", n));
                 }
+                if ta == Ty::DArrS || ta == Ty::StrOwn {
+                    return Err(format!("line {}: hb_HKeys results and owned strings cannot be function parameters in this increment", n));
+                }
                 // A string argument moves out of its variable right away, so
                 // a second use later in the same expression (e.g. the other
                 // side of a `+`) is rejected like any other use-after-move.
-                if ta == Ty::Str {
+                if ta == Ty::Str || ta == Ty::StrOwn {
                     if let Expr::Var(v) = a {
-                        if let Some(x) = env.iter_mut().find(|x| x.name == *v && x.ty == Ty::Str) { x.moved = true; }
+                        if let Some(x) = env.iter_mut().find(|x| x.name == *v && matches!(x.ty, Ty::Str | Ty::StrOwn)) { x.moved = true; }
                     }
                 }
                 let ok = ta == sig.params[i]
@@ -1729,7 +1744,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
             if (matches!(**a, Expr::Nil) || matches!(**b, Expr::Nil)) && !matches!(op, CmpOp::Eq | CmpOp::Ne) {
                 return Err(format!("line {}: NIL only compares with `=` or `#` in this PoC (Harbour raises a type error on ordering NIL)", n));
             }
-            let nil_str = (matches!(**a, Expr::Nil) && tb == Ty::Str) || (matches!(**b, Expr::Nil) && ta == Ty::Str);
+            let nil_str = (matches!(**a, Expr::Nil) && matches!(tb, Ty::Str | Ty::StrOwn)) || (matches!(**b, Expr::Nil) && matches!(ta, Ty::Str | Ty::StrOwn));
             if nil_str {
                 return Ok(Ty::Bool);
             }
@@ -1751,7 +1766,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
             if ta == Ty::I64 && tb == Ty::I64 {
                 return Ok(Ty::Bool);
             }
-            if ta == Ty::Str && tb == Ty::Str {
+            if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) {
                 // Comparison BORROWS both operands (nothing is moved).
                 // Ordering is byte-wise (memcmp-like): no collation.
                 let _ = op;
@@ -1765,7 +1780,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
             // Dyn against a string: `=` is always .F. in Harbour (probe n1:
             // "" = NIL is .F.), `#` always .T.; ordering is a Harbour type
             // error, rejected here at compile time.
-            if (ta == Ty::Dyn && tb == Ty::Str) || (ta == Ty::Str && tb == Ty::Dyn) {
+            if (ta == Ty::Dyn && matches!(tb, Ty::Str | Ty::StrOwn)) || (matches!(ta, Ty::Str | Ty::StrOwn) && tb == Ty::Dyn) {
                 return match op {
                     CmpOp::Eq | CmpOp::Ne => Ok(Ty::Bool),
                     _ => Err(format!("line {}: cannot order a string against a number in this PoC (Harbour raises a type error)", n)),
@@ -1842,7 +1857,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                     if v.moved {
                         return Err(format!("line {}: use of moved value `{}`", n, id));
                     }
-                    if it != Ty::Str {
+                    if it != Ty::Str && it != Ty::StrOwn {
                         return Err(format!("line {}: hash keys are strings in this increment", n));
                     }
                     Ok(Ty::Dyn)
@@ -1864,6 +1879,15 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                 }
                 Some(v) if v.ty == Ty::DArrU => {
                     Err(format!("line {}: the element type of `{}` is unknown until its first `AAdd` (pin it first)", n, id))
+                }
+                Some(v) if v.ty == Ty::DArrS => {
+                    if v.moved {
+                        return Err(format!("line {}: use of moved value `{}`", n, id));
+                    }
+                    // Reading a key out of an hb_HKeys result COPIES the
+                    // string: the reader owns the copy (Ty::StrOwn), so a
+                    // later free/move of the array cannot dangle it.
+                    Ok(Ty::StrOwn)
                 }
                 Some(v) if v.ty == Ty::DArr2 => {
                     // a[i] on an array of arrays would EXTRACT the child by
@@ -1971,6 +1995,8 @@ fn ty_name(t: Ty) -> &'static str {
         Ty::Str => "a string",
         Ty::Bool => "a boolean",
         Ty::DArr3 => "an array of arrays of arrays",
+        Ty::DArrS => "an array of strings",
+        Ty::StrOwn => "a string",
         Ty::DArrU => "a dynamic array",
         Ty::DArr2 => "an array of arrays",
         Ty::Arr(_) => "an array",
@@ -2143,7 +2169,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                     if let Ty::Block(_) = t {
                         return Err(format!("line {}: cannot print a codeblock in this increment", n));
                     }
-                    if t == Ty::DArr || t == Ty::DArrU || t == Ty::DArr2 || t == Ty::DArr3 {
+                    if t == Ty::DArr || t == Ty::DArrU || t == Ty::DArr2 || t == Ty::DArr3 || t == Ty::DArrS {
                         return Err(format!("line {}: cannot print a dynamic array directly in this increment (print an element or `len(a)`)", n));
                     }
                     if t == Ty::Hash {
@@ -2502,7 +2528,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                         if !matches!(vt, Ty::I64 | Ty::Dyn) {
                             return Err(format!("line {}: hash values are tagged scalars (integer or NIL) in this increment", n));
                         }
-                        if type_expr(ie, env, sigs, *n)? != Ty::Str {
+                        if !matches!(type_expr(ie, env, sigs, *n)?, Ty::Str | Ty::StrOwn) {
                             return Err(format!("line {}: hash keys are strings in this increment", n));
                         }
                         apply_moves(e, env, sigs, true);
@@ -2669,7 +2695,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
     match e {
         Expr::Var(id) => {
             if moving {
-                if let Some(v) = env.iter_mut().find(|v| v.name == *id && matches!(v.ty, Ty::Str | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Hash)) { v.moved = true; }
+                if let Some(v) = env.iter_mut().find(|v| v.name == *id && matches!(v.ty, Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Hash)) { v.moved = true; }
             }
         }
         Expr::Bin(_, a, b) => { apply_moves(a, env, sigs, false); apply_moves(b, env, sigs, false); }
@@ -2690,6 +2716,12 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             }
             if is_builtin(id, "array") {
                 // Integer dimensions: borrowed, never moved.
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
+            if is_builtin(id, "hb_hkeys") {
+                // The hash is BORROWED: hbc_hkeys copies every key, the
+                // hash keeps owning its own copies.
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
@@ -2716,7 +2748,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 // ---------------------------------------------------------------------------
 
 fn size_of(t: Ty) -> usize {
-    match t { Ty::I64 => 8, Ty::Str => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Dyn | Ty::Hash => 16, Ty::Bool => unreachable!("booleans rejected in analysis") }
+    match t { Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Dyn | Ty::Hash => 16, Ty::Bool => unreachable!("booleans rejected in analysis") }
 }
 
 #[derive(Clone)]
@@ -2742,7 +2774,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
             match v.ty {
                 Ty::I64 | Ty::Block(_) => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
-                Ty::Str | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Dyn | Ty::Hash => {
+                Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Dyn | Ty::Hash => {
                     // ptr at -(off), len at -(off-8) — same layout as the store
                     out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
                     out.push_str(&format!("    mov -{}(%rbp), %rdx\n", v.off - 8));
@@ -2757,7 +2789,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 Expr::Var(v) => {
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                     match var.ty {
-                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Hash => out.push_str(&format!("    mov -{}(%rbp), %rax\n", var.off - 8)),
+                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Hash => out.push_str(&format!("    mov -{}(%rbp), %rax\n", var.off - 8)),
                         Ty::Arr(k) => out.push_str(&format!("    mov ${}, %rax\n", k)),
                         _ => unreachable!("checked"),
                     }
@@ -2794,6 +2826,17 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     out.push_str("    dec %rax\n    shl $4, %rax\n    mov 0(%r11,%rax), %r10\n    test %r10, %r10\n    jz hbc_len_error\n    mov 8(%r11,%rax), %rax\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
                 }
                 _ => unreachable!("len() of a non-variable in this increment"),
+            }
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_hkeys") => {
+            // hb_HKeys(h): the helper copies every key into a NEW array
+            // the caller owns; the hash slot is passed by address and
+            // never mutated. Returns rax = data pointer, rdx = count.
+            if let Expr::Var(v) = &args[0] {
+                let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                out.push_str(&format!("    lea -{}(%rbp), %rdi\n    call hbc_hkeys\n", var.off));
+            } else {
+                unreachable!("checked: hb_HKeys takes a hash variable");
             }
         }
         Expr::Call(id, args) if is_builtin(id, "array") => {
@@ -2943,7 +2986,17 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 // mutates the hash.
                 cg_value(ie, env, sigs, strs, out, target);
                 out.push_str("    mov %rax, %rsi\n");
+                let temp_key = expr_ty(ie, env, sigs) == Ty::StrOwn && !matches!(&**ie, Expr::Var(_));
+                if temp_key {
+                    // An owned key copy (e.g. h[keys[i]]): the lookup
+                    // borrows it; free it right after hbc_hget returns
+                    // (the lookup never retains the key bytes).
+                    out.push_str("    sub $32, %rsp\n    mov %rsi, (%rsp)\n");
+                }
                 out.push_str(&format!("    lea -{}(%rbp), %rdi\n    call hbc_hget\n", v.off));
+                if temp_key {
+                    out.push_str("    mov %rax, 8(%rsp)\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    mov 8(%rsp), %rax\n    add $32, %rsp\n");
+                }
                 out.push_str("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
                 return;
             }
@@ -2960,6 +3013,23 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str(&format!("    cmp $1, %rax\n    jl 81f\n    cmp -{}(%rbp), %rax\n    jg 81f\n", v.off - 8));
                 out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
                 out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r11\n    mov 8(%rax), %rdx\n    mov %r11, %rax\n    jmp 82f\n");
+                out.push_str("81:\n    call hbc_bound_error\n82:\n");
+                return;
+            }
+            if v.ty == Ty::DArrS {
+                // Reading a key out of an hb_HKeys result COPIES it via
+                // hbc_strcpy: the value in rax/rdx is owned by the
+                // consumer (a StrOwn slot, a print item, or a hash
+                // lookup), never a borrow into the array.
+                if expr_ty(ie, env, sigs) == Ty::Dyn {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                } else {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                }
+                out.push_str(&format!("    cmp $1, %rax\n    jl 81f\n    cmp -{}(%rbp), %rax\n    jg 81f\n", v.off - 8));
+                out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
+                out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov 8(%rax), %rdi\n    mov -8(%rdi), %rsi\n    call hbc_strcpy\n    jmp 82f\n");
                 out.push_str("81:\n    call hbc_bound_error\n82:\n");
                 return;
             }
@@ -3200,6 +3270,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::Var(id) => env.iter().find(|v| v.name == *id).expect("checked").ty,
         Expr::Call(id, args) => {
             if is_builtin(id, "array") { return match args.len() { 1 => Ty::DArr, 2 => Ty::DArr2, _ => Ty::DArr3 }; }
+            if is_builtin(id, "hb_hkeys") { return Ty::DArrS; }
             if is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") { return Ty::I64; }
             sigs.iter().find(|v| v.name == *id).expect("checked").ret.expect("checked")
         }
@@ -3210,6 +3281,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         }
         Expr::Index(id, _) => match env.iter().find(|v| v.name == *id).map(|v| v.ty) {
             Some(Ty::Arr(_)) => Ty::I64,
+            Some(Ty::DArrS) => Ty::StrOwn,
             _ => Ty::Dyn,
         },
         Expr::Index2(_, _, _) => Ty::Dyn,
@@ -3235,8 +3307,8 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 if t == Ty::I64 && dyn_names.contains(id) { t = Ty::Dyn; }
                 *frame += size_of(t);
                 env.push(CgLocal { name: id.clone(), ty: t, off: *frame });
-                if matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Hash) {
-                    darr_slots.push((*frame, if t == Ty::Hash { 2 } else if t == Ty::DArr3 { 3 } else { (t == Ty::DArr2) as u8 }));
+                if matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn | Ty::Hash) {
+                    darr_slots.push((*frame, if t == Ty::Hash { 2 } else if t == Ty::DArr3 { 3 } else if t == Ty::DArrS { 4 } else if t == Ty::StrOwn { 5 } else { (t == Ty::DArr2) as u8 }));
                 }
             }
             Stmt::AAdd(_, id, e) => {
@@ -3493,7 +3565,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         // A moved-out DArr SOURCE slot is nulled right after
                         // the load: every allocation keeps exactly one owner.
                         if let Expr::Var(src) = e {
-                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Hash)) {
+                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
                                 out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                             }
                         }
@@ -3503,7 +3575,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
                             }
-                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Hash => {
+                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn | Ty::Hash => {
                                 // The slot can hold a live value when a
                                 // `local` re-declares inside a loop body:
                                 // free the old allocation first (null-safe).
@@ -3517,6 +3589,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    mov $2, %edx\n    call hbc_rfree\n85:\n", off, off - 8));
                                 } else if class == 2 {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_hfree\n85:\n", off, off - 8));
+                                } else if class == 4 {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_sfree\n85:\n", off, off - 8));
+                                } else if class == 5 {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov $1, %esi\n    call hbc_free\n85:\n", off));
                                 } else {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov $16, %esi\n    call hbc_free\n85:\n", off));
                                 }
@@ -3568,12 +3644,20 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
                     match t {
                         Ty::I64 => out.push_str("    call hbc_print_i64\n"),
-                        Ty::Str => out.push_str("    call hbc_print_str\n"),
+                        Ty::Str | Ty::StrOwn => {
+                            out.push_str("    call hbc_print_str\n");
+                            if t == Ty::StrOwn && !matches!(e, Expr::Var(_)) {
+                                // A temporary copy (e.g. `? keys[i]`): the
+                                // item owns it and frees it right after
+                                // printing; the array keeps its own copy.
+                                out.push_str(&format!("    mov {}(%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n", off));
+                            }
+                        }
                         Ty::Dyn => out.push_str("    call hbc_print_dyn\n"),
                         Ty::Bool => unreachable!("booleans rejected in analysis"),
                         Ty::Arr(_) => unreachable!("whole-array printing rejected in analysis"),
                         Ty::Block(_) => unreachable!("codeblock printing rejected in analysis"),
-                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 => unreachable!("whole-array printing rejected in analysis"),
+                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS => unreachable!("whole-array printing rejected in analysis"),
                         Ty::Hash => unreachable!("whole-hash printing rejected in analysis"),
                     }
                 }
@@ -3594,7 +3678,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // the epilogue never frees the returned allocation (parent
                 // rule: move the return to the output before cleanup).
                 if let Expr::Var(src) = e {
-                    if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3)) {
+                    if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn)) {
                         out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                     }
                 }
@@ -3716,7 +3800,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         // fully evaluated (parent rule: move transfers; the
                         // old slot must not free what it no longer owns).
                         if let Expr::Var(src) = e {
-                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Hash)) {
+                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
                                 out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                             }
                         }
@@ -3743,7 +3827,15 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
                             }
-                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::Hash => {
+                            Ty::StrOwn => {
+                                // Free the OLD owned copy after the RHS
+                                // exists (fresh slots are zero-initialised,
+                                // so the guard sees null), then store.
+                                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov $1, %esi\n    call hbc_free\n86:\n", off));
+                                out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
+                            }
+                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Hash => {
                                 // Free the OLD value after the RHS exists
                                 // (self-assignment `a := a` moved through a
                                 // temporary: the source was nulled above, so
@@ -3752,7 +3844,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // CURRENT type (the old value's type).
                                 let cur_ty = env.iter().find(|x| x.name == *id).map(|x| x.ty);
                                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                                if cur_ty == Some(Ty::DArr2) {
+                                if cur_ty == Some(Ty::DArrS) {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov -{}(%rbp), %rsi\n    call hbc_sfree\n86:\n", off, off - 8));
+                                } else if cur_ty == Some(Ty::DArr2) {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov -{}(%rbp), %rsi\n    call hbc_free2\n86:\n", off, off - 8));
                                 } else if cur_ty == Some(Ty::DArr3) {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov -{}(%rbp), %rsi\n    mov $2, %edx\n    call hbc_rfree\n86:\n", off, off - 8));
@@ -3955,7 +4049,15 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     cg_value(ie, env, sigs, strs, out, target);
                     out.push_str("    mov %rax, %rsi\n");
-                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov %rsp, %rcx\n    call hbc_hput\n    add $16, %rsp\n", v.off));
+                    let temp_key = expr_ty(ie, env, sigs) == Ty::StrOwn && !matches!(ie, Expr::Var(_));
+                    if temp_key {
+                        // Owned key copy (h[keys[i]] := v): hbc_hput copies
+                        // the bytes, so the temporary is freed right after.
+                        out.push_str("    sub $16, %rsp\n    mov %rsi, (%rsp)\n");
+                        out.push_str(&format!("    lea -{}(%rbp), %rdi\n    lea 16(%rsp), %rcx\n    call hbc_hput\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    add $32, %rsp\n", v.off));
+                    } else {
+                        out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov %rsp, %rcx\n    call hbc_hput\n    add $16, %rsp\n", v.off));
+                    }
                 } else if v.ty == Ty::DArr {
                     // Dynamic array write: same value-first order; bounds
                     // 1..=len from the slot word. Elements are {tag,
@@ -4229,6 +4331,15 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
             3 => {
                 // DArr3: recursive free, two pair-levels (rdx = depth).
                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov -{}(%rbp), %rsi\n    mov $2, %edx\n    call hbc_rfree\n91{}:\n", off, i, off - 8, i));
+            }
+            4 => {
+                // DArrS: free each owned key copy, then the block.
+                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov -{}(%rbp), %rsi\n    call hbc_sfree\n91{}:\n", off, i, off - 8, i));
+            }
+            5 => {
+                // StrOwn: an owned string copy; hbc_free(ptr, 1) releases
+                // exactly 8 + len bytes (the length header is at ptr-8).
+                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov $1, %esi\n    call hbc_free\n91{}:\n", off, i, i));
             }
             _ => {
                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov $16, %esi\n    call hbc_free\n91{}:\n", off, i, i));
@@ -4671,6 +4782,144 @@ hbc_hfree:
     pop %rbx
     pop %rbp
     ret
+
+# hbc_hkeys: rdi = hash slot address. Returns rax = data pointer of a
+# NEW array block holding one Dyn {tag 2, payload} element per live
+# entry in insertion order (probes hk4/hk5/hk6), rdx = element count.
+# Each key's bytes are COPIED into an own allocation with an 8-byte
+# length header - the same layout as a hash key copy - so the returned
+# array owns its strings independently of the hash (a later hbc_hfree
+# of the hash cannot dangle them) and hbc_free(payload, 1) releases
+# exactly one. Overflow of 8 + count*16 is OOM (the count is guarded
+# before the shift), matching hbc_hput's rule; a mid-copy hbc_oom
+# exits the process with every temporary still owned by this helper.
+hbc_hkeys:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $8, %rsp
+    mov (%rdi), %r12
+    mov 8(%rdi), %r13
+    mov $0x0FFFFFFFFFFFFFFF, %rax
+    cmp %rax, %r13
+    ja hbc_oom
+    mov %r13, %rdi
+    shl $4, %rdi
+    add $8, %rdi
+    call hbc_alloc
+    mov %rax, %rbx
+    mov %r13, (%rbx)
+    xor %r14d, %r14d
+50: cmp %r13, %r14
+    jae 51f
+    mov %r14, %rax
+    shl $5, %rax
+    lea (%r12,%rax), %r15
+    mov 8(%r15), %rdi
+    add $8, %rdi
+    call hbc_alloc
+    mov 8(%r15), %rcx
+    mov %rcx, (%rax)
+    mov (%r15), %rsi
+    lea 8(%rax), %rdi
+    mov %r14, %rdx
+    shl $4, %rdx
+    lea 8(%rbx,%rdx), %r10
+    mov %rdi, 8(%r10)
+    movq $2, (%r10)
+    xor %r9d, %r9d
+52: cmp %rcx, %r9
+    jae 53f
+    movzbl (%rsi,%r9), %r11d
+    mov %r11b, (%rdi,%r9)
+    inc %r9
+    jmp 52b
+53: inc %r14
+    jmp 50b
+51: lea 8(%rbx), %rax
+    mov %r13, %rdx
+    add $8, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_strcpy: rdi = source bytes, rsi = length. Returns rax = pointer to
+# the bytes of a NEW owned allocation with an 8-byte length header (the
+# hash-key-copy layout: hbc_free(ptr, 1) releases it), rdx = length.
+# Used when a tag-2 array element is read out of its array: the reader
+# owns an independent copy, so freeing or moving the array afterwards
+# cannot dangle it.
+hbc_strcpy:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    sub $8, %rsp
+    mov %rdi, %r13
+    mov %rsi, %r12
+    lea 8(%rsi), %rdi
+    call hbc_alloc
+    mov %rax, %rbx
+    mov %r12, (%rbx)
+    xor %ecx, %ecx
+70: cmp %r12, %rcx
+    jae 71f
+    movzbl (%r13,%rcx), %r9d
+    mov %r9b, 8(%rbx,%rcx)
+    inc %rcx
+    jmp 70b
+71: lea 8(%rbx), %rax
+    mov %r12, %rdx
+    add $8, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_sfree: rdi = array data pointer (non-null), rsi = live element
+# count. Frees each tag-2 string payload, then the block. Uses the
+# LIVE count, never capacity, like hbc_hfree; a non-2 tag is skipped,
+# so a NIL casilla would be harmless.
+hbc_sfree:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    sub $8, %rsp
+    mov %rdi, %rbx
+    mov %rsi, %r12
+    xor %r13d, %r13d
+60: cmp %r12, %r13
+    jae 61f
+    mov %r13, %rax
+    shl $4, %rax
+    cmpq $2, (%rbx,%rax)
+    jne 62f
+    mov 8(%rbx,%rax), %rdi
+    mov $1, %esi
+    call hbc_free
+62: inc %r13
+    jmp 60b
+61: mov %rbx, %rdi
+    mov $16, %esi
+    call hbc_free
+    add $8, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
 ";
 
 fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> String {
@@ -4871,10 +5120,14 @@ hbc_print_i64:
     ret
 
 # hbc_print_dyn: %rax = tag, %rdx = payload. Prints NIL (no field width,
-# probe n1) for tag 1; otherwise the numeric payload via hbc_print_i64.
+# probe n1) for tag 1, the raw string bytes for tag 2 (payload points at
+# the bytes, length header at payload-8 - same layout as a hash key
+# copy); otherwise the numeric payload via hbc_print_i64.
 hbc_print_dyn:
     test %rax, %rax
     jz 8f
+    cmp $2, %rax
+    je 9f
     lea .Lnilmsg(%rip), %rsi
     mov $3, %edx
     mov $1, %eax
@@ -4883,6 +5136,9 @@ hbc_print_dyn:
     ret
 8:  mov %rdx, %rax
     jmp hbc_print_i64
+9:  mov %rdx, %rax
+    mov -8(%rax), %rdx
+    jmp hbc_print_str
 
 # hbc_dyn_to_i64: %rax = tag, %rdx = payload -> %rax = payload. NIL here is
 # a Harbour type error (arithmetic/ordering/indexing on NIL); its dialog
@@ -5520,19 +5776,27 @@ hbc_print_i64:
     ret
 
 # hbc_print_dyn: %rax = tag, %rdx = payload. Prints NIL (no field width,
-# probe n1) for tag 1; otherwise the numeric payload via hbc_print_i64.
+# probe n1) for tag 1, the raw string bytes for tag 2 (payload points at
+# the bytes, length header at payload-8 - same layout as a hash key
+# copy); otherwise the numeric payload via hbc_print_i64.
 hbc_print_dyn:
     push %rbp
     mov %rsp, %rbp
     sub $48, %rsp
     test %rax, %rax
     jz 8f
+    cmp $2, %rax
+    je 10f
     lea .Lnilmsg(%rip), %rax
     mov $3, %edx
     call hbc_print_str
     jmp 9f
 8:  mov %rdx, %rax
     call hbc_print_i64
+    jmp 9f
+10: mov %rdx, %rax
+    mov -8(%rax), %rdx
+    call hbc_print_str
 9:  leave
     ret
 
@@ -6027,7 +6291,14 @@ fn main() {
         // so the body check can surface a more specific error first; the pin
         // error is only reported if the body itself checks clean.
         let (ptys, pin_err) = match pin_params(f, &sigs) {
-            Ok(v) => (v, None),
+            Ok(v) => {
+                let own = v.iter().any(|t| matches!(t, Ty::DArrS | Ty::StrOwn));
+                if own {
+                    (vec![Ty::I64; f.params.len()], Some("hb_HKeys results and owned strings cannot be function parameters in this increment".to_string()))
+                } else {
+                    (v, None)
+                }
+            }
             Err(m) => (vec![Ty::I64; f.params.len()], Some(m)),
         };
         let mut env: Vec<Local> = Vec::new();
