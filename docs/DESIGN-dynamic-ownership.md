@@ -27,17 +27,24 @@ sharing patterns (d6-d8, e9) are registered MODEL divergences: they
 fail to compile as use-after-move, and the Harbour idiom must be
 rewritten explicitly (e.g. return the array from the helper).
 
-### Ownership states per local (physical, no static path tracking)
+### Ownership states per local (static moved-check + physical null)
 
-- The ownership state is PHYSICAL: every dynamic-array slot starts as
-  (null, 0); a move nulls the source slot. Freeing is null-safe, so
-  the compiler needs no per-path Owned/Moved analysis: freeing every
-  slot at the function epilogue is correct on every path.
+- The CHECKER tracks a moved flag per local, statically: use of a
+  moved value is a compile error everywhere, including as an AAdd/ASize
+  target; if-joins union the moved flags; a value moved inside a loop
+  body and not reassigned before the next iteration is a compile error;
+  reassignment revives (as in Rust).
+- The RUNTIME state is also PHYSICAL: every dynamic-array slot starts
+  as (null, 0) and a move nulls the source slot. Freeing is null-safe,
+  so CODEGEN needs no per-path analysis: freeing every slot at the
+  function epilogue is correct on every path. The physical null is for
+  free safety, never a substitute for the static check.
 - Joins/branches: a slot holds its value or null; both are freeable
   exactly once. Untaken branches are safe because slots are zero-init.
-- Loops: a local re-declared in a later iteration frees its previous
-  value when the new binding overwrites the slot; anything still owned
-  at function end is freed at the epilogue. No loop-back-edge freeing.
+- Loops: there is NO scope destruction and no loop-back-edge freeing.
+  A local declared in a loop body RETAINS its value in its frame slot
+  until it is re-declared (the overwrite frees the old value first) or
+  until the function epilogue frees it.
 - Harbour `exit` leaves the LOOP, not the function: it frees nothing;
   locals declared outside the loop stay usable after it (t170).
 - Self-referential assignment (`a := <expr using a>`): the RHS is
