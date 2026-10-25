@@ -85,3 +85,9 @@ t82 (`#define MiXeD` used as `mixed`): Harbour compiles and fails at
 RUNTIME (BASE/1003); HarbourRust fails at COMPILE time (undefined
 variable). Category: static vs dynamic checking, same rejection class -
 registered, consistent with the arity case from iteration 11.
+
+## Run of 2026-10-25 (preprocessor F3a: commands/translates)
+
+t84 (#command, case-insensitive keyword), t85 (capture-until-literal),
+t86 (#translate call form, inline): 3/3 MATCH (pcode reference, values
+identical after whitespace normalization).
