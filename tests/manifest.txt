@@ -458,3 +458,10 @@ pos tests/t460_foreach_sub3_bracket.hb \n         7\n         8\n         0\n   
 neg tests/t461_neg_foreach_sub3_root.hb `for each` needs a flat or string array or a hash in this increment
 neg tests/t462_neg_foreach_sub3_touch.hb cannot be modified, moved or grown inside its own loop
 posx tests/t463_foreach_sub3_bound.hb 1 Bound error: array access
+pos tests/t464_param4_move.hb \n         2\n         2\n        42\n         0\n         0\n         0
+pos tests/t465_param4_return.hb \n         2\n         2\n         9\nNIL\n         0\n         0
+neg tests/t466_neg_param4_reuse.hb use of moved value `a`
+pos tests/t467_param4_chain.hb \n         9\n         0\n         0\n         0\n         0
+pos tests/t468_param4_print.hb \n\nsep\n         2
+neg tests/t469_neg_param4_callee_reuse.hb use of moved value `p`
+pos tests/t470_param4_reassign.hb \n         2\n         9\n         0\n         0
