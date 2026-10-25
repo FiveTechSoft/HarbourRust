@@ -515,3 +515,10 @@ same rule (right-operand length, NUL-padded left). 13 x 13 string pairs
 bytes) produce identical results. Optimization is NOT compared (our
 generator is naive on purpose); the behavioural rule is what was
 verified.
+
+### #xtranslate aliased
+
+Probe b26: Harbour accepts #xtranslate; aliased to #translate in our
+engine (x- priority not emulated, documented). t100 positive. Full
+battery: 103/103 (100 numbered + 3 fixtures), Linux + Wine identical.
+Differential: t100 MATCH.
