@@ -501,6 +501,82 @@ fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
     Some(caps)
 }
 
+
+// Harbour result-side `[ ... ]` (e.g. std.ch's `[, <clr>]`): the bracketed
+// part is emitted only when EVERY marker inside it is bound (its optional
+// pattern clause matched); otherwise the whole group is dropped (probe
+// b35). `bound` holds the lowercase result needles (`<x>`, `<(x)>`) of
+// markers whose capture is non-empty.
+// Harbour result-side `[ ... ]` (probes b35, b36a-d):
+// - if the bracket contains at least one BOUND marker, the content is kept
+//   and any UNBOUND markers inside it are individually removed (which can
+//   leave syntax both compilers then reject, e.g. b36c: `+ <x> + <y>` with
+//   <y> absent yields `+ 5 +`; Harbour E0030, our parse error);
+// - if it contains NO bound marker (only unbound markers and/or literal
+//   text), the whole bracket is dropped (b36b/b36d, std.ch's `[, <clr>]`
+//   with the optional clause absent -> nothing, not even the comma).
+// `bound` holds the lowercase result needles (`<x>`, `<(x)>`) of markers
+// whose capture is non-empty.
+fn resolve_result_brackets(text: &str, bound: &std::collections::HashSet<String>) -> String {
+    fn markers_of(s: &str) -> Vec<String> {
+        let ic: Vec<char> = s.chars().collect();
+        let mut v = Vec::new();
+        let mut k = 0usize;
+        while k < ic.len() {
+            if ic[k] == '<' {
+                if let Some(rel) = ic[k..].iter().position(|&c| c == '>') {
+                    v.push(ic[k..=k + rel].iter().collect::<String>().to_lowercase());
+                    k += rel + 1;
+                    continue;
+                }
+            }
+            k += 1;
+        }
+        v
+    }
+    let b: Vec<char> = text.chars().collect();
+    let mut out = String::new();
+    let mut i = 0usize;
+    while i < b.len() {
+        if b[i] == '[' {
+            let mut depth = 1;
+            let mut j = i + 1;
+            while j < b.len() && depth > 0 {
+                if b[j] == '[' { depth += 1; } else if b[j] == ']' { depth -= 1; }
+                j += 1;
+            }
+            if depth != 0 {
+                // unbalanced: leave untouched; downstream parsing reports it
+                out.push('[');
+                i += 1;
+                continue;
+            }
+            let inner: String = b[i + 1..j - 1].iter().collect();
+            let inner = resolve_result_brackets(&inner, bound);
+            let ms = markers_of(&inner);
+            if ms.iter().any(|m| bound.contains(m)) {
+                // keep content; strip unbound markers individually
+                let mut kept = inner.clone();
+                for m in ms {
+                    if !bound.contains(&m) {
+                        // markers are matched case-insensitively
+                        while let Some(p) = kept.to_lowercase().find(&m) {
+                            kept = format!("{}{}", &kept[..p], &kept[p + m.len()..]);
+                        }
+                    }
+                }
+                out.push_str(&kept);
+            }
+            // else: no bound marker -> drop the whole bracket
+            i = j;
+        } else {
+            out.push(b[i]);
+            i += 1;
+        }
+    }
+    out
+}
+
 fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<String>, String> {
     let src = cmd_tokens(line);
     if src.is_empty() { return Ok(None); }
@@ -527,7 +603,27 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
         let c = &cmds[ci];
         let caps = best_caps;
         {
-            let mut out = c.result.clone();
+            // Resolve result-side [ ... ] groups BEFORE substituting: a
+            // marker is bound exactly when its capture is non-empty (an
+            // unmatched optional clause captures as empty by construction).
+            let mut bound: std::collections::HashSet<String> = std::collections::HashSet::new();
+            {
+                let mut pi = 0usize;
+                for t in &c.pattern {
+                    if t.starts_with('<') && t.ends_with('>') {
+                        let name = &t[1..t.len() - 1];
+                        let is_paren = name.starts_with('(') && name.ends_with(')');
+                        let inner = if is_paren { &name[1..name.len() - 1] } else { name };
+                        let base = inner.strip_suffix(",...").unwrap_or(inner);
+                        if !caps[pi].is_empty() {
+                            bound.insert(format!("<{}>", base.to_lowercase()));
+                            bound.insert(format!("<({})>", base.to_lowercase()));
+                        }
+                        pi += 1;
+                    }
+                }
+            }
+            let mut out = resolve_result_brackets(&c.result, &bound);
             let mut pi = 0usize;
             for t in &c.pattern {
                 if t.starts_with('<') && t.ends_with('>') {
