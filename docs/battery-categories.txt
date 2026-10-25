@@ -104,3 +104,9 @@ t170_dyn_exit_outer HB-EXACT
 t171_dyn_branch_local OURS-ONLY
 t172_dyn_loop_redecl OURS-ONLY
 t176_dyn_asize_neg DIVERGE-FAILMODE
+t177_dyn_neg_branch_join OURS-ONLY (static moved-check, join union)
+t178_dyn_neg_backedge OURS-ONLY (static moved-check, loop backedge)
+t179_dyn_neg_loop_stmt OURS-ONLY (static moved-check, LOOP statement)
+t180_dyn_neg_exit_path OURS-ONLY (conservative: rejected at the backedge even though the moving path exits)
+t181_dyn_neg_aadd_moved OURS-ONLY (AAdd on moved rejected)
+t182_dyn_neg_asize_moved OURS-ONLY (ASize on moved rejected)
