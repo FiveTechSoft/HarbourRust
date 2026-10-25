@@ -2303,53 +2303,6 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     })
 }
 
-// Comparing the FOR EACH variable against a STRING would hit the
-// Dyn-vs-string fold (`=` always .F.): right for NIL casillas (n1),
-// wrong for string elements - Harbour compares byte-wise (hk33) - and
-// wrong for numeric ones - Harbour raises BASE/1071 (hk34). This
-// increment rejects the comparison by name instead of folding wrong.
-fn foreach_lv_no_strcmp(stmts: &[Stmt], name: &str, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<(), String> {
-    fn mentions(e: &Expr, name: &str) -> bool {
-        match e {
-            Expr::Var(v) => v == name,
-            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => mentions(a, name) || mentions(b, name),
-            Expr::Call(_, args) => args.iter().any(|a| mentions(a, name)),
-            Expr::Index(id, i) | Expr::Index2(id, i, _) | Expr::Index3(id, i, _, _) => id == name || mentions(i, name),
-            _ => false,
-        }
-    }
-    fn scan_expr(e: &Expr, name: &str, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<(), String> {
-        if let Expr::Cmp(_, a, b) = e {
-            if mentions(a, name) || mentions(b, name) {
-                let other = if mentions(a, name) { b } else { a };
-                if matches!(type_expr(other, env, sigs, n)?, Ty::Str | Ty::StrOwn) {
-                    return Err(format!("line {}: comparing the `for each` variable `{}` against a string is not in this increment - Harbour compares string elements byte-wise (hk33) and errors BASE/1071 on numeric ones (hk34); registered as pending", n, name));
-                }
-            }
-        }
-        match e {
-            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => { scan_expr(a, name, env, sigs, n)?; scan_expr(b, name, env, sigs, n)?; }
-            Expr::Call(_, args) => { for a in args { scan_expr(a, name, env, sigs, n)?; } }
-            Expr::Index(_, i) | Expr::Index2(_, i, _) | Expr::Index3(_, i, _, _) => scan_expr(i, name, env, sigs, n)?,
-            _ => {}
-        }
-        Ok(())
-    }
-    for s in stmts {
-        match s {
-            Stmt::Print(_, items) => { for i in items { scan_expr(i, name, env, sigs, n)?; } }
-            Stmt::If(_, c, a, b) => { scan_expr(c, name, env, sigs, n)?; foreach_lv_no_strcmp(a, name, env, sigs, n)?; foreach_lv_no_strcmp(b, name, env, sigs, n)?; }
-            Stmt::While(_, c, b) => { scan_expr(c, name, env, sigs, n)?; foreach_lv_no_strcmp(b, name, env, sigs, n)?; }
-            Stmt::For(_, _, a, b, _, body) => { scan_expr(a, name, env, sigs, n)?; scan_expr(b, name, env, sigs, n)?; foreach_lv_no_strcmp(body, name, env, sigs, n)?; }
-            Stmt::ForEach(_, _, c, body) => { scan_expr(c, name, env, sigs, n)?; foreach_lv_no_strcmp(body, name, env, sigs, n)?; }
-            Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) => scan_expr(e, name, env, sigs, n)?,
-            Stmt::ArrSet(_, _, ie, e) | Stmt::AAddSub(_, _, ie, e) | Stmt::ASizeSub(_, _, ie, e) => { scan_expr(ie, name, env, sigs, n)?; scan_expr(e, name, env, sigs, n)?; }
-            _ => {}
-        }
-    }
-    Ok(())
-}
-
 fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Option<Ty>, loop_pre: Option<&Vec<bool>>, exits: &mut Vec<Vec<bool>>, dyn_names: &std::collections::HashSet<String>) -> Result<bool, String> {
     let mut falls = true;
     for s in stmts {
@@ -2569,7 +2522,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 if !foreach_lv_readonly(body, var) {
                     return Err(format!("line {}: the `for each` variable `{}` can only be printed, compared or used in arithmetic in this increment - its value borrows from the collection, so it cannot be returned, assigned, passed to a function or stored (registered limitation)", n, var));
                 }
-                foreach_lv_no_strcmp(body, var, &mut env_body, sigs, *n)?;
+
                 if fb {
                     for k in 0..outer {
                         if !pre[k] && env_body[k].moved {
@@ -3751,21 +3704,77 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             let ta = expr_ty(a, env, sigs);
             let tb = expr_ty(b, env, sigs);
             if ta == Ty::Str || tb == Ty::Str || ta == Ty::StrOwn || tb == Ty::StrOwn {
-                // Dyn against a string: `=` is always .F., `#` always .T.
-                // (probe n1: "" = NIL is .F.). Analysis rejects ordering.
-                // The operands still evaluate left to right - only the
-                // comparison is folded. An owned temporary is freed.
+                // Dyn against a string under `=` / `#` (analysis rejects
+                // ordering, hk36 measured-pending): runtime dispatch on
+                // the Dyn tag. tag 2 (string element, e.g. the FOR EACH
+                // variable over hb_HKeys): a REAL Harbour comparison -
+                // hbc_str_eq compares over the right operand's length
+                // with the left NUL-padded (xBase prefix rule; oracles
+                // hk33/hk37, same helper as b23). tag 1 (NIL): `=` .F.,
+                // `#` .T. (hk35, n1). tag 0 (a number): Harbour raises
+                // BASE/1071 for `=` and BASE/1072 for `#` (hk34/hk38,
+                // error dialogs that hang headless) - a clean named
+                // exit 1 here (registered failure mode). Both operands
+                // evaluate left to right; an owned string temporary is
+                // freed after the comparison.
                 let a_tmp = ta == Ty::StrOwn && !matches!(&**a, Expr::Var(_));
                 let b_tmp = tb == Ty::StrOwn && !matches!(&**b, Expr::Var(_));
+                let tmp = a_tmp || b_tmp;
                 cg_value(a, env, sigs, strs, out, target);
-                if a_tmp { out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"); }
+                match target {
+                    Target::Linux => out.push_str("    push %rax\n    push %rdx\n"),
+                    Target::Windows => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n"),
+                }
                 cg_value(b, env, sigs, strs, out, target);
-                if b_tmp { out.push_str("    mov %rax, %rdi\n    mov $1, %esi\n    call hbc_free\n"); }
-                if a_tmp { out.push_str("    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    add $16, %rsp\n"); }
+                out.push_str("    mov %rax, %rcx\n    mov %rdx, %r8\n");
+                match target {
+                    Target::Linux => out.push_str("    pop %rdx\n    pop %rax\n"),
+                    Target::Windows => out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n"),
+                }
+                // Normalize: rax,rdx = string (ptr,len); r10 = dyn tag,
+                // r11 = dyn payload. The string side is the only one
+                // that can be an owned temporary.
+                if ta == Ty::Dyn {
+                    out.push_str("    mov %rax, %r10\n    mov %rdx, %r11\n    mov %rcx, %rax\n    mov %r8, %rdx\n");
+                } else {
+                    out.push_str("    mov %rcx, %r10\n    mov %r8, %r11\n");
+                }
+                out.push_str("    cmp $2, %r10\n    je 991f\n    cmp $0, %r10\n    je 992f\n");
+                // tag 1 (NIL) or any other tag: the previous fold -
+                // `=` is .F., `#` is .T. (hk35, n1).
+                if tmp { out.push_str("    mov %rax, %rdi\n    mov $1, %esi\n    call hbc_free\n"); }
                 if matches!(op, CmpOp::Ne) {
                     out.push_str(&format!("    jmp {}\n", true_label));
                 }
-                // Eq: the condition is never true - fall through.
+                out.push_str("    jmp 993f\n991:\n");
+                // tag 2: byte comparison. hbc_str_eq compares over the
+                // RIGHT operand's length, so operand order matters.
+                out.push_str("    sub $16, %rsp\n");
+                if tmp { out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"); }
+                if ta == Ty::Dyn {
+                    // Dyn is the LEFT operand: lhs = dyn string.
+                    out.push_str("    mov %rax, %rcx\n    mov %rdx, %r8\n    mov %r11, %rax\n    mov -8(%rax), %rdx\n");
+                } else {
+                    // Dyn is the RIGHT operand: rhs = dyn string.
+                    out.push_str("    mov %r11, %rcx\n    mov -8(%r11), %r8\n");
+                }
+                out.push_str("    call hbc_str_eq\n");
+                if tmp {
+                    out.push_str("    mov %rax, 16(%rsp)\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    add $16, %rsp\n");
+                } else {
+                    out.push_str("    mov %rax, (%rsp)\n");
+                }
+                out.push_str("    mov (%rsp), %rax\n    add $16, %rsp\n    test %rax, %rax\n");
+                let j = match op { CmpOp::Eq => "jnz", _ => "jz" };
+                out.push_str(&format!("    {} {}\n", j, true_label));
+                out.push_str("    jmp 993f\n992:\n");
+                // tag 0: number against a string - Harbour's BASE/1071
+                // for `=` (hk34) and BASE/1072 for `#` (hk38).
+                match op {
+                    CmpOp::Eq => out.push_str("    call hbc_dyncmp_eq_error\n"),
+                    _ => out.push_str("    call hbc_dyncmp_ne_error\n"),
+                }
+                out.push_str("993:\n");
             } else {
                 match op {
                     CmpOp::Eq | CmpOp::Ne => {
@@ -5832,6 +5841,31 @@ hbc_snil_error:
     mov $1, %edi
     syscall
 
+# hbc_dyncmp_eq_error / hbc_dyncmp_ne_error: a numeric Dyn compared
+# against a string (noreturn). Harbour raises BASE/1071 "Argument
+# error: =" and BASE/1072 "Argument error: <>" (hk34/hk38, dialogs
+# that hang headless) - clean named exit 1 here, registered failure
+# mode, same error condition.
+hbc_dyncmp_eq_error:
+    lea .Ldyncmpeqmsg(%rip), %rsi
+    mov $18, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
+hbc_dyncmp_ne_error:
+    lea .Ldyncmpnemsg(%rip), %rsi
+    mov $19, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 hbc_aadd_error:
     lea .Laadderrmsg(%rip), %rsi
     mov $21, %edx
@@ -6211,6 +6245,8 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     // "Argument error: AADD\n" (21 bytes; Harbour BASE/1123 hangs headless, oracle n6)
     out.push_str(".Laadderrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,65,65,68,68,10\n");
     out.push_str(".Lsnilmsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,101,120,112,101,99,116,101,100,32,97,32,115,116,114,105,110,103,32,101,108,101,109,101,110,116,44,32,103,111,116,32,78,73,76,10\n");
+    out.push_str(".Ldyncmpeqmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,61,10\n");
+    out.push_str(".Ldyncmpnemsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,60,62,10\n");
     // "Argument error: ASIZE\n" (22 bytes; Harbour BASE/2023 hangs headless, oracle n7)
     out.push_str(".Lasizeerrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,65,83,73,90,69,10\n");
 }
@@ -6511,6 +6547,28 @@ hbc_snil_error:
     sub $48, %rsp
     lea .Lsnilmsg(%rip), %rax
     mov $47, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+hbc_dyncmp_eq_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Ldyncmpeqmsg(%rip), %rax
+    mov $18, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+hbc_dyncmp_ne_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Ldyncmpnemsg(%rip), %rax
+    mov $19, %edx
     call hbc_print_str
     mov $1, %ecx
     call ExitProcess
