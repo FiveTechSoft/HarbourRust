@@ -585,6 +585,43 @@ tested paths (t191). `Array(n, 0)` children are real empty arrays
 (az0b, t256). Battery: 266/266 green on Linux x86-64 and Wine, plus
 the ABI harness on both targets.
 
+## Iteration 22 - three levels of nesting (arrays of arrays of arrays)
+
+Literals like `{{{1, 2}}, {{3}}}` now compile to a third nesting
+level (oracle pr4: `len(a)` = 2, `len(a[1])` = 1, `len(a[1][1])` =
+2, `a[1][1][2]` = 2; t275 mirrors it). Reads, `len` at each level
+and three-level bounds-checked indexing work; a three-level value
+returns from a function with the same move contract as iteration 21
+(t276: the callee's slot is nulled on return, the caller's epilogue
+frees the whole value, registry balance 0 on both targets).
+
+Two implementation decisions worth naming:
+
+- The type is an explicit `DArr3` variant, not a recursive type:
+  the checker knows the depth statically, so a fourth index level
+  and passing a three-level value as a parameter are compile errors
+  with named limits, not silent misbehavior. A generic recursive
+  structure was considered and set aside for this PoC: it would
+  need runtime depth tracking the current slot model does not have.
+- The FREE side is generic: one new helper `hbc_rfree(ptr, len,
+  depth)` frees any depth >= 2 by recursion (depth 2 reduces to the
+  existing `hbc_free2`), so depth 4+ needs no new helper even though
+  the type checker does not admit it yet. The ABI harness now wraps
+  a live DArr2 in a pair block and frees it through `hbc_rfree`
+  under canary + alignment checks on both targets.
+
+The iteration also repaired a latent bug the new balance test
+surfaced: three-level locals were never registered in the
+free-slot table, so their slots were not zero-initialized at entry
+(a re-declaration could free stack garbage - the registry harness
+caught it - and the epilogue leaked the whole value). The
+declaration/assignment move-out nulling now covers `DArr3` sources
+too. t200 (the old "depth 3 unsupported" negative) is retired:
+depth 3 is supported now. Battery: 275/275 green on Linux x86-64
+and Wine, plus the ABI harness on both targets. Out of scope, all
+explicit compile errors: ASize/AAdd/ArrSet at level 3, three-level
+parameters, a fourth index level, mixed literals.
+
 ## Iteration 21 - nested arrays as parameters and returns
 
 Arrays of arrays now pass as function arguments and return from
