@@ -540,3 +540,16 @@ literal words) regardless of definition order; our first-defined-wins
 was a real divergence, caught here and fixed. t102 positive. Full
 battery: 105/105 (102 numbered + 3 fixtures), Linux + Wine identical.
 Differential: t102 MATCH.
+
+Void-function signature fix + optional result brackets: a function ending
+in `return nil` WITH parameters panicked codegen (no signature entry was
+recorded); fixed - every function now gets a signature entry (void ones
+carry `ret: None`) and using a void result in an expression is a clean
+type error (t103 positive, t104 negative; Harbour accepts and prints NIL
+- registered in DIFFERENTIAL as a typed-model divergence). #command
+result-side [ ... ] implemented from probes b35/b36a-d: kept when a bound
+marker is inside (unbound markers removed individually), dropped whole
+otherwise (t105 positive MATCH vs Harbour, t106 negative, both reject).
+Parse diagnostic "unexpected token None" replaced by "incomplete
+expression (operand or ) missing)". Full battery: 109/109 (106 numbered
++ 3 fixtures), Linux + Wine identical.
