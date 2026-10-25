@@ -585,6 +585,47 @@ tested paths (t191). `Array(n, 0)` children are real empty arrays
 (az0b, t256). Battery: 266/266 green on Linux x86-64 and Wine, plus
 the ABI harness on both targets.
 
+## Iteration 29 - mutable string arrays, parameters and returns
+
+The two limitations iteration 28 shipped with are closed (they were
+PoC scope, never ownership requirements):
+
+- The array from `hb_HKeys` - and any `{}` grown with string
+  elements - is MUTABLE: `AAdd(k, s)` appends an owned copy (a
+  rodata value is copied, an owned value moves in) and `k[i] := s`
+  overwrites an element, freeing the old owned copy once the new one
+  exists (oracle hk7, written for this increment: the hash is
+  unaffected; t307 mirrors it byte for byte; t308 pins the same
+  behaviour for a `{}` pinned by string AAdds, including a
+  self-insert `AAdd(a, a[2])`, which is safe because reads copy).
+  ASize on it stays a named compile error (t315).
+- Arrays of strings and owned strings are function PARAMETERS and
+  returns, under the established move contract: the callee owns the
+  value, the caller's slot is nulled, using it after the call is a
+  compile error (t310, t313). String parameters are now uniformly
+  owned: a rodata argument is copied at the call boundary, an owned
+  argument moves (t311, t312); a function returning its string
+  parameter on one path and a literal on another unifies to an
+  owned return, with a copy emitted at the literal return point
+  (t314). Oracle hk8 registers Harbour's behaviour for the same
+  shape: the array is SHARED (the callee's mutation is visible
+  without any return) - the deliberate move-vs-share difference
+  already registered (pr2/pr5 family), pending the user's contract
+  decision; t309 shows the explicit move round-trip. A string array
+  passed to a parameter pinned to a flat integer array is a genuine
+  type mismatch (t303, repurposed; t304 now pins a non-string AAdd
+  element).
+
+The sweep caught a pre-existing hole: a comparison between an owned
+string and any other value fell through to the numeric arm, which
+compared pointers and leaked the temporary. Comparisons with owned
+strings now byte-compare on both targets and free temporaries after
+the call (covered by t311/t314 through the pinned parameter
+comparisons). No new helpers: hbc_strcpy, hbc_aadd, hbc_free and
+hbc_sfree were already covered by the ABI canary harness, which
+still passes on both targets. Battery: 313/313 green on Linux
+x86-64 and Wine, plus the ABI harness on both targets.
+
 ## Iteration 28 - hb_HKeys: hash keys as an owned array of strings
 
 `hb_HKeys(h)` returns the keys of a hash as a new array, in
