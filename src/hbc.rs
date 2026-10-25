@@ -57,10 +57,14 @@ enum Tok {
     Lt, Le, Gt, Ge,
     KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElse, KwEndif, KwWhile, KwEnddo, KwExit, KwLoop,
     KwFor, KwTo, KwStep, KwNext,
+    EqEq,       // == (object identity, oracle cl7/cl19)
+    Colon,      // : (message send, o:name)
+    ColonColon, // :: (self member, inside a method)
+    KwCreate, KwClass, KwEndclass, KwMethod, KwData, KwInherit, KwConstructor, KwInit, KwSelfTok,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum CmpOp { Eq, Ne, Lt, Le, Gt, Ge }
+enum CmpOp { Eq, EqEq, Ne, Lt, Le, Gt, Ge } // EqEq: == object identity (oracles cl7/cl19)
 
 static BLOCK_ID: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 fn new_block_id() -> usize { BLOCK_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst) }
@@ -89,7 +93,8 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                 it.next();
                 match it.peek() {
                     Some(&(_, '=')) => { toks.push(Tok::Assign); it.next(); }
-                    _ => return Err(format!("line {}: ':' without '=' (col {})", n, i + 1)),
+                    Some(&(_, ':')) => { toks.push(Tok::ColonColon); it.next(); }
+                    _ => toks.push(Tok::Colon),
                 }
             }
             '"' => {
@@ -140,6 +145,15 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                     "to" => Tok::KwTo,
                     "step" => Tok::KwStep,
                     "next" => Tok::KwNext,
+                    "create" => Tok::KwCreate,
+                    "class" => Tok::KwClass,
+                    "endclass" => Tok::KwEndclass,
+                    "method" => Tok::KwMethod,
+                    "data" => Tok::KwData,
+                    "inherit" => Tok::KwInherit,
+                    "constructor" => Tok::KwConstructor,
+                    "init" => Tok::KwInit,
+                    "self" => Tok::KwSelfTok,
                     _ => Tok::Ident(id),
                 });
             }
@@ -147,6 +161,7 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                 it.next();
                 match it.peek() {
                     Some(&(_, '>')) => { toks.push(Tok::FatArrow); it.next(); }
+                    Some(&(_, '=')) => { toks.push(Tok::EqEq); it.next(); }
                     _ => toks.push(Tok::Eq),
                 }
             }
@@ -197,6 +212,9 @@ enum Expr {
     Index3(String, Box<Expr>, Box<Expr>, Box<Expr>), // a[i][j] / a[i,j] on a DArr2 (probe m1/m2)
     BlockLit(usize, Vec<String>, Vec<Expr>), // {|p1, p2| e1, e2} -> last (probes c1-c5)
     DArrNew,                     // {} : empty DYNAMIC array (probes d1, e4)
+    SelfObj,                     // Self (oracle cl2: return Self chains)
+    SelfGet(String),             // ::name inside a method (class parser landed; codegen pending)
+    Send(Box<Expr>, String, Vec<Expr>), // obj:name(args) / obj:name - Harbour message send (cl1/cl10)
     Nil,                         // NIL: tagged i64 sentinel (probes n1: prints NIL, NIL==NIL .T., NIL==0 .F.)
     // Hash literal: string keys, i64 values (v1). {=>} is the empty
     // hash; {} stays the empty dynamic array.
@@ -214,6 +232,9 @@ enum Stmt {
     ArrSet(usize, String, Expr, Expr), // a[i] := expr (index is 1-based)
     ArrSet2(usize, String, Expr, Expr, Expr), // a[i][j] := expr / a[i,j] := expr
     ArrSet3(usize, String, Expr, Expr, Expr, Expr), // a[i][j][k] := expr
+    SelfSet(usize, String, Expr),       // ::name := expr
+    SendSet(usize, Expr, String, Expr), // obj:name := expr (simple receiver)
+    SendStmt(usize, Expr),              // obj:name(args) used as a statement
     AAdd(usize, String, Expr),  // AAdd(a, x): grow dynamic array in place (probe d1)
     AAddSub(usize, String, Expr, Expr), // AAdd(a[i], x): grow the subarray (probe m5)
     ASizeSub(usize, String, Expr, Expr), // ASize(a[i], n): resize the subarray
@@ -277,6 +298,38 @@ impl P {
         Ok(lhs)
     }
     fn factor(&mut self) -> Result<Expr, String> {
+        // Message-send postfix (oracles cl1/cl2/cl10): o:name, o:name(args),
+        // chains o:M():N(). o:name without parens is ALSO a send - the
+        // method wins over a same-named DATA (cl10), DATA read is the
+        // fallback; both resolve in codegen, not here.
+        let mut e = self.factor_primary()?;
+        while self.peek() == Some(&Tok::Colon) {
+            self.pos += 1;
+            let name = match self.bump() {
+                Some(Tok::Ident(id)) => { check_ident(&id, self.n)?; id }
+                other => return Err(format!("line {}: expected a member name after `:`, got {:?}", self.n, other)),
+            };
+            let mut args: Vec<Expr> = Vec::new();
+            if self.peek() == Some(&Tok::LParen) {
+                self.pos += 1;
+                if self.peek() != Some(&Tok::RParen) {
+                    loop {
+                        args.push(self.expr()?);
+                        match self.bump() {
+                            Some(Tok::Comma) => continue,
+                            Some(Tok::RParen) => break,
+                            other => return Err(format!("line {}: expected `,` or `)` in the message arguments, got {:?}", self.n, other)),
+                        }
+                    }
+                } else {
+                    self.pos += 1;
+                }
+            }
+            e = Expr::Send(Box::new(e), name, args);
+        }
+        Ok(e)
+    }
+    fn factor_primary(&mut self) -> Result<Expr, String> {
         match self.bump() {
             // Harbour unary minus (probe q1: `? -7`): sugar for 0 - e, so
             // the i64 typing/codegen path applies unchanged.
@@ -292,6 +345,13 @@ impl P {
             }
             Some(Tok::Str(s)) => Ok(Expr::Str(s)),
             Some(Tok::KwNil) => Ok(Expr::Nil),
+            Some(Tok::KwSelfTok) => Ok(Expr::SelfObj),
+            Some(Tok::ColonColon) => {
+                match self.bump() {
+                    Some(Tok::Ident(id)) => { check_ident(&id, self.n)?; Ok(Expr::SelfGet(id)) }
+                    other => return Err(format!("line {}: expected a member name after `::`, got {:?}", self.n, other)),
+                }
+            }
             Some(Tok::Ident(id)) => {
                 if self.peek() == Some(&Tok::LParen) {
                     self.pos += 1;
@@ -444,6 +504,7 @@ impl P {
     fn peek_cmp(&self) -> Option<CmpOp> {
         match self.peek() {
             Some(Tok::Eq) => Some(CmpOp::Eq),
+            Some(Tok::EqEq) => Some(CmpOp::EqEq),
             Some(Tok::Ne) => Some(CmpOp::Ne),
             Some(Tok::Lt) => Some(CmpOp::Lt),
             Some(Tok::Le) => Some(CmpOp::Le),
@@ -515,6 +576,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
         let n = *n;
         match toks[0].clone() {
             Tok::KwFunction => return Ok(()),
+            Tok::KwMethod | Tok::KwCreate => return Ok(()),
             Tok::KwReturn if depth == 0 => return Ok(()),
             Tok::KwReturn => {
                 // Early return inside an if/while block: an expression is
@@ -871,6 +933,24 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     *i += 1;
                     continue;
                 }
+                if toks.len() >= 3 && toks[1] == Tok::Colon {
+                    // o:name := e (simple receiver) or o:M(...) / o:name as
+                    // a statement whose value is discarded (oracle cl2).
+                    if toks.len() >= 4 {
+                        if let [_, Tok::Colon, Tok::Ident(mname), Tok::Assign, rest @ ..] = toks.as_slice() {
+                            check_ident(mname, n)?;
+                            let e = parse_expr_tokens(rest.to_vec(), n)?;
+                            out.push(Stmt::SendSet(n, Expr::Var(id.clone()), mname.clone(), e));
+                            *i += 1;
+                            continue;
+                        }
+                        let e = parse_expr_tokens(toks.to_vec(), n)?;
+                        match e {
+                            Expr::Send(..) => { out.push(Stmt::SendStmt(n, e)); *i += 1; continue; }
+                            _ => return Err(format!("line {}: message-send statement not in the subset", n)),
+                        }
+                    }
+                }
                 if toks.len() < 3 || toks[1] != Tok::Assign {
                     return Err(format!("line {}: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)", n));
                 }
@@ -879,13 +959,50 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 out.push(Stmt::Assign(n, id, e));
                 *i += 1;
             }
+            Tok::ColonColon => {
+                // ::name := e (statement form inside a method body)
+                match toks.as_slice() {
+                    [Tok::ColonColon, Tok::Ident(mname), Tok::Assign, rest @ ..] => {
+                        check_ident(mname, n)?;
+                        let e = parse_expr_tokens(rest.to_vec(), n)?;
+                        out.push(Stmt::SelfSet(n, mname.clone(), e));
+                        *i += 1;
+                    }
+                    _ => {
+                        let e = parse_expr_tokens(toks.to_vec(), n)?;
+                        match e {
+                            Expr::Send(..) | Expr::SelfGet(_) | Expr::SelfObj => { out.push(Stmt::SendStmt(n, e)); *i += 1; }
+                            _ => return Err(format!("line {}: `::` statement not in the subset (expected `::name := expr`)", n)),
+                        }
+                    }
+                }
+            }
             t => return Err(format!("line {}: statement not in the subset ({:?})", n, t)),
         }
     }
     Ok(())
 }
 
-fn parse(src: &str) -> Result<Vec<Func>, String> {
+// Class surface (parser landed; runtime representation pending the user's
+// decision): CREATE CLASS / DATA / METHOD / INHERIT declarations, METHOD
+// ... CLASS definitions. Semantics probed in sondas_ac/classes (cl1-cl21).
+struct ClassDecl {
+    name: String,
+    parent: Option<String>,
+    datas: Vec<(String, Option<Expr>)>,           // DATA name [INIT expr]
+    methods: Vec<(String, Vec<String>, bool)>,    // name, params, is_constructor
+}
+struct MethodDef {
+    class_name: String,
+    f: Func,
+}
+struct Prog {
+    funcs: Vec<Func>,
+    classes: Vec<ClassDecl>,
+    methods: Vec<MethodDef>,
+}
+
+fn parse(src: &str) -> Result<Prog, String> {
     let mut lines: Vec<(usize, Vec<Tok>)> = Vec::new();
     for (idx, raw) in src.lines().enumerate() {
         let n = idx + 1;
@@ -894,25 +1011,111 @@ fn parse(src: &str) -> Result<Vec<Func>, String> {
     }
 
     let mut funcs: Vec<Func> = Vec::new();
+    let mut classes: Vec<ClassDecl> = Vec::new();
+    let mut methods: Vec<MethodDef> = Vec::new();
     let mut i = 0usize;
     while i < lines.len() {
         let (n, toks) = &lines[i];
+        let n = *n;
+        // CREATE CLASS Name [INHERIT Base] ... ENDCLASS
+        if toks[0] == Tok::KwCreate {
+            let (cname, parent) = match toks.as_slice() {
+                [Tok::KwCreate, Tok::KwClass, Tok::Ident(c)] => { check_ident(c, n)?; (c.clone(), None) }
+                [Tok::KwCreate, Tok::KwClass, Tok::Ident(c), Tok::KwInherit, Tok::Ident(b)] => {
+                    check_ident(c, n)?; check_ident(b, n)?; (c.clone(), Some(b.clone()))
+                }
+                [Tok::KwCreate, Tok::KwClass, Tok::Ident(_), Tok::KwInherit, Tok::Ident(_), Tok::Comma, ..] => {
+                    return Err(format!("line {}: multiple inheritance is not in this increment (oracle cl21: Harbour accepts it)", n));
+                }
+                _ => return Err(format!("line {}: expected `CREATE CLASS Name [INHERIT Base]`", n)),
+            };
+            if classes.iter().any(|c| c.name == cname) {
+                return Err(format!("line {}: duplicate class `{}`", n, cname));
+            }
+            i += 1;
+            let mut decl = ClassDecl { name: cname, parent, datas: Vec::new(), methods: Vec::new() };
+            loop {
+                if i >= lines.len() { return Err(format!("class `{}` without ENDCLASS", decl.name)); }
+                let (ln, lt) = &lines[i];
+                let ln = *ln;
+                match lt.as_slice() {
+                    [Tok::KwEndclass] => { i += 1; break; }
+                    [Tok::KwData, Tok::Ident(d)] => { check_ident(d, ln)?; decl.datas.push((d.clone(), None)); i += 1; }
+                    [Tok::KwData, Tok::Ident(d), Tok::KwInit, rest @ ..] => {
+                        check_ident(d, ln)?;
+                        decl.datas.push((d.clone(), Some(parse_expr_tokens(rest.to_vec(), ln)?)));
+                        i += 1;
+                    }
+                    [Tok::KwMethod, Tok::Ident(m), Tok::LParen, rest @ .., Tok::RParen] => {
+                        check_ident(m, ln)?;
+                        let ps = parse_param_names(rest, ln)?;
+                        decl.methods.push((m.clone(), ps, false));
+                        i += 1;
+                    }
+                    [Tok::KwMethod, Tok::Ident(m), Tok::LParen, rest @ .., Tok::RParen, Tok::KwConstructor] => {
+                        check_ident(m, ln)?;
+                        let ps = parse_param_names(rest, ln)?;
+                        decl.methods.push((m.clone(), ps, true));
+                        i += 1;
+                    }
+                    [Tok::Ident(scope), Tok::Colon] | [Tok::Ident(scope)] if matches!(scope.to_ascii_lowercase().as_str(), "protected" | "hidden" | "exported") => {
+                        return Err(format!("line {}: class scopes ({}:, ...) are not in this increment - Harbour enforces them at runtime (oracle cl8)", ln, scope));
+                    }
+                    _ => return Err(format!("line {}: class member line not in the subset (DATA / METHOD / ENDCLASS)", ln)),
+                }
+            }
+            classes.push(decl);
+            continue;
+        }
+        // METHOD Name(params) CLASS CName ... return ...
+        if toks[0] == Tok::KwMethod {
+            let (mname, params, cname) = match toks.as_slice() {
+                [Tok::KwMethod, Tok::Ident(m), Tok::LParen, rest @ .., Tok::RParen, Tok::KwClass, Tok::Ident(c)] => {
+                    check_ident(m, n)?; check_ident(c, n)?;
+                    (m.clone(), parse_param_names(rest, n)?, c.clone())
+                }
+                [Tok::KwMethod, Tok::Ident(m), Tok::LParen, Tok::RParen, Tok::KwClass, Tok::Ident(c)] => {
+                    check_ident(m, n)?; check_ident(c, n)?;
+                    (m.clone(), Vec::new(), c.clone())
+                }
+                _ => return Err(format!("line {}: expected `METHOD Name(params) CLASS ClassName`", n)),
+            };
+            if !classes.iter().any(|c| c.name == cname) {
+                return Err(format!("line {}: method `{}` defined for unknown class `{}`", n, mname, cname));
+            }
+            i += 1;
+            let mut f = Func { name: format!("{}__{}", cname, mname), params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
+            parse_stmts(&lines, &mut i, &mut f.stmts, 0)?;
+            if i >= lines.len() || lines[i].1[0] != Tok::KwReturn {
+                return Err(format!("method `{}` of `{}` without closing return", mname, cname));
+            }
+            let (rn, rt) = &lines[i];
+            let stmt = match rt.len() {
+                1 => Stmt::Ret(*rn, None),
+                2 if rt[1] == Tok::KwNil => Stmt::Ret(*rn, None),
+                _ => Stmt::Ret(*rn, Some(parse_expr_tokens(rt[1..].to_vec(), *rn)?)),
+            };
+            f.stmts.push(stmt);
+            methods.push(MethodDef { class_name: cname, f });
+            i += 1;
+            continue;
+        }
         if toks[0] != Tok::KwFunction {
             return Err(format!("line {}: code outside a function", n));
         }
         let (name, params) = match toks.as_slice() {
             [Tok::KwFunction, Tok::Ident(id), Tok::LParen, Tok::RParen] => {
-                check_ident(id, *n)?;
+                check_ident(id, n)?;
                 (id.clone(), Vec::new())
             }
             [Tok::KwFunction, Tok::Ident(id), Tok::LParen, rest @ .., Tok::RParen] if !rest.is_empty() => {
-                check_ident(id, *n)?;
+                check_ident(id, n)?;
                 let mut ps: Vec<String> = Vec::new();
                 for (k, t) in rest.iter().enumerate() {
                     let want_ident = k % 2 == 0;
                     match (want_ident, t) {
                         (true, Tok::Ident(p)) => {
-                            check_ident(p, *n)?;
+                            check_ident(p, n)?;
                             if ps.iter().any(|q| q == p) {
                                 return Err(format!("line {}: duplicate parameter `{}`", n, p));
                             }
@@ -945,7 +1148,25 @@ fn parse(src: &str) -> Result<Vec<Func>, String> {
     if funcs.is_empty() {
         return Err("no functions found".to_string());
     }
-    Ok(funcs)
+    Ok(Prog { funcs, classes, methods })
+}
+
+// Comma-separated parameter names out of a method declaration's token
+// slice (same rules as `function name(a, b)`).
+fn parse_param_names(rest: &[Tok], n: usize) -> Result<Vec<String>, String> {
+    let mut ps: Vec<String> = Vec::new();
+    for (k, tk) in rest.iter().enumerate() {
+        match (k % 2 == 0, tk) {
+            (true, Tok::Ident(p)) => {
+                check_ident(p, n)?;
+                if ps.iter().any(|q| q == p) { return Err(format!("line {}: duplicate parameter `{}`", n, p)); }
+                ps.push(p.clone());
+            }
+            (false, Tok::Comma) => {}
+            _ => return Err(format!("line {}: expected comma-separated parameters", n)),
+        }
+    }
+    Ok(ps)
 }
 
 // ---------------------------------------------------------------------------
@@ -1025,6 +1246,8 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
             Expr::Bin(_, a, b) => { pin_vars(f, a, Ty::I64, pin, n)?; pin_vars(f, b, Ty::I64, pin, n) }
             Expr::Cmp(_, a, b) => { pin_vars(f, a, ty, pin, n)?; pin_vars(f, b, ty, pin, n) }
             Expr::Call(_, _) => Ok(()), // call arguments pin via the callee's signature, not the outer context
+            Expr::SelfObj | Expr::SelfGet(_) => Ok(()),
+            Expr::Send(_, _, _) => Ok(()), // like a call: nothing pins through the message syntax
             Expr::ArrLit(es) => { for e in es { pin_vars(f, e, Ty::I64, pin, n)?; } Ok(()) }
             Expr::Index(id, ie) => {
                 if is_param(f, id).is_some() {
@@ -1148,6 +1371,12 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                 walk(f, ie3, sigs, lit, pin, n)
             }
             Expr::DArrNew => Ok(()),
+            Expr::SelfObj | Expr::SelfGet(_) => Ok(()),
+            Expr::Send(o, _, args) => {
+                walk(f, o, sigs, lit, pin, n)?;
+                for a in args { walk(f, a, sigs, lit, pin, n)?; }
+                Ok(())
+            }
             _ => Ok(()),
         }
     }
@@ -1235,6 +1464,13 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     pin_vars(f, e, Ty::I64, pin, *n)?;
                     walk(f, ie, sigs, lit, pin, *n)?;
                     walk(f, ie2, sigs, lit, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, *n)?;
+                }
+                Stmt::SelfSet(n, _, e) | Stmt::SendStmt(n, e) => {
+                    walk(f, e, sigs, lit, pin, *n)?;
+                }
+                Stmt::SendSet(n, o, _, e) => {
+                    walk(f, o, sigs, lit, pin, *n)?;
                     walk(f, e, sigs, lit, pin, *n)?;
                 }
                 Stmt::AAddSub2(n, _id, ie, ie2, e) | Stmt::ASizeSub2(n, _id, ie, ie2, e) => {
@@ -1439,6 +1675,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
             // with `=` / `#` (oracle n4): the borrow reads the child
             // pointer, it never extracts the subarray. A real empty child
             // ({}) owns a block and is NOT NIL.
+            if matches!(op, CmpOp::EqEq) {
+                return Err(format!("line {}: `==` identity comparison is not in this increment yet (oracles cl7/cl19)", n));
+            }
             if matches!(op, CmpOp::Eq | CmpOp::Ne) {
                 let cas = |e: &Expr| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArr2 | Ty::DArr3)));
                 let idx = if cas(a) && matches!(**b, Expr::Nil) {
@@ -1676,6 +1915,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
             }
             Ok(Ty::Block(params.len()))
         }
+        Expr::SelfObj | Expr::SelfGet(_) | Expr::Send(_, _, _) => {
+            Err(format!("line {}: classes are not in this increment yet (parser landed; runtime representation pending)", n))
+        }
         Expr::DArrNew => Ok(Ty::DArrU),
         // Hash literal (probes h1/h2/h8/h9): string keys, tagged-scalar
         // values in v1. Duplicate keys in one literal overwrite in place
@@ -1716,6 +1958,8 @@ fn ty_name(t: Ty) -> &'static str {
 fn free_vars(e: &Expr, out: &mut Vec<String>) {
     match e {
         Expr::Var(id) => { if !out.iter().any(|x| x == id) { out.push(id.clone()); } }
+        Expr::SelfObj | Expr::SelfGet(_) => {}
+        Expr::Send(o, _, args) => { free_vars(o, out); for a in args { free_vars(a, out); } }
         Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => { free_vars(a, out); free_vars(b, out); }
         Expr::Call(_, args) => { for a in args { free_vars(a, out); } }
         Expr::ArrLit(es) => { for e in es { free_vars(e, out); } }
@@ -1832,6 +2076,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
     let mut falls = true;
     for s in stmts {
         match s {
+            Stmt::SelfSet(n, _, _) | Stmt::SendSet(n, _, _, _) | Stmt::SendStmt(n, _) => {
+                return Err(format!("line {}: classes are not in this increment yet (parser landed; runtime representation pending)", n));
+            }
             Stmt::Local(n, id, e) => {
                 if env.iter().any(|v| v.name == *id) {
                     return Err(format!("line {}: duplicate local `{}`", n, id));
@@ -2448,6 +2695,7 @@ struct CgLocal {
 
 fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     match e {
+        Expr::SelfObj | Expr::SelfGet(_) | Expr::Send(_, _, _) => unreachable!("rejected before codegen"),
         Expr::Int(v) => {
             out.push_str(&format!("    mov ${}, %rax\n", v));
         }
@@ -2914,6 +3162,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
     match e {
         Expr::Int(_) | Expr::Bin(_, _, _) => Ty::I64,
         Expr::Nil => Ty::Dyn,
+        Expr::SelfObj | Expr::SelfGet(_) | Expr::Send(_, _, _) => Ty::Dyn, // unreachable: the checker rejects them first
         Expr::Str(_) => Ty::Str,
         Expr::Var(id) => env.iter().find(|v| v.name == *id).expect("checked").ty,
         Expr::Call(id, args) => {
@@ -3160,6 +3409,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             let j = match op {
                 CmpOp::Lt => "jl", CmpOp::Le => "jle", CmpOp::Gt => "jg",
                 CmpOp::Ge => "jge", CmpOp::Eq => "je", CmpOp::Ne => "jne",
+                CmpOp::EqEq => unreachable!("rejected before codegen"),
             };
             out.push_str(&format!("    {} {}\n", j, true_label));
         }
@@ -3170,6 +3420,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
 fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, ll: &Option<(String, String)>, slots: &[(usize, u8)], dyn_names: &std::collections::HashSet<String>) {
     for s in stmts {
         match s {
+            Stmt::SelfSet(..) | Stmt::SendSet(..) | Stmt::SendStmt(..) => unreachable!("rejected before codegen"),
             Stmt::Local(_, id, e) => {
                 let mut t = expr_ty(e, env, sigs);
                 // Prescan widening (probe n2): an i64 initializer whose
@@ -3785,6 +4036,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
 
 // Collect every block literal in a statement tree (deterministic order).
 fn collect_blocks_expr(e: &Expr, out: &mut Vec<(usize, Vec<String>, Vec<Expr>)>) {
+    if let Expr::Send(o, _, args) = e {
+        collect_blocks_expr(o, out);
+        for a in args { collect_blocks_expr(a, out); }
+        return;
+    }
+    if matches!(e, Expr::SelfObj | Expr::SelfGet(_)) { return; }
     match e {
         Expr::BlockLit(id, ps, body) => {
             out.push((*id, ps.clone(), body.clone()));
@@ -3804,6 +4061,8 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
             Stmt::ArrSet(_, _, ie, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(e, out); }
             Stmt::Print(_, es) => { for e in es { collect_blocks_expr(e, out); } }
             Stmt::Ret(_, Some(e)) => collect_blocks_expr(e, out),
+            Stmt::SelfSet(_, _, e) | Stmt::SendStmt(_, e) => collect_blocks_expr(e, out),
+            Stmt::SendSet(_, o, _, e) => { collect_blocks_expr(o, out); collect_blocks_expr(e, out); }
             Stmt::Ret(_, None) | Stmt::Exit(_) | Stmt::Loop(_) => {}
             Stmt::AAdd(_, _, e) | Stmt::ASize(_, _, e) => collect_blocks_expr(e, out),
             Stmt::ArrSet2(_, _, ie, ie2, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(ie2, out); collect_blocks_expr(e, out); }
@@ -5713,10 +5972,15 @@ fn main() {
         process::exit(1);
     }
 
-    let mut funcs = match parse(&src) {
-        Ok(f) => f,
+    let prog = match parse(&src) {
+        Ok(p) => p,
         Err(msg) => { eprintln!("error: {}", msg); process::exit(1); }
     };
+    if !prog.classes.is_empty() || !prog.methods.is_empty() {
+        eprintln!("error: classes are not in this increment yet (the parser landed; the runtime representation is pending the user's decision)");
+        process::exit(1);
+    }
+    let mut funcs = prog.funcs;
 
     // Pass 1: semantic analysis - types, ownership/move, signatures.
     let mut sigs: Vec<Sig> = Vec::new();
