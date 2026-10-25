@@ -574,3 +574,19 @@ against a string - hk33/hk34 measured, support pending), t345
 (`hb_HKeys` with a non-variable argument - clean error, was a
 compiler panic), t346-t348 (escaping the borrowed element:
 return, copy to another local, store into a collection).
+
+## Iteration 33b additions (353 total): loop variable vs string
+
+t344 (hk33 mirror: real byte comparison `=`/`#`), t349 (hk37:
+xBase prefix rule - right-operand length, left NUL-padded),
+t350 (hk35: NIL casilla `=` .F., `#` .T.), t351/t352 (hk34/hk38:
+numeric element vs string is Harbour's BASE/1071/1072 dialog,
+headless-hanging - clean "Argument error: ="/"Argument error:
+<>" exit 1, registered failure modes), t353 (ordering rejected
+by name; hk36 measured, pending), t354 (string on the LEFT and
+an owned temporary k[1] as the string side, freed after the
+comparison). t223 repurposed: its third case assumed the old
+always-.T. fold for a NUMBER casilla vs string, which
+hk34/hk38 disproved; it now uses a NIL casilla (hk35) and keeps
+its evaluation-effects purpose. Runtime dispatch on the Dyn tag
+(2: hbc_str_eq, 1: fold, 0: named error) - no new helpers.
