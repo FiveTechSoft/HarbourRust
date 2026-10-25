@@ -85,3 +85,22 @@ Probes c01-c04, a01-a06 (23 -> 30 total executed):
   list captures, match markers, non-call translate forms, token pasting.
 - Still unprobed: parameter-substitution case sensitivity in function-like
   defines, token pasting.
+
+## F3b round (2026-10-25, third batch)
+
+Probes a07, b01-b03 (30 -> 34 total executed):
+- Parameter substitution in function-like defines is case-SENSITIVE, same
+  as macro names (a07: `#define F(x) X + 1` leaves X unsubstituted;
+  Harbour fails at runtime with BASE/1003). Our engine was case-insensitive
+  here - fixed the same day, regression test t88.
+- Optional clauses [ ... ] work in Harbour (b01) and list captures
+  <x,...> work (b02). F3b landed (scoped): both, with the result-side
+  insertion marker being the plain <x> form - Harbour rejects <x,...> in
+  the result with E0009, and its own std.ch inserts lists via the plain
+  marker (`#command ? [<explist,...>] => QOut( <explist> )`); our engine
+  does the same (behavioural reference, no code copied).
+- Token pasting (##) is accepted by Harbour (b03 compiles and runs);
+  the pasting semantics themselves remain unprobed and are NOT
+  implemented.
+- Still scoped OUT: match markers, non-call #translate forms, token
+  pasting. No claim of general #command/#translate compatibility.
