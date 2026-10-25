@@ -1420,6 +1420,18 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     return walk(f, &args[0], sigs, lit, pin, n);
                 }
                 if is_builtin(id, "eval") {
+                    // eval(b, a1..an) PINS a codeblock parameter (33p):
+                    // the arity evidence is the argument count. Harbour
+                    // tolerates EXTRA ignored arguments (probes c7/c7b);
+                    // with a parameter the pin must match the block's
+                    // arity exactly - a conservative named rejection, not
+                    // a miscompile (registered limitation).
+                    if !args.is_empty() {
+                        pin_vars(f, &args[0], Ty::Block(args.len() - 1), pin, n)?;
+                        // The extra eval arguments are integers here (same
+                        // contract as the checker), so they pin I64 too.
+                        for a in &args[1..] { pin_vars(f, a, Ty::I64, pin, n)?; }
+                    }
                     for a in args { walk(f, a, sigs, lit, pin, n)?; }
                     return Ok(());
                 }
