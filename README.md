@@ -884,3 +884,27 @@ Battery: 322/322 on Linux x86-64 and Wine, plus the ABI harness.
 No new helpers (the ASize change extends the existing hbc_asize
 kind flag; string frees go through the already-canaried
 hbc_free).
+
+## Iteration 31 - ASize growth on string arrays: NIL casillas like Harbour
+
+The last ASize difference is closed: growing an array of strings
+fills with NIL casillas, exactly like Harbour (oracles hk13-hk15,
+Harbour core libraries only, `-gtstd`):
+
+- `ASize(k, n)` with n > len grows with {NIL} casillas; `? k[i]`
+  on one prints NIL (t324 mirrors hk14 byte for byte, t325);
+  `AAdd` after growth appends past them (t326 mirrors hk15).
+- Overwriting a grown casilla with `k[i] := s` works - the old
+  null payload is skipped and the casilla retagged (hk14, in
+  t324); shrinking after growth frees the live copies and skips
+  the NIL ones (t327: balance 0).
+- Reading a grown casilla in a STRING context (assignment,
+  comparison, argument) is a clean runtime error with exit 1
+  (t321 repurposed): Harbour yields NIL there - its typing is
+  dynamic and the target variable would BECOME NIL - while the
+  static owned string cannot. Registered failure mode, same
+  condition, not a compat success.
+
+Battery: 326/326 on Linux x86-64 and Wine, plus the ABI harness.
+No new helpers (the grow path reuses the flat NIL fill; the NIL
+read error is a stub like hbc_aadd_error).
