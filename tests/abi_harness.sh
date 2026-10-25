@@ -1,7 +1,7 @@
 #!/bin/bash
 # ABI harness: assembles a canary test against the emitted runtime helpers
 # for both targets and runs it (natively on Linux, via Wine for Windows).
-# Verifies that hbc_asize / hbc_aadd / hbc_arraym / hbc_array3m / hbc_free / hbc_free2 /
+# Verifies that hbc_asize / hbc_aadd / hbc_arraym / hbc_array3m / hbc_array4m / hbc_free / hbc_free2 /
 # hbc_rfree preserve rbx/r12-r15, keep rsp 16-aligned at internal call boundaries
 # and leave the stack balanced. Prints "ABI OK" on success; any canary,
 # alignment or stack mismatch prints "ABI FAIL <what>" and exits 1.
@@ -136,6 +136,23 @@ hbc_abi_test:
     mov -96(%rbp), %rdi
     mov $2, %esi
     mov $2, %edx
+    call hbc_rfree
+    call abi_check
+    # hbc_array4m (2x2x2x2) + hbc_rfree depth-3 free
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    lea -96(%rbp), %rdi
+    mov $2, %esi
+    mov $2, %edx
+    mov $2, %ecx
+    mov $2, %r8d
+    call hbc_array4m
+    call abi_check
+    # DArr4 frees via rfree at pair-levels 3 (same route as the generated
+    # DArr4 epilogue).
+    mov -96(%rbp), %rdi
+    mov $2, %esi
+    mov $3, %edx
     call hbc_rfree
     call abi_check
     # hbc_hkeys on a 2-entry hash: keys come out in insertion order, each
