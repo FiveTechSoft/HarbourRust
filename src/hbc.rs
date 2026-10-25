@@ -3119,7 +3119,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 }
                 out.push_str(&format!("    cmp $1, %rax\n    jl 81f\n    cmp -{}(%rbp), %rax\n    jg 81f\n", v.off - 8));
                 out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
-                out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov 8(%rax), %rdi\n    mov -8(%rdi), %rsi\n    call hbc_strcpy\n    jmp 82f\n");
+                out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    # A grown casilla (ASize, hk13/hk14) is NIL: a string context\n    # gets a clean error; `? k[i]` prints NIL instead (Print arm).\n    cmpq $2, (%rax)\n    jne hbc_snil_error\n    mov 8(%rax), %rdi\n    mov -8(%rdi), %rsi\n    call hbc_strcpy\n    jmp 82f\n");
                 out.push_str("81:\n    call hbc_bound_error\n82:\n");
                 return;
             }
@@ -3736,6 +3736,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // space; integers right-aligned in a 10-column field,
                 // strings raw; no trailing newline.
                 let darr2_child = |e: &Expr, env: &[CgLocal]| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArr2));
+                let darrs_elem = |e: &Expr, env: &[CgLocal]| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArrS));
                 for e in es {
                     if let Expr::Index(v, ie) = e {
                         if darr2_child(e, env) {
@@ -3750,6 +3751,25 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             continue;
                         }
                     }
+                    if let Expr::Index(v, ie) = e {
+                        if darrs_elem(e, env) {
+                            // Push the raw element pair {payload, tag}
+                            // (no copy): a grown NIL casilla prints NIL
+                            // (hk13), a string element prints borrowed.
+                            let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                            if expr_ty(ie, env, sigs) == Ty::Dyn {
+                                cg_expr(ie, env, sigs, strs, out, target);
+                                out.push_str("    call hbc_dyn_to_i64\n");
+                            } else {
+                                cg_expr(ie, env, sigs, strs, out, target);
+                            }
+                            out.push_str(&format!("    cmp $1, %rax\n    jl 93f\n    cmp -{}(%rbp), %rax\n    jg 93f\n", var.off - 8));
+                            out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
+                            out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov 8(%rax), %rcx\n    mov (%rax), %rax\n    jmp 94f\n93:\n    call hbc_bound_error\n94:\n");
+                            out.push_str("    push %rax\n    push %rcx\n");
+                            continue;
+                        }
+                    }
                     cg_value(e, env, sigs, strs, out, target);
                     out.push_str("    push %rdx\n    push %rax\n");
                 }
@@ -3758,6 +3778,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     let t = expr_ty(e, env, sigs);
                     let off = 16 * (es.len() - 1 - i);
                     if i > 0 { out.push_str("    call hbc_print_sep\n"); }
+                    if darrs_elem(e, env) {
+                        // A grown NIL casilla prints NIL (hk13); a string
+                        // element prints its bytes, borrowed (no copy).
+                        out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
+                        out.push_str("    cmp $2, %rdx\n    jne 95f\n    mov -8(%rax), %rdx\n    call hbc_print_str\n    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
+                        continue;
+                    }
                     if darr2_child(e, env) {
                         // A NIL casilla prints NIL (n1); a live child
                         // prints nothing (n5).
@@ -4207,9 +4234,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     out.push_str(&format!("    cmp $1, %rcx\n    jl 89f\n    cmp -{}(%rbp), %rcx\n    jg 89f\n", v.off - 8));
                     out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
                     out.push_str("    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
-                    // free the old owned copy (payload at 8(entry); tag 2 stays)
+                    // free the old owned copy (payload at 8(entry); a
+                    // NIL casilla from ASize growth has a null payload,
+                    // skipped here and RETAGGED to a string below - hk14)
                     out.push_str("    mov 8(%r10), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov $1, %esi\n    sub $16, %rsp\n    mov %r10, (%rsp)\n    call hbc_free\n    mov (%rsp), %r10\n    add $16, %rsp\n85:\n");
-                    out.push_str("    mov (%rsp), %rax\n    mov %rax, 8(%r10)\n    add $16, %rsp\n    jmp 86f\n89:\n    call hbc_bound_error\n86:\n");
+                    out.push_str("    mov (%rsp), %rax\n    movq $2, (%r10)\n    mov %rax, 8(%r10)\n    add $16, %rsp\n    jmp 86f\n89:\n    call hbc_bound_error\n86:\n");
                 } else if v.ty == Ty::Hash {
                     // h[k] := v: value FIRST, then the key (probe h4).
                     // Both wait on the stack across hbc_hput, which copies
@@ -5416,18 +5445,6 @@ hbc_asize_neg:
     mov $1, %edi
     syscall
 
-# hbc_asize_sgrow: ASize grows an array of strings (noreturn). Harbour
-# grows with NIL casillas (hk13); this increment reports a clean error.
-hbc_asize_sgrow:
-    lea .Lasizegrowmsg(%rip), %rsi
-    mov $57, %edx
-    mov $1, %eax
-    mov $1, %edi
-    syscall
-    mov $60, %eax
-    mov $1, %edi
-    syscall
-
 # hbc_len_error: len() of a NIL slot (noreturn). Harbour's BASE/1111
 # dialog hangs headless (oracle n2): this clean exit 1 is the registered
 # failure mode for the same error condition, not a compat success.
@@ -5444,6 +5461,20 @@ hbc_len_error:
 # hbc_aadd_error / hbc_asize_error: AAdd/ASize on a NIL casilla
 # (noreturn). Harbour's BASE/1123 and BASE/2023 dialogs hang headless
 # (oracles n6/n7): clean exit 1, registered failure modes.
+# hbc_snil_error: a NIL casilla (ASize growth, hk13/hk14) read in a
+# string context (noreturn). Harbour yields NIL there - its typing is
+# dynamic; the static StrOwn cannot, so this is the registered clean
+# failure mode.
+hbc_snil_error:
+    lea .Lsnilmsg(%rip), %rsi
+    mov $47, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 hbc_aadd_error:
     lea .Laadderrmsg(%rip), %rsi
     mov $21, %edx
@@ -5661,10 +5692,6 @@ hbc_asize:
     mov 8(%rbx), %rcx
     cmp %rcx, %r12
     jle 59f
-    # kind 2 (array of strings) cannot grow here: Harbour grows with NIL
-    # casillas (hk13); this increment reports a clean error instead.
-    cmp $2, %r15
-    je hbc_asize_sgrow
     mov (%rbx), %r13
     xor %edx, %edx
     test %r13, %r13
@@ -5724,9 +5751,10 @@ hbc_asize:
     jge 68f
     mov %rcx, %r10
     shl $4, %r10
-    test %r15, %r15
-    jnz 79f
-    # flat dynamic arrays grow with NIL {1, 0} (probe e1: grown slots read NIL)
+    cmp $1, %r15
+    je 79f
+    # flat arrays and arrays of strings grow with NIL {1, 0} (probe e1;
+    # hk13/hk14 for the string array: grown casillas read NIL)
     movq $1, (%r13,%r10)
     movq $0, 8(%r13,%r10)
     jmp 74f
@@ -5821,11 +5849,11 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Lregbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,97,108,108,111,99,97,116,105,111,110,32,114,101,103,105,115,116,114,121,32,109,105,115,109,97,116,99,104,10\n");
     out.push_str(".Ltypemsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,78,73,76,32,117,115,101,100,32,97,115,32,97,32,110,117,109,98,101,114,10\n");
     out.push_str(".Lasizenegmsg:\n    .byte 65,83,105,122,101,58,32,110,101,103,97,116,105,118,101,32,115,105,122,101,10\n");
-    out.push_str(".Lasizegrowmsg:\n    .byte 65,83,105,122,101,58,32,99,97,110,110,111,116,32,103,114,111,119,32,97,110,32,97,114,114,97,121,32,111,102,32,115,116,114,105,110,103,115,32,105,110,32,116,104,105,115,32,105,110,99,114,101,109,101,110,116,10\n");
     // "Argument error: LEN\n" (20 bytes; Harbour BASE/1111 hangs headless - registered failure mode)
     out.push_str(".Llenerrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,76,69,78,10\n");
     // "Argument error: AADD\n" (21 bytes; Harbour BASE/1123 hangs headless, oracle n6)
     out.push_str(".Laadderrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,65,65,68,68,10\n");
+    out.push_str(".Lsnilmsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,101,120,112,101,99,116,101,100,32,97,32,115,116,114,105,110,103,32,101,108,101,109,101,110,116,44,32,103,111,116,32,78,73,76,10\n");
     // "Argument error: ASIZE\n" (22 bytes; Harbour BASE/2023 hangs headless, oracle n7)
     out.push_str(".Lasizeerrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,65,83,73,90,69,10\n");
 }
@@ -6106,18 +6134,6 @@ hbc_asize_neg:
     mov $1, %ecx
     call ExitProcess
 
-# hbc_asize_sgrow: ASize grows an array of strings (noreturn); see hk13.
-hbc_asize_sgrow:
-    push %rbp
-    mov %rsp, %rbp
-    and $-16, %rsp
-    sub $48, %rsp
-    lea .Lasizegrowmsg(%rip), %rax
-    mov $57, %edx
-    call hbc_print_str
-    mov $1, %ecx
-    call ExitProcess
-
 # hbc_len_error: len() of a NIL slot (noreturn) - see the linux copy.
 hbc_len_error:
     push %rbp
@@ -6131,6 +6147,17 @@ hbc_len_error:
     call ExitProcess
 
 # hbc_aadd_error / hbc_asize_error: see the linux copies.
+hbc_snil_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Lsnilmsg(%rip), %rax
+    mov $47, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
 hbc_aadd_error:
     push %rbp
     mov %rsp, %rbp
@@ -6359,10 +6386,6 @@ hbc_asize:
     mov 8(%rbx), %rcx
     cmp %rcx, %r12
     jle 59f
-    # kind 2 (array of strings) cannot grow here: Harbour grows with NIL
-    # casillas (hk13); this increment reports a clean error instead.
-    cmp $2, %r15
-    je hbc_asize_sgrow
     mov (%rbx), %r13
     xor %edx, %edx
     test %r13, %r13
@@ -6419,9 +6442,10 @@ hbc_asize:
     jge 68f
     mov %rcx, %r10
     shl $4, %r10
-    test %r15, %r15
-    jnz 79f
-    # flat dynamic arrays grow with NIL {1, 0} (probe e1: grown slots read NIL)
+    cmp $1, %r15
+    je 79f
+    # flat arrays and arrays of strings grow with NIL {1, 0} (probe e1;
+    # hk13/hk14 for the string array: grown casillas read NIL)
     movq $1, (%r13,%r10)
     movq $0, 8(%r13,%r10)
     jmp 74f
