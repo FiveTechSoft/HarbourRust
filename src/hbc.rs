@@ -1891,7 +1891,18 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     _ => {}
                 }
                 return match type_expr(&args[0], env, sigs, n)? {
-                    Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Arr(_) | Ty::Hash => Ok(Ty::I64),
+                    Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Arr(_) | Ty::Hash => {
+                        // Only variables: an array TEMPORARY in expression
+                        // position has no free point in this increment
+                        // (the FOR EACH temp machinery does not apply
+                        // here). Reachable since 33m via static returns;
+                        // it also existed for dynamic ones - named
+                        // rejection instead of the cg unreachable.
+                        if !matches!(&args[0], Expr::Var(_)) {
+                            return Err(format!("line {}: `len` of an array temporary is not in this increment (assign it to a variable first)", n));
+                        }
+                        Ok(Ty::I64)
+                    }
                     _ => return Err(format!("line {}: `len` expects an array", n)),
                 };
             }
@@ -2637,8 +2648,20 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     return Err(format!("line {}: cannot return a boolean in this PoC", n));
                 }
                 if let Ty::Arr(_) = t {
-                    return Err(format!("line {}: arrays cannot be returned in this increment", n));
-                }
+                    // Returning a static array materializes a dynamic
+                    // COPY the caller owns (33m). Oracle hk99: Harbour's
+                    // local array survives the return and the caller gets
+                    // a fully working array; a fresh owner matches that
+                    // observably for the measured non-aliasing shape.
+                    // Only a variable return this increment.
+                    if !matches!(e, Expr::Var(_)) {
+                        return Err(format!("line {}: a static array return is a variable in this increment", n));
+                    }
+                    apply_moves(e, env, sigs, false);
+                    *ret = Some(unify_ret(*ret, Ty::DArr, *n)?);
+                    falls = false;
+                } else
+                {
                 if let Ty::Block(_) = t {
                     return Err(format!("line {}: codeblocks cannot be returned in this increment", n));
                 }
@@ -2649,6 +2672,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 apply_moves(e, env, sigs, true);
                 *ret = Some(unify_ret(*ret, t, *n)?);
                 falls = false;
+                }
             }
             Stmt::Ret(n, None) => {
                 // `return` / `return nil` return NIL (probe n1c): the Dyn
@@ -4735,6 +4759,23 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
             }
             Stmt::Ret(_, Some(e)) => {
+                if let Ty::Arr(k) = expr_ty(e, env, sigs) {
+                    // Static array return: materialize the boundary COPY
+                    // as a dynamic array (same shape as the argument
+                    // copy, 33l); the caller owns and frees it (33m).
+                    if let Expr::Var(src) = e {
+                        let sv = env.iter().rev().find(|x| x.name == *src).expect("checked").clone();
+                        out.push_str("    sub $16, %rsp\n");
+                        out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + k * 16));
+                        out.push_str(&format!("    movq ${}, (%rax)\n    add $8, %rax\n    mov %rax, (%rsp)\n", k));
+                        for p in 0..k {
+                            out.push_str(&format!("    mov -{}(%rbp), %r10\n", sv.off - 8 * p));
+                            out.push_str(&format!("    mov (%rsp), %r11\n    movq $0, {}(%r11)\n    mov %r10, {}(%r11)\n", p * 16, p * 16 + 8));
+                        }
+                        out.push_str(&format!("    mov (%rsp), %rax\n    mov ${}, %edx\n    add $16, %rsp\n", k));
+                        out.push_str(&format!("    jmp .Lret_{}\n", fname));
+                    }
+                } else {
                 cg_value(e, env, sigs, strs, out, target);
                 // Mixed int/NIL returns unify to Dyn (probe n2): an i64
                 // return expression is tagged into the {0, payload} pair.
@@ -4759,6 +4800,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     }
                 }
                 out.push_str(&format!("    jmp .Lret_{}\n", fname));
+                }
             }
             Stmt::Ret(_, None) => {
                 // `return` / `return nil` return NIL (probes n1c/n2): the
