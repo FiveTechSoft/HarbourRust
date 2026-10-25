@@ -150,3 +150,14 @@ pos tests/t146_for_eval_order.hb \n         1\n         2\n         1\n         
 pos tests/t147_arrset_move_index.hb \n         5
 pos tests/t148_arrset_move_value.hb \n         0
 neg tests/t149_arrset_move_both.hb use of moved value
+pos tests/t150_cb_eval1.hb \n         6
+pos tests/t151_cb_eval2.hb \n         7
+pos tests/t152_cb_noparam.hb \n        42
+pos tests/t153_cb_list.hb \n         7
+pos tests/t154_cb_reuse.hb \n        30
+pos tests/t155_cb_copy.hb \n         8
+pos tests/t156_cb_extra_evaluated.hb \n        42\n         6
+neg tests/t157_cb_neg_capture.hb codeblock captures are not in this increment
+neg tests/t158_cb_neg_fewer_args.hb `eval` got 1
+neg tests/t159_cb_neg_string_body.hb integer expressions
+neg tests/t160_cb_neg_print.hb cannot print a codeblock
