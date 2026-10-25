@@ -267,6 +267,31 @@ negative (rejected by hbc itself before codegen, exit 1, both targets):
 Full 32-case battery re-run after the change: 32/32 pass, `hola` Linux
 ELF still 8,984 bytes. Not yet: `for` loops, early returns.
 
+# Iteration 7: early return (2026-10-25)
+
+`return <expr>` inside `if` / `while` blocks. Codegen already jumped to
+the shared per-function epilogue, so the change is parser + checker: the
+parser takes nested returns as statements, and the checker enforces that
+all returns of a function agree on the type.
+
+semantic change (documented, deliberate): tests/t16_if_return.hb and
+tests/t27_while_return.hb pinned the old rejection ("return inside a
+block is not in the PoC yet"); they now pin the new positive behavior.
+
+positive (byte-identical output on Linux x86-64 and under Wine):
+- tests/t16_if_return.hb - early return inside if prints "100"
+- tests/t27_while_return.hb - early return inside while prints "21"
+
+negative (rejected by hbc itself before codegen, exit 1, both targets):
+- tests/t33_return_bare_block.hb - bare `return` inside a block
+- tests/t34_return_type_mix.hb - "return type mismatch"
+- tests/t35_return_nil_closing.hb - early value return, closing nil
+- tests/t36_return_move_join.hb - moved into an early return, used after
+
+Full 36-case battery re-run after the change: 36/36 pass, `hola` Linux
+ELF still 8,984 bytes. Not yet: `for` loops.
+
+
 - Full Rust assignment semantics: assignment re-lives a moved variable and
   cannot change its type; there is still no Drop (strings are read-only
   literals).
