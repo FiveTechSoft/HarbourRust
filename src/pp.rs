@@ -866,11 +866,21 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
             }
             "INCLUDE" => {
                 if emitting {
-                    let name = arg.trim_matches(|c| c == '"' || c == '\'');
-                    let mut full = None;
+                    // Probe b38: the angle form <file> searches the -I paths
+                    // ONLY (Harbour F0029 without -I, even in the same
+                    // directory); the quoted form checks the including
+                    // file's directory first, then the -I paths.
+                    let angle = arg.starts_with('<') && arg.ends_with('>');
+                    let name = if angle {
+                        arg[1..arg.len() - 1].trim().to_string()
+                    } else {
+                        arg.trim_matches(|c| c == '"' || c == '\'').to_string()
+                    };
                     let parent_dir = std::path::Path::new(path).parent().map(|p| p.to_path_buf()).filter(|p| !p.as_os_str().is_empty()).unwrap_or_else(|| std::path::PathBuf::from("."));
-                    let mut cands: Vec<String> = vec![format!("{}/{}", parent_dir.display(), name)];
+                    let mut cands: Vec<String> = Vec::new();
+                    if !angle { cands.push(format!("{}/{}", parent_dir.display(), name)); }
                     for d in &pp.incdirs { cands.push(format!("{}/{}", d, name)); }
+                    let mut full = None;
                     for c in cands { if fs::metadata(&c).is_ok() { full = Some(c); break; } }
                     let f = full.ok_or_else(|| format!("line {}: cannot find include {}", line, name))?;
                     process(&f, pp, out, depth + 1)?;
