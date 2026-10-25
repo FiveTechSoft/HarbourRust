@@ -1,7 +1,7 @@
 function main()
     // Regression: live Harbour-level state must survive helper calls
     // (hbc_arraym -> hbc_asize/hbc_aadd, plus direct AAdd/ASize).
-    // Caught the Windows helpers clobbering callee-saved registers when
+    // a[1][4] expectation grounded in oracle anadd. Caught the Windows helpers clobbering callee-saved registers when
     // hbc_arraym kept its loop state in them.
     local x := 11
     local y := 22
