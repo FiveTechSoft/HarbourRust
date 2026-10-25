@@ -72,3 +72,9 @@ t121_qout_eval_order HB-EXACT
 
 # neg-MODEL (rejected by our ownership, accepted by Harbour; not part of the 71-pos universe):
 # t123_qout_move_two_uses, t124_qout_move_then_print, t125_qout_move_in_expr
+t126_arr_literal_read HB-EXACT
+t127_arr_write HB-EXACT
+t128_arr_expr_index HB-EXACT
+t129_arr_loop HB-EXACT
+t130_arr_copy_model MODEL
+t133_arr_runtime_oob DIVERGE-FAILMODE
