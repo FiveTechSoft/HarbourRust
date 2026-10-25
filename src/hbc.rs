@@ -600,14 +600,127 @@ struct Local {
     ro: bool, // read-only: the `for` loop variable cannot be assigned
 }
 
-fn type_expr(e: &Expr, env: &[Local], sigs: &[Sig], n: usize) -> Result<Ty, String> {
+// ---------------------------------------------------------------------------
+// Parameter type pinning (pre-pass, syntactic). Harbour parameters are
+// untyped; this PoC is statically typed, so a parameter's type is pinned by
+// how the body uses it: under arithmetic it is an integer, compared against
+// a string literal (or a literal-initialized local) it is a string, passed
+// to another function it takes that parameter's type. A parameter the body
+// only prints, returns or copies is NOT pinnable: report it honestly
+// instead of guessing.
+// ---------------------------------------------------------------------------
+fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
+    let n = f.params.len();
+    let mut pin: Vec<Option<Ty>> = vec![None; n];
+    let mut lit: Vec<(String, Ty)> = Vec::new(); // literal-initialized locals
+    fn is_param(f: &Func, id: &str) -> Option<usize> {
+        f.params.iter().position(|p| p == id)
+    }
+    fn setpin(pin: &mut Vec<Option<Ty>>, idx: usize, ty: Ty, n: usize) -> Result<(), String> {
+        match pin[idx] {
+            None => { pin[idx] = Some(ty); Ok(()) }
+            Some(t) if t == ty => Ok(()),
+            Some(t) => Err(format!("line {}: parameter used as both {} and {}", n,
+                if t == Ty::I64 { "an integer" } else { "a string" },
+                if ty == Ty::I64 { "an integer" } else { "a string" })),
+        }
+    }
+    // Pin parameter vars appearing directly (not under a call) in e.
+    fn pin_vars(f: &Func, e: &Expr, ty: Ty, pin: &mut Vec<Option<Ty>>, n: usize) -> Result<(), String> {
+        match e {
+            Expr::Var(id) => { if let Some(i) = is_param(f, id) { setpin(pin, i, ty, n)?; } Ok(()) }
+            Expr::Bin(_, a, b) => { pin_vars(f, a, Ty::I64, pin, n)?; pin_vars(f, b, Ty::I64, pin, n) }
+            Expr::Cmp(_, a, b) => { pin_vars(f, a, ty, pin, n)?; pin_vars(f, b, ty, pin, n) }
+            Expr::Call(_, _) => Ok(()), // call arguments pin via the callee's signature, not the outer context
+            _ => Ok(()),
+        }
+    }
+    fn walk(f: &Func, e: &Expr, sigs: &[Sig], lit: &[(String, Ty)], pin: &mut Vec<Option<Ty>>, n: usize) -> Result<(), String> {
+        match e {
+            Expr::Bin(_, a, b) => {
+                pin_vars(f, a, Ty::I64, pin, n)?;
+                pin_vars(f, b, Ty::I64, pin, n)?;
+                walk(f, a, sigs, lit, pin, n)?;
+                walk(f, b, sigs, lit, pin, n)
+            }
+            Expr::Cmp(_, a, b) => {
+                let ta = match a.as_ref() {
+                    Expr::Str(_) => Some(Ty::Str),
+                    Expr::Int(_) => Some(Ty::I64),
+                    Expr::Var(v) => lit.iter().find(|(x, _)| x == v).map(|(_, t)| *t),
+                    _ => None,
+                };
+                let tb = match b.as_ref() {
+                    Expr::Str(_) => Some(Ty::Str),
+                    Expr::Int(_) => Some(Ty::I64),
+                    Expr::Var(v) => lit.iter().find(|(x, _)| x == v).map(|(_, t)| *t),
+                    _ => None,
+                };
+                if let Some(t) = ta { pin_vars(f, b, t, pin, n)?; }
+                if let Some(t) = tb { pin_vars(f, a, t, pin, n)?; }
+                walk(f, a, sigs, lit, pin, n)?; walk(f, b, sigs, lit, pin, n)
+            }
+            Expr::Call(id, args) => {
+                if let Some(sig) = sigs.iter().find(|v| v.name == *id) {
+                    for (i, a) in args.iter().enumerate() {
+                        if i < sig.params.len() { pin_vars(f, a, sig.params[i], pin, n)?; }
+                    }
+                }
+                for a in args { walk(f, a, sigs, lit, pin, n)?; }
+                Ok(())
+            }
+            _ => Ok(()),
+        }
+    }
+    fn walk_stmts(f: &Func, stmts: &[Stmt], sigs: &[Sig], lit: &mut Vec<(String, Ty)>, pin: &mut Vec<Option<Ty>>) -> Result<(), String> {
+        for st in stmts {
+            match st {
+                Stmt::Local(n, name, e) => {
+                    walk(f, e, sigs, lit, pin, *n)?;
+                    match e {
+                        Expr::Str(_) => lit.push((name.clone(), Ty::Str)),
+                        Expr::Int(_) => lit.push((name.clone(), Ty::I64)),
+                        _ => {}
+                    }
+                }
+                Stmt::Assign(n, _, e) | Stmt::Print(n, e) => { walk(f, e, sigs, lit, pin, *n)?; }
+                Stmt::Ret(n, Some(e)) => { walk(f, e, sigs, lit, pin, *n)?; }
+                Stmt::Ret(_, None) => {}
+                Stmt::If(n, c, a, b) => {
+                    walk(f, c, sigs, lit, pin, *n)?;
+                    walk_stmts(f, a, sigs, lit, pin)?;
+                    walk_stmts(f, b, sigs, lit, pin)?;
+                }
+                Stmt::While(n, c, body) => {
+                    walk(f, c, sigs, lit, pin, *n)?;
+                    walk_stmts(f, body, sigs, lit, pin)?;
+                }
+                Stmt::For(n, _, a, b, _, body) => {
+                    walk(f, a, sigs, lit, pin, *n)?; walk(f, b, sigs, lit, pin, *n)?;
+                    walk_stmts(f, body, sigs, lit, pin)?;
+                }
+                Stmt::Exit(_) | Stmt::Loop(_) => {}
+            }
+        }
+        Ok(())
+    }
+    walk_stmts(f, &f.stmts, sigs, &mut lit, &mut pin)?;
+    for (i, p) in f.params.iter().enumerate() {
+        if pin[i].is_none() {
+            return Err(format!("cannot infer the type of parameter `{}` of function `{}` (printing, returning or copying it is not enough; use it in arithmetic or compare it against a value of known type)", p, f.name));
+        }
+    }
+    Ok(pin.into_iter().map(|x| x.unwrap()).collect())
+}
+
+fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, String> {
     match e {
         Expr::Int(_) => Ok(Ty::I64),
         Expr::Str(_) => Ok(Ty::Str),
         Expr::Var(id) => match env.iter().find(|v| v.name == *id) {
             None => Err(format!("line {}: undefined variable `{}`", n, id)),
             Some(v) if v.moved => Err(format!(
-                "line {}: use of moved value `{}` (strings move on assignment; they do not copy)", n, id)),
+                "line {}: use of moved value `{}` (strings move on assignment or when passed as an argument; they do not copy)", n, id)),
             Some(v) => Ok(v.ty),
         },
         Expr::Call(id, args) => {
@@ -616,10 +729,21 @@ fn type_expr(e: &Expr, env: &[Local], sigs: &[Sig], n: usize) -> Result<Ty, Stri
             if sig.params.len() != args.len() {
                 return Err(format!("line {}: `{}` takes {} argument(s), got {}", n, id, sig.params.len(), args.len()));
             }
-            for a in args {
+            for (i, a) in args.iter().enumerate() {
                 let ta = type_expr(a, env, sigs, n)?;
-                if ta != Ty::I64 {
-                    return Err(format!("line {}: parameters are integers in this PoC; cannot pass a string to `{}`", n, id));
+                // A string argument moves out of its variable right away, so
+                // a second use later in the same expression (e.g. the other
+                // side of a `+`) is rejected like any other use-after-move.
+                if ta == Ty::Str {
+                    if let Expr::Var(v) = a {
+                        if let Some(x) = env.iter_mut().find(|x| x.name == *v && x.ty == Ty::Str) { x.moved = true; }
+                    }
+                }
+                if ta != sig.params[i] {
+                    return Err(format!("line {}: argument {} of `{}` must be {}, got {}",
+                        n, i + 1, id,
+                        if sig.params[i] == Ty::I64 { "an integer" } else { "a string" },
+                        if ta == Ty::I64 { "an integer" } else { "a string" }));
                 }
             }
             Ok(sig.ret)
@@ -673,7 +797,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 if t == Ty::Bool {
                     return Err(format!("line {}: booleans only exist in `if` conditions in this PoC", n));
                 }
-                apply_moves(e, t, env);
+                apply_moves(e, env, sigs, true);
                 env.push(Local { name: id.clone(), ty: t, moved: false, ro: false });
             }
             Stmt::Print(n, e) => {
@@ -688,7 +812,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 if t == Ty::Bool {
                     return Err(format!("line {}: cannot return a boolean in this PoC", n));
                 }
-                apply_moves(e, t, env);
+                apply_moves(e, env, sigs, true);
                 match *ret {
                     Some(prev) if prev != t => {
                         return Err(format!("line {}: return type mismatch (this function already returns {:?} elsewhere; all returns must agree)", n, prev));
@@ -705,6 +829,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
             }
             Stmt::If(n, cond, then_s, else_s) => {
                 let ct = type_expr(cond, env, sigs, *n)?;
+                apply_moves(cond, env, sigs, false);
                 if ct != Ty::Bool {
                     return Err(format!("line {}: `if` needs a comparison (e.g. `if x >= 1`); a bare value is not a condition in this PoC", n));
                 }
@@ -720,6 +845,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
             }
             Stmt::While(n, cond, body) => {
                 let ct = type_expr(cond, env, sigs, *n)?;
+                apply_moves(cond, env, sigs, false);
                 if ct != Ty::Bool {
                     return Err(format!("line {}: `while` needs a comparison (e.g. `while x >= 1`); a bare value is not a condition in this PoC", n));
                 }
@@ -746,6 +872,8 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
             Stmt::For(n, var, start, end, _step, body) => {
                 let ts = type_expr(start, env, sigs, *n)?;
                 let te = type_expr(end, env, sigs, *n)?;
+                apply_moves(start, env, sigs, false);
+                apply_moves(end, env, sigs, false);
                 if ts != Ty::I64 || te != Ty::I64 {
                     return Err(format!("line {}: `for` bounds must be integers", n));
                 }
@@ -796,7 +924,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
                 if t == Ty::Bool {
                     return Err(format!("line {}: booleans only exist in conditions in this PoC", n));
                 }
-                apply_moves(e, t, env);
+                apply_moves(e, env, sigs, true);
                 let idx = match env.iter().position(|v| v.name == *id) {
                     Some(k) => k,
                     None => return Err(format!("line {}: assignment to undeclared variable `{}` (declare it with `local` first)", n, id)),
@@ -817,12 +945,28 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &[Sig], ret: &mut Opt
 
 // If `e` is a plain variable of type Str, using it as an initializer or a
 // return value MOVES it (ownership transfer). Mark it moved.
-fn apply_moves(e: &Expr, t: Ty, env: &mut [Local]) {
-    if t != Ty::Str { return; } // i64 is Copy: the source stays usable
-    if let Expr::Var(id) = e {
-        if let Some(v) = env.iter_mut().find(|v| v.name == *id) {
-            v.moved = true;
+// Mark moved-out string vars. `moving` is true where the position consumes
+// the value (a local/assign/return root expression, a string argument slot);
+// a bare var in a comparison or arithmetic only borrows. Call arguments move
+// when the callee's parameter is a string: callers hand over ownership, like
+// a Rust String passed by value. i64 never moves (Copy).
+fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
+    match e {
+        Expr::Var(id) => {
+            if moving {
+                if let Some(v) = env.iter_mut().find(|v| v.name == *id && v.ty == Ty::Str) { v.moved = true; }
+            }
         }
+        Expr::Bin(_, a, b) => { apply_moves(a, env, sigs, false); apply_moves(b, env, sigs, false); }
+        Expr::Cmp(_, a, b) => { apply_moves(a, env, sigs, false); apply_moves(b, env, sigs, false); }
+        Expr::Call(id, args) => {
+            let sig = sigs.iter().find(|v| v.name == *id).expect("checked");
+            for (i, a) in args.iter().enumerate() {
+                let m = i < sig.params.len() && sig.params[i] == Ty::Str;
+                apply_moves(a, env, sigs, m);
+            }
+        }
+        _ => {}
     }
 }
 
@@ -844,7 +988,7 @@ struct CgLocal {
     off: usize, // offset below rbp of the FIRST slot (ptr for Str, value for i64)
 }
 
-fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], out: &mut String, target: Target) {
+fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     match e {
         Expr::Int(v) => {
             out.push_str(&format!("    mov ${}, %rax\n", v));
@@ -871,8 +1015,13 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], out: &mut String, target: Ta
             // 16-aligned on both targets); arg k then sits at
             // 16*(n-k)(%rbp) in the callee after its prologue.
             for a in args.iter() {
-                cg_expr(a, env, sigs, out, target);
-                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                let ta = expr_ty(a, env, sigs);
+                cg_value(a, env, sigs, strs, out, target);
+                if ta == Ty::Str {
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                } else {
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                }
             }
             out.push_str(&format!("    call hbc_fn_{}\n", id));
             if !args.is_empty() {
@@ -881,7 +1030,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], out: &mut String, target: Ta
         }
         Expr::Bin(op, a, b) => {
             // arithmetic is i64-only (checked in analysis)
-            cg_expr(a, env, sigs, out, target);
+            cg_expr(a, env, sigs, strs, out, target);
             // Keep the lhs on the stack while evaluating the rhs. On Windows
             // a plain push would break 16-byte alignment for any call inside
             // the rhs (e.g. `1 + valor()`), so reserve a full 16-byte slot.
@@ -889,7 +1038,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], out: &mut String, target: Ta
                 Target::Linux => out.push_str("    push %rax\n"),
                 Target::Windows => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"),
             }
-            cg_expr(b, env, sigs, out, target);
+            cg_expr(b, env, sigs, strs, out, target);
             match target {
                 Target::Linux => out.push_str("    pop %rcx\n"), // %rcx = lhs, %rax = rhs
                 Target::Windows => out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n"),
@@ -922,7 +1071,7 @@ fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out
         out.push_str(&format!("    lea .Lstr{}(%rip), %rax\n", idx));
         out.push_str(&format!("    mov ${}, %edx\n", s.as_bytes().len()));
     } else {
-        cg_expr(e, env, sigs, out, target);
+        cg_expr(e, env, sigs, strs, out, target);
     }
 }
 
@@ -1011,12 +1160,12 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             out.push_str(&format!("    {} {}\n", j, true_label));
         }
         Expr::Cmp(op, a, b) => {
-            cg_expr(a, env, sigs, out, target);
+            cg_expr(a, env, sigs, strs, out, target);
             match target {
                 Target::Linux => out.push_str("    push %rax\n"),
                 Target::Windows => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"),
             }
-            cg_expr(b, env, sigs, out, target);
+            cg_expr(b, env, sigs, strs, out, target);
             match target {
                 Target::Linux => out.push_str("    pop %rcx\n"),
                 Target::Windows => out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n"),
@@ -1161,10 +1310,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
 fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     let mut lenv: Vec<CgLocal> = Vec::new();
     let mut frame = 0usize;
-    // Parameters occupy the first frame slots (i64, 8 bytes each).
-    for p in &f.params {
-        frame += 8;
-        lenv.push(CgLocal { name: p.clone(), ty: Ty::I64, off: frame });
+    // Parameters occupy the first frame slots, sized by their pinned type.
+    // (main has no signature entry: it returns nil and takes no parameters.)
+    if !f.params.is_empty() {
+        let own_sig = sigs.iter().find(|v| v.name == f.name).expect("checked");
+        for (i, p) in f.params.iter().enumerate() {
+            frame += size_of(own_sig.params[i]);
+            lenv.push(CgLocal { name: p.clone(), ty: own_sig.params[i], off: frame });
+        }
     }
     let nparams = lenv.len();
     layout_locals(&f.stmts, &mut lenv, sigs, &mut frame);
@@ -1181,9 +1334,16 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     // Copy incoming arguments from the caller's stack into the parameter
     // slots: arguments were pushed left to right, so arg k sits at
     // 16*(n-k)(%rbp) after this prologue (the last argument is nearest).
+    // A string argument occupies both words of its slot (pointer, length).
     for (k, v) in lenv[..nparams].iter().enumerate() {
-        out.push_str(&format!("    mov {}(%rbp), %rax\n", 16 * (nparams - k)));
-        out.push_str(&format!("    mov %rax, -{}(%rbp)\n", v.off));
+        let src = 16 * (nparams - k);
+        if v.ty == Ty::Str {
+            out.push_str(&format!("    mov {}(%rbp), %rax\n    mov {}(%rbp), %rdx\n", src, src + 8));
+            out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", v.off, v.off - 8));
+        } else {
+            out.push_str(&format!("    mov {}(%rbp), %rax\n", src));
+            out.push_str(&format!("    mov %rax, -{}(%rbp)\n", v.off));
+        }
     }
     let mut env: Vec<CgLocal> = lenv[..nparams].to_vec();
     let mut walk_frame = env.iter().map(|v| size_of(v.ty)).sum();
@@ -1520,10 +1680,18 @@ fn main() {
     let mut has_main = false;
     for f in &mut funcs {
         if f.name == "main" { has_main = true; }
+        // Pin parameter types. On failure, keep going with i64 placeholders
+        // so the body check can surface a more specific error first; the pin
+        // error is only reported if the body itself checks clean.
+        let (ptys, pin_err) = match pin_params(f, &sigs) {
+            Ok(v) => (v, None),
+            Err(m) => (vec![Ty::I64; f.params.len()], Some(m)),
+        };
         let mut env: Vec<Local> = Vec::new();
-        // Parameters enter the frame as owned i64 locals (callers copy them).
-        for p in &f.params {
-            env.push(Local { name: p.clone(), ty: Ty::I64, moved: false, ro: false });
+        // Parameters enter the frame as owned locals: integer arguments copy,
+        // string arguments move (callers hand over ownership).
+        for (i, p) in f.params.iter().enumerate() {
+            env.push(Local { name: p.clone(), ty: ptys[i], moved: false, ro: false });
         }
         let mut ret = None;
         let mut top_exits: Vec<Vec<bool>> = Vec::new();
@@ -1535,8 +1703,12 @@ fn main() {
             eprintln!("error: main must end with `return` or `return nil` in this PoC");
             process::exit(1);
         }
+        if let Some(m) = pin_err {
+            eprintln!("error: {}", m);
+            process::exit(1);
+        }
         if let Some(t) = ret {
-            sigs.push(Sig { name: f.name.clone(), params: vec![Ty::I64; f.params.len()], ret: t });
+            sigs.push(Sig { name: f.name.clone(), params: ptys.clone(), ret: t });
         }
         f.ret = ret;
     }
