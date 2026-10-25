@@ -5873,13 +5873,33 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             out.push_str(&format!("    mov (%rsp), %r11\n    mov %rax, {}(%r11)\n    mov %rdx, {}(%r11)\n", p * 16, p * 16 + 8));
                         }
                         out.push_str(&format!("    mov (%rsp), %rax\n    mov ${}, %edx\n    add $16, %rsp\n", m));
+                    } else if let Expr::Var(src) = e {
+                        if let Some(sv) = env.iter().rev().find(|x| x.name == *src).cloned() {
+                            if let Ty::Arr(m) = sv.ty {
+                                // Static array VARIABLE: COPY its cells
+                                // into a fresh dynamic child (the static
+                                // source keeps its values - the copy
+                                // contract of 33l/33m; Harbour SHARES,
+                                // hk116, registered D5/D7 difference).
+                                out.push_str("    sub $16, %rsp\n");
+                                out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + m * 16));
+                                out.push_str(&format!("    movq ${}, (%rax)\n    add $8, %rax\n    mov %rax, (%rsp)\n", m));
+                                for p in 0..m {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov %rax, %rdx\n    xor %eax, %eax\n", sv.off - 8 * p));
+                                    out.push_str(&format!("    mov (%rsp), %r11\n    mov %rax, {}(%r11)\n    mov %rdx, {}(%r11)\n", p * 16, p * 16 + 8));
+                                }
+                                out.push_str(&format!("    mov (%rsp), %rax\n    mov ${}, %edx\n    add $16, %rsp\n", m));
+                            } else {
+                                cg_value(e, env, sigs, strs, out, target);
+                                if matches!(sv.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3) {
+                                    out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
+                                }
+                            }
+                        } else {
+                            cg_value(e, env, sigs, strs, out, target);
+                        }
                     } else {
                         cg_value(e, env, sigs, strs, out, target);
-                        if let Expr::Var(src) = e {
-                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3)) {
-                                out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
-                            }
-                        }
                     }
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     out.push_str(&format!("    mov %rsp, %rdx\n    mov $16, %esi\n    {}\n    call hbc_aadd\n    add $16, %rsp\n", aptr));
@@ -5946,13 +5966,29 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             out.push_str(&format!("    mov 8(%rsp), %r11\n    mov %rax, {}(%r11)\n    mov %rdx, {}(%r11)\n", p * 16, p * 16 + 8));
                         }
                         out.push_str(&format!("    mov 8(%rsp), %rax\n    mov ${}, %edx\n", m));
+                    } else if let Expr::Var(src) = e {
+                        if let Some(sv) = env.iter().rev().find(|x| x.name == *src).cloned() {
+                            if let Ty::Arr(m) = sv.ty {
+                                // Static array variable: COPY (hk116;
+                                // source keeps its values; D5/D7).
+                                out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + m * 16));
+                                out.push_str(&format!("    movq ${}, (%rax)\n    add $8, %rax\n    mov %rax, 8(%rsp)\n", m));
+                                for p in 0..m {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov %rax, %rdx\n    xor %eax, %eax\n", sv.off - 8 * p));
+                                    out.push_str(&format!("    mov 8(%rsp), %r11\n    mov %rax, {}(%r11)\n    mov %rdx, {}(%r11)\n", p * 16, p * 16 + 8));
+                                }
+                                out.push_str(&format!("    mov 8(%rsp), %rax\n    mov ${}, %edx\n", m));
+                            } else {
+                                cg_value(e, env, sigs, strs, out, target);
+                                if matches!(sv.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3) {
+                                    out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
+                                }
+                            }
+                        } else {
+                            cg_value(e, env, sigs, strs, out, target);
+                        }
                     } else {
                         cg_value(e, env, sigs, strs, out, target);
-                        if let Expr::Var(src) = e {
-                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3)) {
-                                out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
-                            }
-                        }
                     }
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 } else {
@@ -6125,13 +6161,31 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             out.push_str(&format!("    mov (%rsp), %r11\n    mov %rax, {}(%r11)\n    mov %rdx, {}(%r11)\n", p2 * 16, p2 * 16 + 8));
                         }
                         out.push_str(&format!("    mov (%rsp), %rax\n    add $16, %rsp\n    mov ${}, %rdx\n", m));
+                    } else if let Expr::Var(src) = e {
+                        if let Some(sv) = env.iter().rev().find(|x| x.name == *src).cloned() {
+                            if let Ty::Arr(m) = sv.ty {
+                                // Static array variable: COPY into a
+                                // fresh child (hk116; source keeps its
+                                // values; D5/D7).
+                                out.push_str("    sub $16, %rsp\n");
+                                out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + m * 16));
+                                out.push_str(&format!("    movq ${}, (%rax)\n    add $8, %rax\n    mov %rax, (%rsp)\n", m));
+                                for p in 0..m {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov %rax, %rdx\n    xor %eax, %eax\n", sv.off - 8 * p));
+                                    out.push_str(&format!("    mov (%rsp), %r11\n    mov %rax, {}(%r11)\n    mov %rdx, {}(%r11)\n", p * 16, p * 16 + 8));
+                                }
+                                out.push_str(&format!("    mov (%rsp), %rax\n    mov ${}, %rdx\n    add $16, %rsp\n", m));
+                            } else {
+                                cg_value(e, env, sigs, strs, out, target);
+                                if matches!(sv.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3) {
+                                    out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
+                                }
+                            }
+                        } else {
+                            cg_value(e, env, sigs, strs, out, target);
+                        }
                     } else {
                         cg_value(e, env, sigs, strs, out, target);
-                    }
-                    if let Expr::Var(src) = e {
-                        if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3)) {
-                            out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
-                        }
                     }
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     cg_expr(ie, env, sigs, strs, out, target);
