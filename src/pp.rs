@@ -700,7 +700,7 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
     let mut starts = false;
     // Harbour picks the MOST SPECIFIC matching rule (most literal words),
     // regardless of definition order (probes b31/b31b); ties keep the
-    // earliest definition.
+    // LATEST definition (b47/b47b/b47c).
     let mut best: Option<(usize, usize)> = None; // (literal count, index)
     let mut best_caps: Vec<String> = Vec::new();
     for (ci, c) in cmds.iter().enumerate() {
@@ -710,7 +710,9 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
         starts = true;
         if let Some(caps) = cmd_match(&c.pattern, &src) {
             let lits = c.pattern.iter().filter(|t| !(t.starts_with('<') && t.ends_with('>')) && t.as_str() != "[" && t.as_str() != "]").count();
-            if best.map(|(bl, _)| lits > bl).unwrap_or(true) {
+            // probes b47/b47b/b47c: equal literal counts keep the LATEST
+            // definition (>= replaces the current winner with a later tie).
+            if best.map(|(bl, _)| lits >= bl).unwrap_or(true) {
                 best = Some((lits, ci));
                 best_caps = caps;
             }
