@@ -100,3 +100,16 @@ with an interactive dialog, probe c8 - t158 neg). Captures are out of
 this increment (Harbour accepts them, probe c3 - t157 neg, next
 increment). Bodies are integer expressions only (t159 neg); codeblock
 values do not print (t160 neg). No heap is involved.
+
+### Codeblock safety review (t161-t163, probes c12)
+
+Block types carry their arity, so rebinding a block variable to a block
+of a different arity is a type error (t161). Blocks cannot be passed to
+user functions in this increment (t162; argument errors now name the
+actual kind, e.g. "got a codeblock", after a message fix). Non-integer
+eval arguments are rejected (t163). Probe c12 (Harbour): in
+`eval(block_expr, arg_expr)` the BLOCK expression is evaluated BEFORE
+the arguments. Our v1 block expressions are side-effect-free literals
+and variable reads, so the order is unobservable today; it becomes a
+constraint on the increment that introduces block-returning functions
+(blocks cannot be returned in v1).
