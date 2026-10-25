@@ -1302,7 +1302,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                 return Ok(Ty::I64);
             }
             if is_builtin(id, "array") {
-                // Array(n[, m]) constructor (oracles m3/m10/a0/avar).
+                // Array(n[, m[, k]]) constructor (oracles m3/m10/a0/avar/pr7).
                 // Harbour accepts more dimensions and answers Array() /
                 // Array(-1) with dialogs that hang headless (BASE/1111,
                 // BASE/1131): arity errors are compile errors here and a
@@ -1311,15 +1311,15 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &[Sig], n: usize) -> Result<Ty, 
                 if args.is_empty() {
                     return Err(format!("line {}: `Array` needs at least one dimension", n));
                 }
-                if args.len() > 2 {
-                    return Err(format!("line {}: `Array` with more than two dimensions is not in this increment", n));
+                if args.len() > 3 {
+                    return Err(format!("line {}: `Array` with more than three dimensions is not in this increment", n));
                 }
                 for a in args {
                     if !matches!(type_expr(a, env, sigs, n)?, Ty::I64 | Ty::Dyn) {
                         return Err(format!("line {}: `Array` dimensions are integers", n));
                     }
                 }
-                return Ok(if args.len() == 1 { Ty::DArr } else { Ty::DArr2 });
+                return Ok(match args.len() { 1 => Ty::DArr, 2 => Ty::DArr2, _ => Ty::DArr3 });
             }
             if is_builtin(id, "len") {
                 // len(a): number of elements of an array (probe e4:
@@ -2528,7 +2528,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str("    sub $16, %rsp\n    movq $0, (%rsp)\n    movq $0, 8(%rsp)\n");
                 out.push_str("    mov %rax, %rsi\n    mov %rsp, %rdi\n    mov $16, %edx\n    xor %ecx, %ecx\n    call hbc_asize\n");
                 out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
-            } else {
+            } else if args.len() == 2 {
                 cg_expr(&args[0], env, sigs, strs, out, target);
                 if expr_ty(&args[0], env, sigs) == Ty::Dyn {
                     out.push_str("    call hbc_dyn_to_i64\n");
@@ -2541,6 +2541,27 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str("    mov %rax, %rdx\n    mov (%rsp), %rsi\n    add $16, %rsp\n");
                 out.push_str("    sub $16, %rsp\n    movq $0, (%rsp)\n    movq $0, 8(%rsp)\n");
                 out.push_str("    mov %rsp, %rdi\n    call hbc_arraym\n");
+                out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
+            } else {
+                // Array(n, m, k): dimensions left to right, then the
+                // composed constructor (oracle pr7).
+                cg_expr(&args[0], env, sigs, strs, out, target);
+                if expr_ty(&args[0], env, sigs) == Ty::Dyn {
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                }
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                cg_expr(&args[1], env, sigs, strs, out, target);
+                if expr_ty(&args[1], env, sigs) == Ty::Dyn {
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                }
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                cg_expr(&args[2], env, sigs, strs, out, target);
+                if expr_ty(&args[2], env, sigs) == Ty::Dyn {
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                }
+                out.push_str("    mov %rax, %rcx\n    mov (%rsp), %rdx\n    add $16, %rsp\n    mov (%rsp), %rsi\n    add $16, %rsp\n");
+                out.push_str("    sub $16, %rsp\n    movq $0, (%rsp)\n    movq $0, 8(%rsp)\n");
+                out.push_str("    mov %rsp, %rdi\n    call hbc_array3m\n");
                 out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
             }
         }
@@ -2896,7 +2917,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::Str(_) => Ty::Str,
         Expr::Var(id) => env.iter().find(|v| v.name == *id).expect("checked").ty,
         Expr::Call(id, args) => {
-            if is_builtin(id, "array") { return if args.len() == 1 { Ty::DArr } else { Ty::DArr2 }; }
+            if is_builtin(id, "array") { return match args.len() { 1 => Ty::DArr, 2 => Ty::DArr2, _ => Ty::DArr3 }; }
             if is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") { return Ty::I64; }
             sigs.iter().find(|v| v.name == *id).expect("checked").ret.expect("checked")
         }
@@ -4100,6 +4121,48 @@ hbc_arraym:
     ret
 ";
 
+const ARRAY3_HELPER: &str = r"
+# --- Array(n, m, k) constructor ------------------------------------------
+# hbc_array3m: rdi = parent slot address (zeroed by the caller), rsi =
+# dim1, rdx = dim2, rcx = dim3. Builds dim1 children, each a full
+# Array(dim2, dim3) built by hbc_arraym (oracle pr7: real child arrays,
+# innermost slots NIL). A negative dimension aborts via hbc_asize_neg
+# (same registered failure mode as the 2D form). Frame-held state only,
+# 16-byte-aligned internal calls on both targets.
+hbc_array3m:
+    push %rbp
+    mov %rsp, %rbp
+    sub $64, %rsp
+    mov %rdi, -8(%rbp)
+    mov %rsi, -16(%rbp)
+    mov %rdx, -24(%rbp)
+    mov %rcx, -32(%rbp)
+    movq $0, -40(%rbp)
+    test %rsi, %rsi
+    js hbc_asize_neg
+    test %rdx, %rdx
+    js hbc_asize_neg
+    test %rcx, %rcx
+    js hbc_asize_neg
+22: mov -40(%rbp), %rax
+    cmp -16(%rbp), %rax
+    jae 23f
+    movq $0, -56(%rbp)
+    movq $0, -48(%rbp)
+    lea -56(%rbp), %rdi
+    mov -24(%rbp), %rsi
+    mov -32(%rbp), %rdx
+    call hbc_arraym
+    mov -8(%rbp), %rdi
+    mov $16, %esi
+    lea -56(%rbp), %rdx
+    call hbc_aadd
+    incq -40(%rbp)
+    jmp 22b
+23: leave
+    ret
+";
+
 const HASH_HELPERS: &str = r"
 # --- hashes (v1): insertion-ordered, string-keyed maps -----------------
 # The slot holds {data pointer, live pair count}; null/0 is the empty
@@ -4343,6 +4406,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
         Target::Windows => {
             out.push_str(WIN_HELPERS);
             out.push_str(CTOR_HELPERS);
+            out.push_str(ARRAY3_HELPER);
             out.push_str(HASH_HELPERS);
             out.push_str("\n    .section .rdata,\"r\"\n");
             emit_strings(&mut out, &strs);
@@ -4944,6 +5008,7 @@ hbc_mem_frees:  .quad 0
 @REG_DATA@    .text
 "#);
     out.push_str(CTOR_HELPERS);
+    out.push_str(ARRAY3_HELPER);
     out.push_str(HASH_HELPERS);
     out.push_str("\n    .section .rodata\n");
     emit_strings(&mut out, &strs);
