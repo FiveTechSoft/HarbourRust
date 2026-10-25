@@ -486,3 +486,13 @@ Harbour. Non-call #translate implemented at statement start via the
 command machinery (probes b19-b21); t95/t96 positive. Full battery:
 99/99 (96 numbered + 3 fixtures), Linux + Wine identical. Differential:
 t55, t95, t96 MATCH.
+
+### String equality aligned to Harbour's default
+
+Probe b23 (full matrix, EXACT ON/OFF): Harbour's default `=` compares
+over the RIGHT operand's length; our exact byte equality was the
+EXACT ON variant and was corrected. hbc_str_eq rewritten on both
+targets; t52 expectation corrected (had been written for exact
+equality) and t97 added for the matrix. Full battery: 100/100 (97
+numbered + 3 fixtures), Linux + Wine identical. Differential: t52
+(via LOCAL-relocated variant) and t97 MATCH Harbour.
