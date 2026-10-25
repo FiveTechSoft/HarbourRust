@@ -175,3 +175,41 @@ call site now sits between `sub $16, %rsp` and `add $16, %rsp`. Full
 positive battery (hola, t10, t11, unicode, arithmetic) and the negative
 battery re-run after the fixes: identical outputs on both targets.
 hola.exe is still 5,499 bytes. Wine 10.20 wow64, exit code 0.
+
+---
+
+# Iteration 4: if / else / endif (2026-10-25)
+
+New surface: if/else/endif with integer comparisons (`= <> != < <= > >=`),
+nesting, calls inside conditions, branch-scoped locals, and move checking
+across branch joins. Parser, ownership analysis and codegen all changed;
+the iteration 2/3 battery is re-run plus seven new tests.
+
+New tests (each compiled and run, or rejected, on BOTH targets - Linux ELF
+and Windows PE under Wine 10.20):
+
+positive (byte-identical output on both targets):
+  tests/t13_if_else.hb       PASS  big / exactly seven / eq / ne / ne2 ok / lt / 42
+  tests/t15_if_move_both.hb  PASS  hola / fin   (moved in both branches => moved at join)
+  tests/t18_if_call_cond.hb  PASS  v / si       (call inside the condition)
+negative (hbc itself rejects before codegen, exit 1, both targets):
+  tests/t14_if_move_after.hb PASS  error: line 8: use of moved value
+  tests/t16_if_return.hb     PASS  return inside an `if` block rejected
+  tests/t17_if_str_cmp.hb    PASS  comparisons require integers (strings rejected)
+  tests/t19_if_scope.hb      PASS  undefined variable `z` (branch local after endif)
+
+Full regression after the change (iteration 2 + 3 battery):
+  positive: hola, t10, t11, t07 (unicode), t12 (call in expr), arithmetic
+  negative: prestamo_roto, t01-t09
+  ALL PASS, byte-identical on both targets. The hola Linux ELF is still
+  8,984 bytes. In t13's Win64 assembly every call site sits between
+  `sub $16, %rsp` and `add $16, %rsp` (9 checked).
+
+## What this does NOT show
+- Loops: there is still no iteration statement; `if` is the only control
+  flow beyond calls.
+- String comparisons and a first-class boolean: conditions compare i64
+  only; the condition value cannot be stored, printed or returned.
+- `return` remains top-level; early returns are rejected.
+- Same caveat as iteration 3: the Windows side ran under Wine 10.20, not
+  real Windows.
