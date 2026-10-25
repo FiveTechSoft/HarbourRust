@@ -532,3 +532,11 @@ compile-time rejection here vs link-time there (b27, registered);
 commands in dead branches register in neither (b30). t101 positive.
 Full battery: 104/104 (101 numbered + 3 fixtures), Linux + Wine
 identical. Differential: t101 MATCH.
+
+### Command rule specificity
+
+Probes b31/b31b: Harbour picks the most specific matching rule (most
+literal words) regardless of definition order; our first-defined-wins
+was a real divergence, caught here and fixed. t102 positive. Full
+battery: 105/105 (102 numbered + 3 fixtures), Linux + Wine identical.
+Differential: t102 MATCH.
