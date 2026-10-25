@@ -361,21 +361,74 @@ fn cmd_tokens(text: &str) -> Vec<String> {
 // Try to match source tokens against a command pattern. On success returns
 // the captured params (pattern order; optionals that did not fire capture
 // as empty). A <param> captures tokens up to the next literal (at paren
-// depth 0), or the rest of the line when last. F3b adds: [ ... ] optional
-// groups (Harbour probe b01) and <x,...> list captures (probe b02); both
-// scoped to a single non-nested group / rest-of-line list.
+// depth 0), or the rest of the input when no literal follows. Supported
+// markers (all probed against Harbour first): <x>, <x,...> list captures,
+// <(x)> parenthesized-expression captures, and [ ... ] optional groups
+// including nesting (probe b18).
 fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
-    // Helper over one pattern segment (no optional groups inside). `term`
-    // is the first literal of the NEXT segment: a trailing capture stops at
-    // it (at paren depth 0) so following groups can still match.
-    fn plain_match(pat: &[String], src: &[String], caps: &mut Vec<String>, term: Option<&str>) -> Option<usize> {
-        let mut pi = 0usize;
+    // First literal token at or after pat[i], looking through markers and
+    // group brackets; used as the terminator for captures.
+    fn next_lit(pat: &[String], i: usize) -> Option<&str> {
+        pat[i..].iter().find(|t| {
+            !(t.starts_with('<') && t.ends_with('>')) && t.as_str() != "[" && t.as_str() != "]"
+        }).map(|s| s.as_str())
+    }
+    // Capture src[start..] up to `lit` at paren depth 0; when `lit` is
+    // None, or absent from src while stemming from an optional
+    // continuation, capture the rest.
+    fn capture_to(src: &[String], start: usize, lit: Option<&str>) -> Option<usize> {
+        match lit {
+            None => Some(src.len()),
+            Some(l) => {
+                let mut depth = 0i32;
+                let mut k = start;
+                while k < src.len() {
+                    let t = &src[k];
+                    // the terminating literal is compared BEFORE it can
+                    // change the depth (a ")" at depth 0 ends the capture)
+                    if depth == 0 && t.eq_ignore_ascii_case(l) { return Some(k); }
+                    if t == "(" { depth += 1; } else if t == ")" { depth -= 1; }
+                    k += 1;
+                }
+                Some(src.len()) // terminator absent: capture the rest
+            }
+        }
+    }
+    // Match a pattern slice (with balanced groups) against src, returning
+    // tokens consumed. Captures are pushed in pattern order.
+    fn match_seq(pat: &[String], src: &[String], caps: &mut Vec<String>) -> Option<usize> {
         let mut si = 0usize;
+        let mut pi = 0usize;
         while pi < pat.len() {
             let p = &pat[pi];
-            if p.starts_with("<(") && p.ends_with(")>") {
+            if p == "[" {
+                // balanced group
+                let mut depth = 1;
+                let mut j = pi + 1;
+                while j < pat.len() && depth > 0 {
+                    if pat[j] == "[" { depth += 1; } else if pat[j] == "]" { depth -= 1; }
+                    j += 1;
+                }
+                if depth != 0 { return None; } // unbalanced pattern
+                let inner = &pat[pi + 1..j - 1];
+                let mut gcaps: Vec<String> = Vec::new();
+                match match_seq(inner, &src[si..], &mut gcaps) {
+                    Some(consumed) => { si += consumed; caps.extend(gcaps); }
+                    None => {
+                        // optional group absent: its markers capture as empty
+                        fn markers(pat: &[String], caps: &mut Vec<String>) {
+                            for t in pat {
+                                if t == "[" || t == "]" { continue; }
+                                if t.starts_with('<') && t.ends_with('>') { caps.push(String::new()); }
+                            }
+                        }
+                        markers(inner, caps);
+                    }
+                }
+                pi = j;
+            } else if p.starts_with("<(") && p.ends_with(")>") {
                 // <(x)> match marker: source must be a parenthesized
-                // expression (probe b14/b16); capture the inner tokens
+                // expression (probes b14/b16); capture the inner tokens
                 if si >= src.len() || src[si] != "(" { return None; }
                 let mut depth = 0i32;
                 let mut k = si;
@@ -388,38 +441,14 @@ fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
                 if caps.last().map(|c| c.is_empty()).unwrap_or(true) { return None; }
                 si = k + 1;
                 pi += 1;
-                continue;
-            }
-            if p.starts_with('<') && p.ends_with('>') {
-                // <x,...> list markers follow the same termination rule as
-                // plain <x> captures; their name keeps the ",..." suffix
-                let next_lit = pat[pi + 1..].iter().find(|t| !(t.starts_with('<') && t.ends_with('>')) && t.as_str() != "[" && t.as_str() != "]").map(|s| s.as_str()).or(term);
-                let start = si;
-                match next_lit {
-                    None => { si = src.len(); }
-                    Some(lit) => {
-                        let mut depth = 0i32;
-                        let mut found = None;
-                        let mut k = si;
-                        while k < src.len() {
-                            let t = &src[k];
-                            // the terminating literal is compared BEFORE it can
-                            // change the depth (a ")" at depth 0 ends the capture)
-                            if depth == 0 && t.eq_ignore_ascii_case(lit) { found = Some(k); break; }
-                            if t == "(" { depth += 1; } else if t == ")" { depth -= 1; }
-                            k += 1;
-                        }
-                        match found {
-                            Some(k) => si = k,
-                            // terminator from a following (optional) segment
-                            // may be absent: capture the rest and let that
-                            // segment match empty
-                            None => { if term.is_some() { si = src.len(); } else { return None } }
-                        }
-                    }
-                }
-                caps.push(src[start..si].join(" "));
+            } else if p.starts_with('<') && p.ends_with('>') {
+                // <x> or <x,...>: capture up to the next literal anywhere
+                // ahead in the pattern (group brackets included)
+                let lit = next_lit(pat, pi + 1);
+                let end = capture_to(src, si, lit)?;
+                caps.push(src[si..end].join(" "));
                 if caps.last().map(|c| c.is_empty()).unwrap_or(true) { return None; } // empty capture: no match
+                si = end;
                 pi += 1;
             } else {
                 if si >= src.len() || !src[si].eq_ignore_ascii_case(p) { return None; }
@@ -429,63 +458,12 @@ fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
         }
         Some(si)
     }
-    // Optional groups: split the pattern at top-level [ ... ] groups. For
-    // each group, try to match it at the current source position; on
-    // failure the group is skipped (its params capture as empty).
     let mut caps: Vec<String> = Vec::new();
-    let mut groups: Vec<(bool, Vec<String>)> = Vec::new(); // (optional, tokens)
-    let mut cur: Vec<String> = Vec::new();
-    let mut i = 0usize;
-    while i < pat.len() {
-        if pat[i] == "[" {
-            if !cur.is_empty() { groups.push((false, std::mem::take(&mut cur))); }
-            let mut depth = 1;
-            let mut g: Vec<String> = Vec::new();
-            i += 1;
-            while i < pat.len() && depth > 0 {
-                if pat[i] == "[" { depth += 1; } else if pat[i] == "]" { depth -= 1; if depth == 0 { break; } }
-                g.push(pat[i].clone());
-                i += 1;
-            }
-            groups.push((true, g));
-        } else if pat[i] != "]" {
-            cur.push(pat[i].clone());
-        }
-        i += 1;
-    }
-    if !cur.is_empty() { groups.push((false, cur)); }
-    let mut si = 0usize;
-    for (gi, (opt, g)) in groups.iter().enumerate() {
-        // first literal of the next segment, used as capture terminator
-        let term = groups.get(gi + 1).and_then(|(_, ng)| {
-            ng.iter().find(|t| !(t.starts_with('<') && t.ends_with('>')) && t.as_str() != "[" && t.as_str() != "]").map(|s| s.as_str())
-        });
-        let gsrc = &src[si..];
-        let mut gcaps: Vec<String> = Vec::new();
-        match plain_match(g, gsrc, &mut gcaps, term) {
-            Some(consumed) => {
-                // a plain segment must consume exactly up to the next group;
-                // approximate: consumed tokens, continue
-                si += consumed;
-                caps.extend(gcaps);
-            }
-            None => {
-                if !opt { return None; }
-                // optional group absent: its params capture as empty
-                for t in g {
-                    if t.starts_with('<') && t.ends_with('>') { caps.push(String::new()); }
-                }
-            }
-        }
-    }
-    if si != src.len() { return None; } // trailing tokens: no match
+    let consumed = match_seq(pat, src, &mut caps)?;
+    if consumed != src.len() { return None; } // trailing tokens: no match
     Some(caps)
 }
 
-// Apply the first matching command rule to a source line. Returns:
-// Ok(Some(expanded)) matched, Ok(None) no command starts here,
-// Err when the leading keyword matches but the pattern does not complete
-// (Harbour rejects this too: E0020 incomplete statement, probe c09).
 fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<String>, String> {
     let src = cmd_tokens(line);
     if src.is_empty() { return Ok(None); }
