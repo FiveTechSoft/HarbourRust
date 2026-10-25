@@ -4,7 +4,7 @@
 `pos <file> <escaped expected stdout>` or `neg <file> <error substring>`.
 Positive expectations are derived per category, not assumed:
 
-- **HB-EXACT** (58 tests): bytes captured from the Harbour 3.2.1dev
+- **HB-EXACT** (65 tests): bytes captured from the Harbour 3.2.1dev
   reference compiled with `-gtstd` (clean stdio, no ANSI console codes).
   The earlier quick oracle (`hbmk2 file.hb` script mode) runs ONLY the
   first function in the file, not `main` - it was never valid for
@@ -113,6 +113,26 @@ the arguments. Our v1 block expressions are side-effect-free literals
 and variable reads, so the order is unobservable today; it becomes a
 constraint on the increment that introduces block-returning functions
 (blocks cannot be returned in v1).
+
+## Multidimensional dynamic arrays v2b (t183-t207)
+
+Arrays of dynamic arrays: `{{1, 2}, {3, 4}}`, reads `a[i][j]` and the
+comma form `a[i, j]` (Harbour m2: identical), writes, `len` at both
+levels, `AAdd(a[i], x)` / `ASize(a[i], n)` on subarrays, `Array(n, m)`
+(NIL slots read as 0 - the registered i64-model limitation).
+
+Categories: the value cases are HB-EXACT (probes m1/m2/m5/m6/m7). The
+ownership cases are OURS-ONLY: Harbour's `b := a[1]` aliases the shared
+subarray (m4) and AAdd on it mutates what every alias sees (m5); we move
+the child into the parent, and extraction is a compile error in this
+increment (indexed borrows only). Destruction is proven by alloc-identity
+(hb_memcheck balance 0 across function boundaries), not by output. m8's
+ASize shrink shows Harbour's observable reduction only - we claim nothing
+about Harbour's internal lifetime. t207 is DIVERGE-FAILMODE: indexing a
+fresh null child is a clean bound error (exit 1), not Harbour's dialog.
+
+Two v2a fixes ride along: flat `a[i] := v` (checker gap - t193) and the
+epilogue preserving the return value across frees.
 
 ## Dynamic arrays v2a (t164-t176)
 
