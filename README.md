@@ -1096,5 +1096,23 @@ clean error (t345).
   casilla cannot occur in this increment's DArr4 - no operation
   nulls one).
 
-Battery: 459/459 manifest cases on Linux x86-64 and Wine, plus
+- Four-level arrays pass as parameters and return under the MOVE
+  contract (hk111: Harbour SHARES the array - the callee's write
+  is visible in the caller; registered D5/D7-family difference,
+  NO sharing here): the callee reads len at every level and
+  writes at the fourth (t464), a returned DArr4 keeps its
+  structure (hk112 - t465), the move chains through two callees
+  (t467), reassignment frees the old value after the new one
+  exists (t470), and `? a` renders empty exactly as Harbour's
+  QOut (hk113 - t468). Caller reuse after the move and callee
+  reuse after passing the parameter on are named compile errors
+  (t466/t469), balance 0 everywhere. This increment also FIXED
+  the DArr4 move machinery left incomplete at 33r: the return,
+  assignment and call-argument source-slot nulling, the
+  callee-side argument copy-in and the caller-side move marking
+  all missed DArr4 (a returned or passed four-level array
+  crashed or silently mis-ran; those paths had no execution
+  tests at 33r - they do now).
+
+Battery: 466/466 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
