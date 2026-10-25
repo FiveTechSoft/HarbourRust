@@ -573,3 +573,13 @@ probes b39/b39b/b39c/b39e (semicolon must be the last non-whitespace
 character outside strings; Harbour rejects trailing comments after it;
 chains). t111 positive (MATCH), t112 negative (both reject). Full
 battery: 115/115 (112 numbered + 3 fixtures), Linux + Wine identical.
+
+Empty results, zero-param defines, marker validation: empty #command /
+#translate result now legal (b40/b44: deletes the statement); `#define
+NAME() body` expands only as `NAME()` (b42 - object-like vs zero-param
+function-like are now distinct Def kinds); match markers are validated
+at define time (b41: <{b}> rejected, Harbour E0010; same class as
+<"x">/<#x>). Two real divergences fixed (we accepted <{b}> and rejected
+`NAME()` defines). t113 positive (MATCH), t114 negative (both reject).
+Full battery: 117/117 (114 numbered + 3 fixtures), Linux + Wine
+identical.
