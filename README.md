@@ -585,6 +585,25 @@ tested paths (t191). `Array(n, 0)` children are real empty arrays
 (az0b, t256). Battery: 266/266 green on Linux x86-64 and Wine, plus
 the ABI harness on both targets.
 
+## Iteration 27 - three-level arrays as parameters (move)
+
+A DArr3 can now be a function parameter or a return value, under the
+same move contract as two levels (iteration 21): the callee becomes
+the owner, the caller's slot is nulled, and using it after the call
+is a compile error (t295). Passing through a chain of callees moves
+the value along (t296, balance 0). Oracle pr9 registers Harbour's
+semantics for the same program: the object is SHARED (the callee's
+write is visible to the caller) - the deliberate difference already
+registered for two levels (pr2/pr5), pending the user's contract
+decision. Evidence pinning a parameter: p[i][j][k], len(p[i][j]),
+AAdd/ASize(p[i][j], ...), or a call whose signature asks for a
+three-level array. The same mirror run caught a pre-existing hole
+at ALL depths: a `? consume(a)` print statement never applied the
+argument moves, so the caller kept using the moved value (strings
+moved inline, arrays did not). Fixed and pinned with t297 (two
+levels) and t295 (three). Battery: 295/295 green on Linux x86-64
+and Wine, plus the ABI harness on both targets.
+
 ## Iteration 26 - class syntax parser (runtime pending)
 
 The class surface PARSES now: CREATE CLASS Name [INHERIT Base] ...
