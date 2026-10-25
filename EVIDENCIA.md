@@ -18,8 +18,8 @@ hola desde una funcion
 $ file gen/hola
 ELF 64-bit LSB executable, x86-64, statically linked
 $ ldd gen/hola
-not a dynamic executable            # no libc, no runtime
-$ size: 8,984 bytes                 # machine code + string data
+not a dynamic executable            # no libc, no external runtime (own print helpers only)
+$ size: 8,984 bytes                 # ELF file size, headers/alignment included
 
 Generated assembly is readable; `hbc_fn_saludo` stores the (ptr, len) of its
 string in two stack slots and returns them in %rax/%rdx. The print helpers
