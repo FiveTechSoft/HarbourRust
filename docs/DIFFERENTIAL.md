@@ -147,3 +147,14 @@ t95 (non-call #translate, statement start) and t96 (non-call #translate
 with literals and two captures): 2/2 MATCH (probes b19-b21; Harbour also
 applies non-call translate after its own `?` command via std.ch
 chaining, which this PoC does not emulate - scoped difference).
+
+## Run of 2026-10-25 (string equality aligned, probe b23)
+
+Harbour's default `=` (SET EXACT OFF) is asymmetric like the ordering:
+right-operand-length comparison ("abcd" = "abc" true, "abc" = "abcd"
+false, anything = "" true; <> negates). Grounded with a full matrix
+(prefixes both directions, empties, EXACT ON/OFF). hbc_str_eq aligned;
+t52 expectation corrected (it had been written for exact equality),
+t52 MATCHes Harbour (via its LOCAL-relocated variant, see the late-LOCAL
+category), and new t97 pins the matrix: MATCH. Harbour's `==` operator
+and SET EXACT are not implemented (registered, not claimed).
