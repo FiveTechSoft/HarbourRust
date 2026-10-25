@@ -368,3 +368,9 @@ neg tests/t370_neg_foreach_index_grow.hb cannot be modified, moved or grown insi
 neg tests/t371_neg_foreach_index_childgrow.hb cannot be modified, moved or grown inside its own loop
 neg tests/t372_neg_foreach_index_write.hb cannot be modified, moved or grown inside its own loop
 pos tests/t373_foreach_index_exitret.hb \n         1\n         0
+pos tests/t374_foreach_index2.hb \n         1\n         2\n         3\n         4\n         2\n         1
+pos tests/t375_foreach_index2_fx.hb \neval\neval\n         1\n         2
+neg tests/t376_neg_foreach_index2_childgrow.hb cannot be modified, moved or grown inside its own loop
+neg tests/t377_neg_foreach_index2_write.hb cannot be modified, moved or grown inside its own loop
+neg tests/t378_neg_foreach_index2_move.hb cannot be modified, moved or grown inside its own loop
+pos tests/t379_foreach_index2_exitret.hb \n         1\n         0
