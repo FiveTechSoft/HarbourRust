@@ -1020,6 +1020,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[(
                 out.push_str(&format!(".Lforn_{}_{}:\n", fname, id));
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n", i_off));
                 out.push_str(&format!("    add ${}, %rax\n", step));
+                // Advancing past the i64 range would wrap the counter and
+                // the loop would not terminate: overflow ends the loop.
+                out.push_str(&format!("    jo .Lfore_{}_{}\n", fname, id));
                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", i_off));
                 out.push_str(&format!("    jmp .Lforc_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lfore_{}_{}:\n", fname, id));
