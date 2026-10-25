@@ -3,5 +3,6 @@ function bad(x)
 return x
 function main()
     local a := {{{1, 2}, {3}}, {{4}}}
-    ? len(bad(a[1]))
+    local b := bad(a[1])
+    ? len(b)
 return nil
