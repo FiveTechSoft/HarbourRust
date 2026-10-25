@@ -1078,3 +1078,18 @@ A NIL middle is the registered clean bound-error failure mode.
 
 476/476 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
+
+## Iteration 33y additions (481 manifest cases): FOR EACH over a[i][j] of a four-level root
+
+hk118 measures the elements classify "A" and reads go through the
+shared casilla; hk119 measures x[j] := v writes THROUGH (visible in
+the caller, only the iterated middle affected). Implementation: the
+loop variable is a borrowed flat child array - typed DArr in the
+checker, DArrRef layout in codegen (slot = current casilla address,
+the param-borrow machinery). t481/t482 byte-identical to the oracle
+binaries (entry adaptation: `local x := 0`, bare `local x` is not in
+the subset). Named rejections: reseat (t483), grow (t484); restore
+after natural completion and `exit` (t485).
+
+481/481 manifest cases + ABI harness green on Linux x86-64 and Wine
+(Wine is not real Windows).
