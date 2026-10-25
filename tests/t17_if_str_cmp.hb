@@ -1,8 +1,9 @@
-// ordering comparisons on strings are not in the PoC: only = and <>
-// (semantic change in iteration 9: = and <> on strings now work)
+// string comparisons work since iterations 9 (=, <>) and 10 (ordering,
+// byte-wise like memcmp: no collation, uppercase bytes sort before
+// lowercase)
 function main()
-    local a := "x"
-    if a < "x"
+    local a := "abc"
+    if a < "abd"
         ? "lt"
     endif
 return nil
