@@ -91,3 +91,14 @@ registered, consistent with the arity case from iteration 11.
 t84 (#command, case-insensitive keyword), t85 (capture-until-literal),
 t86 (#translate call form, inline): 3/3 MATCH (pcode reference, values
 identical after whitespace normalization).
+
+## Run of 2026-10-25 (preprocessor F3b: optionals, lists, param case)
+
+t89 (optional clause [TO <y>], absent and present): MATCH. t90 (list
+capture <x,...> inserted via the plain result marker <x>, as Harbour's own
+std.ch does): MATCH. Values identical after whitespace normalization.
+t88 (`#define F(x) X + 1` used as `? F(2)`): Harbour compiles and fails at
+RUNTIME (BASE/1003, "Variable does not exist: X" - parameter substitution
+is case-sensitive, so X is NOT substituted); HarbourRust fails at COMPILE
+time (undefined variable `X`). Category: static vs dynamic checking, same
+rejection class - registered, consistent with t82.
