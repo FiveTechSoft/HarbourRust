@@ -496,3 +496,11 @@ targets; t52 expectation corrected (had been written for exact
 equality) and t97 added for the matrix. Full battery: 100/100 (97
 numbered + 3 fixtures), Linux + Wine identical. Differential: t52
 (via LOCAL-relocated variant) and t97 MATCH Harbour.
+
+### #if expressions and #elif
+
+Probes b24/b25: Harbour accepts relational operators, .AND./.OR., unary
+!, arithmetic and #elif chains in #if. eval_if extended (! and + - * / %,
+wrapping, zero-division rejected). t98/t99 positive. Full battery:
+102/102 (99 numbered + 3 fixtures), Linux + Wine identical.
+Differential: t98, t99 MATCH.
