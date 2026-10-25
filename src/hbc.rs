@@ -32,7 +32,7 @@ use std::process;
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2, DArr3, DArrS, StrOwn, Dyn, Hash, DArrRef }
+enum Ty { I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2, DArr3, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2 }
 
 // Dyn is the tagged-union value for any route that can carry NIL (probes
 // n1/n2/n3): a 16-byte {tag, payload} pair, tag 0 = i64 payload, tag 1 =
@@ -1557,9 +1557,16 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                 Stmt::AAdd(n, id, e) => {
                     // AAdd's target is a dynamic array: pins a parameter.
                     // A string element pins an array of strings (the
-                    // hb_HKeys shape); anything else keeps the flat pin.
+                    // hb_HKeys shape); an ARRAY literal element pins one
+                    // level deeper (a borrowed middle of a three-level
+                    // array grows this way - oracle hk94); anything else
+                    // keeps the flat pin.
                     if str_evidence(e, lit, sigs) {
                         pin_vars(f, &Expr::Var(id.clone()), Ty::DArrS, pin, *n)?;
+                    } else if matches!(e, Expr::ArrLit(es) if es.iter().any(|x| matches!(x, Expr::ArrLit(_) | Expr::DArrNew))) {
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::DArr3, pin, *n)?;
+                    } else if matches!(e, Expr::ArrLit(_)) {
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::DArr2, pin, *n)?;
                     } else {
                         pin_vars(f, &Expr::Var(id.clone()), Ty::DArr, pin, *n)?;
                         pin_vars(f, e, Ty::I64, pin, *n)?;
@@ -1949,7 +1956,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if let Expr::Index(rid, ie) = a {
                     let root = env.iter().find(|v| v.name == *rid);
                     if let Some(v) = root {
-                        if v.ty == Ty::DArr2 && sig_params[i] == Ty::DArr {
+                        // One level deeper (33k): f(a[i]) on a THREE-level
+                        // array borrows a middle whose cells are child
+                        // arrays {ptr, len} - the callee pins DArr2
+                        // (oracles hk93-hk96). Same walk, same rules.
+                        let borrow_match = (v.ty == Ty::DArr2 && sig_params[i] == Ty::DArr)
+                            || (v.ty == Ty::DArr3 && sig_params[i] == Ty::DArr2);
+                        if borrow_match {
                             if v.moved {
                                 return Err(format!("line {}: use of moved value `{}`", n, rid));
                             }
@@ -2325,6 +2338,7 @@ fn ty_name(t: Ty) -> &'static str {
         Ty::Block(_) => "a codeblock",
         Ty::DArr => "a dynamic array",
         Ty::DArrRef => "a borrowed array",
+        Ty::DArrRef2 => "a borrowed array",
         Ty::Dyn => "a dynamic value",
         Ty::Hash => "a hash",
     }
@@ -2900,7 +2914,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         false
                     }
                     Ty::DArr2 => {
-                        if t != Ty::DArr {
+                        // A dynamic value MOVES in; a static literal
+                        // materializes as a dynamic child (the borrowed
+                        // middle of a three-level array grows this way -
+                        // oracle hk94).
+                        if !matches!(t, Ty::DArr | Ty::Arr(_)) {
                             return Err(format!("line {}: the elements of `{}` are dynamic arrays", n, id));
                         }
                         true
@@ -3346,7 +3364,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 // ---------------------------------------------------------------------------
 
 fn size_of(t: Ty) -> usize {
-    match t { Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef => 16, Ty::Bool => unreachable!("booleans rejected in analysis") }
+    match t { Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 => 16, Ty::Bool => unreachable!("booleans rejected in analysis") }
 }
 
 #[derive(Clone)]
@@ -3381,7 +3399,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 // Only the address word is meaningful; value-position use
                 // of a borrowed parameter is rejected by the escape
                 // post-pass, so the second word never matters.
-                Ty::DArrRef => out.push_str(&format!("    mov -{}(%rbp), %rax\n    xor %edx, %edx\n", v.off)),
+                Ty::DArrRef | Ty::DArrRef2 => out.push_str(&format!("    mov -{}(%rbp), %rax\n    xor %edx, %edx\n", v.off)),
                 Ty::Arr(_) => unreachable!("whole-array values are emitted via cg_array_value"),
             }
         }
@@ -3417,7 +3435,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     match var.ty {
                         Ty::I64 => vt_letter(strs, out, "N"),
                         Ty::Str | Ty::StrOwn => vt_letter(strs, out, "C"),
-                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::DArrRef | Ty::Arr(_) => vt_letter(strs, out, "A"),
+                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::Arr(_) => vt_letter(strs, out, "A"),
                         Ty::Dyn => {
                             // tag word of the stack pair (tag at -(off))
                             out.push_str(&format!("    mov -{}(%rbp), %r10\n", var.off));
@@ -3443,6 +3461,18 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                             out.push_str("    mov (%r11), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
                             vt_classify_scalar(strs, out);
                         }
+                        Ty::DArrRef2 => {
+                            // Borrowed middle of a THREE-level array: the
+                            // cell content is a child-array {ptr, len} -
+                            // null ptr is "U", non-null "A" (hk90/hk91
+                            // through the borrow, hk97).
+                            out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmp $1, %rax\n    jl 87f\n    cmp 8(%r11), %rax\n    jg 87f\n", var.off));
+                            out.push_str("    mov (%r11), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    test %r10, %r10\n    jz 85f\n    jmp 86f\n87:\n    call hbc_bound_error\n85:\n");
+                            vt_letter(strs, out, "U");
+                            out.push_str("    jmp 88f\n86:\n");
+                            vt_letter(strs, out, "A");
+                            out.push_str("88:\n");
+                        }
                         Ty::DArr2 => {
                             out.push_str(&format!("    cmp $1, %rax\n    jl 87f\n    cmp -{}(%rbp), %rax\n    jg 87f\n", var.off - 8));
                             out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
@@ -3466,9 +3496,17 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
                     cg_expr(ie2, env, sigs, strs, out, target);
                     out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n");
-                    out.push_str(&format!("    cmp $1, %rcx\n    jl 87f\n    cmp -{}(%rbp), %rcx\n    jg 87f\n", var.off - 8));
-                    out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
-                    out.push_str("    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
+                    if var.ty == Ty::DArrRef2 {
+                        // Through the borrowed middle of a three-level
+                        // array (hk97): root bounds and base load through
+                        // the owner's cell address.
+                        out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmp $1, %rcx\n    jl 87f\n    cmp 8(%r11), %rcx\n    jg 87f\n", var.off));
+                        out.push_str("    mov (%r11), %r11\n    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
+                    } else {
+                        out.push_str(&format!("    cmp $1, %rcx\n    jl 87f\n    cmp -{}(%rbp), %rcx\n    jg 87f\n", var.off - 8));
+                        out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
+                        out.push_str("    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
+                    }
                     out.push_str("    mov (%r10), %r11\n    test %r11, %r11\n    jz 87f\n");
                     out.push_str("    cmp $1, %rax\n    jl 87f\n    cmp 8(%r10), %rax\n    jg 87f\n");
                     out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
@@ -3484,7 +3522,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                     match var.ty {
                         Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Hash => out.push_str(&format!("    mov -{}(%rbp), %rax\n", var.off - 8)),
-                        Ty::DArrRef => out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov 8(%rax), %rax\n", var.off)),
+                        Ty::DArrRef | Ty::DArrRef2 => out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov 8(%rax), %rax\n", var.off)),
                         Ty::Arr(k) => out.push_str(&format!("    mov ${}, %rax\n", k)),
                         _ => unreachable!("checked"),
                     }
@@ -3498,6 +3536,17 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     // mode). An EMPTY child ({}) owns a header block and
                     // still reads 0 (oracle e4).
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                    if var.ty == Ty::DArrRef2 {
+                        // len(p[i]) through the borrowed middle of a
+                        // three-level array (hk93): bounds and base load
+                        // through the owner's cell address; the cell holds
+                        // a child {ptr, len} and a null child is the same
+                        // registered "Argument error: LEN" failure mode.
+                        cg_expr(ie, env, sigs, strs, out, target);
+                        out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmp $1, %rax\n    jl 87f\n    cmp 8(%r11), %rax\n    jg 87f\n", var.off));
+                        out.push_str("    mov (%r11), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    test %r10, %r10\n    jz hbc_len_error\n    mov 8(%rax), %rax\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
+                        return;
+                    }
                     cg_expr(ie, env, sigs, strs, out, target);
                     out.push_str(&format!("    cmp $1, %rax\n    jl 87f\n    cmp -{}(%rbp), %rax\n    jg 87f\n", var.off - 8));
                     out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
@@ -3791,6 +3840,32 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             // clean bound error (Harbour would show its dialog instead -
             // registered DIVERGE-FAILMODE).
             let var = env.iter().rev().find(|v| v.name == *id).expect("checked");
+            if var.ty == Ty::DArrRef2 {
+                // p[i][j] through the borrowed middle of a three-level
+                // array (hk93): root bounds and base load through the
+                // owner's cell address; the middle cell holds the child's
+                // {ptr, len}; a null child has length 0 (same bound
+                // error); the innermost cell is a scalar {tag, payload}.
+                if expr_ty(ie, env, sigs) == Ty::Dyn {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                } else {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                }
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                if expr_ty(ie2, env, sigs) == Ty::Dyn {
+                    cg_expr(ie2, env, sigs, strs, out, target);
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                } else {
+                    cg_expr(ie2, env, sigs, strs, out, target);
+                }
+                out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n");
+                out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmp $1, %rcx\n    jl 81f\n    cmp 8(%r11), %rcx\n    jg 81f\n", var.off));
+                out.push_str("    mov (%r11), %r11\n    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
+                out.push_str("    cmp $1, %rax\n    jl 81f\n    cmp 8(%r10), %rax\n    jg 81f\n");
+                out.push_str("    mov (%r10), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r11\n    mov 8(%rax), %rdx\n    mov %r11, %rax\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
+                return;
+            }
             if expr_ty(ie, env, sigs) == Ty::Dyn {
                 cg_expr(ie, env, sigs, strs, out, target);
                 out.push_str("    call hbc_dyn_to_i64\n");
@@ -4510,7 +4585,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let darrs_elem = |e: &Expr, env: &[CgLocal]| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArrS));
                 // A whole array/hash VARIABLE renders empty
                 // (hk16/hk20/hk24): only borrowed, never consumed.
-                let renders_empty = |e: &Expr| matches!(expr_ty(e, env, sigs), Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Hash | Ty::DArrRef);
+                let renders_empty = |e: &Expr| matches!(expr_ty(e, env, sigs), Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::Hash | Ty::DArrRef | Ty::DArrRef2);
                 for e in es {
                     if let Expr::Index(v, ie) = e {
                         if darr2_child(e, env) {
@@ -4617,7 +4692,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         Ty::Bool => unreachable!("booleans rejected in analysis"),
                         Ty::Arr(_) => unreachable!("whole-array printing rejected in analysis"),
                         Ty::Block(_) => unreachable!("codeblock printing rejected in analysis"),
-                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::DArrRef => unreachable!("whole-array printing rejected in analysis"),
+                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 => unreachable!("whole-array printing rejected in analysis"),
                         Ty::Hash => unreachable!("whole-hash printing rejected in analysis"),
                     }
                 }
@@ -5034,7 +5109,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // cell's ADDRESS - feed THAT to hbc_aadd exactly like the
                 // middle arm does, so growth reallocates through the
                 // owner's cell (oracle hk78).
-                let aptr = if v.ty == Ty::DArrRef { format!("mov -{}(%rbp), %rdi", v.off) } else { format!("lea -{}(%rbp), %rdi", v.off) };
+                let aptr = if v.ty == Ty::DArrRef || v.ty == Ty::DArrRef2 { format!("mov -{}(%rbp), %rdi", v.off) } else { format!("lea -{}(%rbp), %rdi", v.off) };
                 if v.ty == Ty::DArrS || (v.ty == Ty::DArrU && matches!(vt, Ty::Str | Ty::StrOwn)) {
                     // String element: a rodata value is copied (the array
                     // owns the copy); an owned value moves in (its source
@@ -5050,13 +5125,31 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     }
                     out.push_str("    mov %rax, %r11\n    sub $16, %rsp\n    movq $2, (%rsp)\n    mov %r11, 8(%rsp)\n");
                     out.push_str(&format!("    mov %rsp, %rdx\n    mov $16, %esi\n    {}\n    call hbc_aadd\n    add $16, %rsp\n", aptr));
-                } else if v.ty == Ty::DArr2 || (v.ty == Ty::DArrU && matches!(vt, Ty::DArr | Ty::DArrU)) {
+                } else if v.ty == Ty::DArr2 || v.ty == Ty::DArrRef2 || (v.ty == Ty::DArrU && matches!(vt, Ty::DArr | Ty::DArrU)) {
                     // Insert a dynamic array: the value MOVES into the
-                    // parent (null the source right after the load).
-                    cg_value(e, env, sigs, strs, out, target);
-                    if let Expr::Var(src) = e {
-                        if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3)) {
-                            out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
+                    // parent (null the source right after the load). A
+                    // static literal materializes as a dynamic child
+                    // (header + tagged cells, the same shape as the
+                    // middle arm's materialization - oracle hk94).
+                    if let Expr::ArrLit(inner) = e {
+                        let m = inner.len();
+                        out.push_str("    sub $16, %rsp\n");
+                        out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + m * 16));
+                        out.push_str(&format!("    movq ${}, (%rax)\n    add $8, %rax\n    mov %rax, (%rsp)\n", m));
+                        for (p, xe) in inner.iter().enumerate() {
+                            cg_expr(xe, env, sigs, strs, out, target);
+                            if expr_ty(xe, env, sigs) == Ty::I64 {
+                                out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                            }
+                            out.push_str(&format!("    mov (%rsp), %r11\n    mov %rax, {}(%r11)\n    mov %rdx, {}(%r11)\n", p * 16, p * 16 + 8));
+                        }
+                        out.push_str(&format!("    mov (%rsp), %rax\n    mov ${}, %edx\n    add $16, %rsp\n", m));
+                    } else {
+                        cg_value(e, env, sigs, strs, out, target);
+                        if let Expr::Var(src) = e {
+                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3)) {
+                                out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
+                            }
                         }
                     }
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
@@ -5087,9 +5180,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // kind 3: three levels (grow NIL casillas like kind 1;
                 // shrink frees removed children RECURSIVELY via
                 // hbc_rfree - they own their own children).
-                let kind = if v.ty == Ty::DArr2 { 1 } else if v.ty == Ty::DArrS { 2 } else if v.ty == Ty::DArr3 { 3 } else { 0 };
+                let kind = if v.ty == Ty::DArr2 { 1 } else if v.ty == Ty::DArrS { 2 } else if v.ty == Ty::DArr3 || v.ty == Ty::DArrRef2 { 3 } else { 0 };
                 // DArrRef: address of the owner's cell, like AAdd (hk87).
-                let aptr = if v.ty == Ty::DArrRef { format!("mov -{}(%rbp), %rdi", v.off) } else { format!("lea -{}(%rbp), %rdi", v.off) };
+                let aptr = if v.ty == Ty::DArrRef || v.ty == Ty::DArrRef2 { format!("mov -{}(%rbp), %rdi", v.off) } else { format!("lea -{}(%rbp), %rdi", v.off) };
                 cg_expr(e, env, sigs, strs, out, target);
                 out.push_str(&format!("    mov %rax, %rsi\n    mov $16, %edx\n    mov ${}, %ecx\n    {}\n    call hbc_asize\n",
                     kind, aptr));
@@ -5379,9 +5472,18 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // rax = value(sp), rcx = i, then j in rax below
                 out.push_str("    mov %rax, %r9\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
                 // rax = value tag, rdx = payload, rcx = i, r9 = j
+                if v.ty == Ty::DArrRef2 {
+                    // p[i][j] := v through the borrowed middle of a
+                    // three-level array (hk95): root bounds and base load
+                    // through the owner's cell address, the write lands
+                    // in the owner's innermost cell.
+                    out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmp $1, %rcx\n    jl 90f\n    cmp 8(%r11), %rcx\n    jg 90f\n", v.off));
+                    out.push_str("    mov (%r11), %r11\n    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
+                } else {
                 out.push_str(&format!("    cmp $1, %rcx\n    jl 90f\n    cmp -{}(%rbp), %rcx\n    jg 90f\n", v.off - 8));
                 out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
                 out.push_str("    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
+                }
                 out.push_str("    cmp $1, %r9\n    jl 90f\n    cmp 8(%r10), %r9\n    jg 90f\n");
                 out.push_str("    mov (%r10), %r11\n    dec %r9\n    shl $4, %r9\n    add %r11, %r9\n    mov %rax, (%r9)\n    mov %rdx, 8(%r9)\n    jmp 92f\n90:\n    call hbc_bound_error\n92:\n");
             }
@@ -5512,7 +5614,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
             frame += size_of(own_sig.params[i]);
             // A parameter some caller feeds as `a[i]` arrives as the cell
             // ADDRESS (one word): borrow shape, never freed here.
-            let pty = if own_sig.borrowed.get(i).copied().unwrap_or(false) && own_sig.params[i] == Ty::DArr { Ty::DArrRef } else { own_sig.params[i] };
+            let pty = if own_sig.borrowed.get(i).copied().unwrap_or(false) && own_sig.params[i] == Ty::DArr { Ty::DArrRef } else if own_sig.borrowed.get(i).copied().unwrap_or(false) && own_sig.params[i] == Ty::DArr2 { Ty::DArrRef2 } else { own_sig.params[i] };
             lenv.push(CgLocal { name: p.clone(), ty: pty, off: frame });
         }
     }
