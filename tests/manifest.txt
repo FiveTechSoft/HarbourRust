@@ -136,7 +136,7 @@ neg tests/t131_arr_neg_const_low.hb out of bounds
 neg tests/t132_arr_neg_const_high.hb out of bounds
 neg tests/t134_arr_neg_str_index.hb is not an array
 neg tests/t135_arr_neg_print_whole.hb cannot print a temporary array or hash
-neg tests/t136_arr_neg_pass_arg.hb arrays cannot be passed as arguments
+neg tests/t136_arr_neg_pass_arg.hb is copied at the boundary only into a flat dynamic-array parameter
 neg tests/t137_arr_neg_size_mismatch.hb type mismatch in assignment
 neg tests/t139_arr_neg_mixed.hb array elements must be integers
 pos tests/t140_arr_call_index.hb \n        77\n        77\n        20
@@ -418,3 +418,9 @@ pos tests/t420_borrow3_order.hb \neval\n         2\n         2\n         0\n    
 posx tests/t423_borrow3_nil_casilla.hb 1 Argument error: PARAM\n
 neg tests/t421_neg_borrow3_return.hb is borrowed from its caller
 neg tests/t422_neg_borrow3_overlap.hb no other argument of the same call may mention it
+pos tests/t424_static_arg_read.hb \n         3\n         2\n         0\n         3\n         3\n         0\n         0
+pos tests/t425_static_arg_writecopy.hb \n        99\n         0\n         1\n         0\n         0
+pos tests/t426_static_arg_growcopy.hb \n         4\n         7\n         0\n         3\n         0\n         0
+pos tests/t427_static_arg_shrinkcopy.hb \n         2\n         0\n         3\n         0\n         0
+neg tests/t428_neg_static_arg_deep.hb is copied at the boundary only into a flat dynamic-array parameter
+neg tests/t429_neg_static_arg_literal.hb is copied at the boundary only into a flat dynamic-array parameter
