@@ -1001,7 +1001,13 @@ Registered limits of this increment, not general fidelity:
   at depth 3 is the BASE/1068-text clean exit 1 (t381/t383;
   in Harbour the dialog hangs headless - a registered
   failure mode, not exact equivalence). AAdd on the middle
-  with array elements (hk66/hk67 measured) stays pending.
+  accepts a flat static literal (materialized as a dynamic
+  child), a dynamic call result or a variable - the value
+  MOVES in and the source is nulled (hk66/hk67/hk69,
+  t387-t393; Harbour would SHARE a variable element -
+  registered difference D5/D7 pending the user's contract
+  decision; this does NOT implement sharing). Nested
+  literals (a fourth level) stay a named compile error.
   Reading a[i] of a three-level array by value stays a
   named compile error.
 
@@ -1009,5 +1015,5 @@ Robustness fix in passing: `hb_HKeys` with a non-variable
 argument used to panic the compiler; it is now the documented
 clean error (t345).
 
-Battery: 383/383 manifest cases on Linux x86-64 and Wine, plus
+Battery: 390/390 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
