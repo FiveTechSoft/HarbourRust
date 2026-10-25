@@ -1097,5 +1097,10 @@ outer over a[1,2] write through independently; a[2,1,1,1] stays NIL.
 Byte-identical to the hk120 oracle binary (same local-initialisation
 adaptation).
 
-482/482 manifest cases + ABI harness green on Linux x86-64 and Wine
+t487 (iteration 34): the middle borrow aliases the root's
+casillas (oracle hk121) - x[1] := 8 through the loop variable is
+visible reading a[1,2,1,1] directly mid-loop, persists, and the
+untouched branch stays NIL. Byte-identical to the hk121 binary.
+
+483/483 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
