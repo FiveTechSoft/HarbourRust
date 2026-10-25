@@ -1132,5 +1132,16 @@ clean error (t345).
   pins the named rejection on a two-level root). The comma form
   previously died with "trailing tokens after expression".
 
-Battery: 472/472 manifest cases on Linux x86-64 and Wine, plus
+- Static array VARIABLES as whole-array values (a := {1, 2} in a
+  local, then a[1] := b / AAdd(a, b) / AAdd(a[1], b)): the checker
+  accepted them but codegen only handled the LITERAL path and
+  panicked (internal error, three sites). Found by the ownership
+  coverage probes, fixed prepublication: the variable's cells are
+  COPIED into a fresh dynamic child and the source keeps its
+  values (the copy contract of 33l/33m; Harbour SHARES - oracle
+  hk116 measures 77 visible through both - registered D5/D7
+  difference). t477-t479 pin the copy, the surviving source and
+  balance 0.
+
+Battery: 475/475 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
