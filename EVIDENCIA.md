@@ -560,3 +560,10 @@ from stacked duplicates - needed a dup counter for call-form rules;
 unknown rule silent). t107 positive MATCH vs Harbour, t108 negative
 (both reject). Full battery: 111/111 (108 numbered + 3 fixtures), Linux
 + Wine identical.
+
+Angle-form #include <file>: was rejected even with -I (brackets kept in
+the filename - real bug); now searches -I paths only, quoted form keeps
+relative-first order (probe b38). t109 positive (MATCH), t110 negative
+(both reject: Harbour F0029). Battery runner compiles with -I tests.
+Full battery: 113/113 (110 numbered + 3 fixtures), Linux + Wine
+identical.
