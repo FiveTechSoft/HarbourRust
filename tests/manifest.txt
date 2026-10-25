@@ -316,6 +316,10 @@ pos tests/t317_hash_return.hb \n         1\n         7
 pos tests/t318_hash_param_free.hb \n         1\n         2\n         0
 pos tests/t319_hkeys_asize.hb \n         2\none\ntwo\n         2
 pos tests/t320_darrs_asize_zero.hb \n         3\n         1\na\n         0\n         0
-posx tests/t321_darrs_asize_grow.hb 1 ASize: cannot grow an array of strings in this increment
+posx tests/t321_darrs_asize_grow.hb 1 Type error: expected a string element, got NIL
+pos tests/t324_darrs_grow_hk14.hb \n         3\nnew\n         3\nNIL\n         2\none
+pos tests/t325_darrs_grow_print.hb \none\nNIL\nNIL
+pos tests/t326_darrs_grow_aadd.hb \n         4\nx\nNIL
+pos tests/t327_darrs_grow_balance.hb \n         1\na\n         0
 pos tests/t322_hash_len_merge.hb \n         2\n         7
 neg tests/t323_neg_hash_pin_conflict.hb indexed assignment applies to arrays
