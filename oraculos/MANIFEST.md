@@ -164,3 +164,5 @@ Números sin fuente recuperable en el transcript: hk10, hk72, hk74, hk75 (planif
 | hk97 | medida-fresca | \nA\nA\nN\nU\n         0 |
 | hk98 | medida-fresca | \n         3\n         0\n        99\n         4 |
 | hk99 | medida-fresca | \n         3\n         2\n        99\n         4 |
+| hk155 | verificado | \n         2\na\nc\n         1\n         3\n         2\n         0 |
+| hk156 | verificado | \n         3\na\n         1\nc\n         3\nbb\n        22\n         3 |
