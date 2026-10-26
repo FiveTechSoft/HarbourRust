@@ -860,7 +860,11 @@ impl P {
                                     other => return Err(format!("line {}: `@` expects a variable name, got {:?}", self.n, other)),
                                 }
                             } else {
-                                args.push(self.expr()?);
+                                // Full expression level (63ze; oracle
+                                // hk322): a comparison/logical is a
+                                // first-class Bool VALUE (hk198), legal
+                                // in argument position.
+                                args.push(self.or_expr()?);
                             }
                             match self.bump() {
                                 Some(Tok::Comma) => continue,
@@ -2352,6 +2356,16 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             _ => false,
         }
     }
+    fn str_typed(e: &Expr, lit: &[(String, Ty)], sigs: &[Sig], f: &Func, pin: &[Option<Ty>]) -> bool {
+        match e {
+            Expr::Str(_) => true,
+            Expr::Var(v) => lit.iter().any(|(x, t)| x == v && matches!(*t, Ty::Str | Ty::StrOwn))
+                || is_param(f, v).map(|i| matches!(pin[i], Some(Ty::Str | Ty::StrOwn))).unwrap_or(false),
+            Expr::Call(id, _) => sigs.iter().any(|s| s.name == *id && matches!(s.ret, Some(Ty::Str | Ty::StrOwn))),
+            Expr::Bin('+', a, b) => str_typed(a, lit, sigs, f, pin) || str_typed(b, lit, sigs, f, pin),
+            _ => false,
+        }
+    }
     fn setpin(pin: &mut Vec<Option<Ty>>, idx: usize, ty: Ty, n: usize) -> Result<(), String> {
         fn tname(t: Ty) -> &'static str {
             match t {
@@ -2403,6 +2417,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             // hash pin - the evidence that can tell the two apart - wins.
             Some(t) if matches!((t, ty), (Ty::DArr, Ty::Hash) | (Ty::Hash, Ty::DArr)) => {
                 pin[idx] = Some(Ty::Hash);
+                Ok(())
+            }
+            // NIL/comparison evidence pins Dyn and a string assignment
+            // pins StrOwn; the tagged union already carries owned
+            // strings (tag 4), so Dyn absorbs the string pin (63ze;
+            // t659/t662: `v := "callee"` after `if v = NIL`).
+            Some(t) if matches!((t, ty), (Ty::Dyn, Ty::StrOwn) | (Ty::StrOwn, Ty::Dyn) | (Ty::Dyn, Ty::Str) | (Ty::Str, Ty::Dyn)) => {
+                pin[idx] = Some(Ty::Dyn);
                 Ok(())
             }
             Some(t) => Err(format!("line {}: parameter used as both {} and {}", n, tname(t), tname(ty))),
@@ -2692,6 +2714,13 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     // `x := <float-typed>` pins a parameter F64 (63zd).
                     if f64_typed(e, lit, sigs, f, pin) {
                         pin_vars(f, &Expr::Var(id.clone()), Ty::F64, pin, *n)?;
+                    }
+                    // `x := <string>` pins a parameter Str (63ze; hk324 /
+                    // passref.prg: a byref-received string parameter is
+                    // assigned in the callee - the byref remap turns the
+                    // pinned Str into RefStrOwn at codegen).
+                    if str_typed(e, lit, sigs, f, pin) {
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::Str, pin, *n)?;
                     }
                     walk(f, e, sigs, lit, pin, *n)?;
                 }
@@ -3580,6 +3609,26 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     }
                 }
                 return Ok(Ty::I64);
+            }
+            if is_builtin(id, "iif") {
+                // iif(cond, a, b) (oracle hk321): LAZY - only the chosen
+                // branch evaluates (side effects on the dead branch do
+                // not happen). Branches unify: identical scalar types,
+                // or F64 absorbs an I64 side through the 63zd boundary
+                // conversion (dec 0 + provenance length). Anything else
+                // (Dyn, arrays, owned strings, mismatched scalars) keeps
+                // a named rejection.
+                if args.len() != 3 {
+                    return Err(format!("line {}: `iif` takes 3 arguments, got {}", n, args.len()));
+                }
+                if type_expr(&args[0], env, sigs, n)? != Ty::Bool {
+                    return Err(format!("line {}: `iif` condition must be logical", n));
+                }
+                let ta = type_expr(&args[1], env, sigs, n)?;
+                let tb = type_expr(&args[2], env, sigs, n)?;
+                if ta == tb && matches!(ta, Ty::I64 | Ty::Bool | Ty::Str | Ty::F64) { return Ok(ta); }
+                if matches!((ta, tb), (Ty::F64, Ty::I64) | (Ty::I64, Ty::F64)) { return Ok(Ty::F64); }
+                return Err(format!("line {}: `iif` branches must share a scalar type (float absorbs an int side), got {:?} and {:?}", n, ta, tb));
             }
             let si = sigs.iter().position(|v| v.name == *id)
                 .ok_or_else(|| format!("line {}: unknown function `{}` (must be defined before use)", n, id))?;
@@ -4744,10 +4793,19 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if ts != Ty::I64 || te != Ty::I64 {
                     return Err(format!("line {}: `for` bounds must be integers", n));
                 }
-                if env.iter().any(|v| v.name == *var) {
-                    return Err(format!("line {}: `for` loop variable `{}` is already declared in this scope (this PoC does not shadow)", n, var));
+                // Harbour REUSES a visible integer variable as the loop
+                // counter (oracle hk323 / exit.prg: `for x := 1 to 5`
+                // over an outer `x` leaves x at 5, no shadowing). A
+                // non-integer or read-only slot keeps a named rejection.
+                let reuse = if let Some(pos) = env.iter().position(|v| v.name == *var) {
+                    if env[pos].ty != Ty::I64 || env[pos].ro {
+                        return Err(format!("line {}: `for` loop variable `{}` reuses a non-integer or read-only slot in this PoC", n, var));
+                    }
+                    true
+                } else { false };
+                if !reuse {
+                    env.push(Local { name: var.clone(), ty: Ty::I64, moved: false, ro: true, byref: false });
                 }
-                env.push(Local { name: var.clone(), ty: Ty::I64, moved: false, ro: true, byref: false });
                 let outer = env.len();
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_body = env.clone();
@@ -4766,7 +4824,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         env[k].ty = env_body[k].ty;
                     }
                 }
-                env.truncate(outer - 1);
+                env.truncate(if reuse { outer } else { outer - 1 });
             }
             Stmt::ForEach(n, var, coll, body) => {
                 // FOR EACH (oracles hk17-hk32): the collection is a
@@ -5784,6 +5842,11 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
+            if is_builtin(id, "iif") {
+                // Scalar branches only (checker-enforced): nothing moves.
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
             let sig = sigs.iter().find(|v| v.name == *id).expect("checked");
             for (i, a) in args.iter().enumerate() {
                 // A static array argument is COPIED at the boundary (33l):
@@ -5866,6 +5929,64 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 // post-pass, so the second word never matters.
                 Ty::DArrRef | Ty::DArrRef2 => out.push_str(&format!("    mov -{}(%rbp), %rax\n    xor %edx, %edx\n", v.off)),
                 Ty::Arr(_) => unreachable!("whole-array values are emitted via cg_array_value"),
+            }
+        }
+        Expr::Call(id, args) if is_builtin(id, "iif") => {
+            // iif(cond, a, b) (oracle hk321): LAZY branch selection.
+            // The false side falls through, the true side sits behind
+            // the conditional jump; both leave the result on the same
+            // channel (rax/rdx, or xmm0/rdi when a side is F64 - an I64
+            // side converts like the 63zd call boundary: cvtsi2sd,
+            // dec 0, provenance length).
+            let ta = expr_ty(&args[1], env, sigs);
+            let tb = expr_ty(&args[2], env, sigs);
+            let k = fresh_lbl();
+            cg_cond_jump(&args[0], env, sigs, strs, out, target, &format!(".Liift{}", k));
+            let mut f64side = |t: Ty, a: &Expr, out: &mut String| {
+                if t == Ty::F64 {
+                    cg_f64_load(a, env, sigs, strs, out, target);
+                } else {
+                    cg_expr(a, env, sigs, strs, out, target);
+                    out.push_str("    cvtsi2sd %rax, %xmm0\n");
+                    let lit_len: Option<u32> = if let Expr::Int(txt) = a {
+                        let neg = txt.starts_with('-');
+                        let digits = txt.trim_start_matches('-').len() as u32;
+                        if !neg && digits >= 10 { Some(digits + 1) } else {
+                            let v: i64 = txt.parse().expect("checked");
+                            Some(if v > 9999999999 || v < -999999999 { 20 } else { 10 })
+                        }
+                    } else { None };
+                    if let Some(l) = lit_len {
+                        out.push_str(&format!("    mov ${}, %edi\n", l << 16));
+                    } else {
+                        let lw = fresh_lbl();
+                        let ld = fresh_lbl();
+                        out.push_str(&format!("    mov $10, %edi\n    mov $9999999999, %r11\n    cmp %r11, %rax\n    jg .Lf64w{}\n    cmp $-999999999, %rax\n    jge .Lf64w{}\n.Lf64w{}:\n    mov $20, %edi\n.Lf64w{}:\n    shl $16, %rdi\n", lw, ld, lw, ld));
+                    }
+                }
+            };
+            if ta == Ty::F64 || tb == Ty::F64 {
+                f64side(tb, &args[2], out);
+                out.push_str(&format!("    jmp .Liife{}\n.Liift{}:\n", k, k));
+                f64side(ta, &args[1], out);
+                out.push_str(&format!(".Liife{}:\n", k));
+            } else {
+                let mut scalar_side = |a: &Expr, out: &mut String| {
+                    // String literals intern like every other emitter
+                    // (cg_expr's Str arm is unreachable by design).
+                    if let Expr::Str(s) = a {
+                        let idx = strs.len();
+                        strs.push(s.clone());
+                        out.push_str(&format!("    lea .Lstr{}(%rip), %rax\n", idx));
+                        out.push_str(&format!("    mov ${}, %edx\n", s.as_bytes().len()));
+                    } else {
+                        cg_expr(a, env, sigs, strs, out, target);
+                    }
+                };
+                scalar_side(&args[2], out);
+                out.push_str(&format!("    jmp .Liife{}\n.Liift{}:\n", k, k));
+                scalar_side(&args[1], out);
+                out.push_str(&format!(".Liife{}:\n", k));
             }
         }
         Expr::Call(id, args) if is_builtin(id, "valtype") => {
@@ -7221,6 +7342,12 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hclone") { return Ty::Hash; }
             if is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") { return Ty::I64; }
             if is_builtin(id, "valtype") { return Ty::Str; } // hk88-hk92
+            if is_builtin(id, "iif") {
+                // Branch unification mirrors the checker (oracle hk321).
+                let ta = expr_ty(&args[1], env, sigs);
+                let tb = expr_ty(&args[2], env, sigs);
+                return if ta == Ty::F64 || tb == Ty::F64 { Ty::F64 } else { ta };
+            }
             sigs.iter().find(|v| v.name == *id).expect("checked").ret.expect("checked")
         }
         Expr::Log(_) | Expr::LNot(_) | Expr::LAnd(_, _) | Expr::LOr(_, _) | Expr::Cmp(..) => Ty::Bool,
@@ -7415,8 +7542,11 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
             Stmt::For(_, var, _, _, _, body) => {
                 let mark = env.len();
                 *frame += 8; // hidden slot holding the evaluated end bound
-                *frame += 8;
-                env.push(CgLocal { name: var.clone(), ty: Ty::I64, off: *frame });
+                // Reuse (hk323): the existing slot is written, no new one.
+                if !env.iter().any(|v| v.name == *var) {
+                    *frame += 8;
+                    env.push(CgLocal { name: var.clone(), ty: Ty::I64, off: *frame });
+                }
                 layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names);
                 env.truncate(mark);
             }
@@ -8263,15 +8393,19 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // Bounds evaluate once, as in Rust ranges. The step is a
                 // non-zero literal, so the counting direction is fixed
                 // here at compile time.
+                // Reuse (hk323): an already-visible integer slot is the
+                // counter; otherwise a fresh slot.
+                let reuse_off = env.iter().rev().find(|v| v.name == *var && v.ty == Ty::I64).map(|v| v.off);
                 cg_value(start, env, sigs, strs, out, target);
-                *frame += 8;
-                let i_off = *frame;
+                let i_off = if let Some(o) = reuse_off { o } else { *frame += 8; *frame };
                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", i_off));
                 cg_value(end, env, sigs, strs, out, target);
                 *frame += 8;
                 let end_off = *frame;
                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", end_off));
-                env.push(CgLocal { name: var.clone(), ty: Ty::I64, off: i_off });
+                if reuse_off.is_none() {
+                    env.push(CgLocal { name: var.clone(), ty: Ty::I64, off: i_off });
+                }
                 out.push_str(&format!(".Lforc_{}_{}:\n", fname, id));
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n", i_off));
                 out.push_str(&format!("    cmp -{}(%rbp), %rax\n", end_off));
