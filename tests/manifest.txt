@@ -744,3 +744,4 @@ pos tests/t745_div_runtime.hb \n         5.00\n         2.50\n         3.33\n   
 posx tests/t746_div_zero.hb 1 Error: division by zero
 neg tests/t747_set_decimals.hb SET commands are not in this increment
 neg tests/t748_dyn_div.hb division with a NIL-able (Dyn) operand is not in this increment
+pos tests/t749_div_length.hb \n 3074457345618259000.00\n-3074457345618259000.00\n         -2000000000.00\n-500000000.00
