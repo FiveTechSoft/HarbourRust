@@ -221,6 +221,35 @@ hbc_abi_test:
     mov $1, %esi
     call hbc_free
     call abi_check
+    # hbc_strcat (iteration 63e, new helper): copies both operands into a
+    # fresh owned buffer (len at -8). Canaries, stack balance and
+    # 16-alignment after the call; the result is freed like any owned
+    # string. Operands here are rodata (nothing to free on that side).
+    lea .Labi_ok(%rip), %rdi
+    mov $7, %esi
+    lea .Labi_ok(%rip), %rdx
+    mov $7, %ecx
+    call hbc_strcat
+    mov %rax, -16(%rbp)
+    mov %rdx, -24(%rbp)
+    call abi_check
+    mov -16(%rbp), %rcx
+    cmpq $14, -8(%rcx)
+    jne abi_fail_sc
+    cmpq $14, -24(%rbp)
+    jne abi_fail_sc
+    cmpl $0x20494241, (%rcx)
+    jne abi_fail_sc
+    cmpw $0x4b4f, 4(%rcx)
+    jne abi_fail_sc
+    cmpb $0x0a, 6(%rcx)
+    jne abi_fail_sc
+    cmpb $0x41, 7(%rcx)
+    jne abi_fail_sc
+    mov %rcx, %rdi
+    mov $1, %esi
+    call hbc_free
+    call abi_check
     mov -32(%rbp), %rdi
     mov $2, %esi
     call hbc_sfree
@@ -1487,6 +1516,10 @@ abi_fail_de:
     lea .Labi_f_de(%rip), %rax
     mov $13, %edx
     jmp abi_fail_common
+abi_fail_sc:
+    lea .Labi_f_sc(%rip), %rax
+    mov $13, %edx
+    jmp abi_fail_common
 abi_fail_dl:
     lea .Labi_f_dl(%rip), %rax
     mov $13, %edx
@@ -1614,6 +1647,7 @@ ASM_EOF
 .Labi_f_hsdD: .ascii "ABI FAIL hsdD\n"
 .Labi_f_hcp: .ascii "ABI FAIL hcp\n"
 .Labi_f_de: .ascii "ABI FAIL deq\n"
+.Labi_f_sc: .ascii "ABI FAIL cat\n"
 .Labi_f_dl: .ascii "ABI FAIL d2l\n"
 .Labi_s3:    .ascii "abc"
 .Labi_s6:    .ascii "abcdef"
