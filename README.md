@@ -1277,5 +1277,18 @@ increment - reads take Str/StrOwn keys); t523 checks the deleted key
 copies are freed (balance 0, own ownership check, same pattern as t298 -
 not a Harbour oracle); t524 rejects a non-hash target at compile time.
 
-Battery: 520/520 manifest cases on Linux x86-64 and Wine, plus
+Iteration 48 adds hb_HHasKey(h, key) (core hb_HHasKey; oracle hk157):
+byte-exact, case-sensitive membership - present keys answer true,
+missing/prefix/different-case keys and the empty hash answer false, ""
+is an ordinary key, and a key deleted with hb_HDel stops answering true.
+The dialect has no logical type (its `if` takes only comparisons), so
+the PoC surface answers 1/0 - the oracle's .T./.F. printing is the
+registered boolean rendering family. New leaf runtime helper
+hbc_hhaskey (no allocation, hash and key only read), canaried in the
+ABI harness on both targets. t525 reproduces the oracle's nine answers
+as 1/0 on Linux and Wine; t526 adds the empty-hash and
+borrowed-variable-key cases; t527 rejects a non-hash target at compile
+time.
+
+Battery: 523/523 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
