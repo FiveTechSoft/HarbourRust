@@ -43,8 +43,30 @@ pub struct Cmd {
 }
 
 impl Pp {
-    pub fn new(incdirs: Vec<String>) -> Self {
-        Pp { defs: HashMap::new(), cmds: Vec::new(), incdirs }
+    pub fn new(incdirs: Vec<String>, windows: bool) -> Self {
+        let mut defs = HashMap::new();
+        // Predefined macros, measured on the pinned Harbour (oracle hk248):
+        // __HARBOUR__ expands to 197121 (0x030201) and __PLATFORM__UNIX is
+        // defined (empty body, like Harbour's own - it exists for
+        // defined()/#ifdef checks; `? __PLATFORM__UNIX` expands to
+        // nothing, same as Harbour).
+        // Keys are exact-case (this pp is case-sensitive for macro names);
+        // the ecosystem writes both in upper case.
+        // __HARBOUR__ is a VERSION STAMP ONLY (197121 = 0x030201, Harbour
+        // 3.2.0dev, measured on the pinned harbour-core, oracle hk248): it
+        // lets conditional compilation take Harbour branches. It is not a
+        // claim of Harbour runtime completeness.
+        defs.insert("__HARBOUR__".to_string(), Def { params: Vec::new(), funclike: false, body: "197121".to_string(), dup: 1 });
+        // The platform macro follows the COMPILE TARGET, not the host:
+        // hk248 measured the Linux target (defines __PLATFORM__UNIX, not
+        // __PLATFORM__WINDOWS); the Windows target mirrors it. Hardcoding
+        // UNIX here would make --target=windows take Unix branches.
+        if windows {
+            defs.insert("__PLATFORM__WINDOWS".to_string(), Def { params: Vec::new(), funclike: false, body: String::new(), dup: 1 });
+        } else {
+            defs.insert("__PLATFORM__UNIX".to_string(), Def { params: Vec::new(), funclike: false, body: String::new(), dup: 1 });
+        }
+        Pp { defs, cmds: Vec::new(), incdirs }
     }
 }
 
