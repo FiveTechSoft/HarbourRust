@@ -2141,10 +2141,15 @@ print-pinned Dyn parameter as the DO WHILE condition: .F. skips, .T.
 enters and EXIT leaves - byte-identical, exit 0; the While checker
 already accepted Bool|Dyn bare conditions, no code change), hk271
 (comparing against an integer pins the parameter; calling with NIL hits
-the registered extraction failure at the call boundary - Harbour prints
-.F. for NIL = 5 instead, a registered failure-mode divergence of the
-pinning model), hk272 (comparing against a string literal pins the
-parameter; calling with NIL is the convergent named rejection), hk273
+the extraction failure at the call boundary. CLASSIFICATION (main,
+12:47): Harbour RUNS that program - NIL = 5 is .F. (hk271) and
+NIL == "ab" is .F. (hk272) - so our rejection is a registered
+SEMANTIC DIVERGENCE of a valid Harbour program (a pinning-model
+limitation), NOT a native failure mode. Future pin work must measure
+valid polymorphism against the oracle instead of treating
+"pinned, so rejected" as native-equivalent), hk272 (same class:
+string-pinned parameter called with NIL - valid in Harbour, named
+rejection here), hk273
 (an integer Dyn cell as the DO WHILE condition is Harbour's type-error
 dialog - clean named exit 1 here).
 
@@ -2153,8 +2158,11 @@ justified routes.
 
 - t716: DO WHILE with a Dyn condition (hk270).
 - t717 (exit 1): integer Dyn cell as the DO WHILE condition (hk273).
-- t718 (exit 1): integer-pinned parameter called with NIL (hk271).
-- t719 (negative): string-pinned parameter called with NIL (hk272).
+- t718 (exit 1): integer-pinned parameter called with NIL (hk271) -
+  locks current behaviour; registers a SEMANTIC DIVERGENCE of a valid
+  Harbour program, not a native failure mode (see above).
+- t719 (negative): string-pinned parameter called with NIL (hk272) -
+  same class: a valid Harbour program this PoC rejects by name.
 
 Sweep 175 re-executed: COMPILES 4, identical to the 63t run.
 tests/manifest.txt sha256
