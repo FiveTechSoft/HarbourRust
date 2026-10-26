@@ -46,7 +46,7 @@ enum Tok {
     Ident(String),
     Int(String),
     Str(String), // already unescaped content
-    Plus, Minus, Star, Slash,
+    Plus, Minus, Star, Slash, Pct, Dollar,
     LParen, RParen, Comma,
     LBrace, RBrace, LBracket, RBracket, Pipe,
     Assign,   // :=
@@ -68,7 +68,7 @@ enum Tok {
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum CmpOp { Eq, EqEq, Ne, Lt, Le, Gt, Ge } // EqEq: == measured for integers (hk124) and DArr identity (hk126)
+enum CmpOp { Eq, EqEq, Ne, Lt, Le, Gt, Ge, Contains } // EqEq: == measured for integers (hk124) and DArr identity (hk126)
 
 static BLOCK_ID: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
@@ -212,6 +212,13 @@ fn fold_num_bin(op: char, a: &Expr, b: &Expr) -> Option<Expr> {
                 }
                 return None;
             }
+            // hb_compExprReduceMod: a nonzero divisor folds int%int to a
+            // LONG (bDec=0; oracle hk340); zero defers to the runtime
+            // (EG_ZERODIV substitution -> 0, oracle hk343).
+            '%' => {
+                if y != 0 { return Some(Expr::Int(x.checked_rem(y)?.to_string())); }
+                return None;
+            }
             _ => return None,
         }
     }
@@ -232,6 +239,12 @@ fn fold_num_bin(op: char, a: &Expr, b: &Expr) -> Option<Expr> {
         '/' => {
             if vb == 0.0 { return None; }
             (va / vb, 2)
+        }
+        // fmod fold, dec = HB_DEFAULT_DECIMALS (SET, 2) like the runtime
+        // (hk345); zero divisor defers (hk344).
+        '%' => {
+            if vb == 0.0 { return None; }
+            (va % vb, 2)
         }
         _ => return None,
     };
@@ -292,9 +305,20 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
                 let l = fresh_lbl();
                 out.push_str(&format!("    xorpd %xmm2, %xmm2\n    ucomisd %xmm2, %xmm0\n    jp .Ldivok{}\n    jne .Ldivok{}\n    call hbc_div0_error\n.Ldivok{}:\n", l, l, l));
             }
-            out.push_str("    movsd (%rsp), %xmm1\n");
-            let inst = match op { '+' => "addsd", '-' => "subsd", '*' => "mulsd", '/' => "divsd", _ => unreachable!("checked") };
-            out.push_str(&format!("    {} %xmm0, %xmm1\n", inst));
+            if *op == '%' {
+                // fmod via x87 fprem (hk345: float % result has dec =
+                // SET(2) like /). Zero divisor: integer-image 0.0 with
+                // dec 0 (hk344); a NaN divisor is NOT zero and fmods
+                // through to NaN (same rule as /, hk296).
+                let mz = fresh_lbl();
+                let mr = fresh_lbl();
+                let md = fresh_lbl();
+                out.push_str(&format!("    xorpd %xmm2, %xmm2\n    ucomisd %xmm2, %xmm0\n    jp .Lpmod{mz}\n    jne .Lpmod{mz}\n    xorpd %xmm1, %xmm1\n    xor %edi, %edi\n    jmp .Lpmodd{md}\n.Lpmod{mz}:\n    movsd (%rsp), %xmm1\n    sub $16, %rsp\n    movsd %xmm1, 8(%rsp)\n    movsd %xmm0, (%rsp)\n    fldl (%rsp)\n    fldl 8(%rsp)\n.Lpmr{mr}:\n    fprem\n    fnstsw %ax\n    test $4, %ah\n    jnz .Lpmr{mr}\n    fstpl 8(%rsp)\n    fstp %st(0)\n    movsd 8(%rsp), %xmm1\n    add $16, %rsp\n    mov $2, %edi\n.Lpmodd{md}:\n"));
+            } else {
+                out.push_str("    movsd (%rsp), %xmm1\n");
+                let inst = match op { '+' => "addsd", '-' => "subsd", '*' => "mulsd", '/' => "divsd", _ => unreachable!("checked") };
+                out.push_str(&format!("    {} %xmm0, %xmm1\n", inst));
+            }
             // Result dec in %rdi: max for +,-, sum for *, SET(2) for /.
             match op {
                 '+' | '-' => out.push_str("    mov 8(%rsp), %rdi\n    cmp %rcx, %rdi\n    cmovb %rcx, %rdi\n"),
@@ -314,6 +338,7 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
                     out.push_str(&format!("    mov 8(%rsp), %rdi\n    add %rcx, %rdi\n    cmp $435, %rdi\n    jbe .Lf64m{lok}\n    call hbc_f64range_error\n.Lf64m{lok}:\n"));
                 }
                 '/' => out.push_str("    mov $2, %edi\n"),
+                '%' => {} // dec emitted with the fprem sequence above
                 _ => unreachable!("checked"),
             }
             out.push_str("    add $32, %rsp\n");
@@ -375,6 +400,8 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             '+' => { toks.push(Tok::Plus); it.next(); }
             '-' => { toks.push(Tok::Minus); it.next(); }
             '*' => { toks.push(Tok::Star); it.next(); }
+            '%' => { toks.push(Tok::Pct); it.next(); }
+            '$' => { toks.push(Tok::Dollar); it.next(); }
             '(' => { toks.push(Tok::LParen); it.next(); }
             ')' => { toks.push(Tok::RParen); it.next(); }
             ',' => { toks.push(Tok::Comma); it.next(); }
@@ -722,6 +749,7 @@ impl P {
             let op = match self.peek() {
                 Some(Tok::Star) => '*',
                 Some(Tok::Slash) => '/',
+                Some(Tok::Pct) => '%',
                 _ => break,
             };
             self.pos += 1;
@@ -1047,6 +1075,7 @@ impl P {
             Some(Tok::Le) => Some(CmpOp::Le),
             Some(Tok::Gt) => Some(CmpOp::Gt),
             Some(Tok::Ge) => Some(CmpOp::Ge),
+            Some(Tok::Dollar) => Some(CmpOp::Contains),
             _ => None,
         }
     }
@@ -2371,7 +2400,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             Expr::Var(v) => lit.iter().any(|(x, t)| x == v && *t == Ty::F64)
                 || is_param(f, v).map(|i| pin[i] == Some(Ty::F64)).unwrap_or(false),
             Expr::Call(id, _) => sigs.iter().any(|s| s.name == *id && s.ret == Some(Ty::F64)),
-            Expr::Bin(op, a, b) => *op == '/' || f64_typed(a, lit, sigs, f, pin) || f64_typed(b, lit, sigs, f, pin),
+            Expr::Bin(op, a, b) => *op == '/' || *op == '%' || f64_typed(a, lit, sigs, f, pin) || f64_typed(b, lit, sigs, f, pin),
             _ => false,
         }
     }
@@ -3862,6 +3891,21 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // Dyn operands are extracted at runtime: a NIL payload is a
             // clean type error (Harbour's interactive dialog is the
             // registered failure-mode difference, same condition).
+            // `%` (hb_vmModulus; oracles hk340-hk348): any numeric mix
+            // produces a DOUBLE with dec = SET DECIMALS at runtime
+            // ("Clipper always returns modulus with the SET number of
+            // decimal places"; hk348 shows variable int%int printing
+            // 1.00), so the static type is F64; only literal int%int
+            // folds to a LONG at parse (hk340). A zero divisor yields
+            // integer-image 0 (hk343/hk344). Dyn payloads extract to
+            // i64 first, exactly like +,-,* (NIL payload -> clean type
+            // error; Harbour's dialog is the registered difference).
+            if *op == '%' {
+                if !matches!(ta, Ty::I64 | Ty::F64 | Ty::Dyn) || !matches!(tb, Ty::I64 | Ty::F64 | Ty::Dyn) {
+                    return Err(format!("line {}: `%` needs numeric operands (strings, logicals and arrays are a Harbour type error, EG_ARG 1085)", n));
+                }
+                return Ok(Ty::F64);
+            }
             if *op == '/' && ta == Ty::I64 && tb == Ty::I64 {
                 // hb_vmDivide: every numeric division produces a double
                 // with dec = SET DECIMALS (oracle hk292); literal-only
@@ -3916,6 +3960,18 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             Ok(Ty::Bool)
         }
         Expr::Cmp(op, a, b) => {
+            // `$` containment (oracle hk341): string-in-string only in
+            // this increment - case-sensitive byte scan; an empty or
+            // longer-than-haystack needle is .F. (measured). Array
+            // membership `$` stays out (registered).
+            if matches!(op, CmpOp::Contains) {
+                let ta = type_expr(a, env, sigs, n)?;
+                let tb = type_expr(b, env, sigs, n)?;
+                if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) {
+                    return Ok(Ty::Bool);
+                }
+                return Err(format!("line {}: containment `$` is measured for string-in-string only (oracle hk341); array membership is not in this increment", n));
+            }
             // A grown casilla of an array of arrays compares against NIL
             // with `=` / `#` (oracle n4): the borrow reads the child
             // pointer, it never extracts the subarray. A real empty child
@@ -7487,6 +7543,9 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::Bin(op, a, b) => {
             if matches!(expr_ty(a, env, sigs), Ty::Str | Ty::StrOwn) || matches!(expr_ty(b, env, sigs), Ty::Str | Ty::StrOwn) {
                 Ty::StrOwn
+            } else if *op == '%' {
+                // Mirror of type_expr: runtime modulus is always F64.
+                Ty::F64
             } else if *op == '/' && expr_ty(a, env, sigs) == Ty::I64 && expr_ty(b, env, sigs) == Ty::I64 {
                 // Mirror of type_expr: runtime int/int division is F64.
                 Ty::F64
@@ -7767,6 +7826,15 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
             _ => {}
         }
     }
+}
+
+// `$` containment scan (oracle hk341): needle in rax/rdx, haystack in
+// rcx/r8; result 0/1 in rax. Empty needle or needle longer than the
+// haystack is .F. (measured). Case-sensitive byte compare. Clobbers rcx,
+// r8, r10, r11 and rax; leaf code with no calls and no stack use, so it
+// adds no ABI surface (no helper symbol, no canary needed).
+fn cg_str_contains(out: &mut String, k: usize) {
+    out.push_str(&format!("    test %rdx, %rdx\n    je .Lsct_f{k}\n    cmp %r8, %rdx\n    ja .Lsct_f{k}\n    sub %rdx, %r8\n    inc %r8\n.Lsct_o{k}:\n    xor %r10, %r10\n.Lsct_i{k}:\n    movzbl (%rcx,%r10), %r11d\n    cmp (%rax,%r10), %r11b\n    jne .Lsct_n{k}\n    inc %r10\n    cmp %rdx, %r10\n    jb .Lsct_i{k}\n    mov $1, %r11d\n    jmp .Lsct_d{k}\n.Lsct_n{k}:\n    inc %rcx\n    dec %r8\n    jnz .Lsct_o{k}\n.Lsct_f{k}:\n    xor %r11d, %r11d\n.Lsct_d{k}:\n    mov %r11d, %eax\n"));
 }
 
 // Emits the comparison and jumps to true_label when it holds.
@@ -8069,6 +8137,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 match op {
                     CmpOp::Eq | CmpOp::Ne => { out.push_str("    call hbc_str_eq\n"); }
                     CmpOp::EqEq => { out.push_str("    call hbc_str_xeq\n"); }
+                    CmpOp::Contains => { cg_str_contains(out, fresh_lbl()); }
                     _ => { out.push_str("    call hbc_str_cmp\n"); }
                 }
                 out.push_str(&format!("    mov %rax, {}(%rsp)\n", 16 * nt));
@@ -8086,6 +8155,13 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                     }
                     out.push_str("    test %rax, %rax\n");
                     match op { CmpOp::Eq | CmpOp::EqEq => "jnz", _ => "jz" }
+                }
+                CmpOp::Contains => {
+                    if !a_tmp && !b_tmp {
+                        cg_str_contains(out, fresh_lbl());
+                        out.push_str("    test %rax, %rax\n");
+                    }
+                    "jnz"
                 }
                 _ => {
                     // hbc_str_cmp returns -1, 0 or 1 (byte-wise, like memcmp)
@@ -8139,6 +8215,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 CmpOp::Le => out.push_str(&format!("    setbe %al\n    setnp %cl\n    and %cl, %al\n    test %al, %al\n    jnz {}\n", true_label)),
                 CmpOp::Gt => out.push_str(&format!("    seta %al\n    test %al, %al\n    jnz {}\n", true_label)),
                 CmpOp::Ge => out.push_str(&format!("    setae %al\n    test %al, %al\n    jnz {}\n", true_label)),
+                CmpOp::Contains => unreachable!("the checker gates `$` to strings; the string arm handles it"),
             }
         }
         Expr::Cmp(op, a, b) => {
@@ -8158,6 +8235,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 CmpOp::Ge => "jge", CmpOp::Eq => "je", CmpOp::Ne => "jne",
                 // Integer `==` compares like `=` (hk124).
                 CmpOp::EqEq => "je",
+                CmpOp::Contains => unreachable!("the checker gates `$` to strings; the string arm handles it"),
             };
             out.push_str(&format!("    {} {}\n", j, true_label));
         }
