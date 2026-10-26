@@ -247,7 +247,9 @@ return <expr> | return nil closes the function  (a closing top-level return
 Expressions: integer literals, string literals in double quotes
 (escapes `\"` and `\\` only - a registered deviation: Harbour treats the
 backslash literally) or in single quotes (no escapes, oracle hk213),
-identifiers, `+ - * /`, parentheses, 0-argument calls `name()`. Conditions: the same
+identifiers, `+ - * /`, parentheses, 0-argument calls `name()`.
+`+` over two strings concatenates into a fresh owned buffer (oracle
+hk215; copies both operands - Harbour value semantics). Conditions: the same
 expressions combined with `= <> != < <= > >=` (integers only); prefix `!`
 is Harbour's `.NOT.` (oracle hk212).
 Anything outside this grammar is rejected by `hbc` itself. Only a validated
@@ -1497,7 +1499,7 @@ normalization; semantics unchanged. hello.prg from the upstream
 test suite (core 694428e1) is the FIRST original program that
 compiles and runs byte-identical to Harbour. Forward references
 (call before definition) remain the next registered blocker.
-Battery: 621/621 manifest cases on Linux x86-64 and Wine, plus
+Battery: 623/623 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
 
 
