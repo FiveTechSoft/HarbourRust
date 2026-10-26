@@ -855,6 +855,71 @@ hbc_abi_test:
     mov $2, %esi
     call hbc_hfree
     call abi_check
+    # hbc_hclone canary (iteration 55): clone {ab=>7, c=>5}, overwrite
+    # ab=>9 in the ORIGINAL, the clone must keep 7 (deep independence,
+    # hk166). Frame-based helper (hput allocates): canaries, stack
+    # balance and alignment after every call.
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    lea .Labi_k1(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $7, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea .Labi_k2(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $1, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $5, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea -96(%rbp), %rdi
+    call hbc_hclone
+    mov %rax, -128(%rbp)
+    mov %rdx, -120(%rbp)
+    call abi_check
+    cmpq $2, -120(%rbp)
+    jne abi_fail_hc
+    lea .Labi_k1(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $9, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea -128(%rbp), %rdi
+    lea .Labi_k1(%rip), %rsi
+    mov $2, %edx
+    call hbc_hget
+    mov %rax, -32(%rbp)
+    call abi_check
+    mov -32(%rbp), %rax
+    test %rax, %rax
+    je abi_fail_hc
+    cmpq $7, 8(%rax)
+    jne abi_fail_hc
+    mov -96(%rbp), %rdi
+    mov $2, %esi
+    call hbc_hfree
+    call abi_check
+    mov -128(%rbp), %rdi
+    mov $2, %esi
+    call hbc_hfree
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -969,6 +1034,10 @@ abi_fail_hm:
     lea .Labi_f_hm(%rip), %rax
     mov $12, %edx
     jmp abi_fail_common
+abi_fail_hc:
+    lea .Labi_f_hc(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
 abi_fail_common:
     call hbc_print_str
 ASM_EOF
@@ -1007,6 +1076,7 @@ ASM_EOF
 .Labi_f_hg:  .ascii "ABI FAIL hg\n"
 .Labi_f_hp:  .ascii "ABI FAIL hp\n"
 .Labi_f_hm:  .ascii "ABI FAIL hm\n"
+.Labi_f_hc:  .ascii "ABI FAIL hc\n"
 .Labi_f_de: .ascii "ABI FAIL deq\n"
 .Labi_s3:    .ascii "abc"
 .Labi_s6:    .ascii "abcdef"
