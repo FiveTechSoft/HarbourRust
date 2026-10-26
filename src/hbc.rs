@@ -2071,6 +2071,36 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         }
                     }
                 }
+                if id.eq_ignore_ascii_case("qout") && toks.len() >= 3 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen {
+                    // QOut (oracle hk383): on the pinned gtstd build QOut
+                    // is BYTE-IDENTICAL to `?` - leading newline, space-
+                    // separated items, numbers width-padded, QOut() a
+                    // blank line - so it desugars to the same
+                    // Stmt::Print(..., false). Expression-position QOut
+                    // (it returns NIL in Harbour) stays on the unknown-
+                    // function path as a named limit of this increment.
+                    let inner = &toks[2..toks.len() - 1];
+                    let mut exprs = Vec::new();
+                    if !inner.is_empty() {
+                        let mut depth = 0i32;
+                        let mut start = 0usize;
+                        for (k, t) in inner.iter().enumerate() {
+                            match t {
+                                Tok::LParen | Tok::LBracket => depth += 1,
+                                Tok::RParen | Tok::RBracket => depth -= 1,
+                                Tok::Comma if depth == 0 => {
+                                    exprs.push(parse_expr_tokens(inner[start..k].to_vec(), n)?);
+                                    start = k + 1;
+                                }
+                                _ => {}
+                            }
+                        }
+                        exprs.push(parse_expr_tokens(inner[start..].to_vec(), n)?);
+                    }
+                    out.push(Stmt::Print(n, exprs, false));
+                    *i += 1;
+                    continue;
+                }
                 if toks.len() >= 3 && toks[1] == Tok::LParen {
                     // Bare call statement (oracle hk216): `f(args)` as a
                     // whole line runs the call for its effect and
