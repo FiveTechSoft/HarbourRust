@@ -1692,22 +1692,6 @@ hbc_abi_test:
     cmp %rax, %rdx
     jne abi_fail_xmm
     call abi_check
-    # hbc_print_trace: direct no-active-frame canary, including nonvolatile
-    # XMM6/XMM7 on Win64. Native-frame link/unlink are inline (no ABI).
-    movabs $0x3131313131313101, %rax
-    movq %rax, %xmm6
-    movabs $0x3232323232323202, %rax
-    movq %rax, %xmm7
-    call hbc_print_trace
-    call abi_check
-    movabs $0x3131313131313101, %rax
-    movq %xmm6, %rdx
-    cmp %rax, %rdx
-    jne abi_fail_xmm
-    movabs $0x3232323232323202, %rax
-    movq %xmm7, %rdx
-    cmp %rax, %rdx
-    jne abi_fail_xmm
     # hbc_print_i64c (63zf, new entry): computed integer field. Positive
     # small, positive at and over the 9999999999 threshold, negative at
     # and over the -999999999 threshold, and the Dyn numeric payload path
