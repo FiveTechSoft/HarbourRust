@@ -1891,13 +1891,17 @@ struct Local {
 // how the body uses it: under arithmetic it is an integer, compared against
 // a string literal (or a literal-initialized local) it is a string, passed
 // to another function it takes that parameter's type. A parameter the body
-// only prints, returns or copies is NOT pinnable: report it honestly
-// instead of guessing.
+// only prints pins to the tagged union (oracles hk257/hk259: Harbour routes
+// any scalar through a print-only parameter); printing is weak evidence,
+// so any arithmetic/concat/known-type compare still wins. A parameter the
+// body only returns or copies is NOT pinnable: report it honestly instead
+// of guessing.
 // ---------------------------------------------------------------------------
 fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>), String> {
     let n = f.params.len();
     let mut pin: Vec<Option<Ty>> = vec![None; n];
     let mut lit: Vec<(String, Ty)> = Vec::new(); // literal-initialized locals
+    let mut printed: Vec<bool> = vec![false; n]; // params printed as a whole-variable item
     fn is_param(f: &Func, id: &str) -> Option<usize> {
         f.params.iter().position(|p| p == id)
     }
@@ -2209,7 +2213,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             _ => Ok(()),
         }
     }
-    fn walk_stmts(f: &Func, stmts: &[Stmt], sigs: &[Sig], lit: &mut Vec<(String, Ty)>, pin: &mut Vec<Option<Ty>>, nil_ret: bool) -> Result<(), String> {
+    fn walk_stmts(f: &Func, stmts: &[Stmt], sigs: &[Sig], lit: &mut Vec<(String, Ty)>, pin: &mut Vec<Option<Ty>>, printed: &mut Vec<bool>, nil_ret: bool) -> Result<(), String> {
         for st in stmts {
             match st {
                 Stmt::Local(n, name, e) => {
@@ -2227,7 +2231,18 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     }
                     walk(f, e, sigs, lit, pin, *n)?;
                 }
-                Stmt::Print(n, es) => { for e in es { walk(f, e, sigs, lit, pin, *n)?; } }
+                Stmt::Print(n, es) => {
+                    for e in es {
+                        // A whole-variable print is Dyn evidence for a
+                        // parameter (hk257/hk259): Harbour accepts a
+                        // string, an integer, .T./.F. or NIL through a
+                        // print-only parameter.
+                        if let Expr::Var(v) = e {
+                            if let Some(idx) = is_param(f, v) { printed[idx] = true; }
+                        }
+                        walk(f, e, sigs, lit, pin, *n)?;
+                    }
+                }
                 Stmt::Ret(n, Some(e)) => {
                     // Mixed return (a value here, bare `return` / `return
                     // nil` elsewhere): the value is tagged, so a returned
@@ -2238,12 +2253,12 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 Stmt::Ret(_, None) => {}
                 Stmt::If(n, c, a, b) => {
                     walk(f, c, sigs, lit, pin, *n)?;
-                    walk_stmts(f, a, sigs, lit, pin, nil_ret)?;
-                    walk_stmts(f, b, sigs, lit, pin, nil_ret)?;
+                    walk_stmts(f, a, sigs, lit, pin, printed, nil_ret)?;
+                    walk_stmts(f, b, sigs, lit, pin, printed, nil_ret)?;
                 }
                 Stmt::While(n, c, body) => {
                     walk(f, c, sigs, lit, pin, *n)?;
-                    walk_stmts(f, body, sigs, lit, pin, nil_ret)?;
+                    walk_stmts(f, body, sigs, lit, pin, printed, nil_ret)?;
                 }
                 Stmt::For(n, _, a, b, _, body) => {
                     // for bounds are i64 by construction (integer counters
@@ -2251,11 +2266,11 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     pin_vars(f, a, Ty::I64, pin, *n)?;
                     pin_vars(f, b, Ty::I64, pin, *n)?;
                     walk(f, a, sigs, lit, pin, *n)?; walk(f, b, sigs, lit, pin, *n)?;
-                    walk_stmts(f, body, sigs, lit, pin, nil_ret)?;
+                    walk_stmts(f, body, sigs, lit, pin, printed, nil_ret)?;
                 }
                 Stmt::ForEach(n, _, c, body) => {
                     walk(f, c, sigs, lit, pin, *n)?;
-                    walk_stmts(f, body, sigs, lit, pin, nil_ret)?;
+                    walk_stmts(f, body, sigs, lit, pin, printed, nil_ret)?;
                 }
                 Stmt::ArrSet(n, id, ie, e) => {
                     // p["key"] := v: a string key pins a hash parameter
@@ -2472,7 +2487,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
         })
     }
     let nil_ret = any_nil_ret(&f.stmts);
-    walk_stmts(f, &f.stmts, sigs, &mut lit, &mut pin, nil_ret)?;
+    walk_stmts(f, &f.stmts, sigs, &mut lit, &mut pin, &mut printed, nil_ret)?;
     // Report the first uninferable parameter, but return the partial pins:
     // one uninferable parameter must not mask the evidence of the others
     // (an i64 placeholder for a string parameter turned a later
@@ -2480,8 +2495,15 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     // hiding the real problem - probes v2/v3 in the 63k notes).
     let mut pin_err = None;
     for (i, p) in f.params.iter().enumerate() {
+        // Print as the sole non-copy evidence pins the tagged union
+        // (oracles hk257/hk259). This runs AFTER the walk so pinning
+        // evidence (arithmetic, concatenation, known-type compare) wins
+        // order-independently (hk260/hk261).
+        if pin[i].is_none() && printed[i] {
+            pin[i] = Some(Ty::Dyn);
+        }
         if pin[i].is_none() && pin_err.is_none() {
-            pin_err = Some(format!("cannot infer the type of parameter `{}` of function `{}` (printing, returning or copying it is not enough; use it in arithmetic or compare it against a value of known type)", p, f.name));
+            pin_err = Some(format!("cannot infer the type of parameter `{}` of function `{}` (returning or copying it is not enough; print it, use it in arithmetic, or compare it against a value of known type)", p, f.name));
         }
     }
     Ok((pin, pin_err))
@@ -3204,7 +3226,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn)) {
                             return Err(format!("line {}: passing borrowed parameter `{}` by value moves it out of its owner - not Harbour semantics; derive a value instead (for example a concatenation)", n, v));
                         }
-                        if let Some(x) = env.iter_mut().find(|x| x.name == *v && matches!(x.ty, Ty::Str | Ty::StrOwn)) { x.moved = true; }
+                        // A Dyn target CLONES at the boundary (the
+                        // caller keeps its value), so no move is marked.
+                        if sig_params[i] != Ty::Dyn {
+                            if let Some(x) = env.iter_mut().find(|x| x.name == *v && matches!(x.ty, Ty::Str | Ty::StrOwn)) { x.moved = true; }
+                        }
                     }
                 }
                 // A hash LITERAL argument has no emission path in
@@ -3217,6 +3243,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 let ok = ta == sig_params[i]
                     || (ta == Ty::Dyn && sig_params[i] == Ty::I64)  // runtime extract (nil -> clean type error)
                     || (ta == Ty::I64 && sig_params[i] == Ty::Dyn) // tagged at the call
+                    || ((ta == Ty::Str || ta == Ty::StrOwn) && sig_params[i] == Ty::Dyn) // cloned to an owned tag-4 payload at the boundary (hk259)
                     || (ta == Ty::Str && sig_params[i] == Ty::StrOwn); // rodata: copied at the call boundary
                 if !ok {
                     // Two codeblocks of different arity: name both arities so
@@ -6018,6 +6045,16 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 if ta == Ty::I64 && pty == Some(Ty::Dyn) {
                     // i64 argument to a Dyn parameter: tag it in.
                     out.push_str("    sub $16, %rsp\n    movq $0, (%rsp)\n    mov %rax, 8(%rsp)\n");
+                    continue;
+                }
+                if (ta == Ty::Str || ta == Ty::StrOwn) && pty == Some(Ty::Dyn) {
+                    // String argument to a Dyn parameter: the callee owns
+                    // its Dyn slot (freed at its epilogue), so the boundary
+                    // hands over a fresh owned copy tagged 4 - caller and
+                    // callee never share an allocation (hk259; same
+                    // contract as Dyn->Dyn, cg_dyn_clone_if_str).
+                    out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                    out.push_str("    sub $16, %rsp\n    movq $4, (%rsp)\n    mov %rax, 8(%rsp)\n");
                     continue;
                 }
                 if ta == Ty::Dyn {
