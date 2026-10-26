@@ -2532,3 +2532,44 @@ promotion). Sondas hk302-hk318 (incl. hk309b) published. BATTERY 753
 oracle). Sweep: COMPILES unchanged at 5, all byte-exact re-verified
 this increment (hello, statfun, lnlenli2, calling, nums); the
 frozen-csv wording drift policy from 63zc is unchanged.
+
+63ze - preprocessor WARNINGLEVEL, lazy iif, comparison-valued call
+arguments, FOR variable reuse, byref string parameters. Oracles
+hk319-hk324 captured first on pinned hbmk2 -gtstd; sondas published.
+
+- __pragma( WARNINGLEVEL ) evaluates to 0 in the preprocessor (oracle
+  hk320: hbmk2 defaults to warning level 0 without -w). It is the only
+  __pragma selector in the stock headers (hbclass.ch:118); other
+  selectors keep a named rejection. The 24 sweep files whose #if stage
+  blocked on it now advance to their real next rejection (#command
+  match markers and the class RTL - parked, needs new architecture).
+- Call arguments parse at or_expr level: comparisons and logicals are
+  first-class Bool values (hk198) and legal in argument position
+  (oracle hk322: p( x == 5 ), (x==5) .and. (x>0)).
+- iif() is a lazy builtin (oracle hk321: the dead branch's side
+  effects never run). The checker intercepts it (3 arguments, Bool
+  condition, scalar branch unification with F64 absorbing I64 through
+  the 63zd boundary conversion); codegen emits a conditional jump over
+  the false arm. Every Call-named pass has its own intercept.
+- FOR reuses a visible integer variable instead of erroring (oracle
+  hk323 = stock exit.prg: the outer x counts and stays readable after
+  the loop). A read-only or non-integer slot keeps a named rejection
+  (t783/t784 pin it; Harbour allows both, so they are registered
+  limits, not equivalence).
+- Byref string parameters: assigning a string to a parameter pins it
+  Str (StrOwn through pin_vars), and the existing byref remap turns it
+  into RefStrOwn at codegen; the caller's literal-initialised local
+  was already promoted to an owned slot when its address escapes
+  (63zd layout rule). Dyn evidence still dominates: a NIL-compared
+  parameter stays Dyn and absorbs the string pin (t659/t662 hold).
+  Oracle hk324 = stock passref.prg, byte-exact.
+
+Tests: t777 (hk323 mirror), t778 (hk324 mirror), t779/t780 (hk320 /
+hk319 pragma), t781 (hk322 cmp-in-args), t782 (hk321 iif laziness),
+t783/t784 (negs pinning the FOR reuse limits). t39 flipped neg->pos:
+its "no shadow" rejection was wrong Harbour semantics (hk323). Sondas
+hk319-hk324 published. BATTERY 772 -> 780 runner rows + ABI ALL GREEN
+(Linux native and Wine with Linux oracle). Sweep: COMPILES 5 -> 7,
+exit.prg and passref.prg flipped and are byte-exact against hbmk2
+-gtstd runs (verified this increment); hello, statfun, lnlenli2,
+calling, nums unchanged. Frozen-csv wording drift policy unchanged.
