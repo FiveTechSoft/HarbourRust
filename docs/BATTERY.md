@@ -1213,6 +1213,14 @@ integer a per-operator clean named exit 1 mirroring BASE/1073-1076
 (hk149-hk152 - dialogs hang headless; registered failure modes;
 t514-t517).
 
+t535-t539 (iteration 49 ownership follow-up): hb_HGet with an OWNED key
+temporary frees it after the lookup, with and without the integer
+default (t535: wrap + memcheck balance 0, own check, not an oracle);
+a string literal, an owning string temporary, an array or a hash as
+the DEFAULT are explicit compile-time rejections in this increment
+(t536-t539) - no unsupported form is ever silently discarded or leaked
+by the default slot.
+
 t532-t534 (iteration 50): hb_HSet(h, key, value) - the functional hash
 write over hbc_hput; write semantics reproduced (t532, hk159), KEY
 evaluated before the value (t533, hk161 - the opposite of h[k] := v,
@@ -1259,5 +1267,5 @@ insertion order into a NEW independent array (oracles hk153/hk154;
 t518/t519), result freed by the DArr epilogue with balance 0 (t520,
 own ownership check, not a Harbour oracle).
 
-530/530 manifest cases + ABI harness green on Linux x86-64 and Wine
+535/535 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
