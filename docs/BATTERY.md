@@ -2256,11 +2256,17 @@ universal; the half-up tie at digit 16 has no direct oracle; the
 Harbour `*` overflow display near 1e16 (hk284) is unmeasured, so
 literals are frontier-rejected: |x| >= 1e15 or nonzero |x| < 1e-17 is
 a named compile error (t732/t734), a coverage limit on valid Harbour,
-not an invalidity verdict.
+not an invalidity verdict. Zero IS admitted: the check is
+a >= 1e15 || (a != 0.0 && a < 1e-17), so 0.0 prints normally.
+Direct ABI canary (tests/abi_harness.sh, 63x): hbc_print_f64 is called
+with the value in xmm0 and the written decimals in rdi, with sentinels
+in xmm6-xmm15 and rbx/r12-r15 plus stack balance and 16-alignment
+checks around the call, on BOTH targets (linux native and wine); the
+printed field is also compared byte-exact in the harness stdout.
 
 ABI: the helper touches only xmm0-xmm2 (volatile on both ABIs), saves
 r12-r15, and makes one aligned call (hbc_print_str). Tests t725-t728
 (byte-exact vs hk278/hk281/hk282/hk283) + t729-t734 negs.
-BATTERY 719 -> 729 + ABI ALL GREEN (Linux native and Wine with Linux
+BATTERY 720 -> 730 manifest lines (675 -> 685 unique test entries; the +10 delta is exactly t725-t734, nothing removed or rewritten, no duplicate IDs) + ABI ALL GREEN (Linux native and Wine with Linux
 oracle). Sweep: COMPILES 5 (nums.prg joins hello, statfun, lnlenli2,
 calling); ains.prg still converges to its named `aclone` blocker.
