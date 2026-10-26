@@ -2229,3 +2229,38 @@ literals keep written decimals (100.0 -> "100.0", 0.12 = .12);
 division floor is 2 decimals (10/3 -> "3.33", 9.0/2 -> "4.50");
 0.1+0.2 = 0.3 is .F. (binary double semantics); hex literals print
 as plain integers (0xABAB -> 43947).
+
+## 63x - float phase 1: literals, locals, printing + hex literals (5/175)
+
+FIFTH original upstream file: nums.prg compiles and runs BYTE-IDENTICAL
+to the Harbour Linux oracle, exit 0, on Linux native AND on Wine
+(oracle from Linux; oracles hk278-hk284 measured pre-design, published
+in sondas/; helper + plan + standalone driver in design/f64/).
+
+Scope (phase 1 only): float literals (incl. `.12` and `0x` hex integers),
+LOCAL storage, `?`/`??` printing, copies and reassignment. A float local
+is TWO dynamic slots: the f64 value and its decimal metadata; assignment
+replaces both (a := 1.50 then a := .123 reprints with the new precision).
+Everything else is a named compile-time rejection: float arithmetic,
+comparisons, conditions, call arguments, array elements, for bounds,
+returns (t729-t734 negs; t733 closed a silently-accepted `return 1.5`
+hole found during this increment's own audit).
+
+Print semantics (hbc_print_f64, both runtime blobs): sign by bit (-0.0
+prints "0.0", hk282); normalize to mantissa [1,10) tracking e;
+N = round(m * 1e15) (16 significant digits, carry at 1e16); integer
+digits e+1 or "0"; fraction zero-padded to the written decimal count;
+field width 11 + decimals, growing for long integer parts. Labels
+honest: "16 significant digits" is OBSERVED in probes, not proven
+universal; the half-up tie at digit 16 has no direct oracle; the
+Harbour `*` overflow display near 1e16 (hk284) is unmeasured, so
+literals are frontier-rejected: |x| >= 1e15 or nonzero |x| < 1e-17 is
+a named compile error (t732/t734), a coverage limit on valid Harbour,
+not an invalidity verdict.
+
+ABI: the helper touches only xmm0-xmm2 (volatile on both ABIs), saves
+r12-r15, and makes one aligned call (hbc_print_str). Tests t725-t728
+(byte-exact vs hk278/hk281/hk282/hk283) + t729-t734 negs.
+BATTERY 719 -> 729 + ABI ALL GREEN (Linux native and Wine with Linux
+oracle). Sweep: COMPILES 5 (nums.prg joins hello, statfun, lnlenli2,
+calling); ains.prg still converges to its named `aclone` blocker.
