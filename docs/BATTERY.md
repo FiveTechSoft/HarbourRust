@@ -1182,5 +1182,11 @@ the BASE/1070 failure mode now covers both operand orders (hk142:
 casilla == int; hk144: int == casilla - both hang headless, no
 oracle; t504/t506 posx, both targets).
 
-502/502 manifest cases + ABI harness green on Linux x86-64 and Wine
+t507 (iteration 42): the third measured mixed order - a NUMERIC
+casilla against a string literal (hk139b: BASE/1070 dialog, hangs
+headless, no oracle) - as a posx case on both targets, completing
+execution coverage of the hbc_dynxeq_dd mixed-tag error branches
+(t504: hk142; t506: hk144; t507: hk139b).
+
+503/503 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
