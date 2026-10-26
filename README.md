@@ -235,7 +235,10 @@ function name()            opens a function (main is the entry point)
     return <expr>            early return: closes the function with a value
 return <expr> | return nil closes the function  (a closing top-level return
                              is always required)
-// comment
+// comment             to end of line; also && to end of line, * as
+                             the first non-whitespace character of a line,
+                             and /* ... */ blocks (mid-line or multi-line,
+                             non-nesting; oracle family hk211)
 ```
 
 Expressions: integer literals, string literals (escapes `\"` and `\\` only),
@@ -1488,7 +1491,7 @@ normalization; semantics unchanged. hello.prg from the upstream
 test suite (core 694428e1) is the FIRST original program that
 compiles and runs byte-identical to Harbour. Forward references
 (call before definition) remain the next registered blocker.
-Battery: 615/615 manifest cases on Linux x86-64 and Wine, plus
+Battery: 618/618 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
 
 
