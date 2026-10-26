@@ -1213,9 +1213,12 @@ integer a per-operator clean named exit 1 mirroring BASE/1073-1076
 (hk149-hk152 - dialogs hang headless; registered failure modes;
 t514-t517).
 
-t528-t530 (iteration 49): hb_HGet(h, key [, default]) over the existing
+t528-t531 (iteration 49): hb_HGet(h, key [, default]) over the existing
 hbc_hget helper; measured reads reproduced (t528: with/without default;
-existing NIL stays NIL - the default is not applied, hk158c), missing
+existing NIL stays NIL - the default never overrides it, hk158c); the
+default IS always evaluated and its value discarded (hk158f1/f2/f3,
+pinned by t531 on both targets - effects fire on present, NIL and
+missing keys, before the error), missing
 key with or without default is the BASE/1132 condition and takes the
 registered clean bound-error exit (t529, exit 1; Harbour's dialog hangs
 headless, hk158a/b/d - failure-mode registration, never a compat
@@ -1248,5 +1251,5 @@ insertion order into a NEW independent array (oracles hk153/hk154;
 t518/t519), result freed by the DArr epilogue with balance 0 (t520,
 own ownership check, not a Harbour oracle).
 
-526/526 manifest cases + ABI harness green on Linux x86-64 and Wine
+527/527 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
