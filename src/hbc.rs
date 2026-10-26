@@ -3628,6 +3628,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 let tb = type_expr(&args[2], env, sigs, n)?;
                 if ta == tb && matches!(ta, Ty::I64 | Ty::Bool | Ty::Str | Ty::F64) { return Ok(ta); }
                 if matches!((ta, tb), (Ty::F64, Ty::I64) | (Ty::I64, Ty::F64)) { return Ok(Ty::F64); }
+                // Owned-string unification (63zf, hk329): the result is
+                // OWNED. A borrowed side materializes a clone only when
+                // its arm is taken; an owned-variable side moves only
+                // when its arm is taken (laziness keeps single ownership).
+                if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) { return Ok(Ty::StrOwn); }
                 return Err(format!("line {}: `iif` branches must share a scalar type (float absorbs an int side), got {:?} and {:?}", n, ta, tb));
             }
             let si = sigs.iter().position(|v| v.name == *id)
@@ -5843,8 +5848,15 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 return;
             }
             if is_builtin(id, "iif") {
-                // Scalar branches only (checker-enforced): nothing moves.
+                // Scalar branches only (checker-enforced). An owned-string
+                // branch MOVES its source when its arm is taken (63zf) -
+                // statically the source is moved on either outcome.
                 for a in args { apply_moves(a, env, sigs, false); }
+                for a in &args[1..] {
+                    if let Expr::Var(v) = a {
+                        if env.iter().any(|x| x.name == *v && x.ty == Ty::StrOwn) { apply_moves(a, env, sigs, true); }
+                    }
+                }
                 return;
             }
             let sig = sigs.iter().find(|v| v.name == *id).expect("checked");
@@ -5873,6 +5885,18 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 // Locals live in the stack frame: i64 takes 8 bytes, Str takes 16.
 // ---------------------------------------------------------------------------
 
+// Constant fold of a pure integer expression (literal +,-,* tree):
+// Harbour's compiler folds these (hk326), and the folded value prints
+// with literal provenance (digits+1), unlike a runtime-computed value.
+fn fold_int(e: &Expr) -> Option<i64> {
+    match e {
+        Expr::Int(t) => t.parse().ok(),
+        Expr::Bin('+', a, b) => fold_int(a)?.checked_add(fold_int(b)?),
+        Expr::Bin('-', a, b) => fold_int(a)?.checked_sub(fold_int(b)?),
+        Expr::Bin('*', a, b) => fold_int(a)?.checked_mul(fold_int(b)?),
+        _ => None,
+    }
+}
 fn size_of(t: Ty) -> usize {
     match t { Ty::F64 => 16, Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefStrOwn => 8 }
 }
@@ -5971,6 +5995,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 f64side(ta, &args[1], out);
                 out.push_str(&format!(".Liife{}:\n", k));
             } else {
+                let to_strown = matches!(ta, Ty::StrOwn) || matches!(tb, Ty::StrOwn);
                 let mut scalar_side = |a: &Expr, out: &mut String| {
                     // String literals intern like every other emitter
                     // (cg_expr's Str arm is unreachable by design).
@@ -5981,6 +6006,22 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                         out.push_str(&format!("    mov ${}, %edx\n", s.as_bytes().len()));
                     } else {
                         cg_expr(a, env, sigs, strs, out, target);
+                    }
+                    // Owned-string unification (63zf): a borrowed side is
+                    // cloned here, on its own (taken) path only, so the
+                    // unified result is a valid owned string.
+                    if to_strown && expr_ty(a, env, sigs) != Ty::StrOwn {
+                        out.push_str("    sub $16, %rsp\n    mov %rdx, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov (%rsp), %rdx\n    add $16, %rsp\n");
+                    }
+                    // An owned-variable side MOVES on this (taken) path:
+                    // null the source slot so the epilogue does not free
+                    // the buffer the result consumer already owns.
+                    if to_strown {
+                        if let Expr::Var(v) = a {
+                            if let Some(lv) = env.iter().find(|x| x.name == *v && x.ty == Ty::StrOwn) {
+                                out.push_str(&format!("    movq $0, -{}(%rbp)\n", lv.off));
+                            }
+                        }
                     }
                 };
                 scalar_side(&args[2], out);
@@ -7346,7 +7387,8 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                 // Branch unification mirrors the checker (oracle hk321).
                 let ta = expr_ty(&args[1], env, sigs);
                 let tb = expr_ty(&args[2], env, sigs);
-                return if ta == Ty::F64 || tb == Ty::F64 { Ty::F64 } else { ta };
+                return if ta == Ty::F64 || tb == Ty::F64 { Ty::F64 }
+                    else if matches!(ta, Ty::StrOwn) || matches!(tb, Ty::StrOwn) { Ty::StrOwn } else { ta };
             }
             sigs.iter().find(|v| v.name == *id).expect("checked").ret.expect("checked")
         }
@@ -8243,7 +8285,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     match t {
                         Ty::RefI64 | Ty::RefStrOwn => unreachable!("expr_ty maps by-reference params to their pointee"),
                         Ty::F64 => unreachable!("handled above"),
-                        Ty::I64 => out.push_str("    call hbc_print_i64\n"),
+                        // Literal (or compile-time foldable, hk326) keeps
+                        // literal provenance; a runtime-computed integer
+                        // follows the asymmetric 10/20 field (hk327/hk328).
+                        Ty::I64 => out.push_str(if fold_int(e).is_some() { "    call hbc_print_i64\n" } else { "    call hbc_print_i64c\n" }),
                         Ty::Str | Ty::StrOwn => {
                             // Line-end space trim (hk22/hk24): only the
                             // LAST visible item can trail spaces.
@@ -11780,6 +11825,59 @@ hbc_print_i64:
     leave
     ret
 
+# hbc_print_i64c: computed (runtime) i64 field (hk327/hk328): 10 within
+# -999999999..9999999999, else 20. Both threshold magnitudes are exactly
+# 10 digits, so the rule is one digit-count test for either sign.
+hbc_print_i64c:
+    push %rbp
+    mov %rsp, %rbp
+    sub $48, %rsp
+    xor %r9d, %r9d
+    test %rax, %rax
+    jns 1f
+    mov $1, %r9d
+    neg %rax
+1:
+    lea -1(%rbp), %rsi
+    mov $10, %r8
+2:
+    xor %edx, %edx
+    div %r8
+    add $48, %dl
+    mov %dl, (%rsi)
+    dec %rsi
+    test %rax, %rax
+    jnz 2b
+    test %r9d, %r9d
+    jz 3f
+    movb $45, (%rsi)
+    dec %rsi
+3:
+    lea 1(%rsi), %r9
+    lea -1(%rbp), %r10
+    sub %r9, %r10
+    inc %r10
+    mov $10, %rax
+    cmp %rax, %r10
+    jbe 6f
+    mov $20, %rax
+6:
+    sub %r10, %rax
+    jle 7f
+    mov %rax, %rdx
+    lea .Lpad20(%rip), %rsi
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+7:
+    mov %r9, %rsi
+    mov %r10, %rdx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    leave
+    ret
+
 # hbc_print_dyn: %rax = tag, %rdx = payload. Prints NIL (no field width,
 # probe n1) for tag 1, the raw string bytes for tag 2 (payload points at
 # the bytes, length header at payload-8 - same layout as a hash key
@@ -11800,7 +11898,7 @@ hbc_print_dyn:
     syscall
     ret
 8:  mov %rdx, %rax
-    jmp hbc_print_i64
+    jmp hbc_print_i64c
 11: lea .Lfmsg(%rip), %rsi
     test %rdx, %rdx
     jz 12f
@@ -13264,6 +13362,56 @@ hbc_print_i64:
     leave
     ret
 
+# hbc_print_i64c: computed (runtime) i64 field (hk327/hk328): 10 within
+# -999999999..9999999999, else 20; one digit-count test for either sign.
+hbc_print_i64c:
+    push %rbp
+    mov %rsp, %rbp
+    sub $64, %rsp
+    xor %r9d, %r9d
+    test %rax, %rax
+    jns 1f
+    mov $1, %r9d
+    neg %rax
+1:
+    lea -1(%rbp), %r10
+    mov $10, %r8
+2:
+    xor %edx, %edx
+    div %r8
+    add $48, %dl
+    mov %dl, (%r10)
+    dec %r10
+    test %rax, %rax
+    jnz 2b
+    test %r9d, %r9d
+    jz 3f
+    movb $45, (%r10)
+    dec %r10
+3:
+    lea 1(%r10), %rax
+    mov %rbp, %rdx
+    sub %r10, %rdx
+    dec %rdx
+    mov $10, %r8
+    cmp %r8, %rdx
+    jbe 6f
+    mov $20, %r8
+6:
+    sub %rdx, %r8
+    jle 7f
+    mov %rax, -32(%rbp)
+    mov %rdx, -40(%rbp)
+    lea .Lpad20(%rip), %rax
+    mov %r8, %rdx
+    call hbc_print_str
+    mov -32(%rbp), %rax
+    mov -40(%rbp), %rdx
+7:
+    call hbc_print_str
+    leave
+    ret
+
 # hbc_print_dyn: %rax = tag, %rdx = payload. Prints NIL (no field width,
 # probe n1) for tag 1, the raw string bytes for tag 2 (payload points at
 # the bytes, length header at payload-8 - same layout as a hash key
@@ -13285,7 +13433,7 @@ hbc_print_dyn:
     call hbc_print_str
     jmp 9f
 8:  mov %rdx, %rax
-    call hbc_print_i64
+    call hbc_print_i64c
     jmp 9f
 10: mov %rdx, %rax
     mov -8(%rax), %rdx
