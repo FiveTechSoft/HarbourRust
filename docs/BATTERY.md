@@ -2687,4 +2687,45 @@ with the rest of the `;` bucket.
 Tests: t791. BATTERY 785 -> 786 runner rows + ABI ALL GREEN (Linux
 native and Wine with Linux oracle). Sweep: COMPILES unchanged at 7;
 ifelse.prg's rejection advanced (line 19 -> line 8) with the frozen
-csv untouched per policy.
+csv untouched per policy. Reconciliation with the documented syntax
+surface: the DO CASE named rejection text (see the identifier-led
+statements batch) already told users to `use if/elseif/else/endif`
+while ELSEIF itself did not compile - so ELSEIF was a real gap in a
+surface the docs implied, corrected in this batch, not a brand-new
+form.
+
+63zh - bare LOCAL as FOR counter (lands the prepass 63zg parked).
+Oracles first: hk336 (bare `local i`, `for i := 1 to 3`, body prints
+and after-loop value; natural exit leaves the counter one step past
+the bound - byte-exact), hk337 (nested `for i` reusing the same
+visible counter: Harbour runs the inner loop to completion, leaves i
+at 3, and the outer loop ends after one iteration - byte-exact), and
+hk339 (stock fornext.prg, 337 bytes of real output - byte-exact).
+Rule: a bare `local i` (equivalently `local i := NIL`) whose FIRST
+mention in the same block is the counter of a top-level
+`for i := start to end`, with start/end free of `i`, types the slot
+i64 from declaration. One pure predicate
+(bare_local_is_for_counter, same-block, mention-clean at any depth)
+feeds checker, layout and codegen so the three cannot disagree.
+Covered limits, not Harbour rules: any read, write, call argument or
+nested use of the name between the LOCAL and the FOR, a start/end
+expression mentioning it, or a `@i` byref alias keeps the Dyn slot
+and the named `for` rejection (t793/t794/t795); a later Dyn
+assignment to the counter is a named type-mismatch rejection (the
+counter stays i64 in this increment). t783's nested same-counter
+case is now defined behaviour (hk337) and its manifest row flips
+neg -> pos; the filename keeps its historical id. Control-flow
+notes: EXIT/LOOP between LOCAL and FOR do not mention the variable
+and stay eligible; prior assignments, prints, calls, array/hash
+writes and nested mentions all disqualify. Exit value matches native
+(counter one step past the bound; EXIT leaves the current value).
+
+Tests: t792 (hk336 mirror), t793-t795 (named rejections), t783 row
+flip. BATTERY 786 -> 790 runner rows + ABI ALL GREEN (Linux native
+and Wine with Linux oracle). Sweep: ifelse.prg and fornext.prg flip
+to COMPILES, both byte-exact against stock Harbour oracles (hk333,
+hk339) - 9 runtime-success originals. Negative originals stay a
+separate class (linecont.prg: stock Harbour E0030 at lines 53/58,
+oracle hk334 build log; rejected by both compilers is equivalence,
+not a runtime success). The frozen 175-file csv denominator counts
+original files, not programs that must run; unchanged per policy.
