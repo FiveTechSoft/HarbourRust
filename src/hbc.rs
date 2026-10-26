@@ -3978,14 +3978,16 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 // Bare call (hk216): runs for effect; the return is
                 // DISCARDED. Discarding is defined only for returns the
                 // established discipline can release: no value, scalars
-                // (Copy), a Dyn (owns nothing anywhere in this PoC), or
-                // one owned string (freed right after the call). Owned
-                // arrays/hashes/codeblocks stay a named rejection here.
+                // (Copy), a Dyn (owns nothing anywhere in this PoC), one
+                // owned string, or an owned array of up to two levels
+                // (all freed right after the call with the same helpers
+                // the epilogue uses; oracle hk256). Hashes, deeper arrays
+                // and codeblocks stay a named rejection here.
                 CALL_STMT_CTX.with(|c| c.set(true));
                 let t = type_expr(e, env, sigs, *n);
                 CALL_STMT_CTX.with(|c| c.set(false));
                 match t? {
-                    Ty::I64 | Ty::Str | Ty::Bool | Ty::StrOwn | Ty::Dyn => {}
+                    Ty::I64 | Ty::Str | Ty::Bool | Ty::StrOwn | Ty::Dyn | Ty::DArr | Ty::DArrS | Ty::DArr2 => {}
                     other => return Err(format!("line {}: discarding {} return is not in this increment", n, ty_name(other))),
                 }
                 apply_moves(e, env, sigs, true);
@@ -7177,13 +7179,27 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
         match s {
             Stmt::SelfSet(..) | Stmt::SendSet(..) | Stmt::SendStmt(..) => unreachable!("rejected before codegen"),
             Stmt::CallStmt(_, e) => {
-                // Run the call; release the one discardable owned return
-                // (a string). Everything else discardable is Copy.
+                // Run the call, then release the discarded owned return
+                // with the same helper the epilogue would use on a slot
+                // of that type (oracle hk256: the discard is legal).
                 cg_expr(e, env, sigs, strs, out, target);
-                if expr_ty(e, env, sigs) == Ty::StrOwn {
-                    out.push_str("    mov %rax, %rdi
+                match expr_ty(e, env, sigs) {
+                    Ty::StrOwn => out.push_str("    mov %rax, %rdi
     call hbc_freestr
-");
+"),
+                    Ty::DArr => out.push_str("    mov %rax, %rdi
+    mov $16, %esi
+    call hbc_free
+"),
+                    Ty::DArrS => out.push_str("    mov %rax, %rdi
+    mov %rdx, %rsi
+    call hbc_sfree
+"),
+                    Ty::DArr2 => out.push_str("    mov %rax, %rdi
+    mov %rdx, %rsi
+    call hbc_free2
+"),
+                    _ => {}
                 }
             }
             Stmt::Local(_, id, e) => {
