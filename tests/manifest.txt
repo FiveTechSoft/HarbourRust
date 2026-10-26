@@ -727,7 +727,7 @@ neg tests/t729_float_arith_neg.hb arithmetic needs numeric operands
 neg tests/t730_float_cond_neg.hb not a condition
 neg tests/t731_float_callarg_neg.hb argument 1 of `p`
 neg tests/t732_float_frontier_neg.hb measured precision frontier
-neg tests/t733_float_ret_neg.hb eturn
+pos tests/t733_float_ret_neg.hb \n         1.5
 neg tests/t734_float_frontier2_neg.hb measured precision frontier
 neg tests/t736_float_starzone_neg.hb measured precision frontier
 neg tests/t737_float_starzone2_neg.hb measured precision frontier
@@ -752,4 +752,24 @@ pos tests/t753_float_rounding.hb \n         0.13\n         0.38\n         0.67\n
 pos tests/t754_float_stars.hb \n**************************************************************\n****************************************************\n*****************************************************\n**************************************************************\n**************************************************************\n.T.\n.T.
 pos tests/t755_float_length_asym.hb \n         -9000000000.0\n         -9000000000.0\n-500000000.0\n        -10000000000.0\n10000000000.0\n5000000000.0\n9000000000.0\n         0.0\n         0.0\n         -1000000000.0\n         -1000000000.0
 pos tests/t756_float_nan_inf_cmp.hb \n.F.\n.T.\n.F.\n.F.\n.F.\n.F.\n.F.\n.F.\n.F.\n.F.\n.F.\n.T.\n.T.\n.F.\n.T.\n.F.\n.T.\n.T.\n.T.\n.T.\n.T.\n.F.\n.T.\n.T.\n.F.\n.T.
-posx tests/t757_float_field_overflow.hb 1 \nError: float field out of range
+posx tests/t757_float_field_overflow.hb 1 Error: float field out of range
+
+pos tests/t758_f64_param_basic.hb \n         1.75\n         2.5\n         1.0
+pos tests/t759_f64_param_polymorph.hb \n         3.0\n         1.5\n        14\n         7
+pos tests/t760_f64_nested_call_arg.hb \n         2.50\n         4.0
+pos tests/t761_f64_call_in_expr.hb \n         3.0\n         4.0\n         4.50
+pos tests/t762_f64_two_params.hb \n        13.75\n        30.500
+pos tests/t763_f64_param_width_rule.hb \n         4\n 12345678901\n        -7\n         0
+pos tests/t764_f64_dec16_param.hb \n         1.00000000000000000000000000000000\n         0.0625
+pos tests/t765_f64_dec64_nested.hb \n         1.0000000000000000000000000000000000000000000000000000000000000000\n         0.00390625
+pos tests/t766_f64_param_loop_accum.hb \n**************************************************************\n**************************************************************
+pos tests/t772_f64_ret_epilogue_strown.hb \n         1.25\n         2.50
+pos tests/t773_mixed_sig_str_f64.hb \nn:\n         3.0\nm:\n         6
+pos tests/t774_f64_forward_ref.hb \n         2.0\n         2.5
+pos tests/t775_f64_cyclic_infer.hb \n         2.5
+neg tests/t767_f64_mixed_return_neg.hb return type mismatch
+neg tests/t768_dyn_float_boundary_neg.hb must be a dynamic value, got a float
+posx tests/t769_f64_fold_defer_guard.hb 1 Error: float field out of range
+posx tests/t770_f64_callchain_overflow.hb 1 Error: float field out of range
+posx tests/t771_f64_varchain_overflow.hb 1 Error: float field out of range
+neg tests/t776_nonnumeric_nopromo_neg.hb must be an integer, got a boolean
