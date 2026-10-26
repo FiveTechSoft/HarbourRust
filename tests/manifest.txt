@@ -662,3 +662,10 @@ pos tests/t664_do_while.hb \n         4\n         3
 pos tests/t665_do_with.hb \nhello\n        43\nbye\n         8
 neg tests/t666_do_case_neg.hb DO CASE is not in this increment
 neg tests/t667_param_uninferable_neg.hb cannot infer the type of parameter `num`
+pos tests/t668_incr_stmt.hb \n         1\n         2\n         1\n         0
+pos tests/t669_compound_assign.hb \n        15\n        12\n        48
+pos tests/t670_str_plus_eq.hb \nabcd
+neg tests/t671_div_eq_neg.hb `/=` is not in this increment
+neg tests/t672_incr_expr_neg.hb inside expressions is not in this increment
+neg tests/t673_prefix_expr_neg.hb inside expressions is not in this increment
+neg tests/t674_negneg_expr_neg.hb inside expressions is not in this increment
