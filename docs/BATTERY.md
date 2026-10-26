@@ -1505,3 +1505,17 @@ Runtime: strings carry a 16-byte header {capacity at -16, length at -8}; fresh c
 - Performance: concat probe median 148.75 → 0.29 ms at N=20000 (total time, startup-dominated at that size); at work-dominated sizes 0.99/1.51 ms vs Harbour 10.94/23.66 ms at N=200000/400000. Full record in docs/BENCH-strcat.md round 3.
 
 **Sweep**: not re-run — no syntax change in this iteration.
+
+## Iteration 63i — LOCAL without initializer + multi-declaration (2026-10-26)
+
+`local name` (no `:= expr`) now parses and the slot starts NIL, matching Harbour oracle hk239/hk241: printing gives NIL, ValType() "U". Comma-separated multi-declarations also parse, with per-item optional initializers: `local a, b, c` and `local a := 10, b, c := "xy"`. The splitter tracks (), [] and {} depth so `local a := {1, 2}, b := 5` is not split inside the array literal.
+
+Limits (existing Dyn-slot rules, not new): a NIL-started Dyn slot accepts i64/bool/NIL reassignment but rejects owned strings ("type mismatch in assignment"); Dyn slots are never string-owners, so nothing leaks at the epilogue. Same behavior class as the already-registered Dyn limits.
+
+- t652: local sin init -> NIL / "U" / reassign 42 / "N" / memcheck 0.
+- t653: multi-decl `local a, b, c` all NIL, later assignments sum 6.
+- t654: mixed `local a := 10, b, c := "xy"` -> 10, NIL, xy. Matches Harbour hk241 byte for byte.
+- t655: neg — string into NIL-started slot rejected with the standard Dyn message.
+- t656: regression — array literal inside multi-decl (initial splitter counted only ()/[] depth and broke every `local a := {...}` in the battery; {} added, full battery re-green).
+
+**Sweep**: re-run on the frozen 175 — still 1/175 (hello.prg); the 18 files that previously stopped at "expected `local name := expr`" now advance to their next blockers (comma-in-expression, floats, command verbs), as the earlier category reclassification predicted. Full-directory check (237 files) additionally compiles dynwin.prg, but that is a hollow pass: its entire body sits under `#if defined( __PLATFORM__WINDOWS )`, so it compiles to an empty PROCEDURE. Not counted as a win.
