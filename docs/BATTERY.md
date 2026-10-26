@@ -1213,6 +1213,16 @@ integer a per-operator clean named exit 1 mirroring BASE/1073-1076
 (hk149-hk152 - dialogs hang headless; registered failure modes;
 t514-t517).
 
+t525-t527 (iteration 48): hb_HHasKey(h, key) - new leaf runtime helper
+hbc_hhaskey (no allocation; hash and key only read); the oracle's nine
+answers reproduced as 1/0 (t525 - the dialect has no logical type, so
+1/0 is the PoC surface; the oracle's .T./.F. is the registered boolean
+rendering family), empty-hash and borrowed-key cases (t526), non-hash
+target rejected at compile time (t527). Dedicated hbc_hhaskey canary in
+the ABI harness (present and missing key, canaries/stack/alignment after
+every call; it caught a result-clobber in its own first draft - the
+result is saved before abi_check).
+
 t521-t524 (iteration 47): hb_HDel(h, key) - new runtime helper hbc_hdel
 frees the hash-owned key copy and shifts the remaining entries down;
 hk155 reproduced byte for byte (t521), hk156's order and no-op facts
@@ -1228,5 +1238,5 @@ insertion order into a NEW independent array (oracles hk153/hk154;
 t518/t519), result freed by the DArr epilogue with balance 0 (t520,
 own ownership check, not a Harbour oracle).
 
-520/520 manifest cases + ABI harness green on Linux x86-64 and Wine
+523/523 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
