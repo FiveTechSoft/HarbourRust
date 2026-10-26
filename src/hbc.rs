@@ -566,6 +566,23 @@ impl P {
                 if !ok {
                     return Err(format!("line {}: float literal outside this increment's measured precision frontier (oracles hk278-hk288)", self.n));
                 }
+                // Rounding-fidelity guard (63y): Harbour's sequential
+                // digit extraction accumulates error that carries a leading
+                // 9-chain UP at 16 significant digits (hk285/hk288 measured:
+                // 9.999999999999999 -> 10.000000000000000); the current
+                // normalize-scale helper rounds the binary double once and
+                // prints ...998. Measured mismatch family = first 16
+                // written significant digits all '9' (8/8 divergent, no
+                // false hits in the hk278-hk288 matrix; boundary near
+                // 15-nines is probe-hypothesis, not proven). Reject it by
+                // name until the helper is rewritten to Harbour's method.
+                {
+                    let txt_nosign = txt.trim_start_matches('-');
+                    let sig: String = txt_nosign.chars().filter(|c| c.is_ascii_digit()).skip_while(|&c| c == '0').collect();
+                    if sig.len() >= 16 && sig.bytes().take(16).all(|b| b == b'9') {
+                        return Err(format!("line {}: float literal outside this increment's rounding-fidelity frontier (leading 9-chain; sequential-extraction helper rewrite in flight; oracles hk285/hk288)", self.n));
+                    }
+                }
                 Ok(Expr::Float(txt, dec))
             }
             Some(Tok::Str(s)) => Ok(Expr::Str(s)),
@@ -13509,3 +13526,4 @@ fn main() {
         .unwrap_or_else(|e| { eprintln!("cannot write {}: {}", args[2], e); process::exit(2); });
     println!("{} -> {} ({} functions)", args[1], args[2], funcs.len());
 }
+
