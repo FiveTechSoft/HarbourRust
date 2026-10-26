@@ -1379,8 +1379,23 @@ rejection (AND/OR/NOT are not operators in Harbour either - E0030,
 hk199), t604 the trailing-token parser error, t605 the mixed
 logical/number comparison (Harbour's BASE/1071, hk202 - compile-time
 rejection here). Dyn logical cells (arrays/hashes of .T.) measured
-(hk201) and deferred to 62b; ordering on logicals unmeasured, stays
-rejected.
+(hk201); ordering on logicals unmeasured, stays rejected.
 
-604/604 manifest cases + ABI harness green on Linux x86-64 and Wine
+t608-t613 (iteration 62b): Dyn tagged logical cells (tag 3) end to
+end - oracles hk201 and hk205-hk208e. t608 reproduces hk201
+byte-exactly (a flat literal mixing logicals and integers becomes a
+dynamic tagged array; Dyn logical equality compares payloads - the
+tag-only shortcut made .T. = .F. wrongly .T. and was removed);
+t609 hk205 (hash writes; hb_HHasKey keeps the registered 1/0
+surface, 1 here vs .T. in Harbour); t610 hk206 (hb_HSetDef
+overwrite on tag difference, hb_HScan finds a logical); t611 hk207
+(hb_HClone/hb_HValues preserve logical cells); t612 the AAdd/ArrSet
+part of hk208; t613 hk208e (hb_HCopy source first, hb_HFill with a
+logical). A Dyn in condition position materializes through the new
+hbc_dyn_to_log (NIL is .F., logical keeps payload, integer/string
+cell is a type error); ValType over a hash casilla measures "L" and
+an absent key "U". Registered limit: a mixed literal must be all
+literal elements.
+
+610/610 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
