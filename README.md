@@ -1188,11 +1188,22 @@ identity and equality coincide (hk128: NIL==NIL .T., NIL==1/1==NIL/
 NIL=="" all .F.; hk129: casilla == NIL answers like `=` - live child
 .F., NIL casilla .T.; t494/t495), so `==` reuses the `=` codegen
 paths (constant folds, tag dispatch, casilla read). Nested dynamic
-array VARIABLES answer identity as well (hk130: a==a .T., a==b .F.;
-t496 - the frame slot's first qword is the heap pointer at every
-implemented depth), and so do codeblock VARIABLES (hk131: x==x .T.,
-x==y .F. for distinct literals; t497 - the slot holds the
-per-literal pointer).
+array VARIABLES answer identity as well (hk130 for depth 2, hk135
+for depths 3 and 4: a==a .T., a==b .F. even with equal contents;
+t496/t498/t499 - the frame slot's first qword is the heap pointer
+at every implemented depth). hk130's third shape (a==c after c:=a)
+is unreachable here by design: assignment MOVES (difference family
+D5/D7), so t496 covers only the same-variable and distinct-variable
+shapes; the oracle label must not be read as the alias case passing.
+Codeblock `==` was admitted at iteration 39 for same-arity variable
+pairs and RETRACTED at 39b: later oracles showed Harbour's block
+identity is per EVALUATION (hk136: make()==make() is .F.; hk137:
+the same literal assigned in two loop iterations is .F.), while our
+slot holds a per-literal STATIC pointer that would answer .T. there.
+Those shapes are unreachable in today's dialect (blocks cannot be
+returned, Dyn cannot be reassigned to Block), but admitting the
+operator would bake in a model known to diverge, so `==` on
+codeblocks stays a named, truthful rejection (t497 neg).
 
-Battery: 493/493 manifest cases on Linux x86-64 and Wine, plus
+Battery: 495/495 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
