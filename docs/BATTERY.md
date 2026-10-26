@@ -1123,5 +1123,13 @@ element compare would lie. Strings/deeper arrays/codeblocks/NIL
 `==` keep named rejections; object identity (cl7/cl19) class-gated.
 No new runtime helpers; no ABI harness change.
 
-488/488 manifest cases + ABI harness green on Linux x86-64 and Wine
+t493 (iteration 37): string `==` is the EXACT comparison (oracle
+hk124: "a"=="a" .T., "a"=="a " .F., "a "=="a" .F. - unlike the
+right-length prefix rule of `=`). New leaf helper hbc_str_xeq
+(lengths must match AND every byte; same register contract as
+hbc_str_eq), canaried in the ABI harness (equal pair answers 1,
+shorter right operand 0). t492's expected rejection text updated
+for the widened measured-scope message.
+
+489/489 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
