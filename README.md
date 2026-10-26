@@ -1220,5 +1220,11 @@ use indexed-assignment storage that this PoC does not implement
 expressible producer - FOR EACH over hb_HKeys - is what t500/t501
 exercise, exactly as measured in hk141/hk143.
 
-Battery: 500/500 manifest cases on Linux x86-64 and Wine, plus
+Hash VARIABLES also answer identity (iteration 41; hk134: h==h .T.,
+h==k .F. even with equal contents - same slot-pointer model as the
+arrays; t505). The BASE/1070 failure mode covers both operand orders
+(hk142: casilla == int; hk144: int == casilla - both hang headless;
+t504/t506 posx).
+
+Battery: 502/502 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
