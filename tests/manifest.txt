@@ -540,3 +540,7 @@ pos tests/t542_hpos_owned_key.hb \n         2\n         0\n         0
 neg tests/t543_neg_hpos_type.hb `hb_HPos` expects a hash variable
 pos tests/t544_hhaskey_owned_key.hb \n         1\n         1\n         0\n         0
 pos tests/t545_hdel_owned_key.hb \n         1\n         0\n         0
+pos tests/t546_hmerge.hb \n         3\n         1\n        22\n         3\n         2\n         3
+pos tests/t547_hmerge_edges.hb \n         1\n         1\n         1\n         1\n         1
+neg tests/t548_neg_hmerge_type.hb hb_HMerge expects hash variables
+neg tests/t549_neg_hmerge_src.hb hb_HMerge expects hash variables
