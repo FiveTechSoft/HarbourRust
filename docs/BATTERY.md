@@ -2080,3 +2080,38 @@ logical boundary).
 
 Battery 704 -> 707 + ABI harness green (Linux nativo y Wine con oracle
 Linux).
+
+## 63t - Dyn conditions require a logical cell (silent divergence fixed)
+
+Oracles first (hbmk2 -gtstd @694428e1, sondas hk266-hk268): hk266 (a Dyn
+parameter as the condition: .T. takes the branch, .F. does not, NIL is
+Harbour's type-error dialog), hk267 (an integer cell in condition
+position is the same Harbour type error - even 0), hk268 (a string cell
+is the same type error). The dialogs cannot be probed headless; the
+registered failure mode is a clean named exit 1.
+
+Found while probing: hbc_dyn_to_log passed tag-0 (integer) payloads
+through as the branch value while its own comment claimed integers are
+a type error "like Harbour" - a silent divergence from hk267. Fixed in
+BOTH target blobs: only tag 3 is a valid condition; every other cell
+goes to the new hbc_dynlog_error ("Type error: condition is not a
+logical", exit 1), so the message also stops borrowing the arithmetic
+wording ("NIL used as a number") for condition failures. t617's
+expectation updated accordingly (same exit 1, right message; its hk210
+premise unchanged).
+
+- t712: logical Dyn cells decide the branch (hk266).
+- t713 (exit 1): an integer cell in a condition errors cleanly (hk267).
+- t714 (exit 1): a string cell in a condition errors cleanly (hk268).
+
+Sweep 175: unchanged, COMPILES 4 (runtime-helper change only).
+src/hbc.rs sha256
+0d74064ed1d983f7336aac56f8ea33e57a4f1928cace3c038ec636d077b4db84,
+compiler binary sha256
+f996c7f9b3f04e5803c483c31bef86c211da70bb7be3173972a36fc233cad9df,
+tests/manifest.txt sha256
+e36c675e4cd4f47c587d030b80c2fe5026b54713ba4808ca3d2c983317baf4d7,
+rustc 1.99.1.
+
+Battery 707 -> 710 + ABI harness green (Linux nativo y Wine con oracle
+Linux).
