@@ -1664,6 +1664,31 @@ hbc_abi_test:
     cmp %rax, %rdx
     jne abi_fail_xmm
     call abi_check
+    # hbc_print_i64c (63zf, new entry): computed integer field. Positive
+    # small, positive at and over the 9999999999 threshold, negative at
+    # and over the -999999999 threshold, and the Dyn numeric payload path
+    # (tag 0) which now routes here. Canaries, 16-alignment and stack
+    # balance around every call; the printed fields land on stdout and
+    # are part of the expected output below, on BOTH targets.
+    mov $5, %rax
+    call hbc_print_i64c
+    call abi_check
+    mov $9999999999, %rax
+    call hbc_print_i64c
+    call abi_check
+    mov $10000000000, %rax
+    call hbc_print_i64c
+    call abi_check
+    mov $-999999999, %rax
+    call hbc_print_i64c
+    call abi_check
+    mov $-1000000000, %rax
+    call hbc_print_i64c
+    call abi_check
+    xor %eax, %eax
+    mov $50000005000000, %rdx
+    call hbc_print_dyn
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -1923,7 +1948,7 @@ out_l=$(gen/abi_l_t) && rc_l=0 || rc_l=$?
 out_w=$("$WINE" gen/abi_w_t.exe 2>/dev/null) && rc_w=0 || rc_w=$?
 echo "linux: $out_l (exit $rc_l)"
 echo "wine:  $out_w (exit $rc_w)"
-if [ "$out_l" = "         1.5ABI OK" ] && [ "$out_w" = "         1.5ABI OK" ] && [ $rc_l -eq 0 ] && [ $rc_w -eq 0 ]; then
+if [ "$out_l" = "         1.5         59999999999         10000000000-999999999         -1000000000      50000005000000ABI OK" ] && [ "$out_w" = "         1.5         59999999999         10000000000-999999999         -1000000000      50000005000000ABI OK" ] && [ $rc_l -eq 0 ] && [ $rc_w -eq 0 ]; then
   echo "ABI HARNESS PASS"
 else
   echo "ABI HARNESS FAIL"; exit 1
