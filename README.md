@@ -1343,5 +1343,16 @@ path with genuine owned temporaries - their expected outputs are
 unchanged). No Harbour behaviour changes: this is our own ownership
 check (hb_memcheck), not an oracle.
 
-Battery: 540/540 manifest cases on Linux x86-64 and Wine, plus
+Iteration 53 fixes the same leak pattern in hb_HDel(h, key): an
+OWNED key temporary (a genuine StrOwn, e.g. an hb_HKeys element copy)
+was never freed around the delete - the balance went 1 over. The
+statement now frees it right after hbc_hdel returns (t545 pins the fix
+with a genuine element-copy key, balance 0). The StrOwn review matrix
+is complete: hash READS by index (h[k]) and indexed writes (h[k] := v)
+already freed their temporaries; hb_HGet/hb_HSet/hb_HPos were verified
+clean in the 52; hb_HHasKey and hb_HDel were the only two leaking
+callers. These are our own ownership checks (hb_memcheck), not Harbour
+oracles.
+
+Battery: 541/541 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
