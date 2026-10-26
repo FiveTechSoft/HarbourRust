@@ -1860,6 +1860,13 @@ struct Sig {
     // modes exclude each other for the same parameter.
     borrowed: Vec<bool>,
     arr_moved: Vec<bool>,
+    // inferred[i]: parameter i's type genuinely comes from the callee's
+    // own body evidence (pin). FALSE only for placeholder entries of the
+    // order-independent fixpoint (seed, or still-unpinned after a round);
+    // call sites skip their per-argument checks against an uninferred
+    // parameter - the callee's pin error is the honest diagnostic, and a
+    // check against a placeholder would be a placeholder artifact.
+    inferred: Vec<bool>,
 }
 
 // Semantic analysis: types + ownership/move tracking. This pass is OURS:
@@ -2121,7 +2128,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 }
                 if let Some(sig) = sigs.iter().find(|v| v.name == *id) {
                     for (i, a) in args.iter().enumerate() {
-                        if i < sig.params.len() {
+                        // Only GENUINELY inferred parameter types are
+                        // evidence; pinning against a fixpoint placeholder
+                        // would launder it into a concrete type (63o).
+                        if i < sig.params.len() && sig.inferred.get(i).copied().unwrap_or(false) {
                             match a {
                                 Expr::ByRef(vn) => pin_vars(f, &Expr::Var(vn.clone()), sig.params[i], pin, n)?,
                                 _ => pin_vars(f, a, sig.params[i], pin, n)?,
@@ -3061,14 +3071,24 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             let si = sigs.iter().position(|v| v.name == *id)
                 .ok_or_else(|| format!("line {}: unknown function `{}` (must be defined before use)", n, id))?;
-            let (sig_params, sig_borrowed, sig_arr_moved, sig_ret) = {
+            let (sig_params, sig_borrowed, sig_arr_moved, sig_ret, sig_inferred) = {
                 let s = &sigs[si];
-                (s.params.clone(), s.borrowed.clone(), s.arr_moved.clone(), s.ret)
+                (s.params.clone(), s.borrowed.clone(), s.arr_moved.clone(), s.ret, s.inferred.clone())
             };
             if sig_params.len() != args.len() {
                 return Err(format!("line {}: `{}` takes {} argument(s), got {}", n, id, sig_params.len(), args.len()));
             }
             for (i, a) in args.iter().enumerate() {
+                if !sig_inferred.get(i).copied().unwrap_or(false) {
+                    // Placeholder parameter (order-independent fixpoint,
+                    // pre-convergence or genuinely uninferable): no
+                    // per-argument check is meaningful against it, and
+                    // flags flipped on a placeholder could persist into
+                    // the converged table. The callee's pin error is
+                    // the diagnostic; when the parameter gains evidence
+                    // in a later round, this call site is re-checked.
+                    continue;
+                }
                 if let Expr::ByRef(vn) = a {
                     // `@x` (hk216 family): the callee gets an EXCLUSIVE
                     // borrow of the caller's own slot for the duration of
@@ -12816,6 +12836,7 @@ fn main() {
         arr_moved: vec![false; f.params.len()],
         params: vec![Ty::I64; f.params.len()],
         ret: None,
+        inferred: vec![false; f.params.len()],
     }).collect();
     let mut sigs: Vec<Sig>;
     let mut has_main = false;
@@ -12829,14 +12850,18 @@ fn main() {
         let mut cur: Vec<Sig> = Vec::with_capacity(funcs.len());
         let before = view.clone();
         let mut first_err: Option<String> = None;
+        let mut first_pin_err: Option<String> = None;
         for f in &mut funcs {
             if f.name == "main" { has_main = true; }
             // Pin parameter types. On failure, keep going with i64 placeholders
             // so the body check can surface a more specific error first; the pin
             // error is only reported if the body itself checks clean.
-            let (ptys, pin_err) = match pin_params(f, &view) {
-                Ok((pin, e)) => (pin.into_iter().map(|x| x.unwrap_or(Ty::I64)).collect(), e),
-                Err(m) => (vec![Ty::I64; f.params.len()], Some(m)),
+            let (ptys, inferred, pin_err) = match pin_params(f, &view) {
+                Ok((pin, e)) => {
+                    let inf: Vec<bool> = pin.iter().map(|x| x.is_some()).collect();
+                    (pin.into_iter().map(|x| x.unwrap_or(Ty::I64)).collect(), inf, e)
+                }
+                Err(m) => (vec![Ty::I64; f.params.len()], vec![false; f.params.len()], Some(m)),
             };
             let mut env: Vec<Local> = Vec::new();
             // Parameters enter the frame as owned locals: integer arguments copy,
@@ -12863,9 +12888,9 @@ fn main() {
                 ret = None; // main's own `return nil` is NIL, never a usable value
             }
             if let Some(m) = pin_err {
-                if first_err.is_none() { first_err = Some(m); }
+                if first_pin_err.is_none() { first_pin_err = Some(m); }
             }
-            cur.push(Sig { name: f.name.clone(), borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], params: ptys.clone(), ret });
+            cur.push(Sig { name: f.name.clone(), borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], params: ptys.clone(), ret, inferred });
             f.ret = ret;
         }
         // Types/returns converge by fresh re-inference (cur) against the
@@ -12874,12 +12899,19 @@ fn main() {
         // (monotone false -> true), so a late caller in this round is
         // not lost by an early copy.
         let converged = cur.len() == before.len()
-            && cur.iter().zip(before.iter()).all(|(c, b)| c.name == b.name && c.params == b.params && c.ret == b.ret)
+            && cur.iter().zip(before.iter()).all(|(c, b)| c.name == b.name && c.params == b.params && c.ret == b.ret && c.inferred == b.inferred)
             && view.iter().zip(before.iter()).all(|(v, b)| v.name == b.name && v.borrowed == b.borrowed && v.arr_moved == b.arr_moved);
         if converged {
             // This round's checks already ran against the stable table:
             // its errors are final, not placeholder artifacts.
-            if let Some(m) = first_err {
+            // Body-first, the established contract (t66, t323): a body
+            // error names the misuse more specifically than a pin
+            // failure; the pin error is reported only when the body
+            // checks clean. Placeholder artifacts cannot hide inside
+            // body errors because call-site checks against uninferred
+            // parameters are skipped, so a body error that survives to
+            // the converged round never rests on a placeholder.
+            if let Some(m) = first_err.or(first_pin_err) {
                 eprintln!("error: {}", m);
                 process::exit(1);
             }
@@ -12897,6 +12929,7 @@ fn main() {
         for (v, c) in view.iter_mut().zip(cur.into_iter()) {
             v.params = c.params;
             v.ret = c.ret;
+            v.inferred = c.inferred;
         }
     }
     // Borrowed-parameter escape post-pass (see borrow_stmts_ok).
