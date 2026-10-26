@@ -1213,6 +1213,22 @@ integer a per-operator clean named exit 1 mirroring BASE/1073-1076
 (hk149-hk152 - dialogs hang headless; registered failure modes;
 t514-t517).
 
+t580-t583 (iteration 59): hb_HDelAt(h, n) over the new frame-based
+shared helper hbc_hdelat - the entry AT a 1-based insertion-order
+position removed, positions compacted, order preserved and the only
+entry emptying the hash (t580; hk187/hk190), the deleted entry's key
+copy freed with full balance (t581, wrap + memcheck = 0, own check)
+and the named rejections for a non-hash target and a non-integer
+position (t582/t583). EVERY out-of-range position is Harbour's
+BASE/1187 dialog (hk189): the registered dialogo-sin-oraculo family,
+clean bound-error exit here, never a compat success. A float position
+truncates in the oracle (hk190) and stays outside the dialect's
+numeric syntax; the CaseMatch flag is irrelevant (positional match).
+hbc_hdelat is canaried in the ABI harness on both targets, including
+the registry check on the freed key copy. Measured note: hb_HPairAt
+returns a mixed {key, value} array (hk188), outside this increment's
+array support - it stays out of the surface, verified.
+
 t574-t579 (iteration 58): hb_HKeyAt / hb_HValueAt over the new shared
 leaf helpers hbc_hkeyat / hbc_hvalueat - key and value casilla at a
 1-based insertion-order position, compact after hb_HDel (t574;
