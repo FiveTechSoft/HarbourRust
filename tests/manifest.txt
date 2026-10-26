@@ -627,3 +627,12 @@ neg tests/t629_discard_array.hb discarding a
 neg tests/t630_call_stmt_unknown.hb unknown function
 pos tests/t631_discard_strown.hb \n         0
 pos tests/t632_len_string.hb \n         5\n         0\n         3
+pos tests/t633_byref_i64.hb \n         2\n         3
+pos tests/t634_byref_string.hb \nabc!\nabc!!
+pos tests/t635_byref_passon.hb \n        20
+neg tests/t636_byref_alias.hb cannot borrow `x` exclusively
+neg tests/t637_byref_nonvar.hb statement not in the subset
+pos tests/t638_byref_selfassign.hb \nabc!\n         1
+pos tests/t639_byref_derived_ret.hb \nabc?\nabc\n         1
+pos tests/t640_byref_literal.hb \nzzz\n         1
+neg tests/t641_byref_moveout.hb moves it out of its owner
