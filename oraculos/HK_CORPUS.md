@@ -2008,3 +2008,85 @@ function main()
 return nil
 ```
 
+### hk148
+
+```harbour
+function main()
+    local h := {"a" => 1, "bb" => 2}
+    local k, k2
+    for each k in hb_HKeys(h)
+        for each k2 in hb_HKeys(h)
+            ? k < k2
+        next
+    next
+    for each k in hb_HKeys(h)
+        for each k2 in hb_HKeys(h)
+            ? k > k2
+        next
+    next
+    for each k in hb_HKeys(h)
+        for each k2 in hb_HKeys(h)
+            ? k <= k2
+        next
+    next
+    for each k in hb_HKeys(h)
+        for each k2 in hb_HKeys(h)
+            ? k >= k2
+        next
+    next
+return nil
+```
+
+### hk149
+
+```harbour
+function main()
+    local h := {"a" => 1}
+    local a := {7}
+    local k
+    for each k in hb_HKeys(h)
+        ? k < a[1]
+    next
+return nil
+```
+
+### hk150
+
+```harbour
+function main()
+    local h := {"a" => 1}
+    local a := {7}
+    local k
+    for each k in hb_HKeys(h)
+        ? k > a[1]
+    next
+return nil
+```
+
+### hk151
+
+```harbour
+function main()
+    local h := {"a" => 1}
+    local a := {7}
+    local k
+    for each k in hb_HKeys(h)
+        ? k <= a[1]
+    next
+return nil
+```
+
+### hk152
+
+```harbour
+function main()
+    local h := {"a" => 1}
+    local a := {7}
+    local k
+    for each k in hb_HKeys(h)
+        ? k >= a[1]
+    next
+return nil
+```
+
+
