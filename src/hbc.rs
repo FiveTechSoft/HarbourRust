@@ -1242,10 +1242,14 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
             Tok::KwMethod | Tok::KwCreate => return Ok(()),
             Tok::KwReturn if depth == 0 => return Ok(()),
             Tok::KwReturn => {
-                // Early return inside an if/while block: an expression is
-                // required, so every early exit carries a typed value.
+                // Early return inside a block (oracles hk378-hk381): a
+                // BARE `return` is Harbour-valid anywhere and returns NIL
+                // (hk378: inside an `if`, hk380: inside `do while`, hk381:
+                // inside a `do case` arm); it maps to the same Ret(None)
+                // the closing top-level bare return already uses, so the
+                // existing single-epilogue cleanup is preserved untouched.
                 let stmt = match toks.len() {
-                    1 => return Err(format!("line {}: an early `return` inside a block needs a value (`return <expr>` or `return nil`); only the closing top-level return may be bare", n)),
+                    1 => Stmt::Ret(n, None),
                     // `return nil` IS a value since v2c: NIL is a real
                     // tagged value, so an early nil return unifies with the
                     // other returns like any expression (probe n2 order-
