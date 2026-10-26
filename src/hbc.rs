@@ -4618,9 +4618,121 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     })
 }
 
+// Bare `local i` (or `local i := NIL`) whose FIRST mention in the same
+// block is the counter of a top-level `for i := start to end`: Harbour
+// reuses the visible variable (oracle hk336; natural exit leaves the
+// counter one step past the bound), and the NIL it holds between the
+// LOCAL and the FOR is unobservable because nothing reads it there. This
+// PoC types such a slot i64 from declaration. Any read, write, call
+// argument, nested use, or a start/end expression mentioning the name
+// before the FOR keeps the Dyn slot and the named `for` rejection: a
+// covered limit of this increment, not a Harbour rule. Checker, layout
+// and codegen must agree, so all three call this one pure predicate.
+fn bare_local_is_for_counter(stmts: &[Stmt], idx: usize, name: &str) -> bool {
+    for s in &stmts[idx + 1..] {
+        match s {
+            Stmt::For(_, lv, start, end, _, _) if lv == name => {
+                return !expr_mentions(start, name) && !expr_mentions(end, name);
+            }
+            _ => {
+                if stmt_mentions(s, name) {
+                    return false;
+                }
+            }
+        }
+    }
+    false
+}
+
+fn stmts_mention(stmts: &[Stmt], name: &str) -> bool {
+    stmts.iter().any(|s| stmt_mentions(s, name))
+}
+
+fn stmt_mentions(s: &Stmt, name: &str) -> bool {
+    match s {
+        Stmt::Local(_, id, e) => id == name || expr_mentions(e, name),
+        Stmt::Print(_, items, _) => items.iter().any(|e| expr_mentions(e, name)),
+        Stmt::Ret(_, Some(e)) => expr_mentions(e, name),
+        Stmt::Ret(_, None) | Stmt::Exit(_) | Stmt::Loop(_) => false,
+        Stmt::If(_, c, a, b) => {
+            expr_mentions(c, name) || stmts_mention(a, name) || stmts_mention(b, name)
+        }
+        Stmt::While(_, c, b) => expr_mentions(c, name) || stmts_mention(b, name),
+        Stmt::Assign(_, id, e) => id == name || expr_mentions(e, name),
+        Stmt::HDel(_, id, e) | Stmt::HDelAt(_, id, e) | Stmt::HFill(_, id, e) => {
+            id == name || expr_mentions(e, name)
+        }
+        Stmt::HClear(_, id) => id == name,
+        Stmt::HMerge(_, a, b) => a == name || b == name,
+        Stmt::HCopy(_, a, b, start, count) => {
+            a == name
+                || b == name
+                || start.as_ref().map_or(false, |e| expr_mentions(e, name))
+                || count.as_ref().map_or(false, |e| expr_mentions(e, name))
+        }
+        Stmt::HSet(_, id, k, v) => {
+            id == name || expr_mentions(k, name) || expr_mentions(v, name)
+        }
+        Stmt::HSetCaseMatch(_, id, f) => id == name || expr_mentions(f, name),
+        Stmt::ArrSet(_, id, i, e) => {
+            id == name || expr_mentions(i, name) || expr_mentions(e, name)
+        }
+        Stmt::ArrSet2(_, id, i, j, e) => {
+            id == name
+                || expr_mentions(i, name)
+                || expr_mentions(j, name)
+                || expr_mentions(e, name)
+        }
+        Stmt::ArrSet3(_, id, i, j, k, e) => {
+            id == name
+                || expr_mentions(i, name)
+                || expr_mentions(j, name)
+                || expr_mentions(k, name)
+                || expr_mentions(e, name)
+        }
+        Stmt::ArrSet4(_, id, i, j, k, l, e) => {
+            id == name
+                || expr_mentions(i, name)
+                || expr_mentions(j, name)
+                || expr_mentions(k, name)
+                || expr_mentions(l, name)
+                || expr_mentions(e, name)
+        }
+        Stmt::SelfSet(_, _, e) => expr_mentions(e, name),
+        Stmt::SendSet(_, r, _, e) => expr_mentions(r, name) || expr_mentions(e, name),
+        Stmt::SendStmt(_, e) | Stmt::CallStmt(_, e) => expr_mentions(e, name),
+        Stmt::AAdd(_, id, e) | Stmt::ASize(_, id, e) => id == name || expr_mentions(e, name),
+        Stmt::AAddSub(_, id, i, e) | Stmt::ASizeSub(_, id, i, e) => {
+            id == name || expr_mentions(i, name) || expr_mentions(e, name)
+        }
+        Stmt::AAddSub2(_, id, i, j, e) | Stmt::ASizeSub2(_, id, i, j, e) => {
+            id == name
+                || expr_mentions(i, name)
+                || expr_mentions(j, name)
+                || expr_mentions(e, name)
+        }
+        Stmt::AAddSub3(_, id, i, j, k, e) | Stmt::ASizeSub3(_, id, i, j, k, e) => {
+            id == name
+                || expr_mentions(i, name)
+                || expr_mentions(j, name)
+                || expr_mentions(k, name)
+                || expr_mentions(e, name)
+        }
+        Stmt::For(_, lv, a, b, _, body) => {
+            lv == name
+                || expr_mentions(a, name)
+                || expr_mentions(b, name)
+                || stmts_mention(body, name)
+        }
+        Stmt::ForEach(_, lv, c, body) => {
+            lv == name || expr_mentions(c, name) || stmts_mention(body, name)
+        }
+    }
+}
+
 fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &mut Option<Ty>, loop_pre: Option<&Vec<bool>>, exits: &mut Vec<Vec<bool>>, dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) -> Result<bool, String> {
     let mut falls = true;
-    for s in stmts {
+    for (si, s) in stmts.iter().enumerate() {
         match s {
             Stmt::SelfSet(n, _, _) | Stmt::SendSet(n, _, _, _) | Stmt::SendStmt(n, _) => {
                 return Err(format!("line {}: classes are not in this increment yet (parser landed; runtime representation pending)", n));
@@ -4662,6 +4774,19 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 // owned-capable slot from the start: the callee frees and
                 // re-stores through the pointer (hk218).
                 let t = if t == Ty::Str && byref_names.contains(id) { Ty::StrOwn } else { t };
+                // Bare-local FOR counter (oracle hk336): the slot types
+                // i64 from declaration via the one shared predicate;
+                // every other shape keeps Dyn and the named `for`
+                // rejection.
+                let t = if t == Ty::Dyn
+                    && matches!(e, Expr::Nil)
+                    && !byref_names.contains(id)
+                    && bare_local_is_for_counter(stmts, si, id)
+                {
+                    Ty::I64
+                } else {
+                    t
+                };
                 env.push(Local { name: id.clone(), ty: t, moved: false, ro: false, byref: false });
             }
             Stmt::Print(n, es, _) => {
@@ -7540,7 +7665,7 @@ fn cg_dyn_clone_if_str(out: &mut String) {
 }
 
 fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &mut usize, darr_slots: &mut Vec<(usize, u8)>, dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
-    for s in stmts {
+    for (si, s) in stmts.iter().enumerate() {
         match s {
             Stmt::Local(_, id, e) => {
                 let mut t = expr_ty(e, env, sigs);
@@ -7550,6 +7675,10 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 if t == Ty::I64 && dyn_names.contains(id) { t = Ty::Dyn; }
                 // Same `@s` widening as cg_stmts (hk218): owned-capable slot.
                 if t == Ty::Str && byref_names.contains(id) { t = Ty::StrOwn; }
+                // Bare-local FOR counter (hk336): i64 slot from
+                // declaration, in lockstep with the checker through the
+                // one shared predicate.
+                if t == Ty::Dyn && matches!(e, Expr::Nil) && !byref_names.contains(id) && bare_local_is_for_counter(stmts, si, id) { t = Ty::I64; }
                 *frame += size_of(t);
                 env.push(CgLocal { name: id.clone(), ty: t, off: *frame });
                 if matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::Dyn) {
@@ -8050,7 +8179,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
 }
 
 fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, ll: &Option<(String, String)>, slots: &[(usize, u8)], dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
-    for s in stmts {
+    for (si, s) in stmts.iter().enumerate() {
         match s {
             Stmt::SelfSet(..) | Stmt::SendSet(..) | Stmt::SendStmt(..) => unreachable!("rejected before codegen"),
             Stmt::CallStmt(_, e) => {
@@ -8090,8 +8219,20 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // initializer is copied into an owned buffer.
                 let byref_str = t == Ty::Str && byref_names.contains(id);
                 if byref_str { t = Ty::StrOwn; }
+                // Bare-local FOR counter (hk336): i64 slot, in lockstep
+                // with the checker and layout through the one shared
+                // predicate. The NIL the slot would hold before the FOR
+                // is unobservable (mention-clean rule); it starts at 0
+                // and the FOR writes it.
+                let bare_cnt = t == Ty::Dyn && matches!(e, Expr::Nil) && !byref_names.contains(id) && bare_local_is_for_counter(stmts, si, id);
+                if bare_cnt { t = Ty::I64; }
                 *frame += size_of(t);
                 let off = *frame;
+                if bare_cnt {
+                    out.push_str(&format!("    movq $0, -{}(%rbp)\n", off));
+                    env.push(CgLocal { name: id.clone(), ty: t, off });
+                    continue;
+                }
                 if t == Ty::Hash {
                     if let Expr::HashLit(ps) = e {
                         // The slot starts zeroed by the prologue. Pairs are
