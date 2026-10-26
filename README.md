@@ -1240,5 +1240,17 @@ equivalence (t511 posx). A string casilla against a NIL casilla is .F.
 in both directions, no error (hk147; t512). t510/t512 run on Linux and
 Wine.
 
-Battery: 508/508 manifest cases on Linux x86-64 and Wine, plus
+Iteration 45 adds ORDERING between two Dyn casillas (new leaf helper
+hbc_dynxcmp, canaried in the ABI harness on both targets): string x
+string compares byte-wise over the right operand's length (oracle
+hk148: <: .F./.T./.F./.F., >: .F./.F./.T./.F., <=: .T./.T./.F./.T.,
+>=: .T./.F./.T./.T.; t513) - before this fix the Dyn x Dyn ordering
+path clean-exited on any non-integer casilla. String x integer is the
+per-operator Harbour condition BASE/1073/1075/1074/1076 (hk149-hk152
+- dialogs hang headless, no oracle): clean named exit 1 via the
+existing hbc_dyncmp_*_error stubs, registered failure modes
+(t514-t517 posx). NIL in an ordering comparison keeps the registered
+type-error failure mode.
+
+Battery: 513/513 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
