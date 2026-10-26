@@ -1175,5 +1175,12 @@ hbc_dynxeq_error stub. hk132/hk133 measured indexed-assignment string
 cells, which this PoC does not implement (elements stay tagged int/
 NIL scalars by indexed assignment) - corpus-only, future material.
 
-500/500 manifest cases + ABI harness green on Linux x86-64 and Wine
+t505/t506 (iteration 41): hash VARIABLES answer `==` identity (oracle
+hk134: h==h .T., h==k .F. even with equal contents - the frame slot's
+first qword is the heap pointer, same model as the arrays; t505), and
+the BASE/1070 failure mode now covers both operand orders (hk142:
+casilla == int; hk144: int == casilla - both hang headless, no
+oracle; t504/t506 posx, both targets).
+
+502/502 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
