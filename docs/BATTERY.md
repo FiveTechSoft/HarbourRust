@@ -2818,6 +2818,32 @@ six misclassified files advance to their real next gap - dates2 to
 extend1 to identifier-led (39), say to identifier-led (7), vmasort
 to DO CASE (63) - while dev/longdev/output/rdd keep the improved
 named rejection.
+63zl - line continuation `;` corrected by fresh oracles
+(hk357-hk368). The preprocessor already joined a trailing `;`
+outside strings/comments, but an old probe (b39c, lost to a sandbox
+wipe) claimed even a COMMENT after the `;` blocked the join. Fresh
+measurement on the pinned hbmk2 says the opposite: hk362 (`; //
+comment`) and hk367 (`; /* block */`, even a MULTI-LINE block
+comment with code after its close) JOIN, while hk368 confirms CODE
+after the `;` is a Harbour E0030 syntax error. The guard is removed;
+comments are stripped before the check, so a stripped line ending in
+`;` had only whitespace/comments after it by construction. Measured
+rules preserved: tokens never merge across the break (hk363: `ab;` +
+`c` is NOT `abc`); a blank next line ends the statement (hk359); `;`
+inside a string does not continue (hk360 unterminated-string);
+trailing `;` after a complete statement continues into the next line
+and errors there (hk366). t622 flips neg -> pos: it locked the old
+probe's wrong behavior; its new expected output is hk362's measured
+one (`\n         3`), same maneuver as the t783 flip in 63zh.
+
+Tests: t816-t819 pos (mirrors of hk357/hk362/hk367/hk364), t820-t822
+neg (code after `;`, unterminated string, no token merge), t622 row
+flip. BATTERY 810 -> 817 runner rows + ABI ALL GREEN (Linux native
+and Wine with Linux oracle). Sweep: 9 COMPILES unchanged;
+keywords.prg - a NEGATIVE original (Harbour itself rejects it:
+E0013/E0020/E0046) - advances from line 138 (`;`) to line 761 (`&`
+macro), 623 lines deeper, both sides still rejecting.
+
 
 
  Sweep: ifelse.prg and fornext.prg flip
