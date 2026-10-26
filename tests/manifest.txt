@@ -491,4 +491,6 @@ pos tests/t493_exeq_str.hb \n         1\n         0\n         0\n         0\n   
 pos tests/t494_exeq_nil.hb \n         1\n         0\n         0\n         0
 pos tests/t495_exeq_casnil.hb \n         0\n         0\n         1\n         0\n         0
 pos tests/t496_exeq_darr2.hb \n         1\n         0\n         1
-pos tests/t497_exeq_block.hb \n         1\n         0\n         1
+neg tests/t497_neg_exeq_block.hb identity is per evaluation
+pos tests/t498_exeq_darr3.hb \n         1\n         0\n         1
+pos tests/t499_exeq_darr4.hb \n         1\n         0\n         1
