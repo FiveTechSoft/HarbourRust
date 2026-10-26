@@ -2198,3 +2198,19 @@ ausente, antes del error - y su valor se descarta (nunca rescata una
 ausente ni anula un NIL existente, hk158b/c). Corrige la redacción
 inicial de la iteración 49 («no se evalúa»), señalada en revisión: t531
 fija la evaluación en ambos targets.
+
+### hk159/hk160/hk161 - hb_HSet: escritura funcional, retorno hash y orden CLAVE-valor (26 oct 2026)
+
+Fuentes `sondas_ac/hkeys/hk159.prg`, `hk160.prg`, `hk161.prg`, compiladas
+con `hbmk2 <f> -gtstd -o<x>` (solo librerías core). hk159 verbatim:
+`\n\n         2\n         2\n\n         2\n         9\nNIL\n         3` -
+la escritura funcional crece len al añadir, sobrescribe en su sitio al
+reescribir y NIL viaja; las líneas VACÍAS son la impresión del valor de
+retorno. hk160 fija ese retorno: ValType "H" - hb_HSet devuelve el
+propio hash (como AAdd devuelve el array; la forma-sentencia es la
+superficie del PoC y el retorno queda fuera, registrado). hk161
+verbatim: `\nKEY\nVAL\nDONE` - hb_HSet evalúa la CLAVE antes que el
+valor, orden OPUESTO a `h[k] := v` (h4): medido por operación, no
+inferido. t532/t533 reproducen en Linux y Wine (t533 con comprobación
+propia de dueño: la clave temporal prestada se libera tras la copia,
+balance 0).
