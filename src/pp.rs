@@ -33,7 +33,6 @@ pub struct Pp {
     pub defs: HashMap<String, Def>, // key: exact name (macro names are case-sensitive)
     pub cmds: Vec<Cmd>,             // #command / #xcommand / #translate rules, in order
     pub incdirs: Vec<String>,
-    pub origins: Vec<(String, usize)>, // emitted line -> original path/line (diagnostics)
 }
 
 // A command rule: pattern tokens (literal words or <param>) => result template.
@@ -67,7 +66,7 @@ impl Pp {
         } else {
             defs.insert("__PLATFORM__UNIX".to_string(), Def { params: Vec::new(), funclike: false, body: String::new(), dup: 1 });
         }
-        Pp { defs, cmds: Vec::new(), incdirs, origins: Vec::new() }
+        Pp { defs, cmds: Vec::new(), incdirs }
     }
 }
 
@@ -987,11 +986,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                         None => break,
                     }
                 }
-                let expanded = expand(&cur, &pp.defs, line)?;
-                for _ in 0..expanded.split('\n').count() {
-                    pp.origins.push((path.to_string(), line));
-                }
-                out.push_str(&expanded);
+                out.push_str(&expand(&cur, &pp.defs, line)?);
                 out.push('\n');
             }
             li += 1;
