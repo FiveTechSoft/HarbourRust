@@ -4845,11 +4845,13 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     if var.ty == Ty::Hash {
                         // ValType(h[k]): the key evaluates once (hk89);
                         // hbc_hget borrows and returns the cell pointer or
-                        // 0 on a miss - a miss classifies as "U", Harbour's
-                        // ValType of an absent key.
+                        // 0 on a miss. A miss is Harbour's BASE/1132-family
+                        // error condition (hk209: the dialog hangs headless)
+                        // - the registered clean bound-error exit, NOT a
+                        // silent "U" read.
                         cg_value(ie, env, sigs, strs, out, target);
                         out.push_str(&format!("    mov %rax, %rsi\n    lea -{}(%rbp), %rdi\n    call hbc_hget\n", var.off));
-                        out.push_str("    test %rax, %rax\n    je 85f\n    mov (%rax), %r10\n    jmp 86f\n85:\n    mov $1, %r10\n86:\n");
+                        out.push_str("    test %rax, %rax\n    je 85f\n    mov (%rax), %r10\n    jmp 86f\n85:\n    call hbc_bound_error\n86:\n");
                         vt_classify_scalar(strs, out);
                     } else {
                     cg_expr(ie, env, sigs, strs, out, target);
