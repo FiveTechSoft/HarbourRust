@@ -1692,3 +1692,103 @@ against the post-63k sweep of HEAD 868b3f57): 9 rows changed, all advances:
   "unexpected token Plus".
 - dates3, guestbk, longdev, longstr2, t1: compound assignment parses;
   first error moves to the next blocker in each file.
+
+## Iteration 63m — file-scope declarations and implicit main (2026-10-26)
+
+File-scope forms measured first against hbmk2 (oracles hk247a-hk250a):
+
+- Implicit main (hk247a): a leading group of bare statements at file
+  scope becomes the synthetic program entry; locals at its top work
+  like any body, and one optional closing `return` is consumed. A
+  second top-level statement group after any function definition is a
+  NAMED rejection - Harbour silently drops it (hk247c, hk247f), and a
+  silently dropped behavior is not one to reproduce. Implicit main
+  plus an explicit Main is the existing duplicate-function error
+  (Harbour silently prefers the explicit one, hk247e; registered
+  divergence).
+- File-scope MEMVAR lines are accepted and ignored (hk247b). The
+  declaration relaxes Harbour's compile-time memvar name resolution
+  only; it creates NO storage, so any later memvar reference still
+  fails by name (t685) - accepting the line can never fabricate a
+  working memvar.
+- REQUEST (hk250a) is NOT treated as a blanket no-op: in Harbour it
+  pulls a module and its init code into the link, an effect this
+  subset cannot reproduce. The only REQUEST honored is one naming a
+  function defined in this same file. Even that honored case is
+  inert-only: no module-link, INIT/EXIT or symbol-registration
+  semantics are implied or reproduced. Anything else is a named
+  rejection (t686) instead of a silently skipped effect.
+- STATIC FUNCTION / STATIC PROCEDURE parse as plain functions
+  (hk249), scoped to the single compilation unit this compiler
+  builds: static linkage only scopes symbol visibility between
+  units, and with one unit the distinction is inert. Name conflicts
+  stay detected - a STATIC and a plain function with the same name
+  hit the duplicate-function error (t687), as Harbour reports too.
+  No cross-unit visibility equivalence is claimed. File-scope
+  STATIC VARIABLES are globals and get a named rejection (global
+  storage needs its own design).
+- `func` and `proc` are lexer aliases for FUNCTION / PROCEDURE
+  (hk249). NOTE lines are comments to end of line, valid at file
+  scope and inside bodies (hk249), unless the second token is an
+  assignment (`note := 1` stays a variable named note).
+- INIT / EXIT PROCEDURE: named rejection (startup/teardown ordering
+  needs its own design).
+- The preprocessor now predefines `__HARBOUR__` = 197121 (0x030201,
+  Harbour 3.2.0dev, measured on the pinned harbour-core, hk248) on
+  every target. It is a VERSION STAMP ONLY, so conditional
+  compilation can take Harbour branches (`#ifndef __HARBOUR__` ->
+  skip clipper.ch); it is not a claim of Harbour runtime
+  completeness.
+- The platform macro follows the COMPILE TARGET, never the host:
+  the Linux target defines object-like `__PLATFORM__UNIX` and the
+  Windows target `__PLATFORM__WINDOWS` (hk248 measured the Linux
+  side; the Windows side mirrors the same platform-macro rule).
+  Verified per target with one conditional source: the Linux build
+  prints the unix branch (equal to the hk248 Linux oracle), and the
+  --target=windows build under Wine prints the windows branch. The
+  Windows branch print proves OUR target switch selects the right
+  macro; it is NOT a measurement against a Harbour Windows oracle
+  (none was run). Windows-target compatibility beyond this target-
+  switch contrast is not claimed. Macro names are exact-case in this
+  preprocessor; the predefined keys use the upper-case spelling the
+  ecosystem writes.
+
+- t675: implicit main prints lead, ok (= hk247a).
+- t676: implicit main with locals and a closing return -> 42.
+- t677: file-scope MEMVAR skipped and REQUEST of a file-defined
+  function honored; body runs.
+- t678: STATIC FUNCTION + proc + NOTE -> 42 (= hk249).
+- t679: func alias -> 42.
+- t680: ? __HARBOUR__ -> 197121 (= hk248).
+- t681-t684: the named rejections above.
+- t685: MEMVAR declaration + reference still fails (no fabricated
+  storage).
+- t686: REQUEST of an undefined symbol is the named rejection.
+- t687: STATIC/plain same-name functions are duplicates.
+
+Battery: 683/683 + ABI harness green (Linux and Wine byte-identical).
+
+**Sweep** (frozen 175; provenance: src hbc.rs sha256
+ac5d8a03ac1766f901449ca2b60bc28f3e44614d94ca877950571a2451d9ac60,
+src pp.rs sha256
+ec5bb2cdaa8287ba2ba1578440d727a4736aaa46f6bef1506603b8b20d9d8df5,
+compiler binary sha256
+6cb75cce3342ada4d375dbe7655444933383a02d7114e45592630913deda971b,
+2026-10-26 (this 63m source); compared against the 63l sweep of HEAD
+d37e0f4f): the 22-file "code outside a function" cluster COLLAPSES to
+zero; all 22 files now advance to their next real blocker (unknown
+builtins such as aeval/cmonth, the ^ and & operators, multi-index
+arrays, memvar references). COMPILES drops from 2 to 1 (hello.prg):
+- errsys.prg no longer compiles. With __HARBOUR__ correctly defined,
+  its `#ifndef __HARBOUR__` / `#include "clipper.ch"` guard now skips
+  the include (measured Harbour behavior, hk248), and the file stops
+  at line 12 on the unknown builtin `hb_symbol_unused`. Correction to
+  the 63l wording: errsys was never a compatible success - it compiled
+  and matched Harbour only up to its own error point (DIVERGE-FAILMODE
+  on the interactive dialog), and its current state is a plain subset
+  limit like any other missing builtin.
+- dynwin.prg still compiles hollow behind its __PLATFORM__WINDOWS
+  guard and is not counted as a real success.
+- langapi.prg now stops at line 4 on the named REQUEST rejection
+  (`hb_lang_hu` is an external module; honoring it would fake a link
+  effect). This is deliberate: a named limit, not a silent skip.
