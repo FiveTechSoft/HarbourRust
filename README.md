@@ -1307,5 +1307,19 @@ canary on both targets. t528 reproduces the measured reads on Linux and
 Wine; t529 pins the missing-key failure mode (exit 1); t530 rejects a
 non-hash target at compile time.
 
-Battery: 527/527 manifest cases on Linux x86-64 and Wine, plus
+Iteration 50 adds hb_HSet(h, key, value) (core hb_HSet; oracles
+hk159/hk160/hk161): the functional hash write - append grows len, an
+existing key is overwritten in place, NIL roundtrips (hk159). It
+evaluates KEY first, THEN the value (hk161) - the OPPOSITE order of
+h[k] := v (h4), measured, never inferred. The call returns the hash
+itself (hk160: ValType "H"); like AAdd, the statement form is the PoC
+surface and the return value is out of scope (registered; printing it
+in Harbour renders an empty line - printing a hash is not in this
+dialect). Reuses hbc_hput; an owned key temporary is freed right after
+the call (t533: wrap + memcheck balance 0, own ownership check, not an
+oracle). t532 reproduces hk159's write semantics on Linux and Wine;
+t533 pins the evaluation order; t534 rejects a non-hash target at
+compile time.
+
+Battery: 530/530 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
