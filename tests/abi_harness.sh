@@ -228,6 +228,24 @@ hbc_abi_test:
     mov $2, %esi
     call hbc_hfree
     call abi_check
+    # hbc_str_xeq: exact comparison - same (ptr,len) pair is 1, a shorter
+    # right operand over the same bytes is 0 (lengths must match).
+    lea .Labi_ok(%rip), %rax
+    mov $7, %edx
+    lea .Labi_ok(%rip), %rcx
+    mov $7, %r8d
+    call hbc_str_xeq
+    cmp $1, %rax
+    jne abi_fail_sx
+    call abi_check
+    lea .Labi_ok(%rip), %rax
+    mov $7, %edx
+    lea .Labi_ok(%rip), %rcx
+    mov $6, %r8d
+    call hbc_str_xeq
+    test %rax, %rax
+    jnz abi_fail_sx
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -298,6 +316,10 @@ abi_fail_align:
     lea .Labi_f_aln(%rip), %rax
     mov $14, %edx
     jmp abi_fail_common
+abi_fail_sx:
+    lea .Labi_f_sx(%rip), %rax
+    mov $11, %edx
+    jmp abi_fail_common
 abi_fail_hk:
     lea .Labi_f_hk(%rip), %rax
     mov $12, %edx
@@ -329,6 +351,7 @@ ASM_EOF
 .Labi_f_r15: .ascii "ABI FAIL r15\n"
 .Labi_f_stk: .ascii "ABI FAIL stk\n"
 .Labi_f_aln: .ascii "ABI FAIL align\n"
+.Labi_f_sx:  .ascii "ABI FAIL xeq\n"
 .Labi_f_hk:  .ascii "ABI FAIL hk\n"
 .Labi_k1:    .ascii "ab"
 .Labi_k2:    .ascii "c"
