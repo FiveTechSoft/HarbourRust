@@ -1410,5 +1410,12 @@ dialog hangs headless) and takes the registered clean bound-error
 exit - not a silent "U" read. Registered limit: a mixed literal must be all
 literal elements.
 
-614/614 manifest cases + ABI harness green on Linux x86-64 and Wine
+615/615 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
+
+t619 (iteration 63a): PROCEDURE keyword + case-insensitive
+identifiers normalized at the token level (Harbour semantics; the
+casing of two existing neg messages, t88 and t603, follows the
+normalization - same errors, same semantics). Upstream hello.prg
+compiles and runs byte-identical to Harbour (the first of the
+frozen 175). Forward references stay the next registered blocker.
