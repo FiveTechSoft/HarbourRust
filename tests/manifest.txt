@@ -619,3 +619,4 @@ neg tests/t621_unterminated_block.hb unterminated /* */ comment
 neg tests/t622_semicolon_comment.hb U+003B
 pos tests/t623_bang_not.hb \n.F.\n.T.\n.T.\n.F.\nbranch
 pos tests/t624_single_quote_strings.hb \nsingle\nit has "double" inside\nand 'single' inside\nback \\ slash
+pos tests/t625_eq_assign.hb \n        42\neq\n        43
