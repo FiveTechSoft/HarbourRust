@@ -494,3 +494,8 @@ pos tests/t496_exeq_darr2.hb \n         1\n         0\n         1
 neg tests/t497_neg_exeq_block.hb identity is per evaluation
 pos tests/t498_exeq_darr3.hb \n         1\n         0\n         1
 pos tests/t499_exeq_darr4.hb \n         1\n         0\n         1
+pos tests/t500_exeq_dynstr.hb \n         1\n         1\n         0\n         0
+pos tests/t501_exeq_dynstrstr.hb \n         1\n         0\n         0\n         1
+pos tests/t502_exeq_dynint.hb \n         1\n         0\n         1\n         1
+pos tests/t503_exeq_dynnileq.hb \n         1\n         0\n         0
+posx tests/t504_posx_dynxeq_mixed.hb 1 Argument error: ==
