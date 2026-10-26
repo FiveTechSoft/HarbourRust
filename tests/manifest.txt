@@ -499,3 +499,5 @@ pos tests/t501_exeq_dynstrstr.hb \n         1\n         0\n         0\n         
 pos tests/t502_exeq_dynint.hb \n         1\n         0\n         1\n         1
 pos tests/t503_exeq_dynnileq.hb \n         1\n         0\n         0
 posx tests/t504_posx_dynxeq_mixed.hb 1 Argument error: ==
+pos tests/t505_exeq_hash.hb \n         1\n         0\n         1
+posx tests/t506_posx_dynxeq_mixed2.hb 1 Argument error: ==
