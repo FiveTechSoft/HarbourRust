@@ -2377,6 +2377,23 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // pointer, it never extracts the subarray. A real empty child
             // ({}) owns a block and is NOT NIL.
             if matches!(op, CmpOp::EqEq) {
+                // NIL first: the other side may be a casilla read that
+                // type_expr rejects by value (hk129), so classify before
+                // computing both types.
+                if matches!(&**a, Expr::Nil) || matches!(&**b, Expr::Nil) {
+                    let other = if matches!(&**a, Expr::Nil) { &**b } else { &**a };
+                    if let Expr::Index(v, ie) = other {
+                        if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArr2 | Ty::DArr3)) {
+                            if type_expr(ie, env, sigs, n)? != Ty::I64 {
+                                return Err(format!("line {}: array index must be an integer in this increment", n));
+                            }
+                            return Ok(Ty::Bool);
+                        }
+                    }
+                    let tother = type_expr(other, env, sigs, n)?;
+                    if matches!(tother, Ty::Str | Ty::StrOwn | Ty::I64 | Ty::Dyn) { return Ok(Ty::Bool); }
+                    return Err(format!("line {}: `==` against NIL is measured only for numbers, strings, NIL and dynamic casillas (hk128/hk129)", n));
+                }
                 let ta = type_expr(a, env, sigs, n)?;
                 let tb = type_expr(b, env, sigs, n)?;
                 // `==` measured so far. Between integers (hk124: 1==1
@@ -2389,6 +2406,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // copied into the frame (D5/D7 family), so an element
                 // compare would answer .T. where Harbour answers .F.
                 if ta == Ty::I64 && tb == Ty::I64 { return Ok(Ty::Bool); }
+                // NIL handled above (hk128/hk129): identity and equality
+                // coincide where NIL is one side; same codegen as `=`.
                 // Strings: `==` is the EXACT comparison (hk124: "a"=="a"
                 // .T., "a"=="a " .F., "a "=="a" .F.) - not the prefix
                 // rule of `=`. Codegen calls hbc_str_xeq.
@@ -2399,7 +2418,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     && matches!(&**a, Expr::Var(_)) && matches!(&**b, Expr::Var(_)) {
                     return Ok(Ty::Bool);
                 }
-                return Err(format!("line {}: `==` is measured only between two integers, between two strings and between two one-level dynamic array variables in this increment (hk124/hk126); static arrays, deeper dynamic arrays, codeblocks and NIL keep their named rejections (object identity oracles cl7/cl19 stay class-gated)", n));
+                return Err(format!("line {}: `==` is measured only between two integers, between two strings, between two one-level dynamic array variables and against NIL in this increment (hk124/hk126/hk128/hk129); static arrays, deeper dynamic arrays, codeblocks and non-NIL Dyn payloads keep their named rejections (object identity oracles cl7/cl19 stay class-gated)", n));
             }
             if matches!(op, CmpOp::Eq | CmpOp::Ne) {
                 let cas = |e: &Expr| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArr2 | Ty::DArr3)));
@@ -5011,7 +5030,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
         }
         Expr::Cmp(op, a, b) if {
             let cas = |e: &Expr| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArr2 | Ty::DArr3)));
-            matches!(op, CmpOp::Eq | CmpOp::Ne) && ((cas(a) && matches!(**b, Expr::Nil)) || (cas(b) && matches!(**a, Expr::Nil)))
+            matches!(op, CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq) && ((cas(a) && matches!(**b, Expr::Nil)) || (cas(b) && matches!(**a, Expr::Nil)))
         } => {
             // Casilla = NIL (oracle n4): the index evaluates ONCE
             // (bounds-checked); the child pointer 0 is the NIL casilla.
@@ -5023,7 +5042,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
             out.push_str("    dec %rax\n    shl $4, %rax\n    mov 0(%r11,%rax), %rax\n");
             out.push_str("    test %rax, %rax\n    jmp 98f\n97:\n    call hbc_bound_error\n98:\n");
-            let j = match op { CmpOp::Eq => "jz", _ => "jnz" };
+            let j = match op { CmpOp::Eq | CmpOp::EqEq => "jz", _ => "jnz" };
             out.push_str(&format!("    {} {}\n", j, true_label));
         }
         Expr::Cmp(op, a, b) if expr_ty(a, env, sigs) == Ty::Dyn || expr_ty(b, env, sigs) == Ty::Dyn => {
@@ -5142,10 +5161,12 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 out.push_str(&format!(".Ldye{}:\n", lid));
             } else {
                 match op {
-                    CmpOp::Eq | CmpOp::Ne => {
+                    CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq => {
                         // Tag-dispatch equality: NIL = NIL is .T., NIL
                         // against a payload is .F., payloads compare
-                        // numerically (hbc_dyn_eq).
+                        // numerically (hbc_dyn_eq). For `==` against NIL
+                        // (the only Dyn shapes the checker admits) the
+                        // answers coincide with `=` (hk128/hk129).
                         cg_expr(a, env, sigs, strs, out, target);
                         if ta == Ty::I64 { out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n"); }
                         match target {
@@ -5160,7 +5181,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                             Target::Windows => out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n"),
                         }
                         out.push_str("    call hbc_dyn_eq\n    test %rax, %rax\n");
-                        let j = match op { CmpOp::Eq => "jnz", _ => "jz" };
+                        let j = match op { CmpOp::Eq | CmpOp::EqEq => "jnz", _ => "jz" };
                         out.push_str(&format!("    {} {}\n", j, true_label));
                     }
                     _ => {
