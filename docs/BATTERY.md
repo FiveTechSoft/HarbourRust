@@ -1985,3 +1985,62 @@ Correction register (from the recovery closeout): the published
 tests/run_battery.sh hashes 5758eec78ce6164c3c354619b8ea16c9218d8f0ca3ee2f8b88b63a5f458ff2b3;
 the f9414cef... value registered at 63p is the same file without the
 web editor's trailing blank line. Content identical.
+
+## 63r - print-only parameters pin to the tagged union; calling.prg is the fourth original
+
+Oracles first (hbmk2 -gtstd @694428e1, sondas hk257-hk263): hk257 (a
+print-only parameter accepts a string, an integer, .T. and NIL across
+calls to the same function, exit 0), hk258 (a print-only parameter
+receiving an array prints an empty line - NOT replicated: the tagged
+union has no array cell, named rejection instead), hk259 (the exact
+t693 shape `? s; return s` plus caller: prints ab, ab, 7, 7, exit 0),
+hk260 (print + arithmetic pins integer: prints 5, returns 6), hk261
+(print + concatenation pins string: prints ab, returns ab!), hk263 (the
+exact t70 shape: prints x, returns 0).
+
+Change: in the pin pass, a parameter whose sole non-copy evidence is a
+whole-variable print pins to the tagged union (16-byte casilla: 0=i64,
+1=NIL, 2=borrowed string, 3=logical, 4=owned string). Pinning evidence
+(arithmetic, concatenation, known-type compare) wins order-independently
+because the fallback runs after the walk. Return-only and copy-only
+parameters keep the named "cannot infer" rejection (its text no longer
+mentions printing). New call boundary: a string argument to a Dyn
+parameter is cloned to an owned tag-4 payload - the callee owns and
+frees its slot at the epilogue, the caller keeps its value (same
+contract as Dyn->Dyn, cg_dyn_clone_if_str). A Dyn return hands the
+caller its own clone; the shared epilogue frees the callee's copy.
+
+- t70 FLIPPED neg -> pos (exact-case oracle hk263): its premise was the
+  old rejection itself ("printing alone cannot pin").
+- t693 FLIPPED neg -> pos (gate: byte output and exit match Harbour for
+  `? s; return s` and the caller, oracle hk259).
+- t702 (negative): a return-only parameter still cannot be inferred.
+- t703: print then arithmetic - the integer pin wins (hk260).
+- t704: print then concatenation - the string pin wins (hk261).
+- t705: one print-only parameter called with a string, an integer and
+  NIL (hk257 minus the logical call).
+- t706 (negative): an array argument to a Dyn parameter is a named
+  rejection (the tagged union has no array cell; oracle hk258).
+- t707: Dyn parameter ownership boundary - clone at the call, epilogue
+  free, clone on return, printed temporary freed; balance 0.
+- t708 (negative): a logical argument to a Dyn parameter is a named
+  rejection - tag-L Dyn cells land separately (registered limit; hk257
+  shows Harbour accepts it).
+
+Sweep 175 (src/hbc.rs sha256
+f573bf921a83ba1caeb22cb3535c22408ec4bd4618ef409f5e5074335a31a42d,
+compiler binary sha256
+362395d0bb753c2f0fe3344f9edfb21b37420df69babae35f72da4874648a0b4,
+tests/manifest.txt sha256
+888629f40a9074e9666d332b67a37e454616b16fc4bde9110ff31bfbc7548e15,
+rustc 1.99.1): COMPILES 3 -> 4. calling.prg now compiles:
+`FUNCTION Fourth( cText ) ? cText RETURN NIL` is exactly the print-only
+parameter shape. Original intact (sha256
+2bc92508ea35cd18d06ebbeaa82afdf7c8894495fe31cec77cb8968246032de5 ==
+upstream raw @694428e1); output byte-identical to the oracle on Linux
+nativo y Wine, exit 0/0; 27 hbc_alloc/hbc_strcpy calls in the generated
+asm (construction not eliminated). hello, statfun and lnlenli2
+unchanged, still byte-identical.
+
+Battery 697 -> 704 + ABI harness green (Linux nativo y Wine con oracle
+Linux).
