@@ -2889,3 +2889,25 @@ forms), t828 negative (named `&` rejection). The old t666 negative lock-in
 program is natively valid, so the row flips neg -> pos as t666_do_case.hb
 against fresh oracle hk377 (output `\none`), the same maneuver as t622 in
 63zl and t783 in 63zh. Battery: 823 rows + ABI canary.
+
+## 63zn - bare `return` inside blocks
+
+Oracles (pinned hbmk2 -gtstd, sondas hk378-hk381 in `sondas/`): a BARE
+`return` is Harbour-valid inside any block and returns NIL - inside an `if`
+(hk378), a `do while` body (hk380) and a `do case` arm (hk381); a valued
+early return keeps its value (hk379, `return x * 10` prints 20). The old
+named rejection ("an early `return` inside a block needs a value") was a
+false rejection of valid Harbour syntax.
+
+Implementation: one parser line - the bare form now maps to the same
+`Stmt::Ret(None)` the closing top-level bare return already used, so both
+codegens and the single-epilogue cleanup path are untouched (the checker
+already propagated Ret(None) through If/While/For/ForEach bodies - v2c).
+No new symbols; no ABI change. Explicit limit: a function whose returns
+mix NIL and a value keeps the existing Dyn tagging; nothing here widens
+the type model.
+
+Tests: t829-t832 positive (hk378-hk381 mirrors). The old t33 negative
+lock-in is superseded: its program is natively valid (oracle hk382, rc=0
+empty output), so the row flips neg -> pos in place - same maneuver as
+t666 in 63zm. Battery: 827 rows + ABI.
