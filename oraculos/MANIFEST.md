@@ -66,7 +66,7 @@ Números sin fuente recuperable en el transcript: hk10, hk72, hk74, hk75 (planif
 | hk145 | verificado | \n.T.\n.F.\n.F.\n.T.\n.F.\n.F. |
 | hk146 | dialogo-sin-oraculo | (sin salida previa; abre el diálogo BASE/1071 "Argument error: =" y cuelga headless, rc=124 con timeout 5s) |
 | hk147 | verificado | \n.F.\n.F. |
-| hk148 | medida-fresca | \n.F.\n.T.\n.F.\n.F.\n.F.\n.F.\n.T.\n.F.\n.T.\n.T.\n.F.\n.T.\n.T.\n.F.\n.T.\n.T. |
+| hk148 | verificado | \n.F.\n.T.\n.F.\n.F.\n.F.\n.F.\n.T.\n.F.\n.T.\n.T.\n.F.\n.T.\n.T.\n.F.\n.T.\n.T. |
 | hk149 | dialogo-sin-oraculo | (sin salida previa; abre el diálogo BASE/1073 "Argument error: <" y cuelga headless, rc=124 con timeout 5s) |
 | hk150 | dialogo-sin-oraculo | (sin salida previa; abre el diálogo BASE/1075 "Argument error: >" y cuelga headless, rc=124 con timeout 5s) |
 | hk151 | dialogo-sin-oraculo | (sin salida previa; abre el diálogo BASE/1074 "Argument error: <=" y cuelga headless, rc=124 con timeout 5s) |
