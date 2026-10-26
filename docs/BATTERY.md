@@ -1213,6 +1213,14 @@ integer a per-operator clean named exit 1 mirroring BASE/1073-1076
 (hk149-hk152 - dialogs hang headless; registered failure modes;
 t514-t517).
 
+t532-t534 (iteration 50): hb_HSet(h, key, value) - the functional hash
+write over hbc_hput; write semantics reproduced (t532, hk159), KEY
+evaluated before the value (t533, hk161 - the opposite of h[k] := v,
+h4), owned key temporaries freed after the copy (t533, balance 0, own
+check), non-hash target rejected at compile time (t534). The call
+returns the hash (hk160: ValType "H"); the statement form is the PoC
+surface and the return value is out of scope (registered).
+
 t528-t531 (iteration 49): hb_HGet(h, key [, default]) over the existing
 hbc_hget helper; measured reads reproduced (t528: with/without default;
 existing NIL stays NIL - the default never overrides it, hk158c); the
@@ -1251,5 +1259,5 @@ insertion order into a NEW independent array (oracles hk153/hk154;
 t518/t519), result freed by the DArr epilogue with balance 0 (t520,
 own ownership check, not a Harbour oracle).
 
-527/527 manifest cases + ABI harness green on Linux x86-64 and Wine
+530/530 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
