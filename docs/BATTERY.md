@@ -1131,5 +1131,13 @@ hbc_str_eq), canaried in the ABI harness (equal pair answers 1,
 shorter right operand 0). t492's expected rejection text updated
 for the widened measured-scope message.
 
-489/489 manifest cases + ABI harness green on Linux x86-64 and Wine
+t494/t495 (iteration 38): `==` against NIL reuses the `=` codegen
+paths because identity and equality coincide where NIL is one side
+(oracle hk128: NIL==NIL .T., NIL==1 / 1==NIL / NIL=="" all .F.;
+hk129: dynamic casilla == NIL answers like `=` - live child .F.,
+NIL casilla .T., .F. after a write). No new leaf helper: the
+constant folds and the hbc_dyn_eq tag dispatch already answer these
+shapes; the execution cases run on both targets.
+
+491/491 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
