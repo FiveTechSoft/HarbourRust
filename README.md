@@ -1369,6 +1369,26 @@ helper upserts through hbc_hput, copying every key and value
 on Linux and Wine, t547 the hk165 edges, t548/t549 reject non-hash
 arguments at compile time.
 
+Iteration 58 adds hb_HKeyAt(h, n) and hb_HValueAt(h, n) (core
+hb_HKeyAt/hb_HValueAt; oracles hk184-hk186): the key / value
+casilla at the 1-based insertion-order position n (positions COMPACT
+after a delete - hk186; a stored NIL comes back as NIL - hk185).
+EVERY out-of-range position (0, past the end, negative) is Harbour's
+BASE/1187 dialog, which hangs headless (hk184/hk185, separate
+binaries): the registered dialogo-sin-oraculo family - the PoC takes
+the same clean bound-error exit as an h[k] miss, never a compat
+success. Float indices truncate in the oracle (hk186) and stay
+outside this dialect's numeric syntax. New leaf helpers
+hbc_hkeyat/hbc_hvalueat (shared blob, both targets) are canaried in
+the ABI harness on both targets. hb_HKeyAt returns an OWNED copy of
+the key (hbc_strcpy): it survives the hash (t576, wrap + memcheck =
+0, own ownership check). t574/t575 reproduce hk184-hk186 on Linux
+and Wine; t577-t579 are the named rejections (non-hash target,
+non-integer position).
+
+Battery: 575/575 manifest cases on Linux x86-64 and Wine, plus
+the ABI harness.
+
 Iteration 57 adds hb_HScan(h, value [, start]) (core hb_HScan;
 oracles hk178-hk183): the 1-based position in insertion order of
 the first entry whose VALUE equals the argument, 0 when absent; the
