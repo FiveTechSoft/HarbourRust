@@ -1410,7 +1410,7 @@ dialog hangs headless) and takes the registered clean bound-error
 exit - not a silent "U" read. Registered limit: a mixed literal must be all
 literal elements.
 
-618/618 manifest cases + ABI harness green on Linux x86-64 and Wine
+620/620 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
 
 t619 (iteration 63a): PROCEDURE keyword + case-insensitive
@@ -1432,3 +1432,12 @@ Stripping runs inside the preprocessor over raw lines, before
 directives and `;` continuation joining, line-count preserving; the
 b39c guard (text after `;`, even a comment, is a syntax error) is
 kept: a comment stripped after a `;` blocks the join (t622).
+
+t623-t624 (iteration 63c): `!` is the prefix .NOT. (oracle hk212: same
+operand rules and precedence as the dotted word; `!=` unchanged) and
+single-quoted strings (oracle hk213: same string type, the other quote
+nests; NO escapes - hk213b measured the backslash as a literal
+character, so '...' is stricter-Harbour than our registered "..."
+escape deviation). String `+` concatenation is NOT yet supported
+anywhere (no runtime helper); it is the next registered gap and the
+reason several quote-form files still stop later.
