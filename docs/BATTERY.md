@@ -2194,3 +2194,38 @@ files that failed first on `??` now advance to their next registered
 blocker: ains.prg -> inference non-convergence (explicit diagnostic,
 cap by design), fileio.prg -> include fileio.ch, fileio2.prg -> fcreate,
 procname.prg -> `++` inside expressions.
+
+## 63w - inference monotonicity violation found and fixed (ains.prg)
+
+Diagnosis (main flagged the 63u non-convergence as evidence against the
+63n/63o monotonicity claim, not a "by design" cap): HBC_INFER_TRACE
+(env-gated round dump, kept in the source) showed function aDump
+oscillating I64 <-> DArr every round. Root cause: when pin_params
+FAILED (the recursive call `aDump( aShow[ n ] )` conflicts with the
+DArr pin - array parameters are not in this increment), the Err arm
+reset the entry to i64 placeholders, RETREATING down the lattice; the
+next round re-pinned DArr, the conflict recurred, and the round cap
+fired as an internal error.
+
+Fix: on pin failure the entry carries the PREVIOUS view types forward
+instead of resetting to placeholders. The table never retreats; the
+conflict is stable across rounds, the round converges, and the
+converged round reports the named rejection (body-first contract
+unchanged). No cap increase. ains.prg is still rejected - it uses
+features this PoC does not have (AClone/AIns/ADel, array parameters) -
+but now fails CONVERGENTLY on its first real blocker
+(`unknown function aclone`, line 12) instead of an internal error.
+ains.prg is a valid Harbour program; the rejection is a registered
+limitation, not a native-invalid verdict.
+
+Tests: t724 (neg): minimal recursion oscillation repro
+(`p(a): ? len(a); p(a[1])`) converges to the named rejection.
+BATTERY 719 -> 720 + ABI ALL GREEN (Linux native and Wine with Linux
+oracle). Sweep re-run: COMPILES 4; ains.prg now reports `aclone`.
+
+Also this increment: float oracles hk278-hk281 measured and published
+(pre-design, option A): print field width = 11 + decimals shown;
+literals keep written decimals (100.0 -> "100.0", 0.12 = .12);
+division floor is 2 decimals (10/3 -> "3.33", 9.0/2 -> "4.50");
+0.1+0.2 = 0.3 is .F. (binary double semantics); hex literals print
+as plain integers (0xABAB -> 43947).
