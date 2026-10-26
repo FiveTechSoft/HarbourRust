@@ -2252,10 +2252,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // h[k] read miss: Harbour shows its dialog and hangs
                 // headless even WITH a default (hk158a/b/d), so the PoC
                 // takes the registered clean bound-error exit - a
-                // failure-mode registration, never a compat success. An
-                // existing NIL value stays NIL; the default is never
-                // applied in any measured case (hk158c), so it is
-                // type-checked but not evaluated. Hash and key borrowed.
+                // failure-mode registration, never a compat success. The
+                // default IS evaluated - its effects fire on present,
+                // NIL and even missing keys, before the error
+                // (hk158f1/f2/f3) - but its value is discarded: it never
+                // rescues a miss and never overrides an existing NIL
+                // (hk158b/c). Hash and key borrowed.
                 if args.len() != 2 && args.len() != 3 {
                     return Err(format!("line {}: `hb_HGet` takes two or three arguments", n));
                 }
@@ -4444,8 +4446,9 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             // the slot by address; hbc_hget returns the entry's
             // {tag, payload} pointer or 0 on a miss, which takes the
             // registered clean bound-error exit (hk158a/b/d). The
-            // default is never evaluated (hk158b/c/e). Returns
-            // rax = tag, rdx = payload.
+            // default IS evaluated after the key and its value
+            // discarded (hk158f1/f2/f3: effects fire even on a miss,
+            // before the error). Returns rax = tag, rdx = payload.
             cg_value(&args[1], env, sigs, strs, out, target);
             let temp_key = expr_ty(&args[1], env, sigs) == Ty::StrOwn && !matches!(&args[1], Expr::Var(_));
             if temp_key {
@@ -4455,6 +4458,11 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
             } else {
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            }
+            if args.len() == 3 {
+                // The default is EVALUATED after the key and its value
+                // discarded (hk158f1/f2/f3).
+                cg_value(&args[2], env, sigs, strs, out, target);
             }
             if let Expr::Var(v) = &args[0] {
                 let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
