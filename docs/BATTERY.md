@@ -1519,3 +1519,54 @@ Limits (existing Dyn-slot rules, not new): a NIL-started Dyn slot accepts i64/bo
 - t656: regression — array literal inside multi-decl (initial splitter counted only ()/[] depth and broke every `local a := {...}` in the battery; {} added, full battery re-green).
 
 **Sweep**: re-run on the frozen 175 — still 1/175 (hello.prg); the 18 files that previously stopped at "expected `local name := expr`" now advance to their next blockers (comma-in-expression, floats, command verbs), as the earlier category reclassification predicted. Full-directory check (237 files) additionally compiles dynwin.prg, but that is a hollow pass: its entire body sits under `#if defined( __PLATFORM__WINDOWS )`, so it compiles to an empty PROCEDURE. Not counted as a win.
+
+## Iteration 63j — owned strings in Dyn slots (tag 4) (2026-10-26)
+
+A Dyn slot (e.g. `local x` with no initializer) now accepts string
+assignment. The value model keeps tag 2 = a BORROWED string view (FOR EACH
+over hash keys; never freed) and adds tag 4 = an OWNED string with the
+63h 16-byte header layout, freed by exactly one owner. This answers the
+load-bearing review point that tag 2 alone never proved ownership.
+
+Boundary rules (each verified by test): a literal is cloned at the slot
+boundary; an owned string expression moves in; a Dyn-to-Dyn copy from a
+variable clones (Harbour value semantics; a call result moves its owned
+temp); every store into a Dyn slot frees a live tag-4 payload first; the
+epilogue frees tag-4 payloads of Dyn locals AND Dyn parameters (params
+are cloned at the call boundary, so caller and callee never share an
+allocation); a Dyn return hands the caller its own clone; a printed or
+compared owned temporary is freed after use. Read paths treat tag 4 as a
+string: print, ValType "C", and the three Dyn comparison helpers
+(hbc_dyn_eq / hbc_dynxcmp / hbc_dynxeq_dd, both target blobs) normalize
+tag 4 to tag 2 at entry — this fixes a real bug found by probing, where
+two owned Dyn strings compared .F. by payload pointer.
+
+Oracles: hk242 (string/int transitions on a NIL-started local: abc, C,
+abcdefgh, 5, N, z, C, .T., .T.) and hk243 (callee reassignment does not
+affect the caller; a returned string survives both storage and direct
+printing). t657-t661 match them; hb_memcheck 0 wherever no value is
+legitimately live at print time (t661 documents its expected 1: the
+loop-local still owns its clone at print time, the epilogue frees it
+after; the ABI harness process-exit balance is the leak gate and is
+green on Linux and Wine).
+
+Limits (registered, not regressions): Dyn array ELEMENTS still reject
+strings (checker-named); Dyn-vs-string concat is rejected ("arithmetic
+requires integers"); a parameter whose body usage infers an owned-string
+type cannot then receive a Dyn argument (the inference pins first);
+hash values with a tag-4 payload inherit exactly the existing tag-2
+hash-value semantics (hbc_hput stores the pair); `==` between an owned
+Dyn string and NIL/numeric follows the same registered failure modes as
+tag 2. STATIC/PRIVATE/PUBLIC are ordinary backlog, NOT user-blocked —
+an earlier report mislabeled them as awaiting a user decision; no such
+decision exists in the record.
+
+- t655 rewritten positive (the 63i neg case is now legal): local s; s := "abc".
+- t657: hk242 exact, incl. `==`/`=` against a literal and NIL teardown.
+- t658: Dyn-to-Dyn copy independence, self-assignment, content compare.
+- t659: param clone-on-pass, callee reassign, caller untouched, memcheck 0.
+- t660: return clone, stored and directly printed, memcheck 0.
+- t661: loop reassignment + per-iteration redeclare, memcheck 1 explained.
+
+**Sweep**: re-run after this runtime change — frozen 175 still 1/175
+(hello.prg); the full-directory hollow pass on dynwin.prg unchanged.
