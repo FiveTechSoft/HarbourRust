@@ -1594,6 +1594,74 @@ hbc_abi_test:
     mov -120(%rbp), %rdi
     call hbc_freestr
     call abi_check
+    # hbc_print_f64 canary (63x): value in %xmm0, written decimals in %rdi.
+    # xmm6-xmm15 sentinels (callee-saved on Windows, all clobber-suspect on
+    # SysV) + rbx/r12-r15 + stack balance/alignment must survive the call.
+    movabs $0x3FF8000000000000, %rax   # 1.5
+    movq %rax, %xmm0
+    mov $1, %edi
+    movabs $0x0606060606060601, %rax
+    movq %rax, %xmm6
+    movabs $0x0707070707070701, %rax
+    movq %rax, %xmm7
+    movabs $0x0808080808080801, %rax
+    movq %rax, %xmm8
+    movabs $0x0909090909090901, %rax
+    movq %rax, %xmm9
+    movabs $0x1010101010101001, %rax
+    movq %rax, %xmm10
+    movabs $0x1111111111111101, %rax
+    movq %rax, %xmm11
+    movabs $0x1212121212121202, %rax
+    movq %rax, %xmm12
+    movabs $0x1313131313131302, %rax
+    movq %rax, %xmm13
+    movabs $0x1414141414141402, %rax
+    movq %rax, %xmm14
+    movabs $0x1515151515151502, %rax
+    movq %rax, %xmm15
+    call hbc_print_f64
+    movabs $0x0606060606060601, %rax
+    movq %xmm6, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    movabs $0x0707070707070701, %rax
+    movq %xmm7, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    movabs $0x0808080808080801, %rax
+    movq %xmm8, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    movabs $0x0909090909090901, %rax
+    movq %xmm9, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    movabs $0x1010101010101001, %rax
+    movq %xmm10, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    movabs $0x1111111111111101, %rax
+    movq %xmm11, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    movabs $0x1212121212121202, %rax
+    movq %xmm12, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    movabs $0x1313131313131302, %rax
+    movq %xmm13, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    movabs $0x1414141414141402, %rax
+    movq %xmm14, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    movabs $0x1515151515151502, %rax
+    movq %xmm15, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -1768,6 +1836,10 @@ abi_fail_t4:
     lea .Labi_f_t4(%rip), %rax
     mov $12, %edx
     jmp abi_fail_common
+abi_fail_xmm:
+    lea .Labi_f_xmm(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
 abi_fail_common:
     call hbc_print_str
 ASM_EOF
@@ -1827,6 +1899,7 @@ ASM_EOF
 .Lsg_d:    .ascii "yz"
 .Lsg_full: .ascii "abcdefghxyz"
 .Labi_f_t4: .ascii "ABI FAIL t4\n"
+.Labi_f_xmm: .ascii "ABI FAIL xmm\n"
 .Lt4_a:    .ascii "abc"
 .Lt4_b:    .ascii "abc"
 .Lt4_c:    .ascii "abd"
@@ -1848,8 +1921,9 @@ out_l=$(gen/abi_l_t) && rc_l=0 || rc_l=$?
 out_w=$("$WINE" gen/abi_w_t.exe 2>/dev/null) && rc_w=0 || rc_w=$?
 echo "linux: $out_l (exit $rc_l)"
 echo "wine:  $out_w (exit $rc_w)"
-if [ "$out_l" = "ABI OK" ] && [ "$out_w" = "ABI OK" ] && [ $rc_l -eq 0 ] && [ $rc_w -eq 0 ]; then
+if [ "$out_l" = "         1.5ABI OK" ] && [ "$out_w" = "         1.5ABI OK" ] && [ $rc_l -eq 0 ] && [ $rc_w -eq 0 ]; then
   echo "ABI HARNESS PASS"
 else
   echo "ABI HARNESS FAIL"; exit 1
 fi
+
