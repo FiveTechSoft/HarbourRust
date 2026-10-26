@@ -623,7 +623,7 @@ pos tests/t625_eq_assign.hb \n        42\neq\n        43
 pos tests/t626_str_concat.hb \nliteral\nfoobar\nfoo!\n.T.\nfooX
 neg tests/t627_str_plus_int.hb arithmetic requires integers
 pos tests/t628_call_stmt.hb \n         1\n         0\nhola
-neg tests/t629_discard_array.hb discarding a
+pos tests/t629_discard_array.hb 
 neg tests/t630_call_stmt_unknown.hb unknown function
 pos tests/t631_discard_strown.hb \n         0
 pos tests/t632_len_string.hb \n         5\n         0\n         3
@@ -692,3 +692,7 @@ neg tests/t694_mutual_no_evidence_neg.hb never returns a value
 pos tests/t695_strlit.hb \n         3\nabbccc\n         4\ndddd\nA\nC\n         0
 pos tests/t696_strlit_arg.hb \nx!\n         2\n         0
 neg tests/t697_strlit_mixed.hb array elements must be integers or logicals
+pos tests/t698_discard_darrs.hb \nstrs-side\nstrs-side\ndone\n         0
+pos tests/t699_discard_darr.hb \narr-side\ndone\n         0
+pos tests/t700_discard_darr2.hb \ngrid-side\ndone\n         0
+neg tests/t701_discard_hash_neg.hb discarding a hash return
