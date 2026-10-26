@@ -617,3 +617,5 @@ pos tests/t619_procedure_kw.hb \n         7\n         8\n         1\nNIL
 pos tests/t620_comment_forms.hb \none\ntwo\nstr /* kept */ ok
 neg tests/t621_unterminated_block.hb unterminated /* */ comment
 neg tests/t622_semicolon_comment.hb U+003B
+pos tests/t623_bang_not.hb \n.F.\n.T.\n.T.\n.F.\nbranch
+pos tests/t624_single_quote_strings.hb \nsingle\nit has "double" inside\nand 'single' inside\nback \\ slash
