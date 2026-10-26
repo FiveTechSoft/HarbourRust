@@ -68,6 +68,14 @@ enum Tok {
 enum CmpOp { Eq, EqEq, Ne, Lt, Le, Gt, Ge } // EqEq: == measured for integers (hk124) and DArr identity (hk126)
 
 static BLOCK_ID: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+// Set only while a bare call STATEMENT is type-checked: a procedure-style
+// call (no return value) is legal in statement position (hk216) even
+// though its result cannot be USED in an expression. Single-threaded
+// compiler; the flag is reset right after the call returns.
+thread_local! {
+    static CALL_STMT_CTX: std::cell::Cell<bool> = std::cell::Cell::new(false);
+}
 fn new_block_id() -> usize { BLOCK_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst) }
 
 // Unique-label counter for inline branches emitted by codegen: every
@@ -309,6 +317,7 @@ enum Stmt {
     SelfSet(usize, String, Expr),       // ::name := expr
     SendSet(usize, Expr, String, Expr), // obj:name := expr (simple receiver)
     SendStmt(usize, Expr),              // obj:name(args) used as a statement
+    CallStmt(usize, Expr),              // bare f(args) statement (oracle hk216): runs for effect, return discarded
     AAdd(usize, String, Expr),  // AAdd(a, x): grow dynamic array in place (probe d1)
     AAddSub(usize, String, Expr, Expr), // AAdd(a[i], x): grow the subarray (probe m5)
     ASizeSub(usize, String, Expr, Expr), // ASize(a[i], n): resize the subarray
@@ -1343,6 +1352,18 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         }
                     }
                 }
+                if toks.len() >= 3 && toks[1] == Tok::LParen {
+                    // Bare call statement (oracle hk216): `f(args)` as a
+                    // whole line runs the call for its effect and
+                    // discards the return. Anything else identifier-led
+                    // with a call shape stays on the old error path.
+                    if let Ok(Expr::Call(..)) = parse_expr_tokens(toks.clone(), n) {
+                        let ce = parse_expr_tokens(toks.clone(), n).unwrap();
+                        out.push(Stmt::CallStmt(n, ce));
+                        *i += 1;
+                        continue;
+                    }
+                }
                 // Harbour also assigns with a single `=` in statement
                 // position (oracle hk214: `x = 41 + 1`, `c = 'eq'`); `=`
                 // stays a comparison inside expressions.
@@ -2086,7 +2107,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     walk(f, ie2, sigs, lit, pin, *n)?;
                     walk(f, e, sigs, lit, pin, *n)?;
                 }
-                Stmt::SelfSet(n, _, e) | Stmt::SendStmt(n, e) => {
+                Stmt::SelfSet(n, _, e) | Stmt::SendStmt(n, e) | Stmt::CallStmt(n, e) => {
                     walk(f, e, sigs, lit, pin, *n)?;
                 }
                 Stmt::SendSet(n, o, _, e) => {
@@ -2262,7 +2283,7 @@ fn borrow_stmts_ok(stmts: &[Stmt], pname: &str) -> Option<usize> {
                 let _ = id;
                 if !borrow_expr_ok(a, pname) || !borrow_expr_ok(b, pname) || !borrow_expr_ok(c, pname) || !borrow_expr_ok(d, pname) || !borrow_expr_ok(e, pname) { Some(*n) } else { None }
             }
-            Stmt::SelfSet(_, _, e) | Stmt::SendStmt(_, e) => if borrow_expr_ok(e, pname) { None } else { Some(0) },
+            Stmt::SelfSet(_, _, e) | Stmt::SendStmt(_, e) | Stmt::CallStmt(_, e) => if borrow_expr_ok(e, pname) { None } else { Some(0) },
             Stmt::SendSet(n, r, _, e) => {
                 if !borrow_expr_ok(r, pname) || !borrow_expr_ok(e, pname) { Some(*n) } else { None }
             }
@@ -2487,6 +2508,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         }
                         Ok(Ty::I64)
                     }
+                    // len() of a string is its byte count (oracle hk217:
+                    // "abcde" -> 5, "" -> 0). A string PARAMETER under
+                    // len() still pins an array (the registered pin rule
+                    // predates string len and Harbour's len is
+                    // polymorphic) - named limitation, not silent.
+                    Ty::Str | Ty::StrOwn => Ok(Ty::I64),
                     _ => return Err(format!("line {}: `len` expects an array", n)),
                 };
             }
@@ -2867,6 +2894,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             match sig_ret {
                 Some(t) => Ok(t),
+                None if CALL_STMT_CTX.with(|c| c.get()) => Ok(Ty::I64), // statement position: value discarded, nothing to release
                 None => Err(format!("line {}: `{}` never returns a value; its result cannot be used in an expression in this PoC", n, id)),
             }
         }
@@ -3481,6 +3509,7 @@ fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
         Stmt::ForEach(_, _, c, body) => expr_ok(c, name) && foreach_coll_untouched(body, name),
         Stmt::Print(_, items) => items.iter().all(|i| expr_ok(i, name)),
         Stmt::Ret(_, Some(e)) => expr_ok(e, name),
+        Stmt::CallStmt(_, e) => expr_ok(e, name),
         _ => true,
     })
 }
@@ -3528,6 +3557,7 @@ fn foreach_barr_lv_ok(stmts: &[Stmt], name: &str) -> bool {
     stmts.iter().all(|s| match s {
         Stmt::Print(_, items) => items.iter().all(|i| print_ok(i, name)),
         Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) => !mentions(e, name),
+        Stmt::CallStmt(_, e) => !mentions(e, name),
         Stmt::ArrSet(_, _, ie, e) => !mentions(ie, name) && !mentions(e, name),
         Stmt::ArrSet2(_, _, i1, i2, e) => !mentions(i1, name) && !mentions(i2, name) && !mentions(e, name),
         Stmt::ArrSet3(_, _, i1, i2, i3, e) => !mentions(i1, name) && !mentions(i2, name) && !mentions(i3, name) && !mentions(e, name),
@@ -3565,6 +3595,7 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     stmts.iter().all(|s| match s {
         Stmt::Print(_, items) => items.iter().all(|i| !in_call(i, name)),
         Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) => !mentions(e, name),
+        Stmt::CallStmt(_, e) => !mentions(e, name),
         Stmt::ArrSet(_, _, ie, e) => !mentions(ie, name) && !mentions(e, name),
         Stmt::ArrSet2(_, _, i1, i2, e) => !mentions(i1, name) && !mentions(i2, name) && !mentions(e, name),
         Stmt::ArrSet3(_, _, i1, i2, i3, e) => !mentions(i1, name) && !mentions(i2, name) && !mentions(i3, name) && !mentions(e, name),
@@ -3587,6 +3618,22 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
         match s {
             Stmt::SelfSet(n, _, _) | Stmt::SendSet(n, _, _, _) | Stmt::SendStmt(n, _) => {
                 return Err(format!("line {}: classes are not in this increment yet (parser landed; runtime representation pending)", n));
+            }
+            Stmt::CallStmt(n, e) => {
+                // Bare call (hk216): runs for effect; the return is
+                // DISCARDED. Discarding is defined only for returns the
+                // established discipline can release: no value, scalars
+                // (Copy), a Dyn (owns nothing anywhere in this PoC), or
+                // one owned string (freed right after the call). Owned
+                // arrays/hashes/codeblocks stay a named rejection here.
+                CALL_STMT_CTX.with(|c| c.set(true));
+                let t = type_expr(e, env, sigs, *n);
+                CALL_STMT_CTX.with(|c| c.set(false));
+                match t? {
+                    Ty::I64 | Ty::Str | Ty::Bool | Ty::StrOwn | Ty::Dyn => {}
+                    other => return Err(format!("line {}: discarding {} return is not in this increment", n, ty_name(other))),
+                }
+                apply_moves(e, env, sigs, true);
             }
             Stmt::Local(n, id, e) => {
                 if env.iter().any(|v| v.name == *id) {
@@ -5029,6 +5076,13 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             }
         }
         Expr::Call(id, args) if is_builtin(id, "len") => {
+            // len(s) for a string (hk217): the value pair's len half.
+            if matches!(expr_ty(&args[0], env, sigs), Ty::Str | Ty::StrOwn) {
+                cg_value(&args[0], env, sigs, strs, out, target);
+                out.push_str("    mov %rdx, %rax
+");
+                return;
+            }
             // len(a) for a dynamic array: the length word of the slot.
             match &args[0] {
                 Expr::Var(v) => {
@@ -6581,6 +6635,17 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     for s in stmts {
         match s {
             Stmt::SelfSet(..) | Stmt::SendSet(..) | Stmt::SendStmt(..) => unreachable!("rejected before codegen"),
+            Stmt::CallStmt(_, e) => {
+                // Run the call; release the one discardable owned return
+                // (a string). Everything else discardable is Copy.
+                cg_expr(e, env, sigs, strs, out, target);
+                if expr_ty(e, env, sigs) == Ty::StrOwn {
+                    out.push_str("    mov %rax, %rdi
+    mov $1, %esi
+    call hbc_free
+");
+                }
+            }
             Stmt::Local(_, id, e) => {
                 let mut t = expr_ty(e, env, sigs);
                 // Prescan widening (probe n2): an i64 initializer whose
@@ -8098,7 +8163,7 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
             Stmt::ArrSet(_, _, ie, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(e, out); }
             Stmt::Print(_, es) => { for e in es { collect_blocks_expr(e, out); } }
             Stmt::Ret(_, Some(e)) => collect_blocks_expr(e, out),
-            Stmt::SelfSet(_, _, e) | Stmt::SendStmt(_, e) => collect_blocks_expr(e, out),
+            Stmt::SelfSet(_, _, e) | Stmt::SendStmt(_, e) | Stmt::CallStmt(_, e) => collect_blocks_expr(e, out),
             Stmt::SendSet(_, o, _, e) => { collect_blocks_expr(o, out); collect_blocks_expr(e, out); }
             Stmt::Ret(_, None) | Stmt::Exit(_) | Stmt::Loop(_) => {}
             Stmt::AAdd(_, _, e) | Stmt::ASize(_, _, e) => collect_blocks_expr(e, out),
