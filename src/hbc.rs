@@ -575,7 +575,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hset",
+    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hset", "hb_hpos",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -2281,6 +2281,23 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 if !matches!(&args[0], Expr::Var(_)) || type_expr(&args[0], env, sigs, n)? != Ty::Hash {
                     return Err(format!("line {}: `hb_HHasKey` expects a hash variable (its slot is passed by address)", n));
+                }
+                if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::Str | Ty::StrOwn) {
+                    return Err(format!("line {}: hash keys are strings in this increment", n));
+                }
+                return Ok(Ty::I64);
+            }
+            if is_builtin(id, "hb_hpos") {
+                // hb_HPos(h, key): the entry's 1-based position among
+                // the LIVE entries in insertion order, 0 when absent
+                // (hk162: present keys answer 1..n, missing and ""
+                // answer 0; hk163: positions COMPACT after a delete).
+                // Hash and key borrowed.
+                if args.len() != 2 {
+                    return Err(format!("line {}: `hb_HPos` takes exactly two arguments", n));
+                }
+                if !matches!(&args[0], Expr::Var(_)) || type_expr(&args[0], env, sigs, n)? != Ty::Hash {
+                    return Err(format!("line {}: `hb_HPos` expects a hash variable (its slot is passed by address)", n));
                 }
                 if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::Str | Ty::StrOwn) {
                     return Err(format!("line {}: hash keys are strings in this increment", n));
@@ -4165,8 +4182,15 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             }
             if is_builtin(id, "hb_hget") {
                 // The hash and the lookup key are BORROWED: hbc_hget
-                // only reads them. The optional default is never
-                // evaluated (hk158b/c/e), so it moves nothing either.
+                // only reads them. The optional default IS evaluated
+                // and its value discarded (hk158f1/f2/f3); as an
+                // integer in this increment it moves nothing either.
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
+            if is_builtin(id, "hb_hpos") {
+                // The hash and the lookup key are BORROWED: hbc_hpos
+                // only reads them.
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
@@ -4505,6 +4529,30 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hhaskey\n    add $16, %rsp\n", var.off));
             } else {
                 unreachable!("checked: hb_HHasKey takes a hash variable");
+            }
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_hpos") => {
+            // hb_HPos(h, key): the key evaluates first (borrowed),
+            // then the hash slot goes by address. Returns rax = the
+            // 1-based live position or 0 (hk162/hk163). An owned key
+            // temporary is freed right after the call (the helper only
+            // reads it).
+            cg_value(&args[1], env, sigs, strs, out, target);
+            let temp_key = expr_ty(&args[1], env, sigs) == Ty::StrOwn && !matches!(&args[1], Expr::Var(_));
+            if temp_key {
+                out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            } else {
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            }
+            if let Expr::Var(v) = &args[0] {
+                let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                if temp_key {
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hpos\n    mov %rax, 16(%rsp)\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    mov 16(%rsp), %rax\n    add $32, %rsp\n", var.off));
+                } else {
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hpos\n    add $16, %rsp\n", var.off));
+                }
+            } else {
+                unreachable!("checked: hb_HPos takes a hash variable");
             }
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hget") => {
@@ -5149,6 +5197,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "array") { return match args.len() { 1 => Ty::DArr, 2 => Ty::DArr2, 3 => Ty::DArr3, _ => Ty::DArr4 }; }
             if is_builtin(id, "hb_hkeys") { return Ty::DArrS; }
             if is_builtin(id, "hb_hhaskey") { return Ty::I64; }
+            if is_builtin(id, "hb_hpos") { return Ty::I64; }
             if is_builtin(id, "hb_hget") { return Ty::Dyn; }
             if is_builtin(id, "hb_hvalues") { return Ty::DArr; }
             if is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") { return Ty::I64; }
@@ -7760,6 +7809,39 @@ hbc_hhaskey:
 71: xor %eax, %eax
     ret
 74: mov $1, %eax
+    ret
+
+# hbc_hpos: rdi = hash slot address, rsi = key bytes, rdx = key
+# length. Returns rax = the entry's 1-based position among the LIVE
+# entries in insertion order when the key matches byte for byte
+# (case-sensitive, full length - probe hk162), 0 when absent; an empty
+# key is an ordinary key. Positions COMPACT after a delete (hk163).
+# Leaf: caller-saved registers only, no allocation, the hash and the
+# lookup key are only read.
+hbc_hpos:
+    mov (%rdi), %r8
+    mov 8(%rdi), %r9
+    xor %ecx, %ecx
+70: cmp %r9, %rcx
+    jae 71f
+    mov %rcx, %rax
+    shl $5, %rax
+    mov (%r8,%rax), %r11
+    cmp 8(%r8,%rax), %rdx
+    jne 72f
+    xor %eax, %eax
+73: cmp %rdx, %rax
+    jae 74f
+    movzbl (%r11,%rax), %edi
+    cmp (%rsi,%rax), %dil
+    jne 72f
+    inc %rax
+    jmp 73b
+72: inc %rcx
+    jmp 70b
+71: xor %eax, %eax
+    ret
+74: lea 1(%rcx), %rax
     ret
 
 # hbc_hkeys: rdi = hash slot address. Returns rax = data pointer of a
