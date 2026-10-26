@@ -129,6 +129,26 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
                     i += 1;
                     toks.push(T::Num(if defs.contains_key(name) { 1 } else { 0 }));
                 }
+                "__PRAGMA" => {
+                    // Harbour pp built-in (oracle hk320: hbmk2 with no -w
+                    // flag defaults WARNINGLEVEL to 0). WARNINGLEVEL is the
+                    // only selector the stock headers use (hbclass.ch);
+                    // anything else stays a named rejection.
+                    while i < b.len() && (b[i] as char).is_whitespace() { i += 1; }
+                    if i >= b.len() || b[i] != b'(' { return Err(format!("line {}: expected ( after __pragma", line)); }
+                    i += 1;
+                    while i < b.len() && (b[i] as char).is_whitespace() { i += 1; }
+                    let k = i;
+                    while i < b.len() && ((b[i] as char).is_ascii_alphanumeric() || b[i] == b'_') { i += 1; }
+                    let sel = &expr[k..i].to_string();
+                    while i < b.len() && (b[i] as char).is_whitespace() { i += 1; }
+                    if i >= b.len() || b[i] != b')' { return Err(format!("line {}: expected ) after __pragma selector", line)); }
+                    i += 1;
+                    if !sel.eq_ignore_ascii_case("warninglevel") {
+                        return Err(format!("line {}: __pragma({}) is not in this increment (only WARNINGLEVEL - oracle hk320)", line, sel));
+                    }
+                    toks.push(T::Num(0));
+                }
                 _ => {
                     // A defined macro expands to its body if numeric, else 0
                     // (macro names are case-sensitive).
@@ -830,11 +850,6 @@ pub fn parse_define(arg: &str, line: usize) -> Result<(String, Vec<String>, Stri
 }
 
 
-// Last non-whitespace character of a line (for the continuation guard).
-fn raw_last_non_ws(s: &str) -> Option<char> {
-    s.chars().rev().find(|c| !c.is_whitespace())
-}
-
 // Harbour comment forms (oracle family hk211, own probes, no Harbour code):
 // `//` and `&&` run to end of line; `*` as the first non-whitespace
 // character comments the whole line (leading whitespace allowed, hk211b);
@@ -901,10 +916,19 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
     let text = fs::read_to_string(path).map_err(|e| format!("cannot read {}: {}", path, e))?;
     let mut conds: Vec<Cond> = Vec::new();
     let mut emitting = true;
-    // Harbour line continuation (probes b39/b39c/b39e): a line whose last
-    // non-whitespace character is a `;` OUTSIDE any string literal joins
-    // with the next line (anything else after the `;`, even a comment, is
-    // a syntax error in Harbour - b39c). The joined statement reports its
+    // Harbour line continuation (probes b39/b39e, oracles hk357-hk368):
+    // a line whose last non-whitespace character is a `;` OUTSIDE any
+    // string literal joins with the next line. Only COMMENTS may follow
+    // the `;` - hk362 measures `; // comment` joining (prints 3), hk367
+    // measures `; /* block */` joining, even a MULTI-LINE block comment
+    // with code after its close; hk368 measures CODE after the `;` as a
+    // Harbour E0030 syntax error. (The old b39c probe claimed even a
+    // comment blocked the join; hk362/hk367 on the pinned hbmk2 supersede
+    // it - the original probe text was lost to a sandbox wipe, so the
+    // fresh oracles are the record.) Comments are stripped before this
+    // check, so a stripped line ending in `;` had only ws/comments after
+    // it. The join inserts a space: tokens never merge across the break
+    // (hk363: `ab;` + `c` is NOT `abc`). The joined statement reports its
     // first line's number.
     let raws: Vec<&str> = text.lines().collect();
     // Strip comments before any directive or continuation processing, the
@@ -936,12 +960,6 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                 if !ch.is_whitespace() { last_non_ws = Some(ch); }
             }
             if in_str || last_non_ws != Some(';') { break; }
-            // b39c guard: anything after the `;`, even a comment, is a
-            // syntax error in Harbour. If stripping removed a comment that
-            // FOLLOWED the semicolon on this line, do not join: leave the
-            // dangling `;` for the lexer to reject, exactly as before
-            // comment stripping existed.
-            if stripped[li].len() != raws[li].len() && raw_last_non_ws(raws[li]) != Some(';') { break; }
             if li + 1 >= raws.len() { break; } // dangling `;` at EOF: leave it; the lexer reports it
             joined.pop(); // the ';' itself (it is the last char only if no trailing ws)
             while joined.ends_with(|c: char| c.is_whitespace()) { joined.pop(); }
@@ -1133,4 +1151,5 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
     if !conds.is_empty() { return Err(format!("{}: unterminated #if/#ifdef", path)); }
     Ok(())
 }
+
 
