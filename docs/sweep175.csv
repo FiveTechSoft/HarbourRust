@@ -1,13 +1,13 @@
 # HarbourRust frozen-175 upstream sweep baseline
 # upstream: FiveTechSoft/harbour-core commit 694428e1c12f726675b19324d62167fa77d68185 (tests/*.prg, 237 files)
 # frozen set: 175 files = 237 minus 62 interactive (grep -iE 'achoice|memoedit|tbrowse|@.*say.*get|inkey\(|dbedit|setcolor|scroll\(')
-# compiler: HarbourRust iteration 63a (PROCEDURE keyword + case-insensitive identifiers)
+# compiler: HarbourRust iteration 63b (Harbour comment forms: // && * and /* */ blocks, oracle hk211)
 # sweep date: 2026-10-26; column 2 = COMPILES or the exact first error (line + message)
-# rows-sha256: 2fb6306955e7f43abc556ccce20c06bc1ab468fda04d813502926d0da9c53f97
-adir.prg|error: line 5: unterminated dotted word `.net` (Harbour logical tokens need a closing dot)
-ains.prg|error: line 9: unterminated dotted word `.net` (Harbour logical tokens need a closing dot)
+# rows-sha256: d12bf84550e0269aee50f3990377823c7979e291a6cf13536ab6a4f526ccfd53
+adir.prg|error: line 22: unterminated string
+ains.prg|error: line 25: expected `local name := expr`
 alias.prg|error: line 6: code outside a function
-aliaslck.prg|error: line 5: unknown dotted word `.onet.` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+aliaslck.prg|error: line 12: '!' without '=' (col 4)
 altd.prg|error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 and_or.prg|error: line 11: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 array.prg|error: line 7: array elements must be integers in this increment
@@ -18,164 +18,164 @@ arreval.prg|error: line 5: statement not in the subset (identifier-led line is n
 arrindex.prg|error: line 3: expected :=
 asort.prg|error: line 12: unexpected token Comma in expression
 base2.prg|error: line 9: character not allowed `&` (U+0026)
-base64.prg|error: line 3: cannot find include simpleio.ch
+base64.prg|error: line 62: '!' without '=' (col 4)
 begin.prg|error: line 4: code outside a function
-big5_gen.prg|error: line 29: unknown directive #iconv in this PoC
-box.prg|error: line 3: cannot find include box.ch
+big5_gen.prg|error: line 97: character not allowed `@` (U+0040)
+box.prg|error: line 53: code outside a function
 byref.prg|error: line 11: character not allowed `@` (U+0040)
 calling.prg|error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 cdow.prg|error: line 3: unknown function `cmonth` (must be defined before use)
-cgi.prg|error: line 59: cannot find include fileio.ch
-clasinh.prg|error: line 1: cannot find include hbclass.ch
+cgi.prg|error: line 118: error in #if expression
+clasinh.prg|error: line 118: error in #if expression
 clasinit.prg|error: line 36: character not allowed `@` (U+0040)
 clasname.prg|error: line 13: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
-classch.prg|error: line 3: cannot find include hbclass.ch
+classch.prg|error: line 118: error in #if expression
 classes.prg|error: line 26: character not allowed `@` (U+0040)
-cls.prg|error: line 3: cannot find include hbclass.ch
-clsccast.prg|error: line 13: cannot find include hbclass.ch
+cls.prg|error: line 118: error in #if expression
+clsccast.prg|error: line 118: error in #if expression
 clsdata.prg|error: line 21: character not allowed `@` (U+0040)
-clsicast.prg|error: line 12: cannot find include hbclass.ch
-clsnv.prg|error: line 11: cannot find include hbclass.ch
-clsscast.prg|error: line 12: cannot find include hbclass.ch
-clsscope.prg|error: line 11: cannot find include hbclass.ch
+clsicast.prg|error: line 118: error in #if expression
+clsnv.prg|error: line 118: error in #if expression
+clsscast.prg|error: line 118: error in #if expression
+clsscope.prg|error: line 118: error in #if expression
 cmphello.prg|error: line 15: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 codebl.prg|error: line 20: character not allowed `@` (U+0040)
 codebl2.prg|error: line 14: character not allowed `&` (U+0026)
-codebloc.prg|error: line 5: unterminated dotted word `.net` (Harbour logical tokens need a closing dot)
-com.prg|error: line 1: cannot find include hbcom.ch
-comments.prg|error: line 16: character not allowed `&` (U+0026)
-cpinfo.prg|error: line 12: cannot find include fileio.ch
+codebloc.prg|error: line 25: expected `local name := expr`
+com.prg|error: line 76: '!' without '=' (col 4)
+comments.prg|error: line 8: code outside a function
+cpinfo.prg|error: line 96: unterminated dotted word `.txt` (Harbour logical tokens need a closing dot)
 curdirt.prg|error: line 3: unknown function `curdir` (must be defined before use)
 dates.prg|error: line 5: expected :=
 dates2.prg|error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 dates3.prg|error: line 5: expected :=
-datetime.prg|error: line 7: cannot find include simpleio.ch
+datetime.prg|error: line 59: statement not in the subset (LParen)
 dbeval.prg|error: line 3: expected `local name := expr`
 dbgcls.prg|error: line 1: unknown directive #pragma in this PoC
 dbi.prg|error: line 4: expected `local name := expr`
 ddate.prg|error: line 27: character not allowed `&` (U+0026)
-declare.prg|error: line 3: cannot find include hbclass.ch
+declare.prg|error: line 118: error in #if expression
 define.prg|error: line 2: unknown directive #warning in this PoC
-delim.prg|error: line 5: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
-destruct.prg|error: line 8: cannot find include hbclass.ch
-dev.prg|error: line 6: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
-directry.prg|error: line 3: cannot find include directry.ch
-diskspac.prg|error: line 18: cannot find include fileio.ch
+delim.prg|error: line 37: '!' without '=' (col 31)
+destruct.prg|error: line 118: error in #if expression
+dev.prg|error: line 10: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+directry.prg|error: line 62: '!' without '=' (col 4)
+diskspac.prg|error: line 100: unknown function `empty` (must be defined before use)
 docase.prg|error: line 9: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 dupvars.prg|error: line 7: expected :=
-dyn.prg|error: line 8: cannot find include simpleio.ch
-dynobj.prg|error: line 18: character not allowed `'` (U+0027)
+dyn.prg|error: line 124: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
+dynobj.prg|error: line 32: character not allowed `@` (U+0040)
 dynsym.prg|error: line 4: expected `local name := expr`
-errsys.prg|error: line 7: unterminated dotted word `.net` (Harbour logical tokens need a closing dot)
+errsys.prg|error: line 23: expected `local name := expr`
 exit.prg|error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
-extend1.prg|error: line 2: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
+extend1.prg|error: line 44: character not allowed `'` (U+0027)
 fib.prg|error: line 3: expected `local name := expr`
 fileio.prg|error: line 21: character not allowed `@` (U+0040)
 fileio2.prg|error: line 6: expected `local name := expr`
 files.prg|error: line 23: character not allowed `@` (U+0040)
-flink.prg|error: line 7: cannot find include simpleio.ch
+flink.prg|error: line 59: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 for.prg|error: line 8: code outside a function
-foreach2.prg|error: line 9: cannot find include hbclass.ch
+foreach2.prg|error: line 118: error in #if expression
 fornext.prg|error: line 10: expected `local name := expr`
 funcarr.prg|error: line 38: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
-fwdref.prg|error: line 1: code outside a function
-gfx2.prg|error: line 8: cannot find include hbgtinfo.ch
-gtxfnt.prg|error: line 8: cannot find include hbgtinfo.ch
-guestbk.prg|error: line 4: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
-hbdoc.prg|error: line 7: cannot find include directry.ch
-hbinline.prg|error: line 4: unknown dotted word `.onet.` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+fwdref.prg|error: line 5: codeblock captures are not in this increment (`nspan` is not a codeblock parameter)
+gfx2.prg|error: line 37: macro hb_gfxMakeColor takes 4 argument(s), got 3
+gtxfnt.prg|error: line 126: character not allowed `@` (U+0040)
+guestbk.prg|error: line 91: character not allowed `'` (U+0027)
+hbdoc.prg|error: line 124: '!' without '=' (col 4)
+hbinline.prg|error: line 11: character not allowed `;` (U+003B)
 hello.prg|COMPILES
-hrb.prg|error: line 3: cannot find include hbhrb.ch
+hrb.prg|error: line 83: '!' without '=' (col 4)
 hrbext.prg|error: line 12: code outside a function
-hsx.prg|error: line 8: cannot find include dbinfo.ch
-html.prg|error: line 11: cannot find include hbclass.ch
+hsx.prg|error: line 140: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+html.prg|error: line 118: error in #if expression
 ifelse.prg|error: line 5: expected `local name := expr`
-ifinline.prg|error: line 1: code outside a function
-inherit.prg|error: line 1: cannot find include fileio.ch
-inhprob.prg|error: line 1: cannot find include hbclass.ch
-inifile.prg|error: line 45: cannot find include fileio.ch
-inifiles.prg|error: line 45: cannot find include fileio.ch
+ifinline.prg|error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+inherit.prg|error: line 118: '!' without '=' (col 10)
+inhprob.prg|error: line 118: error in #if expression
+inifile.prg|error: line 118: error in #if expression
+inifiles.prg|error: line 118: error in #if expression
 initexit.prg|error: line 4: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 initproc.prg|error: line 1: code outside a function
 inline.prg|error: line 29: character not allowed `@` (U+0040)
 inline_c.prg|error: line 9: unknown directive #pragma in this PoC
-iotcp.prg|error: line 48: cannot find include hbiousr.ch
-ipclnt.prg|error: line 1: cannot find include hbsocket.ch
-keywords.prg|error: line 13: cannot find include keywords.ch"  //INCLUDE test
+iotcp.prg|error: line 350: '!' without '=' (col 4)
+ipclnt.prg|error: line 79: '!' without '=' (col 4)
+keywords.prg|error: line 45: character not allowed `%` (U+0025)
 langapi.prg|error: line 4: code outside a function
 lbl.prg|error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
-libname.prg|error: line 7: cannot find include simpleio.ch
+libname.prg|error: line 59: statement not in the subset (LParen)
 linecont.prg|error: line 6: character not allowed `;` (U+003B)
 lnlenli1.prg|error: line 9: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 lnlenli2.prg|error: line 9: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
-longdev.prg|error: line 3: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
-longstr.prg|error: line 5: cannot find include simpleio.ch
+longdev.prg|error: line 8: expected :=
+longstr.prg|error: line 57: unterminated string
 longstr2.prg|error: line 6: expected :=
-macro.prg|error: line 1: cannot find include hbclass.ch
-math.prg|error: line 1: cannot find include hbmath.ch
+macro.prg|error: line 118: error in #if expression
+math.prg|error: line 70: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 mem.prg|error: line 5: expected :=
 memfile.prg|error: line 19: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
-memmgr.prg|error: line 5: cannot find include simpleio.ch
-memory.prg|error: line 4: cannot find include hbmemory.ch
-memvar.prg|error: line 7: unterminated dotted word `.net` (Harbour logical tokens need a closing dot)
-money.prg|error: line 7: cannot find include error.ch
+memmgr.prg|error: line 100: error in #if expression
+memory.prg|error: line 63: unknown function `memory` (must be defined before use)
+memvar.prg|error: line 235: character not allowed `@` (U+0040)
+money.prg|error: line 118: error in #if expression
 multiarg.prg|error: line 10: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 nums.prg|error: line 8: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 objarr.prg|error: line 40: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 objasign.prg|error: line 35: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
-objects.prg|error: line 4: cannot find include hboo.ch
+objects.prg|error: line 103: character not allowed `@` (U+0040)
 omacro.prg|error: line 17: character not allowed `&` (U+0026)
-op.prg|error: line 47: cannot find include hbclass.ch
+op.prg|error: line 118: error in #if expression
 os.prg|error: line 5: unknown function `os` (must be defined before use)
 osshell.prg|error: line 18: '!' without '=' (col 1)
-output.prg|error: line 3: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
-overload.prg|error: line 9: cannot find include hbclass.ch
+output.prg|error: line 31: character not allowed `@` (U+0040)
+overload.prg|error: line 118: error in #if expression
 parexpr.prg|error: line 9: unknown directive #pragma in this PoC
-passref.prg|error: line 1: character not allowed `@` (U+0040)
-persist.prg|error: line 3: cannot find include hbclass.ch
-pipes.prg|error: line 3: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
+passref.prg|error: line 8: character not allowed `'` (U+0027)
+persist.prg|error: line 118: error in #if expression
+pipes.prg|error: line 18: '!' without '=' (col 13)
 pp.prg|error: line 10: unknown result marker <"z"> (Harbour: E0008)
 ppapi.prg|error: line 26: character not allowed `'` (U+0027)
 pragma.prg|error: line 3: unknown directive #pragma in this PoC
 procline.prg|error: line 3: unknown function `procline` (must be defined before use)
 procname.prg|error: line 31: '!' without '=' (col 7)
 rdd.prg|error: line 43: macro hb_dbDrop takes 1 argument(s), got 3
-rdd2.prg|error: line 5: cannot find include directry.ch
-readhrb.prg|error: line 12: cannot find include fileio.ch
+rdd2.prg|error: line 222: incomplete statement for the command used here (Harbour: E0020)
+readhrb.prg|error: line 111: character not allowed `@` (U+0040)
 recursiv.prg|error: line 16: expected `,` or `)` in call arguments, got Some(Lt)
 returns.prg|error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
-round.prg|error: line 3: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
+round.prg|error: line 11: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 rpt.prg|error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 say.prg|error: line 9: character not allowed `@` (U+0040)
-sdf.prg|error: line 6: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
+sdf.prg|error: line 38: '!' without '=' (col 25)
 set.prg|error: line 8: character not allowed `@` (U+0040)
 set_num.prg|error: line 5: expected `local name := expr`
-sha1.prg|error: line 3: unterminated dotted word `.net` (Harbour logical tokens need a closing dot)
-sha2.prg|error: line 3: unterminated dotted word `.net` (Harbour logical tokens need a closing dot)
+sha1.prg|error: line 8: unknown function `hb_sha1` (must be defined before use)
+sha2.prg|error: line 23: character not allowed `;` (U+003B)
 sortbug.prg|error: line 6: character not allowed `;` (U+003B)
 sound.prg|error: line 6: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 speed.prg|error: line 15: '!' without '=' (col 10)
-speedstr.prg|error: line 4: unknown dotted word `.onet.` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+speedstr.prg|error: line 43: character not allowed `;` (U+003B)
 speedtst.prg|error: line 110: unknown result marker <.info.> (Harbour: E0008)
 statfun.prg|error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
-statics.prg|error: line 7: unterminated dotted word `.net` (Harbour logical tokens need a closing dot)
+statics.prg|error: line 21: code outside a function
 statics1.prg|error: line 5: code outside a function
 statics2.prg|error: line 16: character not allowed `'` (U+0027)
 statinit.prg|error: line 4: code outside a function
 str.prg|error: line 16: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 strdelim.prg|error: line 9: character not allowed `'` (U+0027)
-stripem.prg|error: line 1: cannot find include fileio.ch
+stripem.prg|error: line 118: error in #if expression
 switch.prg|error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 symbolt.prg|error: line 6: classes are not in this increment yet (parser landed; runtime representation pending)
 t1.prg|error: line 10: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 test.prg|error: line 8: character not allowed `'` (U+0027)
 ticktime.prg|error: line 3: expected :=
-uc16_gen.prg|error: line 3: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
-use.prg|error: line 1: cannot find include simpleio.ch
-utf8at.prg|error: line 4: cannot find include simpleio.ch
-vars.prg|error: line 5: unterminated dotted word `.net` (Harbour logical tokens need a closing dot)
-vec1.prg|error: line 2: unterminated dotted word `.net` (Harbour logical tokens need a closing dot)
-version.prg|error: line 3: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
+uc16_gen.prg|error: line 39: '!' without '=' (col 4)
+use.prg|error: line 72: '!' without '=' (col 4)
+utf8at.prg|error: line 54: code outside a function
+vars.prg|error: line 28: character not allowed `@` (U+0040)
+vec1.prg|error: line 6: unterminated string
+version.prg|error: line 25: character not allowed `'` (U+0027)
 vmasort.prg|error: line 38: character not allowed `%` (U+0025)
 warnings.prg|error: line 3: unknown directive #pragma in this PoC
 while.prg|error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
