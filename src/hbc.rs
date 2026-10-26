@@ -577,7 +577,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan",
+    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -2331,6 +2331,46 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: hash keys are strings in this increment", n));
                 }
                 return Ok(Ty::I64);
+            }
+            if is_builtin(id, "hb_hkeyat") {
+                // hb_HKeyAt(h, n): the key at the 1-based
+                // insertion-order position n (hk184: bb/ccc by
+                // position; positions COMPACT after a delete - hk186).
+                // EVERY out-of-range position (0, past the end,
+                // negative) is Harbour's BASE/1187 dialog, which hangs
+                // headless (hk184, separate binaries): the registered
+                // dialogo-sin-oraculo family - the PoC takes the clean
+                // bound-error exit, never a compat success. Float
+                // indices truncate in the oracle (hk186) and stay
+                // outside this dialect's numeric syntax. Hash borrowed;
+                // the returned key is an OWNED copy.
+                if args.len() != 2 {
+                    return Err(format!("line {}: `hb_HKeyAt` takes exactly two arguments", n));
+                }
+                if !matches!(&args[0], Expr::Var(_)) || type_expr(&args[0], env, sigs, n)? != Ty::Hash {
+                    return Err(format!("line {}: `hb_HKeyAt` expects a hash variable (its slot is passed by address)", n));
+                }
+                if type_expr(&args[1], env, sigs, n)? != Ty::I64 {
+                    return Err(format!("line {}: the hb_HKeyAt position is an integer in this increment", n));
+                }
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id, "hb_hvalueat") {
+                // hb_HValueAt(h, n): the value casilla at the 1-based
+                // insertion-order position n (hk185: 10/NIL/30 by
+                // position; a stored NIL comes back as NIL). Same
+                // out-of-range family as hb_HKeyAt (hk185: BASE/1187
+                // dialog, clean bound-error exit here). Hash borrowed.
+                if args.len() != 2 {
+                    return Err(format!("line {}: `hb_HValueAt` takes exactly two arguments", n));
+                }
+                if !matches!(&args[0], Expr::Var(_)) || type_expr(&args[0], env, sigs, n)? != Ty::Hash {
+                    return Err(format!("line {}: `hb_HValueAt` expects a hash variable (its slot is passed by address)", n));
+                }
+                if type_expr(&args[1], env, sigs, n)? != Ty::I64 {
+                    return Err(format!("line {}: the hb_HValueAt position is an integer in this increment", n));
+                }
+                return Ok(Ty::Dyn);
             }
             if is_builtin(id, "hb_hscan") {
                 // hb_HScan(h, value [, start]): the 1-based position in
@@ -4331,6 +4371,12 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
+            if is_builtin(id, "hb_hkeyat") || is_builtin(id, "hb_hvalueat") {
+                // The hash is BORROWED: hbc_hkeyat/hbc_hvalueat only
+                // read it; the position is an integer.
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
             if is_builtin(id, "hb_hcasematch") {
                 // The hash is BORROWED: hbc_hcasematch only reads the
                 // slot and the block header.
@@ -4748,6 +4794,37 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             } else {
                 unreachable!("checked: hb_HScan takes a hash variable");
             }
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_hkeyat") => {
+            // hb_HKeyAt(h, n): the position evaluates first, then the
+            // slot by address. hbc_hkeyat returns the stored key
+            // ptr/len or 0 out of range, which takes the registered
+            // clean bound-error exit (BASE/1187 dialog family -
+            // hk184). The key is COPIED out with hbc_strcpy: the
+            // caller owns an independent copy that survives the hash.
+            cg_value(&args[1], env, sigs, strs, out, target);
+            if let Expr::Var(v) = &args[0] {
+                let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                out.push_str(&format!("    mov %rax, %rsi\n    lea -{}(%rbp), %rdi\n    call hbc_hkeyat\n", var.off));
+            } else {
+                unreachable!("checked: hb_HKeyAt takes a hash variable");
+            }
+            out.push_str("    test %rax, %rax\n    je 83f\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    jmp 84f\n83:\n    call hbc_bound_error\n84:\n");
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_hvalueat") => {
+            // hb_HValueAt(h, n): the position evaluates first, then
+            // the slot by address. hbc_hvalueat returns the entry's
+            // {tag, payload} pointer or 0 out of range, which takes
+            // the registered clean bound-error exit (hk185). Returns
+            // rax = tag, rdx = payload (the value is only read).
+            cg_value(&args[1], env, sigs, strs, out, target);
+            if let Expr::Var(v) = &args[0] {
+                let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                out.push_str(&format!("    mov %rax, %rsi\n    lea -{}(%rbp), %rdi\n    call hbc_hvalueat\n", var.off));
+            } else {
+                unreachable!("checked: hb_HValueAt takes a hash variable");
+            }
+            out.push_str("    test %rax, %rax\n    je 85f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 86f\n85:\n    call hbc_bound_error\n86:\n");
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hget") => {
             // hb_HGet(h, key [, default]): key first (borrowed), then
@@ -5405,6 +5482,8 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hhaskey") { return Ty::I64; }
             if is_builtin(id, "hb_hpos") { return Ty::I64; }
             if is_builtin(id, "hb_hscan") { return Ty::I64; }
+            if is_builtin(id, "hb_hkeyat") { return Ty::StrOwn; }
+            if is_builtin(id, "hb_hvalueat") { return Ty::Dyn; }
             if is_builtin(id, "hb_hcasematch") { return Ty::I64; }
             if is_builtin(id, "hb_hget") { return Ty::Dyn; }
             if is_builtin(id, "hb_hvalues") { return Ty::DArr; }
@@ -8596,6 +8675,54 @@ hbc_hscan:
 852: inc %rcx
     jmp 851b
 853: xor %eax, %eax
+    ret
+
+# hbc_hkeyat: rdi = hash slot address, rsi = 1-based position.
+# Returns rax = the entry's key bytes and rdx = its length, or
+# rax = 0 when the position is out of range - 0, past the end or
+# negative all take the caller's registered clean bound-error exit
+# (Harbour's BASE/1187 dialog hangs headless, hk184: the
+# dialogo-sin-oraculo family). Positions are live and compact after
+# a delete (hk186). Leaf: caller-saved registers only, no
+# allocation, the hash is only read.
+hbc_hkeyat:
+    mov (%rdi), %r8
+    test %r8, %r8
+    je 854f
+    mov 8(%rdi), %r9
+    test %rsi, %rsi
+    jle 854f
+    cmp %r9, %rsi
+    ja 854f
+    lea -1(%rsi), %rax
+    shl $5, %rax
+    add %r8, %rax
+    mov 8(%rax), %rdx
+    mov (%rax), %rax
+    ret
+854: xor %eax, %eax
+    ret
+
+# hbc_hvalueat: rdi = hash slot address, rsi = 1-based position.
+# Returns rax = a pointer to the entry's {tag, payload} pair, or
+# rax = 0 out of range (same registered bound-error family, hk185).
+# Leaf: caller-saved registers only, no allocation, the hash is only
+# read.
+hbc_hvalueat:
+    mov (%rdi), %r8
+    test %r8, %r8
+    je 855f
+    mov 8(%rdi), %r9
+    test %rsi, %rsi
+    jle 855f
+    cmp %r9, %rsi
+    ja 855f
+    lea -1(%rsi), %rax
+    shl $5, %rax
+    add %r8, %rax
+    add $16, %rax
+    ret
+855: xor %eax, %eax
     ret
 
 # hbc_strcpy: rdi = source bytes, rsi = length. Returns rax = pointer to
