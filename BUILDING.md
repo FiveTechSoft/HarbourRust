@@ -121,3 +121,24 @@ If `src/hbc.rs` at HEAD is newer than that
 commit, the prebuilt binaries correspond to the older source; rebuild from
 the current source (sections 1-4) for binaries matching HEAD.
 
+## 7. Run the test battery
+
+With the compiler built (section 1), MinGW-w64 extracted (section 3) and
+Wine 10.20 unpacked (section 5):
+
+```
+M=tools/mingw/usr/bin \
+MLIB=tools/mingw/usr/x86_64-w64-mingw32/lib \
+WINE=/path/to/wine-10.20-amd64-wow64/bin/wine \
+WINEPREFIX=$PWD/wineprefix WINEDEBUG=-all \
+LD_LIBRARY_PATH=/path/to/wine-10.20-amd64-wow64/lib \
+bash tests/run_battery.sh
+```
+
+`tests/manifest.txt` lists every case: `pos` cases must print the exact
+expected bytes on Linux and under Wine, `posx` adds the exit code, `neg`
+cases must fail compilation with the named message on both targets.
+Intermediate assembly, objects and binaries are written under `gen/`;
+that directory is kept in the repository (with the `gen/arith.hb`
+fixture the manifest references) so a fresh clone runs the battery
+as-is. A full pass prints `ALL GREEN` as its last line.
