@@ -2314,7 +2314,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         // DArr4 first level: child-array casilla -
                         // "A" (hk114, byte-measured via hk117 markers).
                         match env.iter().rev().find(|x| x.name == *v).map(|x| x.ty.clone()) {
-                            Some(Ty::DArr) | Some(Ty::DArr2) | Some(Ty::DArrRef) | Some(Ty::DArrS) | Some(Ty::DArr4) => {}
+                            Some(Ty::DArr) | Some(Ty::DArr2) | Some(Ty::DArrRef) | Some(Ty::DArrS) | Some(Ty::DArr4) | Some(Ty::Hash) => {}
                             _ => return Err(format!("line {}: `ValType` over this array depth is not measured in this PoC", n)),
                         }
                     }
@@ -2559,7 +2559,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !matches!(&args[0], Expr::Var(_)) || type_expr(&args[0], env, sigs, n)? != Ty::Hash {
                     return Err(format!("line {}: `hb_HScan` expects a hash variable (its slot is passed by address)", n));
                 }
-                if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::I64 | Ty::Dyn) {
+                if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::I64 | Ty::Bool | Ty::Dyn) {
                     return Err(format!("line {}: hash values are integers or NIL in this increment", n));
                 }
                 if args.len() == 3 && !matches!(&args[2], Expr::Nil) && type_expr(&args[2], env, sigs, n)? != Ty::I64 {
@@ -2624,7 +2624,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::Str | Ty::StrOwn) {
                     return Err(format!("line {}: hash keys are strings in this increment", n));
                 }
-                if args.len() == 3 && !matches!(type_expr(&args[2], env, sigs, n)?, Ty::I64 | Ty::Dyn) {
+                if args.len() == 3 && !matches!(type_expr(&args[2], env, sigs, n)?, Ty::I64 | Ty::Bool | Ty::Dyn) {
                     return Err(format!("line {}: the hb_HGetDef default is an integer or NIL in this increment", n));
                 }
                 return Ok(Ty::Dyn);
@@ -2647,7 +2647,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::Str | Ty::StrOwn) {
                     return Err(format!("line {}: hash keys are strings in this increment", n));
                 }
-                if args.len() == 3 && !matches!(type_expr(&args[2], env, sigs, n)?, Ty::I64 | Ty::Dyn) {
+                if args.len() == 3 && !matches!(type_expr(&args[2], env, sigs, n)?, Ty::I64 | Ty::Bool | Ty::Dyn) {
                     return Err(format!("line {}: the hb_HSetDef default is an integer or NIL in this increment", n));
                 }
                 return Ok(Ty::Dyn);
@@ -2843,13 +2843,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         Expr::Nil => Ok(Ty::Dyn),
         Expr::Log(_) => Ok(Ty::Bool),
         Expr::LNot(a) => {
-            if type_expr(a, env, sigs, n)? != Ty::Bool {
+            if !matches!(type_expr(a, env, sigs, n)?, Ty::Bool | Ty::Dyn) {
                 return Err(format!("line {}: `.NOT.` needs a logical operand (hk197)", n));
             }
             Ok(Ty::Bool)
         }
         Expr::LAnd(a, b) | Expr::LOr(a, b) => {
-            if type_expr(a, env, sigs, n)? != Ty::Bool || type_expr(b, env, sigs, n)? != Ty::Bool {
+            if !matches!(type_expr(a, env, sigs, n)?, Ty::Bool | Ty::Dyn) || !matches!(type_expr(b, env, sigs, n)?, Ty::Bool | Ty::Dyn) {
                 return Err(format!("line {}: `.AND.`/`.OR.` need logical operands (hk197/hk198)", n));
             }
             Ok(Ty::Bool)
@@ -2981,10 +2981,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // hk202: .T. = .T. is .T., .T. <> .F. is .T.
                 return Ok(Ty::Bool);
             }
-            if ta == Ty::Bool || tb == Ty::Bool {
+            if (ta == Ty::Bool || tb == Ty::Bool) && ta != Ty::Dyn && tb != Ty::Dyn {
                 // hk202: `.T. = 1` raises Harbour's BASE/1071 argument
                 // error at runtime; ordering logicals is unmeasured. A
-                // compile-time rejection in both cases.
+                // compile-time rejection in both cases (a Dyn operand is
+                // dispatched at runtime instead, below).
                 return Err(format!("line {}: logicals compare only with another logical under `=`/`#`/`==` (hk202); mixed logical/number raises Harbour's BASE/1071 and stays a compile-time rejection here", n));
             }
             if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) {
@@ -3000,6 +3001,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // string against integer is a clean named exit 1 mirroring
             // Harbour's BASE/1071 - hk146, registered failure mode).
             if matches!(ta, Ty::Dyn | Ty::I64) && matches!(tb, Ty::Dyn | Ty::I64) {
+                return Ok(Ty::Bool);
+            }
+            if (ta == Ty::Dyn && tb == Ty::Bool) || (ta == Ty::Bool && tb == Ty::Dyn) {
                 return Ok(Ty::Bool);
             }
             // Dyn against a string: runtime dispatch on the Dyn tag.
@@ -3067,12 +3071,18 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::DArr2);
             }
+            let mut has_log = false;
             for e in es {
-                if type_expr(e, env, sigs, n)? != Ty::I64 {
-                    return Err(format!("line {}: array elements must be integers in this increment", n));
+                let t = type_expr(e, env, sigs, n)?;
+                if !matches!(t, Ty::I64 | Ty::Bool) {
+                    return Err(format!("line {}: array elements must be integers or logicals in this increment", n));
                 }
+                if t == Ty::Bool { has_log = true; }
             }
-            Ok(Ty::Arr(es.len()))
+            if has_log && !es.iter().all(|e| matches!(e, Expr::Int(_) | Expr::Log(_))) {
+                return Err(format!("line {}: a literal mixing logicals is all literal elements in this increment", n));
+            }
+            if has_log { Ok(Ty::DArr) } else { Ok(Ty::Arr(es.len())) }
         }
         Expr::Index(id, ie) => {
             // Arrays are [i64; N] in the Rust model: Copy elements, no
@@ -3230,8 +3240,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: hash keys are strings in this increment", n));
                 }
                 let vt = type_expr(v, env, sigs, n)?;
-                if !matches!(vt, Ty::I64 | Ty::Dyn) {
-                    return Err(format!("line {}: hash values are tagged scalars (integer or NIL) in this increment", n));
+                if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Dyn) {
+                    return Err(format!("line {}: hash values are tagged scalars (integer, logical or NIL) in this increment", n));
                 }
             }
             Ok(Ty::Hash)
@@ -3931,7 +3941,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let moves = match env[kp].ty {
                     Ty::DArrU => {
                         match t {
-                            Ty::I64 | Ty::Dyn => { env[kp].ty = Ty::DArr; false }
+                            Ty::I64 | Ty::Bool | Ty::Dyn => { env[kp].ty = Ty::DArr; false }
                             Ty::DArr | Ty::DArrU => { env[kp].ty = Ty::DArr2; true }
                             // A string pins an array of strings; an owned
                             // string moves in, a rodata one is copied.
@@ -3948,8 +3958,8 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     Ty::DArr => {
                         // Elements are tagged values: an i64 or a Dyn (NIL
                         // included) both store with their tag.
-                        if !matches!(t, Ty::I64 | Ty::Dyn) {
-                            return Err(format!("line {}: the elements of `{}` are tagged scalars (integer or NIL)", n, id));
+                        if !matches!(t, Ty::I64 | Ty::Bool | Ty::Dyn) {
+                            return Err(format!("line {}: the elements of `{}` are tagged scalars (integer, logical or NIL)", n, id));
                         }
                         false
                     }
@@ -4277,8 +4287,8 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if env[kp].moved {
                     return Err(format!("line {}: use of moved value `{}`", n, id));
                 }
-                if !matches!(type_expr(e, env, sigs, *n)?, Ty::I64 | Ty::Dyn) {
-                    return Err(format!("line {}: hash values are integers or NIL in this increment", n));
+                if !matches!(type_expr(e, env, sigs, *n)?, Ty::I64 | Ty::Bool | Ty::Dyn) {
+                    return Err(format!("line {}: hash values are integers, logicals or NIL in this increment", n));
                 }
                 apply_moves(e, env, sigs, false);
             }
@@ -4394,8 +4404,8 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         }
                         // Value first, then the key (probe h4).
                         let vt = type_expr(e, env, sigs, *n)?;
-                        if !matches!(vt, Ty::I64 | Ty::Dyn) {
-                            return Err(format!("line {}: hash values are tagged scalars (integer or NIL) in this increment", n));
+                        if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Dyn) {
+                            return Err(format!("line {}: hash values are tagged scalars (integer, logical or NIL) in this increment", n));
                         }
                         if !matches!(type_expr(ie, env, sigs, *n)?, Ty::Str | Ty::StrOwn) {
                             return Err(format!("line {}: hash keys are strings in this increment", n));
@@ -4405,8 +4415,8 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     }
                     Ty::DArr => {
                         let vt = type_expr(e, env, sigs, *n)?;
-                        if !matches!(vt, Ty::I64 | Ty::Dyn) {
-                            return Err(format!("line {}: dynamic-array elements are tagged scalars (integer or NIL)", n));
+                        if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Dyn) {
+                            return Err(format!("line {}: dynamic-array elements are tagged scalars (integer, logical or NIL)", n));
                         }
                         if type_expr(ie, env, sigs, *n)? != Ty::I64 {
                             return Err(format!("line {}: array index must be an integer", n));
@@ -4801,12 +4811,14 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             }
             // %r10 = scalar Dyn tag: 0 i64 -> "N", 1 NIL -> "U", 2 str -> "C"
             fn vt_classify_scalar(strs: &mut Vec<String>, out: &mut String) {
-                out.push_str("    cmp $1, %r10\n    je 95f\n    cmp $2, %r10\n    je 96f\n");
+                out.push_str("    cmp $1, %r10\n    je 95f\n    cmp $2, %r10\n    je 96f\n    cmp $3, %r10\n    je 98f\n");
                 vt_letter(strs, out, "N");
                 out.push_str("    jmp 97f\n95:\n");
                 vt_letter(strs, out, "U");
                 out.push_str("    jmp 97f\n96:\n");
                 vt_letter(strs, out, "C");
+                out.push_str("    jmp 97f\n98:\n");
+                vt_letter(strs, out, "L");
                 out.push_str("97:\n");
             }
             match &args[0] {
@@ -4830,6 +4842,16 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 }
                 Expr::Index(v, ie) => {
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                    if var.ty == Ty::Hash {
+                        // ValType(h[k]): the key evaluates once (hk89);
+                        // hbc_hget borrows and returns the cell pointer or
+                        // 0 on a miss - a miss classifies as "U", Harbour's
+                        // ValType of an absent key.
+                        cg_value(ie, env, sigs, strs, out, target);
+                        out.push_str(&format!("    mov %rax, %rsi\n    lea -{}(%rbp), %rdi\n    call hbc_hget\n", var.off));
+                        out.push_str("    test %rax, %rax\n    je 85f\n    mov (%rax), %r10\n    jmp 86f\n85:\n    mov $1, %r10\n86:\n");
+                        vt_classify_scalar(strs, out);
+                    } else {
                     cg_expr(ie, env, sigs, strs, out, target);
                     match var.ty {
                         Ty::DArr | Ty::DArrS => {
@@ -4870,6 +4892,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                             out.push_str("88:\n");
                         }
                         _ => unreachable!("checked"),
+                    }
                     }
                 }
                 Expr::Index2(v, ie, ie2) => {
@@ -5119,6 +5142,9 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             if expr_ty(&args[1], env, sigs) == Ty::I64 {
                 out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
             }
+            if expr_ty(&args[1], env, sigs) == Ty::Bool {
+                out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
+            }
             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
             if args.len() == 3 && !matches!(&args[2], Expr::Nil) {
                 cg_value(&args[2], env, sigs, strs, out, target);
@@ -5218,6 +5244,9 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 if expr_ty(&args[2], env, sigs) == Ty::Dyn {
                     // Already a Dyn pair (rax = tag, rdx = payload).
                     out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");
+                } else if expr_ty(&args[2], env, sigs) == Ty::Bool {
+                    // A logical: tag 3, payload 0/1.
+                    out.push_str("    movq $3, 16(%rsp)\n    mov %rax, 24(%rsp)\n");
                 } else {
                     // A pure i64 is 8 bytes: materialize its Dyn pair
                     // (tag 0, payload = value).
@@ -5258,6 +5287,8 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 cg_value(&args[2], env, sigs, strs, out, target);
                 if expr_ty(&args[2], env, sigs) == Ty::Dyn {
                     out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");
+                } else if expr_ty(&args[2], env, sigs) == Ty::Bool {
+                    out.push_str("    movq $3, 16(%rsp)\n    mov %rax, 24(%rsp)\n");
                 } else {
                     out.push_str("    movq $0, 16(%rsp)\n    mov %rax, 24(%rsp)\n");
                 }
@@ -5833,6 +5864,9 @@ fn cg_darr2_literal(es: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<S
                     if expr_ty(ie, env, sigs) == Ty::I64 {
                         out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
                     }
+                    if expr_ty(ie, env, sigs) == Ty::Bool {
+                        out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
+                    }
                     out.push_str(&format!("    mov 8(%rsp), %r11\n    mov %rax, {}(%r11)\n    mov %rdx, {}(%r11)\n", p * 16, p * 16 + 8));
                 }
                 out.push_str(&format!("    mov (%rsp), %r11\n    mov 8(%rsp), %rax\n    mov %rax, {}(%r11)\n    movq ${}, {}(%r11)\n", j * 16, m, j * 16 + 8));
@@ -5854,6 +5888,9 @@ fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out
         if es.iter().any(|x| matches!(x, Expr::ArrLit(_) | Expr::DArrNew)) {
             return cg_darr2_literal(es, env, sigs, strs, out, target);
         }
+        if es.iter().all(|x| matches!(x, Expr::Int(_) | Expr::Log(_))) && es.iter().any(|x| matches!(x, Expr::Log(_))) {
+            return cg_darr1_literal(es, out);
+        }
     }
     if let Expr::Str(s) = e {
         let idx = strs.len();
@@ -5863,6 +5900,25 @@ fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out
     } else {
         cg_expr(e, env, sigs, strs, out, target);
     }
+}
+
+// The materialization of a flat literal mixing integers and logicals:
+// a dynamic tagged array ({tag, payload} cells; tag 0 = integer,
+// tag 3 = logical), the same shape as an AAdd-grown array (hk201).
+fn cg_darr1_literal(es: &[Expr], out: &mut String) {
+    let m = es.len();
+    out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + m * 16));
+    out.push_str(&format!("    movq ${}, (%rax)\n    add $8, %rax\n", m));
+    out.push_str("    mov %rax, %r11\n");
+    for (i, e) in es.iter().enumerate() {
+        let (tag, val) = match e {
+            Expr::Int(v) => (0i64, v.clone()),
+            Expr::Log(b) => (3i64, if *b { "1".to_string() } else { "0".to_string() }),
+            _ => unreachable!("checker"),
+        };
+        out.push_str(&format!("    movq ${}, {}(%r11)\n    movq ${}, {}(%r11)\n", tag, i * 16, val, i * 16 + 8));
+    }
+    out.push_str(&format!("    mov %r11, %rax\n    mov ${}, %edx\n", m));
 }
 
 // Emit an array-producing expression into a frame slot: a literal stores
@@ -5918,7 +5974,9 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::Log(_) | Expr::LNot(_) | Expr::LAnd(_, _) | Expr::LOr(_, _) | Expr::Cmp(..) => Ty::Bool,
         Expr::ArrLit(es) => {
             if es.iter().any(|e| matches!(e, Expr::ArrLit(inner) if inner.iter().any(|x| matches!(x, Expr::ArrLit(_) | Expr::DArrNew)))) { Ty::DArr3 }
-            else if es.iter().any(|e| matches!(e, Expr::ArrLit(_) | Expr::DArrNew)) { Ty::DArr2 } else { Ty::Arr(es.len()) }
+            else if es.iter().any(|e| matches!(e, Expr::ArrLit(_) | Expr::DArrNew)) { Ty::DArr2 }
+            else if es.iter().all(|e| matches!(e, Expr::Int(_) | Expr::Log(_))) && es.iter().any(|e| matches!(e, Expr::Log(_))) { Ty::DArr }
+            else { Ty::Arr(es.len()) }
         }
         Expr::Index(id, _) => match env.iter().find(|v| v.name == *id).map(|v| v.ty) {
             Some(Ty::Arr(_)) => Ty::I64,
@@ -6234,12 +6292,14 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                         // hk139c).
                         cg_expr(a, env, sigs, strs, out, target);
                         if ta == Ty::I64 { out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n"); }
+                        if ta == Ty::Bool { out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"); }
                         match target {
                             Target::Linux => out.push_str("    push %rax\n    push %rdx\n"),
                             Target::Windows => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n"),
                         }
                         cg_expr(b, env, sigs, strs, out, target);
                         if tb == Ty::I64 { out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n"); }
+                        if tb == Ty::Bool { out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"); }
                         out.push_str("    mov %rax, %rcx\n    mov %rdx, %r8\n");
                         match target {
                             Target::Linux => out.push_str("    pop %rdx\n    pop %rax\n"),
@@ -6406,8 +6466,13 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             // A logical VALUE as the condition (literal, variable or call
             // returning one - hk197/hk204): 0/1 in %rax. Comparisons
             // never reach here (the arms above cover every shape the
-            // checker accepts).
+            // checker accepts). A Dyn condition materializes first: NIL
+            // is .F. (payload 0), a logical cell keeps its payload, an
+            // integer or string cell is a type error, like Harbour.
             cg_expr(cond, env, sigs, strs, out, target);
+            if expr_ty(cond, env, sigs) == Ty::Dyn {
+                out.push_str("    call hbc_dyn_to_log\n");
+            }
             out.push_str(&format!("    test %rax, %rax\n    jnz {}\n", true_label));
         }
     }
@@ -6438,6 +6503,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             cg_value(v, env, sigs, strs, out, target);
                             if expr_ty(v, env, sigs) == Ty::I64 {
                                 out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                            }
+                            if expr_ty(v, env, sigs) == Ty::Bool {
+                                out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                             }
                             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                             out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n    add $32, %rsp\n", off));
@@ -7070,6 +7138,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             if expr_ty(v, env, sigs) == Ty::I64 {
                                 out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
                             }
+                            if expr_ty(v, env, sigs) == Ty::Bool {
+                                out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
+                            }
                             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                             out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n    add $32, %rsp\n", off));
                         }
@@ -7193,6 +7264,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             if expr_ty(xe, env, sigs) == Ty::I64 {
                                 out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
                             }
+                            if expr_ty(xe, env, sigs) == Ty::Bool {
+                                out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
+                            }
                             out.push_str(&format!("    mov (%rsp), %r11\n    mov %rax, {}(%r11)\n    mov %rdx, {}(%r11)\n", p * 16, p * 16 + 8));
                         }
                         out.push_str(&format!("    mov (%rsp), %rax\n    mov ${}, %edx\n    add $16, %rsp\n", m));
@@ -7232,6 +7306,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     cg_expr(e, env, sigs, strs, out, target);
                     if expr_ty(e, env, sigs) == Ty::I64 {
                         out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                    }
+                    if expr_ty(e, env, sigs) == Ty::Bool {
+                        out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                     }
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     out.push_str(&format!("    mov %rsp, %rdx\n    mov $16, %esi\n    {}\n    call hbc_aadd\n    add $16, %rsp\n", aptr));
@@ -7286,6 +7363,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             if expr_ty(xe, env, sigs) == Ty::I64 {
                                 out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
                             }
+                            if expr_ty(xe, env, sigs) == Ty::Bool {
+                                out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
+                            }
                             out.push_str(&format!("    mov 8(%rsp), %r11\n    mov %rax, {}(%r11)\n    mov %rdx, {}(%r11)\n", p * 16, p * 16 + 8));
                         }
                         out.push_str(&format!("    mov 8(%rsp), %rax\n    mov ${}, %edx\n", m));
@@ -7318,6 +7398,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 cg_expr(e, env, sigs, strs, out, target);
                 if expr_ty(e, env, sigs) == Ty::I64 {
                     out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                }
+                if expr_ty(e, env, sigs) == Ty::Bool {
+                    out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                 }
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 }
@@ -7367,6 +7450,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 cg_expr(e, env, sigs, strs, out, target);
                 if expr_ty(e, env, sigs) == Ty::I64 {
                     out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                }
+                if expr_ty(e, env, sigs) == Ty::Bool {
+                    out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                 }
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 // stack: [value 16][j 16][i 16]
@@ -7420,6 +7506,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 cg_expr(e, env, sigs, strs, out, target);
                 if expr_ty(e, env, sigs) == Ty::I64 {
                     out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                }
+                if expr_ty(e, env, sigs) == Ty::Bool {
+                    out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                 }
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 // stack: [value 16][k 16][j 16][i 16]
@@ -7475,6 +7564,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 cg_value(ve, env, sigs, strs, out, target);
                 if expr_ty(ve, env, sigs) == Ty::I64 {
                     out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                }
+                if expr_ty(ve, env, sigs) == Ty::Bool {
+                    out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                 }
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n    add $16, %rsp\n", var.off));
@@ -7568,6 +7660,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 if expr_ty(e, env, sigs) == Ty::I64 {
                     out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
                 }
+                if expr_ty(e, env, sigs) == Ty::Bool {
+                    out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
+                }
                 out.push_str("    mov %rax, %rsi\n");
                 out.push_str(&format!("    lea -{}(%rbp), %rdi\n    call hbc_hfill\n", var.off));
             }
@@ -7600,6 +7695,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             cg_expr(ie2, env, sigs, strs, out, target);
                             if expr_ty(ie2, env, sigs) == Ty::I64 {
                                 out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                            }
+                            if expr_ty(ie2, env, sigs) == Ty::Bool {
+                                out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                             }
                             out.push_str(&format!("    mov (%rsp), %r11\n    mov %rax, {}(%r11)\n    mov %rdx, {}(%r11)\n", p2 * 16, p2 * 16 + 8));
                         }
@@ -7673,6 +7771,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     if expr_ty(e, env, sigs) == Ty::I64 {
                         out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
                     }
+                    if expr_ty(e, env, sigs) == Ty::Bool {
+                        out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
+                    }
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     cg_value(ie, env, sigs, strs, out, target);
                     out.push_str("    mov %rax, %rsi\n");
@@ -7695,6 +7796,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     cg_expr(e, env, sigs, strs, out, target);
                     if expr_ty(e, env, sigs) == Ty::I64 {
                         out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                    }
+                    if expr_ty(e, env, sigs) == Ty::Bool {
+                        out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                     }
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     if expr_ty(ie, env, sigs) == Ty::Dyn {
@@ -7740,6 +7844,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 if expr_ty(e, env, sigs) == Ty::I64 {
                     out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
                 }
+                if expr_ty(e, env, sigs) == Ty::Bool {
+                    out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
+                }
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 if expr_ty(ie, env, sigs) == Ty::Dyn {
                     cg_expr(ie, env, sigs, strs, out, target);
@@ -7782,6 +7889,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 if expr_ty(e, env, sigs) == Ty::I64 {
                     out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
                 }
+                if expr_ty(e, env, sigs) == Ty::Bool {
+                    out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
+                }
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 for iex in [ie, ie2] {
                     if expr_ty(iex, env, sigs) == Ty::Dyn {
@@ -7817,6 +7927,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 cg_expr(e, env, sigs, strs, out, target);
                 if expr_ty(e, env, sigs) == Ty::I64 {
                     out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                }
+                if expr_ty(e, env, sigs) == Ty::Bool {
+                    out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                 }
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 for iex in [ie, ie2, ie3] {
@@ -9780,6 +9893,8 @@ hbc_print_dyn:
     jz 8f
     cmp $2, %rax
     je 9f
+    cmp $3, %rax
+    je 11f
     lea .Lnilmsg(%rip), %rsi
     mov $3, %edx
     mov $1, %eax
@@ -9788,6 +9903,15 @@ hbc_print_dyn:
     ret
 8:  mov %rdx, %rax
     jmp hbc_print_i64
+11: lea .Lfmsg(%rip), %rsi
+    test %rdx, %rdx
+    jz 12f
+    lea .Ltmsg(%rip), %rsi
+12: mov $3, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    ret
 9:  mov %rdx, %rax
     mov -8(%rax), %rdx
     jmp hbc_print_str
@@ -9799,6 +9923,18 @@ hbc_print_dyn:
 hbc_dyn_to_i64:
     test %rax, %rax
     jnz hbc_type_error
+    mov %rdx, %rax
+    ret
+
+# hbc_dyn_to_log: %rax = tag, %rdx = payload -> %rax = 0/1 (the logical)
+# NIL behaves as .F. (payload 0); a logical keeps its payload; an integer
+# or string in condition position is a type error, like Harbour.
+hbc_dyn_to_log:
+    cmp $3, %rax
+    je 8f
+    test %rax, %rax
+    jnz hbc_type_error
+8:
     mov %rdx, %rax
     ret
 
@@ -9816,8 +9952,6 @@ hbc_dyn_eq:
     jne 7f
     cmp $2, %rax
     je 6f
-    test %rax, %rax
-    jnz 9f
     cmp %r8, %rdx
     jne 8f
 9:  mov $1, %eax
@@ -10541,6 +10675,8 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Lpad20:\n    .byte 32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32\n");
     // "NIL" (3 bytes; the NIL print form, probe n1)
     out.push_str(".Lnilmsg:\n    .byte 78,73,76\n");
+    out.push_str(".Ltmsg:\n    .byte 46,84,46\n");
+    out.push_str(".Lfmsg:\n    .byte 46,70,46\n");
     // "Bound error: array access\n" (26 bytes; Harbour wording, probe a1)
     out.push_str(".Lboundmsg:\n    .byte 66,111,117,110,100,32,101,114,114,111,114,58,32,97,114,114,97,121,32,97,99,99,101,115,115,10\n");
     out.push_str(".Loommsg:\n    .byte 79,117,116,32,111,102,32,109,101,109,111,114,121,10\n");
@@ -10765,6 +10901,8 @@ hbc_print_dyn:
     jz 8f
     cmp $2, %rax
     je 10f
+    cmp $3, %rax
+    je 11f
     lea .Lnilmsg(%rip), %rax
     mov $3, %edx
     call hbc_print_str
@@ -10775,6 +10913,14 @@ hbc_print_dyn:
 10: mov %rdx, %rax
     mov -8(%rax), %rdx
     call hbc_print_str
+    jmp 9f
+11: lea .Lfmsg(%rip), %rax
+    test %rdx, %rdx
+    jz 12f
+    lea .Ltmsg(%rip), %rax
+12: mov $3, %edx
+    call hbc_print_str
+    jmp 9f
 9:  leave
     ret
 
@@ -10783,6 +10929,18 @@ hbc_print_dyn:
 hbc_dyn_to_i64:
     test %rax, %rax
     jnz hbc_type_error
+    mov %rdx, %rax
+    ret
+
+# hbc_dyn_to_log: %rax = tag, %rdx = payload -> %rax = 0/1 (the logical)
+# NIL behaves as .F. (payload 0); a logical keeps its payload; an integer
+# or string in condition position is a type error, like Harbour.
+hbc_dyn_to_log:
+    cmp $3, %rax
+    je 8f
+    test %rax, %rax
+    jnz hbc_type_error
+8:
     mov %rdx, %rax
     ret
 
@@ -10800,8 +10958,6 @@ hbc_dyn_eq:
     jne 7f
     cmp $2, %rax
     je 6f
-    test %rax, %rax
-    jnz 9f
     cmp %r8, %rdx
     jne 8f
 9:  mov $1, %eax
