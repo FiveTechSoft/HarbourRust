@@ -362,11 +362,22 @@ impl P {
         let mut lhs = self.term()?;
         loop {
             let op = match self.peek() {
-                Some(Tok::Plus) => '+',
-                Some(Tok::Minus) => '-',
+                Some(Tok::Plus) => {
+                    self.pos += 1;
+                    if self.peek() == Some(&Tok::Plus) {
+                        return Err(format!("line {}: `++`/`--` inside expressions is not in this increment (oracle hk246 measures postfix `x++` as the OLD value and prefix `++x` as the NEW one; the statement forms `++x`, `x++`, `--x`, `x--` work)", self.n));
+                    }
+                    '+'
+                }
+                Some(Tok::Minus) => {
+                    self.pos += 1;
+                    if self.peek() == Some(&Tok::Minus) {
+                        return Err(format!("line {}: `++`/`--` inside expressions is not in this increment (oracle hk246 measures postfix `x++` as the OLD value and prefix `++x` as the NEW one; the statement forms `++x`, `x++`, `--x`, `x--` work)", self.n));
+                    }
+                    '-'
+                }
                 _ => break,
             };
-            self.pos += 1;
             let rhs = self.term()?;
             lhs = Expr::Bin(op, Box::new(lhs), Box::new(rhs));
         }
@@ -423,8 +434,16 @@ impl P {
             // Harbour unary minus (probe q1: `? -7`): sugar for 0 - e, so
             // the i64 typing/codegen path applies unchanged.
             Some(Tok::Minus) => {
+                if self.peek() == Some(&Tok::Minus) {
+                    // Adjacent `--` is Harbour pre-decrement, not double
+                    // negation; without this guard it parsed as -(-x) = x.
+                    return Err(format!("line {}: `++`/`--` inside expressions is not in this increment (oracle hk246 measures postfix `x++` as the OLD value and prefix `++x` as the NEW one; the statement forms `++x`, `x++`, `--x`, `x--` work)", self.n));
+                }
                 let e = self.factor()?;
                 Ok(Expr::Bin('-', Box::new(Expr::Int("0".to_string())), Box::new(e)))
+            }
+            Some(Tok::Plus) if self.peek() == Some(&Tok::Plus) => {
+                Err(format!("line {}: `++`/`--` inside expressions is not in this increment (oracle hk246 measures postfix `x++` as the OLD value and prefix `++x` as the NEW one; the statement forms `++x`, `x++`, `--x`, `x--` work)", self.n))
             }
             Some(Tok::Int(v)) => {
                 match v.parse::<u128>() {
@@ -1461,6 +1480,32 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         continue;
                     }
                 }
+                // Postfix ++/-- and compound assignment, statement level
+                // only (oracle hk246): `x++`/`x--` desugar to `x := x +/- 1`
+                // and `x op= e` desugars to `x := x op e` for +, -, *.
+                if toks.len() == 3 && toks[1] == Tok::Plus && toks[2] == Tok::Plus {
+                    check_ident(&id, n)?;
+                    out.push(Stmt::Assign(n, id.clone(), Expr::Bin('+', Box::new(Expr::Var(id.clone())), Box::new(Expr::Int("1".to_string())))));
+                    *i += 1;
+                    continue;
+                }
+                if toks.len() == 3 && toks[1] == Tok::Minus && toks[2] == Tok::Minus {
+                    check_ident(&id, n)?;
+                    out.push(Stmt::Assign(n, id.clone(), Expr::Bin('-', Box::new(Expr::Var(id.clone())), Box::new(Expr::Int("1".to_string())))));
+                    *i += 1;
+                    continue;
+                }
+                if toks.len() >= 4 && toks[2] == Tok::Eq && matches!(toks[1], Tok::Plus | Tok::Minus | Tok::Star) {
+                    let op = match toks[1] { Tok::Plus => '+', Tok::Minus => '-', _ => '*' };
+                    check_ident(&id, n)?;
+                    let e = parse_expr_tokens(toks[3..].to_vec(), n)?;
+                    out.push(Stmt::Assign(n, id.clone(), Expr::Bin(op, Box::new(Expr::Var(id.clone())), Box::new(e))));
+                    *i += 1;
+                    continue;
+                }
+                if toks.len() >= 3 && toks[1] == Tok::Slash && toks[2] == Tok::Eq {
+                    return Err(format!("line {}: `/=` is not in this increment: Harbour division yields decimals (oracle hk246: n /= 2 prints 24.00) and the float/decimal design is parked (hk226-hk233)", n));
+                }
                 // Harbour also assigns with a single `=` in statement
                 // position (oracle hk214: `x = 41 + 1`, `c = 'eq'`); `=`
                 // stays a comparison inside expressions.
@@ -1489,6 +1534,31 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         }
                     }
                 }
+            }
+            Tok::Plus if toks.len() >= 2 && toks[1] == Tok::Plus => {
+                // Prefix increment statement (oracle hk246): `++x` desugars
+                // to `x := x + 1`. Longer shapes keep a named rejection.
+                if toks.len() == 3 {
+                    if let Tok::Ident(pid) = &toks[2] {
+                        check_ident(pid, n)?;
+                        out.push(Stmt::Assign(n, pid.clone(), Expr::Bin('+', Box::new(Expr::Var(pid.clone())), Box::new(Expr::Int("1".to_string())))));
+                        *i += 1;
+                        continue;
+                    }
+                }
+                return Err(format!("line {}: expected the statement form `++x`; `++`/`--` inside expressions is not in this increment (oracle hk246 measures postfix `x++` as the OLD value and prefix `++x` as the NEW one; the statement forms `++x`, `x++`, `--x`, `x--` work)", n));
+            }
+            Tok::Minus if toks.len() >= 2 && toks[1] == Tok::Minus => {
+                // Prefix decrement statement (oracle hk246): `--x`.
+                if toks.len() == 3 {
+                    if let Tok::Ident(pid) = &toks[2] {
+                        check_ident(pid, n)?;
+                        out.push(Stmt::Assign(n, pid.clone(), Expr::Bin('-', Box::new(Expr::Var(pid.clone())), Box::new(Expr::Int("1".to_string())))));
+                        *i += 1;
+                        continue;
+                    }
+                }
+                return Err(format!("line {}: expected the statement form `--x`; `++`/`--` inside expressions is not in this increment (oracle hk246 measures postfix `x++` as the OLD value and prefix `++x` as the NEW one; the statement forms `++x`, `x++`, `--x`, `x--` work)", n));
             }
             t => return Err(format!("line {}: statement not in the subset ({:?})", n, t)),
         }
