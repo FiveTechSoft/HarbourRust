@@ -240,6 +240,7 @@ enum Stmt {
     While(usize, Expr, Vec<Stmt>), // line, condition, body
     Assign(usize, String, Expr),   // x := expr on an already-declared local
     HDel(usize, String, Expr), // hb_HDel(h, key) statement: remove the key's entry (hk155/hk156)
+    HSet(usize, String, Expr, Expr), // hb_HSet(h, key, value) statement: functional hash write (hk159/hk161); the hash it returns is out of the statement surface (registered)
     ArrSet(usize, String, Expr, Expr), // a[i] := expr (index is 1-based)
     ArrSet2(usize, String, Expr, Expr, Expr), // a[i][j] := expr / a[i,j] := expr
     ArrSet3(usize, String, Expr, Expr, Expr, Expr), // a[i][j][k] := expr
@@ -574,7 +575,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget",
+    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hset",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -966,7 +967,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     *i += 1;
                     continue;
                 }
-                if (is_builtin(&id, "aadd") || is_builtin(&id, "asize") || is_builtin(&id, "hb_hdel")) && toks.len() >= 5 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen {
+                if (is_builtin(&id, "aadd") || is_builtin(&id, "asize") || is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hset")) && toks.len() >= 5 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen {
                     // AAdd(a, x) / ASize(a, n) as a STATEMENT: in-place
                     // mutation of the named local (Harbour writes these as
                     // calls; the statement form is the PoC surface - probe
@@ -990,6 +991,39 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         None => return Err(format!("line {}: `{}` takes two arguments", n, id)),
                     };
                     let head = &inner[..comma];
+                    if is_builtin(&id, "hb_hset") {
+                        // hb_HSet(h, key, value) as a STATEMENT (the
+                        // functional hash write, hk159/hk161; the hash it
+                        // returns is out of the statement surface, like
+                        // AAdd's return). The value side is re-split at
+                        // its own first depth-0 comma.
+                        let rest = &inner[comma + 1..];
+                        let mut d0b = 0i32;
+                        let mut comma2: Option<usize> = None;
+                        for (p, tk) in rest.iter().enumerate() {
+                            match tk {
+                                Tok::LBracket | Tok::LParen => d0b += 1,
+                                Tok::RBracket | Tok::RParen => d0b -= 1,
+                                Tok::Comma if d0b == 0 => { comma2 = Some(p); break; }
+                                _ => {}
+                            }
+                        }
+                        let comma2 = match comma2 {
+                            Some(p) => p,
+                            None => return Err(format!("line {}: `hb_HSet` takes three arguments", n)),
+                        };
+                        let ke = parse_expr_tokens(rest[..comma2].to_vec(), n)?;
+                        let ve = parse_expr_tokens(rest[comma2 + 1..].to_vec(), n)?;
+                        match head {
+                            [Tok::Ident(v)] => {
+                                check_ident(v, n)?;
+                                out.push(Stmt::HSet(n, v.clone(), ke, ve));
+                            }
+                            _ => return Err(format!("line {}: the first argument of `hb_HSet` must be a hash variable", n)),
+                        }
+                        *i += 1;
+                        continue;
+                    }
                     let e = parse_expr_tokens(inner[comma + 1..].to_vec(), n)?;
                     match head {
                         [Tok::Ident(v)] => {
@@ -1759,6 +1793,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     // the semantic pass.
                     pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
                     walk(f, e, sigs, lit, pin, *n)?;
+                }
+                Stmt::HSet(n, id, ke, ve) => {
+                    // hb_HSet's target is a hash (hk159): pins a
+                    // parameter; key and value shapes are enforced by
+                    // the semantic pass.
+                    pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
+                    walk(f, ke, sigs, lit, pin, *n)?;
+                    walk(f, ve, sigs, lit, pin, *n)?;
                 }
                 Stmt::AAdd(n, id, e) => {
                     // AAdd's target is a dynamic array: pins a parameter.
@@ -3810,6 +3852,30 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     return Err(format!("line {}: hash keys are strings in this increment", n));
                 }
                 apply_moves(e, env, sigs, false);
+            }
+            Stmt::HSet(n, id, ke, ve) => {
+                // hb_HSet(h, key, value): the hash must be live, the key
+                // a string, the value a tagged scalar (integer or NIL) -
+                // same contract as h[k] := v; the value moves, the key
+                // is borrowed (hbc_hput copies it).
+                let kp = match env.iter().position(|v| v.name == *id) {
+                    Some(k) => k,
+                    None => return Err(format!("line {}: hb_HSet on undeclared variable `{}` (declare it with `local` first)", n, id)),
+                };
+                if env[kp].ty != Ty::Hash {
+                    return Err(format!("line {}: hb_HSet expects a hash variable in this increment", n));
+                }
+                if env[kp].moved {
+                    return Err(format!("line {}: use of moved value `{}`", n, id));
+                }
+                if !matches!(type_expr(ke, env, sigs, *n)?, Ty::Str | Ty::StrOwn) {
+                    return Err(format!("line {}: hash keys are strings in this increment", n));
+                }
+                if !matches!(type_expr(ve, env, sigs, *n)?, Ty::I64 | Ty::Dyn) {
+                    return Err(format!("line {}: hash values are tagged scalars (integer or NIL) in this increment", n));
+                }
+                apply_moves(ve, env, sigs, true);
+                apply_moves(ke, env, sigs, false);
             }
             Stmt::ArrSet(n, id, ie, e) => {
                 // Value first, then the index: the runtime order (probe
@@ -6604,6 +6670,26 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str("    mov %rax, %rsi\n    mov $16, %edx\n    xor %ecx, %ecx\n    call hbc_asize\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
                 out.push_str("    add $48, %rsp\n");
             }
+            Stmt::HSet(_, id, ke, ve) => {
+                // hb_HSet(h, key, value): KEY first, THEN the value
+                // (probe hk161 - the OPPOSITE order of h[k] := v, h4).
+                // hbc_hput copies both; an owned key temporary is freed
+                // right after the call (same pattern as the h[k] write).
+                let var = env.iter().rev().find(|x| x.name == *id).expect("checked");
+                cg_value(ke, env, sigs, strs, out, target);
+                let temp_key = expr_ty(ke, env, sigs) == Ty::StrOwn && !matches!(ke, Expr::Var(_));
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                cg_value(ve, env, sigs, strs, out, target);
+                if expr_ty(ve, env, sigs) == Ty::I64 {
+                    out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                }
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n    add $16, %rsp\n", var.off));
+                if temp_key {
+                    out.push_str("    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n");
+                }
+                out.push_str("    add $16, %rsp\n");
+            }
             Stmt::HDel(_, id, e) => {
                 // hb_HDel: key first (borrowed - hbc_hdel only reads it),
                 // then the slot address; the helper frees the hash-owned
@@ -6907,6 +6993,7 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
         match s {
             Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) => collect_blocks_expr(e, out),
             Stmt::HDel(_, _, e) => { collect_blocks_expr(e, out); }
+            Stmt::HSet(_, _, ke, ve) => { collect_blocks_expr(ke, out); collect_blocks_expr(ve, out); }
             Stmt::ArrSet(_, _, ie, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(e, out); }
             Stmt::Print(_, es) => { for e in es { collect_blocks_expr(e, out); } }
             Stmt::Ret(_, Some(e)) => collect_blocks_expr(e, out),
