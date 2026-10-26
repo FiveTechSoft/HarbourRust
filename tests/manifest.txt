@@ -710,3 +710,7 @@ pos tests/t712_dyn_cond_bool.hb \n.T.\nyes\n.F.\nno
 posx tests/t713_dyn_cond_int.hb 1 \n         0Type error: condition is not a logical\n
 posx tests/t714_dyn_cond_string.hb 1 \nabcType error: condition is not a logical\n
 neg tests/t715_dyn_cond_str_elem_neg.hb a bare value is not a condition in this PoC
+pos tests/t716_while_dyn_cond.hb \n.F.\nafter\n.T.\nin\nafter
+posx tests/t717_while_dyn_int.hb 1 \n         0Type error: condition is not a logical\n
+posx tests/t718_dyn_pin_int_nil_call.hb 1 \n.T.\n.F.Type error: NIL used as a number\n
+neg tests/t719_dyn_pin_str_nil_call_neg.hb must be a string, got a dynamic value
