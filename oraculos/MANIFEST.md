@@ -183,3 +183,6 @@ Números sin fuente recuperable en el transcript: hk10, hk72, hk74, hk75 (planif
 | hk163 | verificado | \n         1\n         2\n         3 (tras hb_HDel las posiciones se compactan; la realta va al final) |
 | hk164 | verificado | \n         3\n         1\n        22\n         3\n         2\n         3 (hb_HMerge: la fuente gana en solape manteniendo posición; nuevas al final) |
 | hk165 | verificado | \nH\n         1\n         1\n\n         1 (retorno ValType «H» = el destino, impreso rinde vacío; fuente intacta; fuente vacía = no-op) |
+| hk166 | verificado | \n         1\n         2\n         2\n         3 (hb_HClone: copia independiente en ambas direcciones) |
+| hk167 | verificado | \nH\n         1\n         2\n         3\nNIL\n         0 (ValType «H»; orden y NIL conservados; clon vacío) |
+| hk168 | verificado | \n         2\n         1\n         2\n         1\n         2 (autofusión hb_HMerge(h, h) = no-op limpio) |
