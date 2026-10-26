@@ -1410,7 +1410,7 @@ dialog hangs headless) and takes the registered clean bound-error
 exit - not a silent "U" read. Registered limit: a mixed literal must be all
 literal elements.
 
-621/621 manifest cases + ABI harness green on Linux x86-64 and Wine
+623/623 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
 
 t619 (iteration 63a): PROCEDURE keyword + case-insensitive
@@ -1445,3 +1445,16 @@ reason several quote-form files still stop later.
 t625 (iteration 63d): a single `=` in statement position assigns
 (oracle hk214: `x = 41 + 1`, `c = 'eq'`, `x = x + 1`); inside
 expressions `=` remains the comparison. Parser-only change.
+
+t626-t627 (iteration 63e): string `+` concatenation (oracle hk215,
+own probe: literal chains, var+var, var+literal, concat inside a
+comparison, reassignment of an owned local) via the new platform-
+neutral hbc_strcat helper (fresh owned buffer, length at -8 like
+hbc_strcpy; copies BOTH operands, variables keep theirs, owned
+temporaries freed right after the copy). Parameter pinning: a `+`
+with string evidence pins both sides to strings, not integers.
+Dedicated ABI canary in the harness (canaries, stack balance,
+alignment, content and free). `"a" + 1` keeps the registered
+"arithmetic requires integers" rejection (t627). Frozen-175 sweep
+re-run after the 63b-63e batch: still 1/175, no regressions - 25
+files report a DEEPER first error (later line or later phase).
