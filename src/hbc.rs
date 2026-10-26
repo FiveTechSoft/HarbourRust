@@ -220,7 +220,15 @@ fn fold_num_bin(op: char, a: &Expr, b: &Expr) -> Option<Expr> {
     let (v, d) = match op {
         '+' => (va + vb, da.max(db)),
         '-' => (va - vb, da.max(db)),
-        '*' => (va * vb, da.saturating_add(db)),
+        '*' => {
+            // The folded dec lives in a u8 (FloatV); a sum that does not
+            // fit DEFERS to the runtime path (63zd: saturating silently
+            // printed the wrong dec; the runtime computes the real sum
+            // and applies the 435-dec frontier guard).
+            let s = da as u16 + db as u16;
+            if s > 255 { return None; }
+            (va * vb, s as u8)
+        }
         '/' => {
             if vb == 0.0 { return None; }
             (va / vb, 2)
@@ -290,7 +298,21 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
             // Result dec in %rdi: max for +,-, sum for *, SET(2) for /.
             match op {
                 '+' | '-' => out.push_str("    mov 8(%rsp), %rdi\n    cmp %rcx, %rdi\n    cmovb %rcx, %rdi\n"),
-                '*' => out.push_str("    mov 8(%rsp), %rdi\n    add %rcx, %rdi\n"),
+                // dec = sum. Guard the sum against the u16 metadata and
+                // the bounded 456-byte print scratch TOGETHER: dec <= 435
+                // keeps length(<=20)+1+dec <= 456 for every length, so a
+                // compute-produced value can never reach the printer's
+                // range check, and no silent u16 wrap can launder an
+                // overflowing dec into the length field (63zd; the fold
+                // defers sums it cannot represent, so this runtime path
+                // is the only dec producer that can reach the bound).
+                '*' => {
+                    // call, not ja: the helper's prologue expects a
+                    // return-address stack layout (Wine ExitProcess faults
+                    // on the jump form - battery t757/t769 on Wine).
+                    let lok = fresh_lbl();
+                    out.push_str(&format!("    mov 8(%rsp), %rdi\n    add %rcx, %rdi\n    cmp $435, %rdi\n    jbe .Lf64m{lok}\n    call hbc_f64range_error\n.Lf64m{lok}:\n"));
+                }
                 '/' => out.push_str("    mov $2, %edi\n"),
                 _ => unreachable!("checked"),
             }
@@ -304,7 +326,14 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
             let lb = fresh_lbl();
             out.push_str(&format!("    mov $10, %eax\n    movsd .Lf64c{}(%rip), %xmm2\n    ucomisd %xmm2, %xmm1\n    ja .Lf64la{}\n    xorpd %xmm2, %xmm2\n    subsd %xmm1, %xmm2\n    movsd .Lf64c{}(%rip), %xmm3\n    ucomisd %xmm3, %xmm2\n    jbe .Lf64lb{}\n.Lf64la{}:\n    mov $20, %eax\n.Lf64lb{}:\n    shl $16, %rax\n    or %rax, %rdi\n    movsd %xmm1, %xmm0\n", kc, la, kn, lb, la, lb));
         }
-        _ => unreachable!("float expressions are literals, locals or checked +,-,*,/ arithmetic"),
+        Expr::Call(..) => {
+            // A float-returning call (63zd): the declared F64 return
+            // convention IS the cg_f64_load pair - xmm0 = value bits,
+            // rdi = packed metadata - so the ordinary call emission
+            // leaves the result exactly where this loader promises it.
+            cg_expr(e, env, sigs, strs, out, target);
+        }
+        _ => unreachable!("float expressions are literals, locals, calls or checked +,-,*,/ arithmetic"),
     }
 }
 
@@ -2251,6 +2280,14 @@ struct Sig {
     // parameter - the callee's pin error is the honest diagnostic, and a
     // check against a placeholder would be a placeholder artifact.
     inferred: Vec<bool>,
+    // arg_ev[i]: at least one call site passes a FLOAT argument for
+    // parameter i (63zd). Recorded by the checker's call-argument walk
+    // even while the parameter is a placeholder; pin_params merges it
+    // with the body's own evidence (I64 + float argument -> F64, since
+    // Harbour's integer argument converts at the boundary - oracles
+    // hk302/hk303/hk306). Reset at the start of every inference round so
+    // a stale mid-convergence reading cannot stick.
+    arg_ev: Vec<Option<Ty>>,
 }
 
 // Semantic analysis: types + ownership/move tracking. This pass is OURS:
@@ -2299,10 +2336,27 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             _ => false,
         }
     }
+    // Evidence that an expression is float-TYPED at pin time (63zd): a
+    // float literal or fold, a literal-initialized float local, a call
+    // whose signature returns a float, a parameter already pinned F64, or
+    // arithmetic that yields a double - Harbour divides EVERY numeric
+    // pair as doubles (hb_vmDivide, oracle hk292), so `/` is always
+    // float-typed, while +,-,* are float-typed when either side is.
+    fn f64_typed(e: &Expr, lit: &[(String, Ty)], sigs: &[Sig], f: &Func, pin: &[Option<Ty>]) -> bool {
+        match e {
+            Expr::Float(..) | Expr::FloatV(..) => true,
+            Expr::Var(v) => lit.iter().any(|(x, t)| x == v && *t == Ty::F64)
+                || is_param(f, v).map(|i| pin[i] == Some(Ty::F64)).unwrap_or(false),
+            Expr::Call(id, _) => sigs.iter().any(|s| s.name == *id && s.ret == Some(Ty::F64)),
+            Expr::Bin(op, a, b) => *op == '/' || f64_typed(a, lit, sigs, f, pin) || f64_typed(b, lit, sigs, f, pin),
+            _ => false,
+        }
+    }
     fn setpin(pin: &mut Vec<Option<Ty>>, idx: usize, ty: Ty, n: usize) -> Result<(), String> {
         fn tname(t: Ty) -> &'static str {
             match t {
                 Ty::I64 => "an integer",
+                Ty::F64 => "a float",
                 Ty::Str => "a string",
                 Ty::Dyn => "a NIL-capable value",
                 Ty::StrOwn => "a string",
@@ -2361,6 +2415,16 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
         // copied at the call boundary and an owned argument moves. One
         // kind keeps the freeing behaviour unambiguous.
         let ty = if ty == Ty::Str { Ty::StrOwn } else { ty };
+        // Float evidence pins a VARIABLE only (63zd): the operands of a
+        // float-typed compound expression may legitimately stay integers
+        // (Harbour promotes them inside float arithmetic), so there is
+        // nothing to pin through.
+        if ty == Ty::F64 {
+            return match e {
+                Expr::Var(id) => { if let Some(i) = is_param(f, id) { setpin(pin, i, ty, n)?; } Ok(()) }
+                _ => Ok(()),
+            };
+        }
         match e {
             Expr::Var(id) => { if let Some(i) = is_param(f, id) { setpin(pin, i, ty, n)?; } Ok(()) }
             Expr::Bin(_, a, b) => { pin_vars(f, a, Ty::I64, pin, n)?; pin_vars(f, b, Ty::I64, pin, n) }
@@ -2430,9 +2494,18 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 let str_side = str_evidence(a, lit, sigs) || str_evidence(b, lit, sigs)
                     || matches!(a.as_ref(), Expr::Var(v) if is_param(f, v).map(|i| matches!(pin[i], Some(Ty::Str | Ty::StrOwn))).unwrap_or(false))
                     || matches!(b.as_ref(), Expr::Var(v) if is_param(f, v).map(|i| matches!(pin[i], Some(Ty::Str | Ty::StrOwn))).unwrap_or(false));
+                // Float arithmetic (63zd): a float-typed operand of
+                // +,-,* pins a parameter operand F64. Division pins
+                // nothing: `p / 2` is float-VALUED with an integer p
+                // (hb_vmDivide, oracle hk292), so p keeps its own type
+                // and converts inside the op like Harbour's (double)n.
+                let f64_side = *op != '/' && (f64_typed(a, lit, sigs, f, pin) || f64_typed(b, lit, sigs, f, pin));
                 if *op == '+' && str_side {
                     pin_vars(f, a, Ty::Str, pin, n)?;
                     pin_vars(f, b, Ty::Str, pin, n)?;
+                } else if f64_side {
+                    pin_vars(f, a, Ty::F64, pin, n)?;
+                    pin_vars(f, b, Ty::F64, pin, n)?;
                 } else {
                     pin_vars(f, a, Ty::I64, pin, n)?;
                     pin_vars(f, b, Ty::I64, pin, n)?;
@@ -2444,6 +2517,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 let ta = match a.as_ref() {
                     Expr::Str(_) => Some(Ty::Str),
                     Expr::Int(_) => Some(Ty::I64),
+                    Expr::Float(..) | Expr::FloatV(..) => Some(Ty::F64),
                     Expr::Nil => Some(Ty::Dyn),
                     Expr::Var(v) => lit.iter().find(|(x, _)| x == v).map(|(_, t)| *t),
                     _ => None,
@@ -2451,6 +2525,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 let tb = match b.as_ref() {
                     Expr::Str(_) => Some(Ty::Str),
                     Expr::Int(_) => Some(Ty::I64),
+                    Expr::Float(..) | Expr::FloatV(..) => Some(Ty::F64),
                     Expr::Nil => Some(Ty::Dyn),
                     Expr::Var(v) => lit.iter().find(|(x, _)| x == v).map(|(_, t)| *t),
                     _ => None,
@@ -2605,6 +2680,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     match e {
                         Expr::Str(_) => lit.push((name.clone(), Ty::Str)),
                         Expr::Int(_) => lit.push((name.clone(), Ty::I64)),
+                        Expr::Float(..) | Expr::FloatV(..) => lit.push((name.clone(), Ty::F64)),
                         _ => {}
                     }
                 }
@@ -2612,6 +2688,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     // `x := NIL` pins a parameter to the tagged union.
                     if matches!(e, Expr::Nil) {
                         pin_vars(f, &Expr::Var(id.clone()), Ty::Dyn, pin, *n)?;
+                    }
+                    // `x := <float-typed>` pins a parameter F64 (63zd).
+                    if f64_typed(e, lit, sigs, f, pin) {
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::F64, pin, *n)?;
                     }
                     walk(f, e, sigs, lit, pin, *n)?;
                 }
@@ -2878,13 +2958,38 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     // `param == "literal"` into the Dyn/integer `==` named rejection,
     // hiding the real problem - probes v2/v3 in the 63k notes).
     let mut pin_err = None;
+    // Float arguments observed at call sites (63zd, oracles hk303/hk306:
+    // Harbour passes the same numeric parameter integers in one call and
+    // floats in another; the integer converts at the boundary). Merged
+    // with the body's own evidence: I64 body + float argument -> F64; a
+    // body Dyn stays Dyn (the float call site is then the registered
+    // Dyn-payload covered limit); any other body type conflicts by name.
+    let self_ev: Vec<Option<Ty>> = sigs.iter().find(|s| s.name == f.name)
+        .map(|s| s.arg_ev.clone())
+        .unwrap_or_else(|| vec![None; n]);
     for (i, p) in f.params.iter().enumerate() {
+        match (pin[i], self_ev[i]) {
+            (Some(Ty::I64), Some(Ty::F64)) => pin[i] = Some(Ty::F64),
+            (Some(Ty::Dyn), _) | (_, None) => {}
+            (Some(t), Some(Ty::F64)) if t != Ty::F64 => {
+                if pin_err.is_none() {
+                    pin_err = Some(format!("parameter `{}` of function `{}` is {} by its body but receives a float argument", p, f.name, ty_name(t)));
+                }
+            }
+            _ => {}
+        }
         // Print as the sole non-copy evidence pins the tagged union
         // (oracles hk257/hk259). This runs AFTER the walk so pinning
         // evidence (arithmetic, concatenation, known-type compare) wins
-        // order-independently (hk260/hk261).
+        // order-independently (hk260/hk261). Print-only still wins over
+        // a float argument: Dyn has no float payload (covered limit at
+        // the call site).
         if pin[i].is_none() && printed[i] {
             pin[i] = Some(Ty::Dyn);
+        }
+        // A float argument as the SOLE evidence pins F64.
+        if pin[i].is_none() {
+            pin[i] = self_ev[i];
         }
         if pin[i].is_none() && pin_err.is_none() {
             pin_err = Some(format!("cannot infer the type of parameter `{}` of function `{}` (returning or copying it is not enough; print it, use it in arithmetic, or compare it against a value of known type)", p, f.name));
@@ -3486,6 +3591,19 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Err(format!("line {}: `{}` takes {} argument(s), got {}", n, id, sig_params.len(), args.len()));
             }
             for (i, a) in args.iter().enumerate() {
+                // Float-argument evidence for the NEXT inference round
+                // (63zd): recorded even against a placeholder parameter,
+                // ahead of every per-argument check below. Only F64 is
+                // tracked - every other type already has body evidence
+                // or an established boundary contract. A mid-round error
+                // here is swallowed on purpose: the placeholder path
+                // skips checks anyway, and the inferred path re-runs
+                // type_expr below, where the same error propagates.
+                if !matches!(a, Expr::ByRef(_)) && i < sigs[si].arg_ev.len() {
+                    if let Ok(Ty::F64) = type_expr(a, env, sigs, n) {
+                        sigs[si].arg_ev[i] = Some(Ty::F64);
+                    }
+                }
                 if !sig_inferred.get(i).copied().unwrap_or(false) {
                     // Placeholder parameter (order-independent fixpoint,
                     // pre-convergence or genuinely uninferable): no
@@ -3627,6 +3745,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 let ok = ta == sig_params[i]
                     || (ta == Ty::Dyn && sig_params[i] == Ty::I64)  // runtime extract (nil -> clean type error)
+                    || (ta == Ty::I64 && sig_params[i] == Ty::F64) // integer converts to a double at the boundary (63zd; oracles hk302/hk303/hk307)
                     || (ta == Ty::I64 && sig_params[i] == Ty::Dyn) // tagged at the call
                     || ((ta == Ty::Str || ta == Ty::StrOwn) && sig_params[i] == Ty::Dyn) // cloned to an owned tag-4 payload at the boundary (hk259)
                     || (ta == Ty::Bool && sig_params[i] == Ty::Dyn) // tagged 3 at the call (hk264)
@@ -4446,7 +4565,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let t = type_expr(e, env, sigs, *n);
                 CALL_STMT_CTX.with(|c| c.set(false));
                 match t? {
-                    Ty::I64 | Ty::Str | Ty::Bool | Ty::StrOwn | Ty::Dyn | Ty::DArr | Ty::DArrS | Ty::DArr2 => {}
+                    Ty::I64 | Ty::Str | Ty::Bool | Ty::StrOwn | Ty::Dyn | Ty::DArr | Ty::DArrS | Ty::DArr2 | Ty::F64 => {}
                     other => return Err(format!("line {}: discarding {} return is not in this increment", n, ty_name(other))),
                 }
                 apply_moves(e, env, sigs, true);
@@ -4517,9 +4636,17 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
             Stmt::Ret(n, Some(e)) => {
                 let t = type_expr(e, env, sigs, *n)?;
                 if t == Ty::F64 {
-                    return Err(format!("line {}: returning a float is not in this increment (phase 1: literals, locals and printing only)", n));
-                }
-                if let Ty::Arr(_) = t {
+                    // Float return (63zd): the caller receives a COPY of
+                    // the {value, metadata} pair - scalars own nothing
+                    // (oracles hk302-hk306). A float return must agree
+                    // with every other return of the function: mixed
+                    // int/float returns stay a named rejection through
+                    // unify_ret - Harbour's item KIND varies per path
+                    // there and arithmetic on the result differs beyond
+                    // the measured dec-0 byte shape (oracle hk312).
+                    *ret = Some(unify_ret(*ret, Ty::F64, *n)?);
+                    falls = false;
+                } else if let Ty::Arr(_) = t {
                     // Returning a static array materializes a dynamic
                     // COPY the caller owns (33m). Oracle hk99: Harbour's
                     // local array survives the return and the caller gets
@@ -6452,6 +6579,52 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 }
                 let ta = expr_ty(a, env, sigs);
                 let pty = psig.as_ref().and_then(|p| p.get(ai).copied());
+                if pty == Some(Ty::F64) && ta == Ty::F64 {
+                    // Float argument (63zd): the declared convention is
+                    // the established F64 pair - value bits in xmm0,
+                    // packed metadata in rdi (same as cg_f64_load and
+                    // the F64 return convention) - stored into the
+                    // argument's 16-byte stack slot like any other
+                    // two-word argument. The dec is a COPY: the callee's
+                    // own slot, its own arithmetic metadata.
+                    cg_f64_load(a, env, sigs, strs, out, target);
+                    out.push_str("    sub $16, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rdi, 8(%rsp)\n");
+                    continue;
+                }
+                if pty == Some(Ty::F64) && ta == Ty::I64 {
+                    // Integer argument to a float parameter (63zd;
+                    // oracles hk302/hk303/hk307): the callee holds a
+                    // DOUBLE item, so the boundary converts with
+                    // cvtsi2sd like the VM's (double)n reads (hk300).
+                    // dec 0. The item LENGTH follows Harbour's
+                    // provenance rule: a literal argument keeps the
+                    // literal-text width (hb_str2number: ten or more
+                    // written integer digits -> digits+1; hk307's
+                    // 12345678901 prints width 12), a computed integer
+                    // keeps HB_LONG_LENGTH (20 beyond 9999999999 /
+                    // -999999999, else 10).
+                    let lit_len: Option<u32> = if let Expr::Int(txt) = a {
+                        let neg = txt.starts_with('-');
+                        let digits = txt.trim_start_matches('-').len() as u32;
+                        if !neg && digits >= 10 {
+                            Some(digits + 1)
+                        } else {
+                            let v: i64 = txt.parse().expect("checked");
+                            Some(if v > 9999999999 || v < -999999999 { 20 } else { 10 })
+                        }
+                    } else { None };
+                    cg_expr(a, env, sigs, strs, out, target);
+                    out.push_str("    cvtsi2sd %rax, %xmm0\n");
+                    if let Some(l) = lit_len {
+                        out.push_str(&format!("    mov ${}, %edi\n", l << 16));
+                    } else {
+                        let lw = fresh_lbl();
+                        let ld = fresh_lbl();
+                        out.push_str(&format!("    mov $10, %edi\n    mov $9999999999, %r11\n    cmp %r11, %rax\n    jg .Lf64w{}\n    cmp $-999999999, %rax\n    jge .Lf64w{}\n.Lf64w{}:\n    mov $20, %edi\n.Lf64w{}:\n    shl $16, %rdi\n", lw, ld, lw, ld));
+                    }
+                    out.push_str("    sub $16, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rdi, 8(%rsp)\n");
+                    continue;
+                }
                 if let Ty::Arr(k) = ta {
                     // Static array argument: materialize the boundary
                     // COPY as a dynamic array (header + tagged cells,
@@ -7996,6 +8169,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         out.push_str(&format!("    mov (%rsp), %rax\n    mov ${}, %edx\n    add $16, %rsp\n", k));
                         out.push_str(&format!("    jmp .Lret_{}\n", fname));
                     }
+                } else if expr_ty(e, env, sigs) == Ty::F64 {
+                // Float return (63zd): the declared convention hands the
+                // caller xmm0 = value bits and rdi = packed metadata -
+                // exactly the cg_f64_load pair, so nested calls and
+                // float temporaries need no shuffling. The shared
+                // epilogue preserves the pair across the slot frees.
+                cg_f64_load(e, env, sigs, strs, out, target);
+                out.push_str(&format!("    jmp .Lret_{}\n", fname));
                 } else {
                 cg_value(e, env, sigs, strs, out, target);
                 // Mixed int/NIL returns unify to Dyn (probe n2): an i64
@@ -9540,7 +9721,9 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     // A string argument occupies both words of its slot (pointer, length).
     for (k, v) in lenv[..nparams].iter().enumerate() {
         let src = 16 * (nparams - k);
-        if v.ty == Ty::Str || v.ty == Ty::DArr || v.ty == Ty::Dyn || v.ty == Ty::DArr2 || v.ty == Ty::DArr3 || v.ty == Ty::DArr4 || v.ty == Ty::DArrS || v.ty == Ty::StrOwn || v.ty == Ty::Hash {
+        if v.ty == Ty::Str || v.ty == Ty::DArr || v.ty == Ty::Dyn || v.ty == Ty::DArr2 || v.ty == Ty::DArr3 || v.ty == Ty::DArr4 || v.ty == Ty::DArrS || v.ty == Ty::StrOwn || v.ty == Ty::Hash || v.ty == Ty::F64 {
+            // Two-word slots: (pointer, length) for owned data; (value
+            // bits, packed metadata) for a float parameter (63zd).
             out.push_str(&format!("    mov {}(%rbp), %rax\n    mov {}(%rbp), %rdx\n", src, src + 8));
             out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", v.off, v.off - 8));
         } else {
@@ -9562,8 +9745,16 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     out.push_str(&format!(".Lret_{}:\n", lbl));
     // The return value waits on the stack while the frees run: hbc_free
     // clobbers rax (and rdx on Windows) and a slot still owned here must
-    // not destroy it.
-    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+    // not destroy it. A FLOAT return rides xmm0/rdi (63zd convention):
+    // rdi is hbc_free's own argument register, so the pair waits on the
+    // same 16-byte stack slot in both targets - nested calls and return
+    // temporaries survive the epilogue by construction (test t770).
+    let f64_ret = sigs.iter().any(|s| s.name == f.name && s.ret == Some(Ty::F64));
+    if f64_ret {
+        out.push_str("    sub $16, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rdi, 8(%rsp)\n");
+    } else {
+        out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+    }
     for (i, (off, class)) in darr_slots.iter().enumerate() {
         match class {
             1 => {
@@ -9602,7 +9793,11 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
             }
         }
     }
-    out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
+    if f64_ret {
+        out.push_str("    movsd (%rsp), %xmm0\n    mov 8(%rsp), %rdi\n    add $16, %rsp\n");
+    } else {
+        out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
+    }
     out.push_str("    leave\n    ret\n\n");
     // Block literals used by this function are emitted right after it.
     let mut blocks = Vec::new();
@@ -13905,6 +14100,7 @@ fn main() {
         params: vec![Ty::I64; f.params.len()],
         ret: None,
         inferred: vec![false; f.params.len()],
+        arg_ev: vec![None; f.params.len()],
     }).collect();
     let mut sigs: Vec<Sig>;
     let mut has_main = false;
@@ -13917,6 +14113,12 @@ fn main() {
         }
         let mut cur: Vec<Sig> = Vec::with_capacity(funcs.len());
         let before = view.clone();
+        // Argument evidence (arg_ev) is NOT reset between rounds: the
+        // only recorded fact is "some call site passed a float", and
+        // float-typedness is monotone across the fixpoint (literals and
+        // float locals are stable; a callee's float return only flips
+        // I64 -> F64 as its own parameter merges upward), so a sticky
+        // recording cannot rest on a stale mid-convergence reading.
         let mut first_err: Option<String> = None;
         let mut first_pin_err: Option<String> = None;
         for (fi, f) in funcs.iter_mut().enumerate() {
@@ -13968,7 +14170,7 @@ fn main() {
                 }
                 if first_pin_err.is_none() { first_pin_err = Some(m); }
             }
-            cur.push(Sig { name: f.name.clone(), borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], params: ptys.clone(), ret, inferred });
+            cur.push(Sig { name: f.name.clone(), borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], params: ptys.clone(), ret, inferred, arg_ev: view[fi].arg_ev.clone() });
             f.ret = ret;
         }
         // Types/returns converge by fresh re-inference (cur) against the
@@ -13978,7 +14180,11 @@ fn main() {
         // not lost by an early copy.
         let converged = cur.len() == before.len()
             && cur.iter().zip(before.iter()).all(|(c, b)| c.name == b.name && c.params == b.params && c.ret == b.ret && c.inferred == b.inferred)
-            && view.iter().zip(before.iter()).all(|(v, b)| v.name == b.name && v.borrowed == b.borrowed && v.arr_moved == b.arr_moved);
+            && view.iter().zip(before.iter()).all(|(v, b)| v.name == b.name && v.borrowed == b.borrowed && v.arr_moved == b.arr_moved
+                // New float-argument evidence recorded THIS round feeds
+                // only the NEXT round's pins: convergence must wait for
+                // it (63zd; monotone None -> Some, so it stabilizes).
+                && v.arg_ev == b.arg_ev);
         if std::env::var("HBC_INFER_TRACE").is_ok() {
             for (c, b) in cur.iter().zip(before.iter()) {
                 if c.params != b.params || c.ret != b.ret || c.inferred != b.inferred {
