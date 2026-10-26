@@ -53,6 +53,14 @@ Números sin fuente recuperable en el transcript: hk10, hk72, hk74, hk75 (planif
 | hk135 | verificado | \n.T.\n.F.\n.T.\n.F. |
 | hk136 | verificado | \n.T.\n.F.\n.F. |
 | hk137 | verificado | \n.F.\n.T. |
+| hk138 | verificado | \n.T.\n.F.\n.T.\n.T. |
+| hk139 | dialogo-sin-oraculo | (sin salida previa; abre el diálogo BASE/1070 "Argument error: ==" y cuelga headless, rc=124 con timeout 5s) |
+| hk139b | dialogo-sin-oraculo | (sin salida previa; abre el diálogo BASE/1070 "Argument error: ==" y cuelga headless, rc=124 con timeout 5s) |
+| hk139c | dialogo-sin-oraculo | (sin salida previa; abre el diálogo BASE/1070 "Argument error: ==" y cuelga headless, rc=124 con timeout 5s) |
+| hk140 | verificado | \n.T.\n.F.\n.F. |
+| hk141 | verificado | \n.T.\n.T.\n.F.\n.F. |
+| hk142 | dialogo-sin-oraculo | (sin salida previa; abre el diálogo BASE/1070 "Argument error: ==" y cuelga headless, rc=124 con timeout 5s) |
+| hk143 | verificado | \n.T.\n.F.\n.F.\n.T. |
 | hk14 | medida-fresca | \n         3\nnew\n         3\nNIL\n         2\none |
 | hk15 | medida-fresca | \n         4\nx\nNIL |
 | hk16 | medida-fresca | \n |
