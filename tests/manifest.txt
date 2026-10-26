@@ -723,7 +723,7 @@ pos tests/t725_float_prints.hb \n         1.5\n         0.12\n         0.12\n   
 pos tests/t726_float_hex_neg.hb \n     43947\n       255\n        -0.001\n    123456.789
 pos tests/t727_float_edge.hb \n         2.675\n         0.999\n         9.999\n         0.0\n         1.50\n123456789012.5\n         0.12345678901234570
 pos tests/t728_float_copy_reassign.hb \n         2.5\n         0.25\n         2.5
-neg tests/t729_float_arith_neg.hb float arithmetic is not in this increment
+neg tests/t729_float_arith_neg.hb arithmetic needs numeric operands
 neg tests/t730_float_cond_neg.hb not a condition
 neg tests/t731_float_callarg_neg.hb argument 1 of `p`
 neg tests/t732_float_frontier_neg.hb measured precision frontier
@@ -745,3 +745,11 @@ posx tests/t746_div_zero.hb 1 Error: division by zero
 neg tests/t747_set_decimals.hb SET commands are not in this increment
 neg tests/t748_dyn_div.hb division with a NIL-able (Dyn) operand is not in this increment
 pos tests/t749_div_length.hb \n 3074457345618259000.00\n-3074457345618259000.00\n         -2000000000.00\n-500000000.00
+pos tests/t750_float_arith_mixed.hb \n         4.5\n         4.5\n        -1.5\n         1.5\n         4.5\n         4.5\n         0.50\n         2.00\n         1.50\n         1.75\n         2.0\n         3.0\n         3.0\n81000000000000000000.00\n         18000000000.0\n         0.0\n         0.00\n         0.0000000000000000000000000000000001\n         0.000000000000000001
+pos tests/t751_float_compare.hb \n.T.\n.T.\n.T.\n.T.\n.T.\n.T.\n.T.\n.F.\n.F.\n.F.\n.F.\n.T.\n.T.\n.T.\n.T.\n.F.\n.T.\n.F.\n.T.\n.T.\n.T.
+pos tests/t752_float_fold_vs_runtime.hb \n         3.75\n         3.75\n         3.375\n         3.375\n        -0.75\n        -0.75\n         0.67\n         0.67\n        -3.75\n        -3.75\n         3.375\n         3.375\n         0.75\n         0.75\n         0.67\n         0.67\n        -0.67\n        -0.67\n        -0.67\n        -0.67\n        -9.00\n        -9.00
+pos tests/t753_float_rounding.hb \n         0.13\n         0.38\n         0.67\n         2.68\n         0.67\n         0.05\n         0.02\n         4.69\n         1.26\n       100.50\n         0.67\n         1.00\n        10.00\n         0.06\n        -0.13\n        -0.67\n       -10.00\n         0.10\n         0.01\n         0.00\n        99.99\n      9999.50\n  99999999.50\n          9999999999.50\n        999999999999.50
+pos tests/t754_float_stars.hb \n**************************************************************\n****************************************************\n*****************************************************\n**************************************************************\n**************************************************************\n.T.\n.T.
+pos tests/t755_float_length_asym.hb \n         -9000000000.0\n         -9000000000.0\n-500000000.0\n        -10000000000.0\n10000000000.0\n5000000000.0\n9000000000.0\n         0.0\n         0.0\n         -1000000000.0\n         -1000000000.0
+pos tests/t756_float_nan_inf_cmp.hb \n.F.\n.T.\n.F.\n.F.\n.F.\n.F.\n.F.\n.F.\n.F.\n.F.\n.F.\n.T.\n.T.\n.F.\n.T.\n.F.\n.T.\n.T.\n.T.\n.T.\n.T.\n.F.\n.T.\n.T.\n.F.\n.T.
+posx tests/t757_float_field_overflow.hb 1 \nError: float field out of range
