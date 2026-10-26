@@ -179,3 +179,5 @@ Números sin fuente recuperable en el transcript: hk10, hk72, hk74, hk75 (planif
 | hk159 | verificado | \n\n         2\n         2\n\n         2\n         9\nNIL\n         3 (las líneas vacías: imprimir el hash devuelto rinde vacío) |
 | hk160 | verificado | \nH\nH\nH (hb_HSet devuelve el propio hash) |
 | hk161 | verificado | \nKEY\nVAL\nDONE (hb_HSet evalúa CLAVE antes que valor - orden opuesto a h[k] := v, h4) |
+| hk162 | verificado | \n         1\n         2\n         3\n         0\n         0 (hb_HPos: posición 1-based; ausente y «» dan 0) |
+| hk163 | verificado | \n         1\n         2\n         3 (tras hb_HDel las posiciones se compactan; la realta va al final) |
