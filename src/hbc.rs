@@ -12995,17 +12995,24 @@ fn main() {
         let before = view.clone();
         let mut first_err: Option<String> = None;
         let mut first_pin_err: Option<String> = None;
-        for f in &mut funcs {
+        for (fi, f) in funcs.iter_mut().enumerate() {
             if f.name == "main" { has_main = true; }
-            // Pin parameter types. On failure, keep going with i64 placeholders
-            // so the body check can surface a more specific error first; the pin
-            // error is only reported if the body itself checks clean.
+            // Pin parameter types. On failure, keep the PREVIOUS view entry
+            // (ains.prg diagnosis): resetting to i64 placeholders made the
+            // table RETREAT down the lattice, so a stable pin conflict
+            // (recursive array-parameter call, line-77 "array parameters
+            // are not in this increment") oscillated I64 <-> DArr until the
+            // round cap fired as an internal error. Carrying the view entry
+            // forward keeps the table monotone: the conflict recurs every
+            // round, the round converges, and the converged round reports
+            // the pin error by name. (The body-first contract still holds:
+            // the pin error is reported only when the body checks clean.)
             let (ptys, inferred, pin_err) = match pin_params(f, &view) {
                 Ok((pin, e)) => {
                     let inf: Vec<bool> = pin.iter().map(|x| x.is_some()).collect();
                     (pin.into_iter().map(|x| x.unwrap_or(Ty::I64)).collect(), inf, e)
                 }
-                Err(m) => (vec![Ty::I64; f.params.len()], vec![false; f.params.len()], Some(m)),
+                Err(m) => (view[fi].params.clone(), view[fi].inferred.clone(), Some(m)),
             };
             let mut env: Vec<Local> = Vec::new();
             // Parameters enter the frame as owned locals: integer arguments copy,
@@ -13032,6 +13039,9 @@ fn main() {
                 ret = None; // main's own `return nil` is NIL, never a usable value
             }
             if let Some(m) = pin_err {
+                if std::env::var("HBC_INFER_TRACE").is_ok() {
+                    eprintln!("infer round {}: {} pin_err: {}", round, f.name, m);
+                }
                 if first_pin_err.is_none() { first_pin_err = Some(m); }
             }
             cur.push(Sig { name: f.name.clone(), borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], params: ptys.clone(), ret, inferred });
@@ -13045,6 +13055,18 @@ fn main() {
         let converged = cur.len() == before.len()
             && cur.iter().zip(before.iter()).all(|(c, b)| c.name == b.name && c.params == b.params && c.ret == b.ret && c.inferred == b.inferred)
             && view.iter().zip(before.iter()).all(|(v, b)| v.name == b.name && v.borrowed == b.borrowed && v.arr_moved == b.arr_moved);
+        if std::env::var("HBC_INFER_TRACE").is_ok() {
+            for (c, b) in cur.iter().zip(before.iter()) {
+                if c.params != b.params || c.ret != b.ret || c.inferred != b.inferred {
+                    eprintln!("infer round {}: {} params {:?} -> {:?} ret {:?} -> {:?} inferred {:?} -> {:?}", round, c.name, b.params, c.params, b.ret, c.ret, b.inferred, c.inferred);
+                }
+            }
+            for (v, b) in view.iter().zip(before.iter()) {
+                if v.borrowed != b.borrowed || v.arr_moved != b.arr_moved {
+                    eprintln!("infer round {}: {} flags borrowed {:?} -> {:?} arr_moved {:?} -> {:?}", round, v.name, b.borrowed, v.borrowed, b.arr_moved, v.arr_moved);
+                }
+            }
+        }
         if converged {
             // This round's checks already ran against the stable table:
             // its errors are final, not placeholder artifacts.
