@@ -2421,3 +2421,62 @@ t749 (fold + runtime length cases) byte-exact. BATTERY 744 -> 745
 runner rows + ABI ALL GREEN. Sweep: COMPILES 5, all byte-exact
 (hello, statfun, lnlenli2, calling, nums re-verified against hbmk2
 with this HEAD).
+
+## 63zc - Float arithmetic on values (+,-,*,/) and comparisons (753 rows)
+
+Increment 2 of phase 2: `+`, `-`, `*`, `/` on float values (literals,
+locals, mixed with integers) and float comparisons, all against
+hbmk2-captured oracles BEFORE implementation (hk296-hk301b).
+
+Semantics (Harbour source + oracles): operands are doubles; integer
+operands convert with cvtsi2sd like the VM's (double)n reads (hk300:
+9007199254740993 = 9007199254740992.0 is .T.). dec metadata: max for
++,-, sum for *, SET DECIMALS = 2 for /. Result length is the asymmetric
+HB_DBL_LENGTH (63zb). Compile-time fold matches expropt2.c: LONG x LONG
+exact folds to LONG (on i64 overflow to a dec-0 DOUBLE); any DOUBLE
+operand folds to DOUBLE with dec max(+,-) / sum(*) / 2 (/); a zero
+divisor is never folded (runtime EG_ZERODIV path, clean exit 1 - the
+registered headless difference, hk294/hk296). Packed metadata moved to
+(length<<16)|dec (dec is Harbour's HB_USHORT); ABI canary now 655361.
+
+Printing (hk301/hk301b, captured this increment): Harbour ROUNDS the
+16-significant-digit image half-up (half-away from zero; the sign is
+handled separately) at the dec boundary: 0.125/1 -> 0.13, 0.665/1 ->
+0.67 (the double is 0.66499...; the 16-digit image carries the tie),
+9.995/1 -> 10.00 (carry grows the integer part), 0.0999/1 -> 0.10
+(carry through the leading fraction zeros), -0.125/1 -> -0.13. The
+printer previously truncated at dec. A dec-0 double prints no dot.
+
+Non-finite values (hk299): inf and NaN fill the whole field with '*'
+(iSize = length + 1 + dec, no padding; NaN keeps length 10 - it fails
+both asymmetric length tests). NaN compares like Harbour's C operators
+(hk300/hk299/t756): .F. for =,==,<,<=,>,>= and .T. for #, operands in
+both orders; inf = inf is .T.; -0.0 = 0 is .T. and -0.0 < 0.0 is .F.
+
+Bounded frontier: the print scratch holds 456 bytes (padding + digits,
+or the star fill); beyond it (pathological dec chains, e.g. 450
+multiplications) a clean named exit 1 prints "Error: float field out
+of range" (t757). Harbour grows its buffer dynamically; this is a
+registered limit, not equivalence.
+
+Covered LIMITS (named rejections, valid Harbour programs): arithmetic
+or comparison between a Dyn (NIL-able) value and a float - Harbour
+runs these when the Dyn holds a number, but this PoC's Dyn has no
+float payload tag; rejected by name instead of silently truncating
+(t729 family moved here). Float mixed with strings/logicals/arrays is
+a Harbour type error and stays a compile-time rejection. Float params,
+returns and Dyn promotion remain named rejections of previous
+increments.
+
+Tests: t729 rewritten (float+string type error), t750 (mixed arith,
+hk296), t751 (comparisons, hk300), t752 (fold vs runtime same value +
+negatives), t753 (rounding, hk301/hk301b), t754 (inf/NaN stars,
+hk299), t755 (asymmetric length at runtime, hk297), t756 (NaN/inf
+comparisons both orders + -0.0), t757 (bounded-field exit). Sondas
+hk299/hk300/hk301/hk301b published. BATTERY 745 -> 753 runner rows +
+ABI ALL GREEN (Linux native and Wine with Linux oracle). Sweep:
+COMPILES 5, all byte-exact (hello, statfun, lnlenli2, calling, nums).
+Note: the 170 rejected sweep files keep their named rejections; their
+first-error wording drifts as the compiler evolves (the frozen
+docs/sweep175.csv records the original wording), which does not affect
+the COMPILES contract.
