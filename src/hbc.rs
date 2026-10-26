@@ -2210,6 +2210,20 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::DArrS);
             }
+            if is_builtin(id, "hb_hvalues") {
+                // hb_HValues(h): NEW array of the hash's value casillas
+                // (tagged int/NIL scalars) in insertion order (oracles
+                // hk153/hk154, core hb_HValues). The hash is borrowed;
+                // the result is a DArr the caller owns, independent of
+                // the hash (hk153: writing it does not touch the hash).
+                if args.len() != 1 {
+                    return Err(format!("line {}: `hb_HValues` takes exactly one argument", n));
+                }
+                if !matches!(&args[0], Expr::Var(_)) || type_expr(&args[0], env, sigs, n)? != Ty::Hash {
+                    return Err(format!("line {}: `hb_HValues` expects a hash variable (its slot is passed by address)", n));
+                }
+                return Ok(Ty::DArr);
+            }
             if is_builtin(id, "eval") {
                 // eval(b, a1..an): b is a codeblock value. Extra arguments
                 // are evaluated and IGNORED, as Harbour does (probes c7 and
@@ -3991,6 +4005,12 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
+            if is_builtin(id, "hb_hvalues") {
+                // The hash is BORROWED: hbc_hvalues copies every value
+                // cell, the hash keeps owning its own cells.
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
             let sig = sigs.iter().find(|v| v.name == *id).expect("checked");
             for (i, a) in args.iter().enumerate() {
                 // A static array argument is COPIED at the boundary (33l):
@@ -4314,6 +4334,18 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str(&format!("    lea -{}(%rbp), %rdi\n    call hbc_hkeys\n", var.off));
             } else {
                 unreachable!("checked: hb_HKeys takes a hash variable");
+            }
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_hvalues") => {
+            // hb_HValues(h): the helper copies every value cell into a
+            // NEW array the caller owns; the hash slot is passed by
+            // address and never mutated. Returns rax = data pointer,
+            // rdx = count.
+            if let Expr::Var(v) = &args[0] {
+                let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                out.push_str(&format!("    lea -{}(%rbp), %rdi\n    call hbc_hvalues\n", var.off));
+            } else {
+                unreachable!("checked: hb_HValues takes a hash variable");
             }
         }
         Expr::Call(id, args) if is_builtin(id, "array") => {
@@ -4910,6 +4942,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::Call(id, args) => {
             if is_builtin(id, "array") { return match args.len() { 1 => Ty::DArr, 2 => Ty::DArr2, 3 => Ty::DArr3, _ => Ty::DArr4 }; }
             if is_builtin(id, "hb_hkeys") { return Ty::DArrS; }
+            if is_builtin(id, "hb_hvalues") { return Ty::DArr; }
             if is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") { return Ty::I64; }
             if is_builtin(id, "valtype") { return Ty::Str; } // hk88-hk92
             sigs.iter().find(|v| v.name == *id).expect("checked").ret.expect("checked")
@@ -7447,6 +7480,58 @@ hbc_hkeys:
     mov %r13, %rdx
     add $8, %rsp
     pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_hvalues: rdi = hash slot address. Returns rax = data pointer of a
+# NEW array block holding one Dyn {tag, payload} element per live entry
+# in insertion order (oracles hk153/hk154, core hb_HValues), rdx =
+# element count. Hash values are tagged int/NIL scalars in this dialect
+# (string values are rejected at assignment), so the 16-byte cell copy
+# is exact - there is no deep copy to skip. The caller owns the array
+# (release with hbc_free(ptr, 16)); the hash is only borrowed. Same
+# overflow rule as hbc_hkeys.
+hbc_hvalues:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    sub $16, %rsp
+    mov (%rdi), %r12
+    mov 8(%rdi), %r13
+    mov $0x0FFFFFFFFFFFFFFF, %rax
+    cmp %rax, %r13
+    ja hbc_oom
+    mov %r13, %rdi
+    shl $4, %rdi
+    add $8, %rdi
+    call hbc_alloc
+    mov %rax, %rbx
+    mov %r13, (%rbx)
+    xor %r14d, %r14d
+50: cmp %r13, %r14
+    jae 51f
+    mov %r14, %rax
+    shl $5, %rax
+    lea (%r12,%rax), %rcx
+    mov 16(%rcx), %rax
+    mov 24(%rcx), %rdx
+    mov %r14, %r8
+    shl $4, %r8
+    lea 8(%rbx,%r8), %r9
+    mov %rax, (%r9)
+    mov %rdx, 8(%r9)
+    inc %r14
+    jmp 50b
+51: lea 8(%rbx), %rax
+    mov %r13, %rdx
+    add $16, %rsp
     pop %r14
     pop %r13
     pop %r12
