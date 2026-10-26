@@ -637,7 +637,7 @@ pos tests/t639_byref_derived_ret.hb \nabc?\nabc\n         1
 pos tests/t640_byref_literal.hb \nzzz\n         1
 neg tests/t641_byref_moveout.hb moves it out of its owner
 neg tests/t642_byref_aliasval.hb cannot borrow `x` exclusively
-neg tests/t643_byref_recursion.hb defined before use
+pos tests/t643_byref_recursion.hb \n         0
 pos tests/t644_byref_nested_i64.hb \n        13\n        12
 pos tests/t645_byref_nested_str.hb \nxy!\ny!
 pos tests/t646_strgrow_content.hb \n       302\n.T.\n       902\n         2
@@ -682,3 +682,8 @@ neg tests/t684_dup_main_neg.hb duplicate function
 neg tests/t685_memvar_ref_neg.hb assignment to undeclared variable `m_y`
 neg tests/t686_request_undef_neg.hb REQUEST `extmod` cannot be honored
 neg tests/t687_static_clash_neg.hb duplicate function `f`
+pos tests/t688_forward_call.hb \n        30
+pos tests/t689_mutual_recursion.hb \n         2
+pos tests/t690_reverse_chain.hb \n       109
+pos tests/t691_forward_str_ret.hb \nhi!
+neg tests/t692_forward_type_neg.hb argument 1 of `fwd` must be an integer, got a string
