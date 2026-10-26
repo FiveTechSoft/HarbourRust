@@ -577,7 +577,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch",
+    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -2329,6 +2329,36 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::Str | Ty::StrOwn) {
                     return Err(format!("line {}: hash keys are strings in this increment", n));
+                }
+                return Ok(Ty::I64);
+            }
+            if is_builtin(id, "hb_hscan") {
+                // hb_HScan(h, value [, start]): the 1-based position in
+                // insertion order of the first entry whose VALUE equals
+                // the argument, 0 when absent (hk178-hk180). The scan
+                // starts at `start` inclusive (hk178: hb_HScan(h,10,2)
+                // skips the 10 at position 1 and answers 3); start
+                // omitted/NIL/0 scans from the first entry, a negative
+                // start or one past the last entry finds nothing
+                // (hk179), and a float start truncates (hk183 - floats
+                // stay outside this increment's syntax). Values are the
+                // tagged int/NIL scalars of this increment: a stored NIL
+                // matches a NIL argument (hk180); an int argument never
+                // matches a stored NIL. Hash and value borrowed. A
+                // missing value argument is Harbour's BASE/1123 dialog
+                // (hk182): the registered dialogo-sin-oraculo family,
+                // never a compat target.
+                if args.len() != 2 && args.len() != 3 {
+                    return Err(format!("line {}: `hb_HScan` takes two or three arguments", n));
+                }
+                if !matches!(&args[0], Expr::Var(_)) || type_expr(&args[0], env, sigs, n)? != Ty::Hash {
+                    return Err(format!("line {}: `hb_HScan` expects a hash variable (its slot is passed by address)", n));
+                }
+                if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::I64 | Ty::Dyn) {
+                    return Err(format!("line {}: hash values are integers or NIL in this increment", n));
+                }
+                if args.len() == 3 && !matches!(&args[2], Expr::Nil) && type_expr(&args[2], env, sigs, n)? != Ty::I64 {
+                    return Err(format!("line {}: the hb_HScan start is an integer in this increment (NIL scans from the first entry)", n));
                 }
                 return Ok(Ty::I64);
             }
@@ -4295,6 +4325,12 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
+            if is_builtin(id, "hb_hscan") {
+                // The hash and the value are BORROWED: hbc_hscan only
+                // reads them (int/NIL scalars move nothing anyway).
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
             if is_builtin(id, "hb_hcasematch") {
                 // The hash is BORROWED: hbc_hcasematch only reads the
                 // slot and the block header.
@@ -4685,6 +4721,32 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
 ", var.off));
             } else {
                 unreachable!("checked: hb_HCaseMatch takes a hash variable");
+            }
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_hscan") => {
+            // hb_HScan(h, value [, start]): the value evaluates first
+            // (borrowed), normalized to the Dyn pair rsi=tag,
+            // rdx=payload (a plain integer gets tag 0); then the start
+            // (rcx: 0 = scan from the first entry - omitted, NIL and an
+            // explicit 0 all mean the same to the oracle, hk179/hk182);
+            // then the slot by address. Returns rax = the 1-based
+            // insertion-order position or 0 (hk178-hk183).
+            cg_value(&args[1], env, sigs, strs, out, target);
+            if expr_ty(&args[1], env, sigs) == Ty::I64 {
+                out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+            }
+            out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            if args.len() == 3 && !matches!(&args[2], Expr::Nil) {
+                cg_value(&args[2], env, sigs, strs, out, target);
+                out.push_str("    mov %rax, %rcx\n");
+            } else {
+                out.push_str("    xor %ecx, %ecx\n");
+            }
+            if let Expr::Var(v) = &args[0] {
+                let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    call hbc_hscan\n", var.off));
+            } else {
+                unreachable!("checked: hb_HScan takes a hash variable");
             }
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hget") => {
@@ -5342,6 +5404,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hkeys") { return Ty::DArrS; }
             if is_builtin(id, "hb_hhaskey") { return Ty::I64; }
             if is_builtin(id, "hb_hpos") { return Ty::I64; }
+            if is_builtin(id, "hb_hscan") { return Ty::I64; }
             if is_builtin(id, "hb_hcasematch") { return Ty::I64; }
             if is_builtin(id, "hb_hget") { return Ty::Dyn; }
             if is_builtin(id, "hb_hvalues") { return Ty::DArr; }
@@ -8499,6 +8562,40 @@ hbc_hsetcasematch:
     pop %rbp
     ret
 41: mov %rsi, -16(%rax)
+    ret
+
+# hbc_hscan: rdi = hash slot address, rsi = value tag (0 = i64,
+# 1 = NIL), rdx = value payload, rcx = start (1-based; 0 scans from
+# the first live entry, negative finds nothing). Returns rax = the
+# 1-based insertion-order position of the first entry whose stored
+# {tag, payload} equals the value, 0 when absent (hk178-hk180: first
+# match wins, the start is inclusive, a stored NIL matches a NIL
+# argument; hk179: start 0/negative/out-of-range and empty-hash
+# edges). Leaf: caller-saved registers only, no allocation, the hash
+# is only read.
+hbc_hscan:
+    test %rcx, %rcx
+    js 853f
+    je 850f
+    dec %rcx
+850: mov (%rdi), %r8
+    test %r8, %r8
+    je 853f
+    mov 8(%rdi), %r9
+851: cmp %r9, %rcx
+    jae 853f
+    mov %rcx, %rax
+    shl $5, %rax
+    add %r8, %rax
+    cmp 16(%rax), %rsi
+    jne 852f
+    cmp 24(%rax), %rdx
+    jne 852f
+    lea 1(%rcx), %rax
+    ret
+852: inc %rcx
+    jmp 851b
+853: xor %eax, %eax
     ret
 
 # hbc_strcpy: rdi = source bytes, rsi = length. Returns rax = pointer to
