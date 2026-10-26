@@ -636,3 +636,13 @@ pos tests/t638_byref_selfassign.hb \nabc!\n         1
 pos tests/t639_byref_derived_ret.hb \nabc?\nabc\n         1
 pos tests/t640_byref_literal.hb \nzzz\n         1
 neg tests/t641_byref_moveout.hb moves it out of its owner
+neg tests/t642_byref_aliasval.hb cannot borrow `x` exclusively
+neg tests/t643_byref_recursion.hb defined before use
+pos tests/t644_byref_nested_i64.hb \n        13\n        12
+pos tests/t645_byref_nested_str.hb \nxy!\ny!
+pos tests/t646_strgrow_content.hb \n       302\n.T.\n       902\n         2
+pos tests/t647_strgrow_excluded_call.hb \n       101\n         1
+pos tests/t648_strgrow_selfalias.hb \nabcabc\n        12\n         1
+pos tests/t649_strgrow_rhs_local.hb \n      1002\n         2
+pos tests/t650_byref_append.hb \nabc!!!!!!!!!!\n         1
+pos tests/t651_hashkey_replace.hb \n         3\n         2\n         3
