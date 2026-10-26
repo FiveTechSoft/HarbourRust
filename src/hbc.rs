@@ -2231,6 +2231,22 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
 
 // Does expression `e` mention variable `name` anywhere (including index
 // positions)? Used by the borrowed-argument aliasing check.
+fn expr_has_call(e: &Expr) -> bool {
+    // Any function call in the expression. The move-LHS grow guard excludes
+    // these wholesale: a callee's effects on the destination through shapes
+    // we have not probed (nested @ pass-on chains, future globals) are not
+    // reconciled, so only call-free RHS forms are justified for in-place
+    // growth (main's rule: reject or exclude unjustified forms).
+    match e {
+        Expr::Call(_, _) => true,
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => expr_has_call(a) || expr_has_call(b),
+        Expr::Var(_) | Expr::Str(_) | Expr::Int(_) | Expr::Log(_) => false,
+        Expr::LNot(a) | Expr::Index(_, a) => expr_has_call(a),
+        Expr::LAnd(a, b) | Expr::LOr(a, b) => expr_has_call(a) || expr_has_call(b),
+        _ => true, // any other shape: not justified - exclude
+    }
+}
+
 fn expr_mentions(e: &Expr, name: &str) -> bool {
     match e {
         Expr::Var(v) => v == name,
@@ -3788,11 +3804,10 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if t == Ty::DArrU {
                     return Err(format!("line {}: cannot return an empty array whose element type was never pinned by `AAdd`", n));
                 }
-                if let Expr::Var(v) = e {
-                    if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn)) {
-                        return Err(format!("line {}: returning borrowed parameter `{}` moves it out of its owner - not Harbour semantics; derive a value first (for example a concatenation)", n, v));
-                    }
-                }
+                // Returning a borrowed parameter is a value COPY (hk237):
+                // Harbour hands the caller the string value while the
+                // owner's variable keeps it; codegen copies through the
+                // pointer. Scalars copy by the same rule (hk236).
                 apply_moves(e, env, sigs, true);
                 *ret = Some(unify_ret(*ret, t, *n)?);
                 falls = false;
@@ -4802,7 +4817,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
         Expr::ByRef(_) => {} // `@x` borrows the slot for the call; the owner keeps it (hk216)
         Expr::Var(id) => {
             if moving {
-                if let Some(v) = env.iter_mut().find(|v| v.name == *id && matches!(v.ty, Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash)) { v.moved = true; }
+                if let Some(v) = env.iter_mut().find(|v| v.name == *id && !v.byref && matches!(v.ty, Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash)) { v.moved = true; }
             }
         }
         Expr::Bin(_, a, b) => { apply_moves(a, env, sigs, false); apply_moves(b, env, sigs, false); }
@@ -5283,7 +5298,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             if let Expr::Var(v) = &args[0] {
                 let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                 if temp_key {
-                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hhaskey\n    mov %rax, 16(%rsp)\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    mov 16(%rsp), %rax\n    add $32, %rsp\n", var.off));
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hhaskey\n    mov %rax, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 16(%rsp), %rax\n    add $32, %rsp\n", var.off));
                 } else {
                     out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hhaskey\n    add $16, %rsp\n", var.off));
                 }
@@ -5307,7 +5322,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             if let Expr::Var(v) = &args[0] {
                 let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                 if temp_key {
-                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hpos\n    mov %rax, 16(%rsp)\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    mov 16(%rsp), %rax\n    add $32, %rsp\n", var.off));
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hpos\n    mov %rax, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 16(%rsp), %rax\n    add $32, %rsp\n", var.off));
                 } else {
                     out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hpos\n    add $16, %rsp\n", var.off));
                 }
@@ -5414,7 +5429,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             if let Expr::Var(v) = &args[0] {
                 let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                 if temp_key {
-                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hget\n    mov %rax, 16(%rsp)\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    mov 16(%rsp), %rax\n    add $32, %rsp\n", var.off));
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hget\n    mov %rax, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 16(%rsp), %rax\n    add $32, %rsp\n", var.off));
                 } else {
                     out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    call hbc_hget\n", var.off));
                 }
@@ -5457,7 +5472,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             if let Expr::Var(v) = &args[0] {
                 let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                 if temp_key {
-                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hget\n    mov %rax, 32(%rsp)\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    mov 32(%rsp), %rax\n", var.off));
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hget\n    mov %rax, 32(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 32(%rsp), %rax\n", var.off));
                 } else {
                     out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hget\n", var.off));
                 }
@@ -5503,7 +5518,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 // evaluation above may clobber it, nothing below does.
                 let setflag = if has_def { "    mov $1, %r8d\n" } else { "    xor %r8d, %r8d\n" };
                 if temp_key {
-                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    lea 16(%rsp), %rcx\n{}    call hbc_hsetdef\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $48, %rsp\n", var.off, setflag));
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    lea 16(%rsp), %rcx\n{}    call hbc_hsetdef\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $48, %rsp\n", var.off, setflag));
                 } else {
                     out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    lea 16(%rsp), %rcx\n{}    call hbc_hsetdef\n    add $32, %rsp\n", var.off, setflag));
                 }
@@ -5784,7 +5799,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 }
                 out.push_str(&format!("    lea -{}(%rbp), %rdi\n    call hbc_hget\n", v.off));
                 if temp_key {
-                    out.push_str("    mov %rax, 8(%rsp)\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    mov 8(%rsp), %rax\n    add $32, %rsp\n");
+                    out.push_str("    mov %rax, 8(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    add $32, %rsp\n");
                 }
                 out.push_str("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
                 return;
@@ -6014,14 +6029,12 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
 ");
                 if b_tmp {
                     out.push_str("    mov 16(%rsp), %rdi
-    mov $1, %esi
-    call hbc_free
+    call hbc_freestr
 ");
                 }
                 if a_tmp {
                     out.push_str("    mov (%rsp), %rdi
-    mov $1, %esi
-    call hbc_free
+    call hbc_freestr
 ");
                 }
                 out.push_str("    mov 24(%rsp), %rax
@@ -6495,8 +6508,8 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             cg_value(a, env, sigs, strs, out, target);
             if a_tmp { out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"); }
             cg_value(b, env, sigs, strs, out, target);
-            if b_tmp { out.push_str("    mov %rax, %rdi\n    mov $1, %esi\n    call hbc_free\n"); }
-            if a_tmp { out.push_str("    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    add $16, %rsp\n"); }
+            if b_tmp { out.push_str("    mov %rax, %rdi\n    call hbc_freestr\n"); }
+            if a_tmp { out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n    add $16, %rsp\n"); }
             if matches!(op, CmpOp::Ne) {
                 out.push_str(&format!("    jmp {}\n", true_label));
             }
@@ -6571,7 +6584,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                         // fold - `=` is .F., `#` is .T. (hk35, n1);
                         // `==` against a string answers .F. for a NIL
                         // casilla too (hk140).
-                        if tmp { out.push_str("    mov %rax, %rdi\n    mov $1, %esi\n    call hbc_free\n"); }
+                        if tmp { out.push_str("    mov %rax, %rdi\n    call hbc_freestr\n"); }
                         if matches!(op, CmpOp::Ne) {
                             out.push_str(&format!("    jmp {}\n", true_label));
                         }
@@ -6611,7 +6624,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                     _ => out.push_str("    call hbc_str_cmp\n"),
                 }
                 if tmp {
-                    out.push_str("    mov %rax, 16(%rsp)\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    add $16, %rsp\n");
+                    out.push_str("    mov %rax, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    add $16, %rsp\n");
                 } else {
                     out.push_str("    mov %rax, (%rsp)\n");
                 }
@@ -6760,8 +6773,8 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                     _ => { out.push_str("    call hbc_str_cmp\n"); }
                 }
                 out.push_str(&format!("    mov %rax, {}(%rsp)\n", 16 * nt));
-                if a_tmp { out.push_str(&format!("    mov {}(%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n", 16 * (b_tmp as usize))); }
-                if b_tmp { out.push_str("    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n"); }
+                if a_tmp { out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n", 16 * (b_tmp as usize))); }
+                if b_tmp { out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n"); }
                 out.push_str(&format!("    mov {}(%rsp), %rax\n    add ${}, %rsp\n", 16 * nt, 16 * (nt + 1)));
             }
             let j = match op {
@@ -6853,8 +6866,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 cg_expr(e, env, sigs, strs, out, target);
                 if expr_ty(e, env, sigs) == Ty::StrOwn {
                     out.push_str("    mov %rax, %rdi
-    mov $1, %esi
-    call hbc_free
+    call hbc_freestr
 ");
                 }
             }
@@ -6940,7 +6952,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 } else if class == 4 {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_sfree\n85:\n", off, off - 8));
                                 } else if class == 5 {
-                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov $1, %esi\n    call hbc_free\n85:\n", off));
+                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n85:\n", off));
                                 } else {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov $16, %esi\n    call hbc_free\n85:\n", off));
                                 }
@@ -7064,7 +7076,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // A temporary copy (e.g. `? keys[i]`): the
                                 // item owns it and frees it right after
                                 // printing; the array keeps its own copy.
-                                out.push_str(&format!("    mov {}(%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n", off));
+                                out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n", off));
                             }
                         }
                         Ty::Dyn => out.push_str("    call hbc_print_dyn\n"),
@@ -7116,6 +7128,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 if expr_ty(e, env, sigs) == Ty::Str
                     && sigs.iter().any(|sg| sg.name == fname && sg.ret == Some(Ty::StrOwn)) {
                     out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                }
+                // Returning a by-reference string parameter copies the
+                // pointee for the caller (hk237); the owner's slot keeps
+                // its buffer, so nothing is nulled or freed here.
+                if let Expr::Var(src) = e {
+                    if env.iter().rev().any(|x| x.name == *src && x.ty == Ty::RefStrOwn) {
+                        out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                    }
                 }
                 // Returning a dynamic array MOVES it to the caller: the
                 // source slot is nulled BEFORE the shared epilogue runs, so
@@ -7512,6 +7532,21 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let l = env.iter().find(|v| v.name == *id).expect("analysis checked the local exists");
                 let off = l.off;
                 let lty = l.ty;
+                // Move-LHS string grow (Harbour's own pattern, hvm.c
+                // hb_vmPlus + itemapi.c hb_itemReSizeString): `s := s + rhs`
+                // on a plain owned local appends through hbc_strgrow - in
+                // place when the capacity header allows, doubling otherwise.
+                // Only when the RHS cannot alias the destination buffer
+                // (expr_mentions guard); every other shape keeps hbc_strcat.
+                if lty == Ty::StrOwn {
+                    if let Expr::Bin('+', a, b) = e {
+                        if matches!(**a, Expr::Var(ref v) if *v == *id) && !expr_mentions(b, id) && !expr_has_call(b) {
+                            cg_value(b, env, sigs, strs, out, target);
+                            out.push_str(&format!("    mov %rax, %rsi\n    mov -{}(%rbp), %rdi\n    call hbc_strgrow\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off, off - 8));
+                            continue;
+                        }
+                    }
+                }
                 if lty == Ty::RefI64 {
                     // @-borrowed scalar (hk216): store THROUGH the pointer
                     // into the owner's slot.
@@ -7541,7 +7576,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // rule: preserve RHS before releasing the old value).
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     out.push_str(&format!("    mov -{}(%rbp), %r11\n", off));
-                    out.push_str("    mov (%r11), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov $1, %esi\n    call hbc_free\n86:\n");
+                    out.push_str("    mov (%r11), %rdi\n    test %rdi, %rdi\n    je 86f\n    call hbc_freestr\n86:\n");
                     out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov -{}(%rbp), %r11\n    mov %rax, (%r11)\n    mov %rdx, 8(%r11)\n", off));
                     continue;
                 }
@@ -7604,7 +7639,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // copy, free the old value after the copy.
                                 out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
                                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov $1, %esi\n    call hbc_free\n86:\n", off));
+                                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    call hbc_freestr\n86:\n", off));
                                 out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
                             }
                             Ty::Str => {
@@ -7616,7 +7651,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // exists (fresh slots are zero-initialised,
                                 // so the guard sees null), then store.
                                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov $1, %esi\n    call hbc_free\n86:\n", off));
+                                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    call hbc_freestr\n86:\n", off));
                                 out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
                             }
                             Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash => {
@@ -8000,7 +8035,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n    add $16, %rsp\n", var.off));
                 if temp_key {
-                    out.push_str("    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n");
+                    out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");
                 }
                 out.push_str("    add $16, %rsp\n");
             }
@@ -8065,7 +8100,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let temp_key = expr_ty(e, env, sigs) == Ty::StrOwn && !matches!(e, Expr::Var(_));
                 if temp_key {
                     out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hdel\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    add $32, %rsp\n", var.off));
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hdel\n    mov (%rsp), %rdi\n    call hbc_freestr\n    add $32, %rsp\n", var.off));
                 } else {
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hdel\n    add $16, %rsp\n", var.off));
@@ -8189,7 +8224,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // free the old owned copy (payload at 8(entry); a
                     // NIL casilla from ASize growth has a null payload,
                     // skipped here and RETAGGED to a string below - hk14)
-                    out.push_str("    mov 8(%r10), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov $1, %esi\n    sub $16, %rsp\n    mov %r10, (%rsp)\n    call hbc_free\n    mov (%rsp), %r10\n    add $16, %rsp\n85:\n");
+                    out.push_str("    mov 8(%r10), %rdi\n    test %rdi, %rdi\n    je 85f\n    sub $16, %rsp\n    mov %r10, (%rsp)\n    call hbc_freestr\n    mov (%rsp), %r10\n    add $16, %rsp\n85:\n");
                     out.push_str("    mov (%rsp), %rax\n    movq $2, (%r10)\n    mov %rax, 8(%r10)\n    add $16, %rsp\n    jmp 86f\n89:\n    call hbc_bound_error\n86:\n");
                 } else if v.ty == Ty::Hash {
                     // h[k] := v: value FIRST, then the key (probe h4).
@@ -8211,7 +8246,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         // Owned key copy (h[keys[i]] := v): hbc_hput copies
                         // the bytes, so the temporary is freed right after.
                         out.push_str("    sub $16, %rsp\n    mov %rsi, (%rsp)\n");
-                        out.push_str(&format!("    lea -{}(%rbp), %rdi\n    lea 16(%rsp), %rcx\n    call hbc_hput\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    add $32, %rsp\n", v.off));
+                        out.push_str(&format!("    lea -{}(%rbp), %rdi\n    lea 16(%rsp), %rcx\n    call hbc_hput\n    mov (%rsp), %rdi\n    call hbc_freestr\n    add $32, %rsp\n", v.off));
                     } else {
                         out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov %rsp, %rcx\n    call hbc_hput\n    add $16, %rsp\n", v.off));
                     }
@@ -8511,6 +8546,13 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         }
     }
     let nparams = lenv.len();
+    // The statement walk must start from the DECLARED param sizes (the
+    // same convention as the lenv offsets above): a `@`-received string
+    // param is remapped to the one-word RefStrOwn, but its slot still
+    // advances the frame by size_of(StrOwn) = 16. Summing the remapped
+    // types instead would start the walk 8 bytes low and collide with
+    // the param slot (hk238: `for` counter overwrote the byref pointer).
+    let params_frame = frame;
     let mut darr_slots: Vec<(usize, u8)> = Vec::new();
     let byref_names_layout = byref_names_in(&f.stmts);
     layout_locals(&f.stmts, &mut lenv, sigs, &mut frame, &mut darr_slots, &f.dyn_names, &byref_names_layout);
@@ -8571,7 +8613,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         }
     }
     let mut env: Vec<CgLocal> = lenv[..nparams].to_vec();
-    let mut walk_frame = env.iter().map(|v| size_of(v.ty)).sum();
+    let mut walk_frame = params_frame;
     let mut label = 0usize;
     let byref_names = byref_names_in(&f.stmts);
     cg_stmts(&f.stmts, &mut env, &mut walk_frame, sigs, strs, out, target, &lbl, &mut label, &None, &darr_slots, &f.dyn_names, &byref_names);
@@ -8609,9 +8651,9 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov -{}(%rbp), %rsi\n    call hbc_sfree\n91{}:\n", off, i, off - 8, i));
             }
             5 => {
-                // StrOwn: an owned string copy; hbc_free(ptr, 1) releases
-                // exactly 8 + len bytes (the length header is at ptr-8).
-                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov $1, %esi\n    call hbc_free\n91{}:\n", off, i, i));
+                // StrOwn: an owned string copy; hbc_freestr(ptr) releases
+                // exactly 16 + cap bytes (cap at ptr-16, len at ptr-8).
+                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hbc_freestr\n91{}:\n", off, i, i));
             }
             _ => {
                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov $16, %esi\n    call hbc_free\n91{}:\n", off, i, i));
@@ -8701,6 +8743,30 @@ const REG_FREE_W: &str = r"    # harness registry: computed 8 + cap*elemsize mus
     imul %rsi, %rax
     add $8, %rax
     lea -8(%rdi), %r8
+    mov hbc_reg_count(%rip), %rcx
+    lea hbc_reg_base(%rip), %r10
+    lea hbc_reg_size(%rip), %r11
+31: test %rcx, %rcx
+    jz hbc_reg_bad
+    dec %rcx
+    cmp %r8, (%r10,%rcx,8)
+    jne 31b
+    cmp %rax, (%r11,%rcx,8)
+    jne hbc_reg_bad
+    mov hbc_reg_count(%rip), %rdx
+    dec %rdx
+    mov (%r10,%rdx,8), %r9
+    mov %r9, (%r10,%rcx,8)
+    mov (%r11,%rdx,8), %r9
+    mov %r9, (%r11,%rcx,8)
+    mov %rdx, hbc_reg_count(%rip)
+";
+const REG_SFREE_W: &str = r"    # harness registry (string free): computed 16 + cap must equal the
+    # recorded allocation size, and the block must be live (double free
+    # = absent). Same swap-with-last removal as REG_FREE_W.
+    mov -16(%rdi), %rax
+    add $16, %rax
+    lea -16(%rdi), %r8
     mov hbc_reg_count(%rip), %rcx
     lea hbc_reg_base(%rip), %r10
     lea hbc_reg_size(%rip), %r11
@@ -9210,18 +9276,10 @@ hbc_hput:
     mov 8(%rcx), %r8
     mov %r8, 24(%rax)
     jmp 49f
-30: lea 8(%r15), %rdi
-    call hbc_alloc
-    mov %r15, (%rax)
-    lea 8(%rax), %rsi
-    xor %ecx, %ecx
-35: cmp %r15, %rcx
-    jae 36f
-    movzbl (%r14,%rcx), %r8d
-    mov %r8b, (%rsi,%rcx)
-    inc %rcx
-    jmp 35b
-36: mov %rsi, %r14
+30: mov %r14, %rdi
+    mov %r15, %rsi
+    call hbc_strcpy
+36: mov %rax, %r14
     test %r12, %r12
     je 37f
     mov -8(%r12), %rax
@@ -9311,8 +9369,7 @@ hbc_hfree:
     mov %r13, %rax
     shl $5, %rax
     mov (%rbx,%rax), %rdi
-    mov $1, %esi
-    call hbc_free
+    call hbc_freestr
     inc %r13
     jmp 20b
 21: mov %rbx, %rdi
@@ -9399,8 +9456,7 @@ hbc_hdel:
     inc %r14
     jmp 60b
 620: mov (%rbx), %rdi
-    mov $1, %esi
-    call hbc_free
+    call hbc_freestr
 65: lea 1(%r14), %rax
     cmp %r13, %rax
     jae 66f
@@ -9703,25 +9759,14 @@ hbc_hkeys:
     mov %r14, %rax
     shl $5, %rax
     lea (%r12,%rax), %r15
-    mov 8(%r15), %rdi
-    add $8, %rdi
-    call hbc_alloc
-    mov 8(%r15), %rcx
-    mov %rcx, (%rax)
-    mov (%r15), %rsi
-    lea 8(%rax), %rdi
+    mov (%r15), %rdi
+    mov 8(%r15), %rsi
+    call hbc_strcpy
     mov %r14, %rdx
     shl $4, %rdx
     lea 8(%rbx,%rdx), %r10
-    mov %rdi, 8(%r10)
+    mov %rax, 8(%r10)
     movq $2, (%r10)
-    xor %r9d, %r9d
-52: cmp %rcx, %r9
-    jae 53f
-    movzbl (%rsi,%r9), %r11d
-    mov %r11b, (%rdi,%r9)
-    inc %r9
-    jmp 52b
 53: inc %r14
     jmp 50b
 51: lea 8(%rbx), %rax
@@ -9943,8 +9988,7 @@ hbc_hdelat:
     mov %r13, %rax
     shl $5, %rax
     mov (%r8,%rax), %rdi
-    mov $1, %esi
-    call hbc_free
+    call hbc_freestr
     mov 8(%rbx), %r9
 857: lea 1(%r13), %rax
     cmp %r9, %rax
@@ -10023,8 +10067,7 @@ hbc_hclear:
     shl $5, %rax
     add %r12, %rax
     mov (%rax), %rdi
-    mov $1, %esi
-    call hbc_free
+    call hbc_freestr
     inc %r13
     jmp 862b
 863: mov %r12, %rdi
@@ -10039,8 +10082,9 @@ hbc_hclear:
 861: ret
 
 # hbc_strcpy: rdi = source bytes, rsi = length. Returns rax = pointer to
-# the bytes of a NEW owned allocation with an 8-byte length header (the
-# hash-key-copy layout: hbc_free(ptr, 1) releases it), rdx = length.
+# the bytes of a NEW owned allocation with a 16-byte header: capacity at
+# -16(%rax), length at -8(%rax) (fresh copies have cap == len; only
+# hbc_strgrow leaves spare capacity). Freed with hbc_freestr.
 # Used when a tag-2 array element is read out of its array: the reader
 # owns an independent copy, so freeing or moving the array afterwards
 # cannot dangle it.
@@ -10053,18 +10097,19 @@ hbc_strcpy:
     sub $8, %rsp
     mov %rdi, %r13
     mov %rsi, %r12
-    lea 8(%rsi), %rdi
+    lea 16(%rsi), %rdi
     call hbc_alloc
     mov %rax, %rbx
     mov %r12, (%rbx)
+    mov %r12, 8(%rbx)
     xor %ecx, %ecx
 70: cmp %r12, %rcx
     jae 71f
     movzbl (%r13,%rcx), %r9d
-    mov %r9b, 8(%rbx,%rcx)
+    mov %r9b, 16(%rbx,%rcx)
     inc %rcx
     jmp 70b
-71: lea 8(%rbx), %rax
+71: lea 16(%rbx), %rax
     mov %r12, %rdx
     add $8, %rsp
     pop %r13
@@ -10087,19 +10132,20 @@ hbc_strcat:
     mov %rsi, %r13
     mov %rdx, %r14
     mov %rcx, %rbx
-    lea 8(%r13,%rbx), %rdi
+    lea 16(%r13,%rbx), %rdi
     call hbc_alloc
     mov %r13, %r10
     add %rbx, %r10
     mov %r10, (%rax)
+    mov %r10, 8(%rax)
     xor %ecx, %ecx
 70: cmp %r13, %rcx
     jae 71f
     movzbl (%r12,%rcx), %r9d
-    mov %r9b, 8(%rax,%rcx)
+    mov %r9b, 16(%rax,%rcx)
     inc %rcx
     jmp 70b
-71: lea 8(%rax,%r13), %r11
+71: lea 16(%rax,%r13), %r11
     xor %ecx, %ecx
 72: cmp %rbx, %rcx
     jae 73f
@@ -10109,7 +10155,86 @@ hbc_strcat:
     jmp 72b
 73: mov %r13, %rdx
     add %rbx, %rdx
-    lea 8(%rax), %rax
+    lea 16(%rax), %rax
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_strgrow: rdi = owned string data pointer (non-null), rsi = bytes to
+# append, rdx = append length. Appends IN PLACE when the capacity header
+# allows; otherwise reallocates with doubling (the Harbour pattern:
+# src/vm/itemapi.c hb_itemReSizeString reserves nSize+1 plus nSize extra,
+# measured amortized O(1) there). Returns rax = data pointer (possibly a
+# new one), rdx = new length. On reallocation the OLD mapping is released
+# here; the caller stores rax/rdx and frees nothing itself. Codegen picks
+# this path only when the appended bytes cannot alias the destination
+# buffer (expr_mentions guard at the `s := s + rhs` site).
+hbc_strgrow:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $24, %rsp
+    mov %rdi, %rbx
+    mov %rsi, %r13
+    mov %rdx, %r14
+    mov -8(%rbx), %r12
+    lea (%r12,%r14), %rax
+    mov %rax, (%rsp)
+    cmp -16(%rbx), %rax
+    ja 80f
+    lea (%rbx,%r12), %r11
+    xor %ecx, %ecx
+70: cmp %r14, %rcx
+    jae 71f
+    movzbl (%r13,%rcx), %r9d
+    mov %r9b, (%r11,%rcx)
+    inc %rcx
+    jmp 70b
+71: mov (%rsp), %rdx
+    mov %rdx, -8(%rbx)
+    mov %rbx, %rax
+    jmp 90f
+80: mov -16(%rbx), %rdi
+    add %rdi, %rdi
+    cmp %rax, %rdi
+    jae 81f
+    mov %rax, %rdi
+81: mov %rdi, 8(%rsp)
+    lea 16(%rdi), %rdi
+    call hbc_alloc
+    mov %rax, %r15
+    mov 8(%rsp), %rcx
+    mov %rcx, (%r15)
+    mov (%rsp), %rcx
+    mov %rcx, 8(%r15)
+    xor %ecx, %ecx
+82: cmp %r12, %rcx
+    jae 83f
+    movzbl (%rbx,%rcx), %r9d
+    mov %r9b, 16(%r15,%rcx)
+    inc %rcx
+    jmp 82b
+83: lea 16(%r15,%r12), %r11
+    xor %ecx, %ecx
+84: cmp %r14, %rcx
+    jae 85f
+    movzbl (%r13,%rcx), %r9d
+    mov %r9b, (%r11,%rcx)
+    inc %rcx
+    jmp 84b
+85: mov %rbx, %rdi
+    call hbc_freestr
+    lea 16(%r15), %rax
+    mov (%rsp), %rdx
+90: add $24, %rsp
+    pop %r15
     pop %r14
     pop %r13
     pop %r12
@@ -10138,8 +10263,7 @@ hbc_sfree:
     cmpq $2, (%rbx,%rax)
     jne 62f
     mov 8(%rbx,%rax), %rdi
-    mov $1, %esi
-    call hbc_free
+    call hbc_freestr
 62: inc %r13
     jmp 60b
 61: mov %rbx, %rdi
@@ -10205,6 +10329,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
             // Allocation registry only in instrumented builds (--instrument).
             out = out.replace("@REG_ALLOC_W@", if instrument { REG_ALLOC_W } else { "" });
             out = out.replace("@REG_FREE_W@", if instrument { REG_FREE_W } else { "" });
+            out = out.replace("@REG_SFREE_W@", if instrument { REG_SFREE_W } else { "" });
             out = out.replace("@REG_HFREE_W@", if instrument { REG_HFREE_W } else { "" });
             out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
             out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
@@ -10804,6 +10929,21 @@ hbc_free:
     incq hbc_mem_frees(%rip)
     ret
 
+# hbc_freestr: rdi = string data pointer (non-null). String layout:
+# capacity at -16(%rdi), length at -8(%rdi); the mapping is 16 + cap
+# bytes starting at rdi-16. The Linux registry snippet is
+# formula-agnostic (it validates the computed base and length).
+hbc_freestr:
+    mov -16(%rdi), %rsi
+    add $16, %rsi
+    sub $16, %rdi
+@REG_FREE_L@    mov $11, %eax
+    syscall
+    test %rax, %rax
+    jnz hbc_os_bad
+    incq hbc_mem_frees(%rip)
+    ret
+
 # hbc_hfreeblock: rdi = hash block data pointer (non-null). Frees the
 # whole block: 16-byte header [flags @0][capacity @8] + entries, so the
 # mapping base is rdi-16 and the length is 16 + cap*32. The registry
@@ -11108,8 +11248,7 @@ hbc_asize:
     mov 8(%r13,%r10), %rdi
     test %rdi, %rdi
     jz 82f
-    mov $1, %esi
-    call hbc_free
+    call hbc_freestr
 82: inc %r9
     jmp 81b
     # kind 3: three levels - removed children own their own children,
@@ -11155,6 +11294,7 @@ hbc_mem_frees:  .quad 0
     out = out.replace("@REG_BAD_L@", if instrument { REG_BAD_L } else { "" });
     out = out.replace("@REG_ALLOC_W@", if instrument { REG_ALLOC_W } else { "" });
     out = out.replace("@REG_FREE_W@", if instrument { REG_FREE_W } else { "" });
+    out = out.replace("@REG_SFREE_W@", if instrument { REG_SFREE_W } else { "" });
     out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
     out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
     out
@@ -11799,6 +11939,25 @@ hbc_free:
     leave
     ret
 
+# hbc_freestr: rdi = string data pointer (non-null). String layout:
+# capacity at -16(%rdi), length at -8(%rdi); HeapFree needs only the
+# base (rdi-16), but the registry snippet validates 16 + cap.
+hbc_freestr:
+    push %rbp
+    mov %rsp, %rbp
+    sub $48, %rsp
+@REG_SFREE_W@    sub $16, %rdi
+    mov %rdi, %r8
+    call GetProcessHeap
+    mov %rax, %rcx
+    xor %edx, %edx
+    call HeapFree
+    test %rax, %rax
+    jz hbc_os_bad
+    incq hbc_mem_frees(%rip)
+    leave
+    ret
+
 # hbc_hfreeblock: rdi = hash block data pointer (non-null). Frees the
 # whole block: 16-byte header [flags @0][capacity @8] + entries, so the
 # block base is rdi-16 (HeapFree needs the base, not the length; the
@@ -12113,8 +12272,7 @@ hbc_asize:
     mov 8(%r13,%r10), %rdi
     test %rdi, %rdi
     jz 82f
-    mov $1, %esi
-    call hbc_free
+    call hbc_freestr
 82: incq -48(%rbp)
     jmp 81b
     # kind 3: three levels - recursive free of removed children
