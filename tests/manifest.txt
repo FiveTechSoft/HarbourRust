@@ -732,6 +732,9 @@ neg tests/t734_float_frontier2_neg.hb measured precision frontier
 neg tests/t736_float_starzone_neg.hb measured precision frontier
 neg tests/t737_float_starzone2_neg.hb measured precision frontier
 pos tests/t738_float_midband.hb \n    999999.9999\n   9999999.999\n  99999999.99\n 999999999.9\n    999999.99999\n     99999.999999\n   9999999.9999\n  99999999.999
-neg tests/t735_float_carry10.hb rounding-fidelity frontier
-neg tests/t739_float_carry16.hb rounding-fidelity frontier
+pos tests/t735_float_carry10.hb \n        10.000000000000000
+pos tests/t739_float_carry16.hb \n      1000.0000000000000
 pos tests/t740_float_9ok.hb \n         1.0000000000000000\n9999999999.99999\n99999999999.9999\n999999999999.999\n 999999999.999999
+pos tests/t741_float_parse_hk289.hb \n        10.000000000000000\n        10.000000000000000\n       -10.000000000000000\n        -0.10000000000000000\n         0.10000000000000000\n         1.0000000000000000
+pos tests/t742_float_frontier_hk290.hb \n         0.00000000000000001\n         1.0000000000000000\n12345678901234.5
+neg tests/t743_float_dec18_neg.hb more than 17 written decimals
