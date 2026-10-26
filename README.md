@@ -1369,6 +1369,37 @@ helper upserts through hbc_hput, copying every key and value
 on Linux and Wine, t547 the hk165 edges, t548/t549 reject non-hash
 arguments at compile time.
 
+Iteration 60 adds hb_HClear(h) and hb_HFill(h, value) (core
+hb_HClear / hb_HFill; oracles hk191-hk193): hb_HClear empties the
+hash - every key copy is freed, the data block is released and the
+slot goes back to (0, 0), leaving the hash reusable (hk191: a new
+write after the clear works; a read on a cleared hash is the
+registered HGet-miss dialog family, not a compat target). The
+CaseMatch flag resets to the default case-sensitive on the next
+write after a clear (hk193: hb_HCaseMatch is .T. again and a
+mismatched-case lookup no longer hits), and clearing an empty or
+already-cleared hash is a no-op. hb_HFill overwrites the VALUE of
+every entry with the given one - keys, count and insertion order
+survive (hk192: an integer over everything including a stored NIL,
+NIL over everything); filling an empty hash is a no-op. Both are
+statements in the PoC surface (their return values stay out of it,
+like hb_HDel's); a non-hash argument is a named compile-time
+rejection in this increment, as is a non-integer/non-NIL fill value.
+New helpers: hbc_hfill (leaf, no allocation, writes the {tag,
+payload} pair into every entry) and hbc_hclear (frame-based: frees
+every key copy, releases the block through hbc_hfreeblock, resets
+the slot); both are canaried in the ABI harness on both targets and
+hbc_hclear's frees are exercised against the instrumented
+allocation registry. t584 reproduces hk191/hk193 on Linux and Wine
+(clear, reuse, flag reset); t585 hk192 (fill over integers and a
+stored NIL, NIL fill, empty-hash no-op); t586 is the ownership
+check (clear of owned key copies, wrap + memcheck = 0, own check);
+t587/t588 are the named rejections (non-hash clear target,
+non-scalar fill value).
+
+Battery: 584/584 manifest cases on Linux x86-64 and Wine, plus
+the ABI harness.
+
 Iteration 59 adds hb_HDelAt(h, n) (core hb_HDelAt; oracles
 hk187-hk190): removes the entry AT the 1-based insertion-order
 position n - positions compact and insertion order is preserved
