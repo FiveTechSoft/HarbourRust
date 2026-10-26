@@ -1588,3 +1588,63 @@ decision exists in the record.
   clones before freeing. Caller/callee/return boundaries: t659 (param
   clone-on-pass + callee reassign), t660 (return clone, stored and
   printed directly). All under the ABI harness on Linux and Wine.
+
+## Iteration 63k — DO WHILE / DO ... WITH command forms (2026-10-26)
+
+Two command forms from the originals' largest first-error cluster
+(53 identifier-led statements): `DO WHILE <cond>` parses as the plain
+`while` loop (same ENDDO; LOOP and EXIT unchanged — oracle hk244: i=4,
+n=3) and `DO name [WITH arg, ...]` is command sugar for the bare-call
+statement (arguments evaluate: 41+1 -> 42). `DO CASE` gets a named
+rejection this batch ("not in this increment; use if/elseif/else/endif")
+so the sweep classifies it honestly instead of a generic parse error.
+The WITH argument splitter tracks (), [] and {} depth.
+
+- t664: do while + loop/exit, matches hk244.
+- t665: do ... with two calls, string and evaluated numeric args (natural shape, oracle hk245).
+- t666: neg - DO CASE named rejection.
+
+Also fixed a pre-existing inference defect surfaced while writing t665
+(reproduced with plain call syntax, so NOT from the DO parser change):
+when ANY parameter of a function stayed uninferable, pin_params
+discarded every parameter's evidence and fell back to i64 placeholders,
+so an unrelated `param == "literal"` died with the misleading `==`
+named rejection instead of naming the uninferable parameter. pin_params
+now returns partial pins: pinned parameters keep their real type, only
+the uninferable ones get the i64 placeholder, and the error names the
+actual parameter (t667 locks it: "cannot infer the type of parameter
+`num`"). No previously accepted program changes behaviour: the pin
+error still fails the compile after the body check, and body errors
+still surface first.
+
+- t667: neg - uninferable parameter named explicitly (regression lock
+  for the partial-pin fix; repro shapes v1/v2/v3 in the 63k notes all
+  took the misleading `==` path before).
+
+t665 uses the NATURAL shape (string `==` on one parameter before any
+arithmetic use of the other) and matches the new Harbour oracle hk245
+byte for byte (hello / 43 / bye / 8).
+
+**Sweep** (frozen 175 baseline; delta vs the previous full run): 12 rows changed, all
+advances or better-classified errors, 1/175 COMPILES unchanged (dynwin
+stays the hollow `#if`-guarded pass, never counted):
+- calling.prg: DO ... WITH parses; advanced to the next real blocker
+  (forward reference to `secondone`).
+- exit.prg, fib.prg, while.prg: DO WHILE parses; advanced to the `++`
+  / `+=` blocker.
+- fileio.prg, fileio2.prg: DO WHILE parses; advanced to a `?`-token
+  blocker deeper in the file.
+- guestbk.prg, inherit.prg: first error moved later within the same
+  identifier-led category (a DO form earlier in the file now parses).
+- docase.prg, returns.prg: DO CASE now gets its named rejection instead
+  of a generic parse error (honest classification).
+- mem.prg: advanced past `a := "Hello"` on a multi-decl local - this is
+  the 63j Dyn owned-string change surfacing (the 10:04 reference run
+  predates the 63j binary), not a 63k change. Next blocker: unknown
+  function `hb_symbol_unused`.
+- directry.prg (include line 10, `IF ! cshort == NIL ...`): same line,
+  different named rejection. The partial-pin fix stops masking the
+  pinned parameter with an i64 placeholder: `!cshort` pins it logical,
+  so the old ".NOT. needs a logical operand" becomes the more precise
+  "`==` against NIL is measured only for ..." rejection. Still not
+  compilable; the classification is the improvement.
