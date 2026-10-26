@@ -526,3 +526,6 @@ pos tests/t528_hget.hb \n         1\n         2\n         1\nNIL\nNIL
 posx tests/t529_posx_hget_missing.hb 1 \n         1Bound error: array access
 neg tests/t530_neg_hget_type.hb expects a hash variable
 pos tests/t531_hget_default_eval.hb \n         7\n         1\n         7\nNIL
+pos tests/t532_hset.hb \n         2\n         2\n         2\n         9\nNIL\n         3
+pos tests/t533_hset_order.hb \n         1\n         2\n         3\n         0
+neg tests/t534_neg_hset_type.hb hb_HSet expects a hash
