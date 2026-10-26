@@ -1160,5 +1160,20 @@ returned, Dyn cannot be reassigned to Block), but admitting the
 operator would bake in a model known to diverge. t497 is now a
 negative case carrying the named rejection; no helper changed.
 
-495/495 manifest cases + ABI harness green on Linux x86-64 and Wine
+t500-t504 (iteration 40): `==` on dynamic casillas dispatches on the
+runtime tag. String x string is the exact byte compare (oracle hk141:
+hkeys FOR EACH variable against literals, symmetric .T./.T./.F./.F.;
+hk143: two casillas compare content, not identity, .T./.F./.F./.T.),
+number x number the value compare (hk138: .T./.F./.T./.T.), NIL x NIL
+.T. and NIL x payload .F. (hk140: .T./.F./.F.). Mixed number x string
+is Harbour's BASE/1070 "Argument error: ==" (hk139/hk139b/hk139c/
+hk142: dialogs that hang headless, no oracle) - clean named exit 1,
+registered failure mode (t504 posx, both targets). New leaf helper
+hbc_dynxeq_dd canaried in the ABI harness (NIL/NIL 1, NIL/number 0,
+number/number 1 and 0, string/string 1 and 0) plus the noreturn
+hbc_dynxeq_error stub. hk132/hk133 measured indexed-assignment string
+cells, which this PoC does not implement (elements stay tagged int/
+NIL scalars by indexed assignment) - corpus-only, future material.
+
+500/500 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
