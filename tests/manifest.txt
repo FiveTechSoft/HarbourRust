@@ -39,7 +39,7 @@ pos tests/t35_return_nil_closing.hb \n         5\nNIL
 neg tests/t36_return_move_join.hb use of moved value
 pos tests/t37_for_basic.hb \n         1\n         2\n         3\n         1\n         3\n         5\n         3\n         2\n         1\nfin
 neg tests/t38_for_scope.hb undefined variable `i`
-neg tests/t39_for_shadow.hb already declared in this scope
+pos tests/t39_for_shadow.hb \n         1\n         2
 neg tests/t40_for_assign_var.hb cannot assign to the `for` loop variable
 neg tests/t41_for_move.hb not reassigned before `next`
 pos tests/t42_for_exit_loop.hb \n         1\n         3\n         4\nfuera
@@ -773,3 +773,11 @@ posx tests/t769_f64_fold_defer_guard.hb 1 Error: float field out of range
 posx tests/t770_f64_callchain_overflow.hb 1 Error: float field out of range
 posx tests/t771_f64_varchain_overflow.hb 1 Error: float field out of range
 neg tests/t776_nonnumeric_nopromo_neg.hb must be an integer, got a boolean
+pos tests/t777_for_reuse.hb \ndo exit test passed\nfor exit test passed
+pos tests/t778_byref_str_param.hb \na := 10         10\nb := "X" X\na pointer + 10 =         20\nb pointer := "A" = A\nreturn of "a" should = 20         20 worked\nreturn of "b" should = A A worked
+pos tests/t779_pragma_warninglevel.hb \nw0
+pos tests/t780_pragma_lt_if0.hb \nlt3\nzero-inactive
+pos tests/t781_cmp_in_args.hb \n.T.\n.F.\n.T.
+pos tests/t782_iif_lazy.hb \npassed\nfail\n         1.5\ngood\ngood2
+neg tests/t783_for_reuse_ro_neg.hb reuses a non-integer or read-only slot
+neg tests/t784_for_reuse_str_neg.hb reuses a non-integer or read-only slot
