@@ -1213,5 +1213,11 @@ integer a per-operator clean named exit 1 mirroring BASE/1073-1076
 (hk149-hk152 - dialogs hang headless; registered failure modes;
 t514-t517).
 
-513/513 manifest cases + ABI harness green on Linux x86-64 and Wine
+t518-t520 (iteration 46): hb_HValues(h) - new runtime helper
+hbc_hvalues (ABI-canaried on both targets): value casillas in
+insertion order into a NEW independent array (oracles hk153/hk154;
+t518/t519), result freed by the DArr epilogue with balance 0 (t520,
+own ownership check, not a Harbour oracle).
+
+516/516 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
