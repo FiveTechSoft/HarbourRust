@@ -1458,3 +1458,24 @@ alignment, content and free). `"a" + 1` keeps the registered
 "arithmetic requires integers" rejection (t627). Frozen-175 sweep
 re-run after the 63b-63e batch: still 1/175, no regressions - 25
 files report a DEEPER first error (later line or later phase).
+
+t628-t632 (iteration 63f): a whole-line call `f(args)` is now a
+statement: the callee runs and its return value may be discarded
+(None/I64/Str/Bool are plain values; a discarded owned string is
+freed by the statement codegen - t631 pins hb_memcheck() == 0;
+Dyn owns nothing). Discarding a dynamic array return is rejected
+(t629), and an unknown name in statement position keeps its
+name-resolution error (t630). t628 byte-matches the Harbour
+oracles hk216b+hk216 for statement-form calls. len() now also
+accepts strings (oracle hk217: 5/0/3; t632); the registered
+limitation stands that a string parameter under len() still pins
+as an array. 623 -> 628 tests, all green plus the ABI harness.
+Paired measurement (sonda, NOT upstream; 19999 iterations of
+`s = s + "x"`, 3 warmups + 21 timed runs, same machine):
+HarbourRust median 158.7 ms (min 135.5, p95 190.3) vs Harbour
+median 2.5 ms (min 2.3, p95 4.9) - about 63x slower on this
+workload. Attribution: each concat does an mmap/munmap pair
+(~100 ms sys) plus a full copy of the accumulator (O(n^2) in
+bytes), while Harbour grows the buffer in place when it can,
+amortized O(n). Registered as the top optimization target;
+correctness first, no parity claim.
