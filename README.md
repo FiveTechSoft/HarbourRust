@@ -1321,5 +1321,5 @@ oracle). t532 reproduces hk159's write semantics on Linux and Wine;
 t533 pins the evaluation order; t534 rejects a non-hash target at
 compile time.
 
-Battery: 530/530 manifest cases on Linux x86-64 and Wine, plus
+Battery: 535/535 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
