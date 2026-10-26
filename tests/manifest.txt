@@ -593,3 +593,12 @@ pos tests/t595_hcopy.hb \n         2\nb\n         3\n         1\n         9\n   
 pos tests/t596_hcopy_edges.hb \n         0\n         0
 pos tests/t597_hcopy_clip.hb \n         0\n         2\nb
 neg tests/t598_hcopy_self.hb `hb_HCopy` cannot copy a hash onto itself
+pos tests/t599_log_literals.hb \n.T.\n.F.\n.F.\n.T.\n.F.\n.T.\nL
+pos tests/t600_cmp_produces_log.hb \n.T.\n.F.\nL\n.F.\n.T.\n.T.
+pos tests/t601_shortcircuit.hb \nrama1b\nevalT\nrama2\nevalF
+pos tests/t602_log_fn.hb \n.T.\n.F.\n.F.
+neg tests/t603_bare_and.hb bare `AND` is not an operator in Harbour either
+neg tests/t604_bare_not.hb trailing tokens after expression
+neg tests/t605_mixed_log_num.hb logicals compare only with another logical
+pos tests/t606_dotted_forms.hb \n.T.\n.F.\n.T.\n.T.
+pos tests/t607_bool_assign_if.hb \nsi\nno2
