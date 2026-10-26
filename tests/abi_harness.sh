@@ -720,6 +720,61 @@ hbc_abi_test:
     mov $1, %esi
     call hbc_hfree
     call abi_check
+    # hbc_hpos canary (iteration 51): a 2-entry hash answers the
+    # 1-based live position on a hit (1 and 2) and 0 on a miss; leaf,
+    # read-only. Results saved BEFORE abi_check (it clobbers rax).
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    lea .Labi_k1(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $7, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea .Labi_k2(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $1, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $9, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea -96(%rbp), %rdi
+    lea .Labi_k1(%rip), %rsi
+    mov $2, %edx
+    call hbc_hpos
+    mov %rax, -32(%rbp)
+    call abi_check
+    cmpq $1, -32(%rbp)
+    jne abi_fail_hp
+    lea -96(%rbp), %rdi
+    lea .Labi_k2(%rip), %rsi
+    mov $1, %edx
+    call hbc_hpos
+    mov %rax, -32(%rbp)
+    call abi_check
+    cmpq $2, -32(%rbp)
+    jne abi_fail_hp
+    lea -96(%rbp), %rdi
+    lea .Labi_k3(%rip), %rsi
+    mov $2, %edx
+    call hbc_hpos
+    mov %rax, -32(%rbp)
+    call abi_check
+    cmpq $0, -32(%rbp)
+    jne abi_fail_hp
+    mov -96(%rbp), %rdi
+    mov $2, %esi
+    call hbc_hfree
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -826,6 +881,10 @@ abi_fail_hg:
     lea .Labi_f_hg(%rip), %rax
     mov $12, %edx
     jmp abi_fail_common
+abi_fail_hp:
+    lea .Labi_f_hp(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
 abi_fail_common:
     call hbc_print_str
 ASM_EOF
@@ -862,6 +921,7 @@ ASM_EOF
 .Labi_f_hd:  .ascii "ABI FAIL hd\n"
 .Labi_f_hh:  .ascii "ABI FAIL hh\n"
 .Labi_f_hg:  .ascii "ABI FAIL hg\n"
+.Labi_f_hp:  .ascii "ABI FAIL hp\n"
 .Labi_f_de: .ascii "ABI FAIL deq\n"
 .Labi_s3:    .ascii "abc"
 .Labi_s6:    .ascii "abcdef"
