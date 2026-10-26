@@ -660,7 +660,7 @@ pos tests/t662_dyn_str_callee_exit.hb \n         2\n         1\n         1\n    
 neg tests/t663_dyn_str_foreach.hb its value borrows from the collection
 pos tests/t664_do_while.hb \n         4\n         3
 pos tests/t665_do_with.hb \nhello\n        43\nbye\n         8
-neg tests/t666_do_case_neg.hb DO CASE is not in this increment
+pos tests/t666_do_case.hb \none
 neg tests/t667_param_uninferable_neg.hb cannot infer the type of parameter `num`
 pos tests/t668_incr_stmt.hb \n         1\n         2\n         1\n         0
 pos tests/t669_compound_assign.hb \n        15\n        12\n        48
@@ -818,3 +818,9 @@ pos tests/t819_cont_chain.hb \n         6
 neg tests/t820_cont_code_after_neg.hb character not allowed `;`
 neg tests/t821_cont_string_neg.hb unterminated string
 neg tests/t822_cont_nomerge_neg.hb expected `local name [:= expr]`
+pos tests/t823_docase_basic.hb \ntwo\nsecond line\nafter
+pos tests/t824_docase_otherwise_end.hb \nfallback\nend-close\nnine\nno-otherwise-taken\nno-match-no-otherwise
+pos tests/t825_docase_nested.hb \nnested-one\ndone
+neg tests/t826_docase_case_nocond_neg.hb `case` takes a condition
+neg tests/t827_docase_unclosed_neg.hb `do case` without `endcase`
+neg tests/t828_macro_named_rejection_neg.hb macro operator `&` is runtime dynamic evaluation
