@@ -522,3 +522,6 @@ neg tests/t524_neg_hdel_type.hb hb_HDel expects a hash
 pos tests/t525_hhaskey.hb \n         1\n         1\n         0\n         0\n         0\n         0\n         1\n         0
 pos tests/t526_hhaskey_empty.hb \n         0\n         1
 neg tests/t527_neg_hhaskey_type.hb expects a hash variable
+pos tests/t528_hget.hb \n         1\n         2\n         1\nNIL\nNIL
+posx tests/t529_posx_hget_missing.hb 1 \n         1Bound error: array access
+neg tests/t530_neg_hget_type.hb expects a hash variable
