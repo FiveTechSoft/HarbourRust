@@ -828,3 +828,4 @@ pos tests/t829_ret_bare_if.hb
 pos tests/t830_ret_value_block.hb \n        20
 pos tests/t831_ret_bare_while.hb 
 pos tests/t832_ret_bare_docase.hb 
+pos tests/t833_qout_forms.hb \nOk!\na b\n        42\n\nafter-empty\ntail
