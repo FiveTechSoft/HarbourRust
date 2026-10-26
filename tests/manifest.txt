@@ -729,3 +729,6 @@ neg tests/t731_float_callarg_neg.hb argument 1 of `p`
 neg tests/t732_float_frontier_neg.hb measured precision frontier
 neg tests/t733_float_ret_neg.hb eturn
 neg tests/t734_float_frontier2_neg.hb measured precision frontier
+neg tests/t736_float_starzone_neg.hb measured precision frontier
+neg tests/t737_float_starzone2_neg.hb measured precision frontier
+pos tests/t738_float_midband.hb \n    999999.9999\n   9999999.999\n  99999999.99\n 999999999.9\n    999999.99999\n     99999.999999\n   9999999.9999\n  99999999.999
