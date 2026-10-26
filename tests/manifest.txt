@@ -550,3 +550,15 @@ pos tests/t552_hclone_owned.hb \n         7\n         1\n         0\n         0
 neg tests/t553_neg_hclone_type.hb `hb_HClone` expects a hash variable
 pos tests/t554_hmerge_self.hb \n         2\n         1\n         2\n         1\n         2
 pos tests/t555_hmerge_srcfree.hb \n         2\n         2\n         0\n         0
+pos tests/t556_casematch_toggle.hb \n         1\n         0\n         1\n         1\n         0
+pos tests/t557_casematch_write.hb \n         1\n         9\na\n         0
+pos tests/t558_casematch_lastread.hb \n         2\n         2\n         1\n         3
+pos tests/t559_casematch_lastwrite.hb \n         2\na\n         1\nA\n         9
+pos tests/t560_casematch_clone.hb \n         0\n         1
+pos tests/t561_casematch_posdel.hb \n         2\n         1\na
+pos tests/t562_casematch_merge.hb \n         1\na\n         2\n         2
+pos tests/t563_casematch_emptyclone.hb \n         0\n         1
+pos tests/t564_casematch_owned.hb \n         1\n         1\n         0\n         0\n         0
+neg tests/t565_neg_casematch_type.hb hb_HSetCaseMatch expects a hash variable
+neg tests/t566_neg_casematch_flag.hb the hb_HSetCaseMatch flag is an integer
+neg tests/t567_neg_casematch_getter.hb `hb_HCaseMatch` expects a hash variable
