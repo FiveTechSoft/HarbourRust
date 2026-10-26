@@ -507,3 +507,8 @@ pos tests/t509_exeq_darrs_xeq2.hb \n         1\n         0\n         1
 pos tests/t510_exeq_dynstrstr_eq.hb \n         1\n         0\n         0\n         1\n         0\n         0
 posx tests/t511_posx_dyneq_strint.hb 1 Argument error: =
 pos tests/t512_exeq_dyneq_strnil.hb \n         0\n         0
+pos tests/t513_exeq_dynord_str.hb \n         0\n         1\n         0\n         0\n         0\n         0\n         1\n         0\n         1\n         1\n         0\n         1\n         1\n         0\n         1\n         1
+posx tests/t514_posx_dynord_lt.hb 1 Argument error: <
+posx tests/t515_posx_dynord_gt.hb 1 Argument error: >
+posx tests/t516_posx_dynord_le.hb 1 Argument error: <=
+posx tests/t517_posx_dynord_ge.hb 1 Argument error: >=
