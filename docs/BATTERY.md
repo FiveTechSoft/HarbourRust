@@ -1479,3 +1479,18 @@ workload. Attribution: each concat does an mmap/munmap pair
 bytes), while Harbour grows the buffer in place when it can,
 amortized O(n). Registered as the top optimization target;
 correctness first, no parity claim.
+
+## 63g — passing @arguments by reference (t633-t641)
+
+**New syntax** `@name` as a call argument borrows the caller's variable exclusively and passes a pointer; assignments inside the callee store through the pointer, so the caller's variable mutates (Harbour byref semantics). Caller locals named in any @arg widen Str→StrOwn so their storage is owned. Integers, logicals and owned strings are supported.
+
+- t633-t635: i64 mutation (hk216b), string mutation + grow (hk218), byref pass-on `f`→`g` (hk220).
+- t636 (neg): alias rejection — `f(@x,@x)` or any second mention of x is refused. **Registered divergence**: Harbour *allows* `f(@x,@x)` (oracle hk219 prints 2) and lets both params alias the same slot; we reject to keep the borrow exclusive. The original byref.prg is therefore not fully compatible here.
+- t637 (neg): `@x + 1` is a syntax error, like Harbour (hk221, rc=6).
+- t638: self-assign `p := p` through the pointer is a no-op (hk222); RHS is preserved on the stack before the old buffer is freed (no use-after-free). Memcheck protocol: program prints `len(hbc_live())`-style count and the battery compares the exact count.
+- t639 (hk224): returning a *derived* string from a borrowed param is safe (`return p + "?"` copies).
+- t640 (hk225b): assigning a rodata literal into an owned slot through @ (checker previously rejected `owned := "lit"`; fixed as part of 63g — mirrors the call-arg contract).
+- t641 (neg): moving a byref param out of its owner (`q := p`, `return p`, passing by value) is rejected as not Harbour semantics.
+- Collections under @ are rejected with a named message pending the RC decision (analysis not done).
+
+**Sweep**: 23 files moved past the `@` tokenizer error to their next blocker (byref.prg now stops at `STATIC`, others at LOCAL-without-init, `%`, floats, ...); still 1/175 — the @-bearing files have other gaps ahead.
