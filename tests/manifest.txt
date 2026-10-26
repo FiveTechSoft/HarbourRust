@@ -614,3 +614,6 @@ posx tests/t616_hash_read_miss.hb 1 Bound error: array access
 posx tests/t617_dyn_nil_condition.hb 1 Type error: NIL used as a number
 pos tests/t618_log_dyn_if_casilla.hb \nsi\nno2\ngiro
 pos tests/t619_procedure_kw.hb \n         7\n         8\n         1\nNIL
+pos tests/t620_comment_forms.hb \none\ntwo\nstr /* kept */ ok
+neg tests/t621_unterminated_block.hb unterminated /* */ comment
+neg tests/t622_semicolon_comment.hb U+003B
