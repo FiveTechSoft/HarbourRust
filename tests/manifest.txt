@@ -578,3 +578,8 @@ pos tests/t580_hdelat.hb \n         2\nb\n         1\nb\n         0
 pos tests/t581_hdelat_owned.hb \nb\n         0\n         0
 neg tests/t582_neg_hdelat_type.hb hb_HDelAt expects a hash variable
 neg tests/t583_neg_hdelat_index.hb the hb_HDelAt position is an integer in this increment
+pos tests/t584_hclear.hb \n         0\n         1\n         9\n         1\n         0\n         0
+pos tests/t585_hfill.hb \n         7\n         7\n         7\nb\n         3\nNIL\n         0
+pos tests/t586_hclear_owned.hb \n         5\n         0\nz\n         0\n         0
+neg tests/t587_neg_hclear_type.hb hb_HClear expects a hash variable
+neg tests/t588_neg_hfill_value.hb hash values are integers or NIL in this increment
