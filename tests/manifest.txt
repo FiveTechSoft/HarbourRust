@@ -33,7 +33,7 @@ neg tests/t29_exit_outside.hb outside a `while` loop
 neg tests/t30_loop_move.hb not reassigned before `loop`
 pos tests/t31_exit_move_ok.hb \nhola\nfuera
 neg tests/t32_exit_move_use.hb use of moved value
-neg tests/t33_return_bare_block.hb an early `return` inside a block needs a value
+pos tests/t33_return_bare_block.hb 
 neg tests/t34_return_type_mix.hb return type mismatch
 pos tests/t35_return_nil_closing.hb \n         5\nNIL
 neg tests/t36_return_move_join.hb use of moved value
@@ -824,3 +824,7 @@ pos tests/t825_docase_nested.hb \nnested-one\ndone
 neg tests/t826_docase_case_nocond_neg.hb `case` takes a condition
 neg tests/t827_docase_unclosed_neg.hb `do case` without `endcase`
 neg tests/t828_macro_named_rejection_neg.hb macro operator `&` is runtime dynamic evaluation
+pos tests/t829_ret_bare_if.hb 
+pos tests/t830_ret_value_block.hb \n        20
+pos tests/t831_ret_bare_while.hb 
+pos tests/t832_ret_bare_docase.hb 
