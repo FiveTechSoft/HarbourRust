@@ -2853,3 +2853,39 @@ separate class (linecont.prg: stock Harbour E0030 at lines 53/58,
 oracle hk334 build log; rejected by both compilers is equivalence,
 not a runtime success). The frozen 175-file csv denominator counts
 original files, not programs that must run; unchanged per policy.
+
+## 63zm - DO CASE statement; named rejection of the `&` macro operator
+
+Oracles (pinned hbmk2 -gtstd, sondas hk374-hk376 in `sondas/`): DO CASE runs the
+FIRST matching CASE only - no fall-through (hk374, where the `x == 2` arm runs
+its two statements and the `x == 3` arm never runs); OTHERWISE runs when no CASE
+matched (hk374/hk375); a bare `end` closes the construct as well as `endcase`
+(hk375); with no match and no OTHERWISE nothing runs and control continues after
+the construct (hk375); nesting works (hk376).
+
+Implementation: `do case` desugars at parse time into the nested `Stmt::If`
+chain that ELSEIF already produces (63zg), so the checker and both codegens are
+untouched. Inside a nested body, statement-initial `case` / `otherwise` /
+`endcase` / `end` are terminator lines that hand control back to the enclosing
+`do case` loop; an assignment to a same-named variable stays a statement (the
+NOTE precedent). Named rejections: `` `do case` takes no expression ``,
+`` `case` takes a condition ``, `` `otherwise` takes no expression ``,
+`` `endcase` takes no expression ``, `` `do case` without `endcase` ``.
+
+The `&` macro operator is now a NAMED rejection instead of a generic
+"character not allowed". Measured semantics (oracles hk369-hk373): in Harbour
+`&` evaluates string contents as Harbour code at RUNTIME with real types
+(`"10"` yields N, `valtype` says N), works in expression, statement and
+dynamic-send positions, and the expanded text cannot see LOCALs of the caller
+(BASE/1003 semantics). That is Harbour's runtime macro-compiler: an evaluator
+embedded in the emitted binary. It is out of this native increment by design -
+a named limit, not a Harbour error. All six uses in the 175-file sweep
+(base2:9, ddate:27, hrb:41, codebl2:14, omacro:17, keywords:761) are dynamic
+evaluation on variables, so they stay parked on this limit.
+
+Tests: t823-t825 positive (hk374-hk376 mirrors), t826/t827 negative (DO CASE
+forms), t828 negative (named `&` rejection). The old t666 negative lock-in
+("DO CASE is not in this increment") is superseded by the feature: its
+program is natively valid, so the row flips neg -> pos as t666_do_case.hb
+against fresh oracle hk377 (output `\none`), the same maneuver as t622 in
+63zl and t783 in 63zh. Battery: 823 rows + ABI canary.
