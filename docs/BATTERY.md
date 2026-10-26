@@ -2656,4 +2656,35 @@ claim. Bench sources are sondas/bench_int.prg and sondas/bench_float.prg
 the emitted .s). Toolchain record: hbc sha256
 e1a9de1df483f990df0f26049b4e294ec4f81859ee442d3ec5011bd1d1322e88,
 rustc 1.99.1 (58cf8f9c3 2026-10-13) via rustup, hbmk2 from the pinned harbour-core
-checkout (3.2.1dev r2026-10-24 21:11), flags -gtstd -o<name>; machine: this sandbox.
+checkout (3.2.1dev r2026-10-24 21:11), flags -gtstd -o<name>; machine: this sandbox (x86_64, Intel Xeon
+2.60GHz). Benched binary hashes (the exact artifacts timed):
+hb_bench_int 58f90a0f3e95360952e9e9dead792613e2c3e814a31284b5cd8a0542c35eaa89,
+hr_bench_int 8cfa302088c2fa27a1e62ac9c1e4c18f2bb8ac21aaa3d1101ad7b6c709044914,
+hb_bench_float dec41ec16aa42c2f387162c9afe34ed431121692711270295e93213204221b70,
+hr_bench_float 7d5544fb8a85078599f79960b2adaaa916e19fbffcf285c7b2d06c49bbd2e08e.
+Method: one warmup run, then 15 timed runs per binary, wall clock
+around the whole process, medians reported with mean and min; the two
+sides were timed back to back on the same idle sandbox. Provenance
+note: the per-run raw arrays were not persisted before the sandbox
+moved on; median/mean/min above come from the frozen-protocol run
+(post-fix, byte-identical outputs) and are the values of record - not
+re-timed ritually.
+
+63zg - ELSEIF. Oracle hk335 captured first on pinned hbmk2 -gtstd;
+sonda published. ELSEIF tokenizes as a keyword and the IF arm folds a
+run of arms into Harbour's exact nested-IF shape behind the optional
+ELSE body (t791 mirrors hk335 byte-exact; a top-level `elseif` keeps
+a named rejection). Stock ifelse.prg advances from the elseif gap to
+its real next rejection: `LOCAL i` (bare, NIL-typed) reused as the FOR
+variable - Harbour retypes the slot, this PoC's reuse covers I64 slots
+only; a sound retype needs a mention-clean prepass shared by checker
+and layout, parked in the design notes rather than half-landed.
+linecont.prg is NOT a flip candidate: stock Harbour itself rejects its
+deliberate negative halves (E0030 at lines 53/58, oracle hk334 build
+log); the mid-line `;` separator it also exercises stays unimplemented
+with the rest of the `;` bucket.
+
+Tests: t791. BATTERY 785 -> 786 runner rows + ABI ALL GREEN (Linux
+native and Wine with Linux oracle). Sweep: COMPILES unchanged at 7;
+ifelse.prg's rejection advanced (line 19 -> line 8) with the frozen
+csv untouched per policy.
