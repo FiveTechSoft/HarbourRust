@@ -1945,3 +1945,43 @@ f9414ceff4c03b5c5488a664f32102b5c553244bd1765a86616422124b2310ae.
 Full battery re-executed on the recovered bytes at 11:36 CET:
 693/693 manifest cases green plus the ABI harness, on Linux nativo y
 Wine con oracle Linux - the recovered bytes are the tested bytes.
+
+## 63q - discarding an owned array return (routine extension; oracle hk256)
+
+A bare call discarding the callee's return is legal Harbour (oracle
+hk256: the callee runs for effect, the program continues, exit 0). The
+compiler already defined the discard for returns its discipline can
+release right after the call; this increment extends that set from one
+owned string to owned arrays of up to two levels, freeing the returned
+block with the SAME helpers the epilogue uses on a slot of that type:
+DArr -> hbc_free, DArrS -> hbc_sfree, DArr2 -> hbc_free2 (the return
+arrives as {pointer in rax, length in rdx}, the slot convention).
+Hashes, deeper arrays and codeblocks keep the named rejection.
+
+- t698: discard a string-array return twice - side effects print,
+  allocation balance 0.
+- t699: discard an integer/logical array return - balance 0.
+- t700: discard a two-level array return - balance 0.
+- t701 (negative): discarding a hash return stays rejected by name.
+- t629 FLIPPED neg -> pos (same pattern as t643 at 63n): its premise
+  was the old rejection itself; `Array(2)` discarded now compiles and
+  prints nothing, matching the oracle shape.
+
+Sweep 175 (reference HEAD bb509326, 2026-10-26; src/hbc.rs sha256
+d83b63e2fcb8e102c8e653f12e7444c977fd255be56824c8a9831f17a027ee29,
+compiler binary sha256 2c890a2f33ac4573936677d562251e159b86cab9b21f4ec9c87cfa595acd132a,
+rustc 1.99.1): COMPILES 2 -> 3. lnlenli2.prg (the line-length stress
+original, 240-string array literal built and discarded) now compiles;
+its output is byte-identical to the oracle's - EMPTY BY DESIGN (the
+file is `//NOTEST` upstream: the work is building and discarding the
+array, there is no printing), exit 0/0. This is a real build-and-free
+execution, not a hollow guard like dynwin.prg's `#if __PLATFORM__WINDOWS`
+(registered there). hello and statfun unchanged, still byte-identical.
+
+Battery 693 -> 697 + ABI harness green (Linux nativo y Wine con oracle
+Linux).
+
+Correction register (from the recovery closeout): the published
+tests/run_battery.sh hashes 5758eec78ce6164c3c354619b8ea16c9218d8f0ca3ee2f8b88b63a5f458ff2b3;
+the f9414cef... value registered at 63p is the same file without the
+web editor's trailing blank line. Content identical.
