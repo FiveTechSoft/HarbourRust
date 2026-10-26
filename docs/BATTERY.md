@@ -3025,3 +3025,58 @@ Includes process startup; short microbench and layout/noise sensitive.
 Not an isolated engine speed claim and not proof that diagnostics improve
 speed. Normal binaries pay location-store/frame overhead even without an
 error; workload-specific cost needs measurement before extrapolation.
+
+## 63zs - Chr()
+
+Oracle hk387 and upstream src/rtl/chrasc.c:53 (byte-codepage branch) show
+Chr(n) returns one byte, n &255, even for NUL or multiples of256. hk389
+measures truncation of numeric fractions but this increment deliberately
+rejects float arguments by name; no numeric-conversion model added.
+Codepage Unicode selection is not implemented. hk390 is the exact output
+oracle for t849: negative/wrapped bytes, runtime integer, arithmetic,
+NUL length/equality and concatenation without displaying NUL directly.
+
+hbc_chr uses existing owned-string header, hbc_strcpy and hbc_freestr.
+No new representation, sharing or interpreter. Parameters used in Chr pin
+to integer. Return values own their allocation; normal move/drop paths
+apply. Len now frees an owned non-variable temporary after reading its
+length (previously it leaked such an expression). t850 exercises returned
+strings, reassignment, discarded Len temporaries and concatenation, then
+checks hb_MemCheck()=0 AFTER the owned local's function has returned.
+Direct hbc_chr ABI canary validates byte, length, header, nonvolatile
+GPR/XMM sentinels and matching free on Linux and Windows via Wine.
+
+Limits: floats/Dyn/non-numeric arguments rejected; no Unicode-codepage
+mode. gtstd replaces NUL with a visible dot while HarbourRust print_str
+writes raw bytes. That output difference is not hidden or called byte-
+compatible. NUL semantics are checked using equality/length, not its
+visible rendering. No Asc/LTrim/RTrim/AllTrim implemented by this change.
+
+63zs checkpoint battery:848 runner rows+ABI=849 ALL GREEN on Linux and Wine.
+Sweep:12/175 unchanged; test.prg advances from unknown chr on line3 to
+unknown ltrim on line8. No original added to the executable count.
+63zs and 63zt are delivered together; final battery is853rows+ABI=854.
+
+## 63zt - Trim family (includes 63zs)
+
+Oracles hk391/hk392 and src/rtl/trim.c / include/hbdefs.h HB_ISSPACE:
+LTrim drops leading bytes9,10,13,32 only (NOT11/12); RTrim/Trim drop
+trailing32 only; AllTrim combines those rules. Empty/all-space strings
+stay valid; NUL/160 and interior bytes are preserved. One string argument
+only; extra arguments/non-strings rejected by name, not silently ignored.
+
+hbc_trim computes a borrowed range then tail-calls hbc_strcpy to produce
+an independent owned result under existing string layout. Source is not
+moved by these builtins; temporary owned arguments are freed after copying.
+Ordinary user-defined calls still MOVE string parameters as documented;
+t856 does not mistake clean(s) for a borrowing builtin. No aliasing model
+or shared ownership added. t854/t855 mirror Harbour bytes; t856 covers
+source preservation, nested temporaries, return through a function,
+reassignment, empty outputs and memcheck0 after function cleanup. Direct
+ABI canary covers helper+free on both targets.
+
+Final combined battery853rows+ABI=854 ALL GREEN Linux/Wine. Sweep remains12/175;
+test.prg advances from LTrim unknown at8 to FOR EACH over a string at18,
+a representation boundary of existing iteration, not a completed original.
+NUL print difference from63zs remains; not claimed bytecompatible output.
+Combined change is based on30fe54808ec4f45a7364077a2ad75391cda87865 (63zr).

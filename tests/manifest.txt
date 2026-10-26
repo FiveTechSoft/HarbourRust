@@ -844,3 +844,13 @@ posx tests/t845_trace_byref.hb 1 Error: round dec out of range\nCallstack:\n  at
 posx tests/t846_trace_while.hb 1 Error: round dec out of range\nCallstack:\n  at cond (tests/t846_trace_while.hb:4)\n  at main (tests/t846_trace_while.hb:9)
 posx tests/t847_trace_nested_expr.hb 1 Error: round dec out of range\nCallstack:\n  at main (tests/t847_trace_nested_expr.hb:8)
 posx tests/t848_trace_block_unlink.hb 1 \n         6Error: round dec out of range\nCallstack:\n  at main (tests/t848_trace_block_unlink.hb:5)
+pos tests/t849_chr_forms.hb \nA          1          1 .T.\n.T. .T. .T.\nA A A C\n         3 aAb
+pos tests/t850_chr_ownership.hb \nA          1\nC          2          1\n         0
+neg tests/t851_chr_float_neg.hb `chr` expects an integer
+neg tests/t852_chr_str_neg.hb `chr` expects an integer
+neg tests/t853_chr_arity_neg.hb `chr` takes one argument
+pos tests/t854_trim_forms.hb \n[a b  ] [  a b] [a b]\n         0          0          0\n.F.\n.T.\n.T.\n.T.
+pos tests/t855_trim_whitespace.hb \n.T.\n.T. .F. .F. .T.\n.T. .T.\n.T. .T.\n[ x]          0
+pos tests/t856_trim_ownership.hb \n  abc   abc          0          2\nq\nz\n         0
+neg tests/t857_trim_type_neg.hb `ltrim` expects a string
+neg tests/t858_trim_arity_neg.hb `rtrim` takes one argument

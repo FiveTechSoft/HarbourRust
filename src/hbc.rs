@@ -1240,7 +1240,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -2843,6 +2843,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     }
                     return walk(f, &args[0], sigs, lit, pin, n);
                 }
+                if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) {
+                    for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,n)?; }
+                    return Ok(());
+                }
+                if is_builtin(id, "chr") {
+                    for a in args { pin_vars(f, a, Ty::I64, pin, n)?; walk(f, a, sigs, lit, pin, n)?; }
+                    return Ok(());
+                }
                 if is_builtin(id, "eval") {
                     // eval(b, a1..an) PINS a codeblock parameter (33p):
                     // the arity evidence is the argument count. Harbour
@@ -3888,6 +3896,20 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // when its arm is taken (laziness keeps single ownership).
                 if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) { return Ok(Ty::StrOwn); }
                 return Err(format!("line {}: `iif` branches must share a scalar type (float absorbs an int side), got {:?} and {:?}", n, ta, tb));
+            }
+            if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) {
+                if args.len()!=1 { return Err(format!("line {}: `{}` takes one argument in this increment",n,id)); }
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
+                    return Err(format!("line {}: `{}` expects a string",n,id));
+                }
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id, "chr") {
+                if args.len() != 1 { return Err(format!("line {}: `chr` takes one argument", n)); }
+                if type_expr(&args[0], env, sigs, n)? != Ty::I64 {
+                    return Err(format!("line {}: `chr` expects an integer in this increment (Harbour converts numeric arguments; float conversion is not covered here)", n));
+                }
+                return Ok(Ty::StrOwn);
             }
             if is_builtin(id, "round") {
                 // Round(n, d) - hb_numRound measured (src/common/hbstr.c;
@@ -6207,6 +6229,14 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 apply_moves(&args[0], env, sigs, false);
                 return;
             }
+            if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) {
+                apply_moves(&args[0],env,sigs,false);
+                return;
+            }
+            if is_builtin(id, "chr") {
+                apply_moves(&args[0], env, sigs, false);
+                return;
+            }
             if is_builtin(id, "round") {
                 // Round borrows both numeric arguments: nothing moves.
                 apply_moves(&args[0], env, sigs, false);
@@ -6664,6 +6694,21 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 _ => unreachable!("checked"),
             }
         }
+        Expr::Call(id,args) if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) => {
+            let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n");
+            let mode=if is_builtin(id,"ltrim") {1} else if is_builtin(id,"alltrim") {3} else {2};
+            out.push_str(&format!("    mov ${}, %edx\n    call hbc_trim\n",mode));
+            if temp {
+                out.push_str("    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n");
+            }
+            out.push_str("    add $32, %rsp\n");
+        }
+        Expr::Call(id, args) if is_builtin(id, "chr") => {
+            cg_expr(&args[0], env, sigs, strs, out, target);
+            out.push_str("    mov %rax, %rdi\n    call hbc_chr\n");
+        }
         Expr::Call(id, args) if is_builtin(id, "round") => {
             // Round(n, d) - hb_numRound (oracles hk384-hk386): the helper
             // returns the f64 pair convention (xmm0 = value, rdi = packed
@@ -6677,8 +6722,11 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             // len(s) for a string (hk217): the value pair's len half.
             if matches!(expr_ty(&args[0], env, sigs), Ty::Str | Ty::StrOwn) {
                 cg_value(&args[0], env, sigs, strs, out, target);
-                out.push_str("    mov %rdx, %rax
-");
+                if expr_ty(&args[0], env, sigs) == Ty::StrOwn && !matches!(&args[0], Expr::Var(_)) {
+                    out.push_str("    sub $16, %rsp\n    mov %rdx, (%rsp)\n    mov %rax, %rdi\n    call hbc_freestr\n    mov (%rsp), %rax\n    add $16, %rsp\n");
+                } else {
+                    out.push_str("    mov %rdx, %rax\n");
+                }
                 return;
             }
             // len(a) for a dynamic array: the length word of the slot.
@@ -7847,6 +7895,8 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hclone") { return Ty::Hash; }
             if is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") { return Ty::I64; }
             if is_builtin(id, "valtype") { return Ty::Str; } // hk88-hk92
+            if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
+            if is_builtin(id, "chr") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
                 // Branch unification mirrors the checker (oracle hk321).
@@ -11910,6 +11960,55 @@ hbc_hclear:
     pop %rbx
     pop %rbp
 861: ret
+
+# hbc_trim: rdi/ rsi bytes/len, edx mode1=left2=right3=both.
+# Left whitespace: HT/LF/CR/space only (hk391/392, HB_ISSPACE).
+# Right whitespace: space only. Always copy through owned-string path.
+hbc_trim:
+    test $2, %edx
+    jz .Ltrim_left
+.Ltrim_right:
+    test %rsi, %rsi
+    jz .Ltrim_copy
+    cmpb $32, -1(%rdi,%rsi)
+    jne .Ltrim_left
+    dec %rsi
+    jmp .Ltrim_right
+.Ltrim_left:
+    test $1, %edx
+    jz .Ltrim_copy
+.Ltrim_again:
+    test %rsi, %rsi
+    jz .Ltrim_copy
+    movzbl (%rdi), %eax
+    cmp $32, %eax
+    je .Ltrim_drop
+    cmp $9, %eax
+    je .Ltrim_drop
+    cmp $10, %eax
+    je .Ltrim_drop
+    cmp $13, %eax
+    jne .Ltrim_copy
+.Ltrim_drop:
+    inc %rdi
+    dec %rsi
+    jmp .Ltrim_again
+.Ltrim_copy:
+    jmp hbc_strcpy
+
+# hbc_chr: rdi = signed integer -> owned one-byte string rax/rdx.
+# Byte-codepage semantics (hk387/hk389): n &255, NUL is still len1.
+# Reuse hbc_strcpy/header/free protocol; no new string representation.
+hbc_chr:
+    push %rbp
+    mov %rsp, %rbp
+    sub $16, %rsp
+    mov %dil, -8(%rbp)
+    lea -8(%rbp), %rdi
+    mov $1, %esi
+    call hbc_strcpy
+    leave
+    ret
 
 # hbc_strcpy: rdi = source bytes, rsi = length. Returns rax = pointer to
 # the bytes of a NEW owned allocation with a 16-byte header: capacity at

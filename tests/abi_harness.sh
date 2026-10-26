@@ -1692,6 +1692,50 @@ hbc_abi_test:
     cmp %rax, %rdx
     jne abi_fail_xmm
     call abi_check
+    # hbc_trim mode3 canary: HT/space on left, spaces on right.
+    lea .Labi_trim_input(%rip), %rdi
+    mov $7, %esi
+    mov $3, %edx
+    call hbc_trim
+    mov %rax, -112(%rbp)
+    cmp $3, %rdx
+    jne abi_fail_trim
+    cmpb $97, (%rax)
+    jne abi_fail_trim
+    cmpb $99, 2(%rax)
+    jne abi_fail_trim
+    call abi_check
+    mov -112(%rbp), %rdi
+    call hbc_freestr
+    call abi_check
+    # hbc_chr new helper: byte wraps to A; header/len and nonvolatiles.
+    mov $321, %edi
+    movabs $0x4141414141414101, %rax
+    movq %rax, %xmm6
+    movabs $0x4242424242424202, %rax
+    movq %rax, %xmm7
+    call hbc_chr
+    mov %rax, -112(%rbp)
+    cmp $1, %rdx
+    jne abi_fail_chr
+    cmpb $65, (%rax)
+    jne abi_fail_chr
+    cmpq $1, -8(%rax)
+    jne abi_fail_chr
+    cmpq $1, -16(%rax)
+    jne abi_fail_chr
+    call abi_check
+    movabs $0x4141414141414101, %rax
+    movq %xmm6, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    movabs $0x4242424242424202, %rax
+    movq %xmm7, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    mov -112(%rbp), %rdi
+    call hbc_freestr
+    call abi_check
     # hbc_print_trace: direct no-active-frame canary, including nonvolatile
     # XMM6/XMM7 on Win64. Native-frame link/unlink are inline (no ABI).
     movabs $0x3131313131313101, %rax
@@ -1911,6 +1955,14 @@ abi_fail_xmm:
     lea .Labi_f_xmm(%rip), %rax
     mov $12, %edx
     jmp abi_fail_common
+abi_fail_trim:
+    lea .Labi_f_trim(%rip), %rax
+    mov $14, %edx
+    jmp abi_fail_common
+abi_fail_chr:
+    lea .Labi_f_chr(%rip), %rax
+    mov $13, %edx
+    jmp abi_fail_common
 abi_fail_round:
     lea .Labi_f_round(%rip), %rax
     mov $12, %edx
@@ -1975,6 +2027,9 @@ ASM_EOF
 .Lsg_full: .ascii "abcdefghxyz"
 .Labi_f_t4: .ascii "ABI FAIL t4\n"
 .Labi_f_xmm: .ascii "ABI FAIL xmm\n"
+.Labi_trim_input: .byte 9,32,97,98,99,32,32
+.Labi_f_trim: .ascii "ABI FAIL trim\n"
+.Labi_f_chr: .ascii "ABI FAIL chr\n"
 .Labi_f_round: .ascii "ABI FAIL rnd\n"
 .Lt4_a:    .ascii "abc"
 .Lt4_b:    .ascii "abc"
