@@ -1332,5 +1332,16 @@ wrap + memcheck balance 0, own ownership check, not an oracle). t540
 reproduces hk162 on Linux and Wine, t541 the compaction of hk163, and
 t543 rejects a non-hash target at compile time.
 
-Battery: 539/539 manifest cases on Linux x86-64 and Wine, plus
+Iteration 52 fixes a real leak found by ownership probing:
+hb_HHasKey(h, key) never freed an OWNED key temporary (e.g. an
+hb_HKeys element copy - a genuine StrOwn); the balance went 1 over.
+The lookup now frees it right after the helper returns, the same
+pattern hb_HGet/hb_HSet/hb_HPos already used (t544 pins it with a
+genuine element-copy key; a function returning a literal types Str,
+not StrOwn, so t533/t535/t542 were rewritten to exercise the free
+path with genuine owned temporaries - their expected outputs are
+unchanged). No Harbour behaviour changes: this is our own ownership
+check (hb_memcheck), not an oracle.
+
+Battery: 540/540 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
