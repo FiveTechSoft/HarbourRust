@@ -1369,6 +1369,45 @@ helper upserts through hbc_hput, copying every key and value
 on Linux and Wine, t547 the hk165 edges, t548/t549 reject non-hash
 arguments at compile time.
 
+Iteration 61 adds hb_HGetDef(h, key [, default]),
+hb_HSetDef(h, key [, default]) and hb_HCopy(src, dst [, start
+[, count]]) (core hb_HGetDef / hb_HSetDef / hb_HCopy; oracles
+hk194-hk196d). hb_HGetDef is hb_HGet without the miss error: a
+hit returns the value, a miss returns the default WITHOUT adding
+the key - or NIL with no default (hk194) - so the HGet-miss
+dialog family never arises here. hb_HSetDef is an expression
+with an effect: an absent key is added (the default, or NIL
+with none) and returned; a present key returns its stored value
+and is overwritten ONLY when the stored Dyn tag differs from
+the default's (hk196: same tag keeps; hk196b: stored NIL +
+integer default overwrites; hk196d - measured this iteration:
+a present key with NO default is always kept). hb_HCopy is a
+statement that upserts the src range [start, start+count) into
+dst through hbc_hput: new keys append, existing ones are
+overwritten, untouched dst entries survive (hk195); start
+0/missing is 1, start > len and count 0 are no-ops, a long
+count clips at len (hk195b/hk195c). A NEGATIVE start is
+Harbour's BASE/1123 dialog family (hk195d, probed this
+iteration) - the registered clean bound-error exit, never a
+compat target. hb_HCopy(h, h) - Harbour's runtime self-copy
+error 9020 (hk195b) - is a named COMPILE-TIME rejection in
+this dialect, since aliases cannot arise. New helpers:
+hbc_hsetdef (frame-based; the add/keep/overwrite decision via
+hbc_hget + hbc_hput) and hbc_hcopy (frame-based; the ranged
+upsert loop over hbc_hput); hb_HGetDef needs no helper - its
+codegen calls hbc_hget and falls back to the saved default
+cells on a miss. t589 reproduces hk194 (hit, miss with and
+without default, no auto-add); t590 the owned-key-copy path
+(ks[i] borrowed and freed, wrap + memcheck = 0); t591 a
+Dyn-cell default from an array element; t592 hk196; t593
+hk196b (NIL overwrite, NIL add without default); t594 hk196d
+(present key, no default); t595 hk195 (slice, edges, upsert);
+t596/t597 hk195b/hk195c (no-op edges, clip); t598 the named
+self-copy rejection.
+
+Battery: 594/594 manifest cases on Linux x86-64 and Wine, plus
+the ABI harness.
+
 Iteration 60 adds hb_HClear(h) and hb_HFill(h, value) (core
 hb_HClear / hb_HFill; oracles hk191-hk193): hb_HClear empties the
 hash - every key copy is freed, the data block is released and the
@@ -1397,8 +1436,6 @@ check (clear of owned key copies, wrap + memcheck = 0, own check);
 t587/t588 are the named rejections (non-hash clear target,
 non-scalar fill value).
 
-Battery: 584/584 manifest cases on Linux x86-64 and Wine, plus
-the ABI harness.
 
 Iteration 59 adds hb_HDelAt(h, n) (core hb_HDelAt; oracles
 hk187-hk190): removes the entry AT the 1-based insertion-order
