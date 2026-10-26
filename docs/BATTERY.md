@@ -2911,3 +2911,17 @@ Tests: t829-t832 positive (hk378-hk381 mirrors). The old t33 negative
 lock-in is superseded: its program is natively valid (oracle hk382, rc=0
 empty output), so the row flips neg -> pos in place - same maneuver as
 t666 in 63zm. Battery: 827 rows + ABI.
+
+## 63zo - QOut statement
+
+Oracle hk383 (pinned hbmk2 -gtstd, in `sondas/`): on this build QOut is
+BYTE-IDENTICAL to `?` - leading newline per call, space-separated items,
+numbers width-padded, `QOut()` prints a blank line. It desugars in the
+parser to the existing `Stmt::Print(..., false)`; checker, both codegens
+and the ABI are untouched. Named limit: expression-position QOut (it
+returns NIL in Harbour) stays on the unknown-function path.
+
+Effect: comments.prg (a natively-valid original) compiles and runs
+byte-exact against stock Harbour on Linux. Sweep 11 -> 12 COMPILES.
+
+Tests: t833 positive (hk383 mirror). Battery: 828 rows + ABI.
