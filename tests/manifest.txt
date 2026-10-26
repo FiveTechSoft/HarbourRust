@@ -714,3 +714,7 @@ pos tests/t716_while_dyn_cond.hb \n.F.\nafter\n.T.\nin\nafter
 posx tests/t717_while_dyn_int.hb 1 \n         0Type error: condition is not a logical\n
 posx tests/t718_dyn_pin_int_nil_call.hb 1 \n.T.\n.F.Type error: NIL used as a number\n
 neg tests/t719_dyn_pin_str_nil_call_neg.hb must be a string, got a dynamic value
+pos tests/t720_qq_basic.hb abcd\nef        42\ngh
+pos tests/t721_qq_multiargs.hb a b          1          2\nc d
+pos tests/t722_qq_logical.hb .T..F.\nend
+pos tests/t723_qq_bare.hb \na\nb
