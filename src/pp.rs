@@ -807,6 +807,73 @@ pub fn parse_define(arg: &str, line: usize) -> Result<(String, Vec<String>, Stri
     Ok((name, Vec::new(), body, false))
 }
 
+
+// Last non-whitespace character of a line (for the continuation guard).
+fn raw_last_non_ws(s: &str) -> Option<char> {
+    s.chars().rev().find(|c| !c.is_whitespace())
+}
+
+// Harbour comment forms (oracle family hk211, own probes, no Harbour code):
+// `//` and `&&` run to end of line; `*` as the first non-whitespace
+// character comments the whole line (leading whitespace allowed, hk211b);
+// `/* ... */` blocks may sit mid-line (hk211c) and span lines (hk211f), do
+// NOT nest (hk211: the first `*/` closes the block), and code may follow
+// the closing `*/` on the same line (hk211g). Markers inside string
+// literals are data (hk211g). An unterminated block at EOF is a compile
+// error (hk211h, Harbour E0023); the line cited is the opening line.
+fn strip_line(raw: &str, in_block: &mut bool, block_line: &mut usize, line: usize) -> String {
+    let t = raw.trim_start();
+    if !*in_block && t.starts_with('*') {
+        return String::new();
+    }
+    let mut out = String::with_capacity(raw.len());
+    let mut it = raw.chars().peekable();
+    let mut in_str: Option<char> = None;
+    while let Some(c) = it.next() {
+        if *in_block {
+            if c == '*' && it.peek() == Some(&'/') {
+                it.next();
+                *in_block = false;
+            }
+            continue;
+        }
+        match in_str {
+            Some(q) => {
+                out.push(c);
+                if c == q {
+                    in_str = None;
+                }
+            }
+            None => match c {
+                '"' | '\'' => {
+                    in_str = Some(c);
+                    out.push(c);
+                }
+                '/' => {
+                    if it.peek() == Some(&'/') {
+                        break;
+                    }
+                    if it.peek() == Some(&'*') {
+                        it.next();
+                        *in_block = true;
+                        *block_line = line;
+                    } else {
+                        out.push(c);
+                    }
+                }
+                '&' => {
+                    if it.peek() == Some(&'&') {
+                        break;
+                    }
+                    out.push(c);
+                }
+                _ => out.push(c),
+            },
+        }
+    }
+    out
+}
+
 pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Result<(), String> {
     if depth > 16 { return Err("too many nested #include levels".to_string()); }
     let text = fs::read_to_string(path).map_err(|e| format!("cannot read {}: {}", path, e))?;
@@ -818,10 +885,22 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
     // a syntax error in Harbour - b39c). The joined statement reports its
     // first line's number.
     let raws: Vec<&str> = text.lines().collect();
+    // Strip comments before any directive or continuation processing, the
+    // same point Harbour's own reader drops them. Line count is preserved
+    // (a stripped line keeps its newline) so reported line numbers stay put.
+    let mut in_block = false;
+    let mut block_line = 0usize;
+    let mut stripped: Vec<String> = Vec::with_capacity(raws.len());
+    for (idx, raw) in raws.iter().enumerate() {
+        stripped.push(strip_line(raw, &mut in_block, &mut block_line, idx + 1));
+    }
+    if in_block {
+        return Err(format!("line {}: unterminated /* */ comment", block_line));
+    }
     let mut li = 0usize;
     while li < raws.len() {
         let line = li + 1;
-        let mut joined = raws[li].to_string();
+        let mut joined = stripped[li].clone();
         loop {
             let mut in_str = false;
             let mut q = '"';
@@ -835,13 +914,19 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                 if !ch.is_whitespace() { last_non_ws = Some(ch); }
             }
             if in_str || last_non_ws != Some(';') { break; }
+            // b39c guard: anything after the `;`, even a comment, is a
+            // syntax error in Harbour. If stripping removed a comment that
+            // FOLLOWED the semicolon on this line, do not join: leave the
+            // dangling `;` for the lexer to reject, exactly as before
+            // comment stripping existed.
+            if stripped[li].len() != raws[li].len() && raw_last_non_ws(raws[li]) != Some(';') { break; }
             if li + 1 >= raws.len() { break; } // dangling `;` at EOF: leave it; the lexer reports it
             joined.pop(); // the ';' itself (it is the last char only if no trailing ws)
             while joined.ends_with(|c: char| c.is_whitespace()) { joined.pop(); }
             if joined.ends_with(';') { joined.pop(); }
             joined.push(' ');
             li += 1;
-            joined.push_str(raws[li].trim_start());
+            joined.push_str(stripped[li].trim_start());
         }
         let raw = joined.as_str();
         let t = raw.trim_start();
