@@ -1420,11 +1420,35 @@ a named compile-time error, not a silent keyword; trailing tokens
 after an expression stay the generic parser error; a logical compared
 against a non-logical under `=`/`#`/`==` is Harbour's BASE/1071
 (hk202) and stays a compile-time rejection here. Ordering comparisons
-on logicals are unmeasured and stay rejected. Dyn tagged logical cells
-(array/hash elements holding .T.) are measured (hk201) but deferred
-to the next increment: registered as 62b. Parameter inference is
+on logicals are unmeasured and stay rejected. Parameter inference is
 body-only, so a bare returned logical parameter is not inferable
 (registered limit; t602 shapes the identity through `.AND. .T.`).
+
+Iteration 62b closes the Dyn side of logicals (oracles hk201 and
+hk205-hk208e, same pinned core): array and hash casillas carry a new
+tag 3 (logical), so a tagged cell can hold .T./.F. end to end. The
+write paths tag it: AAdd growth, casilla overwrite (a[i] := .T.,
+h[k] := .T.), hash literals ({ "a" => .T. }), hb_HSetDef values,
+hb_HGetDef defaults, hb_HScan search values and hb_HFill fill values.
+A flat literal mixing logicals and integers ({ .T., .F., 1 })
+materializes as a dynamic tagged array (hk201) - restricted to all-
+literal elements in this increment, a registered limit. The read
+paths honor it: printing shows .T./.F., ValType says "L" (hash
+casillas included; an absent key classifies "U", Harbour's ValType
+of a missing key), hb_HClone and hb_HValues preserve logical cells,
+and hb_HCopy (source first, hk208e) copies them. Two runtime fixes
+came with the tag: hbc_dyn_eq compared only tags for nonzero
+non-string tags, so .T. = .F. was wrongly .T. - it now compares
+payloads (t608 pins both directions); and a Dyn in condition
+position (IF/WHILE, .AND./.OR./.NOT. operands, the condition of a
+comparison-free jump) materializes through a new hbc_dyn_to_log:
+NIL is .F., a logical keeps its payload, an integer or string cell
+is a type error like Harbour. A Dyn compared against a logical
+(`h["b"] = .T.`) dispatches at runtime through the same equality
+helper. The 62 scope note stands: the builtin flag APIs (hb_HHasKey,
+hb_HCaseMatch, IsAlpha and family) KEEP their registered 1/0
+integer surface - hk205's hb_HHasKey prints .T. in Harbour, 1 here,
+registered.
 Scope note: the logical type covers literals, comparisons and the
 dotted operators - the builtin flag APIs (hb_HHasKey, hb_HCaseMatch,
 IsAlpha and family) KEEP their registered 1/0 integer surface (their
@@ -1437,10 +1461,15 @@ t599 reproduces hk197 (literals, printing, ValType); t600 hk198
 (comparisons produce logicals); t601 hk203 (short-circuit by
 effects); t602 hk204 (parameters and returns); t606 hk199c/hk200
 (case-insensitive dotted forms, .NOT..F.); t607 a logical variable
-reassigned and branched on; t603/t604/t605 pin the three rejection
+reassigned and branched on; t608 hk201 (mixed literal, Dyn logical
+equality both ways); t609 hk205 (hash writes and comparisons);
+t610 hk206 (hb_HSetDef overwrite on tag difference, hb_HScan finds
+a logical); t611 hk207 (hb_HClone/hb_HValues preserve logicals);
+t612 the AAdd/ArrSet part of hk208; t613 hk208e (hb_HCopy source-
+first, hb_HFill with a logical); t603/t604/t605 pin the three rejection
 families.
 
-Battery: 604/604 manifest cases on Linux x86-64 and Wine, plus
+Battery: 610/610 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
 
 
