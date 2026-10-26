@@ -1420,6 +1420,63 @@ hbc_abi_test:
     mov $1, %esi
     call hbc_hfree
     call abi_check
+    # hbc_strgrow (63h): realloc path frees the old buffer itself and
+    # doubles capacity (max(2*cap, needed)); the in-place path returns the
+    # SAME pointer; header cap at -16, len at -8; hbc_freestr releases the
+    # final buffer (registry-validated). strcpy("ab") starts cap==len==2.
+    lea .Lsg_a(%rip), %rdi
+    mov $2, %esi
+    call hbc_strcpy
+    mov %rax, -104(%rbp)
+    call abi_check
+    # grow 1: need 8 > cap 2 -> realloc, cap = max(4, 8) = 8, len 8
+    mov -104(%rbp), %rdi
+    lea .Lsg_b(%rip), %rsi
+    mov $6, %edx
+    call hbc_strgrow
+    mov %rax, -104(%rbp)
+    call abi_check
+    cmp $8, %rdx
+    jne abi_fail_sg
+    mov -104(%rbp), %rax
+    cmpq $8, -16(%rax)
+    jne abi_fail_sg
+    cmpq $8, -8(%rax)
+    jne abi_fail_sg
+    # grow 2: need 9 > cap 8 -> realloc, cap = max(16, 9) = 16
+    mov -104(%rbp), %rdi
+    lea .Lsg_c(%rip), %rsi
+    mov $1, %edx
+    call hbc_strgrow
+    mov %rax, -104(%rbp)
+    call abi_check
+    mov -104(%rbp), %rax
+    cmpq $16, -16(%rax)
+    jne abi_fail_sg
+    # grow 3: need 11 <= cap 16 -> IN PLACE, same data pointer
+    mov %rax, -112(%rbp)
+    mov -104(%rbp), %rdi
+    lea .Lsg_d(%rip), %rsi
+    mov $2, %edx
+    call hbc_strgrow
+    cmp %rax, -112(%rbp)
+    jne abi_fail_sg
+    cmp $11, %rdx
+    jne abi_fail_sg
+    mov %rax, -104(%rbp)
+    call abi_check
+    # content: "ab" + "cdefgh" + "x" + "yz" = "abcdefghxyz"
+    mov -104(%rbp), %rax
+    mov $11, %edx
+    lea .Lsg_full(%rip), %rcx
+    mov $11, %r8d
+    call hbc_str_eq
+    cmp $1, %rax
+    jne abi_fail_sg
+    call abi_check
+    mov -104(%rbp), %rdi
+    call hbc_freestr
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -1586,6 +1643,10 @@ abi_fail_hcp:
     lea .Labi_f_hcp(%rip), %rax
     mov $13, %edx
     jmp abi_fail_common
+abi_fail_sg:
+    lea .Labi_f_sg(%rip), %rax
+    mov $13, %edx
+    jmp abi_fail_common
 abi_fail_common:
     call hbc_print_str
 ASM_EOF
@@ -1638,6 +1699,12 @@ ASM_EOF
 .Labi_f_hcp: .ascii "ABI FAIL hcp\n"
 .Labi_f_de: .ascii "ABI FAIL deq\n"
 .Labi_f_sc: .ascii "ABI FAIL cat\n"
+.Labi_f_sg: .ascii "ABI FAIL grw\n"
+.Lsg_a:    .ascii "ab"
+.Lsg_b:    .ascii "cdefgh"
+.Lsg_c:    .ascii "x"
+.Lsg_d:    .ascii "yz"
+.Lsg_full: .ascii "abcdefghxyz"
 .Labi_f_dl: .ascii "ABI FAIL d2l\n"
 .Labi_s3:    .ascii "abc"
 .Labi_s6:    .ascii "abcdef"
