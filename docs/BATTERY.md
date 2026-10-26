@@ -1139,14 +1139,26 @@ NIL casilla .T., .F. after a write). No new leaf helper: the
 constant folds and the hbc_dyn_eq tag dispatch already answer these
 shapes; the execution cases run on both targets.
 
-t496/t497 (iteration 39): `==` identity extended to nested dynamic
-array variables (oracle hk130: a==a .T., a==b .F. - same slot-pointer
-compare as the one-level case; the first qword of the frame slot is
-the heap pointer at every implemented depth) and to codeblock
-variables (oracle hk131: x==x .T., x==y .F. for distinct literals;
-the 8-byte slot holds the per-literal pointer; same arity only - the
-measured shape). No new helper; the pointer-compare arm is
-instruction-level and shared.
+t496/t498/t499 (iterations 39/39b): `==` identity extended to
+nested dynamic array variables (oracle hk130 for depth 2, hk135
+for depths 3 and 4: a==a .T., a==b .F. - same slot-pointer compare
+as the one-level case; the first qword of the frame slot is the
+heap pointer at every implemented depth). hk130's third shape
+(a==c after c:=a) is unreachable by design - assignment MOVES
+(difference family D5/D7) - so t496 covers only the same-variable
+and distinct-variable shapes; the oracle label must not be read as
+the alias case passing.
 
-493/493 manifest cases + ABI harness green on Linux x86-64 and Wine
+t497 (iteration 39, retracted at 39b): `==` on same-arity codeblock
+variables was admitted on hk131 (x==x .T., x==y .F. for distinct
+literals) and RETRACTED when hk136/hk137 showed Harbour's block
+identity is per EVALUATION (make()==make() .F.; the same literal
+assigned in two loop iterations is .F.) while our slot holds a
+per-literal STATIC pointer that would answer .T. there. Those
+shapes are unreachable in today's dialect (blocks cannot be
+returned, Dyn cannot be reassigned to Block), but admitting the
+operator would bake in a model known to diverge. t497 is now a
+negative case carrying the named rejection; no helper changed.
+
+495/495 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
