@@ -1664,6 +1664,34 @@ hbc_abi_test:
     cmp %rax, %rdx
     jne abi_fail_xmm
     call abi_check
+    # hbc_round canary (63zp, new symbol): n in %xmm0, raw d in %rdi;
+    # result pair %xmm0 + PACKED %rdi (dec | length<<16). Round(1.005, 2)
+    # = 1.01 exactly (the HB_DBLFL_PREC_FACTOR ulp-lift case, hk386).
+    # xmm6/xmm7 sentinels survive; abi_check owns rbx/r12-r15/stk.
+    movabs $0x3ff0147ae147ae14, %rax
+    movq %rax, %xmm0
+    mov $2, %edi
+    movabs $0x2121212121212101, %rax
+    movq %rax, %xmm6
+    movabs $0x2222222222222202, %rax
+    movq %rax, %xmm7
+    call hbc_round
+    movabs $0x3ff028f5c28f5c29, %rax
+    movq %xmm0, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_round
+    mov $655362, %eax
+    cmp %rax, %rdi
+    jne abi_fail_round
+    movabs $0x2121212121212101, %rax
+    movq %xmm6, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    movabs $0x2222222222222202, %rax
+    movq %xmm7, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    call abi_check
     # hbc_print_i64c (63zf, new entry): computed integer field. Positive
     # small, positive at and over the 9999999999 threshold, negative at
     # and over the -999999999 threshold, and the Dyn numeric payload path
@@ -1867,6 +1895,10 @@ abi_fail_xmm:
     lea .Labi_f_xmm(%rip), %rax
     mov $12, %edx
     jmp abi_fail_common
+abi_fail_round:
+    lea .Labi_f_round(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
 abi_fail_common:
     call hbc_print_str
 ASM_EOF
@@ -1927,6 +1959,7 @@ ASM_EOF
 .Lsg_full: .ascii "abcdefghxyz"
 .Labi_f_t4: .ascii "ABI FAIL t4\n"
 .Labi_f_xmm: .ascii "ABI FAIL xmm\n"
+.Labi_f_round: .ascii "ABI FAIL rnd\n"
 .Lt4_a:    .ascii "abc"
 .Lt4_b:    .ascii "abc"
 .Lt4_c:    .ascii "abd"
