@@ -317,6 +317,126 @@ hbc_abi_test:
     mov $7, %esi
     call hbc_free
     call abi_check
+    # hbc_dyn_eq (iteration 44): regressions of the original branches
+    # plus the NEW string-content branch, which tail-calls hbc_str_eq -
+    # canaries (rbx/r12-r15), stack balance and 16-alignment must survive
+    # every call, checked after EACH one. int x int:
+    xor %eax, %eax
+    mov $7, %edx
+    xor %ecx, %ecx
+    mov $7, %r8d
+    call hbc_dyn_eq
+    cmp $1, %rax
+    jne abi_fail_de
+    call abi_check
+    xor %eax, %eax
+    mov $7, %edx
+    xor %ecx, %ecx
+    mov $8, %r8d
+    call hbc_dyn_eq
+    test %rax, %rax
+    jnz abi_fail_de
+    call abi_check
+    # NIL x NIL is 1, NIL x int is 0:
+    mov $1, %eax
+    xor %edx, %edx
+    mov $1, %ecx
+    xor %r8d, %r8d
+    call hbc_dyn_eq
+    cmp $1, %rax
+    jne abi_fail_de
+    call abi_check
+    mov $1, %eax
+    xor %edx, %edx
+    xor %ecx, %ecx
+    mov $7, %r8d
+    call hbc_dyn_eq
+    test %rax, %rax
+    jnz abi_fail_de
+    call abi_check
+    # string x NIL is 0 (hk147 branch):
+    mov $2, %eax
+    xor %edx, %edx
+    mov $1, %ecx
+    xor %r8d, %r8d
+    call hbc_dyn_eq
+    test %rax, %rax
+    jnz abi_fail_de
+    call abi_check
+    # string x string: equal content in two DISTINCT heap blocks is 1
+    # (content compare via the hbc_str_eq tail call, not pointer):
+    lea .Labi_s3(%rip), %rdi
+    mov $3, %esi
+    call hbc_strcpy
+    mov %rax, -16(%rbp)
+    call abi_check
+    lea .Labi_s3(%rip), %rdi
+    mov $3, %esi
+    call hbc_strcpy
+    mov %rax, -48(%rbp)
+    call abi_check
+    mov $2, %eax
+    mov -16(%rbp), %rdx
+    mov $2, %ecx
+    mov -48(%rbp), %r8
+    call hbc_dyn_eq
+    cmp $1, %rax
+    jne abi_fail_de
+    call abi_check
+    # different content is 0:
+    mov -48(%rbp), %rax
+    movb $0x21, (%rax)
+    mov $2, %eax
+    mov -16(%rbp), %rdx
+    mov $2, %ecx
+    mov -48(%rbp), %r8
+    call hbc_dyn_eq
+    test %rax, %rax
+    jnz abi_fail_de
+    call abi_check
+    mov -16(%rbp), %rdi
+    mov $3, %esi
+    call hbc_free
+    call abi_check
+    mov -48(%rbp), %rdi
+    mov $3, %esi
+    call hbc_free
+    call abi_check
+    # prefix rule (hk145): "abcdef" = "abc" is 1, the mirror is 0:
+    lea .Labi_s6(%rip), %rdi
+    mov $6, %esi
+    call hbc_strcpy
+    mov %rax, -16(%rbp)
+    call abi_check
+    lea .Labi_s3(%rip), %rdi
+    mov $3, %esi
+    call hbc_strcpy
+    mov %rax, -48(%rbp)
+    call abi_check
+    mov $2, %eax
+    mov -16(%rbp), %rdx
+    mov $2, %ecx
+    mov -48(%rbp), %r8
+    call hbc_dyn_eq
+    cmp $1, %rax
+    jne abi_fail_de
+    call abi_check
+    mov $2, %eax
+    mov -48(%rbp), %rdx
+    mov $2, %ecx
+    mov -16(%rbp), %r8
+    call hbc_dyn_eq
+    test %rax, %rax
+    jnz abi_fail_de
+    call abi_check
+    mov -16(%rbp), %rdi
+    mov $6, %esi
+    call hbc_free
+    call abi_check
+    mov -48(%rbp), %rdi
+    mov $3, %esi
+    call hbc_free
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -399,6 +519,10 @@ abi_fail_xd:
     lea .Labi_f_xd(%rip), %rax
     mov $11, %edx
     jmp abi_fail_common
+abi_fail_de:
+    lea .Labi_f_de(%rip), %rax
+    mov $13, %edx
+    jmp abi_fail_common
 abi_fail_common:
     call hbc_print_str
 ASM_EOF
@@ -431,6 +555,9 @@ ASM_EOF
 .Labi_f_xd:  .ascii "ABI FAIL xd\n"
 .Labi_k1:    .ascii "ab"
 .Labi_k2:    .ascii "c"
+.Labi_f_de: .ascii "ABI FAIL deq\n"
+.Labi_s3:    .ascii "abc"
+.Labi_s6:    .ascii "abcdef"
 ASM_EOF
 }
 
