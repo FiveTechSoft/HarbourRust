@@ -1200,5 +1200,11 @@ stay a named rejection. No compiler change - the Str x Str path
 already shipped at iteration 37; these tests close the hk132/hk133
 story with execution on both targets.
 
-505/505 manifest cases + ABI harness green on Linux x86-64 and Wine
+t510-t512 (iteration 44): `=`/`#` between two Dyn casillas - string x
+string by content with the prefix rule (hk145, fixes an always-.T.
+tag-only bug in hbc_dyn_eq), string x integer a clean named exit 1
+mirroring BASE/1071 (hk146 - dialog hangs headless; registered failure
+mode), string x NIL .F. in both directions (hk147).
+
+508/508 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
