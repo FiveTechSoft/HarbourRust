@@ -529,3 +529,8 @@ pos tests/t531_hget_default_eval.hb \n         7\n         1\n         7\nNIL
 pos tests/t532_hset.hb \n         2\n         2\n         2\n         9\nNIL\n         3
 pos tests/t533_hset_order.hb \n         1\n         2\n         3\n         0
 neg tests/t534_neg_hset_type.hb hb_HSet expects a hash
+pos tests/t535_hget_owned_key.hb \n         5\n         5\n         0\n         0
+neg tests/t536_neg_hget_default_str.hb the hb_HGet default is an integer in this increment
+neg tests/t537_neg_hget_default_strown.hb the hb_HGet default is an integer in this increment
+neg tests/t538_neg_hget_default_darr.hb the hb_HGet default is an integer in this increment
+neg tests/t539_neg_hget_default_hash.hb the hb_HGet default is an integer in this increment
