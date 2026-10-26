@@ -901,6 +901,69 @@ hbc_abi_test:
     mov $1, %esi
     call hbc_hfree
     call abi_check
+    # hbc_hfill canary (iteration 60): a fresh 2-entry hash
+    # {"ab"=>7, "c"=>9} gets every value overwritten with
+    # {tag 0, payload 42}; keys, count and insertion order survive
+    # (hk192). Leaf helper, no allocation: canaries, stack balance
+    # and alignment after the call.
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    lea .Labi_k1(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $7, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea .Labi_k2(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $1, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $9, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea -96(%rbp), %rdi
+    xor %esi, %esi
+    mov $42, %edx
+    call hbc_hfill
+    call abi_check
+    cmpq $2, -88(%rbp)
+    jne abi_fail_hf
+    mov -96(%rbp), %rax
+    cmpq $42, 24(%rax)
+    jne abi_fail_hf
+    cmpq $42, 56(%rax)
+    jne abi_fail_hf
+    mov (%rax), %rcx
+    cmpb $97, (%rcx)
+    jne abi_fail_hf
+    mov 32(%rax), %rcx
+    cmpb $99, (%rcx)
+    jne abi_fail_hf
+    # hbc_hclear canary (iteration 60): the filled 2-entry hash
+    # empties: the slot goes to (0, 0), the key copies and the data
+    # block are released (the instrumented registry verifies every
+    # free) and the hash stays reusable (hk191/hk193). Clearing an
+    # empty slot is a no-op. Frame-based (hbc_free/hbc_hfreeblock):
+    # canaries, stack balance and alignment after the call.
+    lea -96(%rbp), %rdi
+    call hbc_hclear
+    call abi_check
+    cmpq $0, -96(%rbp)
+    jne abi_fail_hcl
+    cmpq $0, -88(%rbp)
+    jne abi_fail_hcl
+    lea -96(%rbp), %rdi
+    call hbc_hclear
+    call abi_check
     # hbc_hmerge canary (iteration 54): dst {ab=>7} + src {ab=>9, c=>5}
     # leaves dst with the source winning in place and the new key
     # appended (hk164); the source keeps its 2 entries (hk165).
@@ -1229,6 +1292,14 @@ abi_fail_hda:
     lea .Labi_f_hda(%rip), %rax
     mov $13, %edx
     jmp abi_fail_common
+abi_fail_hf:
+    lea .Labi_f_hf(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
+abi_fail_hcl:
+    lea .Labi_f_hcl(%rip), %rax
+    mov $13, %edx
+    jmp abi_fail_common
 abi_fail_hm:
     lea .Labi_f_hm(%rip), %rax
     mov $12, %edx
@@ -1278,6 +1349,8 @@ ASM_EOF
 .Labi_f_hs:  .ascii "ABI FAIL hs\n"
 .Labi_f_hka: .ascii "ABI FAIL hka\n"
 .Labi_f_hda: .ascii "ABI FAIL hda\n"
+.Labi_f_hf:  .ascii "ABI FAIL hf\n"
+.Labi_f_hcl: .ascii "ABI FAIL hcl\n"
 .Labi_f_hm:  .ascii "ABI FAIL hm\n"
 .Labi_f_hc:  .ascii "ABI FAIL hc\n"
 .Labi_f_de: .ascii "ABI FAIL deq\n"
