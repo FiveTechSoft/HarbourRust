@@ -1222,9 +1222,10 @@ exercise, exactly as measured in hk141/hk143.
 
 Hash VARIABLES also answer identity (iteration 41; hk134: h==h .T.,
 h==k .F. even with equal contents - same slot-pointer model as the
-arrays; t505). The BASE/1070 failure mode covers both operand orders
-(hk142: casilla == int; hk144: int == casilla - both hang headless;
-t504/t506 posx).
+arrays; t505). The BASE/1070 failure mode covers every measured
+mixed order (hk142: string casilla == int; hk144: int == string
+casilla; hk139b: numeric casilla == string literal - all hang
+headless; t504/t506/t507 posx).
 
-Battery: 502/502 manifest cases on Linux x86-64 and Wine, plus
+Battery: 503/503 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
