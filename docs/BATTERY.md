@@ -2954,3 +2954,24 @@ unknown function `round` (line 10) to the named type-mismatch (line 11).
 Tests: t834/t835 positive (hk384/hk386 mirrors), t836/t837 negative.
 Battery: 832 rows + ABI. New symbols get ABI canaries: hbc_round covered
 by tests/abi_harness.sh (63zp iteration).
+
+Runtime dec route (63zp addendum): `round` accepts a non-literal dec
+(t835: `local d := 2`, byte-exact vs hk386). The hbc_round helper guards
+BOTH signs before touching the pow10 table: `cmp $15,%rdi; jg` and
+`cmp $-15,%rdi; jl` jump to hbc_round_range_error (linux + windows),
+which prints "Error: round dec out of range" and exits 1. The table is
+never indexed out of range and no out-of-range dec is silently computed.
+Harbour itself falls back to pow(10,d) beyond +/-15 (hb_numPow10,
+src/common/hbstr.c:400) - that zone stays a registered limit, same as
+the compile-time literal rejection (t837). Runtime guards: t838 (d:=16),
+t839 (d:=-16), both exit 1 with the named message on both targets.
+
+round.prg verification (63zp addendum): the `value` local is declared
+`value := -5` (integer) and then `value += 0.001` promotes it to double
+inside the FOR loop - in Harbour it is one variant changing type across
+iterations. That is exactly the Dyn-hoja model (order-dependent dynamic
+local), not a static-typing gap the pinned-scalar representation can
+absorb: hoisting the declaration to F64 would change the typing rule
+itself (order-independent inference) and alter the first column's
+integer-format print. So the line-11 named mismatch stays the documented
+limit; it is a model boundary, not a pending user approval.
