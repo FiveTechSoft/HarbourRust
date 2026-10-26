@@ -1410,7 +1410,7 @@ dialog hangs headless) and takes the registered clean bound-error
 exit - not a silent "U" read. Registered limit: a mixed literal must be all
 literal elements.
 
-615/615 manifest cases + ABI harness green on Linux x86-64 and Wine
+618/618 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
 
 t619 (iteration 63a): PROCEDURE keyword + case-insensitive
@@ -1419,3 +1419,16 @@ casing of two existing neg messages, t88 and t603, follows the
 normalization - same errors, same semantics). Upstream hello.prg
 compiles and runs byte-identical to Harbour (the first of the
 frozen 175). Forward references stay the next registered blocker.
+
+t620-t622 (iteration 63b): Harbour comment forms, measured by oracle
+family hk211 (own probes, no Harbour code): `//` and `&&` to end of
+line, `*` as first non-whitespace character (leading whitespace
+allowed, hk211b), `/* ... */` blocks mid-line (hk211c) and spanning
+lines (hk211f), NON-nesting (the first `*/` closes), code after the
+closing `*/` on the same line (hk211g), markers inside string
+literals are data (hk211g), unterminated block at EOF is a compile
+error (hk211h, Harbour E0023; our message cites the opening line).
+Stripping runs inside the preprocessor over raw lines, before
+directives and `;` continuation joining, line-count preserving; the
+b39c guard (text after `;`, even a comment, is a syntax error) is
+kept: a comment stripped after a `;` blocks the join (t622).
