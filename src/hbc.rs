@@ -2389,11 +2389,17 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // copied into the frame (D5/D7 family), so an element
                 // compare would answer .T. where Harbour answers .F.
                 if ta == Ty::I64 && tb == Ty::I64 { return Ok(Ty::Bool); }
+                // Strings: `==` is the EXACT comparison (hk124: "a"=="a"
+                // .T., "a"=="a " .F., "a "=="a" .F.) - not the prefix
+                // rule of `=`. Codegen calls hbc_str_xeq.
+                if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) {
+                    return Ok(Ty::Bool);
+                }
                 if ta == Ty::DArr && tb == Ty::DArr
                     && matches!(&**a, Expr::Var(_)) && matches!(&**b, Expr::Var(_)) {
                     return Ok(Ty::Bool);
                 }
-                return Err(format!("line {}: `==` is measured only between two integers and between two one-level dynamic array variables in this increment (hk124/hk126); strings, static arrays, deeper dynamic arrays, codeblocks and NIL keep their named rejections (object identity oracles cl7/cl19 stay class-gated)", n));
+                return Err(format!("line {}: `==` is measured only between two integers, between two strings and between two one-level dynamic array variables in this increment (hk124/hk126); static arrays, deeper dynamic arrays, codeblocks and NIL keep their named rejections (object identity oracles cl7/cl19 stay class-gated)", n));
             }
             if matches!(op, CmpOp::Eq | CmpOp::Ne) {
                 let cas = |e: &Expr| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArr2 | Ty::DArr3)));
@@ -5212,6 +5218,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 if a_tmp { out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"); }
                 match op {
                     CmpOp::Eq | CmpOp::Ne => { out.push_str("    call hbc_str_eq\n"); }
+                    CmpOp::EqEq => { out.push_str("    call hbc_str_xeq\n"); }
                     _ => { out.push_str("    call hbc_str_cmp\n"); }
                 }
                 out.push_str(&format!("    mov %rax, {}(%rsp)\n", 16 * nt));
@@ -5220,10 +5227,15 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 out.push_str(&format!("    mov {}(%rsp), %rax\n    add ${}, %rsp\n", 16 * nt, 16 * (nt + 1)));
             }
             let j = match op {
-                CmpOp::Eq | CmpOp::Ne => {
-                    if !a_tmp && !b_tmp { out.push_str("    call hbc_str_eq\n"); }
+                CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq => {
+                    if !a_tmp && !b_tmp {
+                        match op {
+                            CmpOp::EqEq => out.push_str("    call hbc_str_xeq\n"),
+                            _ => out.push_str("    call hbc_str_eq\n"),
+                        }
+                    }
                     out.push_str("    test %rax, %rax\n");
-                    match op { CmpOp::Eq => "jnz", _ => "jz" }
+                    match op { CmpOp::Eq | CmpOp::EqEq => "jnz", _ => "jz" }
                 }
                 _ => {
                     // hbc_str_cmp returns -1, 0 or 1 (byte-wise, like memcmp)
@@ -7521,6 +7533,30 @@ hbc_str_eq:
     xor %eax, %eax
     ret
 
+# hbc_str_xeq: same inputs as hbc_str_eq. Returns %rax = 1 only when the
+# lengths match AND every byte matches - Harbour's exact `==` (hk124:
+# "a"=="a" .T., "a"=="a " .F., "a "=="a" .F.). Leaf routine: no calls,
+# only volatile registers.
+hbc_str_xeq:
+    cmp %r8, %rdx
+    jne 90f
+    xor %r9, %r9
+91:
+    cmp %r8, %r9
+    jae 92f
+    movzbl (%rax,%r9), %r10d
+    movzbl (%rcx,%r9), %r11d
+    cmp %r11b, %r10b
+    jne 90f
+    inc %r9
+    jmp 91b
+92:
+    mov $1, %eax
+    ret
+90:
+    xor %eax, %eax
+    ret
+
 # hbc_str_cmp: same inputs as hbc_str_eq. Returns %rax = -1, 0 or 1.
 # Harbour default (SET EXACT OFF) ordering: compare over the length of
 # the RIGHT operand only; the left operand is read NUL-padded past its
@@ -8326,6 +8362,30 @@ hbc_str_eq:
 94:
     xor %r11d, %r11d
 93:
+    cmp %r11b, %r10b
+    jne 90f
+    inc %r9
+    jmp 91b
+92:
+    mov $1, %eax
+    ret
+90:
+    xor %eax, %eax
+    ret
+
+# hbc_str_xeq: same inputs as hbc_str_eq. Returns %rax = 1 only when the
+# lengths match AND every byte matches - Harbour's exact `==` (hk124:
+# "a"=="a" .T., "a"=="a " .F., "a "=="a" .F.). Leaf routine: no calls,
+# only volatile registers.
+hbc_str_xeq:
+    cmp %r8, %rdx
+    jne 90f
+    xor %r9, %r9
+91:
+    cmp %r8, %r9
+    jae 92f
+    movzbl (%rax,%r9), %r10d
+    movzbl (%rcx,%r9), %r11d
     cmp %r11b, %r10b
     jne 90f
     inc %r9
