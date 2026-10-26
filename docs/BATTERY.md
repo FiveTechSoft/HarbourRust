@@ -2267,6 +2267,6 @@ printed field is also compared byte-exact in the harness stdout.
 ABI: the helper touches only xmm0-xmm2 (volatile on both ABIs), saves
 r12-r15, and makes one aligned call (hbc_print_str). Tests t725-t728
 (byte-exact vs hk278/hk281/hk282/hk283) + t729-t734 negs.
-BATTERY 720 -> 730 manifest lines (675 -> 685 unique test entries; the +10 delta is exactly t725-t734, nothing removed or rewritten, no duplicate IDs) + ABI ALL GREEN (Linux native and Wine with Linux
+BATTERY 720 -> 730 runner rows (63x: 453 pos + 45 posx + 232 neg; one manifest row = one executed test, 730 unique files, no duplicate IDs, no multi-expectation files; the +10 delta is exactly t725-t734, nothing removed or rewritten) + ABI ALL GREEN (Linux native and Wine with Linux
 oracle). Sweep: COMPILES 5 (nums.prg joins hello, statfun, lnlenli2,
 calling); ains.prg still converges to its named `aclone` blocker.
