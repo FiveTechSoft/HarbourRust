@@ -616,7 +616,7 @@ pos tests/t618_log_dyn_if_casilla.hb \nsi\nno2\ngiro
 pos tests/t619_procedure_kw.hb \n         7\n         8\n         1\nNIL
 pos tests/t620_comment_forms.hb \none\ntwo\nstr /* kept */ ok
 neg tests/t621_unterminated_block.hb unterminated /* */ comment
-neg tests/t622_semicolon_comment.hb U+003B
+pos tests/t622_semicolon_comment.hb \n         3
 pos tests/t623_bang_not.hb \n.F.\n.T.\n.T.\n.F.\nbranch
 pos tests/t624_single_quote_strings.hb \nsingle\nit has "double" inside\nand 'single' inside\nback \\ slash
 pos tests/t625_eq_assign.hb \n        42\neq\n        43
@@ -811,3 +811,10 @@ neg tests/t812_pow_arr_neg.hb `^` needs numeric operands
 neg tests/t813_set_callstmt_neg.hb unknown function `set`
 neg tests/t814_set_century_neg.hb SET commands are not in this increment
 neg tests/t815_set_printer_neg.hb SET commands are not in this increment
+pos tests/t816_cont_basic.hb \n         3\nabcdef
+pos tests/t817_cont_comment.hb \n         3
+pos tests/t818_cont_block.hb \n         3\n         7
+pos tests/t819_cont_chain.hb \n         6
+neg tests/t820_cont_code_after_neg.hb character not allowed `;`
+neg tests/t821_cont_string_neg.hb unterminated string
+neg tests/t822_cont_nomerge_neg.hb expected `local name [:= expr]`
