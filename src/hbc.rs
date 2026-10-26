@@ -3635,7 +3635,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
             Stmt::If(n, cond, then_s, else_s) => {
                 let ct = type_expr(cond, env, sigs, *n)?;
                 apply_moves(cond, env, sigs, false);
-                if ct != Ty::Bool {
+                if !matches!(ct, Ty::Bool | Ty::Dyn) {
                     return Err(format!("line {}: `if` needs a comparison (e.g. `if x >= 1`); a bare value is not a condition in this PoC", n));
                 }
                 let outer = env.len();
@@ -3651,7 +3651,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
             Stmt::While(n, cond, body) => {
                 let ct = type_expr(cond, env, sigs, *n)?;
                 apply_moves(cond, env, sigs, false);
-                if ct != Ty::Bool {
+                if !matches!(ct, Ty::Bool | Ty::Dyn) {
                     return Err(format!("line {}: `while` needs a comparison (e.g. `while x >= 1`); a bare value is not a condition in this PoC", n));
                 }
                 let outer = env.len();
