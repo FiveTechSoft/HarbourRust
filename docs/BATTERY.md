@@ -2270,3 +2270,29 @@ r12-r15, and makes one aligned call (hbc_print_str). Tests t725-t728
 BATTERY 720 -> 730 runner rows (63x: 453 pos + 45 posx + 232 neg; one manifest row = one executed test, 730 unique files, no duplicate IDs, no multi-expectation files; the +10 delta is exactly t725-t734, nothing removed or rewritten) + ABI ALL GREEN (Linux native and Wine with Linux
 oracle). Sweep: COMPILES 5 (nums.prg joins hello, statfun, lnlenli2,
 calling); ains.prg still converges to its named `aclone` blocker.
+
+## 63y - star-rule mapping and measured (int,dec) frontier (733 rows)
+
+Star overflow mapped with hk285-hk288 (published in sondas/). Harbour's
+`*` overflow is a value-dependent artifact of hb_itemStrBuf's
+digit-extraction loop (sequential modf*10 with a +0.01 fudge; a rounding
+carry that runs off the left edge of the field stars it): measured stars
+at (int,dec) = (14,2) (10,6) (11,5) (12,4) (13,3) (10,7) (15,1)
+(16,1-all-nines), measured printing at (14,1) (12,3) (11,4) (10,5)
+(9,7) (8,8) (5,11) (3,13) (9,6) (16,1) (17,1). The artifact zone is
+rejected, not imitated. Frontier is no longer |x| < 1e15: admitted is
+|x| < 1 with dec <= 17, or int+dec <= 15 with int <= 14, or int <= 9
+with int+dec = 16, or int <= 2 with int+dec = 17; nonzero |x| >= 1e-17;
+dec <= 17. Zero admitted.
+
+KNOWN DIVERGENCE CLASS (registered, fix in flight): for 16/17-written-
+significant-digit literals whose 16-significant rounding carries a 9-chain
+(9.999999999999999, 999.9999999999999, 99.99999999999999, ...), Harbour's
+error-accumulating sequential extraction rounds UP and prints the carry
+(10.000000000000000, 1000.0000000000000) while the current normalize-then-
+scale helper prints the double's exact rounding (9.999999999999998). Per
+the method-contrast rule the helper is being rewritten to Harbour's
+sequential-extraction method instead of narrowing scope. t735/t739 are
+parked OUT of the manifest (files kept) until the rewrite lands.
+t736/t737 (star zone neg) + t738 (mid-band, 8 prints) added.
+BATTERY 730 -> 733 runner rows (455 pos + 45 posx + 233 neg).
