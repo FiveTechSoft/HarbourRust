@@ -1569,12 +1569,21 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 }
             }
             Tok::Ident(id) => {
-                if id.eq_ignore_ascii_case("set") {
-                    // SET commands switch runtime state; SET DECIMALS
-                    // changes float metadata (oracle hk295: 10/3 prints
-                    // 3.3333 under `set decimals to 4`). This PoC fixes
-                    // SET DECIMALS at the Harbour default 2.
-                    return Err(format!("line {}: SET commands are not in this increment (SET DECIMALS is fixed at the Harbour default 2; oracle hk295)", n));
+                if id.eq_ignore_ascii_case("set") && !(toks.len() >= 2 && toks[1] == Tok::LParen) {
+                    // SET commands switch runtime state. Measured sweep
+                    // forms (63zk): SET PRINTER/DEVICE/ALTERNATE/MARGIN
+                    // belong to the output-routing subsystem (dev/longdev/
+                    // output), SET EXCLUSIVE to the RDD layer (rdd), SET
+                    // CENTURY to the date subsystem (say) - all parked
+                    // WITH their subsystems; a no-op accept would send
+                    // output to the wrong place silently. SET DECIMALS
+                    // stays fixed at the Harbour default 2 (oracle hk295:
+                    // 10/3 prints 3.3333 under `set decimals to 4`).
+                    // `Set(` with parens is the Set() FUNCTION call, not
+                    // a SET command - it falls through to the ordinary
+                    // call-statement path (dates2/dates3/directry/extend1/
+                    // say/vmasort were misclassified here before 63zk).
+                    return Err(format!("line {}: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)", n));
                 }
                 if toks.len() >= 2 && toks[1] == Tok::LBracket {
                     // a[i] := v, a[i][j] := v or a[i,j] := v (probe m2: the
