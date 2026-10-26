@@ -242,6 +242,7 @@ enum Stmt {
     HDel(usize, String, Expr), // hb_HDel(h, key) statement: remove the key's entry (hk155/hk156)
     HMerge(usize, String, String), // hb_HMerge(dst, src) statement: upsert every src entry into dst (hk164/hk165)
     HSet(usize, String, Expr, Expr), // hb_HSet(h, key, value) statement: functional hash write (hk159/hk161); the hash it returns is out of the statement surface (registered)
+    HSetCaseMatch(usize, String, Expr), // hb_HSetCaseMatch(h, flag) statement: set the hash's key-matching mode (hk169/hk170); the hash it returns is out of the statement surface (registered, like hb_HSet's)
     ArrSet(usize, String, Expr, Expr), // a[i] := expr (index is 1-based)
     ArrSet2(usize, String, Expr, Expr, Expr), // a[i][j] := expr / a[i,j] := expr
     ArrSet3(usize, String, Expr, Expr, Expr, Expr), // a[i][j][k] := expr
@@ -576,7 +577,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hclone",
+    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -968,7 +969,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     *i += 1;
                     continue;
                 }
-                if (is_builtin(&id, "aadd") || is_builtin(&id, "asize") || is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hset") || is_builtin(&id, "hb_hmerge")) && toks.len() >= 5 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen {
+                if (is_builtin(&id, "aadd") || is_builtin(&id, "asize") || is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hset") || is_builtin(&id, "hb_hmerge") || is_builtin(&id, "hb_hsetcasematch")) && toks.len() >= 5 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen {
                     // AAdd(a, x) / ASize(a, n) as a STATEMENT: in-place
                     // mutation of the named local (Harbour writes these as
                     // calls; the statement form is the PoC surface - probe
@@ -1031,6 +1032,8 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                             check_ident(v, n)?;
                             if is_builtin(&id, "hb_hdel") {
                                 out.push(Stmt::HDel(n, v.clone(), e));
+                            } else if is_builtin(&id, "hb_hsetcasematch") {
+                                out.push(Stmt::HSetCaseMatch(n, v.clone(), e));
                             } else if is_builtin(&id, "hb_hmerge") {
                                 // hb_HMerge(dst, src) as a STATEMENT
                                 // (hk164/hk165; the hash it returns is
@@ -1097,13 +1100,13 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                                 let i1 = it.next().unwrap();
                                 match (it.next(), it.next()) {
                                     (None, None) => {
-                                        if is_builtin(&id, "hb_hdel") { return Err(format!("line {}: hb_HDel takes a hash variable, not a subscript", n)); } else if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub(n, v, i1, e)); } else { out.push(Stmt::ASizeSub(n, v, i1, e)); }
+                                        if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hsetcasematch") { return Err(format!("line {}: `{}` takes a hash variable, not a subscript", n, id)); } else if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub(n, v, i1, e)); } else { out.push(Stmt::ASizeSub(n, v, i1, e)); }
                                     }
                                     (Some(i2), None) => {
-                                        if is_builtin(&id, "hb_hdel") { return Err(format!("line {}: hb_HDel takes a hash variable, not a subscript", n)); } else if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub2(n, v, i1, i2, e)); } else { out.push(Stmt::ASizeSub2(n, v, i1, i2, e)); }
+                                        if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hsetcasematch") { return Err(format!("line {}: `{}` takes a hash variable, not a subscript", n, id)); } else if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub2(n, v, i1, i2, e)); } else { out.push(Stmt::ASizeSub2(n, v, i1, i2, e)); }
                                     }
                                     (Some(i2), Some(i3)) => {
-                                        if is_builtin(&id, "hb_hdel") { return Err(format!("line {}: hb_HDel takes a hash variable, not a subscript", n)); } else if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub3(n, v, i1, i2, i3, e)); } else { out.push(Stmt::ASizeSub3(n, v, i1, i2, i3, e)); }
+                                        if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hsetcasematch") { return Err(format!("line {}: `{}` takes a hash variable, not a subscript", n, id)); } else if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub3(n, v, i1, i2, i3, e)); } else { out.push(Stmt::ASizeSub3(n, v, i1, i2, i3, e)); }
                                     }
                                     _ => unreachable!(),
                                 }
@@ -1136,15 +1139,15 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                                     return Err(format!("line {}: the first argument of `{}` must be a variable, a[i], a[i][j] or a[i][j][k]", n, id));
                                 }
                                 let i3 = parse_expr_tokens(head[rb2 + 2..head.len() - 1].to_vec(), n)?;
-                                if is_builtin(&id, "hb_hdel") {
-                                    return Err(format!("line {}: hb_HDel takes a hash variable, not a subscript", n));
+                                if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hsetcasematch") {
+                                    return Err(format!("line {}: hb_HDel / hb_HSetCaseMatch take a hash variable, not a subscript", n));
                                 } else if is_builtin(&id, "aadd") {
                                     out.push(Stmt::AAddSub3(n, v, i1, i2, i3, e));
                                 } else {
                                     out.push(Stmt::ASizeSub3(n, v, i1, i2, i3, e));
                                 }
-                            } else if is_builtin(&id, "hb_hdel") {
-                                return Err(format!("line {}: hb_HDel takes a hash variable, not a subscript", n));
+                            } else if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hsetcasematch") {
+                                return Err(format!("line {}: hb_HDel / hb_HSetCaseMatch take a hash variable, not a subscript", n));
                             } else if is_builtin(&id, "aadd") {
                                 out.push(Stmt::AAddSub2(n, v, i1, i2, e));
                             } else {
@@ -1154,8 +1157,8 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         [Tok::Ident(v), Tok::LBracket, rest @ .., Tok::RBracket] if !rest.is_empty() && !rest.iter().any(|t| matches!(t, Tok::LBracket | Tok::RBracket)) => {
                             check_ident(v, n)?;
                             let idx = parse_expr_tokens(rest.to_vec(), n)?;
-                            if is_builtin(&id, "hb_hdel") {
-                                return Err(format!("line {}: hb_HDel takes a hash variable, not a subscript", n));
+                            if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hsetcasematch") {
+                                return Err(format!("line {}: hb_HDel / hb_HSetCaseMatch take a hash variable, not a subscript", n));
                             } else if is_builtin(&id, "aadd") {
                                 out.push(Stmt::AAddSub(n, v.clone(), idx, e));
                             } else {
@@ -1805,6 +1808,13 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
                     walk(f, e, sigs, lit, pin, *n)?;
                 }
+                Stmt::HSetCaseMatch(n, id, e) => {
+                    // hb_HSetCaseMatch's target is a hash (hk169): pins
+                    // a parameter; the flag's integer shape is enforced
+                    // by the semantic pass.
+                    pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, *n)?;
+                }
                 Stmt::HSet(n, id, ke, ve) => {
                     // hb_HSet's target is a hash (hk159): pins a
                     // parameter; key and value shapes are enforced by
@@ -2319,6 +2329,20 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::Str | Ty::StrOwn) {
                     return Err(format!("line {}: hash keys are strings in this increment", n));
+                }
+                return Ok(Ty::I64);
+            }
+            if is_builtin(id, "hb_hcasematch") {
+                // hb_HCaseMatch(h): the hash's CaseMatch flag (hk169:
+                // default .T.; core hb_HCaseMatch). The hash is
+                // borrowed. The result is 1/0 (the dialect has no
+                // logical type; the oracle's .T./.F. is the registered
+                // boolean rendering family).
+                if args.len() != 1 {
+                    return Err(format!("line {}: `hb_HCaseMatch` takes exactly one argument", n));
+                }
+                if !matches!(&args[0], Expr::Var(_)) || type_expr(&args[0], env, sigs, n)? != Ty::Hash {
+                    return Err(format!("line {}: `hb_HCaseMatch` expects a hash variable (its slot is passed by address)", n));
                 }
                 return Ok(Ty::I64);
             }
@@ -3902,6 +3926,27 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
                 apply_moves(e, env, sigs, false);
             }
+            Stmt::HSetCaseMatch(n, id, e) => {
+                // hb_HSetCaseMatch(h, flag): the hash must be live
+                // (its slot goes by address; the helper only writes the
+                // header flag or grows a header-only block); the flag is
+                // an integer (1 sensitive, 0 insensitive - hk169) and
+                // moves nothing.
+                let kp = match env.iter().position(|v| v.name == *id) {
+                    Some(k) => k,
+                    None => return Err(format!("line {}: hb_HSetCaseMatch on undeclared variable `{}` (declare it with `local` first)", n, id)),
+                };
+                if env[kp].ty != Ty::Hash {
+                    return Err(format!("line {}: hb_HSetCaseMatch expects a hash variable in this increment", n));
+                }
+                if env[kp].moved {
+                    return Err(format!("line {}: use of moved value `{}`", n, id));
+                }
+                if type_expr(e, env, sigs, *n)? != Ty::I64 {
+                    return Err(format!("line {}: the hb_HSetCaseMatch flag is an integer in this increment (1 sensitive, 0 insensitive)", n));
+                }
+                apply_moves(e, env, sigs, true);
+            }
             Stmt::HSet(n, id, ke, ve) => {
                 // hb_HSet(h, key, value): the hash must be live, the key
                 // a string, the value a tagged scalar (integer or NIL) -
@@ -4247,6 +4292,12 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id, "hb_hpos") {
                 // The hash and the lookup key are BORROWED: hbc_hpos
                 // only reads them.
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
+            if is_builtin(id, "hb_hcasematch") {
+                // The hash is BORROWED: hbc_hcasematch only reads the
+                // slot and the block header.
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
@@ -4621,6 +4672,19 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 }
             } else {
                 unreachable!("checked: hb_HPos takes a hash variable");
+            }
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_hcasematch") => {
+            // hb_HCaseMatch(h): the slot goes by address; returns
+            // rax = the flag (1 sensitive, 0 insensitive; an untouched
+            // empty hash answers the default 1 - hk169).
+            if let Expr::Var(v) = &args[0] {
+                let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                out.push_str(&format!("    lea -{}(%rbp), %rdi
+    call hbc_hcasematch
+", var.off));
+            } else {
+                unreachable!("checked: hb_HCaseMatch takes a hash variable");
             }
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hget") => {
@@ -5278,6 +5342,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hkeys") { return Ty::DArrS; }
             if is_builtin(id, "hb_hhaskey") { return Ty::I64; }
             if is_builtin(id, "hb_hpos") { return Ty::I64; }
+            if is_builtin(id, "hb_hcasematch") { return Ty::I64; }
             if is_builtin(id, "hb_hget") { return Ty::Dyn; }
             if is_builtin(id, "hb_hvalues") { return Ty::DArr; }
             if is_builtin(id, "hb_hclone") { return Ty::Hash; }
@@ -6830,6 +6895,18 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let src = env.iter().rev().find(|x| x.name == *s).expect("checked");
                 out.push_str(&format!("    lea -{}(%rbp), %rdi\n    lea -{}(%rbp), %rsi\n    call hbc_hmerge\n", dst.off, src.off));
             }
+            Stmt::HSetCaseMatch(_, id, e) => {
+                // hb_HSetCaseMatch(h, flag): the flag evaluates first,
+                // then the slot address; the helper writes the header
+                // flag (allocating a header-only block when the hash has
+                // no block yet - hk176's empty-flagged case).
+                let var = env.iter().rev().find(|x| x.name == *id).expect("checked");
+                cg_value(e, env, sigs, strs, out, target);
+                out.push_str(&format!("    mov %rax, %rsi
+    lea -{}(%rbp), %rdi
+    call hbc_hsetcasematch
+", var.off));
+            }
             Stmt::HDel(_, id, e) => {
                 // hb_HDel: key first (borrowed - hbc_hdel only reads it),
                 // then the slot address; the helper frees the hash-owned
@@ -7143,6 +7220,7 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
             Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) => collect_blocks_expr(e, out),
             Stmt::HDel(_, _, e) => { collect_blocks_expr(e, out); }
             Stmt::HSet(_, _, ke, ve) => { collect_blocks_expr(ke, out); collect_blocks_expr(ve, out); }
+            Stmt::HSetCaseMatch(_, _, e) => { collect_blocks_expr(e, out); }
             Stmt::HMerge(_, _, _) => {}
             Stmt::ArrSet(_, _, ie, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(e, out); }
             Stmt::Print(_, es) => { for e in es { collect_blocks_expr(e, out); } }
@@ -7420,6 +7498,31 @@ const REG_FREE_W: &str = r"    # harness registry: computed 8 + cap*elemsize mus
     mov %r9, (%r11,%rcx,8)
     mov %rdx, hbc_reg_count(%rip)
 ";
+const REG_HFREE_W: &str = r"    # harness registry (hash data block, 16-byte header): computed
+    # 16 + cap*32 must equal the recorded allocation size, and the block
+    # must be live (double free = absent).
+    mov -8(%rdi), %rax
+    shl $5, %rax
+    add $16, %rax
+    lea -16(%rdi), %r8
+    mov hbc_reg_count(%rip), %rcx
+    lea hbc_reg_base(%rip), %r10
+    lea hbc_reg_size(%rip), %r11
+31: test %rcx, %rcx
+    jz hbc_reg_bad
+    dec %rcx
+    cmp %r8, (%r10,%rcx,8)
+    jne 31b
+    cmp %rax, (%r11,%rcx,8)
+    jne hbc_reg_bad
+    mov hbc_reg_count(%rip), %rdx
+    dec %rdx
+    mov (%r10,%rdx,8), %r9
+    mov %r9, (%r10,%rcx,8)
+    mov (%r11,%rdx,8), %r9
+    mov %r9, (%r11,%rcx,8)
+    mov %rdx, hbc_reg_count(%rip)
+";
 const REG_BAD_W: &str = r"# hbc_reg_bad: registry mismatch or unknown/double free (noreturn).
 # Entered via a conditional JUMP: force 16-byte alignment explicitly.
 hbc_reg_bad:
@@ -7619,45 +7722,92 @@ const HASH_HELPERS: &str = r"
 # hbc_hget: rdi = slot address, rsi = key bytes, rdx = key length.
 # Returns rax = pointer to the entry's {tag, payload} pair, or 0 on a
 # miss. Read-only: a lookup never mutates the hash (probes h3/h3b/h3c).
+# Matching honors the CaseMatch flag at -16(data): sensitive is byte
+# exact; insensitive folds ASCII letters and returns the LAST
+# insertion-order match (hk171).
 hbc_hget:
     mov (%rdi), %r10
     test %r10, %r10
     je 41f
+    push %rbx
+    push %r12
+    mov -16(%r10), %rbx
+    movq $-1, %r12
     mov 8(%rdi), %r11
     xor %ecx, %ecx
 42: cmp %r11, %rcx
-    jae 41f
+    jae 430f
     mov %rcx, %rax
     shl $5, %rax
     add %r10, %rax
     mov 8(%rax), %r8
     cmp %rdx, %r8
     jne 43f
-    mov (%rax), %r8
     xor %r9d, %r9d
 44: cmp %rdx, %r9
     jae 45f
+    mov (%rax), %r8
     movzbl (%r8,%r9), %edi
-    cmp %dil, (%rsi,%r9)
+    movzbl (%rsi,%r9), %r8d
+    test %rbx, %rbx
+    jnz 440f
+    cmp $97, %dil
+    jb 441f
+    cmp $122, %dil
+    ja 441f
+    sub $32, %dil
+441: cmp $97, %r8b
+    jb 440f
+    cmp $122, %r8b
+    ja 440f
+    sub $32, %r8b
+440: cmp %r8b, %dil
     jne 43f
     inc %r9
     jmp 44b
 43: inc %rcx
     jmp 42b
-45: add $16, %rax
+45: test %rbx, %rbx
+    jz 450f
+    add $16, %rax
+    pop %r12
+    pop %rbx
+    ret
+450: mov %rcx, %r12
+    inc %rcx
+    jmp 42b
+430: test %r12, %r12
+    js 431f
+    mov %r12, %rax
+    shl $5, %rax
+    add %r10, %rax
+    add $16, %rax
+    pop %r12
+    pop %rbx
+    ret
+431: xor %eax, %eax
+    pop %r12
+    pop %rbx
     ret
 41: xor %eax, %eax
     ret
 
 # hbc_hput: rdi = slot address, rsi = key bytes, rdx = key length,
 # rcx = pointer to the 16-byte value {tag, payload}. A found key is
-# overwritten in place (probe h8: len unchanged, last value wins). On a
-# miss the key bytes are copied into an owned allocation FIRST, so a
-# failed grow leaves the hash untouched (hbc_alloc exits via hbc_oom
-# with every temporary still owned by the caller). Growth doubles the
-# capacity (first grow: 4 pairs, overflow is OOM), moves the entries,
-# frees the OLD block shallow - the key copies moved with the entries -
-# and commits {ptr, len} last.
+# overwritten in place (probe h8: len unchanged, last value wins; the
+# stored key keeps its original casing, hk170). Matching honors the
+# hash's CaseMatch flag in the block header (-16(data): 1 sensitive,
+# 0 insensitive): sensitive mode matches byte for byte; insensitive
+# mode folds ASCII letters and acts on the LAST insertion-order match
+# (hk171/hk172). The data block carries a 16-byte header
+# [flags @0][capacity @8]; entries start at the data pointer. On a miss
+# the key bytes are copied into an owned allocation FIRST, so a failed
+# grow leaves the hash untouched (hbc_alloc exits via hbc_oom with
+# every temporary still owned by the caller). Growth doubles the
+# capacity (first grow from zero capacity: 4 pairs, overflow is OOM),
+# copies the flag forward, moves the entries, frees the OLD block
+# through hbc_hfreeblock (the key copies moved with the entries) and
+# commits {ptr, len} last.
 hbc_hput:
     push %rbp
     mov %rsp, %rbp
@@ -7666,7 +7816,7 @@ hbc_hput:
     push %r13
     push %r14
     push %r15
-    sub $24, %rsp
+    sub $40, %rsp
     mov %rdi, %rbx
     mov %rsi, %r14
     mov %rdx, %r15
@@ -7675,9 +7825,12 @@ hbc_hput:
     mov 8(%rbx), %r13
     test %r12, %r12
     je 30f
+    mov -16(%r12), %rax
+    mov %rax, -72(%rbp)
+    movq $-1, -80(%rbp)
     xor %ecx, %ecx
 31: cmp %r13, %rcx
-    jae 30f
+    jae 300f
     mov %rcx, %rax
     shl $5, %rax
     add %r12, %rax
@@ -7689,13 +7842,41 @@ hbc_hput:
 33: cmp %r15, %r9
     jae 34f
     movzbl (%r8,%r9), %r10d
-    cmp %r10b, (%r14,%r9)
+    movzbl (%r14,%r9), %r11d
+    # case-insensitive mode (flag 0): fold both bytes to uppercase -
+    # ASCII letters only, the measured scope of the hk169-hk175 oracles
+    cmpq $0, -72(%rbp)
+    jne 330f
+    cmp $97, %r10b
+    jb 331f
+    cmp $122, %r10b
+    ja 331f
+    sub $32, %r10b
+331: cmp $97, %r11b
+    jb 330f
+    cmp $122, %r11b
+    ja 330f
+    sub $32, %r11b
+330: cmp %r11b, %r10b
     jne 32f
     inc %r9
     jmp 33b
 32: inc %rcx
     jmp 31b
-34: mov -48(%rbp), %rcx
+300: mov -80(%rbp), %rcx
+    test %rcx, %rcx
+    js 30f
+    jmp 340f
+34: cmpq $0, -72(%rbp)
+    je 341f
+    jmp 340f
+341: mov %rcx, -80(%rbp)
+    inc %rcx
+    jmp 31b
+340: mov %rcx, %rax
+    shl $5, %rax
+    add %r12, %rax
+    mov -48(%rbp), %rcx
     mov (%rcx), %r8
     mov %r8, 16(%rax)
     mov 8(%rcx), %r8
@@ -7718,6 +7899,8 @@ hbc_hput:
     mov -8(%r12), %rax
     cmp %rax, %r13
     jb 40f
+    test %rax, %rax
+    je 37f
     add %rax, %rax
     mov $0x07FFFFFFFFFFFFFF, %rcx
     cmp %rcx, %rax
@@ -7726,11 +7909,16 @@ hbc_hput:
 37: mov $4, %eax
 38: mov %rax, -56(%rbp)
     shl $5, %rax
-    lea 8(%rax), %rdi
+    lea 16(%rax), %rdi
     call hbc_alloc
     mov -56(%rbp), %rcx
-    mov %rcx, (%rax)
-    add $8, %rax
+    mov %rcx, 8(%rax)
+    movq $1, %rcx
+    test %r12, %r12
+    je 381f
+    mov -16(%r12), %rcx
+381: mov %rcx, (%rax)
+    add $16, %rax
     mov %rax, -64(%rbp)
     mov %rax, %r9
     test %r12, %r12
@@ -7751,8 +7939,7 @@ hbc_hput:
     inc %rcx
     jmp 46b
 47: mov %r12, %rdi
-    mov $32, %esi
-    call hbc_free
+    call hbc_hfreeblock
 39: mov -64(%rbp), %r12
 40: mov %r13, %rax
     shl $5, %rax
@@ -7767,7 +7954,7 @@ hbc_hput:
     mov %r12, (%rbx)
     inc %r13
     mov %r13, 8(%rbx)
-49: add $24, %rsp
+49: add $40, %rsp
     pop %r15
     pop %r14
     pop %r13
@@ -7777,9 +7964,10 @@ hbc_hput:
     ret
 
 # hbc_hfree: rdi = block data pointer (non-null), rsi = live pair count.
-# Frees each live key copy, then the block. Uses the LIVE length, never
-# the capacity: after a grow the key copies live in the new block's
-# [0, len) entries.
+# Frees each live key copy, then the block (via hbc_hfreeblock, which
+# accounts for the 16-byte [flags][capacity] header). Uses the LIVE
+# length, never the capacity: after a grow the key copies live in the
+# new block's [0, len) entries.
 hbc_hfree:
     push %rbp
     mov %rsp, %rbp
@@ -7800,8 +7988,7 @@ hbc_hfree:
     inc %r13
     jmp 20b
 21: mov %rbx, %rdi
-    mov $32, %esi
-    call hbc_free
+    call hbc_hfreeblock
     add $8, %rsp
     pop %r13
     pop %r12
@@ -7810,7 +7997,9 @@ hbc_hfree:
     ret
 
 # hbc_hdel: rdi = hash slot address, rsi = key bytes, rdx = key length.
-# Removes the entry whose key matches byte for byte (probes hk155/hk156):
+# Removes the entry whose key matches (probes hk155/hk156; matching
+# honors the CaseMatch flag: insensitive mode folds ASCII letters and
+# removes the LAST insertion-order match - hk174):
 # the hash-owned key copy is freed (hbc_free), the entries above it shift
 # down one slot - insertion order is preserved, which is why a deleted
 # key re-added later lands at the END (hk156) - and the live count drops
@@ -7826,13 +8015,19 @@ hbc_hdel:
     push %r13
     push %r14
     push %r15
-    sub $8, %rsp
+    sub $24, %rsp
     mov %rdi, %r15
     mov (%r15), %r12
     mov 8(%r15), %r13
+    movq $1, %rax
+    test %r12, %r12
+    je 600f
+    mov -16(%r12), %rax
+600: mov %rax, -48(%rbp)
+    movq $-1, -56(%rbp)
     xor %r14d, %r14d
 60: cmp %r13, %r14
-    jae 61f
+    jae 610f
     mov %r14, %rax
     shl $5, %rax
     lea (%r12,%rax), %rbx
@@ -7844,13 +8039,38 @@ hbc_hdel:
     jae 64f
     movzbl (%rcx,%r9), %r10d
     movzbl (%rsi,%r9), %r11d
-    cmp %r11b, %r10b
+    cmpq $0, -48(%rbp)
+    jne 630f
+    cmp $97, %r10b
+    jb 631f
+    cmp $122, %r10b
+    ja 631f
+    sub $32, %r10b
+631: cmp $97, %r11b
+    jb 630f
+    cmp $122, %r11b
+    ja 630f
+    sub $32, %r11b
+630: cmp %r11b, %r10b
     jne 62f
     inc %r9
     jmp 63b
 62: inc %r14
     jmp 60b
-64: mov (%rbx), %rdi
+610: mov -56(%rbp), %r14
+    test %r14, %r14
+    js 61f
+    mov %r14, %rax
+    shl $5, %rax
+    lea (%r12,%rax), %rbx
+    jmp 620f
+64: cmpq $0, -48(%rbp)
+    je 640f
+    jmp 620f
+640: mov %r14, -56(%rbp)
+    inc %r14
+    jmp 60b
+620: mov (%rbx), %rdi
     mov $1, %esi
     call hbc_free
 65: lea 1(%r14), %rax
@@ -7872,7 +8092,7 @@ hbc_hdel:
     jmp 65b
 66: dec %r13
     mov %r13, 8(%r15)
-61: add $8, %rsp
+61: add $24, %rsp
     pop %r15
     pop %r14
     pop %r13
@@ -7887,29 +8107,64 @@ hbc_hdel:
 # ordinary key. Leaf: caller-saved registers only, no allocation, the
 # hash and the lookup key are only read.
 hbc_hhaskey:
+    push %rbx
+    push %r12
     mov (%rdi), %r8
     mov 8(%rdi), %r9
+    movq $1, %rbx
+    test %r8, %r8
+    je 700f
+    mov -16(%r8), %rbx
+700: movq $-1, %r12
     xor %ecx, %ecx
 70: cmp %r9, %rcx
-    jae 71f
+    jae 710f
     mov %rcx, %rax
     shl $5, %rax
-    mov (%r8,%rax), %r11
     cmp 8(%r8,%rax), %rdx
     jne 72f
+    mov (%r8,%rax), %r11
     xor %eax, %eax
 73: cmp %rdx, %rax
     jae 74f
     movzbl (%r11,%rax), %edi
-    cmp (%rsi,%rax), %dil
+    movzbl (%rsi,%rax), %r10d
+    test %rbx, %rbx
+    jnz 730f
+    cmp $97, %dil
+    jb 731f
+    cmp $122, %dil
+    ja 731f
+    sub $32, %dil
+731: cmp $97, %r10b
+    jb 730f
+    cmp $122, %r10b
+    ja 730f
+    sub $32, %r10b
+730: cmp %r10b, %dil
     jne 72f
     inc %rax
     jmp 73b
+74: test %rbx, %rbx
+    jz 740f
+    mov $1, %eax
+    pop %r12
+    pop %rbx
+    ret
+740: mov %rcx, %r12
+    inc %rcx
+    jmp 70b
 72: inc %rcx
     jmp 70b
-71: xor %eax, %eax
+710: test %r12, %r12
+    js 711f
+    mov $1, %eax
+    pop %r12
+    pop %rbx
     ret
-74: mov $1, %eax
+711: xor %eax, %eax
+    pop %r12
+    pop %rbx
     ret
 
 # hbc_hpos: rdi = hash slot address, rsi = key bytes, rdx = key
@@ -7920,29 +8175,64 @@ hbc_hhaskey:
 # Leaf: caller-saved registers only, no allocation, the hash and the
 # lookup key are only read.
 hbc_hpos:
+    push %rbx
+    push %r12
     mov (%rdi), %r8
     mov 8(%rdi), %r9
+    movq $1, %rbx
+    test %r8, %r8
+    je 700f
+    mov -16(%r8), %rbx
+700: movq $-1, %r12
     xor %ecx, %ecx
 70: cmp %r9, %rcx
-    jae 71f
+    jae 710f
     mov %rcx, %rax
     shl $5, %rax
-    mov (%r8,%rax), %r11
     cmp 8(%r8,%rax), %rdx
     jne 72f
+    mov (%r8,%rax), %r11
     xor %eax, %eax
 73: cmp %rdx, %rax
     jae 74f
     movzbl (%r11,%rax), %edi
-    cmp (%rsi,%rax), %dil
+    movzbl (%rsi,%rax), %r10d
+    test %rbx, %rbx
+    jnz 730f
+    cmp $97, %dil
+    jb 731f
+    cmp $122, %dil
+    ja 731f
+    sub $32, %dil
+731: cmp $97, %r10b
+    jb 730f
+    cmp $122, %r10b
+    ja 730f
+    sub $32, %r10b
+730: cmp %r10b, %dil
     jne 72f
     inc %rax
     jmp 73b
+74: test %rbx, %rbx
+    jz 740f
+    lea 1(%rcx), %rax
+    pop %r12
+    pop %rbx
+    ret
+740: mov %rcx, %r12
+    inc %rcx
+    jmp 70b
 72: inc %rcx
     jmp 70b
-71: xor %eax, %eax
+710: test %r12, %r12
+    js 711f
+    lea 1(%r12), %rax
+    pop %r12
+    pop %rbx
     ret
-74: lea 1(%rcx), %rax
+711: xor %eax, %eax
+    pop %r12
+    pop %rbx
     ret
 
 # hbc_hmerge: rdi = dst hash slot address, rsi = src hash slot
@@ -7987,12 +8277,16 @@ hbc_hmerge:
     ret
 
 # hbc_hclone: rdi = hash slot address. Returns rax = data pointer of
-# a NEW block whose entries are DEEP copies - every key is re-copied
+# a NEW block whose entries are copies - every key is re-copied
 # through hbc_hput and every value cell copied (hk166: the clone is
-# fully independent of the original in both directions), rdx = entry
-# count; insertion order and NIL values are preserved (hk167); an
-# empty hash clones to an empty slot (data 0, count 0). The source is
-# only read. Frame-based: hbc_hput allocates. A mid-copy hbc_oom exits
+# independent of the original in both directions for string keys and
+# scalar int/NIL values, the only value types of this increment),
+# rdx = entry count; insertion order and NIL values are preserved
+# (hk167). The clone inherits the CaseMatch flag (hk173), even for an
+# empty flagged hash (hk176: a source WITH a data block clones to a
+# header-only block; a source with NO block at all keeps cloning to
+# the empty slot {0, 0} of hk167). The source is only read.
+# Frame-based: hbc_alloc/hbc_hput allocate. A mid-copy hbc_oom exits
 # the process with every temporary still owned by this helper (no
 # unwinding in this PoC - documented).
 hbc_hclone:
@@ -8008,7 +8302,20 @@ hbc_hclone:
     mov 8(%rdi), %r14
     movq $0, -56(%rbp)
     movq $0, -48(%rbp)
-    xor %r15d, %r15d
+    # the clone inherits the CaseMatch flag (hk173), even with zero
+    # entries (hk176): a source WITH a data block clones to a
+    # header-only block (capacity 0) carrying the flag; a source with
+    # no block at all (never assigned nor flagged) stays {0, 0}.
+    test %r13, %r13
+    je 52f
+    mov $16, %edi
+    call hbc_alloc
+    mov -16(%r13), %rcx
+    mov %rcx, (%rax)
+    movq $0, 8(%rax)
+    add $16, %rax
+    mov %rax, -56(%rbp)
+52: xor %r15d, %r15d
 50: cmp %r14, %r15
     jae 51f
     mov %r15, %rax
@@ -8152,6 +8459,48 @@ hbc_hvalues:
     pop %rbp
     ret
 
+# hbc_hcasematch: rdi = hash slot address. Returns rax = the hash's
+# CaseMatch flag: 1 = case-sensitive byte-exact key matching (the
+# default, hk169), 0 = case-insensitive. An untouched empty hash
+# (data pointer 0) reports the default 1. Leaf: the slot is only read.
+hbc_hcasematch:
+    mov (%rdi), %rax
+    test %rax, %rax
+    je 41f
+    mov -16(%rax), %rax
+    ret
+41: mov $1, %eax
+    ret
+
+# hbc_hsetcasematch: rdi = hash slot address, rsi = flag (1 sensitive,
+# 0 insensitive). The flag lives in the data block's 16-byte header at
+# -16(data). A hash with no block yet (empty, data pointer 0) gets a
+# header-only block (capacity 0) so the flag survives until the first
+# insert; hbc_hput's grow path copies the flag forward and
+# hbc_hfreeblock releases the block. Frame-based: hbc_alloc allocates.
+hbc_hsetcasematch:
+    mov (%rdi), %rax
+    test %rax, %rax
+    jne 41f
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    mov %rdi, %rbx
+    mov %rsi, %r12
+    mov $16, %edi
+    call hbc_alloc
+    mov %r12, (%rax)
+    movq $0, 8(%rax)
+    add $16, %rax
+    mov %rax, (%rbx)
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+41: mov %rsi, -16(%rax)
+    ret
+
 # hbc_strcpy: rdi = source bytes, rsi = length. Returns rax = pointer to
 # the bytes of a NEW owned allocation with an 8-byte length header (the
 # hash-key-copy layout: hbc_free(ptr, 1) releases it), rdx = length.
@@ -8269,6 +8618,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
             // Allocation registry only in instrumented builds (--instrument).
             out = out.replace("@REG_ALLOC_W@", if instrument { REG_ALLOC_W } else { "" });
             out = out.replace("@REG_FREE_W@", if instrument { REG_FREE_W } else { "" });
+            out = out.replace("@REG_HFREE_W@", if instrument { REG_HFREE_W } else { "" });
             out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
             out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
             return out;
@@ -8846,6 +9196,23 @@ hbc_free:
     incq hbc_mem_frees(%rip)
     ret
 
+# hbc_hfreeblock: rdi = hash block data pointer (non-null). Frees the
+# whole block: 16-byte header [flags @0][capacity @8] + entries, so the
+# mapping base is rdi-16 and the length is 16 + cap*32. The registry
+# snippet is the formula-agnostic Linux one (it compares the computed
+# base and length against the recorded allocation).
+hbc_hfreeblock:
+    mov -8(%rdi), %rax
+    shl $5, %rax
+    lea 16(%rax), %rsi
+    sub $16, %rdi
+@REG_FREE_L@    mov $11, %eax
+    syscall
+    test %rax, %rax
+    jnz hbc_os_bad
+    incq hbc_mem_frees(%rip)
+    ret
+
 @REG_BAD_L@# hbc_os_bad: munmap reported failure (noreturn).
 hbc_os_bad:
     lea .Losbadmsg(%rip), %rsi
@@ -9176,6 +9543,7 @@ hbc_mem_frees:  .quad 0
     // battery's mode) carry it; normal output has no registry at all.
     out = out.replace("@REG_ALLOC_L@", if instrument { REG_ALLOC_L } else { "" });
     out = out.replace("@REG_FREE_L@", if instrument { REG_FREE_L } else { "" });
+    out = out.replace("@REG_HFREE_W@", if instrument { REG_HFREE_W } else { "" });
     out = out.replace("@REG_BAD_L@", if instrument { REG_BAD_L } else { "" });
     out = out.replace("@REG_ALLOC_W@", if instrument { REG_ALLOC_W } else { "" });
     out = out.replace("@REG_FREE_W@", if instrument { REG_FREE_W } else { "" });
@@ -9795,6 +10163,26 @@ hbc_free:
     call HeapFree
     # HeapFree result: nonzero on success - a registry match alone does
     # not prove the OS released the block.
+    test %rax, %rax
+    jz hbc_os_bad
+    incq hbc_mem_frees(%rip)
+    leave
+    ret
+
+# hbc_hfreeblock: rdi = hash block data pointer (non-null). Frees the
+# whole block: 16-byte header [flags @0][capacity @8] + entries, so the
+# block base is rdi-16 (HeapFree needs the base, not the length; the
+# registry snippet computes and checks the recorded size).
+hbc_hfreeblock:
+    push %rbp
+    mov %rsp, %rbp
+    sub $48, %rsp
+@REG_HFREE_W@    sub $16, %rdi
+    mov %rdi, %r8
+    call GetProcessHeap
+    mov %rax, %rcx
+    xor %edx, %edx
+    call HeapFree
     test %rax, %rax
     jz hbc_os_bad
     incq hbc_mem_frees(%rip)
