@@ -1369,6 +1369,32 @@ helper upserts through hbc_hput, copying every key and value
 on Linux and Wine, t547 the hk165 edges, t548/t549 reject non-hash
 arguments at compile time.
 
+Iteration 56 adds hb_HCaseMatch(h) and hb_HSetCaseMatch(h, flag)
+(core hb_HCaseMatch/hb_HSetCaseMatch; oracles hk169-hk176): a per-hash
+key-matching flag, default SENSITIVE (the getter prints 1/0 - the
+dialect has no logical type; the oracle's .T./.F. is the registered
+boolean rendering family). In insensitive mode lookups (h[k] read and
+write, hb_HGet, hb_HHasKey, hb_HPos, hb_HDel, hb_HSet) and hb_HMerge
+into that hash match keys case-insensitively, acting on the LAST
+insertion-order match (hk171/hk172/hk174); a case-variant write
+overwrites in place WITHOUT changing len and the stored key keeps its
+original casing (hk170); hb_HMerge obeys the DESTINATION's flag - the
+source's flag is irrelevant (hk175); hb_HClone propagates the flag,
+even for an empty flagged hash (hk173/hk176). The flag lives in the
+hash data block's new 16-byte header [flags][capacity], released by
+the new per-target hbc_hfreeblock; folding is ASCII letters only -
+the measured scope of the oracles (registered limit). One registered
+edge: hb_HGet on a MISSING key stays the named failure family already
+registered (hk177 confirmed the dialog also fires in insensitive
+mode); no claim is made for non-ASCII case folding. New helpers
+hbc_hcasematch/hbc_hsetcasematch are canaried in the ABI harness on
+both targets, which also exercises hbc_hfreeblock on a header-only
+block. t556-t563 reproduce hk169-hk176 on Linux and Wine; t564 checks
+owned key temporaries through the insensitive compare path and full
+balance including a header-only block (wrap + memcheck = 0, own
+ownership check); t565-t567 are the named rejections (non-hash target,
+non-integer flag, subscript target).
+
 Iteration 55 adds hb_HClone(h) (core hb_HClone; oracles
 hk166/hk167): a NEW hash whose entries are copied - fully
 independent in both directions (writes on the original do not cross
