@@ -808,3 +808,6 @@ pos tests/t809_pow_nan_inf.hb \n*************\n***********************\n********
 pos tests/t810_pow_starstar.hb \n         8.00\n        81.00\n         4.00
 neg tests/t811_pow_str_neg.hb `^` needs numeric operands
 neg tests/t812_pow_arr_neg.hb `^` needs numeric operands
+neg tests/t813_set_callstmt_neg.hb unknown function `set`
+neg tests/t814_set_century_neg.hb SET commands are not in this increment
+neg tests/t815_set_printer_neg.hb SET commands are not in this increment
