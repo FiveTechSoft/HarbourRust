@@ -622,3 +622,8 @@ pos tests/t624_single_quote_strings.hb \nsingle\nit has "double" inside\nand 'si
 pos tests/t625_eq_assign.hb \n        42\neq\n        43
 pos tests/t626_str_concat.hb \nliteral\nfoobar\nfoo!\n.T.\nfooX
 neg tests/t627_str_plus_int.hb arithmetic requires integers
+pos tests/t628_call_stmt.hb \n         1\n         0\nhola
+neg tests/t629_discard_array.hb discarding a
+neg tests/t630_call_stmt_unknown.hb unknown function
+pos tests/t631_discard_strown.hb \n         0
+pos tests/t632_len_string.hb \n         5\n         0\n         3
