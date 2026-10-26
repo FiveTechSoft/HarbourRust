@@ -582,7 +582,7 @@ pos tests/t584_hclear.hb \n         0\n         1\n         9\n         1\n     
 pos tests/t585_hfill.hb \n         7\n         7\n         7\nb\n         3\nNIL\n         0
 pos tests/t586_hclear_owned.hb \n         5\n         0\nz\n         0\n         0
 neg tests/t587_neg_hclear_type.hb hb_HClear expects a hash variable
-neg tests/t588_neg_hfill_value.hb hash values are integers or NIL in this increment
+neg tests/t588_neg_hfill_value.hb hash values are integers, logicals or NIL in this increment
 pos tests/t589_hgetdef.hb \n         1\n         9\n         1\nNIL\n         1\n         0\n         0
 pos tests/t590_hgetdef_owned_key.hb \n         2\n         1\n        42\n         0
 pos tests/t591_hgetdef_dyn_def.hb \n         7\n         1\n         1
@@ -602,3 +602,9 @@ neg tests/t604_bare_not.hb trailing tokens after expression
 neg tests/t605_mixed_log_num.hb logicals compare only with another logical
 pos tests/t606_dotted_forms.hb \n.T.\n.F.\n.T.\n.T.
 pos tests/t607_bool_assign_if.hb \nsi\nno2
+pos tests/t608_log_dyn_mixed_literal.hb \n.T.\n.F.\nL\n.T.\n.T.\n.F.
+pos tests/t609_log_dyn_hash_write.hb \n.T.\n.F.\nL\n         1\n.T.\n.F.
+pos tests/t610_log_dyn_hsetdef_hscan.hb \n.T.\n.T.\nL\n         1\n         0
+pos tests/t611_log_dyn_hclone_hvalues.hb \n.T.\nL\n.T.\nL\n         1
+pos tests/t612_log_dyn_aadd_arrset.hb \n.T.\nL\n.F.
+pos tests/t613_log_dyn_hcopy_hfill.hb \n.T.\nL\n         9\n.F.\n.F.\nL
