@@ -1364,5 +1364,23 @@ insertion order into a NEW independent array (oracles hk153/hk154;
 t518/t519), result freed by the DArr epilogue with balance 0 (t520,
 own ownership check, not a Harbour oracle).
 
-551/551 manifest cases + ABI harness green on Linux x86-64 and Wine
+
+t599-t607 (iteration 62): Harbour logicals as a real type - dotted
+literals .T./.F., operators .AND./.OR./.NOT. (oracles hk197-hk204).
+t599 reproduces hk197 byte-exactly (literals print .T./.F., ValType
+"L"); t600 hk198 (comparisons produce logicals, printed and typed);
+t601 hk203 (short-circuit measured by effects: rama1b/evalT/rama2/
+evalF); t602 hk204 (parameters and returns; the identity shape pins
+through `.AND. .T.` because body-only inference cannot type a bare
+returned parameter - registered limit); t606 the case-insensitive
+dotted forms including .NOT..F. (hk199c/hk200); t607 a logical
+variable reassigned and branched on. t603 pins the bare-word
+rejection (AND/OR/NOT are not operators in Harbour either - E0030,
+hk199), t604 the trailing-token parser error, t605 the mixed
+logical/number comparison (Harbour's BASE/1071, hk202 - compile-time
+rejection here). Dyn logical cells (arrays/hashes of .T.) measured
+(hk201) and deferred to 62b; ordering on logicals unmeasured, stays
+rejected.
+
+604/604 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
