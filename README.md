@@ -1433,17 +1433,19 @@ hb_HGetDef defaults, hb_HScan search values and hb_HFill fill values.
 A flat literal mixing logicals and integers ({ .T., .F., 1 })
 materializes as a dynamic tagged array (hk201) - restricted to all-
 literal elements in this increment, a registered limit. The read
-paths honor it: printing shows .T./.F., ValType says "L" (hash
-casillas included; an absent key classifies "U", Harbour's ValType
-of a missing key), hb_HClone and hb_HValues preserve logical cells,
+paths honor it: printing shows .T./.F., ValType says "L"
+(hash casillas included; a missing key is Harbour's BASE/1132-family
+error condition - hk209, the dialog hangs headless - so it takes the
+registered clean bound-error exit, not a silent "U" read), hb_HClone and hb_HValues preserve logical cells,
 and hb_HCopy (source first, hk208e) copies them. Two runtime fixes
 came with the tag: hbc_dyn_eq compared only tags for nonzero
 non-string tags, so .T. = .F. was wrongly .T. - it now compares
 payloads (t608 pins both directions); and a Dyn in condition
 position (IF/WHILE, .AND./.OR./.NOT. operands, the condition of a
 comparison-free jump) materializes through a new hbc_dyn_to_log:
-NIL is .F., a logical keeps its payload, an integer or string cell
-is a type error like Harbour. A Dyn compared against a logical
+a logical cell keeps its payload; NIL, an integer or a string cell
+in condition position is Harbour's error condition (hk210, the
+dialog hangs headless) and takes the registered clean exit 1 here. A Dyn compared against a logical
 (`h["b"] = .T.`) dispatches at runtime through the same equality
 helper. The 62 scope note stands: the builtin flag APIs (hb_HHasKey,
 hb_HCaseMatch, IsAlpha and family) KEEP their registered 1/0
