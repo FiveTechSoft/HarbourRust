@@ -504,3 +504,6 @@ posx tests/t506_posx_dynxeq_mixed2.hb 1 Argument error: ==
 posx tests/t507_posx_dynxeq_mixed3.hb 1 Argument error: ==
 pos tests/t508_exeq_darrs_xeq.hb \n         1\n         0\n         0\n         1
 pos tests/t509_exeq_darrs_xeq2.hb \n         1\n         0\n         1
+pos tests/t510_exeq_dynstrstr_eq.hb \n         1\n         0\n         0\n         1\n         0\n         0
+posx tests/t511_posx_dyneq_strint.hb 1 Argument error: =
+pos tests/t512_exeq_dyneq_strnil.hb \n         0\n         0
