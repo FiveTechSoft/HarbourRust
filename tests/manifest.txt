@@ -709,3 +709,4 @@ neg tests/t711_dyn_bool_reassign_neg.hb type mismatch in assignment
 pos tests/t712_dyn_cond_bool.hb \n.T.\nyes\n.F.\nno
 posx tests/t713_dyn_cond_int.hb 1 \n         0Type error: condition is not a logical\n
 posx tests/t714_dyn_cond_string.hb 1 \nabcType error: condition is not a logical\n
+neg tests/t715_dyn_cond_str_elem_neg.hb a bare value is not a condition in this PoC
