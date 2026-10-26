@@ -1879,3 +1879,69 @@ diagnostics/robustness increment). Provenance: src hbc.rs sha256
 compiler binary sha256
 87dab435b432629103089892f6e76d496d79f340bf1051c4e53d7eb8d5e5a07f,
 2026-10-26, reference HEAD a43404a1 (63n).
+
+## 63p - array literals of strings (routine extension; oracle hk254)
+
+All-string array literals now compile to the same dynamic string-array
+shape an AAdd-grown one has (33n): a `{data pointer, length}` slot, cells
+of 16 bytes `{tag 2, owned copy}` behind an 8-byte capacity header
+(capacity equals the length; later AAdd growth doubles). The layouts were
+demonstrated before the change from three published paths: the AAdd
+string arm (appends `{tag 2, hbc_strcpy copy}`), the epilogue free
+(kind 4, `hbc_sfree` walks the cells freeing every owned copy, then the
+block), and `hbc_hkeys` (same header-plus-cells block). The literal
+materializes each element with the same `hbc_strcpy` the AAdd arm uses,
+so every cell owns its copy and the existing free path releases it.
+
+Scope discipline (grow-guard): pure string elements only. A string and
+integer mix keeps the named rejection "array elements must be integers or
+logicals" (a mixed Dyn-leaf array is parked new storage, not a routine
+extension). The empty literal `{}` is untouched (still the growth seed).
+Nested string literals (`{{"a"},{"b"}}`) keep the named nested rejection.
+
+New tests (battery 690 -> 693, all green):
+- t695: `{"a","bb","ccc"}` local - LEN 3, concatenation, AAdd growth to
+  LEN 4, VALTYPE "A"/"C", allocation balance 0 after the owning
+  procedure returns (oracle shapes hk254).
+- t696: a string literal passed as a procedure argument. String-element
+  evidence (`a[1] + "!"`) pins the parameter as an array of strings; the
+  move at the boundary transfers ownership, balance 0. Print-only
+  parameter evidence still infers a generic dynamic array and rejects the
+  string argument by name - the 63n/63o inference limit, unchanged.
+- t697 (negative): `{"a", 1}` keeps the named mix rejection.
+
+Sweep 175 (reference HEAD ab4d1ea0, 2026-10-26): COMPILES 2 (hello,
+statfun) - unchanged. Two diagnostic moves, both still named rejections:
+- lnlenli2.prg: the line-14 string literal no longer blocks (this
+  increment); the file now stops at the next named limit, "discarding an
+  array of strings return is not in this increment".
+- calling.prg: late-registered 63o effect, not 63p - a print-only
+  parameter stopped pinning as integer when the 63o pin arm began
+  requiring inferred evidence, so the file now reports "cannot infer the
+  type of parameter `ctext`" instead of the old integer/string conflict.
+  The new message names the real limit; coverage is unchanged.
+
+Pending question from the 63o review, answered with probes: mutual
+recursion WITH a value-returning base case infers correctly (probes:
+two-function cycle returning a string prints "fin"; the same shape
+returning an integer prints 7; both compile and run right). The "never
+returns a value" rejection (t694) fires only for cycles with no
+value-return ground evidence anywhere - genuinely ground-less recursion -
+so the diagnostic is exact, not over-broad. No code change needed.
+
+Wording register (standing): platform evidence is "Linux nativo y Wine
+con oracle Linux", never "tres plataformas".
+
+Sandbox recovery provenance (2026-10-26): the sandbox was rebuilt at
+11:26 CET and the local checkout was lost; the tree was recovered from
+the published 63o files plus the transcript-verbatim 63p edits. The
+reconstructed src/hbc.rs hashes byte-identical to the pre-wipe
+battery-tested source: sha256
+aa3687fc6445e179bbd0bc652257f32c1540b2cde50f63a68e4a1e312a61ef60.
+Compiler binary rebuilt after recovery with rustc 1.99.1: sha256
+aa99fefeb47044565165f582b904d1ef7201fb35a0a6932f609a7c4a7a884f49.
+tests/run_battery.sh sha256
+f9414ceff4c03b5c5488a664f32102b5c553244bd1765a86616422124b2310ae.
+Full battery re-executed on the recovered bytes at 11:36 CET:
+693/693 manifest cases green plus the ABI harness, on Linux nativo y
+Wine con oracle Linux - the recovered bytes are the tested bytes.
