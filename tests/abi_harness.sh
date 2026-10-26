@@ -844,6 +844,63 @@ hbc_abi_test:
     mov $2, %esi
     call hbc_hfree
     call abi_check
+    # hbc_hdelat canary (iteration 59): a fresh 2-entry hash
+    # {"ab"=>7, "c"=>9} loses position 1 (count 1, "c"/9 compacts to
+    # the first slot); an out-of-range position answers 0 and changes
+    # nothing. Frame-based (hbc_free): canaries, stack balance and
+    # alignment after every call; the registry checks the freed key.
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    lea .Labi_k1(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $7, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea .Labi_k2(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $1, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $9, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea -96(%rbp), %rdi
+    mov $1, %esi
+    call hbc_hdelat
+    mov %rax, -32(%rbp)
+    call abi_check
+    cmpq $1, -32(%rbp)
+    jne abi_fail_hda
+    cmpq $1, -88(%rbp)
+    jne abi_fail_hda
+    mov -96(%rbp), %rax
+    mov (%rax), %rcx
+    cmpb $99, (%rcx)
+    jne abi_fail_hda
+    cmpq $9, 24(%rax)
+    jne abi_fail_hda
+    lea -96(%rbp), %rdi
+    mov $2, %esi
+    call hbc_hdelat
+    mov %rax, -32(%rbp)
+    call abi_check
+    cmpq $0, -32(%rbp)
+    jne abi_fail_hda
+    cmpq $1, -88(%rbp)
+    jne abi_fail_hda
+    mov -96(%rbp), %rdi
+    mov $1, %esi
+    call hbc_hfree
+    call abi_check
     # hbc_hmerge canary (iteration 54): dst {ab=>7} + src {ab=>9, c=>5}
     # leaves dst with the source winning in place and the new key
     # appended (hk164); the source keeps its 2 entries (hk165).
@@ -1168,6 +1225,10 @@ abi_fail_hka:
     lea .Labi_f_hka(%rip), %rax
     mov $13, %edx
     jmp abi_fail_common
+abi_fail_hda:
+    lea .Labi_f_hda(%rip), %rax
+    mov $13, %edx
+    jmp abi_fail_common
 abi_fail_hm:
     lea .Labi_f_hm(%rip), %rax
     mov $12, %edx
@@ -1216,6 +1277,7 @@ ASM_EOF
 .Labi_f_hp:  .ascii "ABI FAIL hp\n"
 .Labi_f_hs:  .ascii "ABI FAIL hs\n"
 .Labi_f_hka: .ascii "ABI FAIL hka\n"
+.Labi_f_hda: .ascii "ABI FAIL hda\n"
 .Labi_f_hm:  .ascii "ABI FAIL hm\n"
 .Labi_f_hc:  .ascii "ABI FAIL hc\n"
 .Labi_f_de: .ascii "ABI FAIL deq\n"
