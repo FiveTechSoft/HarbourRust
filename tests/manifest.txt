@@ -689,3 +689,6 @@ pos tests/t691_forward_str_ret.hb \nhi!
 neg tests/t692_forward_type_neg.hb argument 1 of `fwd` must be an integer, got a string
 neg tests/t693_forward_uninferable_neg.hb cannot infer the type of parameter `s`
 neg tests/t694_mutual_no_evidence_neg.hb never returns a value
+pos tests/t695_strlit.hb \n         3\nabbccc\n         4\ndddd\nA\nC\n         0
+pos tests/t696_strlit_arg.hb \nx!\n         2\n         0
+neg tests/t697_strlit_mixed.hb array elements must be integers or logicals
