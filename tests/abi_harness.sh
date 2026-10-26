@@ -1170,6 +1170,182 @@ hbc_abi_test:
     xor %esi, %esi
     call hbc_hfree
     call abi_check
+    # hbc_hsetdef canary (iteration 61): on {ab=>7} - hit with the
+    # same tag keeps 7; a miss adds the default; a hit with a
+    # DIFFERENT tag overwrites (stored NIL family, hk196b); a hit
+    # with NO default always keeps (hk196d). Frame-based helper
+    # (hbc_hget/hbc_hput): canaries, balance and alignment after
+    # every call.
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    lea .Labi_k1(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $7, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    # hit, same tag (0), def 99 -> keeps 7, returns (0, 7)
+    movq $0, -48(%rbp)
+    movq $99, -40(%rbp)
+    lea -96(%rbp), %rdi
+    lea .Labi_k1(%rip), %rsi
+    mov $2, %edx
+    lea -48(%rbp), %rcx
+    mov $1, %r8d
+    call hbc_hsetdef
+    mov %rax, -64(%rbp)
+    mov %rdx, -72(%rbp)
+    call abi_check
+    mov -64(%rbp), %rax
+    mov -72(%rbp), %rdx
+    test %rax, %rax
+    jne abi_fail_hsdA
+    cmpq $7, %rdx
+    jne abi_fail_hsdA
+    cmpq $1, -88(%rbp)
+    jne abi_fail_hsdA
+    # miss with def 42 -> adds c=42, returns (0, 42), count 2
+    movq $0, -48(%rbp)
+    movq $42, -40(%rbp)
+    lea -96(%rbp), %rdi
+    lea .Labi_k2(%rip), %rsi
+    mov $1, %edx
+    lea -48(%rbp), %rcx
+    mov $1, %r8d
+    call hbc_hsetdef
+    mov %rax, -64(%rbp)
+    mov %rdx, -72(%rbp)
+    call abi_check
+    mov -64(%rbp), %rax
+    mov -72(%rbp), %rdx
+    test %rax, %rax
+    jne abi_fail_hsdB
+    cmpq $42, %rdx
+    jne abi_fail_hsdB
+    cmpq $2, -88(%rbp)
+    jne abi_fail_hsdB
+    # hit with a DIFFERENT tag (NIL def) -> overwrites ab to NIL
+    movq $1, -48(%rbp)
+    movq $0, -40(%rbp)
+    lea -96(%rbp), %rdi
+    lea .Labi_k1(%rip), %rsi
+    mov $2, %edx
+    lea -48(%rbp), %rcx
+    mov $1, %r8d
+    call hbc_hsetdef
+    mov %rax, -64(%rbp)
+    call abi_check
+    mov -64(%rbp), %rax
+    cmpq $1, %rax
+    jne abi_fail_hsdC
+    # hit with NO default -> keeps the stored NIL (hk196d)
+    lea -96(%rbp), %rdi
+    lea .Labi_k1(%rip), %rsi
+    mov $2, %edx
+    lea -48(%rbp), %rcx
+    xor %r8d, %r8d
+    call hbc_hsetdef
+    mov %rax, -64(%rbp)
+    call abi_check
+    mov -64(%rbp), %rax
+    cmpq $1, %rax
+    jne abi_fail_hsdD
+    mov -96(%rbp), %rdi
+    mov $1, %esi
+    call hbc_hfree
+    call abi_check
+    # hbc_hcopy canary (iteration 61): src {ab=>7, c=>42}, dst
+    # {zz=>1}; a full copy upserts both (new keys append, zz
+    # survives -> count 3, hk195) and a start past the end is a
+    # no-op (hk195b). Frame-based helper (hbc_hput allocates):
+    # canaries, balance and alignment after every call.
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    movq $0, -128(%rbp)
+    movq $0, -120(%rbp)
+    lea .Labi_k1(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $7, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea .Labi_k2(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $1, -24(%rbp)
+    movq $42, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea .Labi_k3(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $1, -40(%rbp)
+    lea -128(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea -96(%rbp), %rdi
+    lea -128(%rbp), %rsi
+    mov $1, %edx
+    mov $-1, %rcx
+    call hbc_hcopy
+    call abi_check
+    cmpq $3, -120(%rbp)
+    jne abi_fail_hcp
+    lea -128(%rbp), %rdi
+    lea .Labi_k1(%rip), %rsi
+    mov $2, %edx
+    call hbc_hget
+    mov %rax, -64(%rbp)
+    call abi_check
+    mov -64(%rbp), %rax
+    test %rax, %rax
+    je abi_fail_hcp
+    cmpq $7, 8(%rax)
+    jne abi_fail_hcp
+    lea -128(%rbp), %rdi
+    lea .Labi_k3(%rip), %rsi
+    mov $2, %edx
+    call hbc_hget
+    mov %rax, -64(%rbp)
+    call abi_check
+    mov -64(%rbp), %rax
+    test %rax, %rax
+    je abi_fail_hcp
+    cmpq $1, 8(%rax)
+    jne abi_fail_hcp
+    lea -96(%rbp), %rdi
+    lea -128(%rbp), %rsi
+    mov $99, %edx
+    mov $-1, %rcx
+    call hbc_hcopy
+    call abi_check
+    cmpq $3, -120(%rbp)
+    jne abi_fail_hcp
+    mov -96(%rbp), %rdi
+    mov $1, %esi
+    call hbc_hfree
+    call abi_check
+    mov -128(%rbp), %rdi
+    mov $1, %esi
+    call hbc_hfree
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -1308,6 +1484,26 @@ abi_fail_hc:
     lea .Labi_f_hc(%rip), %rax
     mov $12, %edx
     jmp abi_fail_common
+abi_fail_hsdA:
+    lea .Labi_f_hsdA(%rip), %rax
+    mov $14, %edx
+    jmp abi_fail_common
+abi_fail_hsdB:
+    lea .Labi_f_hsdB(%rip), %rax
+    mov $14, %edx
+    jmp abi_fail_common
+abi_fail_hsdC:
+    lea .Labi_f_hsdC(%rip), %rax
+    mov $14, %edx
+    jmp abi_fail_common
+abi_fail_hsdD:
+    lea .Labi_f_hsdD(%rip), %rax
+    mov $14, %edx
+    jmp abi_fail_common
+abi_fail_hcp:
+    lea .Labi_f_hcp(%rip), %rax
+    mov $13, %edx
+    jmp abi_fail_common
 abi_fail_common:
     call hbc_print_str
 ASM_EOF
@@ -1353,6 +1549,11 @@ ASM_EOF
 .Labi_f_hcl: .ascii "ABI FAIL hcl\n"
 .Labi_f_hm:  .ascii "ABI FAIL hm\n"
 .Labi_f_hc:  .ascii "ABI FAIL hc\n"
+.Labi_f_hsdA: .ascii "ABI FAIL hsdA\n"
+.Labi_f_hsdB: .ascii "ABI FAIL hsdB\n"
+.Labi_f_hsdC: .ascii "ABI FAIL hsdC\n"
+.Labi_f_hsdD: .ascii "ABI FAIL hsdD\n"
+.Labi_f_hcp: .ascii "ABI FAIL hcp\n"
 .Labi_f_de: .ascii "ABI FAIL deq\n"
 .Labi_s3:    .ascii "abc"
 .Labi_s6:    .ascii "abcdef"
