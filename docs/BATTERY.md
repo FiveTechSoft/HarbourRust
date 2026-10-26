@@ -1391,7 +1391,11 @@ surface, 1 here vs .T. in Harbour); t610 hk206 (hb_HSetDef
 overwrite on tag difference, hb_HScan finds a logical); t611 hk207
 (hb_HClone/hb_HValues preserve logical cells); t612 the AAdd/ArrSet
 part of hk208; t613 hk208e (hb_HCopy source first, hb_HFill with a
-logical). A Dyn in condition position materializes through the new
+logical); t614 the alloc/free balance of logical-casilla structures
+(mixed literal, AAdd growth, hash writes, HClone, HValues, HCopy,
+HFill - wrap + memcheck 0 after the owning frame frees them). The
+ABI harness carries dedicated canaries for hbc_dyn_eq tag-3 and the
+new hbc_dyn_to_log on both targets. A Dyn in condition position materializes through the new
 hbc_dyn_to_log (logical keeps payload; NIL, integer or string
 cell is Harbour's error condition - hk210, dialog hangs headless -
 clean exit 1 here); ValType over a hash casilla measures "L";
@@ -1400,5 +1404,5 @@ dialog hangs headless) and takes the registered clean bound-error
 exit - not a silent "U" read. Registered limit: a mixed literal must be all
 literal elements.
 
-610/610 manifest cases + ABI harness green on Linux x86-64 and Wine
+611/611 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
