@@ -1213,6 +1213,23 @@ integer a per-operator clean named exit 1 mirroring BASE/1073-1076
 (hk149-hk152 - dialogs hang headless; registered failure modes;
 t514-t517).
 
+t556-t567 (iteration 56): hb_HCaseMatch / hb_HSetCaseMatch over the new
+hbc_hcasematch / hbc_hsetcasematch helpers and the CaseMatch flag in the
+hash block's new 16-byte [flags][capacity] header - default sensitive
+(getter printed 1/0, boolean rendering family), insensitive matching on
+the LAST insertion-order match for reads, writes, hb_HPos and hb_HDel
+(t556-t559, t561; hk169-hk172, hk174), flag propagation through hb_HClone
+including an empty flagged hash (t560/t563; hk173/hk176), hb_HMerge
+obeying the DESTINATION's flag (t562; hk175), owned key temporaries
+(hb_HKeys(h)[i]) through the insensitive path with full balance including
+a header-only block (t564, wrap + memcheck = 0, own check) and the named
+rejections for a non-hash target, a non-integer flag and a subscript
+target (t565-t567). Folding is ASCII-only (measured scope). hb_HGet on a
+missing key stays the already-registered failure family (hk177 confirmed
+the dialog in insensitive mode too). The per-target hbc_hfreeblock
+releases the new block layout on both targets and is canaried in the ABI
+harness together with the two new helpers.
+
 t550-t555 (iteration 55): hb_HClone(h) over the new hbc_hclone helper -
 copy independence in both directions (t550, hk166) for string keys
 and scalar int/NIL values (the only value types of this increment;
