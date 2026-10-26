@@ -718,3 +718,4 @@ pos tests/t720_qq_basic.hb abcd\nef        42\ngh
 pos tests/t721_qq_multiargs.hb a b          1          2\nc d
 pos tests/t722_qq_logical.hb .T..F.\nend
 pos tests/t723_qq_bare.hb \na\nb
+neg tests/t724_infer_pinerr_osc_neg.hb must be a dynamic array, got a dynamic value
