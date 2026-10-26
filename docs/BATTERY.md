@@ -1213,6 +1213,13 @@ integer a per-operator clean named exit 1 mirroring BASE/1073-1076
 (hk149-hk152 - dialogs hang headless; registered failure modes;
 t514-t517).
 
+t540-t543 (iteration 51): hb_HPos(h, key) over the new hbc_hpos leaf -
+1-based live position, 0 when absent (t540, hk162), positions compact
+after hb_HDel and a re-add goes last (t541, hk163), an owned key
+temporary is freed after the call (t542, balance 0, own check),
+non-hash target rejected at compile time (t543). New helper canaried
+in the ABI harness on both targets.
+
 t535-t539 (iteration 49 ownership follow-up): hb_HGet with an OWNED key
 temporary frees it after the lookup, with and without the integer
 default (t535: wrap + memcheck balance 0, own check, not an oracle);
@@ -1267,5 +1274,5 @@ insertion order into a NEW independent array (oracles hk153/hk154;
 t518/t519), result freed by the DArr epilogue with balance 0 (t520,
 own ownership check, not a Harbour oracle).
 
-535/535 manifest cases + ABI harness green on Linux x86-64 and Wine
+539/539 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
