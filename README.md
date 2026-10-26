@@ -1263,5 +1263,19 @@ reproduce the oracles on Linux and Wine; t520 checks the result is
 freed by the DArr epilogue (balance 0, own ownership check, same
 pattern as t298 - not a Harbour oracle).
 
-Battery: 516/516 manifest cases on Linux x86-64 and Wine, plus
+Iteration 47 adds hb_HDel(h, key) (core hb_HDel; oracles hk155/hk156):
+removes the key's entry - len drops, iteration and lookups skip it, a
+missing key (including "") is a no-op, and a deleted key re-added lands
+at the END because the remaining entries keep their order (hk156). New
+runtime helper hbc_hdel frees the hash-owned key copy and shifts the
+remaining entries down; canaried in the ABI harness on both targets; the
+lookup key is only borrowed. t521 reproduces hk155 byte for byte on
+Linux and Wine; t522 verifies hk156's order and no-op facts with the
+values read back through literal keys (the oracle's interleaved h[k]
+read with a Dyn `for each` variable stays a named limit of this
+increment - reads take Str/StrOwn keys); t523 checks the deleted key
+copies are freed (balance 0, own ownership check, same pattern as t298 -
+not a Harbour oracle); t524 rejects a non-hash target at compile time.
+
+Battery: 520/520 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
