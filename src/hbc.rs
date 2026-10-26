@@ -542,14 +542,29 @@ impl P {
                 }
             }
             Some(Tok::Float(txt, dec)) => {
-                // Measured precision frontier (oracles hk278-hk284):
-                // |x| < 1e15 (the Harbour `*` overflow display rule near
-                // 1e16 is unmeasured), nonzero |x| >= 1e-17 (16-significant
-                // digit normalization domain), <= 17 written decimals.
+                // Measured precision frontier (oracles hk278-hk288).
+                // Harbour's `*` overflow is a value-dependent artifact of
+                // its hb_itemStrBuf digit-extraction loop (carry running
+                // off the left edge of the field), not a clean magnitude
+                // rule: measured stars at (int,dec) = (14,2) (10,6) (11,5)
+                // (12,4) (13,3) (10,7) (15,1) (16,1-all-nines) and printing
+                // at (14,1) (9,7) (8,8) (5,11) (3,13) (12,3) (16,1) (17,1).
+                // We reject the whole artifact zone instead of imitating
+                // it: admitted = |x| < 1 with dec <= 17, or int+dec <= 15
+                // with int <= 14, or int <= 9 with int+dec = 16, or
+                // int <= 2 with int+dec = 17; nonzero |x| >= 1e-17;
+                // <= 17 written decimals (checked at the lexer).
                 let v: f64 = txt.parse().map_err(|_| format!("line {}: bad float literal", self.n))?;
                 let a = v.abs();
-                if a >= 1e15 || (a != 0.0 && a < 1e-17) {
-                    return Err(format!("line {}: float literal outside this increment's measured precision frontier (|x| < 1e15; oracles hk278-hk284)", self.n));
+                let intd = txt.split('.').next().unwrap_or("").len() as u32;
+                let decd = txt.split('.').nth(1).map(|f| f.len() as u32).unwrap_or(0);
+                let ok = a == 0.0
+                    || (a >= 1e-17 && a < 1.0)
+                    || (a >= 1.0 && intd <= 14 && intd + decd <= 15)
+                    || (a >= 1.0 && intd <= 9 && intd + decd == 16)
+                    || (a >= 1.0 && intd <= 2 && intd + decd == 17);
+                if !ok {
+                    return Err(format!("line {}: float literal outside this increment's measured precision frontier (oracles hk278-hk288)", self.n));
                 }
                 Ok(Expr::Float(txt, dec))
             }
@@ -12018,7 +12033,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
 // "16 significant digits" rule is OBSERVED in the probes, not proven
 // universal; the half-up tie at digit 16 has no direct oracle yet.
 const F64_HELPER: &str = r#"
-# hbc_print_f64: %xmm0 = value, %rdi = dec_count. Frontier: 1e-17<=|x|<1e15, dec<=17.
+# hbc_print_f64: %xmm0 = value, %rdi = dec_count. Frontier: nonzero |x| >= 1e-17 and the (int,dec) measured zone of hbc.rs (oracles hk278-hk288).
 hbc_print_f64:
     push %rbp
     mov %rsp, %rbp
