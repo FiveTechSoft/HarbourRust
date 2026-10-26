@@ -534,3 +534,7 @@ neg tests/t536_neg_hget_default_str.hb the hb_HGet default is an integer in this
 neg tests/t537_neg_hget_default_strown.hb the hb_HGet default is an integer in this increment
 neg tests/t538_neg_hget_default_darr.hb the hb_HGet default is an integer in this increment
 neg tests/t539_neg_hget_default_hash.hb the hb_HGet default is an integer in this increment
+pos tests/t540_hpos.hb \n         1\n         2\n         3\n         0\n         0
+pos tests/t541_hpos_compact.hb \n         1\n         2\n         3
+pos tests/t542_hpos_owned_key.hb \n         2\n         0\n         0
+neg tests/t543_neg_hpos_type.hb `hb_HPos` expects a hash variable
