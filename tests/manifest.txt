@@ -490,3 +490,5 @@ neg tests/t492_neg_exeq_static.hb measured only between two integers, between tw
 pos tests/t493_exeq_str.hb \n         1\n         0\n         0\n         0\n         1\n         0
 pos tests/t494_exeq_nil.hb \n         1\n         0\n         0\n         0
 pos tests/t495_exeq_casnil.hb \n         0\n         0\n         1\n         0\n         0
+pos tests/t496_exeq_darr2.hb \n         1\n         0\n         1
+pos tests/t497_exeq_block.hb \n         1\n         0\n         1
