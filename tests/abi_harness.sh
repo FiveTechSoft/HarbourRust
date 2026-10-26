@@ -1601,7 +1601,7 @@ hbc_abi_test:
     # SysV) + rbx/r12-r15 + stack balance/alignment must survive the call.
     movabs $0x3FF8000000000000, %rax   # 1.5
     movq %rax, %xmm0
-    mov $2561, %edi                    # (10 << 8) | 1
+    mov $655361, %edi                   # (10 << 16) | 1
     movabs $0x0606060606060601, %rax
     movq %rax, %xmm6
     movabs $0x0707070707070701, %rax
