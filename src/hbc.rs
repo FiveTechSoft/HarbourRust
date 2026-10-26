@@ -574,7 +574,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey",
+    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -2244,6 +2244,31 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: hash keys are strings in this increment", n));
                 }
                 return Ok(Ty::I64);
+            }
+            if is_builtin(id, "hb_hget") {
+                // hb_HGet(h, key [, default]): the value casilla of an
+                // existing key (hk158a/e, with or without the default).
+                // A MISSING key is the same BASE/1132 condition as an
+                // h[k] read miss: Harbour shows its dialog and hangs
+                // headless even WITH a default (hk158a/b/d), so the PoC
+                // takes the registered clean bound-error exit - a
+                // failure-mode registration, never a compat success. An
+                // existing NIL value stays NIL; the default is never
+                // applied in any measured case (hk158c), so it is
+                // type-checked but not evaluated. Hash and key borrowed.
+                if args.len() != 2 && args.len() != 3 {
+                    return Err(format!("line {}: `hb_HGet` takes two or three arguments", n));
+                }
+                if !matches!(&args[0], Expr::Var(_)) || type_expr(&args[0], env, sigs, n)? != Ty::Hash {
+                    return Err(format!("line {}: `hb_HGet` expects a hash variable (its slot is passed by address)", n));
+                }
+                if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::Str | Ty::StrOwn) {
+                    return Err(format!("line {}: hash keys are strings in this increment", n));
+                }
+                if args.len() == 3 && type_expr(&args[2], env, sigs, n)? != Ty::I64 {
+                    return Err(format!("line {}: the hb_HGet default is an integer in this increment", n));
+                }
+                return Ok(Ty::Dyn);
             }
             if is_builtin(id, "hb_hvalues") {
                 // hb_HValues(h): NEW array of the hash's value casillas
@@ -4070,6 +4095,13 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
+            if is_builtin(id, "hb_hget") {
+                // The hash and the lookup key are BORROWED: hbc_hget
+                // only reads them. The optional default is never
+                // evaluated (hk158b/c/e), so it moves nothing either.
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
             let sig = sigs.iter().find(|v| v.name == *id).expect("checked");
             for (i, a) in args.iter().enumerate() {
                 // A static array argument is COPIED at the boundary (33l):
@@ -4406,6 +4438,35 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             } else {
                 unreachable!("checked: hb_HHasKey takes a hash variable");
             }
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_hget") => {
+            // hb_HGet(h, key [, default]): key first (borrowed), then
+            // the slot by address; hbc_hget returns the entry's
+            // {tag, payload} pointer or 0 on a miss, which takes the
+            // registered clean bound-error exit (hk158a/b/d). The
+            // default is never evaluated (hk158b/c/e). Returns
+            // rax = tag, rdx = payload.
+            cg_value(&args[1], env, sigs, strs, out, target);
+            let temp_key = expr_ty(&args[1], env, sigs) == Ty::StrOwn && !matches!(&args[1], Expr::Var(_));
+            if temp_key {
+                // An owned key copy (e.g. hb_HGet(h, keys[i])): the
+                // lookup borrows it; free it right after hbc_hget
+                // returns (same pattern as the h[k] read).
+                out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            } else {
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            }
+            if let Expr::Var(v) = &args[0] {
+                let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                if temp_key {
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hget\n    mov %rax, 16(%rsp)\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    mov 16(%rsp), %rax\n    add $32, %rsp\n", var.off));
+                } else {
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    call hbc_hget\n", var.off));
+                }
+            } else {
+                unreachable!("checked: hb_HGet takes a hash variable");
+            }
+            out.push_str("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hvalues") => {
             // hb_HValues(h): the helper copies every value cell into a
@@ -5014,6 +5075,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "array") { return match args.len() { 1 => Ty::DArr, 2 => Ty::DArr2, 3 => Ty::DArr3, _ => Ty::DArr4 }; }
             if is_builtin(id, "hb_hkeys") { return Ty::DArrS; }
             if is_builtin(id, "hb_hhaskey") { return Ty::I64; }
+            if is_builtin(id, "hb_hget") { return Ty::Dyn; }
             if is_builtin(id, "hb_hvalues") { return Ty::DArr; }
             if is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") { return Ty::I64; }
             if is_builtin(id, "valtype") { return Ty::Str; } // hk88-hk92
