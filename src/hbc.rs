@@ -1845,6 +1845,7 @@ fn parse_param_names(rest: &[Tok], n: usize) -> Result<Vec<String>, String> {
 // Function signature: name, parameter types (i64 only in this increment),
 // return type. Passing an integer argument COPIES it (Rust i64 is Copy);
 // passing a string is a type error at the call site in this increment.
+#[derive(Clone)]
 struct Sig {
     name: String,
     params: Vec<Ty>,
@@ -12790,49 +12791,113 @@ fn main() {
     }
 
     // Pass 1: semantic analysis - types, ownership/move, signatures.
-    let mut sigs: Vec<Sig> = Vec::new();
+    // ORDER-INDEPENDENT inference (oracle hk253: Harbour resolves calls
+    // to functions defined later in the file, including mutual and self
+    // recursion): `view` always holds a COMPLETE signature table - every
+    // function in the file, seeded with placeholder types (i64 params,
+    // void return) before round 1. Each round re-infers every function
+    // from the AST against `view`; a function's freshly computed entry
+    // lands in `cur` and is only read by the NEXT round. Errors from a
+    // round that is not yet converged may depend on placeholder types,
+    // so they are collected and only emitted by the round that proves
+    // convergence (its checks ran against the stable table).
+    // Termination is justified by finite progress, not a guessed round
+    // count: an entry only moves placeholder -> concrete and then UP the
+    // finite pin-merge lattice (i64 < Dyn, DArr < DArr2 < DArr3 < DArr4,
+    // ...), and the per-call-site borrowed/arr_moved flags only flip
+    // false -> true, so every non-converged round strictly increases the
+    // summed lattice height and the round count is bounded by `cap`
+    // below. Reaching the cap means the monotonicity argument broke -
+    // an explicit diagnostic, never a silent assumption.
+    let cap = 2 + 4 * funcs.iter().map(|f| f.params.len() + 1).sum::<usize>();
+    let mut view: Vec<Sig> = funcs.iter().map(|f| Sig {
+        name: f.name.clone(),
+        borrowed: vec![false; f.params.len()],
+        arr_moved: vec![false; f.params.len()],
+        params: vec![Ty::I64; f.params.len()],
+        ret: None,
+    }).collect();
+    let mut sigs: Vec<Sig>;
     let mut has_main = false;
-    for f in &mut funcs {
-        if f.name == "main" { has_main = true; }
-        // Pin parameter types. On failure, keep going with i64 placeholders
-        // so the body check can surface a more specific error first; the pin
-        // error is only reported if the body itself checks clean.
-        let (ptys, pin_err) = match pin_params(f, &sigs) {
-            Ok((pin, e)) => (pin.into_iter().map(|x| x.unwrap_or(Ty::I64)).collect(), e),
-            Err(m) => (vec![Ty::I64; f.params.len()], Some(m)),
-        };
-        let mut env: Vec<Local> = Vec::new();
-        // Parameters enter the frame as owned locals: integer arguments copy,
-        // string arguments move (callers hand over ownership). A parameter
-        // some caller passes as `@p` is BORROWED from that caller instead
-        // (hk216): the flag rejects moving it out (the caller keeps it).
-        let brp: std::collections::HashSet<usize> = byref_params.get(&f.name).cloned().unwrap_or_default().into_iter().collect();
-        for (i, p) in f.params.iter().enumerate() {
-            env.push(Local { name: p.clone(), ty: ptys[i], moved: false, ro: false, byref: brp.contains(&i) });
-        }
-        let byref_names: std::collections::HashSet<String> = byref_locals.get(&f.name).cloned().unwrap_or_default();
-        let mut ret = None;
-        let mut top_exits: Vec<Vec<bool>> = Vec::new();
-        let dyn_names = prescan_dyn(f, &sigs, &ptys);
-        let res = check_stmts(&f.stmts, &mut env, &mut sigs, &mut ret, None, &mut top_exits, &dyn_names, &byref_names);
-        f.dyn_names = dyn_names;
-        if let Err(m) = res {
-            eprintln!("error: {}", m);
+    let mut round = 0usize;
+    loop {
+        round += 1;
+        if round > cap {
+            eprintln!("error: internal: type inference did not converge after {} rounds (monotone-refinement bound exceeded; please report this input)", cap);
             process::exit(1);
         }
-        if f.name == "main" {
-            if has_value_return(&f.stmts) {
-                eprintln!("error: main must end with `return` or `return nil` in this PoC");
+        let mut cur: Vec<Sig> = Vec::with_capacity(funcs.len());
+        let before = view.clone();
+        let mut first_err: Option<String> = None;
+        for f in &mut funcs {
+            if f.name == "main" { has_main = true; }
+            // Pin parameter types. On failure, keep going with i64 placeholders
+            // so the body check can surface a more specific error first; the pin
+            // error is only reported if the body itself checks clean.
+            let (ptys, pin_err) = match pin_params(f, &view) {
+                Ok((pin, e)) => (pin.into_iter().map(|x| x.unwrap_or(Ty::I64)).collect(), e),
+                Err(m) => (vec![Ty::I64; f.params.len()], Some(m)),
+            };
+            let mut env: Vec<Local> = Vec::new();
+            // Parameters enter the frame as owned locals: integer arguments copy,
+            // string arguments move (callers hand over ownership). A parameter
+            // some caller passes as `@p` is BORROWED from that caller instead
+            // (hk216): the flag rejects moving it out (the caller keeps it).
+            let brp: std::collections::HashSet<usize> = byref_params.get(&f.name).cloned().unwrap_or_default().into_iter().collect();
+            for (i, p) in f.params.iter().enumerate() {
+                env.push(Local { name: p.clone(), ty: ptys[i], moved: false, ro: false, byref: brp.contains(&i) });
+            }
+            let byref_names: std::collections::HashSet<String> = byref_locals.get(&f.name).cloned().unwrap_or_default();
+            let mut ret = None;
+            let mut top_exits: Vec<Vec<bool>> = Vec::new();
+            let dyn_names = prescan_dyn(f, &view, &ptys);
+            let res = check_stmts(&f.stmts, &mut env, &mut view, &mut ret, None, &mut top_exits, &dyn_names, &byref_names);
+            f.dyn_names = dyn_names;
+            if let Err(m) = res {
+                if first_err.is_none() { first_err = Some(m); }
+            }
+            if f.name == "main" {
+                if has_value_return(&f.stmts) && first_err.is_none() {
+                    first_err = Some("main must end with `return` or `return nil` in this PoC".to_string());
+                }
+                ret = None; // main's own `return nil` is NIL, never a usable value
+            }
+            if let Some(m) = pin_err {
+                if first_err.is_none() { first_err = Some(m); }
+            }
+            cur.push(Sig { name: f.name.clone(), borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], params: ptys.clone(), ret });
+            f.ret = ret;
+        }
+        // Types/returns converge by fresh re-inference (cur) against the
+        // pre-round table (before); the call-site flags live ONLY in
+        // `view`, where they accumulate across the whole round
+        // (monotone false -> true), so a late caller in this round is
+        // not lost by an early copy.
+        let converged = cur.len() == before.len()
+            && cur.iter().zip(before.iter()).all(|(c, b)| c.name == b.name && c.params == b.params && c.ret == b.ret)
+            && view.iter().zip(before.iter()).all(|(v, b)| v.name == b.name && v.borrowed == b.borrowed && v.arr_moved == b.arr_moved);
+        if converged {
+            // This round's checks already ran against the stable table:
+            // its errors are final, not placeholder artifacts.
+            if let Some(m) = first_err {
+                eprintln!("error: {}", m);
                 process::exit(1);
             }
-            ret = None; // main's own `return nil` is NIL, never a usable value
+            // Merge fresh types with the accumulated flags.
+            for (c, v) in cur.iter_mut().zip(view.iter()) {
+                c.borrowed = v.borrowed.clone();
+                c.arr_moved = v.arr_moved.clone();
+            }
+            sigs = cur;
+            break;
         }
-        if let Some(m) = pin_err {
-            eprintln!("error: {}", m);
-            process::exit(1);
+        // Not converged: drop this round's errors (they may rest on
+        // placeholder types) and refine the table for the next round:
+        // types from this round, flags keep accumulating in place.
+        for (v, c) in view.iter_mut().zip(cur.into_iter()) {
+            v.params = c.params;
+            v.ret = c.ret;
         }
-        sigs.push(Sig { name: f.name.clone(), borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], params: ptys.clone(), ret });
-        f.ret = ret;
     }
     // Borrowed-parameter escape post-pass (see borrow_stmts_ok).
     for f in &funcs {
