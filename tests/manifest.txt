@@ -702,4 +702,7 @@ pos tests/t704_print_then_concat.hb \nab\nab!
 pos tests/t705_print_dyn_multitype.hb \ntext\n        42\nNIL
 neg tests/t706_print_dyn_array_neg.hb must be a dynamic value, got a dynamic array
 pos tests/t707_print_dyn_boundary.hb \nabc\nabc\nde\nde
-neg tests/t708_print_dyn_bool_neg.hb must be a dynamic value, got a boolean
+pos tests/t708_print_dyn_bool.hb \n.T.
+pos tests/t709_print_dyn_bool_return.hb \n.T.\n.T.\n.F.\n.F.
+pos tests/t710_print_dyn_all_scalars.hb \ntext\n        42\nNIL\n.T.
+neg tests/t711_dyn_bool_reassign_neg.hb type mismatch in assignment
