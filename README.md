@@ -229,6 +229,9 @@ function name()            opens a function (main is the entry point)
                              assigns too (oracle hk214); `=` stays a
                              comparison inside expressions
     ? <expr>               prints
+    f(<args>)              a call as a statement: the callee runs and the
+                             return value is discarded (an owned string is
+                             freed; discarding a dynamic array is rejected)
     if <cond> ... endif    conditional, optional else, nestable
     while <cond> ... enddo loop, re-evaluates the condition each iteration
     for i := <a> to <b> [step <n>] ... next
@@ -480,7 +483,9 @@ t208-t223). Design: docs/DESIGN-nil-tag.md.
 
 `local a := {}` creates a dynamic array of integers: `AAdd(a, x)` and
 `ASize(a, n)` are built-in statements that grow/resize in place,
-`len(a)` reads the length. This is the compiler's first heap: mmap on
+`len(a)` reads the length. `len()` also accepts
+strings (oracle hk217: length in characters); a string parameter under
+`len()` still pins as an array (registered limitation). This is the compiler's first heap: mmap on
 Linux (failure = negative errno, checked), HeapAlloc on Windows, an
 8-byte capacity header before the data, doubling growth, checked
 overflow, OOM abort with a clean message. Ownership is Rust's model
