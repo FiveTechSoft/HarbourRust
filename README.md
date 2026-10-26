@@ -1205,5 +1205,20 @@ returned, Dyn cannot be reassigned to Block), but admitting the
 operator would bake in a model known to diverge, so `==` on
 codeblocks stays a named, truthful rejection (t497 neg).
 
-Battery: 495/495 manifest cases on Linux x86-64 and Wine, plus
+Dynamic CASILLAS answer `==` by runtime tag dispatch (iteration 40):
+string x string is the exact byte compare (hk141, symmetric; hk143
+between two casillas - content, not identity), number x number the
+value compare (hk138), NIL x NIL .T. and NIL x payload .F. (hk140);
+mixed number x string raises Harbour's BASE/1070 (hk139/hk139b/
+hk139c/hk142 - error dialog, hangs headless, no oracle), a clean
+named exit 1 here: registered failure mode, not exact equivalence.
+New leaf helper hbc_dynxeq_dd (canaried in the ABI harness on both
+targets) plus the noreturn hbc_dynxeq_error stub; t500-t504 run on
+Linux and Wine. The string-casilla shapes measured in hk132/hk133
+use indexed-assignment storage that this PoC does not implement
+(dynamic-array elements stay tagged int/NIL scalars there); the
+expressible producer - FOR EACH over hb_HKeys - is what t500/t501
+exercise, exactly as measured in hk141/hk143.
+
+Battery: 500/500 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
