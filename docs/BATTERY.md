@@ -1648,3 +1648,47 @@ stays the hollow `#if`-guarded pass, never counted):
   so the old ".NOT. needs a logical operand" becomes the more precise
   "`==` against NIL is measured only for ..." rejection. Still not
   compilable; the classification is the improvement.
+
+## Iteration 63l — statement ++/-- and compound assignment (2026-10-26)
+
+Statement-level increment/decrement and compound assignment from the
+originals' first-error cluster (oracle hk246, measured on hbmk2):
+`++x`, `x++`, `--x`, `x--` desugar to `x := x +/- 1`; `x += e`,
+`x -= e`, `x *= e` desugar to `x := x op e`. All typing, ownership and
+codegen flow through the existing assignment path, so only forms the
+desugared assignment already justifies are accepted.
+
+Named rejections, all measured against hk246:
+- `/=`: Harbour division yields decimals (n /= 2 prints 24.00); the
+  float/decimal design stays parked (hk226-hk233).
+- `++`/`--` inside expressions (postfix `x++` reads the OLD value,
+  prefix `++x` the NEW one): needs sequenced side effects in the
+  expression evaluator, a design of its own. Statement forms cover
+  exit.prg and fib.prg; while.prg's `do while x++ < 1000` keeps the
+  named rejection.
+- Adjacent `--` in expression position: it used to parse as double
+  negation `-(-x) = x`, a SILENT Harbour miscompile (`y := --x`
+  computed x; Harbour pre-decrements). Now rejected by name (t674).
+
+- t668: ++x, x++, --x, x-- -> 1, 2, 1, 0 (= hk246).
+- t669: +=, -=, *= -> 15, 12, 48 (= hk246).
+- t670: string += on an owned slot (parameter) -> abcd (= hk246).
+  A literal-initialized local is a borrowed rodata view (Ty::Str), so
+  `s := s + "cd"` on it hits the pre-existing hk225 owned-into-borrowed
+  rejection; that restriction is not from +=.
+- t671-t674: the named rejections above.
+
+**Sweep** (frozen 175; provenance: src-sha256:7842db962de8d273,
+bin-sha256:fb3d81d80c610b3c, 2026-10-26 (this 63l source); compared
+against the post-63k sweep of HEAD 868b3f57): 9 rows changed, all advances:
+- errsys.prg: COMPILES and RUNS to Harbour's own failure point - `n++`
+  on a NIL local raises "Type error: NIL used as a number" and exits 1;
+  Harbour prints the same message and then blocks on its interactive
+  error dialog (the registered failure-mode difference, DIVERGE-FAILMODE).
+  First real original beyond hello.prg to compile and behave.
+- exit.prg, fib.prg: `++` statements parse; advance to the call-args and
+  for-variable-declaration blockers.
+- while.prg: the embedded-`++` named rejection replaces the generic
+  "unexpected token Plus".
+- dates3, guestbk, longdev, longstr2, t1: compound assignment parses;
+  first error moves to the next blocker in each file.
