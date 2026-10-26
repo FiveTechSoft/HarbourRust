@@ -1213,6 +1213,14 @@ integer a per-operator clean named exit 1 mirroring BASE/1073-1076
 (hk149-hk152 - dialogs hang headless; registered failure modes;
 t514-t517).
 
+t546-t549 (iteration 54): hb_HMerge(dst, src) over the new hbc_hmerge
+helper - source wins on overlap and keeps its position, new keys
+append (t546, hk164), empty target/source edges and an unmutated
+source (t547, hk165), non-hash target/source rejected at compile time
+(t548/t549). The call returns the target hash (hk165: ValType "H");
+the statement form is the PoC surface, the return value registered out
+of scope, and both arguments are hash variables in this surface.
+
 t545 (iteration 53): leak fix - hb_HDel freed no owned key temporary
 (same pattern as the hb_HHasKey leak of the 52, found in the StrOwn
 review matrix; h[k] reads/writes and hb_HGet/hb_HSet/hb_HPos verified
@@ -1285,5 +1293,5 @@ insertion order into a NEW independent array (oracles hk153/hk154;
 t518/t519), result freed by the DArr epilogue with balance 0 (t520,
 own ownership check, not a Harbour oracle).
 
-541/541 manifest cases + ABI harness green on Linux x86-64 and Wine
+545/545 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
