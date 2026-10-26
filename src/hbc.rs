@@ -244,6 +244,7 @@ enum Stmt {
     HClear(usize, String), // hb_HClear(h) statement: empty the hash, resetting the CaseMatch flag (hk191/hk193)
     HFill(usize, String, Expr), // hb_HFill(h, value) statement: overwrite every value, keys/order kept (hk192)
     HMerge(usize, String, String), // hb_HMerge(dst, src) statement: upsert every src entry into dst (hk164/hk165)
+    HCopy(usize, String, String, Option<Expr>, Option<Expr>), // hb_HCopy(src, dst [, start [, count]]) statement: upsert the src range into dst (hk195 family)
     HSet(usize, String, Expr, Expr), // hb_HSet(h, key, value) statement: functional hash write (hk159/hk161); the hash it returns is out of the statement surface (registered)
     HSetCaseMatch(usize, String, Expr), // hb_HSetCaseMatch(h, flag) statement: set the hash's key-matching mode (hk169/hk170); the hash it returns is out of the statement surface (registered, like hb_HSet's)
     ArrSet(usize, String, Expr, Expr), // a[i] := expr (index is 1-based)
@@ -580,7 +581,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -972,7 +973,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     *i += 1;
                     continue;
                 }
-                if (is_builtin(&id, "aadd") || is_builtin(&id, "asize") || is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hdelat") || is_builtin(&id, "hb_hclear") || is_builtin(&id, "hb_hfill") || is_builtin(&id, "hb_hset") || is_builtin(&id, "hb_hmerge") || is_builtin(&id, "hb_hsetcasematch")) && toks.len() >= 4 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen {
+                if (is_builtin(&id, "aadd") || is_builtin(&id, "asize") || is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hdelat") || is_builtin(&id, "hb_hclear") || is_builtin(&id, "hb_hfill") || is_builtin(&id, "hb_hset") || is_builtin(&id, "hb_hmerge") || is_builtin(&id, "hb_hcopy") || is_builtin(&id, "hb_hsetcasematch")) && toks.len() >= 4 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen {
                     // AAdd(a, x) / ASize(a, n) as a STATEMENT: in-place
                     // mutation of the named local (Harbour writes these as
                     // calls; the statement form is the PoC surface - probe
@@ -989,6 +990,43 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                             }
                             _ => return Err(format!("line {}: `hb_HClear` takes a single hash variable", n)),
                         }
+                        *i += 1;
+                        continue;
+                    }
+                    if is_builtin(&id, "hb_hcopy") {
+                        // hb_HCopy(src, dst [, start [, count]]) as a
+                        // STATEMENT (hk195/hk195b/hk195c; the hash it
+                        // returns is out of the statement surface, like
+                        // hb_HMerge's). Both must be hash variables and
+                        // NOT the same one: Harbour raises a self-copy
+                        // runtime error there (hk195b); with no aliases
+                        // in this dialect that is a named compile-time
+                        // rejection.
+                        let mut parts: Vec<&[Tok]> = Vec::new();
+                        let mut d0c = 0i32;
+                        let mut last = 0usize;
+                        for (p, tk) in inner.iter().enumerate() {
+                            match tk {
+                                Tok::LBracket | Tok::LParen => d0c += 1,
+                                Tok::RBracket | Tok::RParen => d0c -= 1,
+                                Tok::Comma if d0c == 0 => { parts.push(&inner[last..p]); last = p + 1; }
+                                _ => {}
+                            }
+                        }
+                        parts.push(&inner[last..]);
+                        if parts.len() < 2 || parts.len() > 4 {
+                            return Err(format!("line {}: `hb_HCopy` takes two to four arguments", n));
+                        }
+                        let (src, dst) = match (parts[0], parts[1]) {
+                            ([Tok::Ident(a)], [Tok::Ident(b)]) => { check_ident(a, n)?; check_ident(b, n)?; (a.clone(), b.clone()) }
+                            _ => return Err(format!("line {}: the first two arguments of `hb_HCopy` must be hash variables", n)),
+                        };
+                        if src == dst {
+                            return Err(format!("line {}: `hb_HCopy` cannot copy a hash onto itself (Harbour's self-copy error family, hk195b)", n));
+                        }
+                        let start = if parts.len() >= 3 { Some(parse_expr_tokens(parts[2].to_vec(), n)?) } else { None };
+                        let count = if parts.len() == 4 { Some(parse_expr_tokens(parts[3].to_vec(), n)?) } else { None };
+                        out.push(Stmt::HCopy(n, src, dst, start, count));
                         *i += 1;
                         continue;
                     }
@@ -1877,6 +1915,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
                     pin_vars(f, &Expr::Var(s.clone()), Ty::Hash, pin, *n)?;
                 }
+                Stmt::HCopy(n, id, s2, se, ce) => {
+                    // hb_HCopy's source AND target are hashes (hk195):
+                    // both pin parameters; start/count pin as integers.
+                    pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
+                    pin_vars(f, &Expr::Var(s2.clone()), Ty::Hash, pin, *n)?;
+                    if let Some(e) = se { walk(f, e, sigs, lit, pin, *n)?; }
+                    if let Some(e) = ce { walk(f, e, sigs, lit, pin, *n)?; }
+                }
                 Stmt::AAdd(n, id, e) => {
                     // AAdd's target is a dynamic array: pins a parameter.
                     // A string element pins an array of strings (the
@@ -2487,6 +2533,50 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 if args.len() == 3 && type_expr(&args[2], env, sigs, n)? != Ty::I64 {
                     return Err(format!("line {}: the hb_HGet default is an integer in this increment", n));
+                }
+                return Ok(Ty::Dyn);
+            }
+            if is_builtin(id, "hb_hgetdef") {
+                // hb_HGetDef(h, key [, default]): on a HIT it returns the
+                // entry's value; on a MISS it returns the default WITHOUT
+                // adding the key - or NIL when no default is given (hk194).
+                // Unlike hb_HGet, a miss is not an error here. The default
+                // is an integer or NIL in this increment. Hash and key
+                // borrowed.
+                if args.len() != 2 && args.len() != 3 {
+                    return Err(format!("line {}: `hb_HGetDef` takes two or three arguments", n));
+                }
+                if !matches!(&args[0], Expr::Var(_)) || type_expr(&args[0], env, sigs, n)? != Ty::Hash {
+                    return Err(format!("line {}: `hb_HGetDef` expects a hash variable (its slot is passed by address)", n));
+                }
+                if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::Str | Ty::StrOwn) {
+                    return Err(format!("line {}: hash keys are strings in this increment", n));
+                }
+                if args.len() == 3 && !matches!(type_expr(&args[2], env, sigs, n)?, Ty::I64 | Ty::Dyn) {
+                    return Err(format!("line {}: the hb_HGetDef default is an integer or NIL in this increment", n));
+                }
+                return Ok(Ty::Dyn);
+            }
+            if is_builtin(id, "hb_hsetdef") {
+                // hb_HSetDef(h, key [, default]): an expression WITH an
+                // effect - an absent key is ADDED (default, or NIL with
+                // no default) and returned; a present key returns its
+                // stored value, overwritten only when the stored Dyn tag
+                // differs from the default's (hk196/hk196b/hk196d). The
+                // default is an integer or NIL in this increment. The
+                // hash is borrowed for the mutation (hbc_hsetdef copies
+                // the key and the default cell), the key is borrowed.
+                if args.len() != 2 && args.len() != 3 {
+                    return Err(format!("line {}: `hb_HSetDef` takes two or three arguments", n));
+                }
+                if !matches!(&args[0], Expr::Var(_)) || type_expr(&args[0], env, sigs, n)? != Ty::Hash {
+                    return Err(format!("line {}: `hb_HSetDef` expects a hash variable (its slot is passed by address)", n));
+                }
+                if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::Str | Ty::StrOwn) {
+                    return Err(format!("line {}: hash keys are strings in this increment", n));
+                }
+                if args.len() == 3 && !matches!(type_expr(&args[2], env, sigs, n)?, Ty::I64 | Ty::Dyn) {
+                    return Err(format!("line {}: the hb_HSetDef default is an integer or NIL in this increment", n));
                 }
                 return Ok(Ty::Dyn);
             }
@@ -4147,6 +4237,31 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 apply_moves(ve, env, sigs, true);
                 apply_moves(ke, env, sigs, false);
             }
+            Stmt::HCopy(n, id, s2, se, ce) => {
+                // hb_HCopy(src, dst): both must be live hash variables;
+                // both are only BORROWED (hbc_hcopy copies every key
+                // and value through hbc_hput). start/count are integers
+                // and move nothing. src == dst is rejected at parse
+                // time (hk195b self-copy family).
+                for nm in [&*id, &*s2] {
+                    let kp = match env.iter().position(|v| v.name == *nm) {
+                        Some(k) => k,
+                        None => return Err(format!("line {}: hb_HCopy on undeclared variable `{}` (declare it with `local` first)", n, nm)),
+                    };
+                    if env[kp].ty != Ty::Hash {
+                        return Err(format!("line {}: hb_HCopy expects hash variables in this increment", n));
+                    }
+                    if env[kp].moved {
+                        return Err(format!("line {}: use of moved value `{}`", n, nm));
+                    }
+                }
+                for oe in [se.as_ref(), ce.as_ref()].into_iter().flatten() {
+                    if type_expr(oe, env, sigs, *n)? != Ty::I64 {
+                        return Err(format!("line {}: hb_HCopy start/count are integers in this increment", n));
+                    }
+                    apply_moves(oe, env, sigs, false);
+                }
+            }
             Stmt::HMerge(n, id, s) => {
                 // hb_HMerge(dst, src): both must be live hash variables;
                 // both are only BORROWED (hbc_hmerge copies every key
@@ -4462,6 +4577,22 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 // only reads them. The optional default IS evaluated
                 // and its value discarded (hk158f1/f2/f3); as an
                 // integer in this increment it moves nothing either.
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
+            if is_builtin(id, "hb_hgetdef") {
+                // The hash and the lookup key are BORROWED: hbc_hget
+                // only reads them and a miss never mutates the hash
+                // (hk194: no auto-add). The default is a tagged int/NIL
+                // scalar; it moves nothing.
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
+            if is_builtin(id, "hb_hsetdef") {
+                // The hash is BORROWED for the mutation (hbc_hsetdef
+                // copies the key and the default cell), the key is
+                // borrowed, and the default is a tagged int/NIL scalar:
+                // nothing moves.
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
@@ -4966,6 +5097,89 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 unreachable!("checked: hb_HGet takes a hash variable");
             }
             out.push_str("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_hgetdef") => {
+            // hb_HGetDef(h, key [, default]): hbc_hget does the lookup
+            // (borrowed hash and key); a miss is NOT an error here -
+            // the default's saved Dyn cells are returned instead (or
+            // NIL when no default was given), and the key is never
+            // added (hk194). The default evaluates after the key,
+            // before the lookup. Returns rax = tag, rdx = payload.
+            cg_value(&args[1], env, sigs, strs, out, target);
+            let temp_key = expr_ty(&args[1], env, sigs) == Ty::StrOwn && !matches!(&args[1], Expr::Var(_));
+            if temp_key {
+                out.push_str("    sub $48, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            } else {
+                out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            }
+            if args.len() == 3 {
+                cg_value(&args[2], env, sigs, strs, out, target);
+                if expr_ty(&args[2], env, sigs) == Ty::Dyn {
+                    // Already a Dyn pair (rax = tag, rdx = payload).
+                    out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");
+                } else {
+                    // A pure i64 is 8 bytes: materialize its Dyn pair
+                    // (tag 0, payload = value).
+                    out.push_str("    movq $0, 16(%rsp)\n    mov %rax, 24(%rsp)\n");
+                }
+            } else {
+                // No default: a miss yields NIL (tag 1, payload 0).
+                out.push_str("    movq $1, 16(%rsp)\n    movq $0, 24(%rsp)\n");
+            }
+            if let Expr::Var(v) = &args[0] {
+                let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                if temp_key {
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hget\n    mov %rax, 32(%rsp)\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    mov 32(%rsp), %rax\n", var.off));
+                } else {
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hget\n", var.off));
+                }
+            } else {
+                unreachable!("checked: hb_HGetDef takes a hash variable");
+            }
+            let addend = if temp_key { 48 } else { 32 };
+            out.push_str(&format!("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 82f\n81:\n    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n82:\n    add ${}, %rsp\n", addend));
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_hsetdef") => {
+            // hb_HSetDef(h, key [, default]): key first (borrowed),
+            // then the default's Dyn cells (a pure i64 is materialized
+            // as tag 0; no default becomes a NIL cell) plus the has_def
+            // flag, then the slot by address; hbc_hsetdef applies the
+            // measured add/keep/overwrite rules (hk196/hk196b/hk196d).
+            // Returns rax = tag, rdx = payload.
+            cg_value(&args[1], env, sigs, strs, out, target);
+            let temp_key = expr_ty(&args[1], env, sigs) == Ty::StrOwn && !matches!(&args[1], Expr::Var(_));
+            if temp_key {
+                out.push_str("    sub $48, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            } else {
+                out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            }
+            if args.len() == 3 {
+                cg_value(&args[2], env, sigs, strs, out, target);
+                if expr_ty(&args[2], env, sigs) == Ty::Dyn {
+                    out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");
+                } else {
+                    out.push_str("    movq $0, 16(%rsp)\n    mov %rax, 24(%rsp)\n");
+                }
+            } else {
+                // No default: the cell is NIL (tag 1, payload 0); the
+                // helper only writes it when the key is absent (hk196b)
+                // and never overwrites a present key with it (hk196d).
+                out.push_str("    movq $1, 16(%rsp)\n    movq $0, 24(%rsp)\n");
+            }
+            let has_def = args.len() == 3;
+            if let Expr::Var(v) = &args[0] {
+                let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                // r8 (has_def) is set right before the call: the def
+                // evaluation above may clobber it, nothing below does.
+                let setflag = if has_def { "    mov $1, %r8d\n" } else { "    xor %r8d, %r8d\n" };
+                if temp_key {
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    lea 16(%rsp), %rcx\n{}    call hbc_hsetdef\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $48, %rsp\n", var.off, setflag));
+                } else {
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    lea 16(%rsp), %rcx\n{}    call hbc_hsetdef\n    add $32, %rsp\n", var.off, setflag));
+                }
+            } else {
+                unreachable!("checked: hb_HSetDef takes a hash variable");
+            }
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hclone") => {
             // hb_HClone(h): the helper deep-copies every entry into a
@@ -5592,6 +5806,8 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hvalueat") { return Ty::Dyn; }
             if is_builtin(id, "hb_hcasematch") { return Ty::I64; }
             if is_builtin(id, "hb_hget") { return Ty::Dyn; }
+            if is_builtin(id, "hb_hgetdef") { return Ty::Dyn; }
+            if is_builtin(id, "hb_hsetdef") { return Ty::Dyn; }
             if is_builtin(id, "hb_hvalues") { return Ty::DArr; }
             if is_builtin(id, "hb_hclone") { return Ty::Hash; }
             if is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") { return Ty::I64; }
@@ -7143,6 +7359,32 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let src = env.iter().rev().find(|x| x.name == *s).expect("checked");
                 out.push_str(&format!("    lea -{}(%rbp), %rdi\n    lea -{}(%rbp), %rsi\n    call hbc_hmerge\n", dst.off, src.off));
             }
+            Stmt::HCopy(_, id, s2, se, ce) => {
+                // hb_HCopy(src, dst [, start [, count]]): start
+                // evaluates first, then count (left to right), then
+                // both slots by address (borrowed). start 0/missing
+                // becomes 1 (hk195); a NEGATIVE start is Harbour's
+                // BASE/1123 dialog family (hk195d) - the registered
+                // clean bound-error exit, never a compat target. count
+                // missing = to the end (-1); count 0 and start > len
+                // are no-ops; a long count clips at len (hk195b/hk195c).
+                let src = env.iter().rev().find(|x| x.name == *id).expect("checked");
+                let dst = env.iter().rev().find(|x| x.name == *s2).expect("checked");
+                out.push_str("    sub $16, %rsp\n");
+                match se {
+                    Some(e) => {
+                        cg_value(e, env, sigs, strs, out, target);
+                        out.push_str("    cmp $1, %rax\n    jge 83f\n    test %rax, %rax\n    jnz 84f\n    mov $1, %eax\n    jmp 83f\n84:\n    call hbc_bound_error\n83:\n");
+                    }
+                    None => out.push_str("    mov $1, %eax\n"),
+                }
+                out.push_str("    mov %rax, (%rsp)\n");
+                match ce {
+                    Some(e) => { cg_value(e, env, sigs, strs, out, target); }
+                    None => out.push_str("    mov $-1, %rax\n"),
+                }
+                out.push_str(&format!("    mov %rax, %rcx\n    lea -{}(%rbp), %rdi\n    lea -{}(%rbp), %rsi\n    mov (%rsp), %rdx\n    add $16, %rsp\n    call hbc_hcopy\n", src.off, dst.off));
+            }
             Stmt::HSetCaseMatch(_, id, e) => {
                 // hb_HSetCaseMatch(h, flag): the flag evaluates first,
                 // then the slot address; the helper writes the header
@@ -7506,6 +7748,7 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
             Stmt::HSet(_, _, ke, ve) => { collect_blocks_expr(ke, out); collect_blocks_expr(ve, out); }
             Stmt::HSetCaseMatch(_, _, e) => { collect_blocks_expr(e, out); }
             Stmt::HMerge(_, _, _) => {}
+            Stmt::HCopy(_, _, _, se, ce) => { if let Some(e) = se { collect_blocks_expr(e, out); } if let Some(e) = ce { collect_blocks_expr(e, out); } }
             Stmt::ArrSet(_, _, ie, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(e, out); }
             Stmt::Print(_, es) => { for e in es { collect_blocks_expr(e, out); } }
             Stmt::Ret(_, Some(e)) => collect_blocks_expr(e, out),
@@ -8074,6 +8317,113 @@ hbc_hget:
     pop %rbx
     ret
 41: xor %eax, %eax
+    ret
+
+# hbc_hsetdef: rdi = slot address, rsi = key bytes, rdx = key length,
+# rcx = pointer to the default's 16-byte Dyn cell {tag, payload},
+# r8 = has_def (1 when a default argument was given, 0 otherwise).
+# Measured semantics (hk196/hk196b/hk196d): an ABSENT key is always
+# added - with the default, or NIL when none was given - and the added
+# value is returned. A PRESENT key returns its stored value; it is
+# overwritten with the default ONLY when the stored Dyn tag differs
+# from the default's tag (hk196b: stored NIL + integer default ->
+# overwrite; hk196 same tag -> keep; hk196d: no default -> keep even
+# though the stored tag differs from NIL). Returns rax = tag,
+# rdx = payload of the resulting value.
+hbc_hsetdef:
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    mov %rdi, %rbx
+    mov %rsi, %r12
+    mov %rdx, %r13
+    mov %rcx, %r14
+    mov %r8, %r15
+    call hbc_hget
+    test %rax, %rax
+    jz 51f
+    test %r15, %r15
+    jz 52f
+    mov (%rax), %rcx
+    cmp (%r14), %rcx
+    je 52f
+    mov %rbx, %rdi
+    mov %r12, %rsi
+    mov %r13, %rdx
+    mov %r14, %rcx
+    call hbc_hput
+    mov (%r14), %rax
+    mov 8(%r14), %rdx
+    jmp 53f
+52: mov (%rax), %rcx
+    mov 8(%rax), %rdx
+    mov %rcx, %rax
+    jmp 53f
+51: mov %rbx, %rdi
+    mov %r12, %rsi
+    mov %r13, %rdx
+    mov %r14, %rcx
+    call hbc_hput
+    mov (%r14), %rax
+    mov 8(%r14), %rdx
+53: pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    ret
+
+# hbc_hcopy: rdi = src slot address, rsi = dst slot address,
+# rdx = start (1-based, already normalized by the caller: 0 became 1),
+# rcx = count (-1 = to the end). Upserts src[start..start+count) into
+# dst through hbc_hput (hk195: new keys append, existing overwrite);
+# start > len and count 0 are no-ops, a long count clips at len
+# (hk195b/hk195c). Entries are 32 bytes {keyptr, keylen, tag, payload};
+# the key bytes start AT keyptr (same convention as hbc_hget/hbc_hmerge).
+hbc_hcopy:
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    mov (%rdi), %rbx
+    test %rbx, %rbx
+    jz 69f
+    mov 8(%rdi), %r15
+    cmp %r15, %rdx
+    ja 69f
+    test %rcx, %rcx
+    jz 69f
+    mov %rsi, %r14
+    mov %rdx, %r12
+    test %rcx, %rcx
+    js 61f
+    lea (%rdx,%rcx), %r13
+    lea 1(%r15), %rax
+    cmp %rax, %r13
+    cmova %rax, %r13
+    jmp 62f
+61: lea 1(%r15), %r13
+62: cmp %r13, %r12
+    jae 69f
+    mov %r12, %rax
+    dec %rax
+    shl $5, %rax
+    add %rbx, %rax
+    mov %r14, %rdi
+    mov (%rax), %rsi
+    mov 8(%rax), %rdx
+    lea 16(%rax), %rcx
+    call hbc_hput
+    inc %r12
+    jmp 62b
+69: pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
     ret
 
 # hbc_hput: rdi = slot address, rsi = key bytes, rdx = key length,
