@@ -240,6 +240,7 @@ enum Stmt {
     While(usize, Expr, Vec<Stmt>), // line, condition, body
     Assign(usize, String, Expr),   // x := expr on an already-declared local
     HDel(usize, String, Expr), // hb_HDel(h, key) statement: remove the key's entry (hk155/hk156)
+    HMerge(usize, String, String), // hb_HMerge(dst, src) statement: upsert every src entry into dst (hk164/hk165)
     HSet(usize, String, Expr, Expr), // hb_HSet(h, key, value) statement: functional hash write (hk159/hk161); the hash it returns is out of the statement surface (registered)
     ArrSet(usize, String, Expr, Expr), // a[i] := expr (index is 1-based)
     ArrSet2(usize, String, Expr, Expr, Expr), // a[i][j] := expr / a[i,j] := expr
@@ -575,7 +576,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hset", "hb_hpos",
+    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hset", "hb_hpos", "hb_hmerge",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -967,7 +968,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     *i += 1;
                     continue;
                 }
-                if (is_builtin(&id, "aadd") || is_builtin(&id, "asize") || is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hset")) && toks.len() >= 5 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen {
+                if (is_builtin(&id, "aadd") || is_builtin(&id, "asize") || is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hset") || is_builtin(&id, "hb_hmerge")) && toks.len() >= 5 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen {
                     // AAdd(a, x) / ASize(a, n) as a STATEMENT: in-place
                     // mutation of the named local (Harbour writes these as
                     // calls; the statement form is the PoC surface - probe
@@ -1030,6 +1031,16 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                             check_ident(v, n)?;
                             if is_builtin(&id, "hb_hdel") {
                                 out.push(Stmt::HDel(n, v.clone(), e));
+                            } else if is_builtin(&id, "hb_hmerge") {
+                                // hb_HMerge(dst, src) as a STATEMENT
+                                // (hk164/hk165; the hash it returns is
+                                // out of the statement surface, like
+                                // hb_HSet's). The source must be a hash
+                                // variable too.
+                                match e {
+                                    Expr::Var(s) => out.push(Stmt::HMerge(n, v.clone(), s)),
+                                    _ => return Err(format!("line {}: the second argument of `hb_HMerge` must be a hash variable", n)),
+                                }
                             } else if is_builtin(&id, "aadd") {
                                 out.push(Stmt::AAdd(n, v.clone(), e));
                             } else {
@@ -1801,6 +1812,13 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
                     walk(f, ke, sigs, lit, pin, *n)?;
                     walk(f, ve, sigs, lit, pin, *n)?;
+                }
+                Stmt::HMerge(n, id, s) => {
+                    // hb_HMerge's target AND source are hashes (hk164):
+                    // both pin parameters; the semantic pass enforces
+                    // the shapes.
+                    pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
+                    pin_vars(f, &Expr::Var(s.clone()), Ty::Hash, pin, *n)?;
                 }
                 Stmt::AAdd(n, id, e) => {
                     // AAdd's target is a dynamic array: pins a parameter.
@@ -3893,6 +3911,24 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
                 apply_moves(ve, env, sigs, true);
                 apply_moves(ke, env, sigs, false);
+            }
+            Stmt::HMerge(n, id, s) => {
+                // hb_HMerge(dst, src): both must be live hash variables;
+                // both are only BORROWED (hbc_hmerge copies every key
+                // and value it upserts; the source is only read and
+                // keeps owning its copies - hk165).
+                for nm in [id, s] {
+                    let kp = match env.iter().position(|v| v.name == *nm) {
+                        Some(k) => k,
+                        None => return Err(format!("line {}: hb_HMerge on undeclared variable `{}` (declare it with `local` first)", n, nm)),
+                    };
+                    if env[kp].ty != Ty::Hash {
+                        return Err(format!("line {}: hb_HMerge expects hash variables in this increment", n));
+                    }
+                    if env[kp].moved {
+                        return Err(format!("line {}: use of moved value `{}`", n, nm));
+                    }
+                }
             }
             Stmt::ArrSet(n, id, ie, e) => {
                 // Value first, then the index: the runtime order (probe
@@ -6751,6 +6787,16 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
                 out.push_str("    add $16, %rsp\n");
             }
+            Stmt::HMerge(_, id, s) => {
+                // hb_HMerge(dst, src): both slots by address (borrowed);
+                // hbc_hmerge upserts every src entry in insertion order
+                // through hbc_hput - the source WINS on overlap and keeps
+                // its position (hk164), new keys append at the end, an
+                // empty source is a no-op (hk165).
+                let dst = env.iter().rev().find(|x| x.name == *id).expect("checked");
+                let src = env.iter().rev().find(|x| x.name == *s).expect("checked");
+                out.push_str(&format!("    lea -{}(%rbp), %rdi\n    lea -{}(%rbp), %rsi\n    call hbc_hmerge\n", dst.off, src.off));
+            }
             Stmt::HDel(_, id, e) => {
                 // hb_HDel: key first (borrowed - hbc_hdel only reads it),
                 // then the slot address; the helper frees the hash-owned
@@ -7064,6 +7110,7 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
             Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) => collect_blocks_expr(e, out),
             Stmt::HDel(_, _, e) => { collect_blocks_expr(e, out); }
             Stmt::HSet(_, _, ke, ve) => { collect_blocks_expr(ke, out); collect_blocks_expr(ve, out); }
+            Stmt::HMerge(_, _, _) => {}
             Stmt::ArrSet(_, _, ie, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(e, out); }
             Stmt::Print(_, es) => { for e in es { collect_blocks_expr(e, out); } }
             Stmt::Ret(_, Some(e)) => collect_blocks_expr(e, out),
@@ -7863,6 +7910,47 @@ hbc_hpos:
 71: xor %eax, %eax
     ret
 74: lea 1(%rcx), %rax
+    ret
+
+# hbc_hmerge: rdi = dst hash slot address, rsi = src hash slot
+# address. Every src entry, in insertion order, is upserted into dst
+# through hbc_hput: key and value are COPIED (the source is only read
+# and keeps owning its copies - hk165); an overlapping key is
+# overwritten in place - the source WINS (hk164) - and new keys append
+# at the end; an empty source is a no-op. Frame-based: hbc_hput
+# allocates.
+hbc_hmerge:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $8, %rsp
+    mov %rdi, %r12
+    mov (%rsi), %r13
+    mov 8(%rsi), %r14
+    xor %r15d, %r15d
+50: cmp %r14, %r15
+    jae 51f
+    mov %r15, %rax
+    shl $5, %rax
+    lea (%r13,%rax), %rbx
+    mov %r12, %rdi
+    mov (%rbx), %rsi
+    mov 8(%rbx), %rdx
+    lea 16(%rbx), %rcx
+    call hbc_hput
+    inc %r15
+    jmp 50b
+51: add $8, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
     ret
 
 # hbc_hkeys: rdi = hash slot address. Returns rax = data pointer of a
