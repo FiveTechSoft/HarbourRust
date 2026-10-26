@@ -1840,3 +1840,42 @@ uncounted; errsys remains the registered DIVERGE-FAILMODE case now
 stopped at its hb_symbol_unused limit). and_or, calling and lnlenli2
 advance past the forward reference to their next real blockers
 (boolean arguments, string arguments, string array literals).
+
+## Iteration 63o — forward-reference hardening (2026-10-26)
+
+Three placeholder-artifact classes in 63n's fixpoint, found by pushing
+on the convergence guarantees:
+
+- Call-site argument checks ran against PLACEHOLDER parameter types of
+  not-yet-inferred forward callees, and the first such artifact could
+  mask the real error at convergence: `sff("ab")` with an uninferable
+  callee parameter reported "must be an integer, got a string" instead
+  of the uninferable parameter. Signatures now carry per-parameter
+  `inferred` flags; call sites skip per-argument checks (and flag
+  flips) against uninferred parameters, so a surviving body error
+  never rests on a placeholder (t693).
+- Call arguments PINNED against placeholder callee types, laundering a
+  placeholder into a concrete type across rounds (mutual recursion
+  `ma`/`mb` cross-pinned each other's parameters to the placeholder
+  i64). The pin arm now only accepts genuinely inferred signature
+  entries as evidence (63o).
+- Pin-error priority: a first draft gave pin errors precedence over
+  body errors to surface the root cause, which broke the established
+  body-first contract (t66 duplicate local, t323 pin conflict named by
+  the body). Reverted: body-first stands; the artifact classes are
+  excluded by the skips above, not by reordering. A no-evidence mutual
+  recursion (`ma`/`mb`, t694) is rejected by the CONVERGED fixpoint -
+  the ret=None cycle is the stable fixpoint state, so "`ma` never
+  returns a value" is a convergent verdict, not a placeholder guess.
+
+- t693 (neg): forward call with an uninferable callee parameter names
+  the root cause.
+- t694 (neg): no-evidence mutual recursion, convergent rejection.
+
+Battery: 690/690 + ABI harness green (Linux and Wine byte-identical).
+Sweep: unchanged from 63n (no sweep-visible behavior change; this is a
+diagnostics/robustness increment). Provenance: src hbc.rs sha256
+0ac9b666a42dffe16ee1b3affd22bde9c64715000cd6b95b60e12ecd0f50526e,
+compiler binary sha256
+87dab435b432629103089892f6e76d496d79f340bf1051c4e53d7eb8d5e5a07f,
+2026-10-26, reference HEAD a43404a1 (63n).
