@@ -679,6 +679,47 @@ hbc_abi_test:
     mov $1, %esi
     call hbc_hfree
     call abi_check
+    # hbc_hget canary (iteration 49): a 1-entry hash returns a pointer
+    # to the entry's {tag, payload} on a hit (verified) and 0 on a miss;
+    # read-only. Results saved BEFORE abi_check (it clobbers rax).
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    lea .Labi_k1(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $7, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea -96(%rbp), %rdi
+    lea .Labi_k1(%rip), %rsi
+    mov $2, %edx
+    call hbc_hget
+    mov %rax, -32(%rbp)
+    call abi_check
+    mov -32(%rbp), %rax
+    test %rax, %rax
+    je abi_fail_hg
+    cmpq $0, (%rax)
+    jne abi_fail_hg
+    cmpq $7, 8(%rax)
+    jne abi_fail_hg
+    lea -96(%rbp), %rdi
+    lea .Labi_k2(%rip), %rsi
+    mov $1, %edx
+    call hbc_hget
+    mov %rax, -32(%rbp)
+    call abi_check
+    cmpq $0, -32(%rbp)
+    jne abi_fail_hg
+    mov -96(%rbp), %rdi
+    mov $1, %esi
+    call hbc_hfree
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -781,6 +822,10 @@ abi_fail_hh:
     lea .Labi_f_hh(%rip), %rax
     mov $12, %edx
     jmp abi_fail_common
+abi_fail_hg:
+    lea .Labi_f_hg(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
 abi_fail_common:
     call hbc_print_str
 ASM_EOF
@@ -816,6 +861,7 @@ ASM_EOF
 .Labi_k3:    .ascii "zz"
 .Labi_f_hd:  .ascii "ABI FAIL hd\n"
 .Labi_f_hh:  .ascii "ABI FAIL hh\n"
+.Labi_f_hg:  .ascii "ABI FAIL hg\n"
 .Labi_f_de: .ascii "ABI FAIL deq\n"
 .Labi_s3:    .ascii "abc"
 .Labi_s6:    .ascii "abcdef"
