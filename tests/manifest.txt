@@ -539,3 +539,4 @@ pos tests/t541_hpos_compact.hb \n         1\n         2\n         3
 pos tests/t542_hpos_owned_key.hb \n         2\n         0\n         0
 neg tests/t543_neg_hpos_type.hb `hb_HPos` expects a hash variable
 pos tests/t544_hhaskey_owned_key.hb \n         1\n         1\n         0\n         0
+pos tests/t545_hdel_owned_key.hb \n         1\n         0\n         0
