@@ -46,7 +46,7 @@ enum Tok {
     Ident(String),
     Int(String),
     Str(String), // already unescaped content
-    Plus, Minus, Star, Slash, Pct, Dollar,
+    Plus, Minus, Star, Slash, Pct, Dollar, Caret,
     LParen, RParen, Comma,
     LBrace, RBrace, LBracket, RBracket, Pipe,
     Assign,   // :=
@@ -219,6 +219,16 @@ fn fold_num_bin(op: char, a: &Expr, b: &Expr) -> Option<Expr> {
                 if y != 0 { return Some(Expr::Int(x.checked_rem(y)?.to_string())); }
                 return None;
             }
+            // hb_compExprReducePower: literal ^ folds to a DOUBLE with
+            // dec = HB_DEFAULT_DECIMALS (-> SET, 2) ALWAYS - unlike %,
+            // no integer-preserving case (oracle hk350: 2^3 prints 8.00).
+            // Harbour's fold calls C pow; this fold calls the same libm
+            // powf, so folded literals track Harbour's fold.
+            // NOTE: this fold uses libm powf while the runtime emits an
+            // x87 fyl2x/f2xm1/fscale core - two DIFFERENT routes whose
+            // agreement is only oracle-verified on the measured cases
+            // (hk350-hk356), not a proven general bit-equality (63zj).
+            '^' => return Some(Expr::FloatV((x as f64).powf(y as f64).to_bits(), 2)),
             _ => return None,
         }
     }
@@ -246,6 +256,7 @@ fn fold_num_bin(op: char, a: &Expr, b: &Expr) -> Option<Expr> {
             if vb == 0.0 { return None; }
             (va % vb, 2)
         }
+        '^' => (va.powf(vb), 2),
         _ => return None,
     };
     Some(Expr::FloatV(v.to_bits(), d))
@@ -305,7 +316,34 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
                 let l = fresh_lbl();
                 out.push_str(&format!("    xorpd %xmm2, %xmm2\n    ucomisd %xmm2, %xmm0\n    jp .Ldivok{}\n    jne .Ldivok{}\n    call hbc_div0_error\n.Ldivok{}:\n", l, l, l));
             }
-            if *op == '%' {
+            if *op == '^' {
+                // pow(base, exp) via x87 fyl2x/f2xm1/fscale - hb_vmPower
+                // (src/vm/hvm.c): hb_itemPutND(pow(...)), ALWAYS a double
+                // with dec = SET(2) ("Clipper always returns the result of
+                // power with the SET number of decimal places"; oracles
+                // hk350-hk354). hb_compExprReducePower folds
+                // literal^literal to a DOUBLE too (no integer-preserving
+                // case, unlike %). Domain rules measured (hk353/hk355):
+                // exp == 0 -> 1 (0^0 = 1); base 0 with exp > 0 -> 0, with
+                // exp < 0 -> +Inf; base < 0 with a non-integer exp ->
+                // NaN, with an integer exp -> the sign comes from its
+                // oddness; NaN operands propagate. Non-finite results
+                // print stars via the shared rule (NaN at length 10 = 13
+                // wide, +Inf at 20 = 23 wide, hk355). pow(-0.0, negative)
+                // yields +Inf here where C gives -Inf for odd integer
+                // exponents - unmeasured frontier, registered.
+                let b = fresh_lbl();
+                let gen = fresh_lbl();
+                let neg = fresh_lbl();
+                let nan = fresh_lbl();
+                let zero = fresh_lbl();
+                let done = fresh_lbl();
+                let cone = f64_const(0x3FF0000000000000u64); // 1.0
+                let cinf = f64_const(0x7FF0000000000000u64); // +Inf
+                let cnan = f64_const(0x7FF8000000000000u64); // quiet NaN
+                let core = "    sub $16, %rsp\n    movsd %xmm0, 8(%rsp)\n    movsd %xmm1, (%rsp)\n    fldl 8(%rsp)\n    fldl (%rsp)\n    fyl2x\n    fld %st(0)\n    frndint\n    fxch %st(1)\n    fsub %st(1), %st(0)\n    f2xm1\n    fld1\n    faddp %st(0), %st(1)\n    fscale\n    fstp %st(1)\n    fstpl (%rsp)\n    movsd (%rsp), %xmm1\n    add $16, %rsp\n";
+                out.push_str(&format!("    movsd (%rsp), %xmm1\n    xorpd %xmm2, %xmm2\n    ucomisd %xmm2, %xmm0\n    jp .LpB{b}\n    jne .LpB{b}\n    movsd .Lf64c{cone}(%rip), %xmm1\n    jmp .LpD{done}\n.LpB{b}:\n    ucomisd %xmm2, %xmm1\n    jp .LpG{gen}\n    ja .LpG{gen}\n    jne .LpN{neg}\n    ucomisd %xmm2, %xmm0\n    jp .LpNaN{nan}\n    ja .LpZ{zero}\n    movsd .Lf64c{cinf}(%rip), %xmm1\n    jmp .LpD{done}\n.LpZ{zero}:\n    xorpd %xmm1, %xmm1\n    jmp .LpD{done}\n.LpNaN{nan}:\n    movsd .Lf64c{cnan}(%rip), %xmm1\n    jmp .LpD{done}\n.LpN{neg}:\n    cvttsd2si %xmm0, %rax\n    cvtsi2sd %rax, %xmm3\n    ucomisd %xmm3, %xmm0\n    jp .LpNaN{nan}\n    jne .LpNaN{nan}\n    and $1, %eax\n    mov %eax, %r10d\n    xorpd %xmm3, %xmm3\n    subsd %xmm1, %xmm3\n    movsd %xmm3, %xmm1\n{core}    test %r10d, %r10d\n    jz .LpD{done}\n    xorpd %xmm4, %xmm4\n    subsd %xmm1, %xmm4\n    movsd %xmm4, %xmm1\n    jmp .LpD{done}\n.LpG{gen}:\n{core}.LpD{done}:\n    mov $2, %edi\n"));
+            } else if *op == '%' {
                 // fmod via x87 fprem (hk345: float % result has dec =
                 // SET(2) like /). Zero divisor: integer-image 0.0 with
                 // dec 0 (hk344); a NaN divisor is NOT zero and fmods
@@ -339,6 +377,7 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
                 }
                 '/' => out.push_str("    mov $2, %edi\n"),
                 '%' => {} // dec emitted with the fprem sequence above
+                '^' => {} // dec emitted with the pow sequence above
                 _ => unreachable!("checked"),
             }
             out.push_str("    add $32, %rsp\n");
@@ -399,8 +438,13 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             }
             '+' => { toks.push(Tok::Plus); it.next(); }
             '-' => { toks.push(Tok::Minus); it.next(); }
-            '*' => { toks.push(Tok::Star); it.next(); }
+            '*' => {
+                // Harbour `**` is the same power operator as `^` (hk356).
+                it.next();
+                if it.peek().map(|&(_, c2)| c2) == Some('*') { toks.push(Tok::Caret); it.next(); } else { toks.push(Tok::Star); }
+            }
             '%' => { toks.push(Tok::Pct); it.next(); }
+            '^' => { toks.push(Tok::Caret); it.next(); }
             '$' => { toks.push(Tok::Dollar); it.next(); }
             '(' => { toks.push(Tok::LParen); it.next(); }
             ')' => { toks.push(Tok::RParen); it.next(); }
@@ -743,8 +787,26 @@ impl P {
         }
         Ok(lhs)
     }
-    fn term(&mut self) -> Result<Expr, String> {
+    fn power(&mut self) -> Result<Expr, String> {
+        // Harbour `^` / `**` (oracles hk350-hk356): LEFT-associative
+        // (2^3^2 = 64.00, hk353) and binds LOOSER than unary minus
+        // (-2^2 = 4.00, hk351), so the operands are factor-level.
+        // Always a DOUBLE with dec = SET(2), literal or runtime
+        // (hb_compExprReducePower / hb_vmPower).
         let mut lhs = self.factor()?;
+        while self.peek() == Some(&Tok::Caret) {
+            self.pos += 1;
+            let rhs = self.factor()?;
+            if let Some(f) = fold_num_bin('^', &lhs, &rhs) {
+                lhs = f;
+            } else {
+                lhs = Expr::Bin('^', Box::new(lhs), Box::new(rhs));
+            }
+        }
+        Ok(lhs)
+    }
+    fn term(&mut self) -> Result<Expr, String> {
+        let mut lhs = self.power()?;
         loop {
             let op = match self.peek() {
                 Some(Tok::Star) => '*',
@@ -753,7 +815,7 @@ impl P {
                 _ => break,
             };
             self.pos += 1;
-            let rhs = self.factor()?;
+            let rhs = self.power()?;
             // Harbour compile-time fold of constant numeric arithmetic
             // (expropt2.c hb_compExprReducePlus/Minus/Mult/Div; oracles
             // hk291/hk296/hk298): see fold_num_bin. A zero divisor is NOT
@@ -2400,7 +2462,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             Expr::Var(v) => lit.iter().any(|(x, t)| x == v && *t == Ty::F64)
                 || is_param(f, v).map(|i| pin[i] == Some(Ty::F64)).unwrap_or(false),
             Expr::Call(id, _) => sigs.iter().any(|s| s.name == *id && s.ret == Some(Ty::F64)),
-            Expr::Bin(op, a, b) => *op == '/' || *op == '%' || f64_typed(a, lit, sigs, f, pin) || f64_typed(b, lit, sigs, f, pin),
+            Expr::Bin(op, a, b) => *op == '/' || *op == '%' || *op == '^' || f64_typed(a, lit, sigs, f, pin) || f64_typed(b, lit, sigs, f, pin),
             _ => false,
         }
     }
@@ -3903,6 +3965,18 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             if *op == '%' {
                 if !matches!(ta, Ty::I64 | Ty::F64 | Ty::Dyn) || !matches!(tb, Ty::I64 | Ty::F64 | Ty::Dyn) {
                     return Err(format!("line {}: `%` needs numeric operands (strings, logicals and arrays are a Harbour type error, EG_ARG 1085)", n));
+                }
+                return Ok(Ty::F64);
+            }
+            if *op == '^' {
+                // hb_vmPower: pow() on the (double) reads of both
+                // operands, result ALWAYS a double with dec = SET(2)
+                // (oracles hk350-hk354; non-numeric -> EG_ARG 1088).
+                // Dyn payloads extract to i64 exactly like % (pow on
+                // integral doubles is exact - no truncation divergence
+                // like Dyn division).
+                if !matches!(ta, Ty::I64 | Ty::F64 | Ty::Dyn) || !matches!(tb, Ty::I64 | Ty::F64 | Ty::Dyn) {
+                    return Err(format!("line {}: `^` needs numeric operands (strings, logicals and arrays are a Harbour type error, EG_ARG 1088)", n));
                 }
                 return Ok(Ty::F64);
             }
@@ -7545,6 +7619,9 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                 Ty::StrOwn
             } else if *op == '%' {
                 // Mirror of type_expr: runtime modulus is always F64.
+                Ty::F64
+            } else if *op == '^' {
+                // Mirror of type_expr: runtime power is always F64.
                 Ty::F64
             } else if *op == '/' && expr_ty(a, env, sigs) == Ty::I64 && expr_ty(b, env, sigs) == Ty::I64 {
                 // Mirror of type_expr: runtime int/int division is F64.
