@@ -1225,7 +1225,7 @@ h==k .F. even with equal contents - same slot-pointer model as the
 arrays; t505). The BASE/1070 failure mode covers every measured
 mixed order (hk142: string casilla == int; hk144: int == string
 casilla; hk139b: numeric casilla == string literal - all hang
-headless; t504/t506/t507 posx).
+headless; t504/t506/t507 posx). The hk132/hk133 answers also hold on the expressible string-array surface (iteration 43): Harbour builds the cells with Array(2) and indexed assignment - syntax this PoC rejects, since dynamic-array elements stay tagged int/NIL scalars there - while the dedicated DArrS surface ({} + AAdd, indexed overwrite with the old copy freed) reproduces the measured answers exactly (hk132: 1/0/0/1 as t508; hk133: 1/0/1 as t509); mixed-type arrays stay a named rejection.
 
-Battery: 503/503 manifest cases on Linux x86-64 and Wine, plus
+Battery: 505/505 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
