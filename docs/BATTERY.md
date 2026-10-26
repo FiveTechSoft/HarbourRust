@@ -2285,21 +2285,59 @@ rejected, not imitated. Frontier is no longer |x| < 1e15: admitted is
 with int+dec = 16, or int <= 2 with int+dec = 17; nonzero |x| >= 1e-17;
 dec <= 17. Zero admitted.
 
-KNOWN DIVERGENCE CLASS (named rejection, NOT hidden): Harbour's
-error-accumulating sequential extraction carries a leading 9-chain UP at
-16 significant digits (measured: 9.999999999999999 -> 10.000000000000000,
-999.9999999999999 -> 1000.0000000000000, 0.9999999999999999 ->
-1.0000000000000000, 0.09999999999999999 -> 0.10000000000000000), while
-the current normalize-scale helper rounds the binary double once and
-prints ...998. Measured mismatch family = first 16 written significant
-digits all '9' (8/8 divergent in the hk278-hk288 matrix, no false hits;
-the boundary near 15 leading nines is a probe hypothesis, not a proven
-rule). That family is REJECTED BY NAME ("rounding-fidelity frontier",
-t735/t739 neg) until the helper is rewritten to Harbour's sequential
-method (our own implementation against the oracles; Harbour is
-GPL+runtime-exception, no code copied). Non-chain 16/17-sig literals
+KNOWN DIVERGENCE CLASS — RETRACTED IN 63z (wrong attribution): the
+leading-9-chain family (9.999999999999999 -> 10.000000000000000 etc.)
+was blamed on Harbour's digit-EXTRACTION and parked as t735/t739 neg
+"until the helper is rewritten". The 63z oracle review (hk289) proved
+the cause is Harbour's literal PARSER, not its printer: see the 63z
+section. The textual 9-chain guard added here was removed in 63z. Non-chain 16/17-sig literals
 print fine and stay admitted (t740: 1.0000000000000001, 9999999999.99999,
 99999999999.9999, 999999999999.999, 999999999.999999).
 The (int,dec) magnitude frontier above is likewise a probe hypothesis
 validated only at the measured points, not a universal guarantee.
 BATTERY 730 -> 736 runner rows (456 pos + 45 posx + 235 neg).
+
+## 63z - float literal parse: Harbour digit accumulation, not correct rounding (739 rows)
+
+Root cause of the 63y "rounding-fidelity" family found and fixed, with
+the attribution corrected by oracle + source review, not by hypothesis.
+Harbour's compiler parses a float literal by accumulating its digits in
+an int64 while they fit and dividing the total ONCE by 10^decimals
+(hb_str2number, fPCode branch): `9.999999999999999` accumulates to
+9999999999999999, whose nearest f64 is exactly 1e16, so the literal IS
+10.0 and prints "10.000000000000000" (hk285, re-confirmed in hk289).
+Correct rounding (strtod, Rust parse) gives 9.9999999999999982 instead
+and prints "...999999999999998". The 43-case helper driver had encoded
+the correctly-rounded bits, so the sequential helper was blamed for a
+divergence that lived in the oracle translation: with the bits Harbour
+actually computes, the PUBLISHED helper passes the driver 43/43 under
+Wine unchanged, and a bit-faithful Python simulation of the documented
+C algorithm also goes 43/43 against the same oracles.
+
+Fix: new `harbour_parse_f64` in src/hbc.rs implements the accumulation
+semantics (own code written against oracles; Harbour is
+GPL+runtime-exception, no code copied) and BOTH parse sites use it —
+admission (parser) and constant emission (codegen) — so the value and
+its metadata travel together. The textual 9-chain guard (63y) is
+removed: the parse semantics carry it. The i64 overflow fallback of
+Harbour's parser is unreachable from admitted literals, by lexer/frontier
+rules rather than hypothesis: dec <= 17 (lexer) plus the frontier rules
+bound accumulated digits at 18 (the "0." + 17-decimals case, worst
+999999999999999999 < i64::MAX); reaching the switchover threshold
+(~9.2e17) needs a 19th accumulated digit, which no admitted rule can
+produce. Boundary measured with real cases (hk290, published):
+0.00000000000000001 prints "0.00000000000000001" (t742),
+0.9999999999999999 -> "1.0000000000000000" (t742), 12345678901234.5 at
+the int+dec = 15 edge (t742); 18 written decimals stay a named lexer
+rejection (t743 neg; Harbour prints 0.000000000000000009 — coverage
+limit, not invalidity) and int+dec = 18 stays frontier-rejected (Harbour
+prints 10.00000000000000000 there — same named limit).
+
+Tests: t735/t739 flipped neg -> pos with their oracle outputs
+(10.000000000000000, 1000.0000000000000); t741 covers copy-to-local
+with metadata, unary minus, and same-value-different-writing
+(0.10000000000000001 and 1.0000000000000001, oracle hk289). Sondas
+hk289/hk290 published in sondas/ with hbmk2 -gtstd captures.
+BATTERY 736 -> 739 runner rows (459 pos + 45 posx + 235 neg) + ABI ALL
+GREEN (Linux native and Wine with Linux oracle). Sweep: COMPILES 5
+(hello, statfun, lnlenli2, calling, nums; nums byte-exact).
