@@ -1321,5 +1321,16 @@ oracle). t532 reproduces hk159's write semantics on Linux and Wine;
 t533 pins the evaluation order; t534 rejects a non-hash target at
 compile time.
 
-Battery: 535/535 manifest cases on Linux x86-64 and Wine, plus
+Iteration 51 adds hb_HPos(h, key) (core hb_HPos; oracles
+hk162/hk163): the entry's 1-based position among the LIVE entries in
+insertion order, 0 when the key is absent ("" is an ordinary key with
+no special meaning - hk162). Positions COMPACT after an hb_HDel and a
+re-added key goes last (hk163). The new hbc_hpos helper is a leaf that
+only reads the hash and the key (canaried in the ABI harness on both
+targets); an owned key temporary is freed right after the call (t542:
+wrap + memcheck balance 0, own ownership check, not an oracle). t540
+reproduces hk162 on Linux and Wine, t541 the compaction of hk163, and
+t543 rejects a non-hash target at compile time.
+
+Battery: 539/539 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
