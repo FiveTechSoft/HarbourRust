@@ -32,7 +32,7 @@ use std::process;
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefStrOwn }
+enum Ty { F64, I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefStrOwn }
 
 // Dyn is the tagged-union value for any route that can carry NIL (probes
 // n1/n2/n3): a 16-byte {tag, payload} pair, tag 0 = i64 payload, tag 1 =
@@ -50,6 +50,7 @@ enum Tok {
     LParen, RParen, Comma,
     LBrace, RBrace, LBracket, RBracket, Pipe,
     Assign,   // :=
+    Float(String, u8), // float literal: normalized text, written decimals
     Question, // ?
     QuestionQ, // ?? (QOut without the leading newline)
     At,       // @ by-reference call argument (hk216 family)
@@ -77,6 +78,36 @@ static BLOCK_ID: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize
 // compiler; the flag is reset right after the call returns.
 thread_local! {
     static CALL_STMT_CTX: std::cell::Cell<bool> = std::cell::Cell::new(false);
+}
+
+// f64 literal constants for the current program (rodata .Lf64cN), cleared
+// per compilation unit where `strs` is created.
+thread_local! {
+    static F64_CONSTS: std::cell::RefCell<Vec<u64>> = std::cell::RefCell::new(Vec::new());
+}
+fn f64_const(bits: u64) -> usize {
+    F64_CONSTS.with(|c| { let mut v = c.borrow_mut(); v.push(bits); v.len() - 1 })
+}
+// Load a phase-1 float value (literal or F64 local) into %xmm0 (value) and
+// %rdi (decimal metadata, the second slot). Everything else is rejected by
+// the checker before codegen.
+fn cg_f64_load(e: &Expr, env: &[CgLocal], out: &mut String) {
+    match e {
+        Expr::Float(txt, dec) => {
+            let v: f64 = txt.parse().expect("frontier-checked at parse");
+            let k = f64_const(v.to_bits());
+            out.push_str(&format!("    movsd .Lf64c{}(%rip), %xmm0
+    mov ${}, %edi
+", k, dec));
+        }
+        Expr::Var(v) => {
+            let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+            out.push_str(&format!("    movsd -{}(%rbp), %xmm0
+    mov -{}(%rbp), %rdi
+", var.off, var.off - 8));
+        }
+        _ => unreachable!("phase-1 float expressions are literals or locals"),
+    }
 }
 fn new_block_id() -> usize { BLOCK_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst) }
 
@@ -158,6 +189,38 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                 let mut num = String::new();
                 while let Some(&(_, c2)) = it.peek() {
                     if c2.is_ascii_digit() { num.push(c2); it.next(); } else { break; }
+                }
+                // Hex literal 0xABAB (oracle hk281: prints as a plain
+                // integer, 43947, 10-column field).
+                if num == "0" && matches!(it.peek(), Some(&(_, 'x')) | Some(&(_, 'X'))) {
+                    it.next();
+                    let mut hx = String::new();
+                    while let Some(&(_, c2)) = it.peek() {
+                        if c2.is_ascii_hexdigit() { hx.push(c2); it.next(); } else { break; }
+                    }
+                    if hx.is_empty() { return Err(format!("line {}: `0x` needs at least one hex digit", n)); }
+                    let v = u128::from_str_radix(&hx, 16).map_err(|_| format!("line {}: bad hex literal", n))?;
+                    toks.push(Tok::Int(v.to_string()));
+                    continue;
+                }
+                // Float literal digits.digits (the dot joins only when a
+                // digit follows; otherwise it starts a dotted word).
+                if it.peek().map(|&(_, c2)| c2) == Some('.') {
+                    let mut look = it.clone();
+                    look.next();
+                    if look.peek().map(|&(_, c2)| c2).map(|c| c.is_ascii_digit()) == Some(true) {
+                        it.next();
+                        let mut frac = String::new();
+                        while let Some(&(_, c2)) = it.peek() {
+                            if c2.is_ascii_digit() { frac.push(c2); it.next(); } else { break; }
+                        }
+                        if frac.len() > 17 {
+                            return Err(format!("line {}: float literal with more than 17 written decimals is outside this increment's measured precision frontier (oracles hk278-hk284)", n));
+                        }
+                        let d = frac.len() as u8;
+                        toks.push(Tok::Float(format!("{}.{}", num, frac), d));
+                        continue;
+                    }
                 }
                 toks.push(Tok::Int(num));
             }
@@ -247,6 +310,21 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             '|' => { toks.push(Tok::Pipe); it.next(); }
             ']' => { toks.push(Tok::RBracket); it.next(); }
             '.' => {
+                // Leading-dot float literal `.12` (oracle hk278: prints
+                // exactly like `0.12`).
+                if it.clone().nth(1).map(|(_, c2)| c2.is_ascii_digit()) == Some(true) {
+                    it.next();
+                    let mut frac = String::new();
+                    while let Some(&(_, c2)) = it.peek() {
+                        if c2.is_ascii_digit() { frac.push(c2); it.next(); } else { break; }
+                    }
+                    if frac.len() > 17 {
+                        return Err(format!("line {}: float literal with more than 17 written decimals is outside this increment's measured precision frontier (oracles hk278-hk284)", n));
+                    }
+                    let d = frac.len() as u8;
+                    toks.push(Tok::Float(format!("0.{}", frac), d));
+                    continue;
+                }
                 // Dotted logical words (hk197-hk200): .T. .F. .AND. .OR.
                 // .NOT. - case-insensitive, no inner spaces, closing dot
                 // required (hk199c: .NOT..F. is valid).
@@ -276,6 +354,7 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
 
 #[derive(Debug, Clone)]
 enum Expr {
+    Float(String, u8), // float literal: normalized text, written decimal count
     Int(String),
     Str(String),
     Var(String),
@@ -446,6 +525,11 @@ impl P {
                     return Err(format!("line {}: `++`/`--` inside expressions is not in this increment (oracle hk246 measures postfix `x++` as the OLD value and prefix `++x` as the NEW one; the statement forms `++x`, `x++`, `--x`, `x--` work)", self.n));
                 }
                 let e = self.factor()?;
+                // Unary minus on a float LITERAL folds at parse time (hk278
+                // measures -5.5 printing; float arithmetic is not in).
+                if let Expr::Float(txt, dec) = e {
+                    return Ok(Expr::Float(format!("-{}", txt), dec));
+                }
                 Ok(Expr::Bin('-', Box::new(Expr::Int("0".to_string())), Box::new(e)))
             }
             Some(Tok::Plus) if self.peek() == Some(&Tok::Plus) => {
@@ -456,6 +540,18 @@ impl P {
                     Ok(k) if k <= i64::MAX as u128 => Ok(Expr::Int(v)),
                     _ => Err(format!("line {}: integer literal out of range (i64)", self.n)),
                 }
+            }
+            Some(Tok::Float(txt, dec)) => {
+                // Measured precision frontier (oracles hk278-hk284):
+                // |x| < 1e15 (the Harbour `*` overflow display rule near
+                // 1e16 is unmeasured), nonzero |x| >= 1e-17 (16-significant
+                // digit normalization domain), <= 17 written decimals.
+                let v: f64 = txt.parse().map_err(|_| format!("line {}: bad float literal", self.n))?;
+                let a = v.abs();
+                if a >= 1e15 || (a != 0.0 && a < 1e-17) {
+                    return Err(format!("line {}: float literal outside this increment's measured precision frontier (|x| < 1e15; oracles hk278-hk284)", self.n));
+                }
+                Ok(Expr::Float(txt, dec))
             }
             Some(Tok::Str(s)) => Ok(Expr::Str(s)),
             Some(Tok::KwNil) => Ok(Expr::Nil),
@@ -2672,6 +2768,7 @@ fn borrow_stmts_ok(stmts: &[Stmt], pname: &str) -> Option<usize> {
 fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Result<Ty, String> {
     match e {
         Expr::Int(_) => Ok(Ty::I64),
+        Expr::Float(..) => Ok(Ty::F64),
         Expr::Str(_) => Ok(Ty::Str),
         Expr::Var(id) => match env.iter().find(|v| v.name == *id) {
             None => Err(format!("line {}: undefined variable `{}`", n, id)),
@@ -3314,6 +3411,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // Dyn operands are extracted at runtime: a NIL payload is a
             // clean type error (Harbour's interactive dialog is the
             // registered failure-mode difference, same condition).
+            if ta == Ty::F64 || tb == Ty::F64 {
+                return Err(format!("line {}: float arithmetic is not in this increment (phase 1: literals, locals and printing only; oracles hk278-hk284)", n));
+            }
             if !matches!(ta, Ty::I64 | Ty::Dyn) || !matches!(tb, Ty::I64 | Ty::Dyn) {
                 return Err(format!("line {}: arithmetic requires integers", n));
             }
@@ -3737,6 +3837,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
 // Free VARIABLE names used inside an expression (callees are not variables).
 fn ty_name(t: Ty) -> &'static str {
     match t {
+        Ty::F64 => "a float",
         Ty::I64 => "an integer",
         Ty::RefI64 => "a by-reference integer",
         Ty::RefStrOwn => "a by-reference string",
@@ -4114,6 +4215,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
             }
             Stmt::Ret(n, Some(e)) => {
                 let t = type_expr(e, env, sigs, *n)?;
+                if t == Ty::F64 {
+                    return Err(format!("line {}: returning a float is not in this increment (phase 1: literals, locals and printing only)", n));
+                }
                 if let Ty::Arr(_) = t {
                     // Returning a static array materializes a dynamic
                     // COPY the caller owns (33m). Oracle hk99: Harbour's
@@ -5279,7 +5383,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 // ---------------------------------------------------------------------------
 
 fn size_of(t: Ty) -> usize {
-    match t { Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefStrOwn => 8 }
+    match t { Ty::F64 => 16, Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefStrOwn => 8 }
 }
 
 #[derive(Clone)]
@@ -5296,6 +5400,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
         Expr::Int(v) => {
             out.push_str(&format!("    mov ${}, %rax\n", v));
         }
+        Expr::Float(..) => unreachable!("floats load through cg_f64_load (xmm0/rdi), never the rax/rdx channel"),
         Expr::Nil => {
             // NIL: the Dyn tag/payload pair (probe n1) - rax=tag, rdx=payload
             out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");
@@ -5321,6 +5426,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             match v.ty {
                 Ty::RefI64 => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n", v.off)),
                 Ty::RefStrOwn => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n    mov 8(%r11), %rdx\n", v.off)),
+                Ty::F64 => unreachable!("floats load through cg_f64_load (xmm0/rdi), never the rax/rdx channel"),
                 Ty::I64 | Ty::Block(_) | Ty::Bool => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
                 Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash => {
                     // ptr at -(off), len at -(off-8) — same layout as the store
@@ -6596,6 +6702,7 @@ fn cg_array_value(e: &Expr, off: usize, env: &[CgLocal], sigs: &[Sig], strs: &mu
 
 fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
     match e {
+        Expr::Float(..) => Ty::F64,
         Expr::Int(_) => Ty::I64,
         Expr::Bin(_, a, b) => {
             if matches!(expr_ty(a, env, sigs), Ty::Str | Ty::StrOwn) || matches!(expr_ty(b, env, sigs), Ty::Str | Ty::StrOwn) {
@@ -7316,6 +7423,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     }
                 }
                 match t {
+                    Ty::F64 => {
+                        // Two dynamic slots: value + decimal metadata
+                        // (reassignment replaces both; copies carry both).
+                        cg_f64_load(e, env, out);
+                        out.push_str(&format!("    movsd %xmm0, -{}(%rbp)\n    mov %rdi, -{}(%rbp)\n", off, off - 8));
+                    }
                     Ty::Arr(_) => cg_array_value(e, off, env, sigs, strs, out, target),
                     _ => {
                         cg_value(e, env, sigs, strs, out, target);
@@ -7425,6 +7538,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             continue;
                         }
                     }
+                    if expr_ty(e, env, sigs) == Ty::F64 {
+                        // Pair protocol: value bits at off, dec count at
+                        // off+8 (read back with movsd/mov below).
+                        cg_f64_load(e, env, out);
+                        out.push_str("    movq %xmm0, %rax\n    push %rdi\n    push %rax\n");
+                        continue;
+                    }
                     if renders_empty(e) {
                         // The pair is never consumed; the variable is
                         // only borrowed (hk23: alive after printing).
@@ -7482,9 +7602,15 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         out.push_str("    test %rax, %rax\n    jz 95f\n    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
                         continue;
                     }
+                    if t == Ty::F64 {
+                        // Numbers never trail spaces: no line-end trim.
+                        out.push_str(&format!("    movsd {}(%rsp), %xmm0\n    mov {}(%rsp), %rdi\n    call hbc_print_f64\n", off, off + 8));
+                        continue;
+                    }
                     out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
                     match t {
                         Ty::RefI64 | Ty::RefStrOwn => unreachable!("expr_ty maps by-reference params to their pointee"),
+                        Ty::F64 => unreachable!("handled above"),
                         Ty::I64 => out.push_str("    call hbc_print_i64\n"),
                         Ty::Str | Ty::StrOwn => {
                             // Line-end space trim (hk22/hk24): only the
@@ -7980,6 +8106,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         }
                     }
                 }
+                if lty == Ty::F64 {
+                    // Reassignment REPLACES both slots (value and decimal
+                    // metadata are dynamic): `a := 1.50` then `a := .123`
+                    // reprints with the new precision.
+                    cg_f64_load(e, env, out);
+                    out.push_str(&format!("    movsd %xmm0, -{}(%rbp)\n    mov %rdi, -{}(%rbp)\n", off, off - 8));
+                    continue;
+                }
                 if lty == Ty::RefI64 {
                     // @-borrowed scalar (hk216): store THROUGH the pointer
                     // into the owner's slot.
@@ -8037,6 +8171,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     }
                 }
                 match t {
+                    Ty::F64 => {
+                        // Two dynamic slots: value + decimal metadata
+                        // (reassignment replaces both; copies carry both).
+                        cg_f64_load(e, env, out);
+                        out.push_str(&format!("    movsd %xmm0, -{}(%rbp)\n    mov %rdi, -{}(%rbp)\n", off, off - 8));
+                    }
                     Ty::Arr(_) => cg_array_value(e, off, env, sigs, strs, out, target),
                     _ => {
                         cg_value(e, env, sigs, strs, out, target);
@@ -10778,6 +10918,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
         }
     }
 
+    F64_CONSTS.with(|c| c.borrow_mut().clear());
     let mut strs: Vec<String> = Vec::new();
     for f in funcs {
         cg_func(f, sigs, &mut strs, &mut out, target, None);
@@ -10794,11 +10935,13 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
     match target {
         Target::Windows => {
             out.push_str(WIN_HELPERS);
+            out.push_str(F64_HELPER);
             out.push_str(CTOR_HELPERS);
             out.push_str(ARRAY3_HELPER);
             out.push_str(HASH_HELPERS);
             out.push_str("\n    .section .rdata,\"r\"\n");
             emit_strings(&mut out, &strs);
+    emit_f64_consts(&mut out);
             // Allocation registry only in instrumented builds (--instrument).
             out = out.replace("@REG_ALLOC_W@", if instrument { REG_ALLOC_W } else { "" });
             out = out.replace("@REG_FREE_W@", if instrument { REG_FREE_W } else { "" });
@@ -11791,8 +11934,10 @@ hbc_mem_frees:  .quad 0
     out.push_str(CTOR_HELPERS);
     out.push_str(ARRAY3_HELPER);
     out.push_str(HASH_HELPERS);
+    out.push_str(F64_HELPER);
     out.push_str("\n    .section .rodata\n");
     emit_strings(&mut out, &strs);
+    emit_f64_consts(&mut out);
     // Allocation registry: only instrumented builds (--instrument, the
     // battery's mode) carry it; normal output has no registry at all.
     out = out.replace("@REG_ALLOC_L@", if instrument { REG_ALLOC_L } else { "" });
@@ -11805,6 +11950,18 @@ hbc_mem_frees:  .quad 0
     out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
     out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
     out
+}
+
+fn emit_f64_consts(out: &mut String) {
+    F64_CONSTS.with(|c| {
+        let v = c.borrow();
+        if !v.is_empty() {
+            out.push_str("    .balign 8\n");
+            for (i, b) in v.iter().enumerate() {
+                out.push_str(&format!(".Lf64c{}:\n    .quad {}\n", i, b));
+            }
+        }
+    });
 }
 
 fn emit_strings(out: &mut String, strs: &[String]) {
@@ -11848,6 +12005,210 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     // "Argument error: ASIZE\n" (22 bytes; Harbour BASE/2023 hangs headless, oracle n7)
     out.push_str(".Lasizeerrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,65,83,73,90,69,10\n");
 }
+
+// hbc_print_f64: %xmm0 = value, %rdi = written-decimal count. Standalone-
+// validated against oracles hk278-hk284 (see design/f64/): sign by bit
+// (-0.0 prints "0.0"), normalize to mantissa [1,10) tracking exponent e,
+// N = round(m * 1e15) half-up (16 significant digits, carry N=1e16 -> e++),
+// integer digits = e+1 (or "0" for e<0), fraction = (-e-1) leading zeros +
+// remaining digits of N, zero-padded to the decimal count; field width
+// 11 + decimals, growing when the integer part is longer; no newline.
+// Uses only xmm0-xmm2 and volatile registers plus saved r12-r15; the only
+// call is hbc_print_str (same internal contract on both targets). The
+// "16 significant digits" rule is OBSERVED in the probes, not proven
+// universal; the half-up tie at digit 16 has no direct oracle yet.
+const F64_HELPER: &str = r#"
+# hbc_print_f64: %xmm0 = value, %rdi = dec_count. Frontier: 1e-17<=|x|<1e15, dec<=17.
+hbc_print_f64:
+    push %rbp
+    mov %rsp, %rbp
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $160, %rsp
+    mov %rdi, -40(%rbp)          # dec_count
+    # sign / |x|
+    xor %r10d, %r10d
+    movq %xmm0, %rax
+    test %rax, %rax
+    jns .Lf64_10
+    mov $1, %r10d
+    mov $0x7fffffffffffffff, %rcx
+    and %rcx, %rax
+    movq %rax, %xmm0
+.Lf64_10:
+    # zero? (covers -0.0: sign dropped, oracle hk282)
+    xorpd %xmm2, %xmm2
+    ucomisd %xmm2, %xmm0
+    jp .Lf64_11                      # unordered (NaN): treat as nonzero-defensive
+    je .Lf64_20                      # zero
+.Lf64_11:
+    # normalize ax into [1,10), e in %r11
+    xor %r11d, %r11d
+    mov $0x4024000000000000, %rax
+    movq %rax, %xmm1            # 10.0
+.Lf64_1:  comisd %xmm1, %xmm0
+    jb .Lf64_2
+    divsd %xmm1, %xmm0
+    inc %r11
+    jmp .Lf64_1
+.Lf64_2:  mov $0x3FF0000000000000, %rax
+    movq %rax, %xmm2            # 1.0
+.Lf64_3:  comisd %xmm2, %xmm0
+    jae .Lf64_4
+    mulsd %xmm1, %xmm0
+    dec %r11
+    jmp .Lf64_3
+.Lf64_4:
+    # N = (i64)(m * 1e15 + 0.5)
+    mov $0x430C6BF526340000, %rax
+    movq %rax, %xmm2
+    mulsd %xmm2, %xmm0
+    mov $0x3FE0000000000000, %rax
+    movq %rax, %xmm2
+    addsd %xmm2, %xmm0
+    cvttsd2si %xmm0, %rax
+    # carry: N == 1e16 -> N=1e15, e++
+    mov $10000000000000000, %rcx
+    cmp %rcx, %rax
+    jne .Lf64_5
+    mov $1000000000000000, %rax
+    inc %r11
+.Lf64_5:
+    mov %rax, -48(%rbp)         # N
+    mov %r11, -56(%rbp)         # e
+    jmp .Lf64_30
+.Lf64_20: # zero: N=0, e=0, sign=0
+    xor %r10d, %r10d
+    movq $0, -48(%rbp)
+    movq $0, -56(%rbp)
+.Lf64_30:
+    # digit buffer: 16 digits of N at -48..-65(%rbp) (ASCII, most significant first)
+    mov -48(%rbp), %rax
+    lea -65(%rbp), %rsi
+    mov $16, %ecx
+.Lf64_6:  xor %edx, %edx
+    mov $10, %r8
+    div %r8
+    add $48, %dl
+    mov %dl, (%rsi)
+    dec %rsi
+    dec %ecx
+    jnz .Lf64_6
+    # compose output at -144(%rbp) forward; r9 = cursor
+    lea -144(%rbp), %r9
+    # total_len = sign + int_len + 1 + dec ; width = 11 + dec ; pad = max(width-total,0)
+    mov -56(%rbp), %r11         # e
+    mov $1, %r12                # int_len (e<0 -> "0")
+    test %r11, %r11
+    js .Lf64_7
+    lea 1(%r11), %r12           # int_len = e+1
+.Lf64_7:  mov -40(%rbp), %r13          # dec
+    lea 1(%r12,%r13), %r14      # int_len + 1 + dec
+    test %r10d, %r10d
+    jz .Lf64_8
+    inc %r14
+.Lf64_8:  mov %r13, %r15
+    add $11, %r15               # width
+    sub %r14, %r15              # pad (may be negative)
+    jle .Lf64_9
+.Lf64_12: movb $32, (%r9)
+    inc %r9
+    dec %r15d
+    jnz .Lf64_12
+.Lf64_9:  test %r10d, %r10d
+    jz .Lf64_13
+    movb $45, (%r9)
+    inc %r9
+.Lf64_13:
+    # integer part
+    mov -56(%rbp), %r11
+    test %r11, %r11
+    js .Lf64_14
+    # copy e+1 digits from digit buf (leading zeros within 16-digit N are real)
+    lea -80(%rbp), %rsi
+    mov %r12, %rcx
+    # skip (16 - int_len - max(frac...)) hmm: N always has exactly 16 digits incl leading zeros; int part = FIRST int_len of the 16 only when N>=10^(16-int_len)... For zero N this is wrong; zero handled: digits are "0000000000000000", int="0".
+    mov -48(%rbp), %rax
+    test %rax, %rax
+    jnz .Lf64_15
+    movb $48, (%r9)
+    inc %r9
+    jmp .Lf64_16
+.Lf64_15: # nonzero: first int_len digits are the integer part (N in [1e15,1e16) so no leading zeros within int_len when int_len=e+1)
+    mov %r12, %rcx
+.Lf64_17: movsbq (%rsi), %rdx
+    mov %dl, (%r9)
+    inc %rsi
+    inc %r9
+    dec %ecx
+    jnz .Lf64_17
+    jmp .Lf64_16
+.Lf64_14: movb $48, (%r9)             # e<0: integer "0"
+    inc %r9
+.Lf64_16:
+    movb $46, (%r9)             # '.'
+    inc %r9
+    # fraction sequence: [(-e-1) zeros if e<0] + [16 digits of N after int part] + zeros; take dec chars
+    mov -40(%rbp), %r13          # dec remaining
+    test %r13, %r13
+    jz .Lf64_40
+    mov -56(%rbp), %r11
+    # leading zeros for e<0
+    test %r11, %r11
+    jns .Lf64_18
+    mov %r11, %rcx
+    neg %rcx
+    dec %rcx                    # -e-1
+.Lf64_19: test %r13, %r13
+    jz .Lf64_40
+    test %rcx, %rcx
+    jz .Lf64_18
+    movb $48, (%r9)
+    inc %r9
+    dec %r13
+    dec %rcx
+    jmp .Lf64_19
+.Lf64_18:
+    # digits of N after the integer part: rsi points into digit buf
+    lea -80(%rbp), %rsi
+    xor %r12d, %r12d            # e<0: fraction starts at digit 0 of N
+    mov -56(%rbp), %r11
+    test %r11, %r11
+    js .Lf64_21
+    lea 1(%r11), %r12           # e>=0: skip the e+1 integer digits
+.Lf64_21: add %r12, %rsi              # first fraction digit
+    lea -64(%rbp), %rdx         # end of 16 digits (exclusive)
+.Lf64_22: test %r13, %r13
+    jz .Lf64_40
+    cmp %rdx, %rsi
+    jae .Lf64_23
+    movsbq (%rsi), %rcx
+    mov %cl, (%r9)
+    inc %r9
+    inc %rsi
+    dec %r13
+    jmp .Lf64_22
+.Lf64_23: movb $48, (%r9)             # zero pad
+    inc %r9
+    dec %r13
+    jmp .Lf64_22
+.Lf64_40:
+    # write: start -112, len = r9 - start
+    lea -144(%rbp), %rax
+    mov %r9, %rdx
+    sub %rax, %rdx
+    call hbc_print_str
+    add $160, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    leave
+    ret
+
+"#;
 
 // Win64 runtime helpers (ours): same internal convention as the linux ones
 // (print_str takes ptr/len in rax/rdx, print_i64 takes the value in rax)
