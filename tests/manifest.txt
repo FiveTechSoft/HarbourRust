@@ -574,3 +574,7 @@ pos tests/t576_hkeyat_owned.hb \nb\n         0
 neg tests/t577_neg_hkeyat_type.hb `hb_HKeyAt` expects a hash variable
 neg tests/t578_neg_hkeyat_index.hb the hb_HKeyAt position is an integer in this increment
 neg tests/t579_neg_hvalueat_type.hb `hb_HValueAt` expects a hash variable
+pos tests/t580_hdelat.hb \n         2\nb\n         1\nb\n         0
+pos tests/t581_hdelat_owned.hb \nb\n         0\n         0
+neg tests/t582_neg_hdelat_type.hb hb_HDelAt expects a hash variable
+neg tests/t583_neg_hdelat_index.hb the hb_HDelAt position is an integer in this increment
