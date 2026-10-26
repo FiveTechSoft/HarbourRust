@@ -1139,5 +1139,14 @@ NIL casilla .T., .F. after a write). No new leaf helper: the
 constant folds and the hbc_dyn_eq tag dispatch already answer these
 shapes; the execution cases run on both targets.
 
-491/491 manifest cases + ABI harness green on Linux x86-64 and Wine
+t496/t497 (iteration 39): `==` identity extended to nested dynamic
+array variables (oracle hk130: a==a .T., a==b .F. - same slot-pointer
+compare as the one-level case; the first qword of the frame slot is
+the heap pointer at every implemented depth) and to codeblock
+variables (oracle hk131: x==x .T., x==y .F. for distinct literals;
+the 8-byte slot holds the per-literal pointer; same arity only - the
+measured shape). No new helper; the pointer-compare arm is
+instruction-level and shared.
+
+493/493 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
