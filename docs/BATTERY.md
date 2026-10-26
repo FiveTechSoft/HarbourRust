@@ -2754,6 +2754,44 @@ t801-t803 neg. BATTERY 790 -> 798 runner rows + ABI ALL GREEN
 unchanged - no file flips, but str/keywords/vmasort/funcarr advance
 past their %/$ error to the next gap (`^` power, `;` mid-line, SET
 commands).
+63zj - power operator `^` and its alias `**`. Oracles first
+(hk350-hk356) plus the Harbour source: hb_vmPower (src/vm/hvm.c) is
+hb_itemPutND(pow(base, exp)) - ALWAYS a double with dec = SET
+DECIMALS ("Clipper always returns the result of power with the SET
+number of decimal places") - and hb_compExprReducePower
+(src/common/expropt2.c) folds literal^literal to a DOUBLE too (bDec =
+HB_DEFAULT_DECIMALS -> SET), so unlike `%` there is no
+integer-preserving case (hk350: 2^3 prints 8.00). The parser
+precedence is measured, not assumed: unary minus binds TIGHTER than
+`^` (hk351: -2^2 = 4.00, -2^3 = -8.00) and `^` is LEFT-associative
+(hk353: 2^3^2 = 64.00). `**` lexes as the same token (hk356).
+Measured numeric domain: exp == 0 -> 1 (0^0 = 1); base 0 with exp >
+0 -> 0, with exp < 0 -> +Inf (hk355: 23 stars = length 20); base < 0
+with a non-integer exponent -> NaN, with an integer exponent -> the
+sign comes from its oddness; NaN operands propagate. Non-finite
+results print stars through the pre-existing shared rule (NaN at
+length 10 = 13 wide, +Inf at 20 = 23 wide); no new printer code.
+Runtime emission is an inline x87 fyl2x/frndint/f2xm1/fscale core -
+no helper symbol, no ABI surface, no canary needed.
+
+Registered divergence and precision LIMITS (not equivalences):
+- The constant fold computes libm powf while the runtime emits the
+  x87 core: two DIFFERENT routes. Their agreement is oracle-verified
+  on the measured cases only (hk350-hk356 byte-EXACT); general
+  bit-equality of the two routes is NOT proven or claimed.
+- pow(-0.0, negative exponent) yields +Inf here where C gives -Inf
+  for odd integer exponents (unmeasured frontier).
+- |exp| > 2^63 saturates to an even integer via cvttsd2si (the sign
+  rule for negative bases is wrong in that zone; unmeasured).
+- Non-numeric operands are a named rejection (EG_ARG 1088 wording;
+  t811/t812). Dyn payloads extract to i64 exactly like `%`.
+
+Tests: t804-t810 pos (mirrors of hk350-hk356), t811-t812 neg.
+BATTERY 798 -> 807 runner rows + ABI ALL GREEN (Linux native and
+Wine with Linux oracle). Sweep: 9 COMPILES unchanged - no flips;
+str.prg advances past `^` (line 37) to the identifier-led-statement
+gap (line 6) and funcarr.prg past `^` (line 44) to line 13.
+
  Sweep: ifelse.prg and fornext.prg flip
 to COMPILES, both byte-exact against stock Harbour oracles (hk333,
 hk339) - 9 runtime-success originals. Negative originals stay a
