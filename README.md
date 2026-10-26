@@ -1292,16 +1292,20 @@ time.
 
 Iteration 49 adds hb_HGet(h, key [, default]) (core hb_HGet; oracles
 hk158a-e): an existing key yields its value casilla with or without the
-default (hk158a/e); an existing NIL value stays NIL - the default is
-NOT applied (hk158c), so it is type-checked but never evaluated. A
+default (hk158a/e); an existing NIL value stays NIL - the default never
+overrides it (hk158c). A
 MISSING key is the same BASE/1132 condition as an h[k] read miss:
 Harbour shows its dialog and hangs headless even WITH a default
 (hk158a/b/d), so the PoC prints "Bound error: array access" and exits 1
-- the registered failure mode, never a compat success. Reuses the
+- the registered failure mode, never a compat success. The default IS
+always evaluated - its effects fire on present, NIL and even missing
+keys, before the error (hk158f1/f2/f3, t531) - but its value is
+discarded: it never rescues a miss and never overrides an existing NIL
+(hk158b/c). Reuses the
 existing hbc_hget helper (read-only lookup), now with a dedicated ABI
 canary on both targets. t528 reproduces the measured reads on Linux and
 Wine; t529 pins the missing-key failure mode (exit 1); t530 rejects a
 non-hash target at compile time.
 
-Battery: 526/526 manifest cases on Linux x86-64 and Wine, plus
+Battery: 527/527 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
