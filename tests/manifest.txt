@@ -131,7 +131,7 @@ pos tests/t127_arr_write.hb \n        99
 pos tests/t128_arr_expr_index.hb \n        20\n        20
 pos tests/t129_arr_loop.hb \n         1          4          9
 pos tests/t130_arr_copy_model.hb \n        10\n        99
-posx tests/t133_arr_runtime_oob.hb 1 \n        10Bound error: array access
+posx tests/t133_arr_runtime_oob.hb 1 \n        10Bound error: array access\nCallstack:\n  at main (tests/t133_arr_runtime_oob.hb:6)
 neg tests/t131_arr_neg_const_low.hb out of bounds
 neg tests/t132_arr_neg_const_high.hb out of bounds
 neg tests/t134_arr_neg_str_index.hb is not an array
@@ -141,8 +141,8 @@ neg tests/t137_arr_neg_size_mismatch.hb type mismatch in assignment
 neg tests/t139_arr_neg_mixed.hb array elements must be integers
 pos tests/t140_arr_call_index.hb \n        77\n        77\n        20
 pos tests/t141_arr_set_order.hb \n         2\n         1\n        99
-posx tests/t142_arr_bound_max.hb 1 Bound error: array access
-posx tests/t143_arr_bound_min.hb 1 Bound error: array access
+posx tests/t142_arr_bound_max.hb 1 Bound error: array access\nCallstack:\n  at main (tests/t142_arr_bound_max.hb:5)
+posx tests/t143_arr_bound_min.hb 1 Bound error: array access\nCallstack:\n  at main (tests/t143_arr_bound_min.hb:5)
 pos tests/t144_arr_copy_reverse.hb \n        10\n         5
 pos tests/t145_arr_reassign_same.hb \n         9          8
 pos tests/t146_for_eval_order.hb \n         1\n         2\n         1\n         2
@@ -175,7 +175,7 @@ pos tests/t172_dyn_loop_redecl.hb \n        10\n        20\n        30
 neg tests/t173_dyn_neg_moved.hb use of moved value
 neg tests/t174_dyn_neg_aadd_fixed.hb AAdd` applies to dynamic arrays
 neg tests/t175_dyn_neg_print.hb cannot print a temporary array or hash
-posx tests/t176_dyn_asize_neg.hb 1 ASize: negative size
+posx tests/t176_dyn_asize_neg.hb 1 ASize: negative size\nCallstack:\n  at main (tests/t176_dyn_asize_neg.hb:5)
 neg tests/t177_dyn_neg_branch_join.hb use of moved value
 neg tests/t178_dyn_neg_backedge.hb moved inside the `for` body
 neg tests/t179_dyn_neg_loop_stmt.hb moved inside the `while` body
@@ -205,7 +205,7 @@ neg tests/t203_md_neg_asize_unpinned.hb unknown until its first `AAdd`
 neg tests/t204_md_neg_twolevel_flat.hb two-level indexing needs an array of arrays
 neg tests/t205_md_neg_parent_moved.hb use of moved value
 neg tests/t206_md_neg_aaddsub_flat.hb needs an array of arrays
-posx tests/t207_md_neg_null_child.hb 1 Bound error: array access
+posx tests/t207_md_neg_null_child.hb 1 Bound error: array access\nCallstack:\n  at main (tests/t207_md_neg_null_child.hb:5)
 pos tests/t208_nil_literal.hb \nNIL\nNIL\n         5\nNIL
 pos tests/t209_nil_return.hb \nNIL\nNIL
 pos tests/t210_nil_compare.hb \nok1\nok2\nok3\nok4\nok5\nok6
@@ -216,9 +216,9 @@ pos tests/t214_nil_mixed_branch.hb \nNIL\nok1\n         9\nok2
 pos tests/t215_nil_reassign.hb \nNIL\n         5\nNIL\n         3\nok1
 pos tests/t216_nil_forward_call.hb \nNIL\nnil-in\nNIL\n         4\nnum-in\n         4
 pos tests/t217_nil_mixed_return.hb \n         7\nNIL\nok1\nok2\n         9
-posx tests/t218_nil_typeerr.hb 1 Type error: NIL used as a number
+posx tests/t218_nil_typeerr.hb 1 Type error: NIL used as a number\nCallstack:\n  at main (tests/t218_nil_typeerr.hb:9)
 pos tests/t219_nil_mixed_return_rev.hb \nNIL\n         7\nok1\nok2\nok3\nok4\n         9
-posx tests/t220_nil_order_var_err.hb 1 Type error: NIL used as a number
+posx tests/t220_nil_order_var_err.hb 1 Type error: NIL used as a number\nCallstack:\n  at main (tests/t220_nil_order_var_err.hb:7)
 pos tests/t221_nil_loop_join.hb \nNIL\n        30\nok1\nNIL
 pos tests/t222_nil_min_fixed.hb \n-9223372036854775808\nok1\nok2
 pos tests/t223_nil_eval_effects.hb \ncalled\nok1\ncalled\nok2\nNIL\nnil-in\nok3
@@ -228,12 +228,12 @@ pos tests/t226_big_redeclare.hb \n         3\n         0
 pos tests/t227_big_child_overwrite.hb \n         7\n         0
 pos tests/t228_big_shrink_nested.hb \n         1\n         0
 pos tests/t229_registry_reuse.hb \n         1\n         0
-posx tests/t230_registry_guard.hb 1 Out of memory
+posx tests/t230_registry_guard.hb 1 Out of memory\nCallstack:\n  at main (tests/t230_registry_guard.hb:8)
 pos tests/t231_hash_lit_read.hb \n         2\n         1\n         2
 pos tests/t232_hash_dup_lit.hb \n         1\n         2
 pos tests/t233_hash_empty.hb \n         0
-posx tests/t234_hash_miss.hb 1 Bound error: array access
-posx tests/t235_hash_case.hb 1 Bound error: array access
+posx tests/t234_hash_miss.hb 1 Bound error: array access\nCallstack:\n  at main (tests/t234_hash_miss.hb:5)
+posx tests/t235_hash_case.hb 1 Bound error: array access\nCallstack:\n  at main (tests/t235_hash_case.hb:4)
 pos tests/t236_hash_setorder.hb \nV\nK\n         9
 pos tests/t237_hash_litorder.hb \nK\nV\n         9
 pos tests/t238_hash_emptykey.hb \n         1\n         7
@@ -248,7 +248,7 @@ pos tests/t246_array_ctor2.hb \n         2\n         3\n         9\nNIL
 pos tests/t247_array_ctor0.hb \n         0
 pos tests/t248_array_ctorvar.hb \n         3\nNIL
 pos tests/t249_array_ctor_aadd.hb \n         3\n         5\nNIL
-posx tests/t250_array_neg.hb 1 ASize: negative size
+posx tests/t250_array_neg.hb 1 ASize: negative size\nCallstack:\n  at main (tests/t250_array_neg.hb:4)
 neg tests/t252_array_0args.hb at least one dimension
 pos tests/t253_array_balance.hb \n         7\n         0
 pos tests/t254_array_abi_locals.hb \n        66\n        33\n         4\n         7
@@ -256,11 +256,11 @@ pos tests/t255_array_zero_rows.hb \n         0
 pos tests/t256_array_zero_cols.hb \n         3\n         0
 pos tests/t257_array_eval_order.hb \nf\ng\n         2\n         3
 pos tests/t258_array_nested_aadd.hb \n         4\n         7\nNIL
-posx tests/t259_array_ovf.hb 1 Out of memory
+posx tests/t259_array_ovf.hb 1 Out of memory\nCallstack:\n  at main (tests/t259_array_ovf.hb:4)
 pos tests/t262_nilslot_print.hb \nNIL\nNIL\n         4\n
-posx tests/t263_nilslot_len.hb 1 Argument error: LEN
-posx tests/t264_nilslot_aadd.hb 1 Argument error: AADD
-posx tests/t265_nilslot_asize.hb 1 Argument error: ASIZE
+posx tests/t263_nilslot_len.hb 1 Argument error: LEN\nCallstack:\n  at main (tests/t263_nilslot_len.hb:6)
+posx tests/t264_nilslot_aadd.hb 1 Argument error: AADD\nCallstack:\n  at main (tests/t264_nilslot_aadd.hb:6)
+posx tests/t265_nilslot_asize.hb 1 Argument error: ASIZE\nCallstack:\n  at main (tests/t265_nilslot_asize.hb:6)
 pos tests/t266_nilslot_assign.hb \n         9\n         2\nNIL\n         1\n         5
 pos tests/t267_nilslot_cmp.hb \ncasilla es nil\nhijo no nil\nvacio no nil
 pos tests/t268_nilslot_cmp2.hb \nizq nil\nhijo distinto\nllamada\nuna vez
@@ -283,7 +283,7 @@ pos tests/t284_deep3_asize_order.hb \neval-i\neval-j\neval-n\n         3\n      
 pos tests/t285_array3d.hb \n         2\n         2\n         3\n         7\n         1\n         1\n         0\n         0
 pos tests/t287_array3d_zero.hb \n         0\n         2\n         0\n         0\n         2\n         3\n         0\n         0\n         0
 pos tests/t288_array3d_order.hb \ndim-1\ndim-2\ndim-3\n         2\n         3\n         1\n         0\n         0
-posx tests/t289_posx_array3d_negdim.hb 1 ASize: negative size
+posx tests/t289_posx_array3d_negdim.hb 1 ASize: negative size\nCallstack:\n  at main (tests/t289_posx_array3d_negdim.hb:5)
 neg tests/t290_neg_class_gate.hb classes are not in this increment yet
 neg tests/t291_neg_class_multi.hb multiple inheritance is not in this increment
 neg tests/t292_neg_class_scope.hb class scopes
@@ -315,7 +315,7 @@ pos tests/t317_hash_return.hb \n         1\n         7
 pos tests/t318_hash_param_free.hb \n         1\n         2\n         0
 pos tests/t319_hkeys_asize.hb \n         2\none\ntwo\n         2
 pos tests/t320_darrs_asize_zero.hb \n         3\n         1\na\n         0\n         0
-posx tests/t321_darrs_asize_grow.hb 1 Type error: expected a string element, got NIL
+posx tests/t321_darrs_asize_grow.hb 1 Type error: expected a string element, got NIL\nCallstack:\n  at main (tests/t321_darrs_asize_grow.hb:9)
 pos tests/t324_darrs_grow_hk14.hb \n         3\nnew\n         3\nNIL\n         2\none
 pos tests/t325_darrs_grow_print.hb \none\nNIL\nNIL
 pos tests/t326_darrs_grow_aadd.hb \n         4\nx\nNIL
@@ -345,14 +345,14 @@ neg tests/t348_neg_foreach_store_lv.hb cannot be returned, assigned, passed to a
 pos tests/t344_foreach_strcmp.hb \ndistinta\nigual\nno-es-b
 pos tests/t349_foreach_strcmp_prefix.hb \ncorta-der-igual\nlarga-der-distinta\nexacta-igual
 pos tests/t350_foreach_strcmp_nil.hb \nigual-a\nno-a\ndistinto-de-a
-posx tests/t351_foreach_strcmp_num.hb 1 Argument error: =\n
-posx tests/t352_foreach_strcmp_num_ne.hb 1 Argument error: <>\n
+posx tests/t351_foreach_strcmp_num.hb 1 Argument error: =\nCallstack:\n  at main (tests/t351_foreach_strcmp_num.hb:7)
+posx tests/t352_foreach_strcmp_num_ne.hb 1 Argument error: <>\nCallstack:\n  at main (tests/t352_foreach_strcmp_num_ne.hb:7)
 pos tests/t354_foreach_strcmp_left.hb \nigual\nigual-temp
 pos tests/t355_foreach_strord.hb \nmenorigual-b\nmayorigual-b\nmenor-b\nmenorigual-b\nmayor-b\nmayorigual-b
 pos tests/t356_foreach_strord_prefix.hb \nmenorigual\nmayorigual\nmenor\nmenorigual\nmenorigual\nmayorigual\nmenorigual\nmayorigual
 pos tests/t357_foreach_strord_rightlen.hb \nmenorigual\nmayorigual\nmenorigual\nmayorigual\nmenorigual\nmayorigual\nmenorigual\nmayorigual
-posx tests/t358_foreach_strord_num.hb 1 Argument error: <\n
-posx tests/t359_foreach_strord_nil.hb 1 Argument error: >\n
+posx tests/t358_foreach_strord_num.hb 1 Argument error: <\nCallstack:\n  at main (tests/t358_foreach_strord_num.hb:7)
+posx tests/t359_foreach_strord_nil.hb 1 Argument error: >\nCallstack:\n  at main (tests/t359_foreach_strord_nil.hb:8)
 pos tests/t360_foreach_strord_multi.hb \nmenor-e-igual\nigual\nmenor-e-igual\nmenor\nigual-ab\nigual-ab\nigual-ab\nmayor-ab
 pos tests/t361_foreach_strord_right.hb \nb-mayor\nb-mayor\nb-mayor
 pos tests/t362_foreach_strcmp_shorter.hb \ndistinta\nne\ndistinta\nne
@@ -362,7 +362,7 @@ pos tests/t365_foreach_temp_exitret.hb \n         1\n         0
 pos tests/t366_foreach_temp_arrayn.hb \nnil\nnil\n         1\n         0
 pos tests/t367_foreach_index.hb \n         1\n         2\n         3\n         4\n         2\n         1
 pos tests/t368_foreach_index_fx.hb \neval\n         3\n         4
-posx tests/t369_foreach_index_nil.hb 1 Argument error: array access\n
+posx tests/t369_foreach_index_nil.hb 1 Argument error: array access\nCallstack:\n  at main (tests/t369_foreach_index_nil.hb:6)
 neg tests/t370_neg_foreach_index_grow.hb cannot be modified, moved or grown inside its own loop
 neg tests/t371_neg_foreach_index_childgrow.hb cannot be modified, moved or grown inside its own loop
 neg tests/t372_neg_foreach_index_write.hb cannot be modified, moved or grown inside its own loop
@@ -374,19 +374,19 @@ neg tests/t377_neg_foreach_index2_write.hb cannot be modified, moved or grown in
 neg tests/t378_neg_foreach_index2_move.hb cannot be modified, moved or grown inside its own loop
 pos tests/t379_foreach_index2_exitret.hb \n         1\n         0
 pos tests/t380_asize3_root.hb \n         3\n         1\n         1\n         0\n         0
-posx tests/t381_asize3_root_nil.hb 1 Argument error: array access\n
+posx tests/t381_asize3_root_nil.hb 1 Argument error: array access\nCallstack:\n  at main (tests/t381_asize3_root_nil.hb:6)
 pos tests/t382_asize3_mid.hb \n         1\n         3\n         2\n         1\n         2\n         0\n         0
-posx tests/t383_asize3_mid_nil.hb 1 Argument error: array access\n
+posx tests/t383_asize3_mid_nil.hb 1 Argument error: array access\nCallstack:\n  at main (tests/t383_asize3_mid_nil.hb:6)
 pos tests/t384_asize3_mid_shrink.hb \n         1\n         1\n         0\n         0
 pos tests/t385_asize3_root_zero.hb \n         0\n         0\n         0
-posx tests/t386_asize3_nil_casilla.hb 1 Argument error: ASIZE\n
+posx tests/t386_asize3_nil_casilla.hb 1 Argument error: ASIZE\nCallstack:\n  at main (tests/t386_asize3_nil_casilla.hb:5)
 pos tests/t387_aadd3_mid_lit.hb \n         2\n         5\n         6\n         0\n         0
 pos tests/t388_aadd3_mid_order.hb \neval\nval\n         2
 pos tests/t389_aadd3_mid_call.hb \n         2\n         2\n         0\n         0
 pos tests/t390_aadd3_mid_var.hb \n         2\n         7\n         8\n         0\n         0
 neg tests/t391_neg_aadd3_mid_moved.hb use of moved value
 neg tests/t392_neg_aadd3_mid_deep.hb the elements of the middle level of `a` are flat dynamic arrays in this increment
-posx tests/t393_aadd3_mid_nil.hb 1 Argument error: AADD\n
+posx tests/t393_aadd3_mid_nil.hb 1 Argument error: AADD\nCallstack:\n  at main (tests/t393_aadd3_mid_nil.hb:5)
 pos tests/t394_borrow_param_read.hb \n         2\n         1\n         2\n         0\n         0\n         0
 pos tests/t395_borrow_param_grow.hb \n         0\n         3\n         9\n         0\n         0
 pos tests/t396_borrow_param_order.hb \neval\n         2\n         0\n         0\n         0
@@ -395,7 +395,7 @@ pos tests/t398_borrow_param_shrink.hb \n         0\n         1\n         0\n    
 neg tests/t399_neg_borrow_return.hb is borrowed from its caller
 neg tests/t400_neg_borrow_passon.hb is borrowed from its caller
 neg tests/t401_neg_borrow_overlap.hb no other argument of the same call may mention it
-posx tests/t402_borrow_nil_casilla.hb 1 Argument error: PARAM\n
+posx tests/t402_borrow_nil_casilla.hb 1 Argument error: PARAM\nCallstack:\n  at main (tests/t402_borrow_nil_casilla.hb:7)
 neg tests/t403_neg_borrow_darr3.hb indexing applies to arrays
 neg tests/t404_neg_borrow_foreach.hb cannot be modified, moved or grown inside its own loop
 neg tests/t405_neg_borrow_move_conflict.hb cannot also receive an owned array
@@ -414,7 +414,7 @@ pos tests/t417_borrow3_grow.hb \n         0\n         3\n         2\n         8\
 pos tests/t418_borrow3_write.hb \n         0\n        42\n         0\n         0
 pos tests/t419_borrow3_shrink.hb \n         2\n         0\n         1\n         2\n         0\n         0
 pos tests/t420_borrow3_order.hb \neval\n         2\n         2\n         0\n         0\n         0
-posx tests/t423_borrow3_nil_casilla.hb 1 Argument error: PARAM\n
+posx tests/t423_borrow3_nil_casilla.hb 1 Argument error: PARAM\nCallstack:\n  at main (tests/t423_borrow3_nil_casilla.hb:8)
 neg tests/t421_neg_borrow3_return.hb is borrowed from its caller
 neg tests/t422_neg_borrow3_overlap.hb no other argument of the same call may mention it
 pos tests/t424_static_arg_read.hb \n         3\n         2\n         0\n         3\n         3\n         0\n         0
@@ -457,7 +457,7 @@ pos tests/t459_foreach_sub3_order.hb \nI1\nI2\nI3\n         5\nNIL\n         0\n
 pos tests/t460_foreach_sub3_bracket.hb \n         7\n         8\n         0\n         0
 neg tests/t461_neg_foreach_sub3_root.hb `for each` needs a flat or string array or a hash in this increment
 neg tests/t462_neg_foreach_sub3_touch.hb cannot be modified, moved or grown inside its own loop
-posx tests/t463_foreach_sub3_bound.hb 1 Bound error: array access
+posx tests/t463_foreach_sub3_bound.hb 1 Bound error: array access\nCallstack:\n  at main (tests/t463_foreach_sub3_bound.hb:4)
 pos tests/t464_param4_move.hb \n         2\n         2\n        42\n         0\n         0\n         0
 pos tests/t465_param4_return.hb \n         2\n         2\n         9\nNIL\n         0\n         0
 neg tests/t466_neg_param4_reuse.hb use of moved value `a`
@@ -498,20 +498,20 @@ pos tests/t500_exeq_dynstr.hb \n         1\n         1\n         0\n         0
 pos tests/t501_exeq_dynstrstr.hb \n         1\n         0\n         0\n         1
 pos tests/t502_exeq_dynint.hb \n         1\n         0\n         1\n         1
 pos tests/t503_exeq_dynnileq.hb \n         1\n         0\n         0
-posx tests/t504_posx_dynxeq_mixed.hb 1 Argument error: ==
+posx tests/t504_posx_dynxeq_mixed.hb 1 Argument error: ==\nCallstack:\n  at main (tests/t504_posx_dynxeq_mixed.hb:11)
 pos tests/t505_exeq_hash.hb \n         1\n         0\n         1
-posx tests/t506_posx_dynxeq_mixed2.hb 1 Argument error: ==
-posx tests/t507_posx_dynxeq_mixed3.hb 1 Argument error: ==
+posx tests/t506_posx_dynxeq_mixed2.hb 1 Argument error: ==\nCallstack:\n  at main (tests/t506_posx_dynxeq_mixed2.hb:11)
+posx tests/t507_posx_dynxeq_mixed3.hb 1 Argument error: ==\nCallstack:\n  at main (tests/t507_posx_dynxeq_mixed3.hb:10)
 pos tests/t508_exeq_darrs_xeq.hb \n         1\n         0\n         0\n         1
 pos tests/t509_exeq_darrs_xeq2.hb \n         1\n         0\n         1
 pos tests/t510_exeq_dynstrstr_eq.hb \n         1\n         0\n         0\n         1\n         0\n         0
-posx tests/t511_posx_dyneq_strint.hb 1 Argument error: =
+posx tests/t511_posx_dyneq_strint.hb 1 Argument error: =\nCallstack:\n  at main (tests/t511_posx_dyneq_strint.hb:12)
 pos tests/t512_exeq_dyneq_strnil.hb \n         0\n         0
 pos tests/t513_exeq_dynord_str.hb \n         0\n         1\n         0\n         0\n         0\n         0\n         1\n         0\n         1\n         1\n         0\n         1\n         1\n         0\n         1\n         1
-posx tests/t514_posx_dynord_lt.hb 1 Argument error: <
-posx tests/t515_posx_dynord_gt.hb 1 Argument error: >
-posx tests/t516_posx_dynord_le.hb 1 Argument error: <=
-posx tests/t517_posx_dynord_ge.hb 1 Argument error: >=
+posx tests/t514_posx_dynord_lt.hb 1 Argument error: <\nCallstack:\n  at main (tests/t514_posx_dynord_lt.hb:11)
+posx tests/t515_posx_dynord_gt.hb 1 Argument error: >\nCallstack:\n  at main (tests/t515_posx_dynord_gt.hb:11)
+posx tests/t516_posx_dynord_le.hb 1 Argument error: <=\nCallstack:\n  at main (tests/t516_posx_dynord_le.hb:11)
+posx tests/t517_posx_dynord_ge.hb 1 Argument error: >=\nCallstack:\n  at main (tests/t517_posx_dynord_ge.hb:11)
 pos tests/t518_hvalues.hb \n         3\n         1\nNIL\n        42\n         1\n        99
 pos tests/t519_hvalues_empty.hb \n         0\n         0\n         1\n         7\n         7
 pos tests/t520_hvalues_free.hb \n         2\n         2\n         0
@@ -523,7 +523,7 @@ pos tests/t525_hhaskey.hb \n         1\n         1\n         0\n         0\n    
 pos tests/t526_hhaskey_empty.hb \n         0\n         1
 neg tests/t527_neg_hhaskey_type.hb expects a hash variable
 pos tests/t528_hget.hb \n         1\n         2\n         1\nNIL\nNIL
-posx tests/t529_posx_hget_missing.hb 1 \n         1Bound error: array access
+posx tests/t529_posx_hget_missing.hb 1 \n         1Bound error: array access\nCallstack:\n  at main (tests/t529_posx_hget_missing.hb:8)
 neg tests/t530_neg_hget_type.hb expects a hash variable
 pos tests/t531_hget_default_eval.hb \n         7\n         1\n         7\nNIL
 pos tests/t532_hset.hb \n         2\n         2\n         2\n         9\nNIL\n         3
@@ -609,9 +609,9 @@ pos tests/t611_log_dyn_hclone_hvalues.hb \n.T.\nL\n.T.\nL\n         1
 pos tests/t612_log_dyn_aadd_arrset.hb \n.T.\nL\n.F.
 pos tests/t613_log_dyn_hcopy_hfill.hb \n.T.\nL\n         9\n.F.\n.F.\nL
 pos tests/t614_log_dyn_balance.hb \n         0
-posx tests/t615_valtype_hash_miss.hb 1 Bound error: array access
-posx tests/t616_hash_read_miss.hb 1 Bound error: array access
-posx tests/t617_dyn_nil_condition.hb 1 Type error: condition is not a logical
+posx tests/t615_valtype_hash_miss.hb 1 Bound error: array access\nCallstack:\n  at main (tests/t615_valtype_hash_miss.hb:6)
+posx tests/t616_hash_read_miss.hb 1 Bound error: array access\nCallstack:\n  at main (tests/t616_hash_read_miss.hb:5)
+posx tests/t617_dyn_nil_condition.hb 1 Type error: condition is not a logical\nCallstack:\n  at main (tests/t617_dyn_nil_condition.hb:7)
 pos tests/t618_log_dyn_if_casilla.hb \nsi\nno2\ngiro
 pos tests/t619_procedure_kw.hb \n         7\n         8\n         1\nNIL
 pos tests/t620_comment_forms.hb \none\ntwo\nstr /* kept */ ok
@@ -707,12 +707,12 @@ pos tests/t709_print_dyn_bool_return.hb \n.T.\n.T.\n.F.\n.F.
 pos tests/t710_print_dyn_all_scalars.hb \ntext\n        42\nNIL\n.T.
 neg tests/t711_dyn_bool_reassign_neg.hb type mismatch in assignment
 pos tests/t712_dyn_cond_bool.hb \n.T.\nyes\n.F.\nno
-posx tests/t713_dyn_cond_int.hb 1 \n         0Type error: condition is not a logical\n
-posx tests/t714_dyn_cond_string.hb 1 \nabcType error: condition is not a logical\n
+posx tests/t713_dyn_cond_int.hb 1 \n         0Type error: condition is not a logical\nCallstack:\n  at p (tests/t713_dyn_cond_int.hb:10)\n  at main (tests/t713_dyn_cond_int.hb:6)
+posx tests/t714_dyn_cond_string.hb 1 \nabcType error: condition is not a logical\nCallstack:\n  at p (tests/t714_dyn_cond_string.hb:9)\n  at main (tests/t714_dyn_cond_string.hb:5)
 neg tests/t715_dyn_cond_str_elem_neg.hb a bare value is not a condition in this PoC
 pos tests/t716_while_dyn_cond.hb \n.F.\nafter\n.T.\nin\nafter
-posx tests/t717_while_dyn_int.hb 1 \n         0Type error: condition is not a logical\n
-posx tests/t718_dyn_pin_int_nil_call.hb 1 \n.T.\n.F.Type error: NIL used as a number\n
+posx tests/t717_while_dyn_int.hb 1 \n         0Type error: condition is not a logical\nCallstack:\n  at p (tests/t717_while_dyn_int.hb:9)\n  at main (tests/t717_while_dyn_int.hb:5)
+posx tests/t718_dyn_pin_int_nil_call.hb 1 \n.T.\n.F.Type error: NIL used as a number\nCallstack:\n  at main (tests/t718_dyn_pin_int_nil_call.hb:10)
 neg tests/t719_dyn_pin_str_nil_call_neg.hb must be a string, got a dynamic value
 pos tests/t720_qq_basic.hb abcd\nef        42\ngh
 pos tests/t721_qq_multiargs.hb a b          1          2\nc d
@@ -741,7 +741,7 @@ neg tests/t743_float_dec18_neg.hb more than 17 written decimals
 
 pos tests/t744_div_fold.hb \n         5\n         2.50\n         3\n        10\n         3.50\n         0.33\n        14\n        -4\n        -3.50\n 9223372036854775807\n         0
 pos tests/t745_div_runtime.hb \n         5.00\n         2.50\n         3.33\n         3.33\n         5.00\n 9223372036854776000.00
-posx tests/t746_div_zero.hb 1 Error: division by zero
+posx tests/t746_div_zero.hb 1 Error: division by zero\nCallstack:\n  at main (tests/t746_div_zero.hb:3)
 neg tests/t747_set_decimals.hb SET commands are not in this increment
 neg tests/t748_dyn_div.hb division with a NIL-able (Dyn) operand is not in this increment
 pos tests/t749_div_length.hb \n 3074457345618259000.00\n-3074457345618259000.00\n         -2000000000.00\n-500000000.00
@@ -752,7 +752,7 @@ pos tests/t753_float_rounding.hb \n         0.13\n         0.38\n         0.67\n
 pos tests/t754_float_stars.hb \n**************************************************************\n****************************************************\n*****************************************************\n**************************************************************\n**************************************************************\n.T.\n.T.
 pos tests/t755_float_length_asym.hb \n         -9000000000.0\n         -9000000000.0\n-500000000.0\n        -10000000000.0\n10000000000.0\n5000000000.0\n9000000000.0\n         0.0\n         0.0\n         -1000000000.0\n         -1000000000.0
 pos tests/t756_float_nan_inf_cmp.hb \n.F.\n.T.\n.F.\n.F.\n.F.\n.F.\n.F.\n.F.\n.F.\n.F.\n.F.\n.T.\n.T.\n.F.\n.T.\n.F.\n.T.\n.T.\n.T.\n.T.\n.T.\n.F.\n.T.\n.T.\n.F.\n.T.
-posx tests/t757_float_field_overflow.hb 1 Error: float field out of range
+posx tests/t757_float_field_overflow.hb 1 Error: float field out of range\nCallstack:\n  at main (tests/t757_float_field_overflow.hb:5)
 
 pos tests/t758_f64_param_basic.hb \n         1.75\n         2.5\n         1.0
 pos tests/t759_f64_param_polymorph.hb \n         3.0\n         1.5\n        14\n         7
@@ -769,9 +769,9 @@ pos tests/t774_f64_forward_ref.hb \n         2.0\n         2.5
 pos tests/t775_f64_cyclic_infer.hb \n         2.5
 neg tests/t767_f64_mixed_return_neg.hb return type mismatch
 neg tests/t768_dyn_float_boundary_neg.hb must be a dynamic value, got a float
-posx tests/t769_f64_fold_defer_guard.hb 1 Error: float field out of range
-posx tests/t770_f64_callchain_overflow.hb 1 Error: float field out of range
-posx tests/t771_f64_varchain_overflow.hb 1 Error: float field out of range
+posx tests/t769_f64_fold_defer_guard.hb 1 Error: float field out of range\nCallstack:\n  at main (tests/t769_f64_fold_defer_guard.hb:2)
+posx tests/t770_f64_callchain_overflow.hb 1 Error: float field out of range\nCallstack:\n  at q (tests/t770_f64_callchain_overflow.hb:2)\n  at main (tests/t770_f64_callchain_overflow.hb:4)
+posx tests/t771_f64_varchain_overflow.hb 1 Error: float field out of range\nCallstack:\n  at main (tests/t771_f64_varchain_overflow.hb:5)
 neg tests/t776_nonnumeric_nopromo_neg.hb must be an integer, got a boolean
 pos tests/t777_for_reuse.hb \ndo exit test passed\nfor exit test passed
 pos tests/t778_byref_str_param.hb \na := 10         10\nb := "X" X\na pointer + 10 =         20\nb pointer := "A" = A\nreturn of "a" should = 20         20 worked\nreturn of "b" should = A A worked
@@ -833,5 +833,14 @@ pos tests/t834_round_forms.hb \n         2          3         -2         -3\n   
 pos tests/t835_round_repr.hb \n         1.01          2.68          1.34\n 123456789.12          1.50         -1.50\n         1         -1          0\n       123.4560000000          1.23456789012345\n       1234567890123.5 -987654321.79
 neg tests/t836_round_type_neg.hb `round` expects a numeric first argument
 neg tests/t837_round_dec16_neg.hb dec beyond +/-15 is parked
-posx tests/t838_round_rtdec_pos.hb 1 Error: round dec out of range
-posx tests/t839_round_rtdec_neg.hb 1 Error: round dec out of range
+posx tests/t838_round_rtdec_pos.hb 1 Error: round dec out of range\nCallstack:\n  at main (tests/t838_round_rtdec_pos.hb:3)
+posx tests/t839_round_rtdec_neg.hb 1 Error: round dec out of range\nCallstack:\n  at main (tests/t839_round_rtdec_neg.hb:3)
+posx tests/t840_trace_nested.hb 1 Error: round dec out of range\nCallstack:\n  at leaf (tests/t840_trace_nested.hb:3)\n  at middle (tests/t840_trace_nested.hb:6)\n  at main (tests/t840_trace_nested.hb:9)
+posx tests/t841_trace_recursion.hb 1 Error: round dec out of range\nCallstack:\n  at dive (tests/t841_trace_recursion.hb:7)\n  at dive (tests/t841_trace_recursion.hb:4)\n  at dive (tests/t841_trace_recursion.hb:4)\n  at dive (tests/t841_trace_recursion.hb:4)\n  at main (tests/t841_trace_recursion.hb:10)
+posx tests/t842_trace_block.hb 1 Error: round dec out of range\nCallstack:\n  at fail (tests/t842_trace_block.hb:3)\n  at <block#0> (tests/t842_trace_block.hb:6)\n  at main (tests/t842_trace_block.hb:7)
+posx tests/t843_trace_origin.hb 1 Error: round dec out of range\nCallstack:\n  at included (tests/t843_trace_origin.ch:4)\n  at main (tests/t843_trace_origin.hb:6)
+posx tests/t844_trace_unlink.hb 1 \n        10Error: round dec out of range\nCallstack:\n  at main (tests/t844_trace_unlink.hb:9)
+posx tests/t845_trace_byref.hb 1 Error: round dec out of range\nCallstack:\n  at change (tests/t845_trace_byref.hb:4)\n  at main (tests/t845_trace_byref.hb:8)
+posx tests/t846_trace_while.hb 1 Error: round dec out of range\nCallstack:\n  at cond (tests/t846_trace_while.hb:4)\n  at main (tests/t846_trace_while.hb:9)
+posx tests/t847_trace_nested_expr.hb 1 Error: round dec out of range\nCallstack:\n  at main (tests/t847_trace_nested_expr.hb:8)
+posx tests/t848_trace_block_unlink.hb 1 \n         6Error: round dec out of range\nCallstack:\n  at main (tests/t848_trace_block_unlink.hb:5)

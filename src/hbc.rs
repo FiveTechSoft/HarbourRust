@@ -414,7 +414,45 @@ fn cg_f64_operand(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String
         out.push_str("    cvtsi2sd %rax, %xmm0\n    xor %ecx, %ecx\n");
     }
 }
+thread_local! {
+    static TRACE_ORIGINS: std::cell::RefCell<Vec<(String, usize)>> = std::cell::RefCell::new(Vec::new());
+    static TRACE_BLOCK_LINES: std::cell::RefCell<std::collections::HashMap<usize, usize>> = std::cell::RefCell::new(std::collections::HashMap::new());
+    static TRACE_OFFSET: std::cell::Cell<usize> = std::cell::Cell::new(0);
+}
 fn new_block_id() -> usize { BLOCK_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst) }
+
+// Diagnostic records are native-frame locals, not a value stack or evaluator.
+fn trace_location(name: &str, line: usize, strs: &mut Vec<String>, out: &mut String) {
+    let (path, original) = TRACE_ORIGINS.with(|m| m.borrow().get(line.saturating_sub(1)).cloned())
+        .unwrap_or_else(|| ("<unknown>".to_string(), line));
+    let text = format!("  at {} ({}:{})\n", name, path, original);
+    let len = text.len();
+    let id = strs.len(); strs.push(text);
+    let off = TRACE_OFFSET.with(|o| o.get());
+    // r11 is scratch in generated code; flags and value registers survive.
+    out.push_str(&format!("    lea .Lstr{}(%rip), %r11\n    mov %r11, -{}(%rbp)\n    movq ${}, -{}(%rbp)\n", id, off - 8, len, off - 16));
+}
+fn trace_link(off: usize, out: &mut String) {
+    TRACE_OFFSET.with(|o| o.set(off));
+    out.push_str(&format!("    mov hbc_trace_top(%rip), %r11\n    mov %r11, -{}(%rbp)\n    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n    lea -{}(%rbp), %r11\n    mov %r11, hbc_trace_top(%rip)\n", off, off - 8, off - 16, off));
+}
+fn trace_unlink(off: usize, out: &mut String) {
+    out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov %r11, hbc_trace_top(%rip)\n", off));
+}
+fn stmt_line(s: &Stmt) -> usize {
+    match s {
+        Stmt::Local(n,..) | Stmt::Print(n,..) | Stmt::Ret(n,..) | Stmt::If(n,..) |
+        Stmt::While(n,..) | Stmt::Assign(n,..) | Stmt::HDel(n,..) | Stmt::HDelAt(n,..) |
+        Stmt::HClear(n,..) | Stmt::HFill(n,..) | Stmt::HMerge(n,..) | Stmt::HCopy(n,..) |
+        Stmt::HSet(n,..) | Stmt::HSetCaseMatch(n,..) | Stmt::ArrSet(n,..) |
+        Stmt::ArrSet2(n,..) | Stmt::ArrSet3(n,..) | Stmt::ArrSet4(n,..) |
+        Stmt::SelfSet(n,..) | Stmt::SendSet(n,..) | Stmt::SendStmt(n,..) |
+        Stmt::CallStmt(n,..) | Stmt::AAdd(n,..) | Stmt::AAddSub(n,..) |
+        Stmt::ASizeSub(n,..) | Stmt::AAddSub2(n,..) | Stmt::ASizeSub2(n,..) |
+        Stmt::AAddSub3(n,..) | Stmt::ASizeSub3(n,..) | Stmt::ASize(n,..) |
+        Stmt::Exit(n) | Stmt::Loop(n) | Stmt::For(n,..) | Stmt::ForEach(n,..) => *n,
+    }
+}
 
 // Unique-label counter for inline branches emitted by codegen: every
 // emission of the same construct gets a fresh id, so two comparisons in
@@ -1078,7 +1116,9 @@ impl P {
                             other => return Err(format!("line {}: expected `,` or `}}` in the codeblock body, got {:?}", self.n, other)),
                         }
                     }
-                    return Ok(Expr::BlockLit(new_block_id(), params, body));
+                    let id = new_block_id();
+                    TRACE_BLOCK_LINES.with(|m| m.borrow_mut().insert(id, self.n));
+                    return Ok(Expr::BlockLit(id, params, body));
                 }
                 // {} is the empty DYNAMIC array value (probes d1, e4);
                 // non-empty literals stay fixed-size stack arrays.
@@ -1200,7 +1240,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -8480,6 +8520,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
 
 fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, ll: &Option<(String, String)>, slots: &[(usize, u8)], dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
     for (si, s) in stmts.iter().enumerate() {
+        trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
         match s {
             Stmt::SelfSet(..) | Stmt::SendSet(..) | Stmt::SendStmt(..) => unreachable!("rejected before codegen"),
             Stmt::CallStmt(_, e) => {
@@ -8878,6 +8919,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let id = *label;
                 *label += 1;
                 out.push_str(&format!(".Lwhile_{}_{}:\n", fname, id));
+                trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
                 cg_cond_jump(cond, env, sigs, strs, out, target, &format!(".Lbody_{}_{}", fname, id));
                 out.push_str(&format!("    jmp .Lendw_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lbody_{}_{}:\n", fname, id));
@@ -9176,6 +9218,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 env[kl].off = lv_off;
                 out.push_str(&format!(".Lfec_{}_{}:
 ", fname, id));
+                trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
                 out.push_str(&format!("    mov -{}(%rbp), %rax
     cmp -{}(%rbp), %rax
     jg .Lfee_{}_{}
@@ -10245,12 +10288,17 @@ fn emit_block(id: usize, params: &[String], body: &[Expr], sigs: &[Sig], strs: &
         lenv.push(CgLocal { name: p.clone(), ty: Ty::I64, off: frame });
     }
     let n = lenv.len();
+    let trace_off = frame + 32;
+    frame = trace_off;
     out.push_str(&format!("hbc_blk_{}:\n", id));
     out.push_str("    push %rbp\n    mov %rsp, %rbp\n");
     let frame = if target == Target::Windows { (frame + 15) & !15 } else { frame };
     if frame > 0 {
         out.push_str(&format!("    sub ${}, %rsp\n", frame));
     }
+    trace_link(trace_off, out);
+    let block_line = TRACE_BLOCK_LINES.with(|m| m.borrow().get(&id).copied()).unwrap_or(0);
+    trace_location(&format!("<block#{}>", id), block_line, strs, out);
     for (k, v) in lenv.iter().enumerate() {
         let src = 16 * (n - k);
         out.push_str(&format!("    mov {}(%rbp), %rax\n", src));
@@ -10262,6 +10310,7 @@ fn emit_block(id: usize, params: &[String], body: &[Expr], sigs: &[Sig], strs: &
             out.push_str("    # intermediate block expression: value discarded (probe c4)\n");
         }
     }
+    trace_unlink(trace_off, out);
     out.push_str("    leave\n    ret\n\n");
 }
 
@@ -10338,6 +10387,8 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         }
     }
 
+    let trace_off = frame + 32;
+    frame = trace_off;
     out.push_str(&format!("hbc_fn_{}:\n", lbl));
     out.push_str("    push %rbp\n    mov %rsp, %rbp\n");
     // Win64 ABI: rsp must be 16-byte aligned at every call. The Linux
@@ -10347,6 +10398,8 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     if frame > 0 {
         out.push_str(&format!("    sub ${}, %rsp\n", frame));
     }
+    trace_link(trace_off, out);
+    trace_location(&f.name, f.stmts.first().map(stmt_line).unwrap_or(0), strs, out);
     // Zero-init every dynamic-array slot (parameters included): the
     // epilogue and reassignment free any non-null slot, so every slot must
     // start in the known-empty state even when its declaring branch never
@@ -10437,6 +10490,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     } else {
         out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
     }
+    trace_unlink(trace_off, out);
     out.push_str("    leave\n    ret\n\n");
     // Block literals used by this function are emitted right after it.
     let mut blocks = Vec::new();
@@ -12112,7 +12166,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
             out = out.replace("@REG_HFREE_W@", if instrument { REG_HFREE_W } else { "" });
             out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
             out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
-            return out;
+            return finalize_trace(out, target);
         }
         Target::Linux => {}
     }
@@ -13271,6 +13325,60 @@ hbc_mem_frees:  .quad 0
     out = out.replace("@REG_SFREE_W@", if instrument { REG_SFREE_W } else { "" });
     out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
     out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
+    finalize_trace(out, target)
+}
+
+// Unify controlled failures only. Normal _start exits are not rewritten.
+fn finalize_trace(mut out: String, target: Target) -> String {
+    let (old, new) = match target {
+        Target::Linux => ("    mov $60, %eax\n    mov $1, %edi\n    syscall", "    jmp hbc_panic_exit"),
+        Target::Windows => ("    mov $1, %ecx\n    call ExitProcess", "    jmp hbc_panic_exit"),
+    };
+    out = out.replace(old, new);
+    out.push_str(r#"
+    .data
+    .align 8
+hbc_trace_top: .quad 0
+    .text
+# hbc_print_trace: native diagnostic chain, youngest frame first.
+# No heap, no fixed depth array. Preserve all nonvolatile GPRs.
+hbc_print_trace:
+    push %rbp
+    mov %rsp, %rbp
+    push %r12
+    sub $40, %rsp
+    mov hbc_trace_top(%rip), %r12
+    test %r12, %r12
+    jz .Ltrace_done
+    lea .Ltrace_header(%rip), %rax
+    mov $11, %edx
+    call hbc_print_str
+.Ltrace_next:
+    mov 8(%r12), %rax
+    mov 16(%r12), %rdx
+    test %rdx, %rdx
+    jz .Ltrace_skip
+    call hbc_print_str
+.Ltrace_skip:
+    mov (%r12), %r12
+    test %r12, %r12
+    jnz .Ltrace_next
+.Ltrace_done:
+    add $40, %rsp
+    pop %r12
+    pop %rbp
+    ret
+# Error labels may jump here with arbitrary helper frames and alignment.
+hbc_panic_exit:
+    and $-16, %rsp
+    sub $32, %rsp
+    call hbc_print_trace
+"#);
+    match target {
+        Target::Linux => out.push_str("    mov $60, %eax\n    mov $1, %edi\n    syscall\n    .section .rodata\n"),
+        Target::Windows => out.push_str("    mov $1, %ecx\n    call ExitProcess\n    .section .rdata,\"r\"\n"),
+    }
+    out.push_str(".Ltrace_header:\n    .byte 67,97,108,108,115,116,97,99,107,58,10\n");
     out
 }
 
@@ -14912,6 +15020,7 @@ fn main() {
         process::exit(1);
     }
 
+    TRACE_ORIGINS.with(|m| *m.borrow_mut() = pre.origins.clone());
     let prog = match parse(&src) {
         Ok(p) => p,
         Err(msg) => { eprintln!("error: {}", msg); process::exit(1); }
