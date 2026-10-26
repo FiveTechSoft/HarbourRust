@@ -1213,11 +1213,20 @@ integer a per-operator clean named exit 1 mirroring BASE/1073-1076
 (hk149-hk152 - dialogs hang headless; registered failure modes;
 t514-t517).
 
+t521-t524 (iteration 47): hb_HDel(h, key) - new runtime helper hbc_hdel
+frees the hash-owned key copy and shifts the remaining entries down;
+hk155 reproduced byte for byte (t521), hk156's order and no-op facts
+verified with literal-key reads (t522 - the Dyn `for each` variable as a
+read key stays a named limit), deleted key copies freed with balance 0
+(t523, own check), non-hash target rejected at compile time (t524).
+Dedicated hbc_hdel canary in the ABI harness (entry shift, count and
+no-op redelete verified, canaries/stack/alignment after every call).
+
 t518-t520 (iteration 46): hb_HValues(h) - new runtime helper
 hbc_hvalues (ABI-canaried on both targets): value casillas in
 insertion order into a NEW independent array (oracles hk153/hk154;
 t518/t519), result freed by the DArr epilogue with balance 0 (t520,
 own ownership check, not a Harbour oracle).
 
-516/516 manifest cases + ABI harness green on Linux x86-64 and Wine
+520/520 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
