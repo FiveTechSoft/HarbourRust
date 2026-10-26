@@ -4522,11 +4522,23 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
         Expr::Call(id, args) if is_builtin(id, "hb_hhaskey") => {
             // hb_HHasKey(h, key): the key evaluates first (borrowed),
             // then the hash slot goes by address. Returns rax = 1/0.
+            // An owned key temporary (e.g. hb_HHasKey(h, keys[i])) is
+            // freed right after the call - the helper only reads it
+            // (leak found and fixed in iteration 52; t544).
             cg_value(&args[1], env, sigs, strs, out, target);
-            out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            let temp_key = expr_ty(&args[1], env, sigs) == Ty::StrOwn && !matches!(&args[1], Expr::Var(_));
+            if temp_key {
+                out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            } else {
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            }
             if let Expr::Var(v) = &args[0] {
                 let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
-                out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hhaskey\n    add $16, %rsp\n", var.off));
+                if temp_key {
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hhaskey\n    mov %rax, 16(%rsp)\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    mov 16(%rsp), %rax\n    add $32, %rsp\n", var.off));
+                } else {
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hhaskey\n    add $16, %rsp\n", var.off));
+                }
             } else {
                 unreachable!("checked: hb_HHasKey takes a hash variable");
             }
