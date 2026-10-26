@@ -1213,6 +1213,19 @@ integer a per-operator clean named exit 1 mirroring BASE/1073-1076
 (hk149-hk152 - dialogs hang headless; registered failure modes;
 t514-t517).
 
+t574-t579 (iteration 58): hb_HKeyAt / hb_HValueAt over the new shared
+leaf helpers hbc_hkeyat / hbc_hvalueat - key and value casilla at a
+1-based insertion-order position, compact after hb_HDel (t574;
+hk184/hk186), a stored NIL returned as NIL (t575; hk185), the returned
+key an OWNED copy that survives the source hash with full balance
+(t576, wrap + memcheck = 0, own check) and the named rejections for a
+non-hash target and a non-integer position (t577-t579). EVERY
+out-of-range position is Harbour's BASE/1187 dialog (hk184/hk185): the
+registered dialogo-sin-oraculo family, clean bound-error exit here,
+never a compat success. Float indices truncate in the oracle (hk186)
+and stay outside the dialect's numeric syntax. Both helpers are
+canaried in the ABI harness on both targets.
+
 t568-t573 (iteration 57): hb_HScan(h, value [, start]) over the new
 shared leaf helper hbc_hscan - the first insertion-order entry whose
 stored {tag, payload} equals the value argument, 0 when absent (t568;
