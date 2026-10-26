@@ -7207,9 +7207,10 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             // A logical VALUE as the condition (literal, variable or call
             // returning one - hk197/hk204): 0/1 in %rax. Comparisons
             // never reach here (the arms above cover every shape the
-            // checker accepts). A Dyn condition materializes first: NIL
-            // is .F. (payload 0), a logical cell keeps its payload, an
-            // integer or string cell is a type error, like Harbour.
+            // checker accepts). A Dyn condition materializes first: only
+            // a logical cell is valid - NIL (hk266), an integer (hk267)
+            // or a string is Harbour's type error (registered clean
+            // exit 1; the dialog cannot be probed headless).
             cg_expr(cond, env, sigs, strs, out, target);
             if expr_ty(cond, env, sigs) == Ty::Dyn {
                 out.push_str("    call hbc_dyn_to_log\n");
@@ -10990,17 +10991,28 @@ hbc_dyn_to_i64:
     mov %rdx, %rax
     ret
 
-# hbc_dyn_to_log: %rax = tag, %rdx = payload -> %rax = 0/1 (the logical)
-# NIL behaves as .F. (payload 0); a logical keeps its payload; an integer
-# or string in condition position is a type error, like Harbour.
+# hbc_dyn_to_log: %rax = tag, %rdx = payload -> %rax = 0/1 (the logical
+# payload). Only tag 3 is a valid condition: NIL (hk266), integers
+# (hk267) and strings are Harbour's type error (clean named exit 1).
 hbc_dyn_to_log:
+    # Only a logical cell is a valid condition: NIL errors (hk266) and an
+    # integer errors (hk267) in Harbour - its dialog cannot be probed
+    # headless, so clean named exit 1 (registered failure mode).
     cmp $3, %rax
-    je 8f
-    test %rax, %rax
-    jnz hbc_type_error
-8:
+    jne hbc_dynlog_error
     mov %rdx, %rax
     ret
+
+# hbc_dynlog_error: a non-logical Dyn cell reached a condition (noreturn).
+hbc_dynlog_error:
+    lea .Llogmsg(%rip), %rsi
+    mov $39, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
 
 # hbc_dyn_eq: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload ->
 # %rax = 1/0. NIL = NIL is .T.; NIL against a payload is .F. (probes n1-n3;
@@ -11784,6 +11796,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Losbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,79,83,32,102,114,101,101,32,102,97,105,108,101,100,10\n");
     out.push_str(".Lregbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,97,108,108,111,99,97,116,105,111,110,32,114,101,103,105,115,116,114,121,32,109,105,115,109,97,116,99,104,10\n");
     out.push_str(".Ltypemsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,78,73,76,32,117,115,101,100,32,97,115,32,97,32,110,117,109,98,101,114,10\n");
+    out.push_str(".Llogmsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,99,111,110,100,105,116,105,111,110,32,105,115,32,110,111,116,32,97,32,108,111,103,105,99,97,108,10\n");
     out.push_str(".Lasizenegmsg:\n    .byte 65,83,105,122,101,58,32,110,101,103,97,116,105,118,101,32,115,105,122,101,10\n");
     // "Argument error: LEN\n" (20 bytes; Harbour BASE/1111 hangs headless - registered failure mode)
     out.push_str(".Llenerrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,76,69,78,10\n");
@@ -12034,17 +12047,29 @@ hbc_dyn_to_i64:
     mov %rdx, %rax
     ret
 
-# hbc_dyn_to_log: %rax = tag, %rdx = payload -> %rax = 0/1 (the logical)
-# NIL behaves as .F. (payload 0); a logical keeps its payload; an integer
-# or string in condition position is a type error, like Harbour.
+# hbc_dyn_to_log: %rax = tag, %rdx = payload -> %rax = 0/1 (the logical
+# payload). Only tag 3 is a valid condition: NIL (hk266), integers
+# (hk267) and strings are Harbour's type error (clean named exit 1).
 hbc_dyn_to_log:
+    # Only a logical cell is a valid condition (hk266/hk267); see the
+    # linux copy for the failure-mode note.
     cmp $3, %rax
-    je 8f
-    test %rax, %rax
-    jnz hbc_type_error
-8:
+    jne hbc_dynlog_error
     mov %rdx, %rax
     ret
+
+# hbc_dynlog_error: reached via a JUMP, so force 16-byte alignment
+# before calling out (noreturn).
+hbc_dynlog_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Llogmsg(%rip), %rax
+    mov $39, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
 
 # hbc_dyn_eq: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload ->
 # %rax = 1/0. NIL = NIL is .T.; NIL against a payload is .F. (probes n1-n3;
