@@ -1370,11 +1370,15 @@ on Linux and Wine, t547 the hk165 edges, t548/t549 reject non-hash
 arguments at compile time.
 
 Iteration 55 adds hb_HClone(h) (core hb_HClone; oracles
-hk166/hk167): a NEW hash whose entries are DEEP copies - fully
+hk166/hk167): a NEW hash whose entries are copied - fully
 independent in both directions (writes on the original do not cross
 into the clone, writes on the clone do not cross into the original,
 hk166) in the same insertion order with NIL values preserved; an
-empty hash clones to an empty one (hk167). The new hbc_hclone helper
+empty hash clones to an empty one (hk167). Scope of "independent":
+the entry KEYS (re-copied strings) and the scalar integer/NIL values
+- the only value types this increment admits in hashes; composite
+values (arrays or hashes as values) are not supported here
+(registered limit), so no claim is made about nested structures. The new hbc_hclone helper
 re-copies every key and value through hbc_hput (canaried in the ABI
 harness on both targets); the source is borrowed. t550 reproduces
 hk166 on Linux and Wine, t551 the order/NIL/empty edges of hk167,
