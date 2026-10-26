@@ -3494,7 +3494,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::DArr2);
             }
-            let mut has_log = false;
+            // All-strings literal: a dynamic string array, the same shape as an
+        // AAdd-grown string array (33n; oracle hk254). Pure string elements
+        // only; a string/integer mix keeps the named rejection below (a
+        // mixed Dyn-leaf array is parked new storage).
+        if !es.is_empty() && es.iter().all(|e| matches!(e, Expr::Str(_))) { return Ok(Ty::DArrS); }
+        let mut has_log = false;
             for e in es {
                 let t = type_expr(e, env, sigs, n)?;
                 if !matches!(t, Ty::I64 | Ty::Bool) {
@@ -6435,6 +6440,26 @@ fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out
         if es.iter().any(|x| matches!(x, Expr::ArrLit(_) | Expr::DArrNew)) {
             return cg_darr2_literal(es, env, sigs, strs, out, target);
         }
+        if !es.is_empty() && es.iter().all(|x| matches!(x, Expr::Str(_))) {
+            // All-strings literal: dynamic array with {tag 2, owned copy}
+            // cells - the same layout the AAdd string arm appends (hk254).
+            // The base pointer rides the stack because hbc_strcpy may
+            // clobber caller-saved registers.
+            let m = es.len();
+            out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + m * 16));
+            out.push_str(&format!("    movq ${}, (%rax)\n    add $8, %rax\n", m));
+            out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+            for (i, e) in es.iter().enumerate() {
+                if let Expr::Str(s) = e {
+                    let idx = strs.len();
+                    strs.push(s.clone());
+                    out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hbc_strcpy\n", idx, s.as_bytes().len()));
+                    out.push_str(&format!("    mov (%rsp), %r11\n    movq $2, {}(%r11)\n    mov %rax, {}(%r11)\n", i * 16, i * 16 + 8));
+                }
+            }
+            out.push_str(&format!("    mov (%rsp), %rax\n    add $16, %rsp\n    mov ${}, %edx\n", m));
+            return;
+        }
         if es.iter().all(|x| matches!(x, Expr::Int(_) | Expr::Log(_))) && es.iter().any(|x| matches!(x, Expr::Log(_))) {
             return cg_darr1_literal(es, out);
         }
@@ -6540,6 +6565,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if es.iter().any(|e| matches!(e, Expr::ArrLit(inner) if inner.iter().any(|x| matches!(x, Expr::ArrLit(_) | Expr::DArrNew)))) { Ty::DArr3 }
             else if es.iter().any(|e| matches!(e, Expr::ArrLit(_) | Expr::DArrNew)) { Ty::DArr2 }
             else if es.iter().all(|e| matches!(e, Expr::Int(_) | Expr::Log(_))) && es.iter().any(|e| matches!(e, Expr::Log(_))) { Ty::DArr }
+            else if !es.is_empty() && es.iter().all(|e| matches!(e, Expr::Str(_))) { Ty::DArrS }
             else { Ty::Arr(es.len()) }
         }
         Expr::Index(id, _) => match env.iter().find(|v| v.name == *id).map(|v| v.ty) {
