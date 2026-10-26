@@ -2722,7 +2722,39 @@ writes and nested mentions all disqualify. Exit value matches native
 
 Tests: t792 (hk336 mirror), t793-t795 (named rejections), t783 row
 flip. BATTERY 786 -> 790 runner rows + ABI ALL GREEN (Linux native
-and Wine with Linux oracle). Sweep: ifelse.prg and fornext.prg flip
+and Wine with Linux oracle).
+63zi - `%` modulus and `$` containment operators. Oracles first
+(hk340-hk349), then the Harbour source for the two rules the oracles
+could not pin alone: hb_vmModulus (src/vm/hvm.c) stores EVERY runtime
+result with hb_itemPutND - a double with dec = SET DECIMALS ("Clipper
+always returns modulus with the SET number of decimal places"; hk348
+shows variable int%int printing 1.00 at width 13) - while
+hb_compExprReduceMod (src/common/expropt2.c) folds literal int%int
+with a nonzero divisor to a LONG with dec 0 (hk340 prints 1 at width
+10). A zero divisor, literal or variable, substitutes integer 0
+(hk343/hk344: image "0" at width 10). Float modulus emits x87 fprem
+with the C2 retry loop; integer operands convert with cvtsi2sd like
+every numeric read. The fold's float form carries dec 2 (measured
+width 13 = length 10 + dec 2 + 1, the same print-width formula as
+every computed double, hk347). i64::MIN % -1 is UB in Harbour's own
+C (the fold defers; this PoC's runtime path yields 0.00) -
+unmeasured frontier, registered. Dyn payloads extract to i64 exactly
+like +,-,* (NIL payload -> clean type error; Harbour's dialog is the
+registered difference). `$` is string-in-string only: case-sensitive
+byte scan, an empty or longer-than-haystack needle is .F. (hk341);
+emitted as a leaf inline scan at the compare site - no helper
+symbol, no ABI surface, no canary needed. Array membership `$`
+keeps a named rejection (t803). No i64 codegen path exists for `%`:
+the checker types every runtime `%` F64, so the i64 Bin channel
+never sees it.
+
+Tests: t796-t800 pos (mirrors of hk340/hk348/hk345/hk341/hk349),
+t801-t803 neg. BATTERY 790 -> 798 runner rows + ABI ALL GREEN
+(Linux native and Wine with Linux oracle). Sweep: 9 COMPILES
+unchanged - no file flips, but str/keywords/vmasort/funcarr advance
+past their %/$ error to the next gap (`^` power, `;` mid-line, SET
+commands).
+ Sweep: ifelse.prg and fornext.prg flip
 to COMPILES, both byte-exact against stock Harbour oracles (hk333,
 hk339) - 9 runtime-success originals. Negative originals stay a
 separate class (linecont.prg: stock Harbour E0030 at lines 53/58,
