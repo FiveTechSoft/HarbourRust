@@ -2285,14 +2285,21 @@ rejected, not imitated. Frontier is no longer |x| < 1e15: admitted is
 with int+dec = 16, or int <= 2 with int+dec = 17; nonzero |x| >= 1e-17;
 dec <= 17. Zero admitted.
 
-KNOWN DIVERGENCE CLASS (registered, fix in flight): for 16/17-written-
-significant-digit literals whose 16-significant rounding carries a 9-chain
-(9.999999999999999, 999.9999999999999, 99.99999999999999, ...), Harbour's
-error-accumulating sequential extraction rounds UP and prints the carry
-(10.000000000000000, 1000.0000000000000) while the current normalize-then-
-scale helper prints the double's exact rounding (9.999999999999998). Per
-the method-contrast rule the helper is being rewritten to Harbour's
-sequential-extraction method instead of narrowing scope. t735/t739 are
-parked OUT of the manifest (files kept) until the rewrite lands.
-t736/t737 (star zone neg) + t738 (mid-band, 8 prints) added.
-BATTERY 730 -> 733 runner rows (455 pos + 45 posx + 233 neg).
+KNOWN DIVERGENCE CLASS (named rejection, NOT hidden): Harbour's
+error-accumulating sequential extraction carries a leading 9-chain UP at
+16 significant digits (measured: 9.999999999999999 -> 10.000000000000000,
+999.9999999999999 -> 1000.0000000000000, 0.9999999999999999 ->
+1.0000000000000000, 0.09999999999999999 -> 0.10000000000000000), while
+the current normalize-scale helper rounds the binary double once and
+prints ...998. Measured mismatch family = first 16 written significant
+digits all '9' (8/8 divergent in the hk278-hk288 matrix, no false hits;
+the boundary near 15 leading nines is a probe hypothesis, not a proven
+rule). That family is REJECTED BY NAME ("rounding-fidelity frontier",
+t735/t739 neg) until the helper is rewritten to Harbour's sequential
+method (our own implementation against the oracles; Harbour is
+GPL+runtime-exception, no code copied). Non-chain 16/17-sig literals
+print fine and stay admitted (t740: 1.0000000000000001, 9999999999.99999,
+99999999999.9999, 999999999999.999, 999999999.999999).
+The (int,dec) magnitude frontier above is likewise a probe hypothesis
+validated only at the measured points, not a universal guarantee.
+BATTERY 730 -> 736 runner rows (456 pos + 45 posx + 235 neg).
