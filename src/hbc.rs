@@ -125,6 +125,22 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                 if !closed { return Err(format!("line {}: unterminated string", n)); }
                 toks.push(Tok::Str(s));
             }
+            '\'' => {
+                // Single-quoted strings (oracle hk213): same string type,
+                // the other quote nests freely. NO escapes (hk213b: a
+                // backslash is a literal character) - unlike our "..."
+                // strings, whose \" \\ deviation is registered.
+                it.next();
+                let mut s = String::new();
+                let mut closed = false;
+                while let Some(&(_, c2)) = it.peek() {
+                    it.next();
+                    if c2 == '\'' { closed = true; break; }
+                    s.push(c2);
+                }
+                if !closed { return Err(format!("line {}: unterminated string", n)); }
+                toks.push(Tok::Str(s));
+            }
             c if c.is_ascii_digit() => {
                 let mut num = String::new();
                 while let Some(&(_, c2)) = it.peek() {
@@ -185,10 +201,13 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                 }
             }
             '!' => {
+                // Harbour `!` is the prefix .NOT. (oracle hk212: same
+                // operand and precedence as the dotted word); `!=` stays
+                // the not-equal comparison.
                 it.next();
                 match it.peek() {
                     Some(&(_, '=')) => { toks.push(Tok::Ne); it.next(); }
-                    _ => return Err(format!("line {}: '!' without '=' (col {})", n, i + 1)),
+                    _ => toks.push(Tok::LogNot),
                 }
             }
             '<' => {
