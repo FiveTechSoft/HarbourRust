@@ -2115,3 +2115,21 @@ rustc 1.99.1.
 
 Battery 707 -> 710 + ABI harness green (Linux nativo y Wine con oracle
 Linux).
+
+### 63t canary matrix (support)
+
+- tag 3 (.T./.F.) accepted: t712, both platforms.
+- tag 0 (integer) rejected: t713, exit 1, both platforms.
+- tag 1 (NIL) rejected: t617, exit 1, both platforms.
+- tag 4 (owned string) rejected: t714, exit 1, both platforms.
+- tag 2 (borrowed string view): unreachable from accepted shapes - a
+  string-array element in condition position types as a string and is
+  rejected at COMPILE time by name (t715, negative; stricter than
+  Harbour, registered). The helper still rejects tag 2 by construction:
+  only tag 3 passes the `cmp $3 / jne hbc_dynlog_error` guard (asm
+  inspected in the generated Linux and Windows output of t712).
+- Success path is a leaf (cmp/jne/mov/ret: no stack, no callee-saved
+  registers); the Windows error path aligns the frame before calling
+  out (push rbp / and $-16, mirrors hbc_type_error; asm inspected).
+- Sweep 175 re-executed after the helper change: COMPILES 4, output
+  identical to the 63s run (verified, not assumed).
