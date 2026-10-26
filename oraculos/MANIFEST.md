@@ -47,8 +47,8 @@ Números sin fuente recuperable en el transcript: hk10, hk72, hk74, hk75 (planif
 | hk13 | medida-fresca | \n         2\none\ntwo\n         4\nNIL |
 | hk130 | verificado | \n.T.\n.F.\n.T. |
 | hk131 | verificado | \n.T.\n.F. |
-| hk132 | medida-fresca | \n.T.\n.F.\n.F.\n.T. |
-| hk133 | medida-fresca | \n.T.\n.F.\n.T. |
+| hk132 | verificado | \n.T.\n.F.\n.F.\n.T. |
+| hk133 | verificado | \n.T.\n.F.\n.T. |
 | hk134 | medida-fresca | \n.T.\n.F. |
 | hk135 | verificado | \n.T.\n.F.\n.T.\n.F. |
 | hk136 | verificado | \n.T.\n.F.\n.F. |
