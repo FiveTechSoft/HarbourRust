@@ -620,3 +620,5 @@ neg tests/t622_semicolon_comment.hb U+003B
 pos tests/t623_bang_not.hb \n.F.\n.T.\n.T.\n.F.\nbranch
 pos tests/t624_single_quote_strings.hb \nsingle\nit has "double" inside\nand 'single' inside\nback \\ slash
 pos tests/t625_eq_assign.hb \n        42\neq\n        43
+pos tests/t626_str_concat.hb \nliteral\nfoobar\nfoo!\n.T.\nfooX
+neg tests/t627_str_plus_int.hb arithmetic requires integers
