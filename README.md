@@ -1478,7 +1478,17 @@ a bare logical casilla branching in if/while; t603/t604/t605 pin
 the three rejection
 families.
 
-Battery: 614/614 manifest cases on Linux x86-64 and Wine, plus
+Iteration 63a opens the upstream examples front: PROCEDURE is a
+function keyword (Harbour semantics; a RETURN <expr> inside one is a
+registered difference, unmeasured) and identifiers are
+case-insensitive, normalized at the token level - MAIN/Main/main,
+QOut/qout and locals in any casing are one name (t619). Message
+casing in two existing neg expectations (t88, t603) follows the
+normalization; semantics unchanged. hello.prg from the upstream
+test suite (core 694428e1) is the FIRST original program that
+compiles and runs byte-identical to Harbour. Forward references
+(call before definition) remain the next registered blocker.
+Battery: 615/615 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
 
 
