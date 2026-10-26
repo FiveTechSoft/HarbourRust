@@ -771,6 +771,38 @@ hbc_abi_test:
     call abi_check
     cmpq $0, -32(%rbp)
     jne abi_fail_hp
+    # hbc_hscan canary (iteration 57): the same 2-entry hash
+    # {"k1"=>7, "k2"=>9} answers the 1-based position on a value hit
+    # (9 -> 2), honours the start offset (7 from start 2 -> 0) and
+    # answers 0 for a NIL value against integer entries. Leaf,
+    # read-only. Results saved BEFORE abi_check (it clobbers rax).
+    lea -96(%rbp), %rdi
+    xor %esi, %esi
+    mov $9, %edx
+    xor %ecx, %ecx
+    call hbc_hscan
+    mov %rax, -32(%rbp)
+    call abi_check
+    cmpq $2, -32(%rbp)
+    jne abi_fail_hs
+    lea -96(%rbp), %rdi
+    xor %esi, %esi
+    mov $7, %edx
+    mov $2, %ecx
+    call hbc_hscan
+    mov %rax, -32(%rbp)
+    call abi_check
+    cmpq $0, -32(%rbp)
+    jne abi_fail_hs
+    lea -96(%rbp), %rdi
+    mov $1, %esi
+    xor %edx, %edx
+    xor %ecx, %ecx
+    call hbc_hscan
+    mov %rax, -32(%rbp)
+    call abi_check
+    cmpq $0, -32(%rbp)
+    jne abi_fail_hs
     mov -96(%rbp), %rdi
     mov $2, %esi
     call hbc_hfree
@@ -1091,6 +1123,10 @@ abi_fail_hp:
     lea .Labi_f_hp(%rip), %rax
     mov $12, %edx
     jmp abi_fail_common
+abi_fail_hs:
+    lea .Labi_f_hs(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
 abi_fail_hm:
     lea .Labi_f_hm(%rip), %rax
     mov $12, %edx
@@ -1137,6 +1173,7 @@ ASM_EOF
 .Labi_f_hh:  .ascii "ABI FAIL hh\n"
 .Labi_f_hg:  .ascii "ABI FAIL hg\n"
 .Labi_f_hp:  .ascii "ABI FAIL hp\n"
+.Labi_f_hs:  .ascii "ABI FAIL hs\n"
 .Labi_f_hm:  .ascii "ABI FAIL hm\n"
 .Labi_f_hc:  .ascii "ABI FAIL hc\n"
 .Labi_f_de: .ascii "ABI FAIL deq\n"
