@@ -1570,3 +1570,21 @@ decision exists in the record.
 
 **Sweep**: re-run after this runtime change — frozen 175 still 1/175
 (hello.prg); the full-directory hollow pass on dynwin.prg unchanged.
+
+### 63j closeout (boundary evidence)
+
+- Function-exit accounting (t662): memcheck INSIDE the callee after a
+  param swap reads 2 (caller's live string + callee's owned swap), 1 back
+  in the caller (callee epilogue freed its copy), 1 after `x := mk()`
+  (the returned clone; the callee freed its own at its exit), 0 after
+  teardown. Process-exit balance alone could hide a temporary retention;
+  these counts sit at the exit points.
+- Owned vs borrowed (t663, neg): a FOR EACH variable holds a borrowed
+  tag-2 view and is checker-fenced — it cannot be stored, passed or
+  returned ("its value borrows from the collection"). Borrowed casillas
+  therefore never reach the tag-4 free machinery by construction.
+- Alias between slots (t658): `y := x` clones BEFORE the old payload of y
+  is freed; `x := y; y := x` chains stay independent; self-assignment
+  clones before freeing. Caller/callee/return boundaries: t659 (param
+  clone-on-pass + callee reassign), t660 (return clone, stored and
+  printed directly). All under the ABI harness on Linux and Wine.
