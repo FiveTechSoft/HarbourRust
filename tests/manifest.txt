@@ -609,3 +609,7 @@ pos tests/t611_log_dyn_hclone_hvalues.hb \n.T.\nL\n.T.\nL\n         1
 pos tests/t612_log_dyn_aadd_arrset.hb \n.T.\nL\n.F.
 pos tests/t613_log_dyn_hcopy_hfill.hb \n.T.\nL\n         9\n.F.\n.F.\nL
 pos tests/t614_log_dyn_balance.hb \n         0
+posx tests/t615_valtype_hash_miss.hb 1 Bound error: array access
+posx tests/t616_hash_read_miss.hb 1 Bound error: array access
+posx tests/t617_dyn_nil_condition.hb 1 Type error: NIL used as a number
+pos tests/t618_log_dyn_if_casilla.hb \nsi\nno2\ngiro
