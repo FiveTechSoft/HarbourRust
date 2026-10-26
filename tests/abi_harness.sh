@@ -642,6 +642,43 @@ hbc_abi_test:
     mov $2, %esi
     call hbc_hfree
     call abi_check
+    # hbc_hhaskey (iteration 48): a 1-entry hash answers 1 for its key
+    # and 0 for a missing one; leaf helper, canaries/stack/alignment
+    # after every call.
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    lea .Labi_k1(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $7, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea -96(%rbp), %rdi
+    lea .Labi_k1(%rip), %rsi
+    mov $2, %edx
+    call hbc_hhaskey
+    # Save the result BEFORE abi_check: the canary check clobbers rax.
+    mov %rax, -32(%rbp)
+    call abi_check
+    cmpq $1, -32(%rbp)
+    jne abi_fail_hh
+    lea -96(%rbp), %rdi
+    lea .Labi_k2(%rip), %rsi
+    mov $1, %edx
+    call hbc_hhaskey
+    mov %rax, -32(%rbp)
+    call abi_check
+    cmpq $0, -32(%rbp)
+    jne abi_fail_hh
+    mov -96(%rbp), %rdi
+    mov $1, %esi
+    call hbc_hfree
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -740,6 +777,10 @@ abi_fail_hd:
     lea .Labi_f_hd(%rip), %rax
     mov $12, %edx
     jmp abi_fail_common
+abi_fail_hh:
+    lea .Labi_f_hh(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
 abi_fail_common:
     call hbc_print_str
 ASM_EOF
@@ -774,6 +815,7 @@ ASM_EOF
 .Labi_k2:    .ascii "c"
 .Labi_k3:    .ascii "zz"
 .Labi_f_hd:  .ascii "ABI FAIL hd\n"
+.Labi_f_hh:  .ascii "ABI FAIL hh\n"
 .Labi_f_de: .ascii "ABI FAIL deq\n"
 .Labi_s3:    .ascii "abc"
 .Labi_s6:    .ascii "abcdef"
