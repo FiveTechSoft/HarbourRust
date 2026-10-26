@@ -32,7 +32,7 @@ use std::process;
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2 }
+enum Ty { I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefStrOwn }
 
 // Dyn is the tagged-union value for any route that can carry NIL (probes
 // n1/n2/n3): a 16-byte {tag, payload} pair, tag 0 = i64 payload, tag 1 =
@@ -51,6 +51,7 @@ enum Tok {
     LBrace, RBrace, LBracket, RBracket, Pipe,
     Assign,   // :=
     Question, // ?
+    At,       // @ by-reference call argument (hk216 family)
     Eq,       // =
     FatArrow, // =>
     Ne,       // <> or !=
@@ -233,6 +234,7 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                     _ => toks.push(Tok::Gt),
                 }
             }
+            '@' => { toks.push(Tok::At); it.next(); }
             '{' => { toks.push(Tok::LBrace); it.next(); }
             '}' => { toks.push(Tok::RBrace); it.next(); }
             '[' => { toks.push(Tok::LBracket); it.next(); }
@@ -272,6 +274,7 @@ enum Expr {
     Str(String),
     Var(String),
     Call(String, Vec<Expr>),
+    ByRef(String),             // `@x` call argument: exclusive borrow of the caller's slot (hk216 family; alias rejection diverges from hk219, registered)
     Bin(char, Box<Expr>, Box<Expr>),
     Cmp(CmpOp, Box<Expr>, Box<Expr>), // i64 operands only (checked in analysis)
     ArrLit(Vec<Expr>),             // {e1, ..., eN}; i64 elements, fixed size
@@ -444,7 +447,19 @@ impl P {
                     let mut args: Vec<Expr> = Vec::new();
                     if self.peek() != Some(&Tok::RParen) {
                         loop {
-                            args.push(self.expr()?);
+                            if self.peek() == Some(&Tok::At) {
+                                // `@x`: by-reference argument (hk216). One
+                                // variable only, never an expression -
+                                // Harbour rejects `@x + 1` at compile time
+                                // too (oracle hk221).
+                                self.pos += 1;
+                                match self.bump() {
+                                    Some(Tok::Ident(vn)) => args.push(Expr::ByRef(vn)),
+                                    other => return Err(format!("line {}: `@` expects a variable name, got {:?}", self.n, other)),
+                                }
+                            } else {
+                                args.push(self.expr()?);
+                            }
                             match self.bump() {
                                 Some(Tok::Comma) => continue,
                                 Some(Tok::RParen) => break,
@@ -1618,6 +1633,7 @@ struct Local {
     ty: Ty,
     moved: bool,
     ro: bool, // read-only: the `for` loop variable cannot be assigned
+    byref: bool, // a parameter some caller passes as `@p`: borrowed from its owner, never moved out
 }
 
 // ---------------------------------------------------------------------------
@@ -1863,7 +1879,12 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                 }
                 if let Some(sig) = sigs.iter().find(|v| v.name == *id) {
                     for (i, a) in args.iter().enumerate() {
-                        if i < sig.params.len() { pin_vars(f, a, sig.params[i], pin, n)?; }
+                        if i < sig.params.len() {
+                            match a {
+                                Expr::ByRef(vn) => pin_vars(f, &Expr::Var(vn.clone()), sig.params[i], pin, n)?,
+                                _ => pin_vars(f, a, sig.params[i], pin, n)?,
+                            }
+                        }
                     }
                 }
                 for a in args { walk(f, a, sigs, lit, pin, n)?; }
@@ -2213,6 +2234,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
 fn expr_mentions(e: &Expr, name: &str) -> bool {
     match e {
         Expr::Var(v) => v == name,
+        Expr::ByRef(v) => v == name,
         Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => expr_mentions(a, name) || expr_mentions(b, name),
         Expr::Call(_, args) => args.iter().any(|a| expr_mentions(a, name)),
         Expr::Index(id, i) => id == name || expr_mentions(i, name),
@@ -2783,6 +2805,44 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Err(format!("line {}: `{}` takes {} argument(s), got {}", n, id, sig_params.len(), args.len()));
             }
             for (i, a) in args.iter().enumerate() {
+                if let Expr::ByRef(vn) = a {
+                    // `@x` (hk216 family): the callee gets an EXCLUSIVE
+                    // borrow of the caller's own slot for the duration of
+                    // the call; writes land in the caller's variable.
+                    // Scalars and owned strings only in this increment;
+                    // collections wait on the user's RC decision (analysis
+                    // not done). Divergence REGISTERED: Harbour allows
+                    // aliasing `@x, @x` (hk219); here one exclusive borrow
+                    // per call, so the original program is not compatible.
+                    let (vty, vmoved) = match env.iter().find(|x| x.name == *vn) {
+                        Some(v) => (v.ty, v.moved),
+                        None => return Err(format!("line {}: `@{}` names no visible variable", n, vn)),
+                    };
+                    if vmoved {
+                        return Err(format!("line {}: `@{}` after its value moved out", n, vn));
+                    }
+                    if vty == Ty::Str {
+                        return Err(format!("line {}: `@{}` needs an owned string slot; `{}` holds a borrowed (rodata) string in this increment", n, vn, vn));
+                    }
+                    if !matches!(vty, Ty::I64 | Ty::Bool | Ty::StrOwn) {
+                        return Err(format!("line {}: `@` on arrays, hashes, codeblocks and Dyn is not in this increment (the sharing analysis is pending the user's RC decision)", n));
+                    }
+                    if !(sig_params[i] == vty || (vty == Ty::StrOwn && sig_params[i] == Ty::Str)) {
+                        return Err(format!("line {}: argument {} of `{}` must be {}, got {}",
+                            n, i + 1, id, ty_name(sig_params[i]), ty_name(vty)));
+                    }
+                    for (j, b) in args.iter().enumerate() {
+                        if j == i { continue; }
+                        let clash = match b {
+                            Expr::ByRef(w) => w == vn,
+                            other => expr_mentions(other, vn),
+                        };
+                        if clash {
+                            return Err(format!("line {}: cannot borrow `{}` exclusively: another argument uses it in the same call (Harbour allows this alias, hk219 - registered divergence)", n, vn));
+                        }
+                    }
+                    continue;
+                }
                 // A MIDDLE cell as an argument: f(a[i]) on an array of
                 // arrays. Harbour SHARES the child with the callee
                 // (oracles hk73 reads, hk78 growth, hk86 element write,
@@ -2857,6 +2917,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // side of a `+`) is rejected like any other use-after-move.
                 if ta == Ty::Str || ta == Ty::StrOwn {
                     if let Expr::Var(v) = a {
+                        if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn)) {
+                            return Err(format!("line {}: passing borrowed parameter `{}` by value moves it out of its owner - not Harbour semantics; derive a value instead (for example a concatenation)", n, v));
+                        }
                         if let Some(x) = env.iter_mut().find(|x| x.name == *v && matches!(x.ty, Ty::Str | Ty::StrOwn)) { x.moved = true; }
                     }
                 }
@@ -2916,6 +2979,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             Ok(Ty::I64)
         }
         Expr::Nil => Ok(Ty::Dyn),
+        Expr::ByRef(_) => Err(format!("line {}: `@` is only valid directly as a call argument (hk221)", n)),
         Expr::Log(_) => Ok(Ty::Bool),
         Expr::LNot(a) => {
             if !matches!(type_expr(a, env, sigs, n)?, Ty::Bool | Ty::Dyn) {
@@ -3293,7 +3357,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     }
                 }
             }
-            let mut benv: Vec<Local> = params.iter().map(|p| Local { name: p.clone(), ty: Ty::I64, moved: false, ro: false }).collect();
+            let mut benv: Vec<Local> = params.iter().map(|p| Local { name: p.clone(), ty: Ty::I64, moved: false, ro: false, byref: false }).collect();
             for e in body {
                 if type_expr(e, &mut benv, sigs, n)? != Ty::I64 {
                     return Err(format!("line {}: codeblock bodies are integer expressions in this increment", n));
@@ -3328,6 +3392,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
 fn ty_name(t: Ty) -> &'static str {
     match t {
         Ty::I64 => "an integer",
+        Ty::RefI64 => "a by-reference integer",
+        Ty::RefStrOwn => "a by-reference string",
         Ty::Str => "a string",
         Ty::Bool => "a boolean",
         Ty::DArr3 => "an array of arrays of arrays",
@@ -3612,7 +3678,7 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     })
 }
 
-fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &mut Option<Ty>, loop_pre: Option<&Vec<bool>>, exits: &mut Vec<Vec<bool>>, dyn_names: &std::collections::HashSet<String>) -> Result<bool, String> {
+fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &mut Option<Ty>, loop_pre: Option<&Vec<bool>>, exits: &mut Vec<Vec<bool>>, dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) -> Result<bool, String> {
     let mut falls = true;
     for s in stmts {
         match s {
@@ -3643,9 +3709,18 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if t == Ty::Bool && dyn_names.contains(id) {
                     return Err(format!("line {}: dynamic logical cells are not in this increment (tag-L Dyn cells land separately)", n));
                 }
+                if let Expr::Var(v) = e {
+                    if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn)) {
+                        return Err(format!("line {}: initializing from borrowed parameter `{}` moves it out of its owner - not Harbour semantics; derive a value instead (for example a concatenation)", n, v));
+                    }
+                }
                 apply_moves(e, env, sigs, true);
                 let t = if t == Ty::I64 && dyn_names.contains(id) { Ty::Dyn } else { t };
-                env.push(Local { name: id.clone(), ty: t, moved: false, ro: false });
+                // A local passed as `@s` anywhere in this function needs an
+                // owned-capable slot from the start: the callee frees and
+                // re-stores through the pointer (hk218).
+                let t = if t == Ty::Str && byref_names.contains(id) { Ty::StrOwn } else { t };
+                env.push(Local { name: id.clone(), ty: t, moved: false, ro: false, byref: false });
             }
             Stmt::Print(n, es) => {
                 // Printing borrows the value; it never moves it.
@@ -3713,6 +3788,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if t == Ty::DArrU {
                     return Err(format!("line {}: cannot return an empty array whose element type was never pinned by `AAdd`", n));
                 }
+                if let Expr::Var(v) = e {
+                    if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn)) {
+                        return Err(format!("line {}: returning borrowed parameter `{}` moves it out of its owner - not Harbour semantics; derive a value first (for example a concatenation)", n, v));
+                    }
+                }
                 apply_moves(e, env, sigs, true);
                 *ret = Some(unify_ret(*ret, t, *n)?);
                 falls = false;
@@ -3734,9 +3814,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
                 let outer = env.len();
                 let mut env_then = env.clone();
-                let ft = check_stmts(then_s, &mut env_then, sigs, ret, loop_pre, exits, dyn_names)?;
+                let ft = check_stmts(then_s, &mut env_then, sigs, ret, loop_pre, exits, dyn_names, byref_names)?;
                 let mut env_else = env.clone();
-                let fe = check_stmts(else_s, &mut env_else, sigs, ret, loop_pre, exits, dyn_names)?;
+                let fe = check_stmts(else_s, &mut env_else, sigs, ret, loop_pre, exits, dyn_names, byref_names)?;
                 for k in 0..outer {
                     env[k].moved = env_then[k].moved || env_else[k].moved;
                 }
@@ -3752,7 +3832,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_body = env.clone();
                 let mut wexits: Vec<Vec<bool>> = Vec::new();
-                let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut wexits, dyn_names)?;
+                let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut wexits, dyn_names, byref_names)?;
                 // A variable moved on a path that reaches the next
                 // iteration must be live again there (Rust's loop rule).
                 if fb {
@@ -3788,12 +3868,12 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if env.iter().any(|v| v.name == *var) {
                     return Err(format!("line {}: `for` loop variable `{}` is already declared in this scope (this PoC does not shadow)", n, var));
                 }
-                env.push(Local { name: var.clone(), ty: Ty::I64, moved: false, ro: true });
+                env.push(Local { name: var.clone(), ty: Ty::I64, moved: false, ro: true, byref: false });
                 let outer = env.len();
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_body = env.clone();
                 let mut fexits: Vec<Vec<bool>> = Vec::new();
-                let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut fexits, dyn_names)?;
+                let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut fexits, dyn_names, byref_names)?;
                 if fb {
                     for k in 0..outer {
                         if !pre[k] && env_body[k].moved {
@@ -3955,7 +4035,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_body = env.clone();
                 let mut fexits: Vec<Vec<bool>> = Vec::new();
-                let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut fexits, dyn_names)?;
+                let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut fexits, dyn_names, byref_names)?;
                 if let Some(cn) = &cname {
                     let kc = env.iter().position(|v| v.name == *cn).expect("collection exists");
                     if env_body[kc].moved || !foreach_coll_untouched(body, cn) {
@@ -4670,6 +4750,13 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
             Stmt::Assign(n, id, e) => {
                 // RHS is evaluated first; a Str source variable moves.
                 let t = type_expr(e, env, sigs, *n)?;
+                if let Expr::Var(v) = e {
+                    if *v != *id {
+                        if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn)) {
+                            return Err(format!("line {}: copying borrowed parameter `{}` by move is not Harbour semantics; derive a value instead (for example a concatenation)", n, v));
+                        }
+                    }
+                }
                 apply_moves(e, env, sigs, true);
                 let idx = match env.iter().position(|v| v.name == *id) {
                     Some(k) => k,
@@ -4687,6 +4774,10 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 } else if env[idx].ty == Ty::I64 && t == Ty::Dyn {
                     // i64 slot receiving a Dyn: the tag is checked at
                     // runtime (NIL payload -> clean type error).
+                } else if env[idx].ty == Ty::StrOwn && t == Ty::Str {
+                    // rodata literal into an owned slot (hk225): the
+                    // assignment boundary hands over an owned copy, same
+                    // contract as a rodata argument to an owned parameter.
                 } else if env[idx].ty != t {
                     return Err(format!("line {}: type mismatch in assignment to `{}`", n, id));
                 }
@@ -4708,6 +4799,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
 // i64 and codeblocks never move (Copy).
 fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
     match e {
+        Expr::ByRef(_) => {} // `@x` borrows the slot for the call; the owner keeps it (hk216)
         Expr::Var(id) => {
             if moving {
                 if let Some(v) = env.iter_mut().find(|v| v.name == *id && matches!(v.ty, Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash)) { v.moved = true; }
@@ -4838,7 +4930,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 // ---------------------------------------------------------------------------
 
 fn size_of(t: Ty) -> usize {
-    match t { Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 => 16, Ty::Bool => 8 }
+    match t { Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefStrOwn => 8 }
 }
 
 #[derive(Clone)]
@@ -4851,6 +4943,7 @@ struct CgLocal {
 fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     match e {
         Expr::SelfObj | Expr::SelfGet(_) | Expr::Send(_, _, _) => unreachable!("rejected before codegen"),
+        Expr::ByRef(_) => unreachable!("`@` arguments are emitted at the call site"),
         Expr::Int(v) => {
             out.push_str(&format!("    mov ${}, %rax\n", v));
         }
@@ -4877,6 +4970,8 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
         Expr::Var(id) => {
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
             match v.ty {
+                Ty::RefI64 => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n", v.off)),
+                Ty::RefStrOwn => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n    mov 8(%r11), %rdx\n", v.off)),
                 Ty::I64 | Ty::Block(_) | Ty::Bool => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
                 Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash => {
                     // ptr at -(off), len at -(off-8) — same layout as the store
@@ -5569,6 +5664,20 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 // casilla is Harbour's BASE/1123-family condition (his
                 // dialog hangs headless - no oracle): clean exit 1 with
                 // "Argument error: PARAM" (registered failure mode).
+                if let Expr::ByRef(vn) = a {
+                    // `@x` (hk216): the callee variant receives the ADDRESS
+                    // of the owner's slot. Pass-on (`f(@p)` where p is
+                    // itself @-received, hk220): the slot already holds the
+                    // owner's address - forward it, never its own address.
+                    let v = env.iter().rev().find(|x| x.name == *vn).expect("checked");
+                    if matches!(v.ty, Ty::RefI64 | Ty::RefStrOwn) {
+                        out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
+                    } else {
+                        out.push_str(&format!("    lea -{}(%rbp), %rax\n", v.off));
+                    }
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    movq $0, 8(%rsp)\n");
+                    continue;
+                }
                 if pborrowed.as_ref().and_then(|b| b.get(ai)).copied() == Some(true) {
                     if let Expr::Index(rid, rie) = a {
                         let rv = env.iter().rev().find(|x| x.name == *rid).expect("checked").clone();
@@ -5645,7 +5754,11 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
                 }
             }
-            out.push_str(&format!("    call hbc_fn_{}\n", id));
+            let brmask: Vec<bool> = args.iter().map(|a| matches!(a, Expr::ByRef(_))).collect();
+            let call_lbl = if brmask.iter().any(|b| *b) {
+                format!("{}__br{}", id, brmask.iter().map(|b| if *b { "1" } else { "0" }).collect::<String>())
+            } else { id.clone() };
+            out.push_str(&format!("    call hbc_fn_{}\n", call_lbl));
             if !args.is_empty() {
                 out.push_str(&format!("    add ${}, %rsp\n", 16 * args.len()));
             }
@@ -6105,7 +6218,17 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::Nil => Ty::Dyn,
         Expr::SelfObj | Expr::SelfGet(_) | Expr::Send(_, _, _) => Ty::Dyn, // unreachable: the checker rejects them first
         Expr::Str(_) => Ty::Str,
-        Expr::Var(id) => env.iter().find(|v| v.name == *id).expect("checked").ty,
+        Expr::Var(id) => match env.iter().find(|v| v.name == *id).expect("checked").ty {
+            // A by-reference parameter reads as its pointee type (hk216).
+            Ty::RefI64 => Ty::I64,
+            Ty::RefStrOwn => Ty::StrOwn,
+            t => t,
+        },
+        Expr::ByRef(id) => match env.iter().find(|v| v.name == *id).expect("checked").ty {
+            Ty::RefI64 => Ty::I64,
+            Ty::RefStrOwn => Ty::StrOwn,
+            t => t,
+        },
         Expr::Call(id, args) => {
             if is_builtin(id, "array") { return match args.len() { 1 => Ty::DArr, 2 => Ty::DArr2, 3 => Ty::DArr3, _ => Ty::DArr4 }; }
             if is_builtin(id, "hb_hkeys") { return Ty::DArrS; }
@@ -6145,11 +6268,98 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
     }
 }
 
+// Names passed as `@x` anywhere in a body: those locals need owned-capable
+// slots from the start, because the callee frees and re-stores through the
+// borrowed pointer (hk218). Syntactic walk, mirrors the checker's widening.
+fn byref_names_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
+    fn ex(e: &Expr, out: &mut std::collections::HashSet<String>) {
+        match e {
+            Expr::Call(_, args) => {
+                for a in args {
+                    match a {
+                        Expr::ByRef(vn) => { out.insert(vn.clone()); }
+                        other => ex(other, out),
+                    }
+                }
+            }
+            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => { ex(a, out); ex(b, out); }
+            Expr::LNot(a) => ex(a, out),
+            Expr::Index(_, a) => ex(a, out),
+            Expr::Index2(_, a, b) => { ex(a, out); ex(b, out); }
+            Expr::Index3(_, a, b, c) => { ex(a, out); ex(b, out); ex(c, out); }
+            Expr::Index4(_, a, b, c, d) => { ex(a, out); ex(b, out); ex(c, out); ex(d, out); }
+            Expr::ArrLit(es) => { for x in es { ex(x, out); } }
+            Expr::HashLit(ps) => { for (k, v) in ps { ex(k, out); ex(v, out); } }
+            Expr::BlockLit(_, _, body) => { for x in body { ex(x, out); } }
+            Expr::Send(o, _, args) => { ex(o, out); for a in args { ex(a, out); } }
+            _ => {}
+        }
+    }
+    fn st(stmts: &[Stmt], out: &mut std::collections::HashSet<String>) {
+        for s in stmts {
+            match s {
+                Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) | Stmt::CallStmt(_, e) => ex(e, out),
+                Stmt::Print(_, es) => { for e in es { ex(e, out); } }
+                Stmt::If(_, c, t, el) => { ex(c, out); st(t, out); st(el, out); }
+                Stmt::While(_, c, b) => { ex(c, out); st(b, out); }
+                Stmt::For(_, _, a, b, _, body) => { ex(a, out); ex(b, out); st(body, out); }
+                Stmt::ForEach(_, _, c, body) => { ex(c, out); st(body, out); }
+                _ => {}
+            }
+        }
+    }
+    let mut out = std::collections::HashSet::new();
+    st(stmts, &mut out);
+    out
+}
+
+// The (callee, mask) set of `@`-receiving variants actually used, syntactic.
+fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String, Vec<bool>)> {
+    fn ex(e: &Expr, out: &mut std::collections::BTreeSet<(String, Vec<bool>)>) {
+        match e {
+            Expr::Call(id, args) => {
+                let mask: Vec<bool> = args.iter().map(|a| matches!(a, Expr::ByRef(_))).collect();
+                if mask.iter().any(|b| *b) {
+                    out.insert((id.clone(), mask));
+                }
+                for a in args { if !matches!(a, Expr::ByRef(_)) { ex(a, out); } }
+            }
+            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => { ex(a, out); ex(b, out); }
+            Expr::LNot(a) => ex(a, out),
+            Expr::Index(_, a) => ex(a, out),
+            Expr::Index2(_, a, b) => { ex(a, out); ex(b, out); }
+            Expr::Index3(_, a, b, c) => { ex(a, out); ex(b, out); ex(c, out); }
+            Expr::Index4(_, a, b, c, d) => { ex(a, out); ex(b, out); ex(c, out); ex(d, out); }
+            Expr::ArrLit(es) => { for x in es { ex(x, out); } }
+            Expr::HashLit(ps) => { for (k, v) in ps { ex(k, out); ex(v, out); } }
+            Expr::BlockLit(_, _, body) => { for x in body { ex(x, out); } }
+            Expr::Send(o, _, args) => { ex(o, out); for a in args { ex(a, out); } }
+            _ => {}
+        }
+    }
+    fn st(stmts: &[Stmt], out: &mut std::collections::BTreeSet<(String, Vec<bool>)>) {
+        for s in stmts {
+            match s {
+                Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) | Stmt::CallStmt(_, e) => ex(e, out),
+                Stmt::Print(_, es) => { for e in es { ex(e, out); } }
+                Stmt::If(_, c, t, el) => { ex(c, out); st(t, out); st(el, out); }
+                Stmt::While(_, c, b) => { ex(c, out); st(b, out); }
+                Stmt::For(_, _, a, b, _, body) => { ex(a, out); ex(b, out); st(body, out); }
+                Stmt::ForEach(_, _, c, body) => { ex(c, out); st(body, out); }
+                _ => {}
+            }
+        }
+    }
+    let mut out = std::collections::BTreeSet::new();
+    for f in funcs { st(&f.stmts, &mut out); }
+    out
+}
+
 // Layout pass: assigns stack slots in declaration order and computes the
 // total frame size. Branch locals get their own slots and are scoped: the
 // env is truncated at each branch join. The codegen walk below rebuilds
 // the exact same env, so offsets match.
-fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &mut usize, darr_slots: &mut Vec<(usize, u8)>, dyn_names: &std::collections::HashSet<String>) {
+fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &mut usize, darr_slots: &mut Vec<(usize, u8)>, dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
     for s in stmts {
         match s {
             Stmt::Local(_, id, e) => {
@@ -6158,6 +6368,8 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 // initializer whose local later receives a Dyn value gets
                 // the 16-byte slot.
                 if t == Ty::I64 && dyn_names.contains(id) { t = Ty::Dyn; }
+                // Same `@s` widening as cg_stmts (hk218): owned-capable slot.
+                if t == Ty::Str && byref_names.contains(id) { t = Ty::StrOwn; }
                 *frame += size_of(t);
                 env.push(CgLocal { name: id.clone(), ty: t, off: *frame });
                 if matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash) {
@@ -6198,14 +6410,14 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
             }
             Stmt::If(_, _, then_s, else_s) => {
                 let mark = env.len();
-                layout_locals(then_s, env, sigs, frame, darr_slots, dyn_names);
+                layout_locals(then_s, env, sigs, frame, darr_slots, dyn_names, byref_names);
                 env.truncate(mark);
-                layout_locals(else_s, env, sigs, frame, darr_slots, dyn_names);
+                layout_locals(else_s, env, sigs, frame, darr_slots, dyn_names, byref_names);
                 env.truncate(mark);
             }
             Stmt::While(_, _, body) => {
                 let mark = env.len();
-                layout_locals(body, env, sigs, frame, darr_slots, dyn_names);
+                layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names);
                 env.truncate(mark);
             }
             Stmt::For(_, var, _, _, _, body) => {
@@ -6213,7 +6425,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 *frame += 8; // hidden slot holding the evaluated end bound
                 *frame += 8;
                 env.push(CgLocal { name: var.clone(), ty: Ty::I64, off: *frame });
-                layout_locals(body, env, sigs, frame, darr_slots, dyn_names);
+                layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names);
                 env.truncate(mark);
             }
             Stmt::ForEach(_, var, coll, body) => {
@@ -6236,7 +6448,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 let saved = (env[kl].ty, env[kl].off);
                 env[kl].ty = Ty::Dyn;
                 env[kl].off = *frame;
-                layout_locals(body, env, sigs, frame, darr_slots, dyn_names);
+                layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names);
                 env[kl].ty = saved.0;
                 env[kl].off = saved.1;
             }
@@ -6631,7 +6843,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
     }
 }
 
-fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, ll: &Option<(String, String)>, slots: &[(usize, u8)], dyn_names: &std::collections::HashSet<String>) {
+fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, ll: &Option<(String, String)>, slots: &[(usize, u8)], dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
     for s in stmts {
         match s {
             Stmt::SelfSet(..) | Stmt::SendSet(..) | Stmt::SendStmt(..) => unreachable!("rejected before codegen"),
@@ -6653,6 +6865,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // the i64 initializer is tagged in as {0, payload}.
                 let i64_init = t == Ty::I64 && dyn_names.contains(id);
                 if i64_init { t = Ty::Dyn; }
+                // `@s` widening (hk218): a local passed by reference needs an
+                // owned-capable slot from the start (the callee frees and
+                // re-stores through the pointer), so a rodata literal
+                // initializer is copied into an owned buffer.
+                let byref_str = t == Ty::Str && byref_names.contains(id);
+                if byref_str { t = Ty::StrOwn; }
                 *frame += size_of(t);
                 let off = *frame;
                 if t == Ty::Hash {
@@ -6684,6 +6902,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         cg_value(e, env, sigs, strs, out, target);
                         if i64_init {
                             out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                        }
+                        if byref_str {
+                            // rodata -> owned copy (hbc_strcpy), or the
+                            // epilogue / a `@` callee would free rodata.
+                            out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
                         }
                         // A moved-out DArr SOURCE slot is nulled right after
                         // the load: every allocation keeps exactly one owner.
@@ -6830,6 +7053,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     }
                     out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
                     match t {
+                        Ty::RefI64 | Ty::RefStrOwn => unreachable!("expr_ty maps by-reference params to their pointee"),
                         Ty::I64 => out.push_str("    call hbc_print_i64\n"),
                         Ty::Str | Ty::StrOwn => {
                             // Line-end space trim (hk22/hk24): only the
@@ -6918,11 +7142,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    jmp .Lelse_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lthen_{}_{}:\n", fname, id));
                 let mark = env.len();
-                cg_stmts(then_s, env, frame, sigs, strs, out, target, fname, label, ll, slots, dyn_names);
+                cg_stmts(then_s, env, frame, sigs, strs, out, target, fname, label, ll, slots, dyn_names, byref_names);
                 env.truncate(mark);
                 out.push_str(&format!("    jmp .Lend_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lelse_{}_{}:\n", fname, id));
-                cg_stmts(else_s, env, frame, sigs, strs, out, target, fname, label, ll, slots, dyn_names);
+                cg_stmts(else_s, env, frame, sigs, strs, out, target, fname, label, ll, slots, dyn_names, byref_names);
                 env.truncate(mark);
                 out.push_str(&format!(".Lend_{}_{}:\n", fname, id));
             }
@@ -6935,7 +7159,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!(".Lbody_{}_{}:\n", fname, id));
                 let mark = env.len();
                 let inner = Some((format!(".Lwhile_{}_{}", fname, id), format!(".Lendw_{}_{}", fname, id)));
-                cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names);
+                cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names, byref_names);
                 env.truncate(mark);
                 out.push_str(&format!("    jmp .Lwhile_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lendw_{}_{}:\n", fname, id));
@@ -6968,7 +7192,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     out.push_str(&format!("    jl .Lfore_{}_{}\n", fname, id));
                 }
                 let inner = Some((format!(".Lforn_{}_{}", fname, id), format!(".Lfore_{}_{}", fname, id)));
-                cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names);
+                cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names, byref_names);
                 env.truncate(mark);
                 out.push_str(&format!(".Lforn_{}_{}:\n", fname, id));
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n", i_off));
@@ -7264,7 +7488,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
 ", lv_off, lv_off - 8));
                 }
                 let inner = Some((format!(".Lfen_{}_{}", fname, id), format!(".Lfee_{}_{}", fname, id)));
-                cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names);
+                cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names, byref_names);
                 env[kl].ty = saved_lv.0;
                 env[kl].off = saved_lv.1;
                 env.truncate(mark);
@@ -7288,6 +7512,39 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let l = env.iter().find(|v| v.name == *id).expect("analysis checked the local exists");
                 let off = l.off;
                 let lty = l.ty;
+                if lty == Ty::RefI64 {
+                    // @-borrowed scalar (hk216): store THROUGH the pointer
+                    // into the owner's slot.
+                    cg_value(e, env, sigs, strs, out, target);
+                    out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov %rax, (%r11)\n", off));
+                    continue;
+                }
+                if lty == Ty::RefStrOwn {
+                    // @-borrowed owned string (hk218). Literal self-
+                    // assignment `p := p` is a no-op (Harbour-compatible);
+                    // every other shape was checked to deliver a fresh or
+                    // moved value, never the borrow itself.
+                    if let Expr::Var(src) = e { if src == id { continue; } }
+                    cg_value(e, env, sigs, strs, out, target);
+                    if expr_ty(e, env, sigs) == Ty::Str {
+                        // rodata RHS: the owner's slot must own a copy.
+                        out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                    }
+                    if let Expr::Var(src) = e {
+                        if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::Str | Ty::StrOwn)) {
+                            // the source moved in: null its slot (one owner)
+                            out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
+                        }
+                    }
+                    // Free the owner's OLD value through the pointer - only
+                    // after the RHS fully exists - then store (main's UAF
+                    // rule: preserve RHS before releasing the old value).
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    out.push_str(&format!("    mov -{}(%rbp), %r11\n", off));
+                    out.push_str("    mov (%r11), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov $1, %esi\n    call hbc_free\n86:\n");
+                    out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov -{}(%rbp), %r11\n    mov %rax, (%r11)\n    mov %rdx, 8(%r11)\n", off));
+                    continue;
+                }
                 if t == Ty::Hash {
                     if let Expr::HashLit(ps) = e {
                         // Reassign from a literal: the old value goes first
@@ -7341,6 +7598,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             Ty::Dyn => {
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
+                            }
+                            Ty::Str if lty == Ty::StrOwn => {
+                                // rodata into an owned slot (hk225): own a
+                                // copy, free the old value after the copy.
+                                out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov $1, %esi\n    call hbc_free\n86:\n", off));
+                                out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
                             }
                             Ty::Str => {
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
@@ -8214,7 +8479,13 @@ fn emit_block(id: usize, params: &[String], body: &[Expr], sigs: &[Sig], strs: &
     out.push_str("    leave\n    ret\n\n");
 }
 
-fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, byref: Option<&Vec<bool>>) {
+    // Variant label: the base body is `hbc_fn_<name>`; a `@`-variant adds
+    // its mask (hk216 family).
+    let lbl: String = match byref {
+        None => f.name.clone(),
+        Some(m) => format!("{}__br{}", f.name, m.iter().map(|b| if *b { "1" } else { "0" }).collect::<String>()),
+    };
     let mut lenv: Vec<CgLocal> = Vec::new();
     let mut frame = 0usize;
     // Parameters occupy the first frame slots, sized by their pinned type.
@@ -8226,12 +8497,23 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
             // A parameter some caller feeds as `a[i]` arrives as the cell
             // ADDRESS (one word): borrow shape, never freed here.
             let pty = if own_sig.borrowed.get(i).copied().unwrap_or(false) && own_sig.params[i] == Ty::DArr { Ty::DArrRef } else if own_sig.borrowed.get(i).copied().unwrap_or(false) && own_sig.params[i] == Ty::DArr2 { Ty::DArrRef2 } else { own_sig.params[i] };
+            let pty = if byref.map(|m| m.get(i).copied().unwrap_or(false)).unwrap_or(false) {
+                // `@`-received parameter: the slot holds the OWNER's slot
+                // address (one word); reads and writes go through it and
+                // the slot is never freed here (hk216/hk218).
+                match pty {
+                    Ty::I64 | Ty::Bool => Ty::RefI64,
+                    Ty::Str | Ty::StrOwn => Ty::RefStrOwn,
+                    other => unreachable!("the checker rejects `@` on this parameter type: {:?}", other),
+                }
+            } else { pty };
             lenv.push(CgLocal { name: p.clone(), ty: pty, off: frame });
         }
     }
     let nparams = lenv.len();
     let mut darr_slots: Vec<(usize, u8)> = Vec::new();
-    layout_locals(&f.stmts, &mut lenv, sigs, &mut frame, &mut darr_slots, &f.dyn_names);
+    let byref_names_layout = byref_names_in(&f.stmts);
+    layout_locals(&f.stmts, &mut lenv, sigs, &mut frame, &mut darr_slots, &f.dyn_names, &byref_names_layout);
     // Dynamic-array parameters are owned by this function: their slots are
     // freed at the shared epilogue like any other DArr local.
     for v in &lenv[..lenv.len().min(f.params.len())] {
@@ -8258,7 +8540,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         }
     }
 
-    out.push_str(&format!("hbc_fn_{}:\n", f.name));
+    out.push_str(&format!("hbc_fn_{}:\n", lbl));
     out.push_str("    push %rbp\n    mov %rsp, %rbp\n");
     // Win64 ABI: rsp must be 16-byte aligned at every call. The Linux
     // frame only needs 8-byte slots (syscalls do not care); round up to 16
@@ -8291,14 +8573,15 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     let mut env: Vec<CgLocal> = lenv[..nparams].to_vec();
     let mut walk_frame = env.iter().map(|v| size_of(v.ty)).sum();
     let mut label = 0usize;
-    cg_stmts(&f.stmts, &mut env, &mut walk_frame, sigs, strs, out, target, &f.name, &mut label, &None, &darr_slots, &f.dyn_names);
+    let byref_names = byref_names_in(&f.stmts);
+    cg_stmts(&f.stmts, &mut env, &mut walk_frame, sigs, strs, out, target, &lbl, &mut label, &None, &darr_slots, &f.dyn_names, &byref_names);
     // Free every dynamic array still owned on this exit path. A slot is
     // null when its value was moved out (moves null the source, so each
     // allocation has exactly one freeing owner) or when it never held a
     // value; freeing checks the pointer, so both cases are safe without
     // any path tracking in codegen. The return value was moved to the
     // output registers (and its slot nulled) before this point.
-    out.push_str(&format!(".Lret_{}:\n", f.name));
+    out.push_str(&format!(".Lret_{}:\n", lbl));
     // The return value waits on the stack while the frees run: hbc_free
     // clobbers rax (and rdx on Windows) and a slot still owned here must
     // not destroy it.
@@ -9900,7 +10183,13 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
 
     let mut strs: Vec<String> = Vec::new();
     for f in funcs {
-        cg_func(f, sigs, &mut strs, &mut out, target);
+        cg_func(f, sigs, &mut strs, &mut out, target, None);
+    }
+    // `@`-variants (hk216 family): one per (callee, mask) actually used;
+    // the checker validated every one of these calls.
+    for (vname, mask) in collect_byref_variants(funcs) {
+        let f = funcs.iter().find(|f| f.name == *vname).expect("checked");
+        cg_func(f, sigs, &mut strs, &mut out, target, Some(&mask));
     }
 
     // Runtime helpers (ours, hand-written; syscall-only on linux, three
@@ -11909,6 +12198,61 @@ fn main() {
     }
     let mut funcs = prog.funcs;
 
+    // `@x` prescan (hk216 family), syntactic over the whole program: which
+    // parameter positions each function receives by reference (call sites
+    // come AFTER the callee under definition-before-use, so this must be
+    // collected before the per-function check loop), which local names each
+    // function passes by reference (they need owned-capable slots), and the
+    // exact set of (callee, mask) variants codegen must emit.
+    fn scan_byref_expr(e: &Expr, cur: &str, params: &mut std::collections::HashMap<String, Vec<usize>>, names: &mut std::collections::HashMap<String, std::collections::HashSet<String>>, variants: &mut std::collections::BTreeSet<(String, Vec<bool>)>) {
+        if let Expr::Call(id, args) = e {
+            let mask: Vec<bool> = args.iter().map(|a| matches!(a, Expr::ByRef(_))).collect();
+            if mask.iter().any(|b| *b) && !id.starts_with("hb_") && !is_builtin(id, "len") && !is_builtin(id, "eval") {
+                let pos: Vec<usize> = (0..args.len()).filter(|i| mask[*i]).collect();
+                params.entry(id.clone()).or_default().extend(pos);
+                for (i, a) in args.iter().enumerate() {
+                    if mask[i] {
+                        if let Expr::ByRef(vn) = a { names.entry(cur.to_string()).or_default().insert(vn.clone()); }
+                    }
+                }
+                variants.insert((id.clone(), mask));
+            }
+        }
+        match e {
+            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => { scan_byref_expr(a, cur, params, names, variants); scan_byref_expr(b, cur, params, names, variants); }
+            Expr::LNot(a) => scan_byref_expr(a, cur, params, names, variants),
+            Expr::Call(_, args) => { for a in args { if !matches!(a, Expr::ByRef(_)) { scan_byref_expr(a, cur, params, names, variants); } } }
+            Expr::Index(_, a) => scan_byref_expr(a, cur, params, names, variants),
+            Expr::Index2(_, a, b) => { scan_byref_expr(a, cur, params, names, variants); scan_byref_expr(b, cur, params, names, variants); }
+            Expr::Index3(_, a, b, c) => { scan_byref_expr(a, cur, params, names, variants); scan_byref_expr(b, cur, params, names, variants); scan_byref_expr(c, cur, params, names, variants); }
+            Expr::Index4(_, a, b, c, d) => { scan_byref_expr(a, cur, params, names, variants); scan_byref_expr(b, cur, params, names, variants); scan_byref_expr(c, cur, params, names, variants); scan_byref_expr(d, cur, params, names, variants); }
+            Expr::ArrLit(es) => { for x in es { scan_byref_expr(x, cur, params, names, variants); } }
+            Expr::HashLit(ps) => { for (k, v) in ps { scan_byref_expr(k, cur, params, names, variants); scan_byref_expr(v, cur, params, names, variants); } }
+            Expr::BlockLit(_, _, body) => { for x in body { scan_byref_expr(x, cur, params, names, variants); } }
+            Expr::Send(o, _, args) => { scan_byref_expr(o, cur, params, names, variants); for a in args { scan_byref_expr(a, cur, params, names, variants); } }
+            _ => {}
+        }
+    }
+    fn scan_byref_stmts(stmts: &[Stmt], cur: &str, params: &mut std::collections::HashMap<String, Vec<usize>>, names: &mut std::collections::HashMap<String, std::collections::HashSet<String>>, variants: &mut std::collections::BTreeSet<(String, Vec<bool>)>) {
+        for st in stmts {
+            match st {
+                Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) | Stmt::CallStmt(_, e) => scan_byref_expr(e, cur, params, names, variants),
+                Stmt::Print(_, es) => { for e in es { scan_byref_expr(e, cur, params, names, variants); } }
+                Stmt::If(_, c, t, el) => { scan_byref_expr(c, cur, params, names, variants); scan_byref_stmts(t, cur, params, names, variants); scan_byref_stmts(el, cur, params, names, variants); }
+                Stmt::While(_, c, b) => { scan_byref_expr(c, cur, params, names, variants); scan_byref_stmts(b, cur, params, names, variants); }
+                Stmt::For(_, _, a, b, _, body) => { scan_byref_expr(a, cur, params, names, variants); scan_byref_expr(b, cur, params, names, variants); scan_byref_stmts(body, cur, params, names, variants); }
+                Stmt::ForEach(_, _, c, body) => { scan_byref_expr(c, cur, params, names, variants); scan_byref_stmts(body, cur, params, names, variants); }
+                _ => {}
+            }
+        }
+    }
+    let mut byref_params: std::collections::HashMap<String, Vec<usize>> = std::collections::HashMap::new();
+    let mut byref_locals: std::collections::HashMap<String, std::collections::HashSet<String>> = std::collections::HashMap::new();
+    let mut byref_variants: std::collections::BTreeSet<(String, Vec<bool>)> = std::collections::BTreeSet::new();
+    for f in &funcs {
+        scan_byref_stmts(&f.stmts, &f.name, &mut byref_params, &mut byref_locals, &mut byref_variants);
+    }
+
     // Pass 1: semantic analysis - types, ownership/move, signatures.
     let mut sigs: Vec<Sig> = Vec::new();
     let mut has_main = false;
@@ -11923,14 +12267,18 @@ fn main() {
         };
         let mut env: Vec<Local> = Vec::new();
         // Parameters enter the frame as owned locals: integer arguments copy,
-        // string arguments move (callers hand over ownership).
+        // string arguments move (callers hand over ownership). A parameter
+        // some caller passes as `@p` is BORROWED from that caller instead
+        // (hk216): the flag rejects moving it out (the caller keeps it).
+        let brp: std::collections::HashSet<usize> = byref_params.get(&f.name).cloned().unwrap_or_default().into_iter().collect();
         for (i, p) in f.params.iter().enumerate() {
-            env.push(Local { name: p.clone(), ty: ptys[i], moved: false, ro: false });
+            env.push(Local { name: p.clone(), ty: ptys[i], moved: false, ro: false, byref: brp.contains(&i) });
         }
+        let byref_names: std::collections::HashSet<String> = byref_locals.get(&f.name).cloned().unwrap_or_default();
         let mut ret = None;
         let mut top_exits: Vec<Vec<bool>> = Vec::new();
         let dyn_names = prescan_dyn(f, &sigs, &ptys);
-        let res = check_stmts(&f.stmts, &mut env, &mut sigs, &mut ret, None, &mut top_exits, &dyn_names);
+        let res = check_stmts(&f.stmts, &mut env, &mut sigs, &mut ret, None, &mut top_exits, &dyn_names, &byref_names);
         f.dyn_names = dyn_names;
         if let Err(m) = res {
             eprintln!("error: {}", m);
