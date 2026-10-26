@@ -2791,6 +2791,34 @@ BATTERY 798 -> 807 runner rows + ABI ALL GREEN (Linux native and
 Wine with Linux oracle). Sweep: 9 COMPILES unchanged - no flips;
 str.prg advances past `^` (line 37) to the identifier-led-statement
 gap (line 6) and funcarr.prg past `^` (line 44) to line 13.
+63zk - SET-command gate corrected by measurement, no new runtime
+semantics. Classifying the real forms behind the ten sweep files the
+old gate stopped: six (dates2/dates3/directry/extend1/say/vmasort)
+were `Set( _SET_DATEFORMAT, ... )` FUNCTION-CALL statements
+misclassified as SET commands (the gate fired on the identifier
+`set` without checking for `(`); four (dev/longdev/output/rdd) are
+real SET commands bound to subsystems this PoC does not have - SET
+PRINTER/DEVICE/ALTERNATE/MARGIN (output routing), SET EXCLUSIVE (RDD
+layer) - plus SET CENTURY in say.prg (date subsystem). The gate now
+fires only when `set` is not followed by `(`; a `Set(...)` call
+falls through to the ordinary call-statement path and meets the
+honest unknown-function rejection (the Set() function itself belongs
+to the parked SET-state/date subsystems). The real SET commands keep
+a named rejection whose message now enumerates the measured forms and
+their subsystems: a no-op accept would route output to the wrong
+place silently, which is worse than a named limit. SET DECIMALS
+stays fixed at the Harbour default 2 (oracle hk295).
+
+Tests: t813 (Set() call statement reaches unknown-function, not the
+SET gate), t814/t815 (SET CENTURY / SET PRINTER keep the named
+rejection). BATTERY 807 -> 810 runner rows + ABI ALL GREEN (Linux
+native and Wine with Linux oracle). Sweep: 9 COMPILES unchanged; all
+six misclassified files advance to their real next gap - dates2 to
+`hb_stod` (line 3), dates3 to `set` (7), directry to NIL-`==` (62),
+extend1 to identifier-led (39), say to identifier-led (7), vmasort
+to DO CASE (63) - while dev/longdev/output/rdd keep the improved
+named rejection.
+
 
  Sweep: ifelse.prg and fornext.prg flip
 to COMPILES, both byte-exact against stock Harbour oracles (hk333,
