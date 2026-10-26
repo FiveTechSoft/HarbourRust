@@ -2,6 +2,7 @@
 # ABI harness: assembles a canary test against the emitted runtime helpers
 # for both targets and runs it (natively on Linux, via Wine for Windows).
 # Verifies that hbc_asize / hbc_aadd / hbc_arraym / hbc_array3m / hbc_array4m / hbc_free / hbc_free2 /
+# hbc_dyn_eq (incl. tag-3 logical casillas) / hbc_dyn_to_log
 # hbc_rfree preserve rbx/r12-r15, keep rsp 16-aligned at internal call boundaries
 # and leave the stack balanced. Prints "ABI OK" on success; any canary,
 # alignment or stack mismatch prints "ABI FAIL <what>" and exits 1.
@@ -436,6 +437,60 @@ hbc_abi_test:
     mov -48(%rbp), %rdi
     mov $3, %esi
     call hbc_free
+    call abi_check
+    # hbc_dyn_eq tag 3 (iteration 62b): logical casillas compare payloads -
+    # .T. = .F. is 0 and .T. = .T. is 1 (the old tag-only shortcut made
+    # both 1); a logical is neither the number 1 nor NIL even when the
+    # payload bits coincide.
+    mov $3, %eax
+    mov $1, %edx
+    mov $3, %ecx
+    xor %r8d, %r8d
+    call hbc_dyn_eq
+    test %rax, %rax
+    jnz abi_fail_de
+    call abi_check
+    mov $3, %eax
+    mov $1, %edx
+    mov $3, %ecx
+    mov $1, %r8d
+    call hbc_dyn_eq
+    cmp $1, %rax
+    jne abi_fail_de
+    call abi_check
+    mov $3, %eax
+    mov $1, %edx
+    xor %ecx, %ecx
+    mov $1, %r8d
+    call hbc_dyn_eq
+    test %rax, %rax
+    jnz abi_fail_de
+    call abi_check
+    mov $3, %eax
+    xor %edx, %edx
+    mov $1, %ecx
+    xor %r8d, %r8d
+    call hbc_dyn_eq
+    test %rax, %rax
+    jnz abi_fail_de
+    call abi_check
+    # hbc_dyn_to_log (iteration 62b, new helper): a logical casilla keeps
+    # its payload - canaries, stack balance and 16-alignment after EACH
+    # call. (NIL, integer and string casillas tail-jump to hbc_type_error:
+    # Harbour's error condition for a non-logical condition - hk210, the
+    # dialog hangs headless - so that route ends the process and is not
+    # exercised here.)
+    mov $3, %eax
+    mov $1, %edx
+    call hbc_dyn_to_log
+    cmp $1, %rax
+    jne abi_fail_dl
+    call abi_check
+    mov $3, %eax
+    xor %edx, %edx
+    call hbc_dyn_to_log
+    test %rax, %rax
+    jnz abi_fail_dl
     call abi_check
     # hbc_dynxcmp (iteration 45): int x int signs (-1/0/1), then the new
     # string x string branch (tail call into hbc_str_cmp) for lt/eq/gt -
@@ -1432,6 +1487,10 @@ abi_fail_de:
     lea .Labi_f_de(%rip), %rax
     mov $13, %edx
     jmp abi_fail_common
+abi_fail_dl:
+    lea .Labi_f_dl(%rip), %rax
+    mov $13, %edx
+    jmp abi_fail_common
 abi_fail_dc:
     lea .Labi_f_dc(%rip), %rax
     mov $13, %edx
@@ -1555,6 +1614,7 @@ ASM_EOF
 .Labi_f_hsdD: .ascii "ABI FAIL hsdD\n"
 .Labi_f_hcp: .ascii "ABI FAIL hcp\n"
 .Labi_f_de: .ascii "ABI FAIL deq\n"
+.Labi_f_dl: .ascii "ABI FAIL d2l\n"
 .Labi_s3:    .ascii "abc"
 .Labi_s6:    .ascii "abcdef"
 .Labi_f_dc: .ascii "ABI FAIL dcp\n"
