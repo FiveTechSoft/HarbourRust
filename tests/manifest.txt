@@ -544,3 +544,9 @@ pos tests/t546_hmerge.hb \n         3\n         1\n        22\n         3\n     
 pos tests/t547_hmerge_edges.hb \n         1\n         1\n         1\n         1\n         1
 neg tests/t548_neg_hmerge_type.hb hb_HMerge expects hash variables
 neg tests/t549_neg_hmerge_src.hb hb_HMerge expects hash variables
+pos tests/t550_hclone.hb \n         1\n         2\n         2\n         3
+pos tests/t551_hclone_order.hb \n         1\n         2\n         3\nNIL\n         0
+pos tests/t552_hclone_owned.hb \n         7\n         1\n         0\n         0
+neg tests/t553_neg_hclone_type.hb `hb_HClone` expects a hash variable
+pos tests/t554_hmerge_self.hb \n         2\n         1\n         2\n         1\n         2
+pos tests/t555_hmerge_srcfree.hb \n         2\n         2\n         0\n         0
