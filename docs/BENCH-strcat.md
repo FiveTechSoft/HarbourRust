@@ -158,3 +158,69 @@ Harbour binary sha256 d03b02c2...):
 
 Rounds 1-2 above are preserved unchanged: each timing round is its own
 record.
+
+### Round 3 raw evidence (preserved in-repo)
+
+Probe shape at every N (Harbour idiom `s := s + "x"`, HarbourRust idiom
+`local s := "" + "x"` then `s = s + "x"`; N = final length, loop runs
+N-1 times; the N=20000 sources are in the round 1-2 section above):
+
+Harbour N=200000 (same shape at 400000):
+
+```
+function main()
+   local s := "x"
+   for i := 1 to 199999
+      s := s + "x"
+   next
+   ? len( s )
+   return
+```
+
+HarbourRust N=200000:
+
+```
+function main()
+   local s := "" + "x"
+   for i := 1 to 199999
+      s = s + "x"
+   next
+   ? len( s )
+   return
+```
+
+Build flags: Harbour `hbmk2 -gtstd <src> -o<name>`; HarbourRust
+`hbc <src> out.s && as out.s -o out.o && ld out.o -o <name>`
+(hbc = iteration 63h, `rustc --edition 2021 -O src/hbc.rs`).
+
+Raw runs, N=20000 (ms, sorted, 3 warmup + 21 timed):
+
+```
+harbourrust-r3 N=20000 3warm+21timed median=0.28 min=0.25 p95=0.41
+  raw: 0.25, 0.26, 0.26, 0.26, 0.26, 0.27, 0.27, 0.27, 0.27, 0.28, 0.28, 0.28, 0.28, 0.29, 0.31, 0.32, 0.34, 0.34, 0.40, 0.41, 0.43
+harbour N=20000 3warm+21timed median=2.18 min=2.11 p95=2.48
+  raw: 2.11, 2.12, 2.13, 2.13, 2.14, 2.14, 2.15, 2.15, 2.16, 2.17, 2.18, 2.26, 2.29, 2.29, 2.30, 2.34, 2.39, 2.43, 2.44, 2.48, 2.57
+```
+
+Raw runs, work-dominated sizes (11 runs each; columns
+N, impl, median_ms, min_ms, all_runs_ms):
+
+```
+200000, harbourrust-r3, 0.99, 0.91, [0.91, 0.94, 0.94, 0.96, 0.96, 0.99, 1.02, 1.06, 1.07, 1.11, 1.16]
+200000, harbour, 10.94, 10.35, [10.35, 10.42, 10.59, 10.63, 10.74, 10.94, 10.99, 10.99, 11.21, 11.71, 13.60]
+400000, harbourrust-r3, 1.51, 1.33, [1.33, 1.40, 1.40, 1.43, 1.47, 1.51, 1.58, 1.58, 1.58, 1.61, 1.71]
+400000, harbour, 23.66, 19.60, [19.60, 20.78, 22.27, 22.41, 22.93, 23.66, 24.12, 24.20, 24.38, 24.66, 24.97]
+```
+
+Binary/asm SHAs (sha256) for the round 3 binaries and the Harbour
+binary reused from rounds 1-2:
+
+```
+6ffe7490a1404b3bf2d148c9946a2ac3b5601b5396748e10abff9677e2434d37  /tmp/r3.s
+82be2a13b5165055a8a84306f241812534732c798eeb64de35e5d02f4131c83b  /tmp/bc_hr_r3
+d03b02c24d51da16521c3f7c203f49f20efd23f1b40cf9be87270de1124ee00a  bc_hb.bin
+a95622ab9f0755377ae09e870742ae2fc2a62997dfbe66f9648704dc9376d852  bhr_r3_200000
+c8dbd17fd95cf102fafc3035ae0765464173e3838718e3c918cbb128fa6419fc  bhr_r3_400000
+2df7bda51bf20c468e36cfaf360e4236ffd43a633767cf16ae49826c87384abb  bhb_200000
+af9877e2a3cee873b4b68e13dcc606675f2786bdba4f0022103684109806f13d  bhb_400000
+```
