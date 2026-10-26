@@ -2225,3 +2225,17 @@ VIVAS; clave ausente y «» responden 0, sin diálogo (rc=0). hk163
 verbatim: `\n         1\n         2\n         3` - tras hb_HDel de la
 primera, las restantes se COMPACTAN («bb» pasa a 1, «c» a 2) y una
 clave realta va al final. t540/t541 reproducen ambos en Linux y Wine.
+
+### hk164/hk165 - hb_HMerge: la fuente gana en solape, retorno hash y no-mutación (26 oct 2026)
+
+Fuentes `sondas_ac/hkeys/hk164.prg` y `hk165.prg`, compiladas con
+`hbmk2 <f> -gtstd -o<x>` (solo librerías core). hk164 verbatim:
+`\n         3\n         1\n        22\n         3\n         2\n         3` -
+la fuente GANA en clave solapada («bb»: 2 a 22) manteniendo su
+posición (2), y las claves nuevas se añaden al final en orden de la
+fuente. hk165 verbatim: `\nH\n         1\n         1\n\n         1` -
+el retorno es el propio destino (ValType «H»; imprimirlo rinde línea
+vacía, como el retorno de hb_HSet), la fuente NO se muta y una fuente
+vacía es no-op. t546/t547 reproducen ambos en Linux y Wine; la forma
+con literal vacío en línea del segundo argumento queda como límite de
+superficie (ambos argumentos son variables hash en el PoC).
