@@ -1761,6 +1761,8 @@ Números sin fuente recuperable en el transcript: hk10, hk72, hk74, hk75 (planif
 
 ### hk132
 
+> Nota de soporte (26 oct, iteración 43): las respuestas medidas de esta sonda se reproducen en el PoC SOLO vía el adaptador dedicado DArrS (`{}` + `AAdd` + sobrescritura indexada; t508/t509), NO con la sintaxis `Array(2)` + asignación indexada escalar que usa el programa original - esa sigue rechazada por nombre. Los arrays de tipo mixto también siguen rechazados.
+
 ```harbour
 function main()
     local a := Array(2)
@@ -1773,6 +1775,8 @@ return nil
 ```
 
 ### hk133
+
+> Nota de soporte (26 oct, iteración 43): las respuestas medidas de esta sonda se reproducen en el PoC SOLO vía el adaptador dedicado DArrS (`{}` + `AAdd` + sobrescritura indexada; t508/t509), NO con la sintaxis `Array(2)` + asignación indexada escalar que usa el programa original - esa sigue rechazada por nombre. Los arrays de tipo mixto también siguen rechazados.
 
 ```harbour
 function main()
