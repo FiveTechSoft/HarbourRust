@@ -920,6 +920,67 @@ hbc_abi_test:
     mov $2, %esi
     call hbc_hfree
     call abi_check
+    # hbc_hcasematch / hbc_hsetcasematch canary (iteration 56): the
+    # default on an untouched empty slot is 1 (hk169); setting 0 on a
+    # fresh empty slot grows a header-only block (hk176); the flag reads
+    # back; a case-variant lookup then matches case-insensitively and
+    # the grow frees the header-only block through hbc_hfreeblock.
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    lea -96(%rbp), %rdi
+    call hbc_hcasematch
+    mov %rax, -32(%rbp)
+    call abi_check
+    cmpq $1, -32(%rbp)
+    jne abi_fail_hc
+    lea -96(%rbp), %rdi
+    xor %esi, %esi
+    call hbc_hsetcasematch
+    call abi_check
+    lea -96(%rbp), %rdi
+    call hbc_hcasematch
+    mov %rax, -32(%rbp)
+    call abi_check
+    cmpq $0, -32(%rbp)
+    jne abi_fail_hc
+    lea .Labi_k1(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $7, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea -96(%rbp), %rdi
+    lea .Labi_k4(%rip), %rsi
+    mov $2, %edx
+    call hbc_hget
+    mov %rax, -32(%rbp)
+    call abi_check
+    mov -32(%rbp), %rax
+    test %rax, %rax
+    je abi_fail_hc
+    cmpq $7, 8(%rax)
+    jne abi_fail_hc
+    mov -96(%rbp), %rdi
+    mov $1, %esi
+    call hbc_hfree
+    call abi_check
+    # a header-only block (never grown) freed through hbc_hfree ->
+    # hbc_hfreeblock, both targets' registry
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    lea -96(%rbp), %rdi
+    mov $1, %esi
+    call hbc_hsetcasematch
+    call abi_check
+    mov -96(%rbp), %rdi
+    xor %esi, %esi
+    call hbc_hfree
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -1071,6 +1132,7 @@ ASM_EOF
 .Labi_k1:    .ascii "ab"
 .Labi_k2:    .ascii "c"
 .Labi_k3:    .ascii "zz"
+.Labi_k4:    .ascii "AB"
 .Labi_f_hd:  .ascii "ABI FAIL hd\n"
 .Labi_f_hh:  .ascii "ABI FAIL hh\n"
 .Labi_f_hg:  .ascii "ABI FAIL hg\n"
