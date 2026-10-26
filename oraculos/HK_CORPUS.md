@@ -1758,3 +1758,89 @@ Números sin fuente recuperable en el transcript: hk10, hk72, hk74, hk75 (planif
 | hk97 | medida-fresca | \nA\nA\nN\nU\n         0 |
 | hk98 | medida-fresca | \n         3\n         0\n        99\n         4 |
 | hk99 | medida-fresca | \n         3\n         2\n        99\n         4 |
+
+### hk132
+
+```harbour
+function main()
+    local a := Array(2)
+    a[1] := "hola"
+    ? a[1] == "hola"
+    ? a[1] == "hola "
+    ? a[1] == "hol"
+    ? "hola" == a[1]
+return nil
+```
+
+### hk133
+
+```harbour
+function main()
+    local a := Array(2)
+    local b := Array(2)
+    a[1] := "hola"
+    b[1] := "hola"
+    ? a[1] == b[1]
+    b[1] := "holaa"
+    ? a[1] == b[1]
+    ? a[1] == a[1]
+return nil
+```
+
+### hk134
+
+```harbour
+function main()
+    local h := {"a" => 1}
+    local h2 := {"a" => 1}
+    ? h == h
+    ? h == h2
+return nil
+```
+
+### hk135
+
+```harbour
+function main()
+    local a := Array(2, 2, 2)
+    local b := Array(2, 2, 2)
+    local c := Array(2, 2, 2, 2)
+    local d := Array(2, 2, 2, 2)
+    ? a == a
+    ? a == b
+    ? c == c
+    ? c == d
+return nil
+```
+
+### hk136
+
+```harbour
+function make()
+    return {|n| n + 1}
+function main()
+    local x := make()
+    local y := make()
+    ? x == x
+    ? x == y
+    ? make() == make()
+return nil
+```
+
+### hk137
+
+```harbour
+function main()
+    local x, y, i
+    for i := 1 to 2
+        if i == 1
+            x := {|n| n + 1}
+        else
+            y := {|n| n + 1}
+        endif
+    next
+    ? x == y
+    ? x == x
+return nil
+```
+
