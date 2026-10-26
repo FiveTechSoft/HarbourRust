@@ -2044,3 +2044,39 @@ unchanged, still byte-identical.
 
 Battery 697 -> 704 + ABI harness green (Linux nativo y Wine con oracle
 Linux).
+
+## 63s - logical arguments admitted at the Dyn parameter boundary
+
+Reconciliation (main): tag-3 Dyn values already existed end to end -
+hbc_print_dyn prints .T./.F. for tag 3, the Dyn->Dyn clone passes scalar
+tags through, a Dyn return hands the caller its own clone, and the
+epilogue frees only tag-4 payloads - so the logical case was an
+admission boundary, not new architecture. Oracles first (hbmk2 -gtstd
+@694428e1): hk264 (print-only parameter called with .T. and .F.: prints
+.T. and .F., exit 0), hk265 (print + return of a logical parameter, the
+caller prints the tagged result: .T. .T. .F. .F., exit 0). Both
+byte-identical with the new compiler on Linux nativo y Wine, exit 0/0.
+
+Change: the call-argument check admits `logical -> Dyn` and the call
+codegen tags it in (tag 3, payload 0/1). Scalar: no ownership transfer;
+no clone, no free. Nothing else widened: assigning a logical INTO a Dyn
+slot keeps its named rejection (t711) - Dyn-slot logical stores land
+with the tag-L local increment (registered limit).
+
+- t708 FLIPPED neg -> pos (exact-case oracle hk264).
+- t709: logical Dyn parameter through print and return (hk265).
+- t710: one print-only parameter called with string, integer, NIL and
+  logical (hk257 + hk264).
+- t711 (negative): `x := .f.` on a Dyn parameter stays rejected.
+
+Sweep 175 (src/hbc.rs sha256
+03749ce74501ec925e9945079acdc77537f3cb7fab808c8b30e149614594ffb3,
+compiler binary sha256
+b2b269782cae3f26a8d440c26f20a64b7fb8b16ef4ed2b0badbd8ff33217aa8a,
+tests/manifest.txt sha256
+559cac925093b40c1c9137ccebf0bd4502dace641b7471afc645995a21492a79,
+rustc 1.99.1): unchanged, COMPILES 4 (no sweep original uses the
+logical boundary).
+
+Battery 704 -> 707 + ABI harness green (Linux nativo y Wine con oracle
+Linux).
