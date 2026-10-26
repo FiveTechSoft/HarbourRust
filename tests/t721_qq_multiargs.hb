@@ -1,0 +1,4 @@
+procedure main()
+   ?? "a", "b", 1, 2
+   ? "c", "d"
+   return
