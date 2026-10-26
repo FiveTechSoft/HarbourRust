@@ -6755,11 +6755,20 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // hb_HDel: key first (borrowed - hbc_hdel only reads it),
                 // then the slot address; the helper frees the hash-owned
                 // key copy and shifts the remaining entries down,
-                // preserving insertion order (hk155/hk156).
+                // preserving insertion order (hk155/hk156). An OWNED key
+                // temporary (e.g. hb_HDel(h, keys[i])) is freed right
+                // after the call (leak found and fixed in iteration 53;
+                // t545).
                 let var = env.iter().rev().find(|x| x.name == *id).expect("checked");
                 cg_value(e, env, sigs, strs, out, target);
-                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hdel\n    add $16, %rsp\n", var.off));
+                let temp_key = expr_ty(e, env, sigs) == Ty::StrOwn && !matches!(e, Expr::Var(_));
+                if temp_key {
+                    out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hdel\n    mov (%rsp), %rdi\n    mov $1, %esi\n    call hbc_free\n    add $32, %rsp\n", var.off));
+                } else {
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hdel\n    add $16, %rsp\n", var.off));
+                }
             }
             Stmt::ArrSet(_, id, ie, e) => {
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
