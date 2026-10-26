@@ -5232,6 +5232,29 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                         let j = match op { CmpOp::Eq | CmpOp::EqEq => "jnz", _ => "jz" };
                         out.push_str(&format!("    {} {}\n", j, true_label));
                     }
+                    _ if ta == Ty::Dyn && tb == Ty::Dyn => {
+                        // Ordering between two Dyn casillas: tag dispatch
+                        // in hbc_dynxcmp (hk148: int x int numeric, string
+                        // x string byte-wise over the right operand's
+                        // length; hk149-hk152: string x integer is the
+                        // per-operator BASE/1073-1076 clean named exit 1;
+                        // NIL is the registered type error).
+                        cg_expr(a, env, sigs, strs, out, target);
+                        match target {
+                            Target::Linux => out.push_str("    push %rax\n    push %rdx\n"),
+                            Target::Windows => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n"),
+                        }
+                        cg_expr(b, env, sigs, strs, out, target);
+                        out.push_str("    mov %rax, %rcx\n    mov %rdx, %r8\n");
+                        match target {
+                            Target::Linux => out.push_str("    pop %rdx\n    pop %rax\n"),
+                            Target::Windows => out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n"),
+                        }
+                        let sel = match op { CmpOp::Lt => 1, CmpOp::Gt => 2, CmpOp::Le => 3, CmpOp::Ge => 4, _ => unreachable!("CmpOp variants") };
+                        out.push_str(&format!("    mov ${}, %r9d\n    call hbc_dynxcmp\n    test %rax, %rax\n", sel));
+                        let j = match op { CmpOp::Lt => "js", CmpOp::Le => "jle", CmpOp::Gt => "jg", CmpOp::Ge => "jns", _ => unreachable!() };
+                        out.push_str(&format!("    {} {}\n", j, true_label));
+                    }
                     _ => {
                         // Ordering: NIL in an ordering comparison is a
                         // Harbour type error; extraction raises it (clean
@@ -7795,6 +7818,50 @@ hbc_dyn_eq:
     je 8b
     jmp hbc_dyncmp_eq_error
 
+# hbc_dynxcmp: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload,
+# %r9d = operator (1=<, 2=>, 3=<=, 4=>=) -> %rax = -1/0/1 (signed).
+# Ordering between two Dyn casillas (hk148): int x int numerically;
+# string x string byte-wise over the right operand's length (hbc_str_cmp
+# tail call); string x integer is Harbour's BASE/1073/1075/1074/1076 per
+# operator (hk149-hk152 - dialogs hang headless): clean named exit 1 via
+# the hbc_dyncmp_*_error stubs, registered failure modes, not exact
+# equivalence. A NIL casilla in an ordering comparison is a Harbour type
+# error: hbc_type_error (registered failure mode). Leaf routine.
+hbc_dynxcmp:
+    cmp %rcx, %rax
+    jne 70f
+    test %rax, %rax
+    jnz 71f
+    xor %eax, %eax
+    cmp %r8, %rdx
+    je 79f
+    jl 77f
+    mov $1, %eax
+    ret
+77: mov $-1, %rax
+79: ret
+71: cmp $2, %rax
+    je 72f
+    jmp hbc_type_error
+72: mov -8(%rdx), %r10
+    mov -8(%r8), %r11
+    mov %rdx, %rax
+    mov %r8, %rcx
+    mov %r11, %r8
+    mov %r10, %rdx
+    jmp hbc_str_cmp
+70: cmp $1, %rax
+    je hbc_type_error
+    cmp $1, %rcx
+    je hbc_type_error
+    cmp $1, %r9d
+    je hbc_dyncmp_lt_error
+    cmp $2, %r9d
+    je hbc_dyncmp_gt_error
+    cmp $3, %r9d
+    je hbc_dyncmp_le_error
+    jmp hbc_dyncmp_ge_error
+
 # hbc_dynxeq_dd: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload ->
 # %rax = 1/0. Harbour's `==` between casillas (hk132/hk133/hk138/hk140):
 # NIL x NIL .T., NIL x payload .F., number x number by value, string x
@@ -8716,6 +8783,50 @@ hbc_dyn_eq:
 72: cmp $1, %rcx
     je 8b
     jmp hbc_dyncmp_eq_error
+
+# hbc_dynxcmp: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload,
+# %r9d = operator (1=<, 2=>, 3=<=, 4=>=) -> %rax = -1/0/1 (signed).
+# Ordering between two Dyn casillas (hk148): int x int numerically;
+# string x string byte-wise over the right operand's length (hbc_str_cmp
+# tail call); string x integer is Harbour's BASE/1073/1075/1074/1076 per
+# operator (hk149-hk152 - dialogs hang headless): clean named exit 1 via
+# the hbc_dyncmp_*_error stubs, registered failure modes, not exact
+# equivalence. A NIL casilla in an ordering comparison is a Harbour type
+# error: hbc_type_error (registered failure mode). Leaf routine.
+hbc_dynxcmp:
+    cmp %rcx, %rax
+    jne 70f
+    test %rax, %rax
+    jnz 71f
+    xor %eax, %eax
+    cmp %r8, %rdx
+    je 79f
+    jl 77f
+    mov $1, %eax
+    ret
+77: mov $-1, %rax
+79: ret
+71: cmp $2, %rax
+    je 72f
+    jmp hbc_type_error
+72: mov -8(%rdx), %r10
+    mov -8(%r8), %r11
+    mov %rdx, %rax
+    mov %r8, %rcx
+    mov %r11, %r8
+    mov %r10, %rdx
+    jmp hbc_str_cmp
+70: cmp $1, %rax
+    je hbc_type_error
+    cmp $1, %rcx
+    je hbc_type_error
+    cmp $1, %r9d
+    je hbc_dyncmp_lt_error
+    cmp $2, %r9d
+    je hbc_dyncmp_gt_error
+    cmp $3, %r9d
+    je hbc_dyncmp_le_error
+    jmp hbc_dyncmp_ge_error
 
 # hbc_dynxeq_dd: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload ->
 # %rax = 1/0. Harbour's `==` between casillas (hk132/hk133/hk138/hk140):
