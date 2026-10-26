@@ -139,6 +139,11 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                 }
                 toks.push(match id.to_ascii_lowercase().as_str() {
                     "function" => Tok::KwFunction,
+                    // Harbour PROCEDURE: a function without an explicit
+                    // return value (it answers NIL in expression context;
+                    // a RETURN <expr> inside one is a registered
+                    // difference, not oracle-measured yet).
+                    "procedure" => Tok::KwFunction,
                     "local" => Tok::KwLocal,
                     "return" => Tok::KwReturn,
                     "nil" => Tok::KwNil,
@@ -164,7 +169,11 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                     "constructor" => Tok::KwConstructor,
                     "init" => Tok::KwInit,
                     "self" => Tok::KwSelfTok,
-                    _ => Tok::Ident(id),
+                    // Harbour identifiers are case-insensitive: MAIN/main,
+                    // QOut/qout and locals in any casing are the same name.
+                    // Normalize at the token level so every later pass
+                    // (defs, calls, locals) compares one canonical form.
+                    _ => Tok::Ident(id.to_ascii_lowercase()),
                 });
             }
             '=' => {
