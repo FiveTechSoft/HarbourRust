@@ -1188,5 +1188,17 @@ headless, no oracle) - as a posx case on both targets, completing
 execution coverage of the hbc_dynxeq_dd mixed-tag error branches
 (t504: hk142; t506: hk144; t507: hk139b).
 
-503/503 manifest cases + ABI harness green on Linux x86-64 and Wine
+t508/t509 (iteration 43): the hk132/hk133 answers reproduced on the
+expressible string-array surface. Harbour's probes build the cells
+with Array(2) and indexed assignment - syntax this PoC rejects by
+name (dynamic-array elements stay tagged int/NIL scalars) - while
+the dedicated DArrS surface ({} + AAdd, indexed overwrite freeing
+the old copy) answers the measured shapes exactly: hk132 as 1/0/0/1
+(t508: exact, symmetric, no prefix rule), hk133 as 1/0/1 (t509:
+content compare between cells, not identity). Mixed-type arrays
+stay a named rejection. No compiler change - the Str x Str path
+already shipped at iteration 37; these tests close the hk132/hk133
+story with execution on both targets.
+
+505/505 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
