@@ -181,3 +181,5 @@ Números sin fuente recuperable en el transcript: hk10, hk72, hk74, hk75 (planif
 | hk161 | verificado | \nKEY\nVAL\nDONE (hb_HSet evalúa CLAVE antes que valor - orden opuesto a h[k] := v, h4) |
 | hk162 | verificado | \n         1\n         2\n         3\n         0\n         0 (hb_HPos: posición 1-based; ausente y «» dan 0) |
 | hk163 | verificado | \n         1\n         2\n         3 (tras hb_HDel las posiciones se compactan; la realta va al final) |
+| hk164 | verificado | \n         3\n         1\n        22\n         3\n         2\n         3 (hb_HMerge: la fuente gana en solape manteniendo posición; nuevas al final) |
+| hk165 | verificado | \nH\n         1\n         1\n\n         1 (retorno ValType «H» = el destino, impreso rinde vacío; fuente intacta; fuente vacía = no-op) |
