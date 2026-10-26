@@ -1252,5 +1252,16 @@ existing hbc_dyncmp_*_error stubs, registered failure modes
 (t514-t517 posx). NIL in an ordering comparison keeps the registered
 type-error failure mode.
 
-Battery: 513/513 manifest cases on Linux x86-64 and Wine, plus
+Iteration 46 adds hb_HValues(h) (core hb_HValues; oracles hk153/hk154):
+a NEW array with the hash's value casillas in insertion order - tagged
+int/NIL scalars copied cell by cell, independent of the hash (hk153:
+writing the result does not touch the hash; hk154: an earlier snapshot
+does not see later growth; empty hash gives an empty array). New
+runtime helper hbc_hvalues (same overflow rule as hbc_hkeys), canaried
+in the ABI harness on both targets; the hash is borrowed. t518/t519
+reproduce the oracles on Linux and Wine; t520 checks the result is
+freed by the DArr epilogue (balance 0, own ownership check, same
+pattern as t298 - not a Harbour oracle).
+
+Battery: 516/516 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
