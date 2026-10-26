@@ -61,6 +61,7 @@ enum Tok {
     Colon,      // : (message send, o:name)
     ColonColon, // :: (self member, inside a method)
     KwCreate, KwClass, KwEndclass, KwMethod, KwData, KwInherit, KwConstructor, KwInit, KwSelfTok,
+    LogT, LogF, LogAnd, LogOr, LogNot, // dotted logical words (hk197-hk200)
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -201,6 +202,28 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             '[' => { toks.push(Tok::LBracket); it.next(); }
             '|' => { toks.push(Tok::Pipe); it.next(); }
             ']' => { toks.push(Tok::RBracket); it.next(); }
+            '.' => {
+                // Dotted logical words (hk197-hk200): .T. .F. .AND. .OR.
+                // .NOT. - case-insensitive, no inner spaces, closing dot
+                // required (hk199c: .NOT..F. is valid).
+                it.next();
+                let mut w = String::new();
+                while let Some(&(_, c2)) = it.peek() {
+                    if c2.is_ascii_alphabetic() { w.push(c2); it.next(); } else { break; }
+                }
+                match it.peek() {
+                    Some(&(_, '.')) => { it.next(); }
+                    _ => return Err(format!("line {}: unterminated dotted word `.{}` (Harbour logical tokens need a closing dot)", n, w)),
+                }
+                toks.push(match w.to_ascii_lowercase().as_str() {
+                    "t" => Tok::LogT,
+                    "f" => Tok::LogF,
+                    "and" => Tok::LogAnd,
+                    "or" => Tok::LogOr,
+                    "not" => Tok::LogNot,
+                    _ => return Err(format!("line {}: unknown dotted word `.{}.` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)", n, w)),
+                });
+            }
             o => return Err(format!("line {}: character not allowed `{}` (U+{:04X})", n, o, o as u32)),
         }
     }
@@ -229,6 +252,10 @@ enum Expr {
     // Hash literal: string keys, i64 values (v1). {=>} is the empty
     // hash; {} stays the empty dynamic array.
     HashLit(Vec<(Expr, Expr)>),
+    Log(bool),                   // .T./.F. (hk197)
+    LNot(Box<Expr>),             // .NOT. x (hk197)
+    LAnd(Box<Expr>, Box<Expr>),  // x .AND. y, short-circuit (hk203)
+    LOr(Box<Expr>, Box<Expr>),   // x .OR. y, short-circuit (hk203)
 }
 
 #[derive(Debug)]
@@ -454,7 +481,7 @@ impl P {
                 }
             }
             Some(Tok::LParen) => {
-                let e = self.expr()?;
+                let e = self.or_expr()?;
                 if self.bump() != Some(Tok::RParen) {
                     return Err(format!("line {}: missing )", self.n));
                 }
@@ -541,6 +568,13 @@ impl P {
                 }
                 Ok(Expr::ArrLit(items))
             }
+            Some(Tok::LogT) => Ok(Expr::Log(true)),
+            Some(Tok::LogF) => Ok(Expr::Log(false)),
+            Some(Tok::LogNot) => {
+                // .NOT. binds tighter than comparisons (xBase precedence).
+                let e = self.factor()?;
+                Ok(Expr::LNot(Box::new(e)))
+            }
             None => Err(format!("line {}: incomplete expression (operand or ) missing)", self.n)),
             Some(t) => Err(format!("line {}: unexpected token {:?} in expression", self.n, t)),
         }
@@ -565,6 +599,33 @@ impl P {
             self.pos += 1;
             let rhs = self.expr()?;
             return Ok(Expr::Cmp(op, Box::new(lhs), Box::new(rhs)));
+        }
+        Ok(lhs)
+    }
+    // Logical level (hk197-hk200): dotted .AND./.OR. (short-circuit in
+    // codegen). The bare words AND/OR/NOT are a Harbour syntax error too
+    // (E0030, probe hk199) and get a differentiated rejection.
+    fn and_expr(&mut self) -> Result<Expr, String> {
+        let mut lhs = self.cmp_expr()?;
+        while self.peek() == Some(&Tok::LogAnd) {
+            self.pos += 1;
+            let rhs = self.cmp_expr()?;
+            lhs = Expr::LAnd(Box::new(lhs), Box::new(rhs));
+        }
+        Ok(lhs)
+    }
+    fn or_expr(&mut self) -> Result<Expr, String> {
+        let mut lhs = self.and_expr()?;
+        while self.peek() == Some(&Tok::LogOr) {
+            self.pos += 1;
+            let rhs = self.and_expr()?;
+            lhs = Expr::LOr(Box::new(lhs), Box::new(rhs));
+        }
+        if let Some(Tok::Ident(id)) = self.peek() {
+            let l = id.to_ascii_lowercase();
+            if l == "and" || l == "or" || l == "not" {
+                return Err(format!("line {}: bare `{}` is not an operator in Harbour either (E0030, probe hk199); use the dotted form .AND./.OR./.NOT.", self.n, id));
+            }
         }
         Ok(lhs)
     }
@@ -601,7 +662,7 @@ fn parse_expr_tokens(toks: Vec<Tok>, n: usize) -> Result<Expr, String> {
         return Err(format!("line {}: missing expression", n));
     }
     let mut p = P { toks, pos: 0, n };
-    let e = p.cmp_expr()?;
+    let e = p.or_expr()?;
     p.done()?;
     Ok(e)
 }
@@ -1599,6 +1660,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
             Expr::Var(id) => { if let Some(i) = is_param(f, id) { setpin(pin, i, ty, n)?; } Ok(()) }
             Expr::Bin(_, a, b) => { pin_vars(f, a, Ty::I64, pin, n)?; pin_vars(f, b, Ty::I64, pin, n) }
             Expr::Cmp(_, a, b) => { pin_vars(f, a, ty, pin, n)?; pin_vars(f, b, ty, pin, n) }
+            Expr::Log(_) => Ok(()),
+            Expr::LNot(a) => pin_vars(f, a, Ty::Bool, pin, n),
+            Expr::LAnd(a, b) | Expr::LOr(a, b) => { pin_vars(f, a, Ty::Bool, pin, n)?; pin_vars(f, b, Ty::Bool, pin, n) }
             Expr::Call(_, _) => Ok(()), // call arguments pin via the callee's signature, not the outer context
             Expr::SelfObj | Expr::SelfGet(_) => Ok(()),
             Expr::Send(_, _, _) => Ok(()), // like a call: nothing pins through the message syntax
@@ -1679,6 +1743,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                 if let Some(t) = ta { pin_vars(f, b, t, pin, n)?; }
                 if let Some(t) = tb { pin_vars(f, a, t, pin, n)?; }
                 walk(f, a, sigs, lit, pin, n)?; walk(f, b, sigs, lit, pin, n)
+            }
+            Expr::Log(_) => Ok(()),
+            Expr::LNot(a) => { pin_vars(f, a, Ty::Bool, pin, n)?; walk(f, a, sigs, lit, pin, n) }
+            Expr::LAnd(a, b) | Expr::LOr(a, b) => {
+                pin_vars(f, a, Ty::Bool, pin, n)?;
+                pin_vars(f, b, Ty::Bool, pin, n)?;
+                walk(f, a, sigs, lit, pin, n)?;
+                walk(f, b, sigs, lit, pin, n)
             }
             Expr::Call(id, args) => {
                 if is_builtin(id, "hb_memcheck") {
@@ -2312,7 +2384,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         }
                     }
                     e => match type_expr(e, env, sigs, n)? {
-                        Ty::I64 | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::Arr(_) | Ty::Dyn => {}
+                        Ty::I64 | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::Arr(_) | Ty::Dyn | Ty::Bool => {}
                         _ => return Err(format!("line {}: `ValType` is not measured for this type in this PoC", n)),
                     },
                 }
@@ -2769,6 +2841,19 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             Ok(Ty::I64)
         }
         Expr::Nil => Ok(Ty::Dyn),
+        Expr::Log(_) => Ok(Ty::Bool),
+        Expr::LNot(a) => {
+            if type_expr(a, env, sigs, n)? != Ty::Bool {
+                return Err(format!("line {}: `.NOT.` needs a logical operand (hk197)", n));
+            }
+            Ok(Ty::Bool)
+        }
+        Expr::LAnd(a, b) | Expr::LOr(a, b) => {
+            if type_expr(a, env, sigs, n)? != Ty::Bool || type_expr(b, env, sigs, n)? != Ty::Bool {
+                return Err(format!("line {}: `.AND.`/`.OR.` need logical operands (hk197/hk198)", n));
+            }
+            Ok(Ty::Bool)
+        }
         Expr::Cmp(op, a, b) => {
             // A grown casilla of an array of arrays compares against NIL
             // with `=` / `#` (oracle n4): the borrow reads the child
@@ -2804,6 +2889,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // copied into the frame (D5/D7 family), so an element
                 // compare would answer .T. where Harbour answers .F.
                 if ta == Ty::I64 && tb == Ty::I64 { return Ok(Ty::Bool); }
+                if ta == Ty::Bool && tb == Ty::Bool { return Ok(Ty::Bool); } // hk202: t == t is .T.
                 // NIL handled above (hk128/hk129): identity and equality
                 // coincide where NIL is one side; same codegen as `=`.
                 // Strings: `==` is the EXACT comparison (hk124: "a"=="a"
@@ -2890,6 +2976,16 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             if ta == Ty::I64 && tb == Ty::I64 {
                 return Ok(Ty::Bool);
+            }
+            if ta == Ty::Bool && tb == Ty::Bool && matches!(op, CmpOp::Eq | CmpOp::Ne) {
+                // hk202: .T. = .T. is .T., .T. <> .F. is .T.
+                return Ok(Ty::Bool);
+            }
+            if ta == Ty::Bool || tb == Ty::Bool {
+                // hk202: `.T. = 1` raises Harbour's BASE/1071 argument
+                // error at runtime; ordering logicals is unmeasured. A
+                // compile-time rejection in both cases.
+                return Err(format!("line {}: logicals compare only with another logical under `=`/`#`/`==` (hk202); mixed logical/number raises Harbour's BASE/1071 and stays a compile-time rejection here", n));
             }
             if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) {
                 // Comparison BORROWS both operands (nothing is moved).
@@ -3440,8 +3536,8 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     return Err(format!("line {}: duplicate local `{}`", n, id));
                 }
                 let t = type_expr(e, env, sigs, *n)?;
-                if t == Ty::Bool {
-                    return Err(format!("line {}: booleans only exist in `if` conditions in this PoC", n));
+                if t == Ty::Bool && dyn_names.contains(id) {
+                    return Err(format!("line {}: dynamic logical cells are not in this increment (tag-L Dyn cells land separately)", n));
                 }
                 apply_moves(e, env, sigs, true);
                 let t = if t == Ty::I64 && dyn_names.contains(id) { Ty::Dyn } else { t };
@@ -3464,9 +3560,6 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         }
                     }
                     let t = type_expr(e, env, sigs, *n)?;
-                    if t == Ty::Bool {
-                        return Err(format!("line {}: cannot print a boolean in this PoC", n));
-                    }
                     if let Ty::Block(_) = t {
                         return Err(format!("line {}: cannot print a codeblock in this increment", n));
                     }
@@ -3494,9 +3587,6 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
             }
             Stmt::Ret(n, Some(e)) => {
                 let t = type_expr(e, env, sigs, *n)?;
-                if t == Ty::Bool {
-                    return Err(format!("line {}: cannot return a boolean in this PoC", n));
-                }
                 if let Ty::Arr(_) = t {
                     // Returning a static array materializes a dynamic
                     // COPY the caller owns (33m). Oracle hk99: Harbour's
@@ -4476,9 +4566,6 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
             Stmt::Assign(n, id, e) => {
                 // RHS is evaluated first; a Str source variable moves.
                 let t = type_expr(e, env, sigs, *n)?;
-                if t == Ty::Bool {
-                    return Err(format!("line {}: booleans only exist in conditions in this PoC", n));
-                }
                 apply_moves(e, env, sigs, true);
                 let idx = match env.iter().position(|v| v.name == *id) {
                     Some(k) => k,
@@ -4647,7 +4734,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 // ---------------------------------------------------------------------------
 
 fn size_of(t: Ty) -> usize {
-    match t { Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 => 16, Ty::Bool => unreachable!("booleans rejected in analysis") }
+    match t { Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 => 16, Ty::Bool => 8 }
 }
 
 #[derive(Clone)]
@@ -4668,17 +4755,30 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");
         }
         Expr::Str(_) => unreachable!("string literals are emitted via cg_str_ref"),
-        Expr::Cmp(..) => unreachable!("comparisons are emitted via cg_cond_jump"),
+        Expr::Log(b) => {
+            out.push_str(&format!("    mov ${}, %rax\n", if *b { 1 } else { 0 }));
+        }
+        Expr::LNot(a) => {
+            cg_expr(a, env, sigs, strs, out, target);
+            out.push_str("    xor $1, %rax\n");
+        }
+        Expr::LAnd(_, _) | Expr::LOr(_, _) | Expr::Cmp(..) => {
+            // A logical VALUE (hk198: comparisons produce logicals):
+            // the same conditional-jump machinery as conditions,
+            // materialized to 0/1. Short-circuit preserved (hk203).
+            let k = fresh_lbl();
+            cg_cond_jump(e, env, sigs, strs, out, target, &format!(".Lbt{}", k));
+            out.push_str(&format!("    xor %eax, %eax\n    jmp .Lbe{}\n.Lbt{}:\n    mov $1, %rax\n.Lbe{}:\n", k, k, k));
+        }
         Expr::Var(id) => {
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
             match v.ty {
-                Ty::I64 | Ty::Block(_) => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
+                Ty::I64 | Ty::Block(_) | Ty::Bool => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
                 Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash => {
                     // ptr at -(off), len at -(off-8) — same layout as the store
                     out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
                     out.push_str(&format!("    mov -{}(%rbp), %rdx\n", v.off - 8));
                 }
-                Ty::Bool => unreachable!("booleans rejected in analysis"),
                 // Only the address word is meaningful; value-position use
                 // of a borrowed parameter is rejected by the escape
                 // post-pass, so the second word never matters.
@@ -4717,6 +4817,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                     match var.ty {
                         Ty::I64 => vt_letter(strs, out, "N"),
+                        Ty::Bool => vt_letter(strs, out, "L"), // hk197
                         Ty::Str | Ty::StrOwn => vt_letter(strs, out, "C"),
                         Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::Arr(_) => vt_letter(strs, out, "A"),
                         Ty::Dyn => {
@@ -5814,7 +5915,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "valtype") { return Ty::Str; } // hk88-hk92
             sigs.iter().find(|v| v.name == *id).expect("checked").ret.expect("checked")
         }
-        Expr::Cmp(..) => Ty::Bool,
+        Expr::Log(_) | Expr::LNot(_) | Expr::LAnd(_, _) | Expr::LOr(_, _) | Expr::Cmp(..) => Ty::Bool,
         Expr::ArrLit(es) => {
             if es.iter().any(|e| matches!(e, Expr::ArrLit(inner) if inner.iter().any(|x| matches!(x, Expr::ArrLit(_) | Expr::DArrNew)))) { Ty::DArr3 }
             else if es.iter().any(|e| matches!(e, Expr::ArrLit(_) | Expr::DArrNew)) { Ty::DArr2 } else { Ty::Arr(es.len()) }
@@ -5938,6 +6039,26 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
 // in a 16-byte slot so a call inside either operand keeps ABI alignment.
 fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, true_label: &str) {
     match cond {
+        Expr::Log(b) => {
+            out.push_str(&format!("    mov ${}, %eax\n    test %rax, %rax\n    jnz {}\n", if *b { 1 } else { 0 }, true_label));
+        }
+        Expr::LNot(a) => {
+            // True when the operand is FALSE.
+            let k = fresh_lbl();
+            cg_cond_jump(a, env, sigs, strs, out, target, &format!(".Lnot{}", k));
+            out.push_str(&format!("    jmp {}\n.Lnot{}:\n", true_label, k));
+        }
+        Expr::LAnd(a, b) => {
+            let k = fresh_lbl();
+            cg_cond_jump(a, env, sigs, strs, out, target, &format!(".Land{}", k));
+            out.push_str(&format!("    jmp .Lande{}\n.Land{}:\n", k, k));
+            cg_cond_jump(b, env, sigs, strs, out, target, true_label);
+            out.push_str(&format!(".Lande{}:\n", k));
+        }
+        Expr::LOr(a, b) => {
+            cg_cond_jump(a, env, sigs, strs, out, target, true_label);
+            cg_cond_jump(b, env, sigs, strs, out, target, true_label);
+        }
         // NIL against a string is always .F. under `=` (probe n1); only
         // `=` / `#` reach codegen (analysis rejects ordering NIL).
         Expr::Cmp(op, a, b) if (matches!(**a, Expr::Nil) && matches!(expr_ty(b, env, sigs), Ty::Str | Ty::StrOwn))
@@ -6281,7 +6402,14 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             };
             out.push_str(&format!("    {} {}\n", j, true_label));
         }
-        _ => unreachable!("analysis requires a comparison as the `if` condition"),
+        _ => {
+            // A logical VALUE as the condition (literal, variable or call
+            // returning one - hk197/hk204): 0/1 in %rax. Comparisons
+            // never reach here (the arms above cover every shape the
+            // checker accepts).
+            cg_expr(cond, env, sigs, strs, out, target);
+            out.push_str(&format!("    test %rax, %rax\n    jnz {}\n", true_label));
+        }
     }
 }
 
@@ -6333,7 +6461,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             }
                         }
                         match t {
-                            Ty::I64 | Ty::Block(_) => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
+                            Ty::I64 | Ty::Block(_) | Ty::Bool => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
                             Ty::Str | Ty::Dyn => {
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
@@ -6484,7 +6612,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             }
                         }
                         Ty::Dyn => out.push_str("    call hbc_print_dyn\n"),
-                        Ty::Bool => unreachable!("booleans rejected in analysis"),
+                        Ty::Bool => {
+                            // .T./.F. (hk197/hk198): the 0/1 payload picks
+                            // the literal; plain 3-byte print, no trim.
+                            let ti = { strs.push(".T.".to_string()); strs.len() - 1 };
+                            let fi = { strs.push(".F.".to_string()); strs.len() - 1 };
+                            out.push_str(&format!("    test %rax, %rax\n    jz 95f\n    lea .Lstr{}(%rip), %rax\n    jmp 96f\n95:\n    lea .Lstr{}(%rip), %rax\n96:\n    mov $3, %edx\n    call hbc_print_str\n", ti, fi));
+                        }
                         Ty::Arr(_) => unreachable!("whole-array printing rejected in analysis"),
                         Ty::Block(_) => unreachable!("codeblock printing rejected in analysis"),
                         Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 => unreachable!("whole-array printing rejected in analysis"),
@@ -6962,7 +7096,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
                             }
-                            Ty::I64 | Ty::Block(_) => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
+                            Ty::I64 | Ty::Block(_) | Ty::Bool => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
                             Ty::Dyn if lty == Ty::I64 => {
                                 // i64 slot receiving a Dyn: the tag is
                                 // checked at runtime (NIL -> clean error).
