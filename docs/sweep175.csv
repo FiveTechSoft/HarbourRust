@@ -1,9 +1,3 @@
-# HarbourRust frozen-175 upstream sweep baseline
-# upstream: FiveTechSoft/harbour-core commit 694428e1c12f726675b19324d62167fa77d68185 (tests/*.prg, 237 files)
-# frozen set: 175 files = 237 minus 62 interactive (grep -iE 'achoice|memoedit|tbrowse|@.*say.*get|inkey\(|dbedit|setcolor|scroll\(')
-# compiler: HarbourRust iteration 63f (63e surface + call statements + len() on strings)
-# sweep date: 2026-10-26; column 2 = COMPILES or the exact first error (line + message)
-# rows-sha256: e488bb0c4206247bc1300f1916f31ffb84649d9628df139658bcf93bdf4e98a5
 adir.prg|error: line 22: unterminated string
 ains.prg|error: line 25: expected `local name := expr`
 alias.prg|error: line 6: code outside a function
@@ -20,29 +14,29 @@ asort.prg|error: line 12: unexpected token Comma in expression
 base2.prg|error: line 9: character not allowed `&` (U+0026)
 base64.prg|error: line 55: expected :=
 begin.prg|error: line 4: code outside a function
-big5_gen.prg|error: line 97: character not allowed `@` (U+0040)
+big5_gen.prg|error: line 197: character not allowed `^` (U+005E)
 box.prg|error: line 53: code outside a function
-byref.prg|error: line 11: character not allowed `@` (U+0040)
+byref.prg|error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 calling.prg|error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 cdow.prg|error: line 3: unknown function `cmonth` (must be defined before use)
 cgi.prg|error: line 118: error in #if expression
 clasinh.prg|error: line 118: error in #if expression
-clasinit.prg|error: line 36: character not allowed `@` (U+0040)
+clasinit.prg|error: line 6: expected `local name := expr`
 clasname.prg|error: line 13: unknown function `aeval` (must be defined before use)
 classch.prg|error: line 118: error in #if expression
-classes.prg|error: line 26: character not allowed `@` (U+0040)
+classes.prg|error: line 15: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 cls.prg|error: line 118: error in #if expression
 clsccast.prg|error: line 118: error in #if expression
-clsdata.prg|error: line 21: character not allowed `@` (U+0040)
+clsdata.prg|error: line 15: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 clsicast.prg|error: line 118: error in #if expression
 clsnv.prg|error: line 118: error in #if expression
 clsscast.prg|error: line 118: error in #if expression
 clsscope.prg|error: line 118: error in #if expression
 cmphello.prg|error: line 15: unknown function `hb_run` (must be defined before use)
-codebl.prg|error: line 20: character not allowed `@` (U+0040)
+codebl.prg|error: line 60: character not allowed `%` (U+0025)
 codebl2.prg|error: line 14: character not allowed `&` (U+0026)
 codebloc.prg|error: line 25: expected `local name := expr`
-com.prg|error: line 97: character not allowed `@` (U+0040)
+com.prg|error: line 73: expected `local name := expr`
 comments.prg|error: line 8: code outside a function
 cpinfo.prg|error: line 96: unterminated dotted word `.txt` (Harbour logical tokens need a closing dot)
 curdirt.prg|error: line 3: unknown function `curdir` (must be defined before use)
@@ -64,15 +58,15 @@ diskspac.prg|error: line 100: unknown function `empty` (must be defined before u
 docase.prg|error: line 9: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 dupvars.prg|error: line 7: expected :=
 dyn.prg|error: line 124: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
-dynobj.prg|error: line 32: character not allowed `@` (U+0040)
+dynobj.prg|error: line 65: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 dynsym.prg|error: line 4: expected `local name := expr`
 errsys.prg|error: line 23: expected `local name := expr`
 exit.prg|error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
-extend1.prg|error: line 50: character not allowed `@` (U+0040)
+extend1.prg|error: line 143: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 fib.prg|error: line 3: expected `local name := expr`
-fileio.prg|error: line 21: character not allowed `@` (U+0040)
+fileio.prg|error: line 5: expected `local name := expr`
 fileio2.prg|error: line 6: expected `local name := expr`
-files.prg|error: line 23: character not allowed `@` (U+0040)
+files.prg|error: line 16: trailing tokens after expression
 flink.prg|error: line 61: statement not in the subset (LParen)
 for.prg|error: line 8: code outside a function
 foreach2.prg|error: line 118: error in #if expression
@@ -80,7 +74,7 @@ fornext.prg|error: line 10: expected `local name := expr`
 funcarr.prg|error: line 38: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 fwdref.prg|error: line 5: codeblock captures are not in this increment (`nspan` is not a codeblock parameter)
 gfx2.prg|error: line 37: macro hb_gfxMakeColor takes 4 argument(s), got 3
-gtxfnt.prg|error: line 126: character not allowed `@` (U+0040)
+gtxfnt.prg|error: line 97: code outside a function
 guestbk.prg|error: line 68: expected :=
 hbdoc.prg|error: line 142: character not allowed `$` (U+0024)
 hbinline.prg|error: line 11: character not allowed `;` (U+003B)
@@ -91,15 +85,15 @@ hsx.prg|error: line 140: statement not in the subset (identifier-led line is not
 html.prg|error: line 118: error in #if expression
 ifelse.prg|error: line 5: expected `local name := expr`
 ifinline.prg|error: line 8: missing )
-inherit.prg|error: line 192: character not allowed `@` (U+0040)
+inherit.prg|error: line 93: expected `local name := expr`
 inhprob.prg|error: line 118: error in #if expression
 inifile.prg|error: line 118: error in #if expression
 inifiles.prg|error: line 118: error in #if expression
 initexit.prg|error: line 4: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 initproc.prg|error: line 1: code outside a function
-inline.prg|error: line 29: character not allowed `@` (U+0040)
+inline.prg|error: line 18: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 inline_c.prg|error: line 9: unknown directive #pragma in this PoC
-iotcp.prg|error: line 410: character not allowed `@` (U+0040)
+iotcp.prg|error: line 486: unsupported escape \r
 ipclnt.prg|error: line 74: expected `local name := expr`
 keywords.prg|error: line 45: character not allowed `%` (U+0025)
 langapi.prg|error: line 4: code outside a function
@@ -117,21 +111,21 @@ mem.prg|error: line 5: expected :=
 memfile.prg|error: line 19: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 memmgr.prg|error: line 100: error in #if expression
 memory.prg|error: line 63: unknown function `memory` (must be defined before use)
-memvar.prg|error: line 235: character not allowed `@` (U+0040)
+memvar.prg|error: line 21: code outside a function
 money.prg|error: line 118: error in #if expression
 multiarg.prg|error: line 10: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 nums.prg|error: line 8: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 objarr.prg|error: line 40: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 objasign.prg|error: line 35: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
-objects.prg|error: line 103: character not allowed `@` (U+0040)
+objects.prg|error: line 97: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 omacro.prg|error: line 17: character not allowed `&` (U+0026)
 op.prg|error: line 118: error in #if expression
 os.prg|error: line 5: unknown function `os` (must be defined before use)
 osshell.prg|error: line 13: expected `local name := expr`
-output.prg|error: line 31: character not allowed `@` (U+0040)
+output.prg|error: line 26: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 overload.prg|error: line 118: error in #if expression
 parexpr.prg|error: line 9: unknown directive #pragma in this PoC
-passref.prg|error: line 11: character not allowed `@` (U+0040)
+passref.prg|error: line 12: expected `,` or `)` in call arguments, got Some(EqEq)
 persist.prg|error: line 118: error in #if expression
 pipes.prg|error: line 40: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 pp.prg|error: line 10: unknown result marker <"z"> (Harbour: E0008)
@@ -141,14 +135,14 @@ procline.prg|error: line 3: unknown function `procline` (must be defined before 
 procname.prg|error: line 32: unexpected token Question in expression
 rdd.prg|error: line 43: macro hb_dbDrop takes 1 argument(s), got 3
 rdd2.prg|error: line 222: incomplete statement for the command used here (Harbour: E0020)
-readhrb.prg|error: line 111: character not allowed `@` (U+0040)
+readhrb.prg|error: line 150: character not allowed `$` (U+0024)
 recursiv.prg|error: line 16: expected `,` or `)` in call arguments, got Some(Lt)
 returns.prg|error: line 19: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 round.prg|error: line 11: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 rpt.prg|error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
-say.prg|error: line 9: character not allowed `@` (U+0040)
+say.prg|error: line 13: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 sdf.prg|error: line 46: unterminated dotted word `.txt` (Harbour logical tokens need a closing dot)
-set.prg|error: line 8: character not allowed `@` (U+0040)
+set.prg|error: line 3: code outside a function
 set_num.prg|error: line 5: expected `local name := expr`
 sha1.prg|error: line 8: unknown function `hb_sha1` (must be defined before use)
 sha2.prg|error: line 23: character not allowed `;` (U+003B)
@@ -173,7 +167,7 @@ ticktime.prg|error: line 3: expected :=
 uc16_gen.prg|error: line 48: character not allowed `$` (U+0024)
 use.prg|error: line 71: statement not in the subset (LParen)
 utf8at.prg|error: line 54: code outside a function
-vars.prg|error: line 28: character not allowed `@` (U+0040)
+vars.prg|error: line 19: code outside a function
 vec1.prg|error: line 6: unterminated string
 version.prg|error: line 25: unknown function `version` (must be defined before use)
 vmasort.prg|error: line 38: character not allowed `%` (U+0025)
