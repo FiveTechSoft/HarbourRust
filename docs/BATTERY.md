@@ -1410,7 +1410,7 @@ dialog hangs headless) and takes the registered clean bound-error
 exit - not a silent "U" read. Registered limit: a mixed literal must be all
 literal elements.
 
-620/620 manifest cases + ABI harness green on Linux x86-64 and Wine
+621/621 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
 
 t619 (iteration 63a): PROCEDURE keyword + case-insensitive
@@ -1441,3 +1441,7 @@ character, so '...' is stricter-Harbour than our registered "..."
 escape deviation). String `+` concatenation is NOT yet supported
 anywhere (no runtime helper); it is the next registered gap and the
 reason several quote-form files still stop later.
+
+t625 (iteration 63d): a single `=` in statement position assigns
+(oracle hk214: `x = 41 + 1`, `c = 'eq'`, `x = x + 1`); inside
+expressions `=` remains the comparison. Parser-only change.
