@@ -2499,8 +2499,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 let _ = op;
                 return Ok(Ty::Bool);
             }
-            // Dyn against a number: tag dispatch at runtime (nil = nil is
-            // .T., nil against a payload is .F. under `=`, payloads compare).
+            // Dyn against a Dyn: tag dispatch at runtime (nil = nil is
+            // .T.; nil against a payload is .F. under `=` - n1-n3, both
+            // directions against string casillas too - hk147; two string
+            // casillas compare by content with the prefix rule - hk145;
+            // string against integer is a clean named exit 1 mirroring
+            // Harbour's BASE/1071 - hk146, registered failure mode).
             if matches!(ta, Ty::Dyn | Ty::I64) && matches!(tb, Ty::Dyn | Ty::I64) {
                 return Ok(Ty::Bool);
             }
@@ -5196,7 +5200,10 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                     CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq => {
                         // Tag-dispatch equality: NIL = NIL is .T., NIL
                         // against a payload is .F., payloads compare
-                        // numerically (hbc_dyn_eq). For `==` against NIL
+                        // by hbc_dyn_eq: strings by content with the
+                        // prefix rule (hk145), string x integer a clean
+                        // named exit 1 (hk146), NIL x any payload .F.
+                        // (n1-n3/hk147). For `==` against NIL
                         // the answers coincide with `=` (hk128/hk129);
                         // between two non-NIL casillas `==` dispatches
                         // deeper (hbc_dynxeq_dd: strings by exact
@@ -7748,10 +7755,19 @@ hbc_dyn_to_i64:
     ret
 
 # hbc_dyn_eq: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload ->
-# %rax = 1/0. NIL = NIL is .T.; NIL against a payload is .F. (probes n1-n3).
+# %rax = 1/0. NIL = NIL is .T.; NIL against a payload is .F. (probes n1-n3;
+# string casilla x NIL casilla .F. in both directions - hk147). Two string
+# casillas compare by CONTENT with Harbour's prefix rule over the right
+# operand's length (hbc_str_eq tail call - hk145; before this fix they
+# answered .T. by tag alone, a divergence). A string casilla against an
+# integer casilla is Harbour's BASE/1071 "Argument error: =" (hk146,
+# dialog hangs headless) - clean named exit 1 via hbc_dyncmp_eq_error,
+# registered failure mode, not exact equivalence. Leaf routine.
 hbc_dyn_eq:
     cmp %rcx, %rax
-    jne 8f
+    jne 7f
+    cmp $2, %rax
+    je 6f
     test %rax, %rax
     jnz 9f
     cmp %r8, %rdx
@@ -7760,6 +7776,24 @@ hbc_dyn_eq:
     ret
 8:  xor %eax, %eax
     ret
+6:  mov -8(%rdx), %r10
+    mov -8(%r8), %r9
+    mov %rdx, %rax
+    mov %r8, %rcx
+    mov %r9, %r8
+    mov %r10, %rdx
+    jmp hbc_str_eq
+7:  test %rax, %rax
+    je 71f
+    cmp $2, %rax
+    je 72f
+    jmp 8b
+71: cmp $2, %rcx
+    je hbc_dyncmp_eq_error
+    jmp 8b
+72: cmp $1, %rcx
+    je 8b
+    jmp hbc_dyncmp_eq_error
 
 # hbc_dynxeq_dd: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload ->
 # %rax = 1/0. Harbour's `==` between casillas (hk132/hk133/hk138/hk140):
@@ -8643,10 +8677,19 @@ hbc_dyn_to_i64:
     ret
 
 # hbc_dyn_eq: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload ->
-# %rax = 1/0. NIL = NIL is .T.; NIL against a payload is .F. (probes n1-n3).
+# %rax = 1/0. NIL = NIL is .T.; NIL against a payload is .F. (probes n1-n3;
+# string casilla x NIL casilla .F. in both directions - hk147). Two string
+# casillas compare by CONTENT with Harbour's prefix rule over the right
+# operand's length (hbc_str_eq tail call - hk145; before this fix they
+# answered .T. by tag alone, a divergence). A string casilla against an
+# integer casilla is Harbour's BASE/1071 "Argument error: =" (hk146,
+# dialog hangs headless) - clean named exit 1 via hbc_dyncmp_eq_error,
+# registered failure mode, not exact equivalence. Leaf routine.
 hbc_dyn_eq:
     cmp %rcx, %rax
-    jne 8f
+    jne 7f
+    cmp $2, %rax
+    je 6f
     test %rax, %rax
     jnz 9f
     cmp %r8, %rdx
@@ -8655,6 +8698,24 @@ hbc_dyn_eq:
     ret
 8:  xor %eax, %eax
     ret
+6:  mov -8(%rdx), %r10
+    mov -8(%r8), %r9
+    mov %rdx, %rax
+    mov %r8, %rcx
+    mov %r9, %r8
+    mov %r10, %rdx
+    jmp hbc_str_eq
+7:  test %rax, %rax
+    je 71f
+    cmp $2, %rax
+    je 72f
+    jmp 8b
+71: cmp $2, %rcx
+    je hbc_dyncmp_eq_error
+    jmp 8b
+72: cmp $1, %rcx
+    je 8b
+    jmp hbc_dyncmp_eq_error
 
 # hbc_dynxeq_dd: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload ->
 # %rax = 1/0. Harbour's `==` between casillas (hk132/hk133/hk138/hk140):
