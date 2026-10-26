@@ -1369,6 +1369,31 @@ helper upserts through hbc_hput, copying every key and value
 on Linux and Wine, t547 the hk165 edges, t548/t549 reject non-hash
 arguments at compile time.
 
+Iteration 59 adds hb_HDelAt(h, n) (core hb_HDelAt; oracles
+hk187-hk190): removes the entry AT the 1-based insertion-order
+position n - positions compact and insertion order is preserved
+(hk187), deleting the only entry empties the hash (hk190). The
+statement is the PoC surface (the returned hash is out of it, like
+hb_HDel's). EVERY out-of-range position (0, past the end, negative)
+is Harbour's BASE/1187 dialog, which hangs headless (hk189, separate
+binaries): the registered dialogo-sin-oraculo family - the PoC takes
+the same clean bound-error exit, never a compat success. A float
+position truncates in the oracle (hk190) and stays outside this
+dialect's numeric syntax. The CaseMatch flag is irrelevant:
+matching is positional. New frame-based helper hbc_hdelat (shared
+blob, both targets) frees the deleted entry's key copy, shifts the
+entries above down and drops the live count; canaried in the ABI
+harness on both targets. t580 reproduces hk187/hk190 on Linux and
+Wine; t581 is the ownership check (deleted key copy freed, wrap +
+memcheck = 0); t582/t583 are the named rejections (non-hash target,
+non-integer position). Measured note: hb_HPairAt returns a MIXED
+{key, value} array (hk188: ValType "A", {"ab", 42}), outside this
+increment's array support, so it stays out of the surface -
+verified, not assumed.
+
+Battery: 579/579 manifest cases on Linux x86-64 and Wine, plus
+the ABI harness.
+
 Iteration 58 adds hb_HKeyAt(h, n) and hb_HValueAt(h, n) (core
 hb_HKeyAt/hb_HValueAt; oracles hk184-hk186): the key / value
 casilla at the 1-based insertion-order position n (positions COMPACT
