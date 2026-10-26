@@ -164,11 +164,13 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                 }
                 toks.push(match id.to_ascii_lowercase().as_str() {
                     "function" => Tok::KwFunction,
+                    "func" => Tok::KwFunction, // 4-letter abbreviation (hk249)
                     // Harbour PROCEDURE: a function without an explicit
                     // return value (it answers NIL in expression context;
                     // a RETURN <expr> inside one is a registered
                     // difference, not oracle-measured yet).
                     "procedure" => Tok::KwFunction,
+                    "proc" => Tok::KwFunction, // 4-letter abbreviation (hk249)
                     "local" => Tok::KwLocal,
                     "return" => Tok::KwReturn,
                     "nil" => Tok::KwNil,
@@ -1590,19 +1592,71 @@ fn parse(src: &str) -> Result<Prog, String> {
     for (idx, raw) in src.lines().enumerate() {
         let n = idx + 1;
         let toks = tokenize(raw, n)?;
+        // NOTE starts an old-style comment to end of line (oracle hk249),
+        // at file scope or inside a body; a `note` variable being
+        // assigned stays a statement.
+        if matches!(toks.first(), Some(Tok::Ident(id)) if id.eq_ignore_ascii_case("note"))
+            && !matches!(toks.get(1), Some(Tok::Assign) | Some(Tok::Eq)) {
+            continue;
+        }
         if !toks.is_empty() { lines.push((n, toks)); }
     }
 
     let mut funcs: Vec<Func> = Vec::new();
     let mut classes: Vec<ClassDecl> = Vec::new();
     let mut methods: Vec<MethodDef> = Vec::new();
+    let mut requests: Vec<(usize, String)> = Vec::new();
     let mut i = 0usize;
     while i < lines.len() {
         let (n, toks) = &lines[i];
         let n = *n;
+        // File-scope declaration lines, measured on the pinned Harbour:
+        // MEMVAR (hk247b) only relaxes Harbour's compile-time memvar name
+        // resolution - memvars are not in this subset, the declaration
+        // alone has no runtime effect, so it is accepted and ignored.
+        // REQUEST (hk250a) is a link-time module request with no meaning
+        // for this compiler. INIT/EXIT PROCEDURE (startup/teardown
+        // semantics) and file-scope STATIC variables (global storage, not
+        // in the subset) keep named rejections.
+        if matches!(&toks[0], Tok::Ident(id) if id.eq_ignore_ascii_case("memvar")) {
+            // Declaration only: it creates NO storage. Any later memvar
+            // reference still fails with the usual unknown-variable error,
+            // so accepting the line can never fabricate a working memvar.
+            i += 1;
+            continue;
+        }
+        if matches!(&toks[0], Tok::Ident(id) if id.eq_ignore_ascii_case("request")) {
+            // REQUEST pulls a module (and its init code) into the link.
+            // This subset has no module linking, so the only REQUEST that
+            // is genuinely inert names a function defined in this same
+            // file; anything else would silently skip a required effect.
+            // Validated after the whole file is parsed.
+            match toks.get(1) {
+                Some(Tok::Ident(sym)) if toks.len() == 2 => requests.push((n, sym.to_lowercase())),
+                _ => return Err(format!("line {}: REQUEST with a symbol list is not in this increment (the subset has no module linking)", n)),
+            }
+            i += 1;
+            continue;
+        }
+        if (toks[0] == Tok::KwInit || toks[0] == Tok::KwExit)
+            && toks.len() >= 2 && toks[1] == Tok::KwFunction {
+            return Err(format!("line {}: INIT/EXIT PROCEDURE is not in this increment (startup/teardown ordering needs its own design)", n));
+        }
+        // STATIC FUNCTION/PROCEDURE is plain visibility: a single-module
+        // compiler has one visibility domain (oracle hk249). File-scope
+        // STATIC variables are global storage, not in this subset.
+        let toks: &[Tok] = if matches!(&toks[0], Tok::Ident(id) if id.eq_ignore_ascii_case("static")) {
+            if toks.len() >= 2 && toks[1] == Tok::KwFunction {
+                &toks[1..]
+            } else {
+                return Err(format!("line {}: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works", n));
+            }
+        } else {
+            &toks[..]
+        };
         // CREATE CLASS Name [INHERIT Base] ... ENDCLASS
         if toks[0] == Tok::KwCreate {
-            let (cname, parent) = match toks.as_slice() {
+            let (cname, parent) = match toks {
                 [Tok::KwCreate, Tok::KwClass, Tok::Ident(c)] => { check_ident(c, n)?; (c.clone(), None) }
                 [Tok::KwCreate, Tok::KwClass, Tok::Ident(c), Tok::KwInherit, Tok::Ident(b)] => {
                     check_ident(c, n)?; check_ident(b, n)?; (c.clone(), Some(b.clone()))
@@ -1652,7 +1706,7 @@ fn parse(src: &str) -> Result<Prog, String> {
         }
         // METHOD Name(params) CLASS CName ... return ...
         if toks[0] == Tok::KwMethod {
-            let (mname, params, cname) = match toks.as_slice() {
+            let (mname, params, cname) = match toks {
                 [Tok::KwMethod, Tok::Ident(m), Tok::LParen, rest @ .., Tok::RParen, Tok::KwClass, Tok::Ident(c)] => {
                     check_ident(m, n)?; check_ident(c, n)?;
                     (m.clone(), parse_param_names(rest, n)?, c.clone())
@@ -1684,9 +1738,35 @@ fn parse(src: &str) -> Result<Prog, String> {
             continue;
         }
         if toks[0] != Tok::KwFunction {
-            return Err(format!("line {}: code outside a function", n));
+            if funcs.is_empty() && classes.is_empty() && methods.is_empty() {
+                // Implicit main (oracle hk247a): the FIRST group of
+                // top-level statements is the module entry when the file
+                // declares no explicit `main`. Later groups are silently
+                // dropped by Harbour (hk247c/hk247f) - this increment
+                // rejects them by name below instead, and an explicit
+                // `function main()` after an implicit group trips the
+                // duplicate-function check (Harbour silently prefers the
+                // explicit one, hk247e).
+                let mut f = Func { name: "main".to_string(), params: Vec::new(), ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
+                parse_stmts(&lines, &mut i, &mut f.stmts, 0)?;
+                if i < lines.len() && lines[i].1[0] == Tok::KwReturn {
+                    let (rn, rt) = &lines[i];
+                    let stmt = match rt.len() {
+                        1 => Stmt::Ret(*rn, None),
+                        2 if rt[1] == Tok::KwNil => Stmt::Ret(*rn, None),
+                        _ => Stmt::Ret(*rn, Some(parse_expr_tokens(rt[1..].to_vec(), *rn)?)),
+                    };
+                    f.stmts.push(stmt);
+                    i += 1;
+                } else {
+                    f.stmts.push(Stmt::Ret(n, None));
+                }
+                funcs.push(f);
+                continue;
+            }
+            return Err(format!("line {}: code outside a function (Harbour silently drops top-level statements after the first group - hk247c/hk247f; this increment rejects them by name)", n));
         }
-        let (name, params) = match toks.as_slice() {
+        let (name, params) = match toks {
             [Tok::KwFunction, Tok::Ident(id), Tok::LParen, Tok::RParen] => {
                 check_ident(id, n)?;
                 (id.clone(), Vec::new())
@@ -1730,6 +1810,15 @@ fn parse(src: &str) -> Result<Prog, String> {
     }
     if funcs.is_empty() {
         return Err("no functions found".to_string());
+    }
+    // REQUEST honored only when genuinely inert: the symbol is a
+    // function defined in this same file (validated post-parse so the
+    // definition may appear after the REQUEST line). Anything else
+    // would silently skip Harbour's link/module-init effect.
+    for (ln, sym) in &requests {
+        if !funcs.iter().any(|f| f.name.eq_ignore_ascii_case(sym)) {
+            return Err(format!("line {}: REQUEST `{}` cannot be honored: the subset has no module linking; only functions defined in this file may be requested", ln, sym));
+        }
     }
     Ok(Prog { funcs, classes, methods })
 }
@@ -12628,7 +12717,7 @@ fn main() {
     // Preprocessing runs automatically on every compile. Errors cite the
     // line in the ORIGINAL file for the main input; lines injected by an
     // #include report against that include file.
-    let mut pre = pp::Pp::new(incdirs);
+    let mut pre = pp::Pp::new(incdirs, matches!(target, Target::Windows));
     let mut src = String::new();
     if let Err(m) = pp::process(pos[0], &mut pre, &mut src, 0) {
         eprintln!("error: {}", m);
