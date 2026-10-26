@@ -114,3 +114,47 @@ small buffer allocator in the emitted runtime (~60% of the time),
 preserving value semantics (removes the O(n^2)). Neither changes
 alias/copy/ownership rules; each lands as its own verified iteration
 with a re-run of this probe.
+
+---
+
+## Round 3 (iteration 63h): in-place grow for the assign-back pattern
+
+What changed in 63h:
+
+- String layout: 16-byte header {capacity at -16, length at -8}; fresh
+  copies (hbc_strcpy/hbc_strcat) start with cap == len; hbc_freestr frees
+  the new layout; all string frees migrated (runtime + ABI harness).
+- NEW hbc_strgrow: appends into an owned buffer in place when capacity
+  allows, doubling realloc (freeing the old block itself) when not.
+- Codegen emits it for `s := s + rhs` on a plain owned local only when
+  rhs does not mention s and contains no calls (calls stay excluded
+  until byref/global/nested effects are reconciled). All other forms
+  keep the hbc_strcat copy semantics.
+
+Correctness: battery 647/647 + ABI harness, Linux and Wine, including
+six dedicated grow/freestr tests with hb_memcheck() counts (content
+equality against the strcat path, realloc fallback on a single append
+larger than spare capacity, excluded-call fallback, self-alias
+fallback, rhs-local grow, hash key replace under the new layout) and a
+byref append loop (hk238: a `@` string param plus `for` crashed on a
+frame-slot collision; fixed).
+
+Measurement (same protocol, same machine and moment, same preserved
+Harbour binary sha256 d03b02c2...):
+
+- N=20000 (19999 appends, final length 20000), 3 warmup + 21 timed,
+  two samples: HarbourRust median 0.29 / 0.28 ms (min 0.28 / 0.25)
+  vs Harbour 2.54 / 2.18 ms (min 2.38 / 2.11). Before the fix:
+  148.75 ms. At this size both sides are dominated by process
+  startup, so read this as TOTAL time for the whole probe, not as an
+  engine comparison.
+- Work-dominated sizes (11 runs, median ms): N=200000: HarbourRust
+  0.99 vs Harbour 10.94; N=400000: HarbourRust 1.51 vs Harbour 23.66.
+  Both now scale ~linearly: amortized O(n) appends on both sides.
+  Derived per-append marginal cost from these two points:
+  HarbourRust ~2.6 ns vs Harbour ~64 ns (derived, not directly timed).
+- Raw runs: sondas raw21_r3_n20000.txt and scaling_r3_large.txt;
+  binary/asm SHAs in r3_sha.txt.
+
+Rounds 1-2 above are preserved unchanged: each timing round is its own
+record.
