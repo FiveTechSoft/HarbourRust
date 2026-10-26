@@ -568,3 +568,9 @@ pos tests/t570_hscan_nil.hb \n         1\n         2\n         2\n         0
 neg tests/t571_neg_hscan_type.hb `hb_HScan` expects a hash variable
 neg tests/t572_neg_hscan_start.hb the hb_HScan start is an integer in this increment
 neg tests/t573_neg_hscan_value.hb hash values are integers or NIL in this increment
+pos tests/t574_hkeyat.hb \nbb\nccc\na\n         2
+pos tests/t575_hvalueat.hb \n        10\nNIL\n        30
+pos tests/t576_hkeyat_owned.hb \nb\n         0
+neg tests/t577_neg_hkeyat_type.hb `hb_HKeyAt` expects a hash variable
+neg tests/t578_neg_hkeyat_index.hb the hb_HKeyAt position is an integer in this increment
+neg tests/t579_neg_hvalueat_type.hb `hb_HValueAt` expects a hash variable
