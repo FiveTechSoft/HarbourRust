@@ -437,6 +437,87 @@ hbc_abi_test:
     mov $3, %esi
     call hbc_free
     call abi_check
+    # hbc_dynxcmp (iteration 45): int x int signs (-1/0/1), then the new
+    # string x string branch (tail call into hbc_str_cmp) for lt/eq/gt -
+    # canaries, stack balance and alignment checked after EACH call.
+    xor %eax, %eax
+    mov $7, %edx
+    xor %ecx, %ecx
+    mov $8, %r8d
+    mov $1, %r9d
+    call hbc_dynxcmp
+    cmp $-1, %rax
+    jne abi_fail_dc
+    call abi_check
+    xor %eax, %eax
+    mov $7, %edx
+    xor %ecx, %ecx
+    mov $7, %r8d
+    mov $1, %r9d
+    call hbc_dynxcmp
+    test %rax, %rax
+    jnz abi_fail_dc
+    call abi_check
+    xor %eax, %eax
+    mov $8, %edx
+    xor %ecx, %ecx
+    mov $7, %r8d
+    mov $2, %r9d
+    call hbc_dynxcmp
+    cmp $1, %rax
+    jne abi_fail_dc
+    call abi_check
+    # string x string: "abc" vs "abd" is -1; equal content is 0; the
+    # byte-wise comparison goes through the hbc_str_cmp tail call.
+    lea .Labi_s3(%rip), %rdi
+    mov $3, %esi
+    call hbc_strcpy
+    mov %rax, -16(%rbp)
+    call abi_check
+    lea .Labi_s3(%rip), %rdi
+    mov $3, %esi
+    call hbc_strcpy
+    mov %rax, -48(%rbp)
+    call abi_check
+    mov -48(%rbp), %rax
+    movb $0x64, 2(%rax)
+    mov $2, %eax
+    mov -16(%rbp), %rdx
+    mov $2, %ecx
+    mov -48(%rbp), %r8
+    mov $1, %r9d
+    call hbc_dynxcmp
+    cmp $-1, %rax
+    jne abi_fail_dc
+    call abi_check
+    mov $2, %eax
+    mov -48(%rbp), %rdx
+    mov $2, %ecx
+    mov -16(%rbp), %r8
+    mov $2, %r9d
+    call hbc_dynxcmp
+    cmp $1, %rax
+    jne abi_fail_dc
+    call abi_check
+    mov -48(%rbp), %rax
+    movb $0x63, 2(%rax)
+    mov $2, %eax
+    mov -16(%rbp), %rdx
+    mov $2, %ecx
+    mov -48(%rbp), %r8
+    mov $3, %r9d
+    call hbc_dynxcmp
+    test %rax, %rax
+    jnz abi_fail_dc
+    call abi_check
+    mov -16(%rbp), %rdi
+    mov $3, %esi
+    call hbc_free
+    call abi_check
+    mov -48(%rbp), %rdi
+    mov $3, %esi
+    call hbc_free
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -523,6 +604,10 @@ abi_fail_de:
     lea .Labi_f_de(%rip), %rax
     mov $13, %edx
     jmp abi_fail_common
+abi_fail_dc:
+    lea .Labi_f_dc(%rip), %rax
+    mov $13, %edx
+    jmp abi_fail_common
 abi_fail_common:
     call hbc_print_str
 ASM_EOF
@@ -558,6 +643,7 @@ ASM_EOF
 .Labi_f_de: .ascii "ABI FAIL deq\n"
 .Labi_s3:    .ascii "abc"
 .Labi_s6:    .ascii "abcdef"
+.Labi_f_dc: .ascii "ABI FAIL dcp\n"
 ASM_EOF
 }
 
