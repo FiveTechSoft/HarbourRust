@@ -1,20 +1,20 @@
 # HarbourRust frozen-175 upstream sweep baseline
 # upstream: FiveTechSoft/harbour-core commit 694428e1c12f726675b19324d62167fa77d68185 (tests/*.prg, 237 files)
 # frozen set: 175 files = 237 minus 62 interactive (grep -iE 'achoice|memoedit|tbrowse|@.*say.*get|inkey\(|dbedit|setcolor|scroll\(')
-# compiler: HarbourRust iteration 63e (comments, ! prefix, single-quote strings, = assignment, string +)
+# compiler: HarbourRust iteration 63f (63e surface + call statements + len() on strings)
 # sweep date: 2026-10-26; column 2 = COMPILES or the exact first error (line + message)
-# rows-sha256: cba0abde1223190e04eee94fa080d6c8ccc1296a5330e49997e100c7e3ca5f2e
+# rows-sha256: e488bb0c4206247bc1300f1916f31ffb84649d9628df139658bcf93bdf4e98a5
 adir.prg|error: line 22: unterminated string
 ains.prg|error: line 25: expected `local name := expr`
 alias.prg|error: line 6: code outside a function
 aliaslck.prg|error: line 9: code outside a function
 altd.prg|error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
-and_or.prg|error: line 11: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+and_or.prg|error: line 7: unknown function `dispandreturnnil` (must be defined before use)
 array.prg|error: line 7: array elements must be integers in this increment
 array16.prg|error: line 24: expected `name[idx, ...] := expr`
 arrayidx.prg|error: line 21: character not allowed `^` (U+005E)
 arrays.prg|error: line 24: expected `name[idx, ...] := expr`
-arreval.prg|error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+arreval.prg|error: line 5: unknown function `aeval` (must be defined before use)
 arrindex.prg|error: line 3: expected :=
 asort.prg|error: line 12: unexpected token Comma in expression
 base2.prg|error: line 9: character not allowed `&` (U+0026)
@@ -23,12 +23,12 @@ begin.prg|error: line 4: code outside a function
 big5_gen.prg|error: line 97: character not allowed `@` (U+0040)
 box.prg|error: line 53: code outside a function
 byref.prg|error: line 11: character not allowed `@` (U+0040)
-calling.prg|error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+calling.prg|error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 cdow.prg|error: line 3: unknown function `cmonth` (must be defined before use)
 cgi.prg|error: line 118: error in #if expression
 clasinh.prg|error: line 118: error in #if expression
 clasinit.prg|error: line 36: character not allowed `@` (U+0040)
-clasname.prg|error: line 13: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+clasname.prg|error: line 13: unknown function `aeval` (must be defined before use)
 classch.prg|error: line 118: error in #if expression
 classes.prg|error: line 26: character not allowed `@` (U+0040)
 cls.prg|error: line 118: error in #if expression
@@ -38,7 +38,7 @@ clsicast.prg|error: line 118: error in #if expression
 clsnv.prg|error: line 118: error in #if expression
 clsscast.prg|error: line 118: error in #if expression
 clsscope.prg|error: line 118: error in #if expression
-cmphello.prg|error: line 15: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+cmphello.prg|error: line 15: unknown function `hb_run` (must be defined before use)
 codebl.prg|error: line 20: character not allowed `@` (U+0040)
 codebl2.prg|error: line 14: character not allowed `&` (U+0026)
 codebloc.prg|error: line 25: expected `local name := expr`
@@ -47,7 +47,7 @@ comments.prg|error: line 8: code outside a function
 cpinfo.prg|error: line 96: unterminated dotted word `.txt` (Harbour logical tokens need a closing dot)
 curdirt.prg|error: line 3: unknown function `curdir` (must be defined before use)
 dates.prg|error: line 5: expected :=
-dates2.prg|error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+dates2.prg|error: line 3: unknown function `hb_stod` (must be defined before use)
 dates3.prg|error: line 5: expected :=
 datetime.prg|error: line 59: statement not in the subset (LParen)
 dbeval.prg|error: line 3: expected `local name := expr`
@@ -73,7 +73,7 @@ fib.prg|error: line 3: expected `local name := expr`
 fileio.prg|error: line 21: character not allowed `@` (U+0040)
 fileio2.prg|error: line 6: expected `local name := expr`
 files.prg|error: line 23: character not allowed `@` (U+0040)
-flink.prg|error: line 59: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+flink.prg|error: line 61: statement not in the subset (LParen)
 for.prg|error: line 8: code outside a function
 foreach2.prg|error: line 118: error in #if expression
 fornext.prg|error: line 10: expected `local name := expr`
@@ -90,7 +90,7 @@ hrbext.prg|error: line 12: code outside a function
 hsx.prg|error: line 140: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 html.prg|error: line 118: error in #if expression
 ifelse.prg|error: line 5: expected `local name := expr`
-ifinline.prg|error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+ifinline.prg|error: line 8: missing )
 inherit.prg|error: line 192: character not allowed `@` (U+0040)
 inhprob.prg|error: line 118: error in #if expression
 inifile.prg|error: line 118: error in #if expression
@@ -106,8 +106,8 @@ langapi.prg|error: line 4: code outside a function
 lbl.prg|error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 libname.prg|error: line 59: statement not in the subset (LParen)
 linecont.prg|error: line 6: character not allowed `;` (U+003B)
-lnlenli1.prg|error: line 9: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
-lnlenli2.prg|error: line 9: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+lnlenli1.prg|error: line 14: expected `,` or `}` in the array literal, got None
+lnlenli2.prg|error: line 9: unknown function `longline2` (must be defined before use)
 longdev.prg|error: line 8: expected :=
 longstr.prg|error: line 57: unterminated string
 longstr2.prg|error: line 6: expected :=
@@ -138,12 +138,12 @@ pp.prg|error: line 10: unknown result marker <"z"> (Harbour: E0008)
 ppapi.prg|error: line 1: code outside a function
 pragma.prg|error: line 3: unknown directive #pragma in this PoC
 procline.prg|error: line 3: unknown function `procline` (must be defined before use)
-procname.prg|error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+procname.prg|error: line 32: unexpected token Question in expression
 rdd.prg|error: line 43: macro hb_dbDrop takes 1 argument(s), got 3
 rdd2.prg|error: line 222: incomplete statement for the command used here (Harbour: E0020)
 readhrb.prg|error: line 111: character not allowed `@` (U+0040)
 recursiv.prg|error: line 16: expected `,` or `)` in call arguments, got Some(Lt)
-returns.prg|error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+returns.prg|error: line 19: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 round.prg|error: line 11: unterminated dotted word `.` (Harbour logical tokens need a closing dot)
 rpt.prg|error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 say.prg|error: line 9: character not allowed `@` (U+0040)
@@ -157,7 +157,7 @@ sound.prg|error: line 6: unterminated dotted word `.` (Harbour logical tokens ne
 speed.prg|error: line 3: unexpected token Comma in expression
 speedstr.prg|error: line 43: character not allowed `;` (U+003B)
 speedtst.prg|error: line 110: unknown result marker <.info.> (Harbour: E0008)
-statfun.prg|error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+statfun.prg|error: line 13: code outside a function
 statics.prg|error: line 21: code outside a function
 statics1.prg|error: line 5: code outside a function
 statics2.prg|error: line 5: code outside a function
@@ -167,8 +167,8 @@ strdelim.prg|error: line 5: unexpected token LBracket in expression
 stripem.prg|error: line 118: error in #if expression
 switch.prg|error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
 symbolt.prg|error: line 6: classes are not in this increment yet (parser landed; runtime representation pending)
-t1.prg|error: line 10: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
-test.prg|error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+t1.prg|error: line 11: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+test.prg|error: line 14: code outside a function
 ticktime.prg|error: line 3: expected :=
 uc16_gen.prg|error: line 48: character not allowed `$` (U+0024)
 use.prg|error: line 71: statement not in the subset (LParen)
