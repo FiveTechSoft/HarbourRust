@@ -218,12 +218,11 @@ hbc_abi_test:
     cmpw $0x6261, (%rcx)
     jne abi_fail_hk
     mov %rcx, %rdi
-    mov $1, %esi
-    call hbc_free
+    call hbc_freestr
     call abi_check
     # hbc_strcat (iteration 63e, new helper): copies both operands into a
     # fresh owned buffer (len at -8). Canaries, stack balance and
-    # 16-alignment after the call; the result is freed like any owned
+    # 16-alignment after the call; the result is freed via hbc_freestr like any owned
     # string. Operands here are rodata (nothing to free on that side).
     lea .Labi_ok(%rip), %rdi
     mov $7, %esi
@@ -247,8 +246,7 @@ hbc_abi_test:
     cmpb $0x41, 7(%rcx)
     jne abi_fail_sc
     mov %rcx, %rdi
-    mov $1, %esi
-    call hbc_free
+    call hbc_freestr
     call abi_check
     mov -32(%rbp), %rdi
     mov $2, %esi
@@ -340,12 +338,10 @@ hbc_abi_test:
     jnz abi_fail_xd
     call abi_check
     mov -16(%rbp), %rdi
-    mov $7, %esi
-    call hbc_free
+    call hbc_freestr
     call abi_check
     mov -48(%rbp), %rdi
-    mov $7, %esi
-    call hbc_free
+    call hbc_freestr
     call abi_check
     # hbc_dyn_eq (iteration 44): regressions of the original branches
     # plus the NEW string-content branch, which tail-calls hbc_str_eq -
@@ -425,12 +421,10 @@ hbc_abi_test:
     jnz abi_fail_de
     call abi_check
     mov -16(%rbp), %rdi
-    mov $3, %esi
-    call hbc_free
+    call hbc_freestr
     call abi_check
     mov -48(%rbp), %rdi
-    mov $3, %esi
-    call hbc_free
+    call hbc_freestr
     call abi_check
     # prefix rule (hk145): "abcdef" = "abc" is 1, the mirror is 0:
     lea .Labi_s6(%rip), %rdi
@@ -460,12 +454,10 @@ hbc_abi_test:
     jnz abi_fail_de
     call abi_check
     mov -16(%rbp), %rdi
-    mov $6, %esi
-    call hbc_free
+    call hbc_freestr
     call abi_check
     mov -48(%rbp), %rdi
-    mov $3, %esi
-    call hbc_free
+    call hbc_freestr
     call abi_check
     # hbc_dyn_eq tag 3 (iteration 62b): logical casillas compare payloads -
     # .T. = .F. is 0 and .T. = .T. is 1 (the old tag-only shortcut made
@@ -595,12 +587,10 @@ hbc_abi_test:
     jnz abi_fail_dc
     call abi_check
     mov -16(%rbp), %rdi
-    mov $3, %esi
-    call hbc_free
+    call hbc_freestr
     call abi_check
     mov -48(%rbp), %rdi
-    mov $3, %esi
-    call hbc_free
+    call hbc_freestr
     call abi_check
     # hbc_hvalues (iteration 46): a 2-entry hash yields a NEW array of
     # the value cells in insertion order - count, tags and payloads
