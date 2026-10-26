@@ -1477,6 +1477,123 @@ hbc_abi_test:
     mov -104(%rbp), %rdi
     call hbc_freestr
     call abi_check
+    # --- Dyn tag-4 owned-string casillas (63j): the changed Dyn helpers.
+    # tag 4 must behave exactly like tag 2 (borrowed) in comparisons and
+    # printing; canaries cover both operands, callee-saved registers and
+    # stack alignment through every call.
+    lea .Lt4_a(%rip), %rdi
+    mov $3, %esi
+    call hbc_strcpy
+    mov %rax, -104(%rbp)
+    call abi_check
+    lea .Lt4_b(%rip), %rdi
+    mov $3, %esi
+    call hbc_strcpy
+    mov %rax, -112(%rbp)
+    call abi_check
+    lea .Lt4_c(%rip), %rdi
+    mov $3, %esi
+    call hbc_strcpy
+    mov %rax, -120(%rbp)
+    call abi_check
+    # hbc_dyn_eq: {4,a} x {4,b} equal content -> 1 (prefix rule, right len)
+    mov $4, %eax
+    mov -104(%rbp), %rdx
+    mov $4, %ecx
+    mov -112(%rbp), %r8
+    call hbc_dyn_eq
+    cmp $1, %rax
+    jne abi_fail_t4
+    call abi_check
+    # hbc_dyn_eq: {4,a} x {4,c} different content -> 0
+    mov $4, %eax
+    mov -104(%rbp), %rdx
+    mov $4, %ecx
+    mov -120(%rbp), %r8
+    call hbc_dyn_eq
+    test %rax, %rax
+    jnz abi_fail_t4
+    call abi_check
+    # hbc_dyn_eq: {4,a} owned x {2,b} borrowed, same content -> 1
+    # (normalization fires on BOTH operands)
+    mov $4, %eax
+    mov -104(%rbp), %rdx
+    mov $2, %ecx
+    mov -112(%rbp), %r8
+    call hbc_dyn_eq
+    cmp $1, %rax
+    jne abi_fail_t4
+    call abi_check
+    # hbc_dynxeq_dd (==): {4,a} x {4,b} -> 1; {4,a} x {4,c} -> 0
+    mov $4, %eax
+    mov -104(%rbp), %rdx
+    mov $4, %ecx
+    mov -112(%rbp), %r8
+    call hbc_dynxeq_dd
+    cmp $1, %rax
+    jne abi_fail_t4
+    call abi_check
+    mov $4, %eax
+    mov -104(%rbp), %rdx
+    mov $4, %ecx
+    mov -120(%rbp), %r8
+    call hbc_dynxeq_dd
+    test %rax, %rax
+    jnz abi_fail_t4
+    call abi_check
+    # hbc_dynxcmp: {4,a} vs {4,c} -> -1; {4,c} vs {4,a} -> 1; equal -> 0
+    mov $4, %eax
+    mov -104(%rbp), %rdx
+    mov $4, %ecx
+    mov -120(%rbp), %r8
+    mov $1, %r9d
+    call hbc_dynxcmp
+    cmp $-1, %rax
+    jne abi_fail_t4
+    call abi_check
+    mov $4, %eax
+    mov -120(%rbp), %rdx
+    mov $4, %ecx
+    mov -104(%rbp), %r8
+    mov $2, %r9d
+    call hbc_dynxcmp
+    cmp $1, %rax
+    jne abi_fail_t4
+    call abi_check
+    mov $4, %eax
+    mov -104(%rbp), %rdx
+    mov $4, %ecx
+    mov -112(%rbp), %r8
+    mov $1, %r9d
+    call hbc_dynxcmp
+    test %rax, %rax
+    jnz abi_fail_t4
+    call abi_check
+    # hbc_print_dyn: tag-4 dispatch on an EMPTY owned string prints zero
+    # bytes (the harness output must stay exactly "ABI OK"); the dispatch
+    # and the header read at payload-8 still execute.
+    mov -104(%rbp), %rdi
+    xor %esi, %esi
+    call hbc_strcpy
+    mov %rax, -80(%rbp)
+    call abi_check
+    mov $4, %eax
+    mov -80(%rbp), %rdx
+    call hbc_print_dyn
+    call abi_check
+    mov -80(%rbp), %rdi
+    call hbc_freestr
+    call abi_check
+    # teardown: the registry validates each free against its allocation
+    mov -104(%rbp), %rdi
+    call hbc_freestr
+    call abi_check
+    mov -112(%rbp), %rdi
+    call hbc_freestr
+    call abi_check
+    mov -120(%rbp), %rdi
+    call hbc_freestr
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -1647,6 +1764,10 @@ abi_fail_sg:
     lea .Labi_f_sg(%rip), %rax
     mov $13, %edx
     jmp abi_fail_common
+abi_fail_t4:
+    lea .Labi_f_t4(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
 abi_fail_common:
     call hbc_print_str
 ASM_EOF
@@ -1705,6 +1826,10 @@ ASM_EOF
 .Lsg_c:    .ascii "x"
 .Lsg_d:    .ascii "yz"
 .Lsg_full: .ascii "abcdefghxyz"
+.Labi_f_t4: .ascii "ABI FAIL t4\n"
+.Lt4_a:    .ascii "abc"
+.Lt4_b:    .ascii "abc"
+.Lt4_c:    .ascii "abd"
 .Labi_f_dl: .ascii "ABI FAIL d2l\n"
 .Labi_s3:    .ascii "abc"
 .Labi_s6:    .ascii "abcdef"
