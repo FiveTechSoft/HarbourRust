@@ -85,6 +85,81 @@ thread_local! {
 thread_local! {
     static F64_CONSTS: std::cell::RefCell<Vec<u64>> = std::cell::RefCell::new(Vec::new());
 }
+// Exact powers of ten for the single division in Harbour's literal parse
+// (10^0..=10^22 are exactly representable in f64; the lexer caps written
+// decimals at 17).
+const P10: [f64; 18] = [
+    1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9,
+    1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17,
+];
+
+// Harbour float-literal parse semantics (compiler branch of hb_str2number),
+// measured against oracles hk278-hk289: digits accumulate in an i64 while
+// they fit, the total converts to f64 and is divided ONCE by 10^decimals.
+// This is NOT correct rounding: `9.999999999999999` accumulates to
+// 9999999999999999, whose nearest f64 is exactly 1e16, so the literal IS
+// 10.0 and prints "10.000000000000000" (oracle hk285); Rust's str::parse
+// would give 9.9999999999999982 and print "...999999999999998". Own
+// implementation written against oracles (Harbour is GPL+runtime-exception;
+// no code copied). Reachability bound, by lexer/frontier rules (not
+// hypothesis): the lexer caps written decimals at 17 and the precision
+// frontier admits only (a) |x| < 1 with dec <= 17: the literal is "0" +
+// "." + <= 17 fraction digits, so at most 18 digits accumulate, worst
+// 999999999999999999 < i64::MAX; (b) int <= 14 with int+dec <= 15: <= 15
+// digits; (c) int <= 9 with int+dec = 16: <= 16 digits; (d) int <= 2 with
+// int+dec = 17: <= 17 digits. The switchover threshold LLIMV ~ 9.2e17 is
+// only reachable from a 19th accumulated digit, which no admitted rule can
+// produce, so the f64 fallback below (Harbour's overflow path) is
+// unreachable from admitted literals; it is kept so the function stays
+// total, and literals beyond these rules stay rejected by name.
+fn harbour_parse_f64(txt: &str) -> Option<f64> {
+    let (neg, s) = match txt.strip_prefix('-') {
+        Some(r) => (true, r),
+        None => (false, txt),
+    };
+    const LLIMV: i64 = i64::MAX / 10;
+    const LLIMC: i64 = (i64::MAX % 10) as i64;
+    let mut lval: i64 = 0;
+    let mut dval: f64 = 0.0;
+    let mut fdbl = false;
+    let mut dec: usize = 0;
+    let mut seen_dot = false;
+    let mut any = false;
+    for &b in s.as_bytes() {
+        if b == b'.' && !seen_dot {
+            seen_dot = true;
+            continue;
+        }
+        if !b.is_ascii_digit() {
+            return None;
+        }
+        any = true;
+        let c = (b - b'0') as i64;
+        if fdbl {
+            dval = dval * 10.0 + c as f64;
+        } else if lval < LLIMV || (lval == LLIMV && c <= LLIMC) {
+            lval = lval * 10 + c;
+        } else {
+            dval = lval as f64 * 10.0 + c as f64;
+            fdbl = true;
+        }
+        if seen_dot {
+            dec += 1;
+        }
+    }
+    if !any {
+        return None;
+    }
+    let mut v = if fdbl { dval } else { lval as f64 };
+    if dec > 0 {
+        if dec >= P10.len() {
+            return None;
+        }
+        v /= P10[dec];
+    }
+    Some(if neg { -v } else { v })
+}
+
 fn f64_const(bits: u64) -> usize {
     F64_CONSTS.with(|c| { let mut v = c.borrow_mut(); v.push(bits); v.len() - 1 })
 }
@@ -94,7 +169,7 @@ fn f64_const(bits: u64) -> usize {
 fn cg_f64_load(e: &Expr, env: &[CgLocal], out: &mut String) {
     match e {
         Expr::Float(txt, dec) => {
-            let v: f64 = txt.parse().expect("frontier-checked at parse");
+            let v: f64 = harbour_parse_f64(txt).expect("frontier-checked at parse");
             let k = f64_const(v.to_bits());
             out.push_str(&format!("    movsd .Lf64c{}(%rip), %xmm0
     mov ${}, %edi
@@ -554,7 +629,7 @@ impl P {
                 // with int <= 14, or int <= 9 with int+dec = 16, or
                 // int <= 2 with int+dec = 17; nonzero |x| >= 1e-17;
                 // <= 17 written decimals (checked at the lexer).
-                let v: f64 = txt.parse().map_err(|_| format!("line {}: bad float literal", self.n))?;
+                let v: f64 = harbour_parse_f64(&txt).ok_or_else(|| format!("line {}: bad float literal", self.n))?;
                 let a = v.abs();
                 let intd = txt.split('.').next().unwrap_or("").len() as u32;
                 let decd = txt.split('.').nth(1).map(|f| f.len() as u32).unwrap_or(0);
@@ -565,23 +640,6 @@ impl P {
                     || (a >= 1.0 && intd <= 2 && intd + decd == 17);
                 if !ok {
                     return Err(format!("line {}: float literal outside this increment's measured precision frontier (oracles hk278-hk288)", self.n));
-                }
-                // Rounding-fidelity guard (63y): Harbour's sequential
-                // digit extraction accumulates error that carries a leading
-                // 9-chain UP at 16 significant digits (hk285/hk288 measured:
-                // 9.999999999999999 -> 10.000000000000000); the current
-                // normalize-scale helper rounds the binary double once and
-                // prints ...998. Measured mismatch family = first 16
-                // written significant digits all '9' (8/8 divergent, no
-                // false hits in the hk278-hk288 matrix; boundary near
-                // 15-nines is probe-hypothesis, not proven). Reject it by
-                // name until the helper is rewritten to Harbour's method.
-                {
-                    let txt_nosign = txt.trim_start_matches('-');
-                    let sig: String = txt_nosign.chars().filter(|c| c.is_ascii_digit()).skip_while(|&c| c == '0').collect();
-                    if sig.len() >= 16 && sig.bytes().take(16).all(|b| b == b'9') {
-                        return Err(format!("line {}: float literal outside this increment's rounding-fidelity frontier (leading 9-chain; sequential-extraction helper rewrite in flight; oracles hk285/hk288)", self.n));
-                    }
                 }
                 Ok(Expr::Float(txt, dec))
             }
