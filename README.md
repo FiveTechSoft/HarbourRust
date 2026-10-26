@@ -224,7 +224,10 @@ string/integer ordering as a type error.
 ```
 function name()            opens a function (main is the entry point)
     local x := <expr>      local variable, type inferred
-    x := <expr>            assignment to an existing local (same type)
+    x := <expr>            assignment to an existing local (same type);
+                             Harbour's single `=` in statement position
+                             assigns too (oracle hk214); `=` stays a
+                             comparison inside expressions
     ? <expr>               prints
     if <cond> ... endif    conditional, optional else, nestable
     while <cond> ... enddo loop, re-evaluates the condition each iteration
@@ -1494,7 +1497,7 @@ normalization; semantics unchanged. hello.prg from the upstream
 test suite (core 694428e1) is the FIRST original program that
 compiles and runs byte-identical to Harbour. Forward references
 (call before definition) remain the next registered blocker.
-Battery: 620/620 manifest cases on Linux x86-64 and Wine, plus
+Battery: 621/621 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
 
 
