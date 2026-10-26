@@ -2421,17 +2421,14 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     // is the heap pointer - the identity - at every depth.
                     return Ok(Ty::Bool);
                 }
-                if let (Ty::Block(ka), Ty::Block(kb)) = (ta, tb) {
-                    if ka == kb
-                        && matches!(&**a, Expr::Var(_)) && matches!(&**b, Expr::Var(_)) {
-                        // hk131: codeblocks answer identity (x==x .T.,
-                        // x==y .F. for distinct literals). The 8-byte slot
-                        // holds the per-literal pointer. Same arity only
-                        // (the measured shape).
-                        return Ok(Ty::Bool);
-                    }
-                }
-                return Err(format!("line {}: `==` is measured only between two integers, between two strings, between two one-level dynamic array variables and against NIL in this increment (hk124/hk126/hk128/hk129); static arrays, deeper dynamic arrays, codeblocks and non-NIL Dyn payloads keep their named rejections (object identity oracles cl7/cl19 stay class-gated)", n));
+                // Codeblocks stay rejected: Harbour's identity is per
+                // EVALUATION (hk131: x==x .T., x==y .F. between literals;
+                // hk136: make()==make() .F. for the same literal returned
+                // twice; hk137: the same literal assigned in two loop
+                // iterations is .F.) while our slot holds a per-literal
+                // STATIC pointer, which would answer .T. where Harbour
+                // says .F. A truthful rejection beats fake compatibility.
+                return Err(format!("line {}: `==` is measured only between two integers, between two strings, between two one-level dynamic array variables and against NIL in this increment (hk124/hk126/hk128/hk129); static arrays, codeblocks (identity is per evaluation - hk131/hk136/hk137 - and our slot is per literal) and non-NIL Dyn payloads keep their named rejections (object identity oracles cl7/cl19 stay class-gated)", n));
             }
             if matches!(op, CmpOp::Eq | CmpOp::Ne) {
                 let cas = |e: &Expr| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArr2 | Ty::DArr3)));
@@ -5285,11 +5282,10 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             out.push_str(&format!("    {} {}\n", j, true_label));
         }
         Expr::Cmp(op, a, b) if matches!(op, CmpOp::EqEq)
-            && matches!(expr_ty(a, env, sigs), Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::Block(_))
+            && matches!(expr_ty(a, env, sigs), Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4)
             && expr_ty(a, env, sigs) == expr_ty(b, env, sigs) => {
-            // hk126/hk130: dynamic array identity at every implemented
-            // depth; hk131: codeblock identity. The frame slot holds the
-            // heap pointer (arrays) or the per-literal pointer (blocks)
+            // hk126/hk130/hk135: dynamic array identity at every
+            // implemented depth. The frame slot holds the heap pointer
             // and that pointer IS the identity: a==a .T., a==b .F. even
             // with equal contents. The checker restricts both operands
             // to variables, so the loads borrow - no move, no free.
