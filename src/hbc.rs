@@ -57,14 +57,14 @@ enum Tok {
     Lt, Le, Gt, Ge,
     KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElse, KwEndif, KwWhile, KwEnddo, KwExit, KwLoop,
     KwFor, KwTo, KwStep, KwNext, KwEach, KwIn,
-    EqEq,       // == (object identity, oracle cl7/cl19)
+    EqEq,       // == (measured: integers hk124, DArr identity hk126; object identity cl7/cl19 class-gated)
     Colon,      // : (message send, o:name)
     ColonColon, // :: (self member, inside a method)
     KwCreate, KwClass, KwEndclass, KwMethod, KwData, KwInherit, KwConstructor, KwInit, KwSelfTok,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum CmpOp { Eq, EqEq, Ne, Lt, Le, Gt, Ge } // EqEq: == object identity (oracles cl7/cl19)
+enum CmpOp { Eq, EqEq, Ne, Lt, Le, Gt, Ge } // EqEq: == measured for integers (hk124) and DArr identity (hk126)
 
 static BLOCK_ID: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 fn new_block_id() -> usize { BLOCK_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst) }
@@ -2377,7 +2377,23 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // pointer, it never extracts the subarray. A real empty child
             // ({}) owns a block and is NOT NIL.
             if matches!(op, CmpOp::EqEq) {
-                return Err(format!("line {}: `==` identity comparison is not in this increment yet (oracles cl7/cl19)", n));
+                let ta = type_expr(a, env, sigs, n)?;
+                let tb = type_expr(b, env, sigs, n)?;
+                // `==` measured so far. Between integers (hk124: 1==1
+                // .T., 1==2 .F.). Between two one-level DYNAMIC array
+                // VARIABLES as reference identity (hk126: a==a .T.,
+                // a==b .F. even with equal contents - the frame slot
+                // holds the heap pointer and that pointer is the
+                // identity). Static arrays stay rejected: Harbour
+                // compares references while our static arrays are
+                // copied into the frame (D5/D7 family), so an element
+                // compare would answer .T. where Harbour answers .F.
+                if ta == Ty::I64 && tb == Ty::I64 { return Ok(Ty::Bool); }
+                if ta == Ty::DArr && tb == Ty::DArr
+                    && matches!(&**a, Expr::Var(_)) && matches!(&**b, Expr::Var(_)) {
+                    return Ok(Ty::Bool);
+                }
+                return Err(format!("line {}: `==` is measured only between two integers and between two one-level dynamic array variables in this increment (hk124/hk126); strings, static arrays, deeper dynamic arrays, codeblocks and NIL keep their named rejections (object identity oracles cl7/cl19 stay class-gated)", n));
             }
             if matches!(op, CmpOp::Eq | CmpOp::Ne) {
                 let cas = |e: &Expr| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArr2 | Ty::DArr3)));
@@ -5222,6 +5238,23 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             };
             out.push_str(&format!("    {} {}\n", j, true_label));
         }
+        Expr::Cmp(op, a, b) if matches!(op, CmpOp::EqEq)
+            && expr_ty(a, env, sigs) == Ty::DArr && expr_ty(b, env, sigs) == Ty::DArr => {
+            // hk126: one-level dynamic array identity. The frame slot
+            // holds the heap pointer and that pointer IS the identity:
+            // a==a .T., a==b .F. even with equal contents. The checker
+            // restricts both operands to variables, so the loads borrow
+            // - no move, no free. Target-independent instructions.
+            if let (Expr::Var(x), Expr::Var(y)) = (&**a, &**b) {
+                let vx = env.iter().rev().find(|v| v.name == *x).expect("checked");
+                let vy = env.iter().rev().find(|v| v.name == *y).expect("checked");
+                out.push_str(&format!("    mov -{}(%rbp), %rax\n", vx.off));
+                out.push_str(&format!("    cmp -{}(%rbp), %rax\n", vy.off));
+                out.push_str(&format!("    je {}\n", true_label));
+            } else {
+                unreachable!("checker restricts `==` on arrays to variables");
+            }
+        }
         Expr::Cmp(op, a, b) => {
             cg_expr(a, env, sigs, strs, out, target);
             match target {
@@ -5237,7 +5270,8 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             let j = match op {
                 CmpOp::Lt => "jl", CmpOp::Le => "jle", CmpOp::Gt => "jg",
                 CmpOp::Ge => "jge", CmpOp::Eq => "je", CmpOp::Ne => "jne",
-                CmpOp::EqEq => unreachable!("rejected before codegen"),
+                // Integer `==` compares like `=` (hk124).
+                CmpOp::EqEq => "je",
             };
             out.push_str(&format!("    {} {}\n", j, true_label));
         }
