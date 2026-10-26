@@ -1213,6 +1213,21 @@ integer a per-operator clean named exit 1 mirroring BASE/1073-1076
 (hk149-hk152 - dialogs hang headless; registered failure modes;
 t514-t517).
 
+t568-t573 (iteration 57): hb_HScan(h, value [, start]) over the new
+shared leaf helper hbc_hscan - the first insertion-order entry whose
+stored {tag, payload} equals the value argument, 0 when absent (t568;
+hk178), the start inclusive with 0/NIL/omitted scanning from the first
+entry and negative or past-the-end starts finding nothing without
+error (t569; hk179/hk182), a stored NIL matched by a NIL argument
+(t570; hk180) and the named rejections for a non-hash target, a
+non-integer start and a string scan value (t571-t573). Float start
+truncation (hk183) stays outside the dialect's numeric syntax; the
+CaseMatch flag does not affect value comparison in this increment
+(string values are outside the measured scope - registered limit, no
+claim). A missing value argument is Harbour's BASE/1123 dialog
+(hk182), the registered dialogo-sin-oraculo family. hbc_hscan is
+canaried in the ABI harness on both targets.
+
 t556-t567 (iteration 56): hb_HCaseMatch / hb_HSetCaseMatch over the new
 hbc_hcasematch / hbc_hsetcasematch helpers and the CaseMatch flag in the
 hash block's new 16-byte [flags][capacity] header - default sensitive
