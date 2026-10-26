@@ -2414,9 +2414,22 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) {
                     return Ok(Ty::Bool);
                 }
-                if ta == Ty::DArr && tb == Ty::DArr
+                if matches!(ta, Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4) && ta == tb
                     && matches!(&**a, Expr::Var(_)) && matches!(&**b, Expr::Var(_)) {
+                    // hk130: nested dynamic arrays answer identity too
+                    // (a==a .T., a==b .F.). The frame slot's first qword
+                    // is the heap pointer - the identity - at every depth.
                     return Ok(Ty::Bool);
+                }
+                if let (Ty::Block(ka), Ty::Block(kb)) = (ta, tb) {
+                    if ka == kb
+                        && matches!(&**a, Expr::Var(_)) && matches!(&**b, Expr::Var(_)) {
+                        // hk131: codeblocks answer identity (x==x .T.,
+                        // x==y .F. for distinct literals). The 8-byte slot
+                        // holds the per-literal pointer. Same arity only
+                        // (the measured shape).
+                        return Ok(Ty::Bool);
+                    }
                 }
                 return Err(format!("line {}: `==` is measured only between two integers, between two strings, between two one-level dynamic array variables and against NIL in this increment (hk124/hk126/hk128/hk129); static arrays, deeper dynamic arrays, codeblocks and non-NIL Dyn payloads keep their named rejections (object identity oracles cl7/cl19 stay class-gated)", n));
             }
@@ -5272,12 +5285,15 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             out.push_str(&format!("    {} {}\n", j, true_label));
         }
         Expr::Cmp(op, a, b) if matches!(op, CmpOp::EqEq)
-            && expr_ty(a, env, sigs) == Ty::DArr && expr_ty(b, env, sigs) == Ty::DArr => {
-            // hk126: one-level dynamic array identity. The frame slot
-            // holds the heap pointer and that pointer IS the identity:
-            // a==a .T., a==b .F. even with equal contents. The checker
-            // restricts both operands to variables, so the loads borrow
-            // - no move, no free. Target-independent instructions.
+            && matches!(expr_ty(a, env, sigs), Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::Block(_))
+            && expr_ty(a, env, sigs) == expr_ty(b, env, sigs) => {
+            // hk126/hk130: dynamic array identity at every implemented
+            // depth; hk131: codeblock identity. The frame slot holds the
+            // heap pointer (arrays) or the per-literal pointer (blocks)
+            // and that pointer IS the identity: a==a .T., a==b .F. even
+            // with equal contents. The checker restricts both operands
+            // to variables, so the loads borrow - no move, no free.
+            // Target-independent instructions (first qword of the slot).
             if let (Expr::Var(x), Expr::Var(y)) = (&**a, &**b) {
                 let vx = env.iter().rev().find(|v| v.name == *x).expect("checked");
                 let vy = env.iter().rev().find(|v| v.name == *y).expect("checked");
