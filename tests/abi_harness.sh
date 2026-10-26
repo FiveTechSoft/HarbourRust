@@ -21,7 +21,7 @@ inject() { # $1 = input .s, $2 = output .s, $3 = linux|windows
 hbc_abi_test:
     push %rbp
     mov %rsp, %rbp
-    sub $96, %rsp
+    sub $128, %rsp
     # entry invariant: caller aligned rsp to 16 before the call, so it is
     # 8 here and 0 after push rbp.
     mov %rsp, %rax
@@ -775,6 +775,86 @@ hbc_abi_test:
     mov $2, %esi
     call hbc_hfree
     call abi_check
+    # hbc_hmerge canary (iteration 54): dst {ab=>7} + src {ab=>9, c=>5}
+    # leaves dst with the source winning in place and the new key
+    # appended (hk164); the source keeps its 2 entries (hk165).
+    # Frame-based helper (hbc_hput allocates): canaries, stack balance
+    # and alignment after every call; hget verifies the merged values.
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    movq $0, -128(%rbp)
+    movq $0, -120(%rbp)
+    lea .Labi_k1(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $7, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea .Labi_k1(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $9, -40(%rbp)
+    lea -128(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea .Labi_k2(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $1, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $5, -40(%rbp)
+    lea -128(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea -96(%rbp), %rdi
+    lea -128(%rbp), %rsi
+    call hbc_hmerge
+    call abi_check
+    cmpq $2, -88(%rbp)
+    jne abi_fail_hm
+    cmpq $2, -120(%rbp)
+    jne abi_fail_hm
+    lea -96(%rbp), %rdi
+    lea .Labi_k1(%rip), %rsi
+    mov $2, %edx
+    call hbc_hget
+    mov %rax, -32(%rbp)
+    call abi_check
+    mov -32(%rbp), %rax
+    test %rax, %rax
+    je abi_fail_hm
+    cmpq $9, 8(%rax)
+    jne abi_fail_hm
+    lea -96(%rbp), %rdi
+    lea .Labi_k2(%rip), %rsi
+    mov $1, %edx
+    call hbc_hget
+    mov %rax, -32(%rbp)
+    call abi_check
+    mov -32(%rbp), %rax
+    test %rax, %rax
+    je abi_fail_hm
+    cmpq $5, 8(%rax)
+    jne abi_fail_hm
+    mov -96(%rbp), %rdi
+    mov $2, %esi
+    call hbc_hfree
+    call abi_check
+    mov -128(%rbp), %rdi
+    mov $2, %esi
+    call hbc_hfree
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -885,6 +965,10 @@ abi_fail_hp:
     lea .Labi_f_hp(%rip), %rax
     mov $12, %edx
     jmp abi_fail_common
+abi_fail_hm:
+    lea .Labi_f_hm(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
 abi_fail_common:
     call hbc_print_str
 ASM_EOF
@@ -922,6 +1006,7 @@ ASM_EOF
 .Labi_f_hh:  .ascii "ABI FAIL hh\n"
 .Labi_f_hg:  .ascii "ABI FAIL hg\n"
 .Labi_f_hp:  .ascii "ABI FAIL hp\n"
+.Labi_f_hm:  .ascii "ABI FAIL hm\n"
 .Labi_f_de: .ascii "ABI FAIL deq\n"
 .Labi_s3:    .ascii "abc"
 .Labi_s6:    .ascii "abcdef"
