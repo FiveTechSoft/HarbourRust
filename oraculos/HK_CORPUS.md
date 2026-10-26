@@ -2184,3 +2184,17 @@ default 42 NO se aplica), hk158e (rc=0, verbatim `\n         1\n         1`:
 existente con y sin default). El diálogo headless no es oráculo: t528
 reproduce las lecturas medidas y t529 registra la condición de ausente
 como modo de fallo con salida limpia (exit 1), nunca éxito de compat.
+
+### hk158f - hb_HGet: el default SIEMPRE se evalúa (26 oct 2026)
+
+Fuentes `sondas_ac/hkeys/hk158f1-f3.prg`, compiladas con
+`hbmk2 <f> -gtstd -o<x>` (solo librerías core). El default es una función
+con efecto (imprime EFFECT y devuelve 42). Verbatim hk158f1 (clave
+presente): `\nEFFECT\n         1\nDONE`; hk158f2 (valor NIL existente):
+`\nEFFECT\nNIL\nDONE`; hk158f3 (clave ausente): imprime EFFECT y DESPUÉS
+levanta el diálogo BASE/1132 (dialogo-sin-oraculo, rc=124). Conclusión
+medida: el argumento default se evalúa siempre - presente, NIL o
+ausente, antes del error - y su valor se descarta (nunca rescata una
+ausente ni anula un NIL existente, hk158b/c). Corrige la redacción
+inicial de la iteración 49 («no se evalúa»), señalada en revisión: t531
+fija la evaluación en ambos targets.
