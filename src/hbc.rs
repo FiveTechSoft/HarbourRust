@@ -1750,9 +1750,19 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
     }
     fn walk(f: &Func, e: &Expr, sigs: &[Sig], lit: &[(String, Ty)], pin: &mut Vec<Option<Ty>>, n: usize) -> Result<(), String> {
         match e {
-            Expr::Bin(_, a, b) => {
-                pin_vars(f, a, Ty::I64, pin, n)?;
-                pin_vars(f, b, Ty::I64, pin, n)?;
+            Expr::Bin(op, a, b) => {
+                // String `+` (oracle hk215): a `+` with string evidence on
+                // either side pins both sides to strings, not integers.
+                let str_side = str_evidence(a, lit, sigs) || str_evidence(b, lit, sigs)
+                    || matches!(a.as_ref(), Expr::Var(v) if is_param(f, v).map(|i| matches!(pin[i], Some(Ty::Str | Ty::StrOwn))).unwrap_or(false))
+                    || matches!(b.as_ref(), Expr::Var(v) if is_param(f, v).map(|i| matches!(pin[i], Some(Ty::Str | Ty::StrOwn))).unwrap_or(false));
+                if *op == '+' && str_side {
+                    pin_vars(f, a, Ty::Str, pin, n)?;
+                    pin_vars(f, b, Ty::Str, pin, n)?;
+                } else {
+                    pin_vars(f, a, Ty::I64, pin, n)?;
+                    pin_vars(f, b, Ty::I64, pin, n)?;
+                }
                 walk(f, a, sigs, lit, pin, n)?;
                 walk(f, b, sigs, lit, pin, n)
             }
@@ -2860,9 +2870,15 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 None => Err(format!("line {}: `{}` never returns a value; its result cannot be used in an expression in this PoC", n, id)),
             }
         }
-        Expr::Bin(_, a, b) => {
+        Expr::Bin(op, a, b) => {
             let ta = type_expr(a, env, sigs, n)?;
             let tb = type_expr(b, env, sigs, n)?;
+            // String `+` concatenation (oracle hk215): both operands
+            // strings, result a fresh owned buffer copying both - Harbour
+            // value semantics, variables keep their own copies.
+            if *op == '+' && matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) {
+                return Ok(Ty::StrOwn);
+            }
             // Dyn operands are extracted at runtime: a NIL payload is a
             // clean type error (Harbour's interactive dialog is the
             // registered failure-mode difference, same condition).
@@ -5804,6 +5820,49 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             out.push_str("    add $32, %rsp\n    jmp 82f\n81:\n    add $32, %rsp\n    call hbc_bound_error\n82:\n");
         }
         Expr::Bin(op, a, b) => {
+            // String `+` (oracle hk215): hbc_strcat copies BOTH operands
+            // into a fresh owned buffer; owned temporaries (a nested
+            // concat) are freed right after the copy, variables keep
+            // theirs. Result: rax=ptr, rdx=len, owned by the consumer
+            // (StrOwn slot, print item, comparison, hash key - the
+            // established consumers free non-Var StrOwn).
+            if *op == '+' && matches!(expr_ty(a, env, sigs), Ty::Str | Ty::StrOwn) {
+                let a_tmp = expr_ty(a, env, sigs) == Ty::StrOwn && !matches!(a.as_ref(), Expr::Var(_));
+                let b_tmp = expr_ty(b, env, sigs) == Ty::StrOwn && !matches!(b.as_ref(), Expr::Var(_));
+                cg_value(a, env, sigs, strs, out, target);
+                out.push_str("    sub $48, %rsp
+    mov %rax, (%rsp)
+    mov %rdx, 8(%rsp)
+");
+                cg_value(b, env, sigs, strs, out, target);
+                out.push_str("    mov %rax, 16(%rsp)
+    mov %rdx, %rcx
+    mov %rax, %rdx
+    mov (%rsp), %rdi
+    mov 8(%rsp), %rsi
+    call hbc_strcat
+");
+                out.push_str("    mov %rax, 24(%rsp)
+    mov %rdx, 32(%rsp)
+");
+                if b_tmp {
+                    out.push_str("    mov 16(%rsp), %rdi
+    mov $1, %esi
+    call hbc_free
+");
+                }
+                if a_tmp {
+                    out.push_str("    mov (%rsp), %rdi
+    mov $1, %esi
+    call hbc_free
+");
+                }
+                out.push_str("    mov 24(%rsp), %rax
+    mov 32(%rsp), %rdx
+    add $48, %rsp
+");
+                return;
+            }
             // Operands are i64 or Dyn (checked in analysis): a Dyn operand
             // is extracted with the runtime tag check (NIL payload -> clean
             // type error, Harbour's dialog is the registered difference).
@@ -5981,7 +6040,14 @@ fn cg_array_value(e: &Expr, off: usize, env: &[CgLocal], sigs: &[Sig], strs: &mu
 
 fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
     match e {
-        Expr::Int(_) | Expr::Bin(_, _, _) => Ty::I64,
+        Expr::Int(_) => Ty::I64,
+        Expr::Bin(_, a, b) => {
+            if matches!(expr_ty(a, env, sigs), Ty::Str | Ty::StrOwn) || matches!(expr_ty(b, env, sigs), Ty::Str | Ty::StrOwn) {
+                Ty::StrOwn
+            } else {
+                Ty::I64
+            }
+        }
         Expr::Nil => Ty::Dyn,
         Expr::SelfObj | Expr::SelfGet(_) | Expr::Send(_, _, _) => Ty::Dyn, // unreachable: the checker rejects them first
         Expr::Str(_) => Ty::Str,
@@ -9653,6 +9719,50 @@ hbc_strcpy:
 71: lea 8(%rbx), %rax
     mov %r12, %rdx
     add $8, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_strcat: rdi=p1, rsi=len1, rdx=p2, rcx=len2 -> rax/rdx fresh owned
+# string (length at -8(%rax), like hbc_strcpy). Copies both operands;
+# neither is consumed. Platform-neutral: only hbc_alloc + register work.
+hbc_strcat:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    mov %rdi, %r12
+    mov %rsi, %r13
+    mov %rdx, %r14
+    mov %rcx, %rbx
+    lea 8(%r13,%rbx), %rdi
+    call hbc_alloc
+    mov %r13, %r10
+    add %rbx, %r10
+    mov %r10, (%rax)
+    xor %ecx, %ecx
+70: cmp %r13, %rcx
+    jae 71f
+    movzbl (%r12,%rcx), %r9d
+    mov %r9b, 8(%rax,%rcx)
+    inc %rcx
+    jmp 70b
+71: lea 8(%rax,%r13), %r11
+    xor %ecx, %ecx
+72: cmp %rbx, %rcx
+    jae 73f
+    movzbl (%r14,%rcx), %r9d
+    mov %r9b, (%r11,%rcx)
+    inc %rcx
+    jmp 72b
+73: mov %r13, %rdx
+    add %rbx, %rdx
+    lea 8(%rax), %rax
+    pop %r14
     pop %r13
     pop %r12
     pop %rbx
