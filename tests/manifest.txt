@@ -515,3 +515,7 @@ posx tests/t517_posx_dynord_ge.hb 1 Argument error: >=
 pos tests/t518_hvalues.hb \n         3\n         1\nNIL\n        42\n         1\n        99
 pos tests/t519_hvalues_empty.hb \n         0\n         0\n         1\n         7\n         7
 pos tests/t520_hvalues_free.hb \n         2\n         2\n         0
+pos tests/t521_hdel.hb \n         2\na\nc\n         1\n         3\n         2\n         0
+pos tests/t522_hdel_readd.hb \n         3\na\nc\nbb\n         1\n         3\n        22\n         3
+pos tests/t523_hdel_free.hb \n         1\n         0
+neg tests/t524_neg_hdel_type.hb hb_HDel expects a hash
