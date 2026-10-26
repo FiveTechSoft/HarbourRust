@@ -163,9 +163,76 @@ fn harbour_parse_f64(txt: &str) -> Option<f64> {
 fn f64_const(bits: u64) -> usize {
     F64_CONSTS.with(|c| { let mut v = c.borrow_mut(); v.push(bits); v.len() - 1 })
 }
-// Load a float value into %xmm0 (value) and %rdi (decimal metadata, the
-// second slot): phase-1 literals and F64 locals, plus the runtime int/int
-// division of this increment (hb_vmDivide: EVERY numeric division is a
+// Numeric literal view for Harbour's compile-time fold (expropt2.c):
+// Float/FloatV are doubles with their written/folded dec; Int is a long
+// (dec 0). Returns (value, dec).
+fn num_lit(e: &Expr) -> Option<(f64, u8)> {
+    match e {
+        Expr::Int(v) => v.parse::<i64>().ok().map(|k| (k as f64, 0)),
+        Expr::Float(txt, dec) => harbour_parse_f64(txt).map(|v| (v, *dec)),
+        Expr::FloatV(bits, dec) => Some((f64::from_bits(*bits), *dec)),
+        _ => None,
+    }
+}
+
+// Harbour compile-time fold of a constant numeric binary op (expropt2.c
+// hb_compExprReducePlus/Minus/Mult/Div; oracles hk291/hk296/hk298).
+// LONG x LONG: exact +,-,* fold to LONG; on i64 overflow they fold to a
+// dec-0 DOUBLE like the VM's non-exact path (HB_DBL_LIM_LONG). / folds to
+// LONG only when exact, otherwise to a DOUBLE whose dec is the current
+// SET DECIMALS (the folded bDec = HB_DEFAULT_DECIMALS defers to the
+// runtime setting, fixed at 2 in this PoC). With any DOUBLE operand the
+// result is a DOUBLE with dec = max(+,-) / sum(*) / SET DECIMALS (2) for
+// /. Returns None when Harbour itself would not fold (a zero divisor or
+// unrepresentable int division): the runtime path handles those.
+fn fold_num_bin(op: char, a: &Expr, b: &Expr) -> Option<Expr> {
+    let ia = if let Expr::Int(v) = a { v.parse::<i64>().ok() } else { None };
+    let ib = if let Expr::Int(v) = b { v.parse::<i64>().ok() } else { None };
+    if let (Some(x), Some(y)) = (ia, ib) {
+        match op {
+            '+' => return Some(match x.checked_add(y) {
+                Some(r) => Expr::Int(r.to_string()),
+                None => Expr::FloatV((x as f64 + y as f64).to_bits(), 0),
+            }),
+            '-' => return Some(match x.checked_sub(y) {
+                Some(r) => Expr::Int(r.to_string()),
+                None => Expr::FloatV((x as f64 - y as f64).to_bits(), 0),
+            }),
+            '*' => return Some(match x.checked_mul(y) {
+                Some(r) => Expr::Int(r.to_string()),
+                None => Expr::FloatV((x as f64 * y as f64).to_bits(), 0),
+            }),
+            '/' => {
+                if y != 0 && !(x == i64::MIN && y == -1) {
+                    return Some(if x % y == 0 {
+                        Expr::Int((x / y).to_string())
+                    } else {
+                        Expr::FloatV(((x as f64) / (y as f64)).to_bits(), 2)
+                    });
+                }
+                return None;
+            }
+            _ => return None,
+        }
+    }
+    let (va, da) = num_lit(a)?;
+    let (vb, db) = num_lit(b)?;
+    let (v, d) = match op {
+        '+' => (va + vb, da.max(db)),
+        '-' => (va - vb, da.max(db)),
+        '*' => (va * vb, da.saturating_add(db)),
+        '/' => {
+            if vb == 0.0 { return None; }
+            (va / vb, 2)
+        }
+        _ => return None,
+    };
+    Some(Expr::FloatV(v.to_bits(), d))
+}
+
+// Load a float value into %xmm0 (value) and %rdi (packed metadata:
+// Harbour item length in the high bits, dec in the low 16): literals,
+// F64 locals and checked +,-,*,/ arithmetic on numeric values (phase 2). (hb_vmDivide: EVERY numeric division is a
 // double with dec = SET DECIMALS, 2 by default - oracle hk292 prints 5.00
 // for variable 10/2 while the compiler fold prints 5 for literal 10/2,
 // expropt2.c hb_compExprReduceDiv + oracle hk291). Everything else is
@@ -176,10 +243,10 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
             let v: f64 = harbour_parse_f64(txt).expect("frontier-checked at parse");
             let k = f64_const(v.to_bits());
             // Packed metadata: Harbour literal length HB_DEFAULT_WIDTH (10)
-            // in the high byte, dec in the low byte.
+            // in the high bits, dec in the low 16 bits.
             out.push_str(&format!("    movsd .Lf64c{}(%rip), %xmm0
     mov ${}, %rdi
-", k, (10u32 << 8) | (*dec as u32)));
+", k, (10u32 << 16) | (*dec as u32)));
         }
         Expr::FloatV(bits, dec) => {
             // Harbour's fold sets bWidth = HB_DEFAULT_WIDTH (255): the
@@ -192,7 +259,7 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
             let k = f64_const(*bits);
             out.push_str(&format!("    movsd .Lf64c{}(%rip), %xmm0
     mov ${}, %rdi
-", k, (len << 8) | (*dec as u32)));
+", k, (len << 16) | (*dec as u32)));
         }
         Expr::Var(v) => {
             let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
@@ -200,59 +267,58 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
     mov -{}(%rbp), %rdi
 ", var.off, var.off - 8));
         }
-        Expr::Bin('/', a, b) => {
-            // Runtime int/int division (both operands I64; literal-only
-            // division folded at parse). Divide as doubles like
-            // hb_vmDivide - (double)n1 / (double)n2, dec = SET DECIMALS
-            // (2 in this PoC; SET commands are a named rejection). A zero
-            // divisor raises EG_ZERODIV in Harbour; the default headless
-            // handler substitutes nothing and `?` prints the stale slot
-            // (probe hk294), so a clean error exit is the registered
-            // failure-mode difference, same condition.
-            cg_expr(a, env, sigs, strs, out, target);
-            out.push_str("    cvtsi2sd %rax, %xmm1
-    sub $16, %rsp
-    movsd %xmm1, (%rsp)
-");
-            cg_expr(b, env, sigs, strs, out, target);
-            let l = fresh_lbl();
-            out.push_str(&format!("    test %rax, %rax
-    jne .Ldivz{}
-    call hbc_div0_error
-.Ldivz{}:
-", l, l));
-            out.push_str("    cvtsi2sd %rax, %xmm0
-    movsd (%rsp), %xmm1
-    add $16, %rsp
-    divsd %xmm0, %xmm1
-    movsd %xmm1, %xmm0
-");
-            // Harbour length metadata for a runtime double: 20 when
-            // |d| > 9999999999.0, else 10 (hb_itemPutND + HB_DBL_LENGTH;
-            // oracle hk293 prints 2^63 padded to width 23 with dec 2).
-            // Asymmetric HB_DBL_LENGTH (hbdefs.h:570, oracle hk297):
-            // length 20 when x > 9999999999.0 OR x < -999999999.0.
+        Expr::Bin(op, a, b) => {
+            // Harbour numeric arithmetic on values (hb_vmPlus/Minus/Mult/
+            // Divide; oracles hk279/hk292/hk296/hk297): both operands are
+            // doubles, integer operands convert with cvtsi2sd like the
+            // VM's (double)n reads (hk300). dec = max(+,-), sum(*), SET
+            // DECIMALS = 2 (/). Division by a real zero (0.0 or -0.0)
+            // raises EG_ZERODIV (hk296 line 33); a NaN divisor is NOT
+            // zero (ucomisd sets PF on unordered) and divides through to
+            // NaN. The packed metadata carries the asymmetric
+            // HB_DBL_LENGTH of the RESULT (hbdefs.h:570, 63zb).
+            cg_f64_operand(a, env, sigs, strs, out, target);
+            out.push_str("    sub $32, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rcx, 8(%rsp)\n");
+            cg_f64_operand(b, env, sigs, strs, out, target);
+            if *op == '/' {
+                let l = fresh_lbl();
+                out.push_str(&format!("    xorpd %xmm2, %xmm2\n    ucomisd %xmm2, %xmm0\n    jp .Ldivok{}\n    jne .Ldivok{}\n    call hbc_div0_error\n.Ldivok{}:\n", l, l, l));
+            }
+            out.push_str("    movsd (%rsp), %xmm1\n");
+            let inst = match op { '+' => "addsd", '-' => "subsd", '*' => "mulsd", '/' => "divsd", _ => unreachable!("checked") };
+            out.push_str(&format!("    {} %xmm0, %xmm1\n", inst));
+            // Result dec in %rdi: max for +,-, sum for *, SET(2) for /.
+            match op {
+                '+' | '-' => out.push_str("    mov 8(%rsp), %rdi\n    cmp %rcx, %rdi\n    cmovb %rcx, %rdi\n"),
+                '*' => out.push_str("    mov 8(%rsp), %rdi\n    add %rcx, %rdi\n"),
+                '/' => out.push_str("    mov $2, %edi\n"),
+                _ => unreachable!("checked"),
+            }
+            out.push_str("    add $32, %rsp\n");
+            // Length: asymmetric HB_DBL_LENGTH - 20 when x > 9999999999.0
+            // or x < -999999999.0, else 10 (hbdefs.h:570; hk297). NaN
+            // fails both tests (unordered) and keeps 10.
             let kc = f64_const(9999999999.0f64.to_bits());
             let kn = f64_const(999999999.0f64.to_bits());
             let la = fresh_lbl();
             let lb = fresh_lbl();
-            out.push_str(&format!("    mov $10, %edi
-    movsd .Lf64c{}(%rip), %xmm2
-    ucomisd %xmm2, %xmm1
-    ja .Lf64la{}
-    xorpd %xmm2, %xmm2
-    subsd %xmm1, %xmm2
-    movsd .Lf64c{}(%rip), %xmm3
-    ucomisd %xmm3, %xmm2
-    jbe .Lf64lb{}
-.Lf64la{}:
-    mov $20, %edi
-.Lf64lb{}:
-    shl $8, %rdi
-    or $2, %rdi
-", kc, la, kn, lb, la, lb));
+            out.push_str(&format!("    mov $10, %eax\n    movsd .Lf64c{}(%rip), %xmm2\n    ucomisd %xmm2, %xmm1\n    ja .Lf64la{}\n    xorpd %xmm2, %xmm2\n    subsd %xmm1, %xmm2\n    movsd .Lf64c{}(%rip), %xmm3\n    ucomisd %xmm3, %xmm2\n    jbe .Lf64lb{}\n.Lf64la{}:\n    mov $20, %eax\n.Lf64lb{}:\n    shl $16, %rax\n    or %rax, %rdi\n    movsd %xmm1, %xmm0\n", kc, la, kn, lb, la, lb));
         }
-        _ => unreachable!("float expressions are literals, locals or int/int division"),
+        _ => unreachable!("float expressions are literals, locals or checked +,-,*,/ arithmetic"),
+    }
+}
+
+// Load one operand of float arithmetic: value into %xmm0, its Harbour
+// dec metadata into %ecx (0 for integers - hb_itemGetNDDec). Integers
+// convert with cvtsi2sd like the VM's (double)n reads (oracle hk300:
+// 2^53+1 rounds to 2^53 and compares .T. against 9007199254740992.0).
+fn cg_f64_operand(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    if expr_ty(e, env, sigs) == Ty::F64 {
+        cg_f64_load(e, env, sigs, strs, out, target);
+        out.push_str("    mov %rdi, %rcx\n    movzwl %cx, %ecx\n");
+    } else {
+        cg_expr(e, env, sigs, strs, out, target);
+        out.push_str("    cvtsi2sd %rax, %xmm0\n    xor %ecx, %ecx\n");
     }
 }
 fn new_block_id() -> usize { BLOCK_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst) }
@@ -611,7 +677,12 @@ impl P {
                 _ => break,
             };
             let rhs = self.term()?;
-            lhs = Expr::Bin(op, Box::new(lhs), Box::new(rhs));
+            // Harbour compile-time fold (expropt2.c; fold_num_bin).
+            if let Some(f) = fold_num_bin(op, &lhs, &rhs) {
+                lhs = f;
+            } else {
+                lhs = Expr::Bin(op, Box::new(lhs), Box::new(rhs));
+            }
         }
         Ok(lhs)
     }
@@ -625,30 +696,16 @@ impl P {
             };
             self.pos += 1;
             let rhs = self.factor()?;
-            // Harbour compile-time fold of constant int division
-            // (expropt2.c hb_compExprReduceDiv; oracle hk291: literal 10/2
-            // prints "5", 10/4 prints "2.50"): exact int/int folds to
-            // LONG; non-exact folds to DOUBLE with dec = current SET
-            // DECIMALS (the folded bDec = HB_DEFAULT_DECIMALS defers to
-            // the runtime setting, fixed at 2 in this PoC). A zero
-            // divisor is NOT folded (runtime EG_ZERODIV); i64::MIN / -1
-            // cannot fold without overflow and takes the runtime double
-            // path, which Harbour also uses for variables (oracle hk293).
-            if op == '/' {
-                if let (Expr::Int(ai), Expr::Int(bi)) = (&lhs, &rhs) {
-                    let a: i64 = ai.parse().expect("admitted at factor");
-                    let b: i64 = bi.parse().expect("admitted at factor");
-                    if b != 0 && !(a == i64::MIN && b == -1) {
-                        lhs = if a % b == 0 {
-                            Expr::Int((a / b).to_string())
-                        } else {
-                            Expr::FloatV(((a as f64) / (b as f64)).to_bits(), 2)
-                        };
-                        continue;
-                    }
-                }
+            // Harbour compile-time fold of constant numeric arithmetic
+            // (expropt2.c hb_compExprReducePlus/Minus/Mult/Div; oracles
+            // hk291/hk296/hk298): see fold_num_bin. A zero divisor is NOT
+            // folded (runtime EG_ZERODIV); i64::MIN / -1 takes the
+            // runtime double path (oracle hk293).
+            if let Some(f) = fold_num_bin(op, &lhs, &rhs) {
+                lhs = f;
+            } else {
+                lhs = Expr::Bin(op, Box::new(lhs), Box::new(rhs));
             }
-            lhs = Expr::Bin(op, Box::new(lhs), Box::new(rhs));
         }
         Ok(lhs)
     }
@@ -3628,7 +3685,23 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Err(format!("line {}: division with a NIL-able (Dyn) operand is not in this increment (Harbour always divides as doubles; an i64 payload path would silently truncate)", n));
             }
             if ta == Ty::F64 || tb == Ty::F64 {
-                return Err(format!("line {}: float arithmetic is not in this increment (phase 2 covers int/int division only so far; oracles hk278-hk284/hk291-hk293)", n));
+                // Float arithmetic on values (oracles hk279/hk292/hk296:
+                // +,- keep dec = max; * sums the decs; / takes SET
+                // DECIMALS = 2; integer operands promote with dec 0).
+                // Mixed float/string, float/logical, float/array and
+                // float/Dyn stay Harbour type errors (BASE/1081+); Dyn
+                // has no float payload tag in this increment.
+                if matches!(ta, Ty::Dyn) || matches!(tb, Ty::Dyn) {
+                    // Covered LIMIT, not a Harbour error: Harbour runs a
+                    // float op with a number-holding Dyn fine; this PoC's
+                    // Dyn has no float payload tag, so the op is rejected
+                    // by name instead of silently truncating (63zc).
+                    return Err(format!("line {}: arithmetic between a NIL-able (Dyn) value and a float is a covered LIMIT of this increment (Harbour runs it when the Dyn holds a number; this PoC's Dyn has no float payload - registered divergence, no silent truncation)", n));
+                }
+                if !matches!(ta, Ty::I64 | Ty::F64) || !matches!(tb, Ty::I64 | Ty::F64) {
+                    return Err(format!("line {}: arithmetic needs numeric operands (float mixed with strings, logicals or arrays is a Harbour type error)", n));
+                }
+                return Ok(Ty::F64);
             }
             if !matches!(ta, Ty::I64 | Ty::Dyn) || !matches!(tb, Ty::I64 | Ty::Dyn) {
                 return Err(format!("line {}: arithmetic requires integers", n));
@@ -3684,7 +3757,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // compares references while our static arrays are
                 // copied into the frame (D5/D7 family), so an element
                 // compare would answer .T. where Harbour answers .F.
-                if ta == Ty::I64 && tb == Ty::I64 { return Ok(Ty::Bool); }
+                if matches!(ta, Ty::I64 | Ty::F64) && matches!(tb, Ty::I64 | Ty::F64) { return Ok(Ty::Bool); } // numeric `==` compares values like `=` (hk124; floats hk296)
                 if ta == Ty::Bool && tb == Ty::Bool { return Ok(Ty::Bool); } // hk202: t == t is .T.
                 // NIL handled above (hk128/hk129): identity and equality
                 // coincide where NIL is one side; same codegen as `=`.
@@ -3773,6 +3846,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             if ta == Ty::I64 && tb == Ty::I64 {
                 return Ok(Ty::Bool);
             }
+            if matches!(ta, Ty::I64 | Ty::F64) && matches!(tb, Ty::I64 | Ty::F64) {
+                // Float comparisons: plain IEEE double compare with
+                // integer operands converted (oracles hk280/hk296/hk300).
+                return Ok(Ty::Bool);
+            }
             if ta == Ty::Bool && tb == Ty::Bool && matches!(op, CmpOp::Eq | CmpOp::Ne) {
                 // hk202: .T. = .T. is .T., .T. <> .F. is .T.
                 return Ok(Ty::Bool);
@@ -3814,6 +3892,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // not exact equivalence.
             if (ta == Ty::Dyn && matches!(tb, Ty::Str | Ty::StrOwn)) || (matches!(ta, Ty::Str | Ty::StrOwn) && tb == Ty::Dyn) {
                 return Ok(Ty::Bool);
+            }
+            if (ta == Ty::Dyn && tb == Ty::F64) || (ta == Ty::F64 && tb == Ty::Dyn) {
+                // Covered LIMIT (same reason as arithmetic): a number-
+                // holding Dyn compares fine in Harbour; this PoC's Dyn
+                // has no float payload tag - named rejection instead of
+                // a silent i64 extraction (63zc).
+                return Err(format!("line {}: comparing a NIL-able (Dyn) value with a float is a covered LIMIT of this increment (Harbour runs it when the Dyn holds a number; this PoC's Dyn has no float payload - registered divergence)", n));
             }
             if ta != tb {
                 return Err(format!("line {}: cannot compare a string with an integer in this PoC", n));
@@ -6926,6 +7011,9 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             } else if *op == '/' && expr_ty(a, env, sigs) == Ty::I64 && expr_ty(b, env, sigs) == Ty::I64 {
                 // Mirror of type_expr: runtime int/int division is F64.
                 Ty::F64
+            } else if expr_ty(a, env, sigs) == Ty::F64 || expr_ty(b, env, sigs) == Ty::F64 {
+                // Mirror of type_expr: float arithmetic is F64.
+                Ty::F64
             } else {
                 Ty::I64
             }
@@ -7536,6 +7624,28 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 out.push_str(&format!("    je {}\n", true_label));
             } else {
                 unreachable!("checker restricts `==` on arrays to variables");
+            }
+        }
+        Expr::Cmp(op, a, b) if expr_ty(a, env, sigs) == Ty::F64 || expr_ty(b, env, sigs) == Ty::F64 => {
+            // Float comparison (oracles hk280/hk296/hk300): IEEE value
+            // compare, integer operands converted with cvtsi2sd (2^53+1
+            // rounds and compares .T. against 9007199254740992.0).
+            // ucomisd treats NaN (reachable via inf-inf, hk299) as
+            // unordered: CF=ZF=PF=1. Harbour's C operators answer .F.
+            // for =,<,<=,>,>= and .T. for # on an unordered pair; the
+            // setnp/setp guards below reproduce exactly that (> and >=
+            // need no guard: the unordered CF=1 already answers .F.).
+            cg_f64_operand(a, env, sigs, strs, out, target);
+            out.push_str("    sub $16, %rsp\n    movsd %xmm0, (%rsp)\n");
+            cg_f64_operand(b, env, sigs, strs, out, target);
+            out.push_str("    movsd (%rsp), %xmm1\n    add $16, %rsp\n    ucomisd %xmm0, %xmm1\n");
+            match op {
+                CmpOp::Eq | CmpOp::EqEq => out.push_str(&format!("    sete %al\n    setnp %cl\n    and %cl, %al\n    test %al, %al\n    jnz {}\n", true_label)),
+                CmpOp::Ne => out.push_str(&format!("    setne %al\n    setp %cl\n    or %cl, %al\n    test %al, %al\n    jnz {}\n", true_label)),
+                CmpOp::Lt => out.push_str(&format!("    setb %al\n    setnp %cl\n    and %cl, %al\n    test %al, %al\n    jnz {}\n", true_label)),
+                CmpOp::Le => out.push_str(&format!("    setbe %al\n    setnp %cl\n    and %cl, %al\n    test %al, %al\n    jnz {}\n", true_label)),
+                CmpOp::Gt => out.push_str(&format!("    seta %al\n    test %al, %al\n    jnz {}\n", true_label)),
+                CmpOp::Ge => out.push_str(&format!("    setae %al\n    test %al, %al\n    jnz {}\n", true_label)),
             }
         }
         Expr::Cmp(op, a, b) => {
@@ -11580,6 +11690,20 @@ hbc_div0_error:
     mov $1, %edi
     syscall
 
+# hbc_f64range_error: a float field (padding + digits, or a non-finite
+# star fill) exceeds the helper's bounded compose scratch (456 bytes).
+# Harbour grows its print buffer dynamically; beyond this measured
+# frontier a clean named exit 1 is the registered limit (63zc).
+hbc_f64range_error:
+    lea .Lf64rangemsg(%rip), %rsi
+    mov $32, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 # hbc_type_error: NIL used as a number at runtime (arithmetic, ordering or
 # array indexing). Harbour raises a type-error dialog; headless probes
 # cannot capture it, so this PoC prints and exits 1 (registered failure
@@ -12215,6 +12339,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Lboundmsg:\n    .byte 66,111,117,110,100,32,101,114,114,111,114,58,32,97,114,114,97,121,32,97,99,99,101,115,115,10\n");
     // "Error: division by zero\n" (24 bytes; EG_ZERODIV, probe hk294)
     out.push_str(".Ldiv0msg:\n    .byte 69,114,114,111,114,58,32,100,105,118,105,115,105,111,110,32,98,121,32,122,101,114,111,10\n");
+    out.push_str(".Lf64rangemsg:\n    .byte 69,114,114,111,114,58,32,102,108,111,97,116,32,102,105,101,108,100,32,111,117,116,32,111,102,32,114,97,110,103,101,10\n");
     out.push_str(".Loommsg:\n    .byte 79,117,116,32,111,102,32,109,101,109,111,114,121,10\n");
     // "Type error: NIL used as a number\n" (33 bytes; registered failure mode)
     out.push_str(".Losbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,79,83,32,102,114,101,101,32,102,97,105,108,101,100,10\n");
@@ -12261,8 +12386,46 @@ hbc_print_f64:
     push %r13
     push %r14
     push %r15
-    sub $160, %rsp
-    mov %rdi, -40(%rbp)          # dec_count
+    sub $512, %rsp
+    mov %rdi, -40(%rbp)          # packed metadata: (length << 16) | dec
+    # Non-finite (inf from overflow, NaN from inf-inf): Harbour fills the
+    # whole field with '*' - iSize = length + (dec ? 1 + dec : 0) stars
+    # and NO padding (hb_itemStrBuf; oracle hk299).
+    movq %xmm0, %rax
+    mov $0x7ff0000000000000, %rcx
+    and %rcx, %rax          # exponent field only (NaN and inf both all-ones)
+    cmp %rcx, %rax
+    jne .Lf64_fin
+    mov -40(%rbp), %r13
+    mov %r13, %r15
+    shr $16, %r15               # Harbour item length
+    movzwl %r13w, %r13d         # dec
+    test %r13d, %r13d
+    jz .Lf64_st
+    inc %r15
+    add %r13, %r15
+.Lf64_st:
+    cmp $456, %r15              # bounded scratch (63zc frontier)
+    jbe .Lf64_st3
+    call hbc_f64range_error
+.Lf64_st3:
+    lea -544(%rbp), %r9
+    mov %r15d, %ecx
+.Lf64_st2:  movb $42, (%r9)
+    inc %r9
+    dec %ecx
+    jnz .Lf64_st2
+    lea -544(%rbp), %rax
+    mov %r15, %rdx
+    call hbc_print_str
+    add $512, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    leave
+    ret
+.Lf64_fin:
     # sign / |x|
     xor %r10d, %r10d
     movq %xmm0, %rax
@@ -12331,25 +12494,138 @@ hbc_print_f64:
     dec %rsi
     dec %ecx
     jnz .Lf64_6
-    # compose output at -144(%rbp) forward; r9 = cursor
-    lea -144(%rbp), %r9
+    # hk301/hk301b: Harbour rounds the printed value HALF-UP (half-away
+    # from zero - the sign is handled separately) at the dec boundary,
+    # applied to the 16-significant-digit image: 0.125/1 -> 0.13,
+    # 0.665/1 -> 0.67 (the double is 0.66499...; the image carries the
+    # tie), 1.5/2.25 -> 0.67, 9.995/1 -> 10.00 with carry into the
+    # integer part, 0.0999/1 -> 0.10 with carry through the leading
+    # fraction zeros.
+    movb $48, -160(%rbp)         # integer char when e<0 ("0"); -160/-161 are free frame bytes (saved regs occupy -8..-32)
+    movb $0, -161(%rbp)          # leading-zero fraction position raised by a carry (0 = none)
+    movzwl -40(%rbp), %r13d     # dec
+    mov -56(%rbp), %r11         # e
+    mov $1, %r12
+    test %r11, %r11
+    js .Lf64_50
+    lea 1(%r11), %r12           # int_len = e+1
+.Lf64_50:
+    # round source = digit at position int_len+dec+1 of the sequence
+    # (e>=0: N[i-1] or '0' past 16; e<0: '0' through the -e-1 leading
+    # fraction zeros, then N[k+e]).
+    lea 1(%r12,%r13), %rcx
+    mov $48, %dl
+    test %r11, %r11
+    js .Lf64_51
+    cmp $16, %rcx
+    ja .Lf64_52
+    mov -81(%rbp,%rcx), %dl
+    jmp .Lf64_52
+.Lf64_51:
+    lea -1(%rcx), %rax          # fraction index k
+    mov %r11, %r8
+    neg %r8
+    dec %r8                     # -e-1
+    cmp %r8, %rax
+    jle .Lf64_52                # inside the leading zeros: source is '0'
+    lea (%rax,%r11), %r8        # N index = k+e
+    cmp $16, %r8
+    jae .Lf64_52
+    mov -80(%rbp,%r8), %dl
+.Lf64_52:
+    cmp $53, %dl                # '5'
+    jb .Lf64_60
+    # increment at position int_len+dec and walk the carry left
+    lea (%r12,%r13), %rcx
+.Lf64_54:
+    test %r11, %r11
+    js .Lf64_55
+    mov -81(%rbp,%rcx), %dl     # e>=0: position rcx maps to N[rcx-1]
+    cmp $57, %dl
+    je .Lf64_57
+    inc %dl
+    mov %dl, -81(%rbp,%rcx)
+    jmp .Lf64_60
+.Lf64_57:
+    movb $48, -81(%rbp,%rcx)
+    dec %rcx
+    jnz .Lf64_54
+    # full carry: the image becomes 1 followed by zeros - clear ALL 16
+    # digits (the round source and everything past it are stale)
+    lea -80(%rbp), %rsi
+    mov $16, %ecx
+.Lf64_62:  movb $48, (%rsi)
+    inc %rsi
+    dec %ecx
+    jnz .Lf64_62
+    movb $49, -80(%rbp)
+    incq -56(%rbp)              # e grows: 9.995/1 -> 10.00 (hk301)
+    jmp .Lf64_60
+.Lf64_55:
+    cmp $1, %rcx
+    je .Lf64_58
+    lea -1(%rcx), %rax          # fraction index k
+    mov %r11, %r8
+    neg %r8
+    dec %r8                     # -e-1
+    cmp %r8, %rax
+    jle .Lf64_59                # leading-zero region: '0' -> '1'
+    lea (%rax,%r11), %r8        # N index = k+e
+    mov -80(%rbp,%r8), %dl
+    cmp $57, %dl
+    je .Lf64_61
+    inc %dl
+    mov %dl, -80(%rbp,%r8)
+    jmp .Lf64_60
+.Lf64_61:
+    movb $48, -80(%rbp,%r8)
+    dec %rcx
+    jmp .Lf64_54
+.Lf64_59:
+    movb %al, -161(%rbp)         # raised leading-zero position
+    jmp .Lf64_60
+.Lf64_58:
+    movb $49, -160(%rbp)         # the integer "0" becomes "1"
+.Lf64_60:
+
+    # compose output at -544(%rbp) forward; r9 = cursor
+    lea -544(%rbp), %r9
     # total_len = sign + int_len + 1 + dec ; width = 11 + dec ; pad = max(width-total,0)
     mov -56(%rbp), %r11         # e
     mov $1, %r12                # int_len (e<0 -> "0")
     test %r11, %r11
     js .Lf64_7
     lea 1(%r11), %r12           # int_len = e+1
-.Lf64_7:  mov -40(%rbp), %r13          # packed metadata: dec = low byte, Harbour item length (10/20) above it
+.Lf64_7:  mov -40(%rbp), %r13          # packed metadata: dec = low 16 bits, Harbour item length (10/20) above them
     mov %r13, %r15
-    shr $8, %r15                # length: 10 for literals and small results, 20 when |d| > 9999999999.0 (hb_itemPutND + HB_DBL_LENGTH, oracle hk293)
-    movzbl %r13b, %r13d         # dec
-    lea 1(%r12,%r13), %r14      # int_len + 1 + dec
+    shr $16, %r15               # length: 10 for literals and small results, 20 for the asymmetric HB_DBL_LENGTH bounds (hb_itemPutND, oracles hk293/hk297)
+    movzwl %r13w, %r13d         # dec
+    lea (%r12,%r13), %r14       # int_len + dec
+    test %r13d, %r13d
+    jz .Lf64_7b
+    inc %r14                    # + the dot (only when dec > 0: hb_itemStrBuf)
+.Lf64_7b:
     test %r10d, %r10d
     jz .Lf64_8
     inc %r14
-.Lf64_8:  inc %r15
-    add %r13, %r15              # width = length + 1 + dec
+.Lf64_8:  test %r13d, %r13d
+    jz .Lf64_8b
+    inc %r15
+    add %r13, %r15              # width = length + 1 + dec (dec > 0 only)
+.Lf64_8b:
     sub %r14, %r15              # pad (may be negative)
+    # bounded compose scratch: total + pad must fit 456 bytes (Harbour
+    # grows its print buffer dynamically; 63zc registered frontier)
+    mov %r14, %rax
+    test %r15, %r15
+    jle .Lf64_70
+    add %r15, %rax
+.Lf64_70:
+    cmp $456, %rax
+    jbe .Lf64_71
+    call hbc_f64range_error
+.Lf64_71:
+    test %r15, %r15
     jle .Lf64_9
 .Lf64_12: movb $32, (%r9)
     inc %r9
@@ -12396,15 +12672,16 @@ hbc_print_f64:
     dec %ecx
     jnz .Lf64_41
     jmp .Lf64_16
-.Lf64_14: movb $48, (%r9)             # e<0: integer "0"
+.Lf64_14: movb -160(%rbp), %al        # e<0: integer char ("0"; a round carry may have raised it to "1", hk301b)
+    mov %al, (%r9)
     inc %r9
 .Lf64_16:
+    movzwl -40(%rbp), %r13d     # dec remaining (low 16 bits of the packed metadata)
+    test %r13, %r13
+    jz .Lf64_40                 # dec 0: no dot, no fraction (hb_itemStrBuf)
     movb $46, (%r9)             # '.'
     inc %r9
     # fraction sequence: [(-e-1) zeros if e<0] + [16 digits of N after int part] + zeros; take dec chars
-    movzbl -40(%rbp), %r13d      # dec remaining (low byte of the packed metadata)
-    test %r13, %r13
-    jz .Lf64_40
     mov -56(%rbp), %r11
     # leading zeros for e<0
     test %r11, %r11
@@ -12416,7 +12693,19 @@ hbc_print_f64:
     jz .Lf64_40
     test %rcx, %rcx
     jz .Lf64_18
-    movb $48, (%r9)
+    # 1-based fraction position of this leading zero: (-e-1) - rcx + 1;
+    # a round carry may have raised one of them to '1' (hk301b 0.0999/1).
+    mov -56(%rbp), %rax
+    neg %rax
+    dec %rax
+    sub %rcx, %rax
+    inc %rax
+    movb $48, %dl
+    cmpb -161(%rbp), %al
+    jne .Lf64_19b
+    movb $49, %dl
+.Lf64_19b:
+    mov %dl, (%r9)
     inc %r9
     dec %r13
     dec %rcx
@@ -12447,11 +12736,11 @@ hbc_print_f64:
     jmp .Lf64_22
 .Lf64_40:
     # write: start -112, len = r9 - start
-    lea -144(%rbp), %rax
+    lea -544(%rbp), %rax
     mov %r9, %rdx
     sub %rax, %rdx
     call hbc_print_str
-    add $160, %rsp
+    add $512, %rsp
     pop %r15
     pop %r14
     pop %r13
@@ -12890,6 +13179,17 @@ hbc_div0_error:
     sub $48, %rsp
     lea .Ldiv0msg(%rip), %rax
     mov $24, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+# hbc_f64range_error: same wording as the linux helper; exit code 1.
+hbc_f64range_error:
+    push %rbp
+    mov %rsp, %rbp
+    sub $48, %rsp
+    lea .Lf64rangemsg(%rip), %rax
+    mov $32, %edx
     call hbc_print_str
     mov $1, %ecx
     call ExitProcess
