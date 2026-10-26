@@ -246,6 +246,77 @@ hbc_abi_test:
     test %rax, %rax
     jnz abi_fail_sx
     call abi_check
+    # hbc_dynxeq_dd: NIL x NIL is 1; NIL x number is 0; number x number
+    # by value (1 equal, 0 different); string x string exact via the -8
+    # length header (1 equal, 0 different content).
+    mov $1, %eax
+    xor %edx, %edx
+    mov $1, %ecx
+    xor %r8d, %r8d
+    call hbc_dynxeq_dd
+    cmp $1, %rax
+    jne abi_fail_xd
+    call abi_check
+    mov $1, %eax
+    xor %edx, %edx
+    xor %ecx, %ecx
+    mov $7, %r8d
+    call hbc_dynxeq_dd
+    test %rax, %rax
+    jnz abi_fail_xd
+    call abi_check
+    xor %eax, %eax
+    mov $7, %edx
+    xor %ecx, %ecx
+    mov $7, %r8d
+    call hbc_dynxeq_dd
+    cmp $1, %rax
+    jne abi_fail_xd
+    call abi_check
+    xor %eax, %eax
+    mov $7, %edx
+    xor %ecx, %ecx
+    mov $8, %r8d
+    call hbc_dynxeq_dd
+    test %rax, %rax
+    jnz abi_fail_xd
+    call abi_check
+    lea .Labi_ok(%rip), %rdi
+    mov $7, %esi
+    call hbc_strcpy
+    mov %rax, -16(%rbp)
+    call abi_check
+    lea .Labi_ok(%rip), %rdi
+    mov $7, %esi
+    call hbc_strcpy
+    mov %rax, -48(%rbp)
+    call abi_check
+    mov $2, %eax
+    mov -16(%rbp), %rdx
+    mov $2, %ecx
+    mov -48(%rbp), %r8
+    call hbc_dynxeq_dd
+    cmp $1, %rax
+    jne abi_fail_xd
+    call abi_check
+    mov -48(%rbp), %rax
+    movb $0x21, (%rax)
+    mov $2, %eax
+    mov -16(%rbp), %rdx
+    mov $2, %ecx
+    mov -48(%rbp), %r8
+    call hbc_dynxeq_dd
+    test %rax, %rax
+    jnz abi_fail_xd
+    call abi_check
+    mov -16(%rbp), %rdi
+    mov $7, %esi
+    call hbc_free
+    call abi_check
+    mov -48(%rbp), %rdi
+    mov $7, %esi
+    call hbc_free
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -324,6 +395,10 @@ abi_fail_hk:
     lea .Labi_f_hk(%rip), %rax
     mov $12, %edx
     jmp abi_fail_common
+abi_fail_xd:
+    lea .Labi_f_xd(%rip), %rax
+    mov $11, %edx
+    jmp abi_fail_common
 abi_fail_common:
     call hbc_print_str
 ASM_EOF
@@ -353,6 +428,7 @@ ASM_EOF
 .Labi_f_aln: .ascii "ABI FAIL align\n"
 .Labi_f_sx:  .ascii "ABI FAIL xeq\n"
 .Labi_f_hk:  .ascii "ABI FAIL hk\n"
+.Labi_f_xd:  .ascii "ABI FAIL xd\n"
 .Labi_k1:    .ascii "ab"
 .Labi_k2:    .ascii "c"
 ASM_EOF
