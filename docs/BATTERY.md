@@ -2400,3 +2400,24 @@ captures. BATTERY 739 -> 744 runner rows + ABI ALL GREEN (Linux native
 and Wine with Linux oracle). Sweep: COMPILES 5 (hello, statfun,
 lnlenli2, calling, nums; nums re-verified byte-exact after the printer
 metadata change).
+
+## 63zb - Harbour's asymmetric length rule for float results (745 rows)
+
+HB_DBL_LENGTH (hbdefs.h:570) is NOT symmetric: a runtime double gets
+length 20 when d > 9999999999.0 OR d < -999999999.0 (ten times less
+magnitude on the negative side), else 10. 63za used the symmetric
+|d| > 9999999999.0: `? -2000000000 / 1` padded to 13 where Harbour
+pads to 23 (oracle hk297). Folded constants resolve bWidth 255 to the
+same value-driven length, so `? 9223372036854775807 / 3` pads to 23
+(oracle hk298) - 63za printed it unpadded. Both fixed: the runtime
+division path tests the two Harbour thresholds, and FloatV folds
+compute the length from the folded value. Written-literal width stays
+10: Harbour's compiler width-from-text rule (max(10, intdigits+sign))
+is observably identical to 10 under our admitted frontier (proved by
+case split on intdigits+sign vs 10). Oracles hk296 (mixed VM ops,
+comparisons, dec-34 mult, double-zero divide), hk297 (asymmetric
+thresholds), hk298 (fold lengths/decs) captured and published.
+t749 (fold + runtime length cases) byte-exact. BATTERY 744 -> 745
+runner rows + ABI ALL GREEN. Sweep: COMPILES 5, all byte-exact
+(hello, statfun, lnlenli2, calling, nums re-verified against hbmk2
+with this HEAD).
