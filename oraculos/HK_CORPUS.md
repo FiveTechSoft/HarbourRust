@@ -2126,3 +2126,31 @@ return nil
 
 
 
+
+### hk155 - hb_HDel: borrado, clave ausente y vaciado (26 oct 2026)
+
+Fuente `sondas_ac/hkeys/hk155.prg`, compilada con
+`hbmk2 hk155.prg -gtstd -ohk155` (solo librerías core). Salida verbatim:
+
+```
+\n         2\na\nc\n         1\n         3\n         2\n         0
+```
+
+Tras hb_HDel(h, "bb") len pasa de 3 a 2 y la iteración y las lecturas
+saltan "bb"; borrar la ausente "zz" es un no-op (len sigue 2); borrar
+todas deja len 0. Reproducido byte a byte por t521 en Linux y Wine.
+
+### hk156 - hb_HDel: re-alta al final y clave vacía (26 oct 2026)
+
+Fuente `sondas_ac/hkeys/hk156.prg`, compilada con
+`hbmk2 hk156.prg -gtstd -ohk156` (solo librerías core). Salida verbatim:
+
+```
+\n         3\na\n         1\nc\n         3\nbb\n        22\n         3
+```
+
+Una clave borrada y re-alta ("bb") queda al FINAL - las entradas
+restantes conservan su orden (a, c, bb); borrar "" sin existir es un
+no-op (len sigue 3). Verificado por t522 con lecturas por clave literal
+(la lectura h[k] del oráculo con variable `for each` Dyn sigue siendo
+límite nombrado del incremento: las lecturas piden claves Str/StrOwn).
