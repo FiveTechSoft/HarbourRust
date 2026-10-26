@@ -1792,3 +1792,51 @@ arrays, memvar references). COMPILES drops from 2 to 1 (hello.prg):
 - langapi.prg now stops at line 4 on the named REQUEST rejection
   (`hb_lang_hu` is an external module; honoring it would fake a link
   effect). This is deliberate: a named limit, not a silent skip.
+
+## Iteration 63n — order-independent inference / forward references (2026-10-26)
+
+Calls to functions defined LATER in the file, including self and mutual
+recursion (oracle hk253: Early(3)=30, static MutA(2)=2; Harbour
+compiles the whole file without textual order). Pass 1 no longer
+accumulates signatures in textual order: `view` always holds a
+COMPLETE signature table for the file, seeded with placeholder types
+(i64 parameters, void return), and each round re-infers every function
+from the AST against the previous round's table. A round that changes
+no entry proves convergence; only the converged round's errors are
+emitted (placeholder-dependent errors are dropped). Termination rests
+on finite progress, not a guessed round count: entries only move
+placeholder -> concrete and then up the finite pin-merge lattice
+(i64 < Dyn, DArr < DArr2 < DArr3 < DArr4), and call-site
+borrowed/arr_moved flags only flip false -> true and live in the
+persistent table, so every non-converged round strictly increases the
+summed lattice height. The cap is computed from that bound; hitting it
+is an explicit diagnostic, never a silent assumption. No new semantics
+or storage: the rule that a callee's parameter types come from the
+callee's own body evidence is unchanged; callers only CHECK.
+
+- t688: call-before-definition -> 30 (= hk253).
+- t689: mutual recursion between STATIC functions -> 2 (= hk253).
+- t690: ten-deep reverse call chain -> 109 (no fixed round cap would
+  justify this chain; the monotone bound does).
+- t691: forward call whose return pins a local's string type across
+  rounds -> hi!
+- t692 (neg): a forward call with a string argument where the callee
+  needs an integer is still detected after convergence.
+- t643 FLIPPED from neg to pos: its premise was the define-before-use
+  rejection itself. Self-recursion re-lending a @ borrow compiles and
+  is byte-identical with Harbour (oracle hk255: both print 0); each
+  frame's borrow ends before the inner call's begins.
+
+Battery: 688/688 + ABI harness green (Linux and Wine byte-identical).
+
+**Sweep** (frozen 175; provenance: src hbc.rs sha256 2c67976961c21e6844d25a278c8690b30bd032df30562c05a045676ae6cd2ba9,
+compiler binary sha256 d2309ce04279204a7bab3d26bdd3e4418fc8c76385b5402a438e37e15066df3e, 2026-10-26 (this 63n source); compared
+against the 63m sweep of HEAD a28f0ac8): the four genuine forward-
+reference files advance - statfun.prg COMPILES and its output is
+BYTE-IDENTICAL with Harbour (verified with diff: "From Main()" /
+"From Second()" / "From Main() again") - the second real original to
+compile and behave (hello.prg was the first; dynwin stays hollow and
+uncounted; errsys remains the registered DIVERGE-FAILMODE case now
+stopped at its hb_symbol_unused limit). and_or, calling and lnlenli2
+advance past the forward reference to their next real blockers
+(boolean arguments, string arguments, string array literals).
