@@ -1213,6 +1213,14 @@ integer a per-operator clean named exit 1 mirroring BASE/1073-1076
 (hk149-hk152 - dialogs hang headless; registered failure modes;
 t514-t517).
 
+t550-t555 (iteration 55): hb_HClone(h) over the new hbc_hclone helper -
+deep-copy independence in both directions (t550, hk166), insertion
+order + NIL + empty clone (t551, hk167), independent freeing of clone
+and source (t552, balance 0, own check), non-hash target rejected
+(t553). hb_HMerge edges: self-merge is a clean no-op (t554, hk168)
+and merged entries survive the source hash being freed (t555, deep
+copies, balance 0, own check). New helper canaried on both targets.
+
 t546-t549 (iteration 54): hb_HMerge(dst, src) over the new hbc_hmerge
 helper - source wins on overlap and keeps its position, new keys
 append (t546, hk164), empty target/source edges and an unmutated
@@ -1293,5 +1301,5 @@ insertion order into a NEW independent array (oracles hk153/hk154;
 t518/t519), result freed by the DArr epilogue with balance 0 (t520,
 own ownership check, not a Harbour oracle).
 
-545/545 manifest cases + ABI harness green on Linux x86-64 and Wine
+551/551 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
