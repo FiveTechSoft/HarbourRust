@@ -239,6 +239,7 @@ enum Stmt {
     If(usize, Expr, Vec<Stmt>, Vec<Stmt>), // line, condition, then, else (possibly empty)
     While(usize, Expr, Vec<Stmt>), // line, condition, body
     Assign(usize, String, Expr),   // x := expr on an already-declared local
+    HDel(usize, String, Expr), // hb_HDel(h, key) statement: remove the key's entry (hk155/hk156)
     ArrSet(usize, String, Expr, Expr), // a[i] := expr (index is 1-based)
     ArrSet2(usize, String, Expr, Expr, Expr), // a[i][j] := expr / a[i,j] := expr
     ArrSet3(usize, String, Expr, Expr, Expr, Expr), // a[i][j][k] := expr
@@ -573,7 +574,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees",
+    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -965,7 +966,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     *i += 1;
                     continue;
                 }
-                if (is_builtin(&id, "aadd") || is_builtin(&id, "asize")) && toks.len() >= 5 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen {
+                if (is_builtin(&id, "aadd") || is_builtin(&id, "asize") || is_builtin(&id, "hb_hdel")) && toks.len() >= 5 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen {
                     // AAdd(a, x) / ASize(a, n) as a STATEMENT: in-place
                     // mutation of the named local (Harbour writes these as
                     // calls; the statement form is the PoC surface - probe
@@ -993,7 +994,9 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     match head {
                         [Tok::Ident(v)] => {
                             check_ident(v, n)?;
-                            if is_builtin(&id, "aadd") {
+                            if is_builtin(&id, "hb_hdel") {
+                                out.push(Stmt::HDel(n, v.clone(), e));
+                            } else if is_builtin(&id, "aadd") {
                                 out.push(Stmt::AAdd(n, v.clone(), e));
                             } else {
                                 out.push(Stmt::ASize(n, v.clone(), e));
@@ -1049,13 +1052,13 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                                 let i1 = it.next().unwrap();
                                 match (it.next(), it.next()) {
                                     (None, None) => {
-                                        if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub(n, v, i1, e)); } else { out.push(Stmt::ASizeSub(n, v, i1, e)); }
+                                        if is_builtin(&id, "hb_hdel") { return Err(format!("line {}: hb_HDel takes a hash variable, not a subscript", n)); } else if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub(n, v, i1, e)); } else { out.push(Stmt::ASizeSub(n, v, i1, e)); }
                                     }
                                     (Some(i2), None) => {
-                                        if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub2(n, v, i1, i2, e)); } else { out.push(Stmt::ASizeSub2(n, v, i1, i2, e)); }
+                                        if is_builtin(&id, "hb_hdel") { return Err(format!("line {}: hb_HDel takes a hash variable, not a subscript", n)); } else if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub2(n, v, i1, i2, e)); } else { out.push(Stmt::ASizeSub2(n, v, i1, i2, e)); }
                                     }
                                     (Some(i2), Some(i3)) => {
-                                        if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub3(n, v, i1, i2, i3, e)); } else { out.push(Stmt::ASizeSub3(n, v, i1, i2, i3, e)); }
+                                        if is_builtin(&id, "hb_hdel") { return Err(format!("line {}: hb_HDel takes a hash variable, not a subscript", n)); } else if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub3(n, v, i1, i2, i3, e)); } else { out.push(Stmt::ASizeSub3(n, v, i1, i2, i3, e)); }
                                     }
                                     _ => unreachable!(),
                                 }
@@ -1088,11 +1091,15 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                                     return Err(format!("line {}: the first argument of `{}` must be a variable, a[i], a[i][j] or a[i][j][k]", n, id));
                                 }
                                 let i3 = parse_expr_tokens(head[rb2 + 2..head.len() - 1].to_vec(), n)?;
-                                if is_builtin(&id, "aadd") {
+                                if is_builtin(&id, "hb_hdel") {
+                                    return Err(format!("line {}: hb_HDel takes a hash variable, not a subscript", n));
+                                } else if is_builtin(&id, "aadd") {
                                     out.push(Stmt::AAddSub3(n, v, i1, i2, i3, e));
                                 } else {
                                     out.push(Stmt::ASizeSub3(n, v, i1, i2, i3, e));
                                 }
+                            } else if is_builtin(&id, "hb_hdel") {
+                                return Err(format!("line {}: hb_HDel takes a hash variable, not a subscript", n));
                             } else if is_builtin(&id, "aadd") {
                                 out.push(Stmt::AAddSub2(n, v, i1, i2, e));
                             } else {
@@ -1102,7 +1109,9 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         [Tok::Ident(v), Tok::LBracket, rest @ .., Tok::RBracket] if !rest.is_empty() && !rest.iter().any(|t| matches!(t, Tok::LBracket | Tok::RBracket)) => {
                             check_ident(v, n)?;
                             let idx = parse_expr_tokens(rest.to_vec(), n)?;
-                            if is_builtin(&id, "aadd") {
+                            if is_builtin(&id, "hb_hdel") {
+                                return Err(format!("line {}: hb_HDel takes a hash variable, not a subscript", n));
+                            } else if is_builtin(&id, "aadd") {
                                 out.push(Stmt::AAddSub(n, v.clone(), idx, e));
                             } else {
                                 out.push(Stmt::ASizeSub(n, v.clone(), idx, e));
@@ -1742,6 +1751,13 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     }
                     pin_vars(f, ie, Ty::I64, pin, *n)?;
                     walk(f, ie, sigs, lit, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, *n)?;
+                }
+                Stmt::HDel(n, id, e) => {
+                    // hb_HDel's target is a hash (hk155): pins a
+                    // parameter; the key's string shape is enforced by
+                    // the semantic pass.
+                    pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
                     walk(f, e, sigs, lit, pin, *n)?;
                 }
                 Stmt::AAdd(n, id, e) => {
@@ -3730,6 +3746,24 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if env[kp].moved {
                     return Err(format!("line {}: use of moved value `{}`", n, id));
                 }
+            }
+            Stmt::HDel(n, id, e) => {
+                // hb_HDel(h, key): the hash must be live and the key a
+                // string; the key is only borrowed (hbc_hdel reads it).
+                let kp = match env.iter().position(|v| v.name == *id) {
+                    Some(k) => k,
+                    None => return Err(format!("line {}: hb_HDel on undeclared variable `{}` (declare it with `local` first)", n, id)),
+                };
+                if env[kp].ty != Ty::Hash {
+                    return Err(format!("line {}: hb_HDel expects a hash variable in this increment", n));
+                }
+                if env[kp].moved {
+                    return Err(format!("line {}: use of moved value `{}`", n, id));
+                }
+                if !matches!(type_expr(e, env, sigs, *n)?, Ty::Str | Ty::StrOwn) {
+                    return Err(format!("line {}: hash keys are strings in this increment", n));
+                }
+                apply_moves(e, env, sigs, false);
             }
             Stmt::ArrSet(n, id, ie, e) => {
                 // Value first, then the index: the runtime order (probe
@@ -6462,6 +6496,16 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str("    mov %rax, %rsi\n    mov $16, %edx\n    xor %ecx, %ecx\n    call hbc_asize\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
                 out.push_str("    add $48, %rsp\n");
             }
+            Stmt::HDel(_, id, e) => {
+                // hb_HDel: key first (borrowed - hbc_hdel only reads it),
+                // then the slot address; the helper frees the hash-owned
+                // key copy and shifts the remaining entries down,
+                // preserving insertion order (hk155/hk156).
+                let var = env.iter().rev().find(|x| x.name == *id).expect("checked");
+                cg_value(e, env, sigs, strs, out, target);
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hdel\n    add $16, %rsp\n", var.off));
+            }
             Stmt::ArrSet(_, id, ie, e) => {
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
                 if v.ty == Ty::DArr2 {
@@ -6754,6 +6798,7 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
     for s in stmts {
         match s {
             Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) => collect_blocks_expr(e, out),
+            Stmt::HDel(_, _, e) => { collect_blocks_expr(e, out); }
             Stmt::ArrSet(_, _, ie, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(e, out); }
             Stmt::Print(_, es) => { for e in es { collect_blocks_expr(e, out); } }
             Stmt::Ret(_, Some(e)) => collect_blocks_expr(e, out),
@@ -7413,6 +7458,78 @@ hbc_hfree:
     mov $32, %esi
     call hbc_free
     add $8, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_hdel: rdi = hash slot address, rsi = key bytes, rdx = key length.
+# Removes the entry whose key matches byte for byte (probes hk155/hk156):
+# the hash-owned key copy is freed (hbc_free), the entries above it shift
+# down one slot - insertion order is preserved, which is why a deleted
+# key re-added later lands at the END (hk156) - and the live count drops
+# by one. A missing key is a no-op (hk155); the capacity header is left
+# alone. The lookup key is only read, never freed, so rodata and borrowed
+# caller keys are both safe. Value payloads own no memory (strings are
+# rejected at assignment), so nothing else needs releasing.
+hbc_hdel:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $8, %rsp
+    mov %rdi, %r15
+    mov (%r15), %r12
+    mov 8(%r15), %r13
+    xor %r14d, %r14d
+60: cmp %r13, %r14
+    jae 61f
+    mov %r14, %rax
+    shl $5, %rax
+    lea (%r12,%rax), %rbx
+    cmp 8(%rbx), %rdx
+    jne 62f
+    mov (%rbx), %rcx
+    xor %r9d, %r9d
+63: cmp %rdx, %r9
+    jae 64f
+    movzbl (%rcx,%r9), %r10d
+    movzbl (%rsi,%r9), %r11d
+    cmp %r11b, %r10b
+    jne 62f
+    inc %r9
+    jmp 63b
+62: inc %r14
+    jmp 60b
+64: mov (%rbx), %rdi
+    mov $1, %esi
+    call hbc_free
+65: lea 1(%r14), %rax
+    cmp %r13, %rax
+    jae 66f
+    mov %r14, %rax
+    shl $5, %rax
+    lea (%r12,%rax), %rcx
+    lea 32(%rcx), %rdx
+    mov (%rdx), %r8
+    mov %r8, (%rcx)
+    mov 8(%rdx), %r8
+    mov %r8, 8(%rcx)
+    mov 16(%rdx), %r8
+    mov %r8, 16(%rcx)
+    mov 24(%rdx), %r8
+    mov %r8, 24(%rcx)
+    inc %r14
+    jmp 65b
+66: dec %r13
+    mov %r13, 8(%r15)
+61: add $8, %rsp
+    pop %r15
+    pop %r14
     pop %r13
     pop %r12
     pop %rbx
