@@ -4805,9 +4805,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if env[idx].ty == Ty::DArrU && matches!(t, Ty::DArr | Ty::DArr2) {
                     // Assigning a pinned dynamic array pins the empty `{}`.
                     env[idx].ty = t;
-                } else if env[idx].ty == Ty::Dyn && matches!(t, Ty::I64 | Ty::Dyn) {
+                } else if env[idx].ty == Ty::Dyn && matches!(t, Ty::I64 | Ty::Dyn | Ty::Str | Ty::StrOwn) {
                     // Dyn slot: an i64 is tagged in, a Dyn is copied (probe
-                    // n2: reassignment re-tags a live variable).
+                    // n2: reassignment re-tags a live variable), a string
+                    // becomes an OWNED tag-4 casilla (hk242): a literal is
+                    // cloned at the boundary, an owned value moves in.
                 } else if env[idx].ty == Ty::I64 && t == Ty::Dyn {
                     // i64 slot receiving a Dyn: the tag is checked at
                     // runtime (NIL payload -> clean type error).
@@ -5037,7 +5039,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             }
             // %r10 = scalar Dyn tag: 0 i64 -> "N", 1 NIL -> "U", 2 str -> "C"
             fn vt_classify_scalar(strs: &mut Vec<String>, out: &mut String) {
-                out.push_str("    cmp $1, %r10\n    je 95f\n    cmp $2, %r10\n    je 96f\n    cmp $3, %r10\n    je 98f\n");
+                out.push_str("    cmp $1, %r10\n    je 95f\n    cmp $2, %r10\n    je 96f\n    cmp $4, %r10\n    je 96f\n    cmp $3, %r10\n    je 98f\n");
                 vt_letter(strs, out, "N");
                 out.push_str("    jmp 97f\n95:\n");
                 vt_letter(strs, out, "U");
@@ -5766,6 +5768,11 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     continue;
                 }
                 if ta == Ty::Dyn {
+                    // The callee OWNS its Dyn parameter (freed at its
+                    // epilogue like any owned param): a string payload is
+                    // cloned at the boundary so caller and callee never
+                    // share an allocation.
+                    cg_dyn_clone_if_str(out);
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     continue;
                 }
@@ -6394,6 +6401,21 @@ fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String,
 // total frame size. Branch locals get their own slots and are scoped: the
 // env is truncated at each branch join. The codegen walk below rebuilds
 // the exact same env, so offsets match.
+// Dyn slot write preludes (hk242). INVARIANT: tag 2 = a BORROWED string
+// view (FOR EACH over hash keys; payload-8 is the length header) and is
+// never freed; tag 4 = an OWNED string (16-byte header layout) freed by
+// exactly one owner (slot overwrite, epilogue, or a print/compare temp).
+// Every store into a Dyn slot first releases a live tag-4 payload.
+fn cg_dyn_free_old(out: &mut String, off: usize) {
+    out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne 87f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 87f\n    call hbc_freestr\n87:\n", off, off - 8));
+}
+
+// rax=tag, rdx=payload -> the pair with any string (tag 2 or 4) cloned
+// into a fresh owned tag-4 copy. Scalar tags pass through untouched.
+fn cg_dyn_clone_if_str(out: &mut String) {
+    out.push_str("    cmp $2, %rax\n    je 88f\n    cmp $4, %rax\n    jne 89f\n88:\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n89:\n");
+}
+
 fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &mut usize, darr_slots: &mut Vec<(usize, u8)>, dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
     for s in stmts {
         match s {
@@ -6407,8 +6429,8 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 if t == Ty::Str && byref_names.contains(id) { t = Ty::StrOwn; }
                 *frame += size_of(t);
                 env.push(CgLocal { name: id.clone(), ty: t, off: *frame });
-                if matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash) {
-                    darr_slots.push((*frame, if t == Ty::Hash { 2 } else if t == Ty::DArr3 { 3 } else if t == Ty::DArr4 { 6 } else if t == Ty::DArrS { 4 } else if t == Ty::StrOwn { 5 } else { (t == Ty::DArr2) as u8 }));
+                if matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::Dyn) {
+                    darr_slots.push((*frame, if t == Ty::Dyn { 7 } else if t == Ty::Hash { 2 } else if t == Ty::DArr3 { 3 } else if t == Ty::DArr4 { 6 } else if t == Ty::DArrS { 4 } else if t == Ty::StrOwn { 5 } else { (t == Ty::DArr2) as u8 }));
                 }
             }
             Stmt::AAdd(_, id, e) => {
@@ -6598,7 +6620,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                     out.push_str("    mov %rcx, %r10\n    mov %r8, %r11\n");
                 }
                 let lid = fresh_lbl();
-                out.push_str(&format!("    cmp $2, %r10\n    je .Ldys{}\n", lid));
+                out.push_str(&format!("    cmp $2, %r10\n    je .Ldys{}\n    cmp $4, %r10\n    je .Ldys{}\n", lid, lid));
                 match op {
                     CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq => {
                         out.push_str(&format!("    cmp $0, %r10\n    je .Ldyn{}\n", lid));
@@ -6951,11 +6973,18 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         }
                         match t {
                             Ty::I64 | Ty::Block(_) | Ty::Bool => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
-                            Ty::Str | Ty::Dyn => {
+                            Ty::Str => {
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
                             }
-                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash => {
+                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::Dyn => {
+                                // A Dyn initialized FROM A VAR borrows its
+                                // pair: clone any string payload so the new
+                                // slot owns its own copy (the same boundary
+                                // rule as Dyn-to-Dyn assignment).
+                                if t == Ty::Dyn && matches!(e, Expr::Var(_)) {
+                                    cg_dyn_clone_if_str(out);
+                                }
                                 // The slot can hold a live value when a
                                 // `local` re-declares inside a loop body:
                                 // free the old allocation first (null-safe).
@@ -6975,6 +7004,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_sfree\n85:\n", off, off - 8));
                                 } else if class == 5 {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n85:\n", off));
+                                } else if class == 7 {
+                                    out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne 85f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n85:\n", off, off - 8));
                                 } else {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov $16, %esi\n    call hbc_free\n85:\n", off));
                                 }
@@ -7101,7 +7132,15 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n", off));
                             }
                         }
-                        Ty::Dyn => out.push_str("    call hbc_print_dyn\n"),
+                        Ty::Dyn => {
+                            out.push_str("    call hbc_print_dyn\n");
+                            if !matches!(e, Expr::Var(_)) {
+                                // An owned temporary (a call result): a
+                                // tag-4 payload is released right after
+                                // printing; a Var stays owned by its slot.
+                                out.push_str(&format!("    cmpq $4, {}(%rsp)\n    jne 95f\n    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je 95f\n    call hbc_freestr\n95:\n", off, off + 8));
+                            }
+                        }
                         Ty::Bool => {
                             // .T./.F. (hk197/hk198): the 0/1 payload picks
                             // the literal; plain 3-byte print, no trim.
@@ -7158,6 +7197,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     if env.iter().rev().any(|x| x.name == *src && x.ty == Ty::RefStrOwn) {
                         out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
                     }
+                }
+                // A Dyn return hands the caller its own clone of any
+                // string payload (tag 4 owned temp): the callee's slot
+                // keeps its copy and the shared epilogue frees it.
+                if expr_ty(e, env, sigs) == Ty::Dyn {
+                    cg_dyn_clone_if_str(out);
                 }
                 // Returning a dynamic array MOVES it to the caller: the
                 // source slot is nulled BEFORE the shared epilogue runs, so
@@ -7641,7 +7686,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             Ty::I64 | Ty::Block(_) if lty == Ty::Dyn => {
                                 // Dyn slot, i64 value: tag it in (probe n2:
                                 // reassignment re-tags a live variable).
-                                out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                                // A live tag-4 payload is released first.
+                                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                                cg_dyn_free_old(out, off);
+                                out.push_str("    mov (%rsp), %rdx\n    add $16, %rsp\n    xor %eax, %eax\n");
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
                             }
@@ -7653,8 +7701,34 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                             }
                             Ty::Dyn => {
-                                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
-                                out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
+                                // A Var is a borrowed VIEW of its slot: a
+                                // string payload is cloned so each slot owns
+                                // its own copy (Harbour value semantics). A
+                                // non-Var (a call result) is already an
+                                // owned temporary: it moves in as-is.
+                                if matches!(e, Expr::Var(_)) {
+                                    cg_dyn_clone_if_str(out);
+                                }
+                                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                                cg_dyn_free_old(out, off);
+                                out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
+                            }
+                            Ty::Str if lty == Ty::Dyn => {
+                                // rodata literal into a Dyn slot: clone to
+                                // an owned tag-4 casilla at the boundary.
+                                out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                                out.push_str("    mov %rax, %rdx\n    mov $4, %eax\n");
+                                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                                cg_dyn_free_old(out, off);
+                                out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
+                            }
+                            Ty::StrOwn if lty == Ty::Dyn => {
+                                // An owned string MOVES into the Dyn slot
+                                // as a tag-4 casilla (a Var source was
+                                // already nulled by the generic move block).
+                                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                                cg_dyn_free_old(out, off);
+                                out.push_str(&format!("    mov $4, %eax\n    mov (%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
                             }
                             Ty::Str if lty == Ty::StrOwn => {
                                 // rodata into an owned slot (hk225): own a
@@ -8602,6 +8676,11 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         if v.ty == Ty::Hash {
             darr_slots.push((v.off, 2));
         }
+        if v.ty == Ty::Dyn {
+            // Dyn params own their casilla: the call boundary clones any
+            // string payload (tag 4), so the epilogue frees it once.
+            darr_slots.push((v.off, 7));
+        }
     }
 
     out.push_str(&format!("hbc_fn_{}:\n", lbl));
@@ -8676,6 +8755,12 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
                 // StrOwn: an owned string copy; hbc_freestr(ptr) releases
                 // exactly 16 + cap bytes (cap at ptr-16, len at ptr-8).
                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hbc_freestr\n91{}:\n", off, i, i));
+            }
+            7 => {
+                // Dyn slot: free the payload only for an OWNED string
+                // (tag 4). Borrowed tag-2 views (FOR EACH over hash keys)
+                // and scalar tags (0/1/3) own nothing.
+                out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne 91{}f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hbc_freestr\n91{}:\n", off, i, off - 8, i, i));
             }
             _ => {
                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov $16, %esi\n    call hbc_free\n91{}:\n", off, i, i));
@@ -10537,6 +10622,8 @@ hbc_print_dyn:
     jz 8f
     cmp $2, %rax
     je 9f
+    cmp $4, %rax
+    je 9f
     cmp $3, %rax
     je 11f
     lea .Lnilmsg(%rip), %rsi
@@ -10592,7 +10679,14 @@ hbc_dyn_to_log:
 # dialog hangs headless) - clean named exit 1 via hbc_dyncmp_eq_error,
 # registered failure mode, not exact equivalence. Leaf routine.
 hbc_dyn_eq:
-    cmp %rcx, %rax
+    # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
+    cmp $4, %rax
+    jne 80f
+    mov $2, %eax
+80: cmp $4, %rcx
+    jne 81f
+    mov $2, %ecx
+81: cmp %rcx, %rax
     jne 7f
     cmp $2, %rax
     je 6f
@@ -10631,7 +10725,14 @@ hbc_dyn_eq:
 # equivalence. A NIL casilla in an ordering comparison is a Harbour type
 # error: hbc_type_error (registered failure mode). Leaf routine.
 hbc_dynxcmp:
-    cmp %rcx, %rax
+    # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
+    cmp $4, %rax
+    jne 80f
+    mov $2, %eax
+80: cmp $4, %rcx
+    jne 81f
+    mov $2, %ecx
+81: cmp %rcx, %rax
     jne 70f
     test %rax, %rax
     jnz 71f
@@ -10673,7 +10774,14 @@ hbc_dynxcmp:
 # dialog hangs headless): a clean named exit 1, registered failure mode,
 # not exact equivalence. Leaf routine: the error path is a noreturn stub.
 hbc_dynxeq_dd:
-    cmp %rcx, %rax
+    # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
+    cmp $4, %rax
+    jne 80f
+    mov $2, %eax
+80: cmp $4, %rcx
+    jne 81f
+    mov $2, %ecx
+81: cmp %rcx, %rax
     jne 5f
     cmp $2, %rax
     je 2f
@@ -11560,6 +11668,8 @@ hbc_print_dyn:
     jz 8f
     cmp $2, %rax
     je 10f
+    cmp $4, %rax
+    je 10f
     cmp $3, %rax
     je 11f
     lea .Lnilmsg(%rip), %rax
@@ -11613,7 +11723,14 @@ hbc_dyn_to_log:
 # dialog hangs headless) - clean named exit 1 via hbc_dyncmp_eq_error,
 # registered failure mode, not exact equivalence. Leaf routine.
 hbc_dyn_eq:
-    cmp %rcx, %rax
+    # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
+    cmp $4, %rax
+    jne 80f
+    mov $2, %eax
+80: cmp $4, %rcx
+    jne 81f
+    mov $2, %ecx
+81: cmp %rcx, %rax
     jne 7f
     cmp $2, %rax
     je 6f
@@ -11652,7 +11769,14 @@ hbc_dyn_eq:
 # equivalence. A NIL casilla in an ordering comparison is a Harbour type
 # error: hbc_type_error (registered failure mode). Leaf routine.
 hbc_dynxcmp:
-    cmp %rcx, %rax
+    # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
+    cmp $4, %rax
+    jne 80f
+    mov $2, %eax
+80: cmp $4, %rcx
+    jne 81f
+    mov $2, %ecx
+81: cmp %rcx, %rax
     jne 70f
     test %rax, %rax
     jnz 71f
@@ -11694,7 +11818,14 @@ hbc_dynxcmp:
 # dialog hangs headless): a clean named exit 1, registered failure mode,
 # not exact equivalence. Leaf routine: the error path is a noreturn stub.
 hbc_dynxeq_dd:
-    cmp %rcx, %rax
+    # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
+    cmp $4, %rax
+    jne 80f
+    mov $2, %eax
+80: cmp $4, %rcx
+    jne 81f
+    mov $2, %ecx
+81: cmp %rcx, %rax
     jne 5f
     cmp $2, %rax
     je 2f
