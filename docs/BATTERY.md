@@ -2925,3 +2925,32 @@ Effect: comments.prg (a natively-valid original) compiles and runs
 byte-exact against stock Harbour on Linux. Sweep 11 -> 12 COMPILES.
 
 Tests: t833 positive (hk383 mirror). Battery: 828 rows + ABI.
+
+## 63zp - Round()
+
+Oracles hk384/hk386 (pinned hbmk2 -gtstd, in `sondas/`): half away from zero
+(1.5 -> 2, -2.5 -> -3); the binary-representation traps round UP
+(1.005 -> 1.01, 2.675 -> 2.68, 1.335 -> 1.34); result dec = max(d, 0)
+(3 -> 3.000 with d=3; 123.456 -> 120 with d=-1; zero-padding to d=10);
+runtime variable dec works. Source-grounded transcription of hb_numRound
+(src/common/hbstr.c): exact pow10 table for |d| <= 15, +/- 5 by sign,
+HB_DBLFL_PREC_FACTOR = 1.0000000000000002 ulp lift (hbdefs.h:665, ACTIVE in
+the pinned build - proven by 1.005 -> 1.01), trunc toward zero, back-scale.
+
+Implementation: new runtime helper hbc_round (both targets) returning the
+63zd f64 pair convention, plus hbc_round_range_error for runtime |d| > 15
+(Harbour switches to pow(10,d) there - parked, named). Checker: numeric
+first argument (else named rejection, Harbour's EG_ARG), integer dec
+argument (hb_parni conversion is a named limit), literal |d| > 15 rejected
+by name. `round`/`round_range_error` reserved as helper symbols. No Dyn
+widening: the type model is untouched.
+
+round.prg itself does NOT flip: its `value := -5` then `value += 0.001`
+evolves a local from integer to double across loop iterations (the first
+column prints "-5" then "-4.999" in Harbour). That mixed-evolution local is
+the Dyn-hoja model parked to the user - the sweep error advances from
+unknown function `round` (line 10) to the named type-mismatch (line 11).
+
+Tests: t834/t835 positive (hk384/hk386 mirrors), t836/t837 negative.
+Battery: 832 rows + ABI. New symbols get ABI canaries: hbc_round covered
+by tests/abi_harness.sh (63zp iteration).
