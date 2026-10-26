@@ -519,3 +519,6 @@ pos tests/t521_hdel.hb \n         2\na\nc\n         1\n         3\n         2\n 
 pos tests/t522_hdel_readd.hb \n         3\na\nc\nbb\n         1\n         3\n        22\n         3
 pos tests/t523_hdel_free.hb \n         1\n         0
 neg tests/t524_neg_hdel_type.hb hb_HDel expects a hash
+pos tests/t525_hhaskey.hb \n         1\n         1\n         0\n         0\n         0\n         0\n         1\n         0
+pos tests/t526_hhaskey_empty.hb \n         0\n         1
+neg tests/t527_neg_hhaskey_type.hb expects a hash variable
