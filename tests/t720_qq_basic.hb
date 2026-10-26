@@ -1,0 +1,7 @@
+procedure main()
+   ?? "ab"
+   ?? "cd"
+   ? "ef"
+   ?? 42
+   ? "gh"
+   return
