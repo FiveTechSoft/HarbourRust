@@ -512,3 +512,6 @@ posx tests/t514_posx_dynord_lt.hb 1 Argument error: <
 posx tests/t515_posx_dynord_gt.hb 1 Argument error: >
 posx tests/t516_posx_dynord_le.hb 1 Argument error: <=
 posx tests/t517_posx_dynord_ge.hb 1 Argument error: >=
+pos tests/t518_hvalues.hb \n         3\n         1\nNIL\n        42\n         1\n        99
+pos tests/t519_hvalues_empty.hb \n         0\n         0\n         1\n         7\n         7
+pos tests/t520_hvalues_free.hb \n         2\n         2\n         0
