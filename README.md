@@ -1354,5 +1354,20 @@ clean in the 52; hb_HHasKey and hb_HDel were the only two leaking
 callers. These are our own ownership checks (hb_memcheck), not Harbour
 oracles.
 
-Battery: 541/541 manifest cases on Linux x86-64 and Wine, plus
+Iteration 54 adds hb_HMerge(dst, src) (core hb_HMerge; oracles
+hk164/hk165): every source entry is upserted into the target in
+insertion order - the source WINS on an overlapping key and the key
+keeps its position, new keys append at the end (hk164); the source is
+never mutated, an empty source is a no-op and an empty target just
+receives copies (hk165). The call returns the target hash (hk165:
+ValType "H"); like hb_HSet, the statement form is the PoC surface and
+the return value is out of scope (registered). Both arguments are hash
+VARIABLES in this surface (hk165's inline empty-literal form is a
+named surface limit, not a semantic difference). The new hbc_hmerge
+helper upserts through hbc_hput, copying every key and value
+(canaried in the ABI harness on both targets). t546 reproduces hk164
+on Linux and Wine, t547 the hk165 edges, t548/t549 reject non-hash
+arguments at compile time.
+
+Battery: 545/545 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
