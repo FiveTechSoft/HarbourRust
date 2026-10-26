@@ -5,6 +5,7 @@ Salida de referencia: la de su ejecución headless (timeout 5s) con esa misma ca
 Estados: `verificado` = la salida regenerada coincide byte a byte con la medida publicada/citada en README.md o docs/BATTERY.md; 
 `dialogo-sin-oraculo` = el programa abre el diálogo de error de Harbour y cuelga headless (modo de fallo registrado, NUNCA un oráculo); 
 `medida-fresca` = fuente verbatim recuperada del transcript y re-ejecutada con la misma cadena; la medida original del transcript no se extrajo para contraste byte a byte en este lote; 
+`verificado-equivalente-darrs` = la salida se reproduce con respuestas idénticas en el compilador PoC SOLO vía el adaptador dedicado DArrS (literal `{}` + `AAdd` + sobrescritura indexada que libera la copia vieja; t508/t509); NO significa soporte de la sintaxis Harbour `Array(2)` + almacenamiento indexado escalar, que sigue rechazada por nombre;
 `borrador-superado` = fuente recuperada que ya no compila (borrador temprano superado por sondas posteriores).
 
 Números sin fuente recuperable en el transcript: hk10, hk72, hk74, hk75 (planificados o creados fuera del registro; sus medidas, si las hubo, permanecen solo donde se citaron).
@@ -47,8 +48,8 @@ Números sin fuente recuperable en el transcript: hk10, hk72, hk74, hk75 (planif
 | hk13 | medida-fresca | \n         2\none\ntwo\n         4\nNIL |
 | hk130 | verificado | \n.T.\n.F.\n.T. |
 | hk131 | verificado | \n.T.\n.F. |
-| hk132 | verificado | \n.T.\n.F.\n.F.\n.T. |
-| hk133 | verificado | \n.T.\n.F.\n.T. |
+| hk132 | verificado-equivalente-darrs | \n.T.\n.F.\n.F.\n.T. |
+| hk133 | verificado-equivalente-darrs | \n.T.\n.F.\n.T. |
 | hk134 | medida-fresca | \n.T.\n.F. |
 | hk135 | verificado | \n.T.\n.F.\n.T.\n.F. |
 | hk136 | verificado | \n.T.\n.F.\n.F. |
