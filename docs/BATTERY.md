@@ -2170,3 +2170,27 @@ b756b30c4b74ee2cbe6f57e720c46195d19c234b69761ec5b4e4b61401dc99f2.
 
 Battery 711 -> 715 + ABI harness green (Linux nativo y Wine con oracle
 Linux).
+
+## 63v - `??` operator (QOut without the leading newline)
+
+Oracles first (hbmk2 -gtstd @694428e1, published in sondas/): hk274
+(`?? "ab" ?? "cd" ? "ef" ?? 42 ? "gh"` -> "abcd\nef        42\ngh"),
+hk275 (comma items join with one space; integers right-aligned in a
+10-column field, same as `?`: "a b          1          2\nc d"), hk276
+(logicals print .T./.F. unpadded), hk277 (bare `??` prints NOTHING -
+no newline, no space). Item evaluation order, separators, field
+widths and the trailing right-trim are the `?` QOut rules; `??` skips
+ONLY the leading newline. Both oracles and ours byte-identical
+(exit 0, Linux native and Wine).
+
+Change: new Tok::QuestionQ; Stmt::Print gains an `inline` flag; codegen
+emits `hbc_print_nl` only for `?`. No new runtime helpers, no Dyn
+change, no pinning change.
+
+Tests: t720 (hk274), t721 (hk275), t722 (hk276), t723 (hk277).
+BATTERY 715 -> 719 + ABI ALL GREEN (Linux native and Wine with Linux
+oracle). Sweep re-run: COMPILES 4, identical to 63u. The four sweep
+files that failed first on `??` now advance to their next registered
+blocker: ains.prg -> inference non-convergence (explicit diagnostic,
+cap by design), fileio.prg -> include fileio.ch, fileio2.prg -> fcreate,
+procname.prg -> `++` inside expressions.
