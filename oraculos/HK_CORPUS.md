@@ -1844,3 +1844,106 @@ function main()
 return nil
 ```
 
+### hk138
+
+```harbour
+function main()
+    local a := Array(2)
+    local b := Array(2)
+    a[1] := 1
+    b[1] := 1
+    ? a[1] == b[1]
+    ? a[1] == 2
+    ? 1 == a[1]
+    ? a[1] == a[1]
+return nil
+```
+
+### hk139
+
+```harbour
+function main()
+    local a := Array(2)
+    local b := Array(2)
+    a[1] := "hola"
+    b[1] := 1
+    ? a[1] == b[1]
+    ? b[1] == "hola"
+    ? a[1] == 1
+return nil
+```
+
+### hk139b
+
+```harbour
+function main()
+    local b := Array(2)
+    b[1] := 1
+    ? b[1] == "hola"
+return nil
+```
+
+### hk139c
+
+```harbour
+function main()
+    local a := Array(2)
+    a[1] := "hola"
+    ? a[1] == 1
+return nil
+```
+
+### hk140
+
+```harbour
+function main()
+    local a := Array(2)
+    local b := Array(2)
+    ? a[1] == b[1]
+    ? a[1] == "hola"
+    ? a[1] == 7
+return nil
+```
+
+### hk141
+
+```harbour
+function main()
+    local h := {"b" => 20, "a" => 10}
+    local k := hb_HKeys(h)
+    local c
+    for each c in k
+        ? c == "b"
+        ? "b" == c
+    next
+return nil
+```
+
+### hk142
+
+```harbour
+function main()
+    local h := {"b" => 20}
+    local k := hb_HKeys(h)
+    local c
+    for each c in k
+        ? c == 7
+    next
+return nil
+```
+
+### hk143
+
+```harbour
+function main()
+    local h := {"b" => 20, "a" => 10}
+    local k := hb_HKeys(h)
+    local c1, c2
+    for each c1 in k
+        for each c2 in k
+            ? c1 == c2
+        next
+    next
+return nil
+```
+
