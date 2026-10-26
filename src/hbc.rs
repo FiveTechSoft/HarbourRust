@@ -3244,6 +3244,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     || (ta == Ty::Dyn && sig_params[i] == Ty::I64)  // runtime extract (nil -> clean type error)
                     || (ta == Ty::I64 && sig_params[i] == Ty::Dyn) // tagged at the call
                     || ((ta == Ty::Str || ta == Ty::StrOwn) && sig_params[i] == Ty::Dyn) // cloned to an owned tag-4 payload at the boundary (hk259)
+                    || (ta == Ty::Bool && sig_params[i] == Ty::Dyn) // tagged 3 at the call (hk264)
                     || (ta == Ty::Str && sig_params[i] == Ty::StrOwn); // rodata: copied at the call boundary
                 if !ok {
                     // Two codeblocks of different arity: name both arities so
@@ -6045,6 +6046,13 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 if ta == Ty::I64 && pty == Some(Ty::Dyn) {
                     // i64 argument to a Dyn parameter: tag it in.
                     out.push_str("    sub $16, %rsp\n    movq $0, (%rsp)\n    mov %rax, 8(%rsp)\n");
+                    continue;
+                }
+                if ta == Ty::Bool && pty == Some(Ty::Dyn) {
+                    // Logical argument to a Dyn parameter: tag 3, payload
+                    // 0/1 (hk264). Scalar: no ownership transfer, the
+                    // epilogue's tag-4-only free leaves it alone.
+                    out.push_str("    sub $16, %rsp\n    movq $3, (%rsp)\n    mov %rax, 8(%rsp)\n");
                     continue;
                 }
                 if (ta == Ty::Str || ta == Ty::StrOwn) && pty == Some(Ty::Dyn) {
