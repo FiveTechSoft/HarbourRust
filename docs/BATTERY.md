@@ -2480,3 +2480,55 @@ Note: the 170 rejected sweep files keep their named rejections; their
 first-error wording drifts as the compiler evolves (the frozen
 docs/sweep175.csv records the original wording), which does not affect
 the COMPILES contract.
+63zd - F64 parameters and returns (scalar-copy model, no new RC):
+
+Float arguments and returns are now native across function boundaries
+(oracles hk302-hk318; t758-t776). Declared internal convention, same
+on both targets: an F64 argument is a 16-byte stack slot (value bits +
+packed metadata (length<<16)|dec, like every argument); an F64 return
+is xmm0 = value + rdi = packed metadata, preserved across epilogue
+frees (t772: StrOwn local freed while the F64 pair lives). Int
+arguments convert to F64 at the call boundary (cvtsi2sd, dec 0;
+length by the literal text rule - 10+ written digits add one, hk307 -
+or the asymmetric computed rule). The same parameter may receive ints
+and floats across callsites (Harbour polymorphism, hk303/hk306): the
+arg evidence (arg_ev) is monotone-sticky and convergence waits on it,
+which covers forward references (t774/hk316) and cyclic inference
+with recursion (t775/hk317). Non-numeric arguments never promote
+silently (t776 named rejection). Mixed int/float returns of one
+function stay a named rejection (t767/hk312: the bytes diverge when
+the result feeds arithmetic). Print-only params still pin Dyn, and a
+float argument at that boundary is the covered Dyn<->F64 limit
+(t768 named rejection: no bits are passed as a float-less Dyn).
+
+Compute-time metadata guard (main 15:49): the '*' runtime sums dec
+and rejects >435 (456 field - 20 max length - 1) via
+hbc_f64range_error before any silent u16 wrap; the compile-time fold
+defers (None) sums >255 so the runtime guard is the only dec producer
+that can reach the bound (t769 demonstrates the fold->runtime
+handoff). The guard uses call/label form - a bare jump reaches the
+helper without a return address and Wine's ExitProcess faults
+(caught by t757 on Wine). t757's expectation lost its leading
+newline: the same named limit now fires at compute time, before the
+print. t733 (63zc neg "bare F64 return") became the feature itself
+and flipped to pos (oracle hk318; the file keeps its historical
+name).
+
+Known divergences, documented not modeled: Harbour's QOut wraps
+output fields at 80 columns (hk309 original, q(q(lit16)) dec-256
+field) - this PoC prints the full field unwrapped; the sonda is kept
+verbatim and the dec-64 variant is explicit as hk309b (t765 mirrors
+hk309b). On a 450-multiply variable chain (hk315) Harbour prints a
+~7200-dec field wrapped at 80 columns; this PoC exits 1 with the
+named range error (t771) - registered limit, not equivalence.
+
+Tests: t758-t766 (pos mirrors hk302-hk310/hk309b), t767 (neg mixed
+return), t768 (neg Dyn-float boundary), t769-t771 (posx dec overflow:
+literal chain, call chain, variable chain), t772 (F64 return +
+StrOwn epilogue), t773 (mixed signature string+float, hk314), t774
+(forward reference), t775 (cyclic inference), t776 (neg non-numeric
+promotion). Sondas hk302-hk318 (incl. hk309b) published. BATTERY 753
+-> 772 runner rows + ABI ALL GREEN (Linux native and Wine with Linux
+oracle). Sweep: COMPILES unchanged at 5, all byte-exact re-verified
+this increment (hello, statfun, lnlenli2, calling, nums); the
+frozen-csv wording drift policy from 63zc is unchanged.
