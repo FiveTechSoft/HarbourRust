@@ -1343,7 +1343,10 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         }
                     }
                 }
-                if toks.len() < 3 || toks[1] != Tok::Assign {
+                // Harbour also assigns with a single `=` in statement
+                // position (oracle hk214: `x = 41 + 1`, `c = 'eq'`); `=`
+                // stays a comparison inside expressions.
+                if toks.len() < 3 || (toks[1] != Tok::Assign && toks[1] != Tok::Eq) {
                     return Err(format!("line {}: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)", n));
                 }
                 check_ident(&id, n)?;
