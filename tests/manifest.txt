@@ -719,3 +719,13 @@ pos tests/t721_qq_multiargs.hb a b          1          2\nc d
 pos tests/t722_qq_logical.hb .T..F.\nend
 pos tests/t723_qq_bare.hb \na\nb
 neg tests/t724_infer_pinerr_osc_neg.hb must be a dynamic array, got a dynamic value
+pos tests/t725_float_prints.hb \n         1.5\n         0.12\n         0.12\n     12000.123\n        -5.5\n       100.0\n         0.0\n         3.14159265358979
+pos tests/t726_float_hex_neg.hb \n     43947\n       255\n        -0.001\n    123456.789
+pos tests/t727_float_edge.hb \n         2.675\n         0.999\n         9.999\n         0.0\n         1.50\n123456789012.5\n         0.12345678901234570
+pos tests/t728_float_copy_reassign.hb \n         2.5\n         0.25\n         2.5
+neg tests/t729_float_arith_neg.hb float arithmetic is not in this increment
+neg tests/t730_float_cond_neg.hb not a condition
+neg tests/t731_float_callarg_neg.hb argument 1 of `p`
+neg tests/t732_float_frontier_neg.hb measured precision frontier
+neg tests/t733_float_ret_neg.hb eturn
+neg tests/t734_float_frontier2_neg.hb measured precision frontier
