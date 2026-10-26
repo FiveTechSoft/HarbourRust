@@ -1169,5 +1169,18 @@ clean error (t345).
   middle re-borrows it and sees the writes (t489, hk123) -
   both byte-identical to their oracles.
 
-Battery: 485/485 manifest cases on Linux x86-64 and Wine, plus
+`==` (exact/identity comparison) enters measured scope: between
+integers it compares like `=` (hk124; t490, and t293 repurposed
+from the old rejection), and between two one-level dynamic array
+VARIABLES it is reference identity - a==a .T., a==b .F. even with
+equal contents (hk126; t491). `=` on arrays stays a named
+rejection (Harbour raises a runtime error dialog, no headless
+oracle - hk125 hangs after `==` answers .T./.F.); `==` on static
+arrays, strings, deeper arrays, codeblocks and NIL keeps named
+rejections (t492): Harbour compares array REFERENCES while our
+static arrays are frame copies (D5/D7 family), so an element
+compare would answer .T. where Harbour answers .F. Object
+identity (cl7/cl19) stays class-gated.
+
+Battery: 488/488 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
