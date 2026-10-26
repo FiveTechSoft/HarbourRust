@@ -2239,3 +2239,19 @@ vacía, como el retorno de hb_HSet), la fuente NO se muta y una fuente
 vacía es no-op. t546/t547 reproducen ambos en Linux y Wine; la forma
 con literal vacío en línea del segundo argumento queda como límite de
 superficie (ambos argumentos son variables hash en el PoC).
+
+### hk166/hk167/hk168 - hb_HClone: copia profunda independiente; autofusión no-op (26 oct 2026)
+
+Fuentes `sondas_ac/hkeys/hk166.prg`, `hk167.prg` y `hk168.prg`,
+compiladas con `hbmk2 <f> -gtstd -o<x>` (solo librerías core). hk166
+verbatim: `\n         1\n         2\n         2\n         3` - la copia
+de hb_HClone es totalmente INDEPENDIENTE: sobrescribir y añadir en el
+original no cruzan a la copia, y mutar la copia no cruza al original.
+hk167 verbatim: `\nH\n         1\n         2\n         3\nNIL\n         0`
+- el retorno es un hash (ValType «H») que conserva el orden de
+inserción (posiciones 1, 2, 3) y los NIL; clonar un hash vacío da len
+0. hk168 verbatim: `\n         2\n         1\n         2\n         1\n         2`
+- la autofusión hb_HMerge(h, h) es un no-op limpio (len, valores y
+posiciones intactos). t550/t551/t554 reproducen los tres en Linux y
+Wine; t552/t555 son comprobaciones propias de ownership (liberación
+independiente e independencia tras la muerte de la fuente).
