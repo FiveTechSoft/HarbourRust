@@ -646,3 +646,8 @@ pos tests/t648_strgrow_selfalias.hb \nabcabc\n        12\n         1
 pos tests/t649_strgrow_rhs_local.hb \n      1002\n         2
 pos tests/t650_byref_append.hb \nabc!!!!!!!!!!\n         1
 pos tests/t651_hashkey_replace.hb \n         3\n         2\n         3
+pos tests/t652_local_noinit.hb \nNIL\nU\n        42\nN\n         0
+pos tests/t653_local_multi.hb \nNIL\nNIL\nNIL\n         6
+pos tests/t654_local_mixed.hb \n        10\nNIL\nxy
+neg tests/t655_local_noinit_str.hb type mismatch in assignment to `s`
+pos tests/t656_local_multi_arr.hb \n         1\n         2\n         5
