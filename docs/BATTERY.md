@@ -2975,3 +2975,53 @@ absorb: hoisting the declaration to F64 would change the typing rule
 itself (order-independent inference) and alter the first column's
 integer-format print. So the line-11 named mismatch stays the documented
 limit; it is a model boundary, not a pending user approval.
+
+## 63zr - Native source callstack on controlled errors
+
+Each generated function (including @ variants) and Eval block now links a
+32-byte diagnostic record inside its native stack frame. It holds the prior
+record and the current source location. Common returns unlink it without
+clobbering scalar, string/array or float-pair return registers. There is no
+HVM, evaluator, heap allocation, fixed-depth array or OS unwinder. Location
+updates use scratch r11. WHILE/FOR EACH retests restore the header location.
+
+The preprocessor records one original path/line per emitted line, preserving
+include origins and the FIRST line of semicolon continuations. Parser and
+checker line numbering is unchanged; only runtime diagnostics use this map.
+Blocks report their definition location (not an expression column). Caller
+frames keep the active call statement. Each controlled error still prints
+its original message and exits 1, now followed by Callstack: and youngest-
+first source frames. Normal runs emit no trace. All existing exit-1 terminal
+sequences converge on hbc_panic_exit after printing the error; it realigns
+rsp before hbc_print_trace. No internal runtime helpers are shown as .prg
+functions. Text is a HarbourRust diagnostic, NOT Harbour dialog bytecompat.
+
+Reference oracle hk388: Harbour ProcName/ProcLine reports LEAF line 2,
+MIDDLE call-site 7, MAIN call-site 10. Our error probes are intentionally
+headless controlled failures rather than a claimed replica of that dialog.
+
+Tests t840-t848 cover nested calls, recursion, Eval + definition line,
+include/directive/continuation origins, completed/early returns, byref
+variants, WHILE + LOOP retest, nested expressions after a callee returns,
+and block unlink. Existing 52 posx tests keep their previous output as an
+exact prefix and add a hand-inspected diagnostic suffix. No successful
+program expectation changed. Direct hbc_print_trace ABI canary covers an
+empty chain, nonvolatile registers and stack balance (both targets).
+Battery: 843 runner rows + ABI = 844, ALL GREEN Linux and Wine. Sweep
+63zr identical to 63zq: 12/175. No additional original claimed.
+
+Limits: controlled runtime errors only. No signal/SEH handler for arbitrary
+SIGSEGV, access violation, integer CPU traps or OS stack exhaustion. No
+thread-local chain for future threads or async callbacks. Codeblocks show
+their definition line; continued expressions use the first statement line.
+Source paths are embedded as supplied to the compiler (may be absolute).
+
+Paired speed check, same sondas/bench_int.prg (10M additions) and
+bench_float.prg (2M float additions), same output across Harbour and both
+HarbourRust builds, Linux process wall time median of 7 interleaved runs:
+integer before/trace/Harbour = 0.034172/0.026987/0.852758 seconds;
+float before/trace/Harbour = 0.015791/0.015554/0.241109 seconds.
+Includes process startup; short microbench and layout/noise sensitive.
+Not an isolated engine speed claim and not proof that diagnostics improve
+speed. Normal binaries pay location-store/frame overhead even without an
+error; workload-specific cost needs measurement before extrapolation.
