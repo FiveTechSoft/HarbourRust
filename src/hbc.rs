@@ -893,18 +893,40 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 out.push(Stmt::If(n, cond, then_stmts, else_stmts));
             }
             Tok::KwLocal => {
-                if toks.len() < 4 {
-                    return Err(format!("line {}: expected `local name := expr`", n));
+                // Harbour: `local name [:= expr] [, name [:= expr] ...]`.
+                // Without an initializer the variable starts NIL (hk239:
+                // prints NIL, ValType "U"); a NIL slot is Dyn, so the
+                // usual Dyn rules apply to what it can later receive.
+                if toks.len() < 2 {
+                    return Err(format!("line {}: expected `local name [:= expr] [, ...]`", n));
                 }
-                let id = match &toks[1] {
-                    Tok::Ident(id) => { check_ident(id, n)?; id.clone() }
-                    t => return Err(format!("line {}: expected identifier, got {:?}", n, t)),
-                };
-                if toks[2] != Tok::Assign {
-                    return Err(format!("line {}: expected :=", n));
+                let rest = &toks[1..];
+                let mut depth = 0i32;
+                let mut start = 0usize;
+                let mut spans: Vec<&[Tok]> = Vec::new();
+                for (k, t) in rest.iter().enumerate() {
+                    match t {
+                        Tok::LParen | Tok::LBracket | Tok::LBrace => depth += 1,
+                        Tok::RParen | Tok::RBracket | Tok::RBrace => depth -= 1,
+                        Tok::Comma if depth == 0 => { spans.push(&rest[start..k]); start = k + 1; }
+                        _ => {}
+                    }
                 }
-                let e = parse_expr_tokens(toks[3..].to_vec(), n)?;
-                out.push(Stmt::Local(n, id, e));
+                spans.push(&rest[start..]);
+                for it in spans {
+                    let id = match it.first() {
+                        Some(Tok::Ident(id)) => { check_ident(id, n)?; id.clone() }
+                        t => return Err(format!("line {}: expected identifier, got {:?}", n, t)),
+                    };
+                    if it.len() == 1 {
+                        out.push(Stmt::Local(n, id, Expr::Nil));
+                    } else if it.len() >= 3 && it[1] == Tok::Assign {
+                        let e = parse_expr_tokens(it[2..].to_vec(), n)?;
+                        out.push(Stmt::Local(n, id, e));
+                    } else {
+                        return Err(format!("line {}: expected `local name [:= expr]`", n));
+                    }
+                }
                 *i += 1;
             }
             Tok::Question => {
