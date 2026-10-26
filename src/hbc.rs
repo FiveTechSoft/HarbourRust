@@ -51,6 +51,7 @@ enum Tok {
     LBrace, RBrace, LBracket, RBracket, Pipe,
     Assign,   // :=
     Question, // ?
+    QuestionQ, // ?? (QOut without the leading newline)
     At,       // @ by-reference call argument (hk216 family)
     Eq,       // =
     FatArrow, // =>
@@ -105,7 +106,10 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             '(' => { toks.push(Tok::LParen); it.next(); }
             ')' => { toks.push(Tok::RParen); it.next(); }
             ',' => { toks.push(Tok::Comma); it.next(); }
-            '?' => { toks.push(Tok::Question); it.next(); }
+            '?' => {
+                it.next();
+                if it.peek().map(|&(_, c2)| c2) == Some('?') { toks.push(Tok::QuestionQ); it.next(); } else { toks.push(Tok::Question); }
+            }
             ':' => {
                 it.next();
                 match it.peek() {
@@ -302,7 +306,7 @@ enum Expr {
 #[derive(Debug)]
 enum Stmt {
     Local(usize, String, Expr),
-    Print(usize, Vec<Expr>),
+    Print(usize, Vec<Expr>, bool), // bool: true = `??` (no leading newline)
     Ret(usize, Option<Expr>),
     If(usize, Expr, Vec<Stmt>, Vec<Stmt>), // line, condition, then, else (possibly empty)
     While(usize, Expr, Vec<Stmt>), // line, condition, body
@@ -971,7 +975,32 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     }
                     exprs.push(parse_expr_tokens(rest[start..].to_vec(), n)?);
                 }
-                out.push(Stmt::Print(n, exprs));
+                out.push(Stmt::Print(n, exprs, false));
+                *i += 1;
+            }
+            Tok::QuestionQ => {
+                // Harbour `??`: same QOut item list as `?` but WITHOUT
+                // the leading newline (hk274-hk276); bare `??` prints
+                // nothing at all.
+                let rest = &toks[1..];
+                let mut exprs = Vec::new();
+                if !rest.is_empty() {
+                    let mut depth = 0i32;
+                    let mut start = 0usize;
+                    for (k, t) in rest.iter().enumerate() {
+                        match t {
+                            Tok::LParen | Tok::LBracket => depth += 1,
+                            Tok::RParen | Tok::RBracket => depth -= 1,
+                            Tok::Comma if depth == 0 => {
+                                exprs.push(parse_expr_tokens(rest[start..k].to_vec(), n)?);
+                                start = k + 1;
+                            }
+                            _ => {}
+                        }
+                    }
+                    exprs.push(parse_expr_tokens(rest[start..].to_vec(), n)?);
+                }
+                out.push(Stmt::Print(n, exprs, true));
                 *i += 1;
             }
             Tok::KwExit => {
@@ -2231,7 +2260,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     }
                     walk(f, e, sigs, lit, pin, *n)?;
                 }
-                Stmt::Print(n, es) => {
+                Stmt::Print(n, es, _) => {
                     for e in es {
                         // A whole-variable print is Dyn evidence for a
                         // parameter (hk257/hk259): Harbour accepts a
@@ -2581,7 +2610,7 @@ fn borrow_stmts_ok(stmts: &[Stmt], pname: &str) -> Option<usize> {
             Stmt::Local(n, id, e) => {
                 if id == pname || !borrow_expr_ok(e, pname) { Some(*n) } else { None }
             }
-            Stmt::Print(n, items) => {
+            Stmt::Print(n, items, _) => {
                 let ok = items.iter().all(|i| matches!(i, Expr::Var(v) if v == pname) || borrow_expr_ok(i, pname));
                 if ok { None } else { Some(*n) }
             }
@@ -3890,7 +3919,7 @@ fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
         Stmt::While(_, c, b) => expr_ok(c, name) && foreach_coll_untouched(b, name),
         Stmt::For(_, _, a, b, _, body) => expr_ok(a, name) && expr_ok(b, name) && foreach_coll_untouched(body, name),
         Stmt::ForEach(_, _, c, body) => expr_ok(c, name) && foreach_coll_untouched(body, name),
-        Stmt::Print(_, items) => items.iter().all(|i| expr_ok(i, name)),
+        Stmt::Print(_, items, _) => items.iter().all(|i| expr_ok(i, name)),
         Stmt::Ret(_, Some(e)) => expr_ok(e, name),
         Stmt::CallStmt(_, e) => expr_ok(e, name),
         _ => true,
@@ -3938,7 +3967,7 @@ fn foreach_barr_lv_ok(stmts: &[Stmt], name: &str) -> bool {
         }
     }
     stmts.iter().all(|s| match s {
-        Stmt::Print(_, items) => items.iter().all(|i| print_ok(i, name)),
+        Stmt::Print(_, items, _) => items.iter().all(|i| print_ok(i, name)),
         Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) => !mentions(e, name),
         Stmt::CallStmt(_, e) => !mentions(e, name),
         Stmt::ArrSet(_, _, ie, e) => !mentions(ie, name) && !mentions(e, name),
@@ -3976,7 +4005,7 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
         }
     }
     stmts.iter().all(|s| match s {
-        Stmt::Print(_, items) => items.iter().all(|i| !in_call(i, name)),
+        Stmt::Print(_, items, _) => items.iter().all(|i| !in_call(i, name)),
         Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) => !mentions(e, name),
         Stmt::CallStmt(_, e) => !mentions(e, name),
         Stmt::ArrSet(_, _, ie, e) => !mentions(ie, name) && !mentions(e, name),
@@ -4041,7 +4070,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let t = if t == Ty::Str && byref_names.contains(id) { Ty::StrOwn } else { t };
                 env.push(Local { name: id.clone(), ty: t, moved: false, ro: false, byref: false });
             }
-            Stmt::Print(n, es) => {
+            Stmt::Print(n, es, _) => {
                 // Printing borrows the value; it never moves it.
                 for e in es {
                     // `? a[i]` on an array of arrays is allowed: a
@@ -6660,7 +6689,7 @@ fn byref_names_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
         for s in stmts {
             match s {
                 Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) | Stmt::CallStmt(_, e) => ex(e, out),
-                Stmt::Print(_, es) => { for e in es { ex(e, out); } }
+                Stmt::Print(_, es, _) => { for e in es { ex(e, out); } }
                 Stmt::If(_, c, t, el) => { ex(c, out); st(t, out); st(el, out); }
                 Stmt::While(_, c, b) => { ex(c, out); st(b, out); }
                 Stmt::For(_, _, a, b, _, body) => { ex(a, out); ex(b, out); st(body, out); }
@@ -6702,7 +6731,7 @@ fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String,
         for s in stmts {
             match s {
                 Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) | Stmt::CallStmt(_, e) => ex(e, out),
-                Stmt::Print(_, es) => { for e in es { ex(e, out); } }
+                Stmt::Print(_, es, _) => { for e in es { ex(e, out); } }
                 Stmt::If(_, c, t, el) => { ex(c, out); st(t, out); st(el, out); }
                 Stmt::While(_, c, b) => { ex(c, out); st(b, out); }
                 Stmt::For(_, _, a, b, _, body) => { ex(a, out); ex(b, out); st(body, out); }
@@ -7351,7 +7380,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
                 env.push(CgLocal { name: id.clone(), ty: t, off });
             }
-            Stmt::Print(_, es) => {
+            Stmt::Print(_, es, inline) => {
                 // Harbour `?` is a QOut( <items> ) call (probes b51-b59,
                 // t12 vs -gtstd binary): ALL items are evaluated FIRST
                 // (side effects like prints inside calls happen before the
@@ -7405,7 +7434,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     cg_value(e, env, sigs, strs, out, target);
                     out.push_str("    push %rdx\n    push %rax\n");
                 }
-                out.push_str("    call hbc_print_nl\n");
+                // `??` skips ONLY the leading newline (hk274-hk276);
+                // item evaluation order, separators, field widths and
+                // the trailing right-trim are identical to `?`.
+                if !inline { out.push_str("    call hbc_print_nl\n"); }
                 // Harbour renders a whole dynamic array or hash as
                 // NOTHING (oracles hk16/hk20/hk21/hk24) and QOut
                 // space-trims the END of the line (hk22/hk24/hk25);
@@ -8891,7 +8923,7 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
             Stmt::HMerge(_, _, _) => {}
             Stmt::HCopy(_, _, _, se, ce) => { if let Some(e) = se { collect_blocks_expr(e, out); } if let Some(e) = ce { collect_blocks_expr(e, out); } }
             Stmt::ArrSet(_, _, ie, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(e, out); }
-            Stmt::Print(_, es) => { for e in es { collect_blocks_expr(e, out); } }
+            Stmt::Print(_, es, _) => { for e in es { collect_blocks_expr(e, out); } }
             Stmt::Ret(_, Some(e)) => collect_blocks_expr(e, out),
             Stmt::SelfSet(_, _, e) | Stmt::SendStmt(_, e) | Stmt::CallStmt(_, e) => collect_blocks_expr(e, out),
             Stmt::SendSet(_, o, _, e) => { collect_blocks_expr(o, out); collect_blocks_expr(e, out); }
@@ -12906,7 +12938,7 @@ fn main() {
         for st in stmts {
             match st {
                 Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) | Stmt::CallStmt(_, e) => scan_byref_expr(e, cur, params, names, variants),
-                Stmt::Print(_, es) => { for e in es { scan_byref_expr(e, cur, params, names, variants); } }
+                Stmt::Print(_, es, _) => { for e in es { scan_byref_expr(e, cur, params, names, variants); } }
                 Stmt::If(_, c, t, el) => { scan_byref_expr(c, cur, params, names, variants); scan_byref_stmts(t, cur, params, names, variants); scan_byref_stmts(el, cur, params, names, variants); }
                 Stmt::While(_, c, b) => { scan_byref_expr(c, cur, params, names, variants); scan_byref_stmts(b, cur, params, names, variants); }
                 Stmt::For(_, _, a, b, _, body) => { scan_byref_expr(a, cur, params, names, variants); scan_byref_expr(b, cur, params, names, variants); scan_byref_stmts(body, cur, params, names, variants); }
