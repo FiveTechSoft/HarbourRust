@@ -58,7 +58,7 @@ enum Tok {
     FatArrow, // =>
     Ne,       // <> or !=
     Lt, Le, Gt, Ge,
-    KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElse, KwEndif, KwWhile, KwEnddo, KwExit, KwLoop,
+    KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElseif, KwElse, KwEndif, KwWhile, KwEnddo, KwExit, KwLoop,
     KwFor, KwTo, KwStep, KwNext, KwEach, KwIn,
     EqEq,       // == (measured: integers hk124, DArr identity hk126; object identity cl7/cl19 class-gated)
     Colon,      // : (message send, o:name)
@@ -483,6 +483,7 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                     "return" => Tok::KwReturn,
                     "nil" => Tok::KwNil,
                     "if" => Tok::KwIf,
+                    "elseif" => Tok::KwElseif,
                     "else" => Tok::KwElse,
                     "endif" => Tok::KwEndif,
                     "while" => Tok::KwWhile,
@@ -1156,9 +1157,9 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 out.push(stmt);
                 *i += 1;
             }
-            Tok::KwElse | Tok::KwEndif => {
+            Tok::KwElseif | Tok::KwElse | Tok::KwEndif => {
                 if depth == 0 {
-                    return Err(format!("line {}: `else`/`endif` without `if`", n));
+                    return Err(format!("line {}: `elseif`/`else`/`endif` without `if`", n));
                 }
                 return Ok(());
             }
@@ -1281,6 +1282,21 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 *i += 1;
                 let mut then_stmts = Vec::new();
                 parse_stmts(lines, i, &mut then_stmts, depth + 1)?;
+                // ELSEIF arms (stock ifelse.prg): exactly Harbour's nested
+                // IF - collect, then fold from the last arm behind the
+                // optional ELSE body.
+                let mut arms: Vec<(usize, Expr, Vec<Stmt>)> = Vec::new();
+                while *i < lines.len() && lines[*i].1[0] == Tok::KwElseif {
+                    let en = lines[*i].0;
+                    if lines[*i].1.len() < 2 {
+                        return Err(format!("line {}: `elseif` takes a condition", en));
+                    }
+                    let ec = parse_expr_tokens(lines[*i].1[1..].to_vec(), en)?;
+                    *i += 1;
+                    let mut ebody = Vec::new();
+                    parse_stmts(lines, i, &mut ebody, depth + 1)?;
+                    arms.push((en, ec, ebody));
+                }
                 let mut else_stmts = Vec::new();
                 if *i < lines.len() && lines[*i].1[0] == Tok::KwElse {
                     if lines[*i].1.len() != 1 {
@@ -1288,6 +1304,9 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     }
                     *i += 1;
                     parse_stmts(lines, i, &mut else_stmts, depth + 1)?;
+                }
+                for (en, ec, ebody) in arms.into_iter().rev() {
+                    else_stmts = vec![Stmt::If(en, ec, ebody, else_stmts)];
                 }
                 if *i >= lines.len() || lines[*i].1[0] != Tok::KwEndif {
                     return Err(format!("line {}: `if` without `endif`", n));
