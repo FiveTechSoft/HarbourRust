@@ -446,6 +446,14 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             '%' => { toks.push(Tok::Pct); it.next(); }
             '^' => { toks.push(Tok::Caret); it.next(); }
             '$' => { toks.push(Tok::Dollar); it.next(); }
+            // The macro operator is runtime dynamic evaluation (oracles
+            // hk369-hk373: it evaluates string contents as Harbour code
+            // with real types, sees no locals in the expanded text, and
+            // works in expression, statement and dynamic-send positions) -
+            // it needs an evaluator embedded in the emitted binary, out of
+            // this native increment. `&&` comments never reach the lexer
+            // (the preprocessor strips them).
+            '&' => return Err(format!("line {}: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error", n)),
             '(' => { toks.push(Tok::LParen); it.next(); }
             ')' => { toks.push(Tok::RParen); it.next(); }
             ',' => { toks.push(Tok::Comma); it.next(); }
@@ -1535,7 +1543,50 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         t => return Err(format!("line {}: expected `do while` or `do name [WITH args]`, got {:?}", n, t)),
                     };
                     if fname.eq_ignore_ascii_case("case") {
-                        return Err(format!("line {}: DO CASE is not in this increment (use if/elseif/else/endif)", n));
+                        // DO CASE (oracles hk374-hk376): the FIRST matching
+                        // CASE runs, then control continues past ENDCASE -
+                        // no fall-through; OTHERWISE runs when nothing
+                        // matched (hk374/hk375); a bare `end` also closes
+                        // (hk375); nothing runs when no CASE matches and
+                        // there is no OTHERWISE (hk375); nesting works
+                        // (hk376). Desugars to the nested-IF shape ELSEIF
+                        // already uses (63zg) - no checker/codegen change.
+                        if toks.len() != 2 {
+                            return Err(format!("line {}: `do case` takes no expression", n));
+                        }
+                        *i += 1;
+                        let mut arms: Vec<(usize, Expr, Vec<Stmt>)> = Vec::new();
+                        while *i < lines.len() && matches!(&lines[*i].1[0], Tok::Ident(id) if id.eq_ignore_ascii_case("case")) {
+                            let cn = lines[*i].0;
+                            if lines[*i].1.len() < 2 {
+                                return Err(format!("line {}: `case` takes a condition", cn));
+                            }
+                            let cc = parse_expr_tokens(lines[*i].1[1..].to_vec(), cn)?;
+                            *i += 1;
+                            let mut cbody = Vec::new();
+                            parse_stmts(lines, i, &mut cbody, depth + 1)?;
+                            arms.push((cn, cc, cbody));
+                        }
+                        let mut else_stmts: Vec<Stmt> = Vec::new();
+                        if *i < lines.len() && matches!(&lines[*i].1[0], Tok::Ident(id) if id.eq_ignore_ascii_case("otherwise")) {
+                            if lines[*i].1.len() != 1 {
+                                return Err(format!("line {}: `otherwise` takes no expression", lines[*i].0));
+                            }
+                            *i += 1;
+                            parse_stmts(lines, i, &mut else_stmts, depth + 1)?;
+                        }
+                        if *i >= lines.len() || !matches!(&lines[*i].1[0], Tok::Ident(id) if id.eq_ignore_ascii_case("endcase") || id.eq_ignore_ascii_case("end")) {
+                            return Err(format!("line {}: `do case` without `endcase`", n));
+                        }
+                        if lines[*i].1.len() != 1 {
+                            return Err(format!("line {}: `endcase` takes no expression", lines[*i].0));
+                        }
+                        *i += 1;
+                        for (cn, cc, cbody) in arms.into_iter().rev() {
+                            else_stmts = vec![Stmt::If(cn, cc, cbody, else_stmts)];
+                        }
+                        out.extend(else_stmts);
+                        continue;
                     }
                     check_ident(&fname, n)?;
                     let args: Vec<Expr> = if toks.len() == 2 {
@@ -1569,6 +1620,16 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 }
             }
             Tok::Ident(id) => {
+                // DO CASE body terminators (oracles hk374-hk376): inside a
+                // nested body these hand control back to the enclosing
+                // `do case` loop. A same-named variable being ASSIGNED
+                // stays a statement (the NOTE precedent, oracle hk249).
+                if depth > 0
+                    && (id.eq_ignore_ascii_case("case") || id.eq_ignore_ascii_case("otherwise") || id.eq_ignore_ascii_case("endcase") || id.eq_ignore_ascii_case("end"))
+                    && !matches!(toks.get(1), Some(Tok::Assign) | Some(Tok::Eq))
+                {
+                    return Ok(());
+                }
                 if id.eq_ignore_ascii_case("set") && !(toks.len() >= 2 && toks[1] == Tok::LParen) {
                     // SET commands switch runtime state. Measured sweep
                     // forms (63zk): SET PRINTER/DEVICE/ALTERNATE/MARGIN
