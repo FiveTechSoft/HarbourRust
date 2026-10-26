@@ -576,7 +576,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hset", "hb_hpos", "hb_hmerge",
+    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hclone",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -2348,6 +2348,20 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: the hb_HGet default is an integer in this increment", n));
                 }
                 return Ok(Ty::Dyn);
+            }
+            if is_builtin(id, "hb_hclone") {
+                // hb_HClone(h): a NEW hash whose entries are DEEP copies
+                // (hk166: fully independent - later writes on either side
+                // do not cross) in the SAME insertion order, NILs
+                // preserved (hk167); cloning an empty hash gives an
+                // empty one. The source is BORROWED (only read).
+                if args.len() != 1 {
+                    return Err(format!("line {}: `hb_HClone` takes exactly one argument", n));
+                }
+                if !matches!(&args[0], Expr::Var(_)) || type_expr(&args[0], env, sigs, n)? != Ty::Hash {
+                    return Err(format!("line {}: `hb_HClone` expects a hash variable (its slot is passed by address)", n));
+                }
+                return Ok(Ty::Hash);
             }
             if is_builtin(id, "hb_hvalues") {
                 // hb_HValues(h): NEW array of the hash's value casillas
@@ -4210,6 +4224,12 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
+            if is_builtin(id, "hb_hclone") {
+                // The source is BORROWED: hbc_hclone deep-copies every
+                // entry, the source keeps owning its own copies.
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
             if is_builtin(id, "hb_hhaskey") {
                 // The hash and the lookup key are BORROWED: hbc_hhaskey
                 // only reads them.
@@ -4637,6 +4657,18 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 unreachable!("checked: hb_HGet takes a hash variable");
             }
             out.push_str("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_hclone") => {
+            // hb_HClone(h): the helper deep-copies every entry into a
+            // NEW block the caller owns (hk166: fully independent);
+            // the source slot is passed by address and never mutated.
+            // Returns rax = data pointer, rdx = count.
+            if let Expr::Var(v) = &args[0] {
+                let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                out.push_str(&format!("    lea -{}(%rbp), %rdi\n    call hbc_hclone\n", var.off));
+            } else {
+                unreachable!("checked: hb_HClone takes a hash variable");
+            }
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hvalues") => {
             // hb_HValues(h): the helper copies every value cell into a
@@ -5248,6 +5280,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hpos") { return Ty::I64; }
             if is_builtin(id, "hb_hget") { return Ty::Dyn; }
             if is_builtin(id, "hb_hvalues") { return Ty::DArr; }
+            if is_builtin(id, "hb_hclone") { return Ty::Hash; }
             if is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") { return Ty::I64; }
             if is_builtin(id, "valtype") { return Ty::Str; } // hk88-hk92
             sigs.iter().find(|v| v.name == *id).expect("checked").ret.expect("checked")
@@ -7945,6 +7978,52 @@ hbc_hmerge:
     inc %r15
     jmp 50b
 51: add $8, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_hclone: rdi = hash slot address. Returns rax = data pointer of
+# a NEW block whose entries are DEEP copies - every key is re-copied
+# through hbc_hput and every value cell copied (hk166: the clone is
+# fully independent of the original in both directions), rdx = entry
+# count; insertion order and NIL values are preserved (hk167); an
+# empty hash clones to an empty slot (data 0, count 0). The source is
+# only read. Frame-based: hbc_hput allocates. A mid-copy hbc_oom exits
+# the process with every temporary still owned by this helper (no
+# unwinding in this PoC - documented).
+hbc_hclone:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $24, %rsp
+    mov (%rdi), %r13
+    mov 8(%rdi), %r14
+    movq $0, -56(%rbp)
+    movq $0, -48(%rbp)
+    xor %r15d, %r15d
+50: cmp %r14, %r15
+    jae 51f
+    mov %r15, %rax
+    shl $5, %rax
+    lea (%r13,%rax), %rbx
+    lea -56(%rbp), %rdi
+    mov (%rbx), %rsi
+    mov 8(%rbx), %rdx
+    lea 16(%rbx), %rcx
+    call hbc_hput
+    inc %r15
+    jmp 50b
+51: mov -56(%rbp), %rax
+    mov -48(%rbp), %rdx
+    add $24, %rsp
     pop %r15
     pop %r14
     pop %r13
