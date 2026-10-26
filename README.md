@@ -1369,5 +1369,21 @@ helper upserts through hbc_hput, copying every key and value
 on Linux and Wine, t547 the hk165 edges, t548/t549 reject non-hash
 arguments at compile time.
 
-Battery: 545/545 manifest cases on Linux x86-64 and Wine, plus
+Iteration 55 adds hb_HClone(h) (core hb_HClone; oracles
+hk166/hk167): a NEW hash whose entries are DEEP copies - fully
+independent in both directions (writes on the original do not cross
+into the clone, writes on the clone do not cross into the original,
+hk166) in the same insertion order with NIL values preserved; an
+empty hash clones to an empty one (hk167). The new hbc_hclone helper
+re-copies every key and value through hbc_hput (canaried in the ABI
+harness on both targets); the source is borrowed. t550 reproduces
+hk166 on Linux and Wine, t551 the order/NIL/empty edges of hk167,
+t552 the independent freeing of clone and source (balance 0, own
+ownership check), t553 rejects a non-hash target. The same iteration
+covers two hb_HMerge edges asked in review: self-merge hb_HMerge(h,
+h) is a clean no-op (hk168: len, values and positions unchanged;
+t554), and merged entries stay valid after the SOURCE hash is freed
+(t555: deep key copies, balance 0, own check).
+
+Battery: 551/551 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
