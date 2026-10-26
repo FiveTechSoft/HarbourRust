@@ -1470,10 +1470,15 @@ a logical); t611 hk207 (hb_HClone/hb_HValues preserve logicals);
 t612 the AAdd/ArrSet part of hk208; t613 hk208e (hb_HCopy source-
 first, hb_HFill with a logical); t614 the alloc/free balance of
 logical-casilla structures (wrap + memcheck 0 after the owners are
-freed); t603/t604/t605 pin the three rejection
+freed); t615/t616 pin the missing-key
+error contract (ValType and plain read, hk209/hk209b - clean
+bound-error exit 1, never a silent read); t617 the NIL-casilla
+condition contract (hk210 - clean exit 1 via hbc_dyn_to_log); t618
+a bare logical casilla branching in if/while; t603/t604/t605 pin
+the three rejection
 families.
 
-Battery: 610/610 manifest cases on Linux x86-64 and Wine, plus
+Battery: 614/614 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
 
 
