@@ -1290,5 +1290,18 @@ as 1/0 on Linux and Wine; t526 adds the empty-hash and
 borrowed-variable-key cases; t527 rejects a non-hash target at compile
 time.
 
-Battery: 523/523 manifest cases on Linux x86-64 and Wine, plus
+Iteration 49 adds hb_HGet(h, key [, default]) (core hb_HGet; oracles
+hk158a-e): an existing key yields its value casilla with or without the
+default (hk158a/e); an existing NIL value stays NIL - the default is
+NOT applied (hk158c), so it is type-checked but never evaluated. A
+MISSING key is the same BASE/1132 condition as an h[k] read miss:
+Harbour shows its dialog and hangs headless even WITH a default
+(hk158a/b/d), so the PoC prints "Bound error: array access" and exits 1
+- the registered failure mode, never a compat success. Reuses the
+existing hbc_hget helper (read-only lookup), now with a dedicated ABI
+canary on both targets. t528 reproduces the measured reads on Linux and
+Wine; t529 pins the missing-key failure mode (exit 1); t530 rejects a
+non-hash target at compile time.
+
+Battery: 526/526 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
