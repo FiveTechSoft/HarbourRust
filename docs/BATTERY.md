@@ -1206,5 +1206,12 @@ tag-only bug in hbc_dyn_eq), string x integer a clean named exit 1
 mirroring BASE/1071 (hk146 - dialog hangs headless; registered failure
 mode), string x NIL .F. in both directions (hk147).
 
-508/508 manifest cases + ABI harness green on Linux x86-64 and Wine
+t513-t517 (iteration 45): ordering between two Dyn casillas - new leaf
+helper hbc_dynxcmp (ABI-canaried on both targets): string x string
+byte-wise over the right operand's length (hk148; t513), string x
+integer a per-operator clean named exit 1 mirroring BASE/1073-1076
+(hk149-hk152 - dialogs hang headless; registered failure modes;
+t514-t517).
+
+513/513 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
