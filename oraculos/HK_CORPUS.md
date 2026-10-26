@@ -1963,3 +1963,48 @@ function main()
     next
 return nil
 ```
+
+### hk145
+
+```harbour
+function main()
+    local h := {"a" => 1, "bb" => 2}
+    local k, k2
+    for each k in hb_HKeys(h)
+        for each k2 in hb_HKeys(h)
+            ? k = k2
+        next
+    next
+    for each k in hb_HKeys(h)
+        ? k # k
+    next
+return nil
+```
+
+### hk146
+
+```harbour
+function main()
+    local h := {"a" => 1}
+    local a := {7}
+    local k
+    for each k in hb_HKeys(h)
+        ? k = a[1]
+    next
+return nil
+```
+
+### hk147
+
+```harbour
+function main()
+    local h := {"a" => 1}
+    local a := {NIL}
+    local k
+    for each k in hb_HKeys(h)
+        ? k = a[1]
+        ? a[1] = k
+    next
+return nil
+```
+
