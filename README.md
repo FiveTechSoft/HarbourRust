@@ -1405,8 +1405,44 @@ hk196b (NIL overwrite, NIL add without default); t594 hk196d
 t596/t597 hk195b/hk195c (no-op edges, clip); t598 the named
 self-copy rejection.
 
-Battery: 594/594 manifest cases on Linux x86-64 and Wine, plus
+Iteration 62 adds Harbour logicals as a real type (oracles hk197-hk204,
+measured against core at 694428e1): the dotted words .T. and .F.
+(literals), .AND. / .OR. / .NOT. (operators) - case-insensitive, no
+inner spaces, closing dot required (hk199c: .NOT..F. is valid). Every
+comparison now PRODUCES a logical (ValType "L", printed as .T./.F. -
+hk198), so `? 1 = 1` prints .T. like Harbour, not 1. Logicals store in
+variables, pass as parameters and return from functions (hk204);
+.AND./.OR. short-circuit by effects (hk203); the lexer speaks dotted
+words and the parser adds and_expr/or_expr precedence levels above
+comparisons. Rejections are differentiated and measured: bare
+AND/OR/NOT words are not operators in Harbour either (E0030, hk199) -
+a named compile-time error, not a silent keyword; trailing tokens
+after an expression stay the generic parser error; a logical compared
+against a non-logical under `=`/`#`/`==` is Harbour's BASE/1071
+(hk202) and stays a compile-time rejection here. Ordering comparisons
+on logicals are unmeasured and stay rejected. Dyn tagged logical cells
+(array/hash elements holding .T.) are measured (hk201) but deferred
+to the next increment: registered as 62b. Parameter inference is
+body-only, so a bare returned logical parameter is not inferable
+(registered limit; t602 shapes the identity through `.AND. .T.`).
+Scope note: the logical type covers literals, comparisons and the
+dotted operators - the builtin flag APIs (hb_HHasKey, hb_HCaseMatch,
+IsAlpha and family) KEEP their registered 1/0 integer surface (their
+.T./.F. in Harbour is the long-standing boolean rendering family).
+A consequence to register: comparing such a flag against 1 yields
+.T. here, while Harbour's logical-returning original raises
+BASE/1071 on the mixed comparison (the hk202 family, from the
+integer-flag surface).
+t599 reproduces hk197 (literals, printing, ValType); t600 hk198
+(comparisons produce logicals); t601 hk203 (short-circuit by
+effects); t602 hk204 (parameters and returns); t606 hk199c/hk200
+(case-insensitive dotted forms, .NOT..F.); t607 a logical variable
+reassigned and branched on; t603/t604/t605 pin the three rejection
+families.
+
+Battery: 604/604 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
+
 
 Iteration 60 adds hb_HClear(h) and hb_HFill(h, value) (core
 hb_HClear / hb_HFill; oracles hk191-hk193): hb_HClear empties the
