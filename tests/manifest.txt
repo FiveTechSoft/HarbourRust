@@ -583,3 +583,13 @@ pos tests/t585_hfill.hb \n         7\n         7\n         7\nb\n         3\nNIL
 pos tests/t586_hclear_owned.hb \n         5\n         0\nz\n         0\n         0
 neg tests/t587_neg_hclear_type.hb hb_HClear expects a hash variable
 neg tests/t588_neg_hfill_value.hb hash values are integers or NIL in this increment
+pos tests/t589_hgetdef.hb \n         1\n         9\n         1\nNIL\n         1\n         0\n         0
+pos tests/t590_hgetdef_owned_key.hb \n         2\n         1\n        42\n         0
+pos tests/t591_hgetdef_dyn_def.hb \n         7\n         1\n         1
+pos tests/t592_hsetdef.hb \n         1\n         1\n         5\n         2\n         1\n         5\n         5
+pos tests/t593_hsetdef_nil_overwrite.hb \n         5\n         5\nNIL\n         2\n         1\nNIL
+pos tests/t594_hsetdef_present_nodef.hb \n         7\n         7\n         1
+pos tests/t595_hcopy.hb \n         2\nb\n         3\n         1\n         9\n         3
+pos tests/t596_hcopy_edges.hb \n         0\n         0
+pos tests/t597_hcopy_clip.hb \n         0\n         2\nb
+neg tests/t598_hcopy_self.hb `hb_HCopy` cannot copy a hash onto itself
