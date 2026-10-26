@@ -2154,3 +2154,19 @@ restantes conservan su orden (a, c, bb); borrar "" sin existir es un
 no-op (len sigue 3). Verificado por t522 con lecturas por clave literal
 (la lectura h[k] del oráculo con variable `for each` Dyn sigue siendo
 límite nombrado del incremento: las lecturas piden claves Str/StrOwn).
+
+### hk157 - hb_HHasKey: membresía exacta y sensible a caso (26 oct 2026)
+
+Fuente `sondas_ac/hkeys/hk157.prg`, compilada con
+`hbmk2 hk157.prg -gtstd -ohk157` (solo librerías core). Salida verbatim:
+
+```
+\n.T.\n.T.\n.F.\n.F.\n.F.\n.F.\n.T.\n.F.\n.F.
+```
+
+Claves presentes .T.; ausente "zz", caso distinto "A" y prefijo "b" .F.;
+"" es .F. hasta que se añade como clave (.T.); tras hb_HDel(h, "a") la
+clave borrada vuelve a .F.; el hash vacío responde .F. Reproducido como
+1/0 por t525/t526 en Linux y Wine (el dialecto no tiene tipo lógico:
+1/0 es la superficie del PoC; la impresión .T./.F. es la familia
+registrada de representación booleana).
