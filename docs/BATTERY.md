@@ -1404,5 +1404,5 @@ dialog hangs headless) and takes the registered clean bound-error
 exit - not a silent "U" read. Registered limit: a mixed literal must be all
 literal elements.
 
-611/611 manifest cases + ABI harness green on Linux x86-64 and Wine
+610/610 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
