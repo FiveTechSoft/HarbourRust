@@ -1494,3 +1494,14 @@ correctness first, no parity claim.
 - Collections under @ are rejected with a named message pending the RC decision (analysis not done).
 
 **Sweep**: 23 files moved past the `@` tokenizer error to their next blocker (byref.prg now stops at `STATIC`, others at LOCAL-without-init, `%`, floats, ...); still 1/175 — the @-bearing files have other gaps ahead.
+
+## 63h — string capacity header + in-place grow (concat performance)
+
+Runtime: strings carry a 16-byte header {capacity at -16, length at -8}; fresh copies start cap == len; all string frees go through the new hbc_freestr (own registry snippet on Windows). New hbc_strgrow appends in place with doubling realloc; codegen emits it for `s := s + rhs` on a plain owned local only when rhs neither mentions s nor contains a call. Every other form keeps strcat copy semantics.
+
+- t646-t651: dedicated grow/freestr regressions with hb_memcheck() counts — content equality against the strcat path, realloc fallback on a single large append, excluded-call fallback, self-alias fallback, grow with a local rhs, hash key replace under the new layout.
+- t650 is also the regression for hk238 (bug found by these new tests, ours not Harbour's): a `@` string param plus a `for` loop crashed — the statement walk restarted the frame from the remapped one-word RefStrOwn size while the layout used the declared 16-byte size, so the loop counter overwrote the byref slot pointer. The walk now starts from the declared param sizes.
+- ABI harness: two latent instrumentation bugs fixed (harness, not runtime): a hbc_free2 call that relied on a stale esi (masked by the old heap layout; surfaced as SEGV on Linux and "OS free failed" under Wine) and eight strcpy-built strings still freed with the old-layout free.
+- Performance: concat probe median 148.75 → 0.29 ms at N=20000 (total time, startup-dominated at that size); at work-dominated sizes 0.99/1.51 ms vs Harbour 10.94/23.66 ms at N=200000/400000. Full record in docs/BENCH-strcat.md round 3.
+
+**Sweep**: not re-run — no syntax change in this iteration.
