@@ -803,6 +803,43 @@ hbc_abi_test:
     call abi_check
     cmpq $0, -32(%rbp)
     jne abi_fail_hs
+    # hbc_hkeyat / hbc_hvalueat canary (iteration 58): the same
+    # 2-entry hash {"ab"=>7, "c"=>9} answers the key ptr/len at
+    # position 1 ("ab", len 2), 0 for an out-of-range key position,
+    # and the value {tag 0, payload 9} at position 2. Leaf,
+    # read-only. Results saved BEFORE abi_check (it clobbers rax).
+    lea -96(%rbp), %rdi
+    mov $1, %esi
+    call hbc_hkeyat
+    mov %rax, -32(%rbp)
+    mov %rdx, -24(%rbp)
+    call abi_check
+    cmpq $0, -32(%rbp)
+    je abi_fail_hka
+    cmpq $2, -24(%rbp)
+    jne abi_fail_hka
+    mov -32(%rbp), %rax
+    cmpb $97, (%rax)
+    jne abi_fail_hka
+    lea -96(%rbp), %rdi
+    mov $3, %esi
+    call hbc_hkeyat
+    mov %rax, -32(%rbp)
+    call abi_check
+    cmpq $0, -32(%rbp)
+    jne abi_fail_hka
+    lea -96(%rbp), %rdi
+    mov $2, %esi
+    call hbc_hvalueat
+    mov %rax, -32(%rbp)
+    call abi_check
+    cmpq $0, -32(%rbp)
+    je abi_fail_hka
+    mov -32(%rbp), %rax
+    cmpq $0, (%rax)
+    jne abi_fail_hka
+    cmpq $9, 8(%rax)
+    jne abi_fail_hka
     mov -96(%rbp), %rdi
     mov $2, %esi
     call hbc_hfree
@@ -1127,6 +1164,10 @@ abi_fail_hs:
     lea .Labi_f_hs(%rip), %rax
     mov $12, %edx
     jmp abi_fail_common
+abi_fail_hka:
+    lea .Labi_f_hka(%rip), %rax
+    mov $13, %edx
+    jmp abi_fail_common
 abi_fail_hm:
     lea .Labi_f_hm(%rip), %rax
     mov $12, %edx
@@ -1174,6 +1215,7 @@ ASM_EOF
 .Labi_f_hg:  .ascii "ABI FAIL hg\n"
 .Labi_f_hp:  .ascii "ABI FAIL hp\n"
 .Labi_f_hs:  .ascii "ABI FAIL hs\n"
+.Labi_f_hka: .ascii "ABI FAIL hka\n"
 .Labi_f_hm:  .ascii "ABI FAIL hm\n"
 .Labi_f_hc:  .ascii "ABI FAIL hc\n"
 .Labi_f_de: .ascii "ABI FAIL deq\n"
