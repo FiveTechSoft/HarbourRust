@@ -182,12 +182,17 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
 ", k, (10u32 << 8) | (*dec as u32)));
         }
         Expr::FloatV(bits, dec) => {
-            // Harbour's fold sets bWidth = HB_DEFAULT_WIDTH (10), bDec =
-            // HB_DEFAULT_DECIMALS ("current SET DECIMALS", 2 here).
+            // Harbour's fold sets bWidth = HB_DEFAULT_WIDTH (255): the
+            // literal item resolves length from the VALUE with the
+            // asymmetric HB_DBL_LENGTH rule - 20 when d > 9999999999.0 or
+            // d < -999999999.0, else 10 (hbdefs.h:570; oracle hk298's
+            // 9223372036854775807/3 pads to width 23, not 13).
+            let v = f64::from_bits(*bits);
+            let len: u32 = if v > 9999999999.0 || v < -999999999.0 { 20 } else { 10 };
             let k = f64_const(*bits);
             out.push_str(&format!("    movsd .Lf64c{}(%rip), %xmm0
     mov ${}, %rdi
-", k, (10u32 << 8) | (*dec as u32)));
+", k, (len << 8) | (*dec as u32)));
         }
         Expr::Var(v) => {
             let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
@@ -225,25 +230,27 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
             // Harbour length metadata for a runtime double: 20 when
             // |d| > 9999999999.0, else 10 (hb_itemPutND + HB_DBL_LENGTH;
             // oracle hk293 prints 2^63 padded to width 23 with dec 2).
+            // Asymmetric HB_DBL_LENGTH (hbdefs.h:570, oracle hk297):
+            // length 20 when x > 9999999999.0 OR x < -999999999.0.
             let kc = f64_const(9999999999.0f64.to_bits());
+            let kn = f64_const(999999999.0f64.to_bits());
             let la = fresh_lbl();
             let lb = fresh_lbl();
             out.push_str(&format!("    mov $10, %edi
     movsd .Lf64c{}(%rip), %xmm2
     ucomisd %xmm2, %xmm1
-    jbe .Lf64la{}
-    mov $20, %edi
-.Lf64la{}:
+    ja .Lf64la{}
     xorpd %xmm2, %xmm2
     subsd %xmm1, %xmm2
     movsd .Lf64c{}(%rip), %xmm3
     ucomisd %xmm3, %xmm2
     jbe .Lf64lb{}
+.Lf64la{}:
     mov $20, %edi
 .Lf64lb{}:
     shl $8, %rdi
     or $2, %rdi
-", kc, la, la, kc, lb, lb));
+", kc, la, kn, lb, la, lb));
         }
         _ => unreachable!("float expressions are literals, locals or int/int division"),
     }
