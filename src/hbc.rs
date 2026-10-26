@@ -967,6 +967,66 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 out.push(Stmt::Loop(n));
                 *i += 1;
             }
+            Tok::Ident(id) if id.eq_ignore_ascii_case("do") => {
+                // Harbour command forms (oracle hk244): `DO WHILE <cond>`
+                // is the plain `while` loop (same ENDDO); `DO name` and
+                // `DO name WITH arg, ...` run the call for its effect
+                // (the bare-call statement of hk216 with command sugar).
+                if toks.len() >= 2 && toks[1] == Tok::KwWhile {
+                    if toks.len() < 3 {
+                        return Err(format!("line {}: expected `do while <expr>`", n));
+                    }
+                    let cond = parse_expr_tokens(toks[2..].to_vec(), n)?;
+                    *i += 1;
+                    let mut body = Vec::new();
+                    parse_stmts(lines, i, &mut body, depth + 1)?;
+                    if *i >= lines.len() || lines[*i].1[0] != Tok::KwEnddo {
+                        return Err(format!("line {}: `do while` without `enddo`", n));
+                    }
+                    if lines[*i].1.len() != 1 {
+                        return Err(format!("line {}: `enddo` takes no expression", lines[*i].0));
+                    }
+                    *i += 1;
+                    out.push(Stmt::While(n, cond, body));
+                } else if toks.len() >= 2 {
+                    let fname = match &toks[1] {
+                        Tok::Ident(f) => f.clone(),
+                        t => return Err(format!("line {}: expected `do while` or `do name [WITH args]`, got {:?}", n, t)),
+                    };
+                    if fname.eq_ignore_ascii_case("case") {
+                        return Err(format!("line {}: DO CASE is not in this increment (use if/elseif/else/endif)", n));
+                    }
+                    check_ident(&fname, n)?;
+                    let args: Vec<Expr> = if toks.len() == 2 {
+                        Vec::new()
+                    } else if toks.len() >= 4 && matches!(&toks[2], Tok::Ident(w) if w.eq_ignore_ascii_case("with")) {
+                        let rest = &toks[3..];
+                        let mut d = 0i32;
+                        let mut start = 0usize;
+                        let mut spans: Vec<&[Tok]> = Vec::new();
+                        for (k, t) in rest.iter().enumerate() {
+                            match t {
+                                Tok::LParen | Tok::LBracket | Tok::LBrace => d += 1,
+                                Tok::RParen | Tok::RBracket | Tok::RBrace => d -= 1,
+                                Tok::Comma if d == 0 => { spans.push(&rest[start..k]); start = k + 1; }
+                                _ => {}
+                            }
+                        }
+                        spans.push(&rest[start..]);
+                        let mut v = Vec::new();
+                        for sp in spans {
+                            v.push(parse_expr_tokens(sp.to_vec(), n)?);
+                        }
+                        v
+                    } else {
+                        return Err(format!("line {}: expected `do {} [WITH arg, ...]`", n, fname));
+                    };
+                    out.push(Stmt::CallStmt(n, Expr::Call(fname, args)));
+                    *i += 1;
+                } else {
+                    return Err(format!("line {}: expected `do while` or `do name [WITH args]`", n));
+                }
+            }
             Tok::Ident(id) => {
                 if toks.len() >= 2 && toks[1] == Tok::LBracket {
                     // a[i] := v, a[i][j] := v or a[i,j] := v (probe m2: the
@@ -1667,7 +1727,7 @@ struct Local {
 // only prints, returns or copies is NOT pinnable: report it honestly
 // instead of guessing.
 // ---------------------------------------------------------------------------
-fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
+fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>), String> {
     let n = f.params.len();
     let mut pin: Vec<Option<Ty>> = vec![None; n];
     let mut lit: Vec<(String, Ty)> = Vec::new(); // literal-initialized locals
@@ -2243,12 +2303,18 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
     }
     let nil_ret = any_nil_ret(&f.stmts);
     walk_stmts(f, &f.stmts, sigs, &mut lit, &mut pin, nil_ret)?;
+    // Report the first uninferable parameter, but return the partial pins:
+    // one uninferable parameter must not mask the evidence of the others
+    // (an i64 placeholder for a string parameter turned a later
+    // `param == "literal"` into the Dyn/integer `==` named rejection,
+    // hiding the real problem - probes v2/v3 in the 63k notes).
+    let mut pin_err = None;
     for (i, p) in f.params.iter().enumerate() {
-        if pin[i].is_none() {
-            return Err(format!("cannot infer the type of parameter `{}` of function `{}` (printing, returning or copying it is not enough; use it in arithmetic or compare it against a value of known type)", p, f.name));
+        if pin[i].is_none() && pin_err.is_none() {
+            pin_err = Some(format!("cannot infer the type of parameter `{}` of function `{}` (printing, returning or copying it is not enough; use it in arithmetic or compare it against a value of known type)", p, f.name));
         }
     }
-    Ok(pin.into_iter().map(|x| x.unwrap()).collect())
+    Ok((pin, pin_err))
 }
 
 // Does expression `e` mention variable `name` anywhere (including index
@@ -12573,7 +12639,7 @@ fn main() {
         // so the body check can surface a more specific error first; the pin
         // error is only reported if the body itself checks clean.
         let (ptys, pin_err) = match pin_params(f, &sigs) {
-            Ok(v) => (v, None),
+            Ok((pin, e)) => (pin.into_iter().map(|x| x.unwrap_or(Ty::I64)).collect(), e),
             Err(m) => (vec![Ty::I64; f.params.len()], Some(m)),
         };
         let mut env: Vec<Local> = Vec::new();
