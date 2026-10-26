@@ -1213,6 +1213,11 @@ integer a per-operator clean named exit 1 mirroring BASE/1073-1076
 (hk149-hk152 - dialogs hang headless; registered failure modes;
 t514-t517).
 
+t545 (iteration 53): leak fix - hb_HDel freed no owned key temporary
+(same pattern as the hb_HHasKey leak of the 52, found in the StrOwn
+review matrix; h[k] reads/writes and hb_HGet/hb_HSet/hb_HPos verified
+clean). t545 pins the fix with a genuine element-copy key (balance 0).
+
 t544 (iteration 52): leak fix - hb_HHasKey freed no owned key
 temporary (found by memcheck probing with a genuine hb_HKeys element
 copy; a function-returned literal types Str and never exercised the
@@ -1280,5 +1285,5 @@ insertion order into a NEW independent array (oracles hk153/hk154;
 t518/t519), result freed by the DArr epilogue with balance 0 (t520,
 own ownership check, not a Harbour oracle).
 
-540/540 manifest cases + ABI harness green on Linux x86-64 and Wine
+541/541 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
