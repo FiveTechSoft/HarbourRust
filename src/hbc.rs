@@ -1200,7 +1200,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -3849,6 +3849,31 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) { return Ok(Ty::StrOwn); }
                 return Err(format!("line {}: `iif` branches must share a scalar type (float absorbs an int side), got {:?} and {:?}", n, ta, tb));
             }
+            if is_builtin(id, "round") {
+                // Round(n, d) - hb_numRound measured (src/common/hbstr.c;
+                // oracles hk384-hk386): half away from zero with the
+                // HB_DBLFL_PREC_FACTOR ulp lift (hbdefs.h:665), result
+                // dec = max(d, 0), exact pow10 table for |d| <= 15.
+                if args.len() != 2 {
+                    return Err(format!("line {}: `round` takes two arguments", n));
+                }
+                let tn = type_expr(&args[0], env, sigs, n)?;
+                if !matches!(tn, Ty::I64 | Ty::F64) {
+                    return Err(format!("line {}: `round` expects a numeric first argument (Harbour raises RT error EG_ARG; compile-time typed here)", n));
+                }
+                let td = type_expr(&args[1], env, sigs, n)?;
+                if td != Ty::I64 {
+                    return Err(format!("line {}: `round` expects an integer dec argument (Harbour hb_parni converts; a named limit of this increment)", n));
+                }
+                if let Expr::Int(v) = &args[1] {
+                    if let Ok(dv) = v.parse::<i64>() {
+                        if dv.abs() > 15 {
+                            return Err(format!("line {}: `round` dec beyond +/-15 is parked (Harbour switches to pow(10,d) there; the exact-table zone is the measured one)", n));
+                        }
+                    }
+                }
+                return Ok(Ty::F64);
+            }
             let si = sigs.iter().position(|v| v.name == *id)
                 .ok_or_else(|| format!("line {}: unknown function `{}` (must be defined before use)", n, id))?;
             let (sig_params, sig_borrowed, sig_arr_moved, sig_ret, sig_inferred) = {
@@ -6142,6 +6167,12 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 apply_moves(&args[0], env, sigs, false);
                 return;
             }
+            if is_builtin(id, "round") {
+                // Round borrows both numeric arguments: nothing moves.
+                apply_moves(&args[0], env, sigs, false);
+                apply_moves(&args[1], env, sigs, false);
+                return;
+            }
             if is_builtin(id, "eval") {
                 // Block values are Copy pointers; arguments are integers:
                 // nothing moves (checked in analysis).
@@ -6592,6 +6623,15 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 }
                 _ => unreachable!("checked"),
             }
+        }
+        Expr::Call(id, args) if is_builtin(id, "round") => {
+            // Round(n, d) - hb_numRound (oracles hk384-hk386): the helper
+            // returns the f64 pair convention (xmm0 = value, rdi = packed
+            // dec | length<<16), like any float-returning call (63zd).
+            cg_f64_operand(&args[0], env, sigs, strs, out, target);
+            out.push_str("    sub $16, %rsp\n    movsd %xmm0, (%rsp)\n");
+            cg_expr(&args[1], env, sigs, strs, out, target);
+            out.push_str("    mov %rax, %rdi\n    movsd (%rsp), %xmm0\n    add $16, %rsp\n    call hbc_round\n");
         }
         Expr::Call(id, args) if is_builtin(id, "len") => {
             // len(s) for a string (hk217): the value pair's len half.
@@ -7767,6 +7807,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hclone") { return Ty::Hash; }
             if is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") { return Ty::I64; }
             if is_builtin(id, "valtype") { return Ty::Str; } // hk88-hk92
+            if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
                 // Branch unification mirrors the checker (oracle hk321).
                 let ta = expr_ty(&args[1], env, sigs);
@@ -12550,6 +12591,84 @@ hbc_f64range_error:
     mov $1, %edi
     syscall
 
+# hbc_round: %xmm0 = n, %rdi = d (i64, sign kept) -> %xmm0 = rounded value,
+# %rdi = PACKED metadata (dec low16 | length<<16). Exact hb_numRound
+# transcription (src/common/hbstr.c; HB_NUM_PRECISION off;
+# HB_DBLFL_PREC_FACTOR = 1.0000000000000002 active - hbdefs.h:665):
+# c = n [* or /] dPow * 10; c +/- 5 by sign of n; c / 10; c * factor;
+# trunc toward zero; back-scale by dPow. dec = max(d, 0); length = the
+# asymmetric HB_DBL_LENGTH rule. Zero flows through uniformly.
+hbc_round:
+    mov %rdi, %r8
+    test %rdi, %rdi
+    js .Lround_neg
+    cmp $15, %rdi
+    jg hbc_round_range_error
+    lea .Lround_pow10(%rip), %rax
+    movsd (%rax,%rdi,8), %xmm1
+    mulsd %xmm1, %xmm0
+    jmp .Lround_common
+.Lround_neg:
+    cmp $-15, %rdi
+    jl hbc_round_range_error
+    neg %rdi
+    lea .Lround_pow10(%rip), %rax
+    movsd (%rax,%rdi,8), %xmm1
+    divsd %xmm1, %xmm0
+.Lround_common:
+    movsd .Lround_ten(%rip), %xmm2
+    mulsd %xmm2, %xmm0
+    xorpd %xmm3, %xmm3
+    ucomisd %xmm3, %xmm0
+    jb .Lround_sub5
+    addsd .Lround_five(%rip), %xmm0
+    jmp .Lround_div
+.Lround_sub5:
+    subsd .Lround_five(%rip), %xmm0
+.Lround_div:
+    divsd %xmm2, %xmm0
+    mulsd .Lround_factor(%rip), %xmm0
+    roundsd $3, %xmm0, %xmm0
+    test %r8, %r8
+    js .Lround_mulback
+    divsd %xmm1, %xmm0
+    jmp .Lround_meta
+.Lround_mulback:
+    mulsd %xmm1, %xmm0
+.Lround_meta:
+    xor %edi, %edi
+    test %r8, %r8
+    js .Lround_len
+    mov %r8, %rdi
+.Lround_len:
+    mov $10, %eax
+    movsd .Lround_lenmax(%rip), %xmm2
+    ucomisd %xmm2, %xmm0
+    ja .Lround_l20
+    xorpd %xmm2, %xmm2
+    subsd %xmm0, %xmm2
+    movsd .Lround_lenmin(%rip), %xmm3
+    ucomisd %xmm3, %xmm2
+    jbe .Lround_l10
+.Lround_l20:
+    mov $20, %eax
+.Lround_l10:
+    shl $16, %rax
+    or %rax, %rdi
+    ret
+
+# hbc_round_range_error: runtime dec beyond +/-15 (Harbour switches to
+# pow(10,d) there - parked, registered limit). Clean named exit 1.
+hbc_round_range_error:
+    lea .Lroundmsg(%rip), %rsi
+    mov $30, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 # hbc_type_error: NIL used as a number at runtime (arithmetic, ordering or
 # array indexing). Harbour raises a type-error dialog; headless probes
 # cannot capture it, so this PoC prints and exits 1 (registered failure
@@ -13186,6 +13305,13 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     // "Error: division by zero\n" (24 bytes; EG_ZERODIV, probe hk294)
     out.push_str(".Ldiv0msg:\n    .byte 69,114,114,111,114,58,32,100,105,118,105,115,105,111,110,32,98,121,32,122,101,114,111,10\n");
     out.push_str(".Lf64rangemsg:\n    .byte 69,114,114,111,114,58,32,102,108,111,97,116,32,102,105,101,108,100,32,111,117,116,32,111,102,32,114,97,110,103,101,10\n");
+    out.push_str(".Lroundmsg:\n    .byte 69,114,114,111,114,58,32,114,111,117,110,100,32,100,101,99,32,111,117,116,32,111,102,32,114,97,110,103,101,10\n");
+    out.push_str(".Lround_pow10:\n    .quad 4607182418800017408, 4621819117588971520, 4636737291354636288, 4652007308841189376\n    .quad 4666723172467343360, 4681608360884174848, 4696837146684686336, 4711630319722168320\n    .quad 4726483295884279808, 4741671816366391296, 4756540486875873280, 4771362005757984768\n    .quad 4786511204640096256, 4801453603149578240, 4816244402031689728, 4831355200913801216\n");
+    out.push_str(".Lround_lenmax:\n    .quad 4756540486875348992\n");
+    out.push_str(".Lround_lenmin:\n    .quad 4741671816358002688\n");
+    out.push_str(".Lround_ten:\n    .quad 4621819117588971520\n");
+    out.push_str(".Lround_five:\n    .quad 4617315517961601024\n");
+    out.push_str(".Lround_factor:\n    .quad 4607182418800017409\n");
     out.push_str(".Loommsg:\n    .byte 79,117,116,32,111,102,32,109,101,109,111,114,121,10\n");
     // "Type error: NIL used as a number\n" (33 bytes; registered failure mode)
     out.push_str(".Losbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,79,83,32,102,114,101,101,32,102,97,105,108,101,100,10\n");
@@ -14086,6 +14212,83 @@ hbc_f64range_error:
     sub $48, %rsp
     lea .Lf64rangemsg(%rip), %rax
     mov $32, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+# hbc_round: %xmm0 = n, %rdi = d (i64, sign kept) -> %xmm0 = rounded value,
+# %rdi = PACKED metadata (dec low16 | length<<16). Exact hb_numRound
+# transcription (src/common/hbstr.c; HB_NUM_PRECISION off;
+# HB_DBLFL_PREC_FACTOR = 1.0000000000000002 active - hbdefs.h:665):
+# c = n [* or /] dPow * 10; c +/- 5 by sign of n; c / 10; c * factor;
+# trunc toward zero; back-scale by dPow. dec = max(d, 0); length = the
+# asymmetric HB_DBL_LENGTH rule. Zero flows through uniformly.
+hbc_round:
+    mov %rdi, %r8
+    test %rdi, %rdi
+    js .Lround_neg
+    cmp $15, %rdi
+    jg hbc_round_range_error
+    lea .Lround_pow10(%rip), %rax
+    movsd (%rax,%rdi,8), %xmm1
+    mulsd %xmm1, %xmm0
+    jmp .Lround_common
+.Lround_neg:
+    cmp $-15, %rdi
+    jl hbc_round_range_error
+    neg %rdi
+    lea .Lround_pow10(%rip), %rax
+    movsd (%rax,%rdi,8), %xmm1
+    divsd %xmm1, %xmm0
+.Lround_common:
+    movsd .Lround_ten(%rip), %xmm2
+    mulsd %xmm2, %xmm0
+    xorpd %xmm3, %xmm3
+    ucomisd %xmm3, %xmm0
+    jb .Lround_sub5
+    addsd .Lround_five(%rip), %xmm0
+    jmp .Lround_div
+.Lround_sub5:
+    subsd .Lround_five(%rip), %xmm0
+.Lround_div:
+    divsd %xmm2, %xmm0
+    mulsd .Lround_factor(%rip), %xmm0
+    roundsd $3, %xmm0, %xmm0
+    test %r8, %r8
+    js .Lround_mulback
+    divsd %xmm1, %xmm0
+    jmp .Lround_meta
+.Lround_mulback:
+    mulsd %xmm1, %xmm0
+.Lround_meta:
+    xor %edi, %edi
+    test %r8, %r8
+    js .Lround_len
+    mov %r8, %rdi
+.Lround_len:
+    mov $10, %eax
+    movsd .Lround_lenmax(%rip), %xmm2
+    ucomisd %xmm2, %xmm0
+    ja .Lround_l20
+    xorpd %xmm2, %xmm2
+    subsd %xmm0, %xmm2
+    movsd .Lround_lenmin(%rip), %xmm3
+    ucomisd %xmm3, %xmm2
+    jbe .Lround_l10
+.Lround_l20:
+    mov $20, %eax
+.Lround_l10:
+    shl $16, %rax
+    or %rax, %rdi
+    ret
+
+# hbc_round_range_error: same wording as the linux helper; exit code 1.
+hbc_round_range_error:
+    push %rbp
+    mov %rsp, %rbp
+    sub $48, %rsp
+    lea .Lroundmsg(%rip), %rax
+    mov $30, %edx
     call hbc_print_str
     mov $1, %ecx
     call ExitProcess
