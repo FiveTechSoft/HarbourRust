@@ -65,7 +65,7 @@ pos tests/t61_params_forbound.hb \n      5050
 pos tests/t62_params_copy.hb \n         9\n         9\n         9
 neg tests/t63_params_arity.hb takes 2 argument(s), got 1
 neg tests/t64_params_strarg.hb cannot infer the type of parameter
-neg tests/t70_strparam_nopin.hb cannot infer the type of parameter
+pos tests/t70_strparam_print_dyn.hb \nx\n         0
 neg tests/t69_strparam_useaftermove.hb use of moved value `v`
 neg tests/t73_strparam_wrongty.hb argument 1 of `isab` must be a string
 neg tests/t75_strparam_movetwice.hb use of moved value `v`
@@ -687,7 +687,7 @@ pos tests/t689_mutual_recursion.hb \n         2
 pos tests/t690_reverse_chain.hb \n       109
 pos tests/t691_forward_str_ret.hb \nhi!
 neg tests/t692_forward_type_neg.hb argument 1 of `fwd` must be an integer, got a string
-neg tests/t693_forward_uninferable_neg.hb cannot infer the type of parameter `s`
+pos tests/t693_forward_print_dyn.hb \nab\nab
 neg tests/t694_mutual_no_evidence_neg.hb never returns a value
 pos tests/t695_strlit.hb \n         3\nabbccc\n         4\ndddd\nA\nC\n         0
 pos tests/t696_strlit_arg.hb \nx!\n         2\n         0
@@ -696,3 +696,10 @@ pos tests/t698_discard_darrs.hb \nstrs-side\nstrs-side\ndone\n         0
 pos tests/t699_discard_darr.hb \narr-side\ndone\n         0
 pos tests/t700_discard_darr2.hb \ngrid-side\ndone\n         0
 neg tests/t701_discard_hash_neg.hb discarding a hash return
+neg tests/t702_return_only_param_neg.hb returning or copying it is not enough
+pos tests/t703_print_then_arith.hb \n         5\n         6
+pos tests/t704_print_then_concat.hb \nab\nab!
+pos tests/t705_print_dyn_multitype.hb \ntext\n        42\nNIL
+neg tests/t706_print_dyn_array_neg.hb must be a dynamic value, got a dynamic array
+pos tests/t707_print_dyn_boundary.hb \nabc\nabc\nde\nde
+neg tests/t708_print_dyn_bool_neg.hb must be a dynamic value, got a boolean
