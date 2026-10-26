@@ -1187,7 +1187,12 @@ hbc_str_xeq, canaried in the ABI harness on both targets. Against NIL
 identity and equality coincide (hk128: NIL==NIL .T., NIL==1/1==NIL/
 NIL=="" all .F.; hk129: casilla == NIL answers like `=` - live child
 .F., NIL casilla .T.; t494/t495), so `==` reuses the `=` codegen
-paths (constant folds, tag dispatch, casilla read).
+paths (constant folds, tag dispatch, casilla read). Nested dynamic
+array VARIABLES answer identity as well (hk130: a==a .T., a==b .F.;
+t496 - the frame slot's first qword is the heap pointer at every
+implemented depth), and so do codeblock VARIABLES (hk131: x==x .T.,
+x==y .F. for distinct literals; t497 - the slot holds the
+per-literal pointer).
 
-Battery: 491/491 manifest cases on Linux x86-64 and Wine, plus
+Battery: 493/493 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
