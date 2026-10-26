@@ -1395,7 +1395,13 @@ logical); t614 the alloc/free balance of logical-casilla structures
 (mixed literal, AAdd growth, hash writes, HClone, HValues, HCopy,
 HFill - wrap + memcheck 0 after the owning frame frees them). The
 ABI harness carries dedicated canaries for hbc_dyn_eq tag-3 and the
-new hbc_dyn_to_log on both targets. A Dyn in condition position materializes through the new
+new hbc_dyn_to_log on both targets. t615/t616 pin the missing-key
+error contract as executable regressions (ValType and plain read,
+hk209/hk209b - exit 1 "Bound error: array access" on both targets,
+never a silent read); t617 the NIL casilla in condition position
+(hk210 - exit 1 via hbc_dyn_to_log); t618 the positive twin: a bare
+logical casilla branches in if/while (the if/while checkers now
+admit a Dyn condition, matching Harbour's runtime-checked IF). A Dyn in condition position materializes through the new
 hbc_dyn_to_log (logical keeps payload; NIL, integer or string
 cell is Harbour's error condition - hk210, dialog hangs headless -
 clean exit 1 here); ValType over a hash casilla measures "L";
@@ -1404,5 +1410,5 @@ dialog hangs headless) and takes the registered clean bound-error
 exit - not a silent "U" read. Registered limit: a mixed literal must be all
 literal elements.
 
-610/610 manifest cases + ABI harness green on Linux x86-64 and Wine
+614/614 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
