@@ -4,7 +4,8 @@
 // registered failure mode, not exact equivalence.
 function main()
     local h := {"a" => 1}
-    local a := {7}
+    local a := {}
+    AAdd(a, 7)
     local k := hb_HKeys(h)
     local c := 0
     for each c in k
