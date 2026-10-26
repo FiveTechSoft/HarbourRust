@@ -781,3 +781,8 @@ pos tests/t781_cmp_in_args.hb \n.T.\n.F.\n.T.
 pos tests/t782_iif_lazy.hb \npassed\nfail\n         1.5\ngood\ngood2
 neg tests/t783_for_reuse_ro_neg.hb reuses a non-integer or read-only slot
 neg tests/t784_for_reuse_str_neg.hb reuses a non-integer or read-only slot
+pos tests/t785_int_width_literals.hb \n 9999999999\n 10000000000\n 50000005000000\n-999999999\n         -1000000000\n     -50000005000000\n 123456789
+pos tests/t786_int_width_folded.hb \n         5\n 1000000000\n 5000000000\n 10000000000\n 5025000000\n         -1000000000\n         -5000000000\n        10
+pos tests/t787_int_width_computed.hb \n 999999999\n1000000000\n9999999999\n         10000000000\n-999999999\n         -1000000000\n         -9999999999\n        -10000000000
+pos tests/t789_iif_owned_str.hb \nconcat\nowned\n         7\n         2.5
+pos tests/t790_iif_owned_memcheck.hb \nconcat\n         1\nowned\n         1\nab\n         0
