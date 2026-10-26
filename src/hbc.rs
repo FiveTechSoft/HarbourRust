@@ -2421,6 +2421,20 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     // is the heap pointer - the identity - at every depth.
                     return Ok(Ty::Bool);
                 }
+                // Dynamic casillas (hk132/hk133/hk138/hk140): `==`
+                // between two casillas, or between a casilla and a
+                // string/integer, dispatches on the runtime tag -
+                // string x string is the EXACT byte compare, number x
+                // number the value compare, NIL x NIL .T., NIL x
+                // payload .F. Mixed number x string raises Harbour's
+                // BASE/1070 (hk139/hk139b/hk139c: dialog that hangs
+                // headless) - a clean named exit 1 here, registered
+                // failure mode, not exact equivalence.
+                if (matches!(ta, Ty::Dyn) || matches!(tb, Ty::Dyn))
+                    && matches!(ta, Ty::Dyn | Ty::Str | Ty::StrOwn | Ty::I64)
+                    && matches!(tb, Ty::Dyn | Ty::Str | Ty::StrOwn | Ty::I64) {
+                    return Ok(Ty::Bool);
+                }
                 // Codeblocks stay rejected: Harbour's identity is per
                 // EVALUATION (hk131: x==x .T., x==y .F. between literals;
                 // hk136: make()==make() .F. for the same literal returned
@@ -5101,10 +5115,12 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 let lid = fresh_lbl();
                 out.push_str(&format!("    cmp $2, %r10\n    je .Ldys{}\n", lid));
                 match op {
-                    CmpOp::Eq | CmpOp::Ne => {
+                    CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq => {
                         out.push_str(&format!("    cmp $0, %r10\n    je .Ldyn{}\n", lid));
                         // tag 1 (NIL) or any other tag: the previous
-                        // fold - `=` is .F., `#` is .T. (hk35, n1).
+                        // fold - `=` is .F., `#` is .T. (hk35, n1);
+                        // `==` against a string answers .F. for a NIL
+                        // casilla too (hk140).
                         if tmp { out.push_str("    mov %rax, %rdi\n    mov $1, %esi\n    call hbc_free\n"); }
                         if matches!(op, CmpOp::Ne) {
                             out.push_str(&format!("    jmp {}\n", true_label));
@@ -5140,6 +5156,8 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 }
                 match op {
                     CmpOp::Eq | CmpOp::Ne => out.push_str("    call hbc_str_eq\n"),
+                    // `==` is the EXACT byte compare (hk132/hk133).
+                    CmpOp::EqEq => out.push_str("    call hbc_str_xeq\n"),
                     _ => out.push_str("    call hbc_str_cmp\n"),
                 }
                 if tmp {
@@ -5149,16 +5167,18 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 }
                 out.push_str("    mov (%rsp), %rax\n    add $16, %rsp\n");
                 match op {
-                    CmpOp::Eq | CmpOp::Ne => {
+                    CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq => {
                         out.push_str("    test %rax, %rax\n");
-                        let j = match op { CmpOp::Eq => "jnz", _ => "jz" };
+                        let j = match op { CmpOp::Eq | CmpOp::EqEq => "jnz", _ => "jz" };
                         out.push_str(&format!("    {} {}\n", j, true_label));
                         out.push_str(&format!("    jmp .Ldye{}\n.Ldyn{}:\n", lid, lid));
                         // tag 0: number against a string - Harbour's
-                        // BASE/1071 for `=` (hk34) and BASE/1072 for
-                        // `#` (hk38); clean named exit 1.
+                        // BASE/1071 for `=` (hk34), BASE/1072 for `#`
+                        // (hk38) and BASE/1070 for `==` (hk139b/hk139c);
+                        // clean named exit 1.
                         match op {
                             CmpOp::Eq => out.push_str("    call hbc_dyncmp_eq_error\n"),
+                            CmpOp::EqEq => out.push_str("    call hbc_dynxeq_error\n"),
                             _ => out.push_str("    call hbc_dyncmp_ne_error\n"),
                         }
                     }
@@ -5175,8 +5195,13 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                         // Tag-dispatch equality: NIL = NIL is .T., NIL
                         // against a payload is .F., payloads compare
                         // numerically (hbc_dyn_eq). For `==` against NIL
-                        // (the only Dyn shapes the checker admits) the
-                        // answers coincide with `=` (hk128/hk129).
+                        // the answers coincide with `=` (hk128/hk129);
+                        // between two non-NIL casillas `==` dispatches
+                        // deeper (hbc_dynxeq_dd: strings by exact
+                        // content - hk132/hk133, numbers by value -
+                        // hk138, mixed number x string is the BASE/1070
+                        // registered failure mode - hk139/hk139b/
+                        // hk139c).
                         cg_expr(a, env, sigs, strs, out, target);
                         if ta == Ty::I64 { out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n"); }
                         match target {
@@ -5190,7 +5215,11 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                             Target::Linux => out.push_str("    pop %rdx\n    pop %rax\n"),
                             Target::Windows => out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n"),
                         }
-                        out.push_str("    call hbc_dyn_eq\n    test %rax, %rax\n");
+                        match op {
+                            CmpOp::EqEq => out.push_str("    call hbc_dynxeq_dd\n"),
+                            _ => out.push_str("    call hbc_dyn_eq\n"),
+                        }
+                        out.push_str("    test %rax, %rax\n");
                         let j = match op { CmpOp::Eq | CmpOp::EqEq => "jnz", _ => "jz" };
                         out.push_str(&format!("    {} {}\n", j, true_label));
                     }
@@ -7729,6 +7758,44 @@ hbc_dyn_eq:
     ret
 8:  xor %eax, %eax
     ret
+
+# hbc_dynxeq_dd: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload ->
+# %rax = 1/0. Harbour's `==` between casillas (hk132/hk133/hk138/hk140):
+# NIL x NIL .T., NIL x payload .F., number x number by value, string x
+# string the EXACT byte compare (length header at payload-8). Mixed
+# number x string raises Harbour's BASE/1070 (hk139/hk139b/hk139c -
+# dialog hangs headless): a clean named exit 1, registered failure mode,
+# not exact equivalence. Leaf routine: the error path is a noreturn stub.
+hbc_dynxeq_dd:
+    cmp %rcx, %rax
+    jne 5f
+    cmp $2, %rax
+    je 2f
+    cmp $1, %rax
+    je 9f
+    cmp %r8, %rdx
+    jne 8f
+9:  mov $1, %eax
+    ret
+2:  mov -8(%rdx), %r10
+    cmp -8(%r8), %r10
+    jne 8f
+    xor %r9, %r9
+3:  cmp %r10, %r9
+    jae 9b
+    movzbl (%rdx,%r9), %r11d
+    movzbl (%r8,%r9), %eax
+    cmp %eax, %r11d
+    jne 8f
+    inc %r9
+    jmp 3b
+5:  cmp $1, %rax
+    je 8f
+    cmp $1, %rcx
+    je 8f
+    jmp hbc_dynxeq_error
+8:  xor %eax, %eax
+    ret
 "#);
 
     out.push_str(r#"
@@ -7860,6 +7927,20 @@ hbc_dyncmp_eq_error:
 
 hbc_dyncmp_ne_error:
     lea .Ldyncmpnemsg(%rip), %rsi
+    mov $19, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
+# hbc_dynxeq_error: numeric casilla compared against a string under `==`
+# (noreturn). Harbour raises BASE/1070 "Argument error: ==" (hk139/
+# hk139b/hk139c, dialogs that hang headless) - clean named exit 1 here,
+# registered failure mode, same error condition.
+hbc_dynxeq_error:
+    lea .Ldynxeqmsg(%rip), %rsi
     mov $19, %edx
     mov $1, %eax
     mov $1, %edi
@@ -8330,6 +8411,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Lparamerrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,80,65,82,65,77,10\n");
     out.push_str(".Lsnilmsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,101,120,112,101,99,116,101,100,32,97,32,115,116,114,105,110,103,32,101,108,101,109,101,110,116,44,32,103,111,116,32,78,73,76,10\n");
     out.push_str(".Ldyncmpeqmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,61,10\n");
+    out.push_str(".Ldynxeqmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,61,61,10\n");
     out.push_str(".Ldyncmpnemsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,60,62,10\n");
     out.push_str(".Ldyncmpltmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,60,10\n");
     out.push_str(".Ldyncmpgtmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,62,10\n");
@@ -8572,6 +8654,44 @@ hbc_dyn_eq:
 8:  xor %eax, %eax
     ret
 
+# hbc_dynxeq_dd: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload ->
+# %rax = 1/0. Harbour's `==` between casillas (hk132/hk133/hk138/hk140):
+# NIL x NIL .T., NIL x payload .F., number x number by value, string x
+# string the EXACT byte compare (length header at payload-8). Mixed
+# number x string raises Harbour's BASE/1070 (hk139/hk139b/hk139c -
+# dialog hangs headless): a clean named exit 1, registered failure mode,
+# not exact equivalence. Leaf routine: the error path is a noreturn stub.
+hbc_dynxeq_dd:
+    cmp %rcx, %rax
+    jne 5f
+    cmp $2, %rax
+    je 2f
+    cmp $1, %rax
+    je 9f
+    cmp %r8, %rdx
+    jne 8f
+9:  mov $1, %eax
+    ret
+2:  mov -8(%rdx), %r10
+    cmp -8(%r8), %r10
+    jne 8f
+    xor %r9, %r9
+3:  cmp %r10, %r9
+    jae 9b
+    movzbl (%rdx,%r9), %r11d
+    movzbl (%r8,%r9), %eax
+    cmp %eax, %r11d
+    jne 8f
+    inc %r9
+    jmp 3b
+5:  cmp $1, %rax
+    je 8f
+    cmp $1, %rcx
+    je 8f
+    jmp hbc_dynxeq_error
+8:  xor %eax, %eax
+    ret
+
 # hbc_type_error: NIL used as a number at runtime. Reached via a JUMP from
 # hbc_dyn_to_i64, so force 16-byte alignment before calling out (noreturn).
 hbc_type_error:
@@ -8693,6 +8813,21 @@ hbc_dyncmp_ne_error:
     and $-16, %rsp
     sub $48, %rsp
     lea .Ldyncmpnemsg(%rip), %rax
+    mov $19, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+# hbc_dynxeq_error: numeric casilla compared against a string under `==`
+# (noreturn). Harbour raises BASE/1070 "Argument error: ==" (hk139/
+# hk139b/hk139c, dialogs that hang headless) - clean named exit 1 here,
+# registered failure mode, same error condition.
+hbc_dynxeq_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Ldynxeqmsg(%rip), %rax
     mov $19, %edx
     call hbc_print_str
     mov $1, %ecx
