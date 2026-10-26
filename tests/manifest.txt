@@ -669,3 +669,16 @@ neg tests/t671_div_eq_neg.hb `/=` is not in this increment
 neg tests/t672_incr_expr_neg.hb inside expressions is not in this increment
 neg tests/t673_prefix_expr_neg.hb inside expressions is not in this increment
 neg tests/t674_negneg_expr_neg.hb inside expressions is not in this increment
+pos tests/t675_implicit_main.hb \nlead\nok
+pos tests/t676_implicit_main_locals.hb \n        42
+pos tests/t677_filescope_skip.hb \nbody
+pos tests/t678_static_func_proc_note.hb \n        42
+pos tests/t679_func_alias.hb \n        42
+pos tests/t680_predef_harbour.hb \n    197121
+neg tests/t681_init_proc_neg.hb INIT/EXIT PROCEDURE is not in this increment
+neg tests/t682_static_var_neg.hb file-scope STATIC variables are not in this increment
+neg tests/t683_second_group_neg.hb code outside a function
+neg tests/t684_dup_main_neg.hb duplicate function
+neg tests/t685_memvar_ref_neg.hb assignment to undeclared variable `m_y`
+neg tests/t686_request_undef_neg.hb REQUEST `extmod` cannot be honored
+neg tests/t687_static_clash_neg.hb duplicate function `f`
