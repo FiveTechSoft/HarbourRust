@@ -1108,5 +1108,20 @@ written, the outer loop completes both iterations; and a second
 FOR EACH over the same middle re-borrows it after the first loop
 ends and sees the writes (oracle hk123). Both byte-identical.
 
-485/485 manifest cases + ABI harness green on Linux x86-64 and Wine
+## Iteration 36 additions (488 manifest cases): `==` measured scope
+
+hk124 measures integer `==` (1==1 .T., 1==2 .F. - same as `=`);
+hk125 shows array `==` answers identity (.T./.F.) before `=` on
+arrays raises Harbour's runtime error dialog (hangs headless - no
+oracle, `=` on arrays stays a named rejection); hk126 pins one-level
+dynamic array identity: a==a .T., a==b .F. even with equal contents
+(the frame slot's heap pointer is the identity). t490 (integer),
+t491 (DArr identity), t293 repurposed from the old blanket rejection
+to the measured positive, t492 (neg) keeps static arrays rejected:
+Harbour compares references, ours are frame copies (D5/D7), an
+element compare would lie. Strings/deeper arrays/codeblocks/NIL
+`==` keep named rejections; object identity (cl7/cl19) class-gated.
+No new runtime helpers; no ABI harness change.
+
+488/488 manifest cases + ABI harness green on Linux x86-64 and Wine
 (Wine is not real Windows).
