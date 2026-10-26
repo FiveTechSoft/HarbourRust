@@ -1369,6 +1369,28 @@ helper upserts through hbc_hput, copying every key and value
 on Linux and Wine, t547 the hk165 edges, t548/t549 reject non-hash
 arguments at compile time.
 
+Iteration 57 adds hb_HScan(h, value [, start]) (core hb_HScan;
+oracles hk178-hk183): the 1-based position in insertion order of
+the first entry whose VALUE equals the argument, 0 when absent; the
+optional start is inclusive and scans from that position
+(hk178/hk180), and an omitted start, NIL or an explicit 0 all scan
+from the first entry while a negative start or one past the last
+entry finds nothing - no error (hk179/hk182). Values are the tagged
+int/NIL scalars of this increment: a stored NIL matches a NIL
+argument (hk180); float start truncation (hk183) is outside the
+dialect's numeric syntax. The CaseMatch flag is irrelevant to
+hb_HScan in this increment - it compares VALUES, and string values
+are outside the measured scope (registered limit, no claim). A
+missing value argument is Harbour's BASE/1123 dialog (hk182): the
+registered dialogo-sin-oraculo family, never a compat target. New
+leaf helper hbc_hscan (shared blob, both targets) is canaried in
+the ABI harness on both targets. t568-t570 reproduce hk178-hk180 on
+Linux and Wine; t571-t573 are the named rejections (non-hash target,
+non-integer start, string scan value).
+
+Battery: 569/569 manifest cases on Linux x86-64 and Wine, plus
+the ABI harness.
+
 Iteration 56 adds hb_HCaseMatch(h) and hb_HSetCaseMatch(h, flag)
 (core hb_HCaseMatch/hb_HSetCaseMatch; oracles hk169-hk176): a per-hash
 key-matching flag, default SENSITIVE (the getter prints 1/0 - the
@@ -1394,6 +1416,9 @@ owned key temporaries through the insensitive compare path and full
 balance including a header-only block (wrap + memcheck = 0, own
 ownership check); t565-t567 are the named rejections (non-hash target,
 non-integer flag, subscript target).
+
+Battery: 563/563 manifest cases on Linux x86-64 and Wine, plus
+the ABI harness.
 
 Iteration 55 adds hb_HClone(h) (core hb_HClone; oracles
 hk166/hk167): a NEW hash whose entries are copied - fully
