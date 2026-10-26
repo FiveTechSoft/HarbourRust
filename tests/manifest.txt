@@ -611,7 +611,7 @@ pos tests/t613_log_dyn_hcopy_hfill.hb \n.T.\nL\n         9\n.F.\n.F.\nL
 pos tests/t614_log_dyn_balance.hb \n         0
 posx tests/t615_valtype_hash_miss.hb 1 Bound error: array access
 posx tests/t616_hash_read_miss.hb 1 Bound error: array access
-posx tests/t617_dyn_nil_condition.hb 1 Type error: NIL used as a number
+posx tests/t617_dyn_nil_condition.hb 1 Type error: condition is not a logical
 pos tests/t618_log_dyn_if_casilla.hb \nsi\nno2\ngiro
 pos tests/t619_procedure_kw.hb \n         7\n         8\n         1\nNIL
 pos tests/t620_comment_forms.hb \none\ntwo\nstr /* kept */ ok
@@ -706,3 +706,6 @@ pos tests/t708_print_dyn_bool.hb \n.T.
 pos tests/t709_print_dyn_bool_return.hb \n.T.\n.T.\n.F.\n.F.
 pos tests/t710_print_dyn_all_scalars.hb \ntext\n        42\nNIL\n.T.
 neg tests/t711_dyn_bool_reassign_neg.hb type mismatch in assignment
+pos tests/t712_dyn_cond_bool.hb \n.T.\nyes\n.F.\nno
+posx tests/t713_dyn_cond_int.hb 1 \n         0Type error: condition is not a logical\n
+posx tests/t714_dyn_cond_string.hb 1 \nabcType error: condition is not a logical\n
