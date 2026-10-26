@@ -687,3 +687,5 @@ pos tests/t689_mutual_recursion.hb \n         2
 pos tests/t690_reverse_chain.hb \n       109
 pos tests/t691_forward_str_ret.hb \nhi!
 neg tests/t692_forward_type_neg.hb argument 1 of `fwd` must be an integer, got a string
+neg tests/t693_forward_uninferable_neg.hb cannot infer the type of parameter `s`
+neg tests/t694_mutual_no_evidence_neg.hb never returns a value
