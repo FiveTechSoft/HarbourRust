@@ -167,3 +167,9 @@ Números sin fuente recuperable en el transcript: hk10, hk72, hk74, hk75 (planif
 | hk155 | verificado | \n         2\na\nc\n         1\n         3\n         2\n         0 |
 | hk156 | verificado | \n         3\na\n         1\nc\n         3\nbb\n        22\n         3 |
 | hk157 | verificado | \n.T.\n.T.\n.F.\n.F.\n.F.\n.F.\n.T.\n.F.\n.F. |
+| hk158 | verificado | \n         1\n         2 (luego diálogo BASE/1132 sin oráculo) |
+| hk158a | verificado | \n         1\n         2 (ausente sin default: diálogo BASE/1132, cuelga) |
+| hk158b | verificado | (ausente CON default: diálogo BASE/1132 inmediato, cuelga) |
+| hk158c | verificado | \nNIL\nNIL (NIL existente; el default no rescata) |
+| hk158d | verificado | (hash vacío: diálogo BASE/1132, cuelga) |
+| hk158e | verificado | \n         1\n         1 (existente con y sin default) |
