@@ -2214,3 +2214,14 @@ valor, orden OPUESTO a `h[k] := v` (h4): medido por operación, no
 inferido. t532/t533 reproducen en Linux y Wine (t533 con comprobación
 propia de dueño: la clave temporal prestada se libera tras la copia,
 balance 0).
+
+### hk162/hk163 - hb_HPos: posición 1-based viva y compactación tras borrado (26 oct 2026)
+
+Fuentes `sondas_ac/hkeys/hk162.prg` y `hk163.prg`, compiladas con
+`hbmk2 <f> -gtstd -o<x>` (solo librerías core). hk162 verbatim:
+`\n         1\n         2\n         3\n         0\n         0` -
+hb_HPos responde la posición 1-based de inserción entre las entradas
+VIVAS; clave ausente y «» responden 0, sin diálogo (rc=0). hk163
+verbatim: `\n         1\n         2\n         3` - tras hb_HDel de la
+primera, las restantes se COMPACTAN («bb» pasa a 1, «c» a 2) y una
+clave realta va al final. t540/t541 reproducen ambos en Linux y Wine.
