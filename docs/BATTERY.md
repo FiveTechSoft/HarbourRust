@@ -2133,3 +2133,32 @@ Linux).
   out (push rbp / and $-16, mirrors hbc_type_error; asm inspected).
 - Sweep 175 re-executed after the helper change: COMPILES 4, output
   identical to the 63s run (verified, not assumed).
+
+## 63u - Dyn regressions: DO WHILE conditions and pinning-vs-calls
+
+Oracles first (hbmk2 -gtstd @694428e1, sondas hk270-hk273): hk270 (a
+print-pinned Dyn parameter as the DO WHILE condition: .F. skips, .T.
+enters and EXIT leaves - byte-identical, exit 0; the While checker
+already accepted Bool|Dyn bare conditions, no code change), hk271
+(comparing against an integer pins the parameter; calling with NIL hits
+the registered extraction failure at the call boundary - Harbour prints
+.F. for NIL = 5 instead, a registered failure-mode divergence of the
+pinning model), hk272 (comparing against a string literal pins the
+parameter; calling with NIL is the convergent named rejection), hk273
+(an integer Dyn cell as the DO WHILE condition is Harbour's type-error
+dialog - clean named exit 1 here).
+
+No compiler change in this increment: battery coverage over already
+justified routes.
+
+- t716: DO WHILE with a Dyn condition (hk270).
+- t717 (exit 1): integer Dyn cell as the DO WHILE condition (hk273).
+- t718 (exit 1): integer-pinned parameter called with NIL (hk271).
+- t719 (negative): string-pinned parameter called with NIL (hk272).
+
+Sweep 175 re-executed: COMPILES 4, identical to the 63t run.
+tests/manifest.txt sha256
+b756b30c4b74ee2cbe6f57e720c46195d19c234b69761ec5b4e4b61401dc99f2.
+
+Battery 711 -> 715 + ABI harness green (Linux nativo y Wine con oracle
+Linux).
