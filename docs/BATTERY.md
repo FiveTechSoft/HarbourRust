@@ -1214,7 +1214,9 @@ integer a per-operator clean named exit 1 mirroring BASE/1073-1076
 t514-t517).
 
 t550-t555 (iteration 55): hb_HClone(h) over the new hbc_hclone helper -
-deep-copy independence in both directions (t550, hk166), insertion
+copy independence in both directions (t550, hk166) for string keys
+and scalar int/NIL values (the only value types of this increment;
+no claim about nested structures), insertion
 order + NIL + empty clone (t551, hk167), independent freeing of clone
 and source (t552, balance 0, own check), non-hash target rejected
 (t553). hb_HMerge edges: self-merge is a clean no-op (t554, hk168)
