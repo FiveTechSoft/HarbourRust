@@ -656,3 +656,5 @@ pos tests/t658_dyn_str_copy.hb \nabc\nchanged\n.T.\n.T.\n         0
 pos tests/t659_dyn_str_param.hb \ncaller\nC\ncallee\ncaller\nis-nil\nNIL\nU\ncallee\n         0
 pos tests/t660_dyn_str_return.hb \nmade\nmade\n         0
 pos tests/t661_dyn_str_loop.hb \niter\niter\niter\niter\n         1
+pos tests/t662_dyn_str_callee_exit.hb \n         2\n         1\n         1\n         0
+neg tests/t663_dyn_str_foreach.hb its value borrows from the collection
