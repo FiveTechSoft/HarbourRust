@@ -2170,3 +2170,17 @@ clave borrada vuelve a .F.; el hash vacío responde .F. Reproducido como
 1/0 por t525/t526 en Linux y Wine (el dialecto no tiene tipo lógico:
 1/0 es la superficie del PoC; la impresión .T./.F. es la familia
 registrada de representación booleana).
+
+### hk158 - hb_HGet: lectura, default inaplicado y BASE/1132 en ausente (26 oct 2026)
+
+Fuentes `sondas_ac/hkeys/hk158*.prg`, compiladas con
+`hbmk2 <f> -gtstd -o<x>` (solo librerías core), medidas por separado tras
+un cuelgue inicial: hk158a (existentes 1 y 2; la ausente "zz" sin default
+levanta el diálogo BASE/1132 «Bound error: array access» y CUELGA
+headless, rc=124), hk158b (la ausente CON default 42 levanta el mismo
+diálogo de inmediato), hk158d (hash vacío, mismo diálogo), hk158c
+(rc=0, verbatim `\nNIL\nNIL`: el valor NIL existente se devuelve NIL y el
+default 42 NO se aplica), hk158e (rc=0, verbatim `\n         1\n         1`:
+existente con y sin default). El diálogo headless no es oráculo: t528
+reproduce las lecturas medidas y t529 registra la condición de ausente
+como modo de fallo con salida limpia (exit 1), nunca éxito de compat.
