@@ -2089,4 +2089,40 @@ function main()
 return nil
 ```
 
+### hk153
+
+```harbour
+function main()
+    local h := {"a" => 1, "bb" => NIL, "c" => 42}
+    local v := hb_HValues(h)
+    ? len(v)
+    ? v[1]
+    ? v[2]
+    ? v[3]
+    v[1] := 99
+    ? h["a"]
+    ? v[1]
+return nil
+```
+
+### hk154
+
+```harbour
+function main()
+    local h := {=>}
+    local v := hb_HValues(h)
+    local w, k
+    ? len(v)
+    h["x"] := 7
+    ? len(v)
+    w := hb_HValues(h)
+    ? len(w)
+    ? w[1]
+    for each k in w
+        ? k
+    next
+return nil
+```
+
+
 
