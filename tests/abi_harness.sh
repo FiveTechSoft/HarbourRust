@@ -570,6 +570,78 @@ hbc_abi_test:
     mov $2, %esi
     call hbc_hfree
     call abi_check
+    # hbc_hdel (iteration 47): three entries "ab"/"c"/"zz"; deleting the
+    # middle key frees its copy and shifts "zz" down (count 2, values and
+    # order verified); a second delete of the now-missing key is a no-op.
+    # Canaries/stack/alignment after every call.
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    lea .Labi_k1(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $1, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea .Labi_k2(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $1, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $2, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea .Labi_k3(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $3, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea -96(%rbp), %rdi
+    lea .Labi_k2(%rip), %rsi
+    mov $1, %edx
+    call hbc_hdel
+    call abi_check
+    cmpq $2, -88(%rbp)
+    jne abi_fail_hd
+    mov -96(%rbp), %rax
+    cmpq $2, 8(%rax)
+    jne abi_fail_hd
+    mov (%rax), %rcx
+    cmpw $0x6261, (%rcx)
+    jne abi_fail_hd
+    cmpq $1, 24(%rax)
+    jne abi_fail_hd
+    cmpq $2, 40(%rax)
+    jne abi_fail_hd
+    mov 32(%rax), %rcx
+    cmpw $0x7a7a, (%rcx)
+    jne abi_fail_hd
+    cmpq $3, 56(%rax)
+    jne abi_fail_hd
+    lea -96(%rbp), %rdi
+    lea .Labi_k2(%rip), %rsi
+    mov $1, %edx
+    call hbc_hdel
+    call abi_check
+    cmpq $2, -88(%rbp)
+    jne abi_fail_hd
+    mov -96(%rbp), %rdi
+    mov $2, %esi
+    call hbc_hfree
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -664,6 +736,10 @@ abi_fail_hv:
     lea .Labi_f_hv(%rip), %rax
     mov $12, %edx
     jmp abi_fail_common
+abi_fail_hd:
+    lea .Labi_f_hd(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
 abi_fail_common:
     call hbc_print_str
 ASM_EOF
@@ -696,6 +772,8 @@ ASM_EOF
 .Labi_f_xd:  .ascii "ABI FAIL xd\n"
 .Labi_k1:    .ascii "ab"
 .Labi_k2:    .ascii "c"
+.Labi_k3:    .ascii "zz"
+.Labi_f_hd:  .ascii "ABI FAIL hd\n"
 .Labi_f_de: .ascii "ABI FAIL deq\n"
 .Labi_s3:    .ascii "abc"
 .Labi_s6:    .ascii "abcdef"
