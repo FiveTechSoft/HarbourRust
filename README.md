@@ -1180,7 +1180,10 @@ arrays, strings, deeper arrays, codeblocks and NIL keeps named
 rejections (t492): Harbour compares array REFERENCES while our
 static arrays are frame copies (D5/D7 family), so an element
 compare would answer .T. where Harbour answers .F. Object
-identity (cl7/cl19) stays class-gated.
+identity (cl7/cl19) stays class-gated. Between STRINGS `==` is the
+exact comparison (hk124: "a"=="a" .T., "a"=="a " .F., "a "=="a" .F.
+- not the prefix rule of `=`; t493) via the new leaf helper
+hbc_str_xeq, canaried in the ABI harness on both targets.
 
-Battery: 488/488 manifest cases on Linux x86-64 and Wine, plus
+Battery: 489/489 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
