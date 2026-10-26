@@ -1468,7 +1468,9 @@ equality both ways); t609 hk205 (hash writes and comparisons);
 t610 hk206 (hb_HSetDef overwrite on tag difference, hb_HScan finds
 a logical); t611 hk207 (hb_HClone/hb_HValues preserve logicals);
 t612 the AAdd/ArrSet part of hk208; t613 hk208e (hb_HCopy source-
-first, hb_HFill with a logical); t603/t604/t605 pin the three rejection
+first, hb_HFill with a logical); t614 the alloc/free balance of
+logical-casilla structures (wrap + memcheck 0 after the owners are
+freed); t603/t604/t605 pin the three rejection
 families.
 
 Battery: 610/610 manifest cases on Linux x86-64 and Wine, plus
