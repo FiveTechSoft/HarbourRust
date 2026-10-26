@@ -791,3 +791,11 @@ pos tests/t792_barelocal_for.hb          1         2         3\nafter          4
 neg tests/t793_barefor_mention_neg.hb reuses a non-integer or read-only slot
 neg tests/t794_barefor_range_neg.hb reuses a non-integer or read-only slot
 neg tests/t795_barefor_nested_neg.hb reuses a non-integer or read-only slot
+pos tests/t796_mod_literals.hb \n         1\n        -1\n         1\n        -1\n         1.50\n         0\n         0
+pos tests/t797_mod_runtime.hb \n         1.00\n         1.00\n         1.00\n         0
+pos tests/t798_mod_floatmix.hb \n         1.50\n         1.00\n         1.50\n         0.05\n         0.75\n         0.05\n         0.74\n         1.90\n         0.00\n         2.75
+pos tests/t799_dollar.hb \n.T.\n.F.\n.F.\n.T.\n.F.\n.F.
+pos tests/t800_dollar_if.hb \nyes\nno2\n.T.
+neg tests/t801_dollar_int_neg.hb containment `$` is measured for string-in-string only
+neg tests/t802_mod_str_neg.hb `%` needs numeric operands
+neg tests/t803_dollar_arr_neg.hb containment `$` is measured for string-in-string only
