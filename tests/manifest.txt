@@ -486,4 +486,5 @@ pos tests/t488_foreach_mid_nested_exit.hb \n         5\nNIL\n         6\n       
 pos tests/t489_foreach_mid_reborrow.hb \n         7\n         7
 pos tests/t490_exeq_int.hb \n         1\n         0
 pos tests/t491_exeq_darr.hb \n         1\n         0\n         1
-neg tests/t492_neg_exeq_static.hb measured only between two integers and between two one-level dynamic array variables
+neg tests/t492_neg_exeq_static.hb measured only between two integers, between two strings and between two one-level dynamic array variables
+pos tests/t493_exeq_str.hb \n         1\n         0\n         0\n         0\n         1\n         0
