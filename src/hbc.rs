@@ -2414,11 +2414,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) {
                     return Ok(Ty::Bool);
                 }
-                if matches!(ta, Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4) && ta == tb
+                if matches!(ta, Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::Hash) && ta == tb
                     && matches!(&**a, Expr::Var(_)) && matches!(&**b, Expr::Var(_)) {
                     // hk130: nested dynamic arrays answer identity too
                     // (a==a .T., a==b .F.). The frame slot's first qword
                     // is the heap pointer - the identity - at every depth.
+                    // hk134: hash variables answer identity the same way
+                    // (h==h .T., h==k .F. even with equal contents).
                     return Ok(Ty::Bool);
                 }
                 // Dynamic casillas (hk132/hk133/hk138/hk140): `==`
@@ -5311,10 +5313,10 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             out.push_str(&format!("    {} {}\n", j, true_label));
         }
         Expr::Cmp(op, a, b) if matches!(op, CmpOp::EqEq)
-            && matches!(expr_ty(a, env, sigs), Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4)
+            && matches!(expr_ty(a, env, sigs), Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::Hash)
             && expr_ty(a, env, sigs) == expr_ty(b, env, sigs) => {
             // hk126/hk130/hk135: dynamic array identity at every
-            // implemented depth. The frame slot holds the heap pointer
+            // implemented depth; hk134: hash identity. The frame slot holds the heap pointer
             // and that pointer IS the identity: a==a .T., a==b .F. even
             // with equal contents. The checker restricts both operands
             // to variables, so the loads borrow - no move, no free.
