@@ -240,6 +240,7 @@ enum Stmt {
     While(usize, Expr, Vec<Stmt>), // line, condition, body
     Assign(usize, String, Expr),   // x := expr on an already-declared local
     HDel(usize, String, Expr), // hb_HDel(h, key) statement: remove the key's entry (hk155/hk156)
+    HDelAt(usize, String, Expr), // hb_HDelAt(h, n) statement: remove the entry at the 1-based position (hk187/hk190)
     HMerge(usize, String, String), // hb_HMerge(dst, src) statement: upsert every src entry into dst (hk164/hk165)
     HSet(usize, String, Expr, Expr), // hb_HSet(h, key, value) statement: functional hash write (hk159/hk161); the hash it returns is out of the statement surface (registered)
     HSetCaseMatch(usize, String, Expr), // hb_HSetCaseMatch(h, flag) statement: set the hash's key-matching mode (hk169/hk170); the hash it returns is out of the statement surface (registered, like hb_HSet's)
@@ -577,7 +578,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat",
+    "print_i64", "print_str", "bound_error", "eval", "len", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -969,7 +970,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     *i += 1;
                     continue;
                 }
-                if (is_builtin(&id, "aadd") || is_builtin(&id, "asize") || is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hset") || is_builtin(&id, "hb_hmerge") || is_builtin(&id, "hb_hsetcasematch")) && toks.len() >= 5 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen {
+                if (is_builtin(&id, "aadd") || is_builtin(&id, "asize") || is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hdelat") || is_builtin(&id, "hb_hset") || is_builtin(&id, "hb_hmerge") || is_builtin(&id, "hb_hsetcasematch")) && toks.len() >= 5 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen {
                     // AAdd(a, x) / ASize(a, n) as a STATEMENT: in-place
                     // mutation of the named local (Harbour writes these as
                     // calls; the statement form is the PoC surface - probe
@@ -1032,6 +1033,12 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                             check_ident(v, n)?;
                             if is_builtin(&id, "hb_hdel") {
                                 out.push(Stmt::HDel(n, v.clone(), e));
+                            } else if is_builtin(&id, "hb_hdelat") {
+                                // hb_HDelAt(h, n) as a STATEMENT
+                                // (hk187; the hash it returns is out
+                                // of the statement surface, like
+                                // hb_HDel's).
+                                out.push(Stmt::HDelAt(n, v.clone(), e));
                             } else if is_builtin(&id, "hb_hsetcasematch") {
                                 out.push(Stmt::HSetCaseMatch(n, v.clone(), e));
                             } else if is_builtin(&id, "hb_hmerge") {
@@ -1100,13 +1107,13 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                                 let i1 = it.next().unwrap();
                                 match (it.next(), it.next()) {
                                     (None, None) => {
-                                        if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hsetcasematch") { return Err(format!("line {}: `{}` takes a hash variable, not a subscript", n, id)); } else if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub(n, v, i1, e)); } else { out.push(Stmt::ASizeSub(n, v, i1, e)); }
+                                        if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hdelat") || is_builtin(&id, "hb_hsetcasematch") { return Err(format!("line {}: `{}` takes a hash variable, not a subscript", n, id)); } else if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub(n, v, i1, e)); } else { out.push(Stmt::ASizeSub(n, v, i1, e)); }
                                     }
                                     (Some(i2), None) => {
-                                        if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hsetcasematch") { return Err(format!("line {}: `{}` takes a hash variable, not a subscript", n, id)); } else if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub2(n, v, i1, i2, e)); } else { out.push(Stmt::ASizeSub2(n, v, i1, i2, e)); }
+                                        if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hdelat") || is_builtin(&id, "hb_hsetcasematch") { return Err(format!("line {}: `{}` takes a hash variable, not a subscript", n, id)); } else if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub2(n, v, i1, i2, e)); } else { out.push(Stmt::ASizeSub2(n, v, i1, i2, e)); }
                                     }
                                     (Some(i2), Some(i3)) => {
-                                        if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hsetcasematch") { return Err(format!("line {}: `{}` takes a hash variable, not a subscript", n, id)); } else if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub3(n, v, i1, i2, i3, e)); } else { out.push(Stmt::ASizeSub3(n, v, i1, i2, i3, e)); }
+                                        if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hdelat") || is_builtin(&id, "hb_hsetcasematch") { return Err(format!("line {}: `{}` takes a hash variable, not a subscript", n, id)); } else if is_builtin(&id, "aadd") { out.push(Stmt::AAddSub3(n, v, i1, i2, i3, e)); } else { out.push(Stmt::ASizeSub3(n, v, i1, i2, i3, e)); }
                                     }
                                     _ => unreachable!(),
                                 }
@@ -1139,15 +1146,15 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                                     return Err(format!("line {}: the first argument of `{}` must be a variable, a[i], a[i][j] or a[i][j][k]", n, id));
                                 }
                                 let i3 = parse_expr_tokens(head[rb2 + 2..head.len() - 1].to_vec(), n)?;
-                                if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hsetcasematch") {
-                                    return Err(format!("line {}: hb_HDel / hb_HSetCaseMatch take a hash variable, not a subscript", n));
+                                if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hdelat") || is_builtin(&id, "hb_hsetcasematch") {
+                                    return Err(format!("line {}: hb_HDel / hb_HDelAt / hb_HSetCaseMatch take a hash variable, not a subscript", n));
                                 } else if is_builtin(&id, "aadd") {
                                     out.push(Stmt::AAddSub3(n, v, i1, i2, i3, e));
                                 } else {
                                     out.push(Stmt::ASizeSub3(n, v, i1, i2, i3, e));
                                 }
-                            } else if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hsetcasematch") {
-                                return Err(format!("line {}: hb_HDel / hb_HSetCaseMatch take a hash variable, not a subscript", n));
+                            } else if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hdelat") || is_builtin(&id, "hb_hsetcasematch") {
+                                return Err(format!("line {}: hb_HDel / hb_HDelAt / hb_HSetCaseMatch take a hash variable, not a subscript", n));
                             } else if is_builtin(&id, "aadd") {
                                 out.push(Stmt::AAddSub2(n, v, i1, i2, e));
                             } else {
@@ -1157,8 +1164,8 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         [Tok::Ident(v), Tok::LBracket, rest @ .., Tok::RBracket] if !rest.is_empty() && !rest.iter().any(|t| matches!(t, Tok::LBracket | Tok::RBracket)) => {
                             check_ident(v, n)?;
                             let idx = parse_expr_tokens(rest.to_vec(), n)?;
-                            if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hsetcasematch") {
-                                return Err(format!("line {}: hb_HDel / hb_HSetCaseMatch take a hash variable, not a subscript", n));
+                            if is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hdelat") || is_builtin(&id, "hb_hsetcasematch") {
+                                return Err(format!("line {}: hb_HDel / hb_HDelAt / hb_HSetCaseMatch take a hash variable, not a subscript", n));
                             } else if is_builtin(&id, "aadd") {
                                 out.push(Stmt::AAddSub(n, v.clone(), idx, e));
                             } else {
@@ -1805,6 +1812,13 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<Vec<Ty>, String> {
                     // hb_HDel's target is a hash (hk155): pins a
                     // parameter; the key's string shape is enforced by
                     // the semantic pass.
+                    pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, *n)?;
+                }
+                Stmt::HDelAt(n, id, e) => {
+                    // hb_HDelAt's target is a hash (hk187): pins a
+                    // parameter; the position's integer shape is
+                    // enforced by the semantic pass.
                     pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
                     walk(f, e, sigs, lit, pin, *n)?;
                 }
@@ -3993,6 +4007,29 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
                 if !matches!(type_expr(e, env, sigs, *n)?, Ty::Str | Ty::StrOwn) {
                     return Err(format!("line {}: hash keys are strings in this increment", n));
+                }
+                apply_moves(e, env, sigs, false);
+            }
+            Stmt::HDelAt(n, id, e) => {
+                // hb_HDelAt(h, pos): the hash must be live (its slot
+                // goes by address; the helper frees the deleted
+                // entry's key copy and compacts); the position is an
+                // integer (hk187) and moves nothing. An out-of-range
+                // position is Harbour's BASE/1187 dialog family
+                // (hk189) - the clean bound-error exit at runtime,
+                // checked in codegen.
+                let kp = match env.iter().position(|v| v.name == *id) {
+                    Some(k) => k,
+                    None => return Err(format!("line {}: hb_HDelAt on undeclared variable `{}` (declare it with `local` first)", n, id)),
+                };
+                if env[kp].ty != Ty::Hash {
+                    return Err(format!("line {}: hb_HDelAt expects a hash variable in this increment", n));
+                }
+                if env[kp].moved {
+                    return Err(format!("line {}: use of moved value `{}`", n, id));
+                }
+                if type_expr(e, env, sigs, *n)? != Ty::I64 {
+                    return Err(format!("line {}: the hb_HDelAt position is an integer in this increment", n));
                 }
                 apply_moves(e, env, sigs, false);
             }
@@ -7068,6 +7105,18 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hdel\n    add $16, %rsp\n", var.off));
                 }
             }
+            Stmt::HDelAt(_, id, e) => {
+                // hb_HDelAt: position first, then the slot address;
+                // the helper frees the hash-owned key copy and shifts
+                // the remaining entries down, preserving insertion
+                // order (hk187/hk190). rax = 0 (out of range) takes
+                // the registered clean bound-error exit (Harbour's
+                // BASE/1187 dialog hangs headless - hk189, the
+                // dialogo-sin-oraculo family).
+                let var = env.iter().rev().find(|x| x.name == *id).expect("checked");
+                cg_value(e, env, sigs, strs, out, target);
+                out.push_str(&format!("    mov %rax, %rsi\n    lea -{}(%rbp), %rdi\n    call hbc_hdelat\n    test %rax, %rax\n    jne 87f\n    call hbc_bound_error\n87:\n", var.off));
+            }
             Stmt::ArrSet(_, id, ie, e) => {
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
                 if v.ty == Ty::DArr2 {
@@ -7361,6 +7410,7 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
         match s {
             Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) => collect_blocks_expr(e, out),
             Stmt::HDel(_, _, e) => { collect_blocks_expr(e, out); }
+            Stmt::HDelAt(_, _, e) => { collect_blocks_expr(e, out); }
             Stmt::HSet(_, _, ke, ve) => { collect_blocks_expr(ke, out); collect_blocks_expr(ve, out); }
             Stmt::HSetCaseMatch(_, _, e) => { collect_blocks_expr(e, out); }
             Stmt::HMerge(_, _, _) => {}
@@ -8723,6 +8773,70 @@ hbc_hvalueat:
     add $16, %rax
     ret
 855: xor %eax, %eax
+    ret
+
+# hbc_hdelat: rdi = hash slot address, rsi = 1-based position.
+# Removes the entry AT that position (hk187: positions compact after
+# the delete and insertion order is preserved; hk190: deleting the
+# only entry empties the hash): the hash-owned key copy is freed, the
+# entries above shift down one slot and the live count drops by one.
+# Returns rax = 1 on a delete, 0 when the position is out of range -
+# 0, past the end or negative all take the caller's registered clean
+# bound-error exit (Harbour's BASE/1187 dialog hangs headless,
+# hk189: the dialogo-sin-oraculo family). The CaseMatch flag is
+# irrelevant: matching is positional. The capacity header is left
+# alone. Frame-based: hbc_free.
+hbc_hdelat:
+    mov (%rdi), %r8
+    test %r8, %r8
+    je 856f
+    mov 8(%rdi), %r9
+    test %rsi, %rsi
+    jle 856f
+    cmp %r9, %rsi
+    ja 856f
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    sub $8, %rsp
+    mov %rdi, %rbx
+    mov %r8, %r12
+    lea -1(%rsi), %r13
+    mov %r13, %rax
+    shl $5, %rax
+    mov (%r8,%rax), %rdi
+    mov $1, %esi
+    call hbc_free
+    mov 8(%rbx), %r9
+857: lea 1(%r13), %rax
+    cmp %r9, %rax
+    jae 858f
+    mov %r13, %rax
+    shl $5, %rax
+    lea (%r12,%rax), %rcx
+    lea 32(%rcx), %rdx
+    mov (%rdx), %r8
+    mov %r8, (%rcx)
+    mov 8(%rdx), %r8
+    mov %r8, 8(%rcx)
+    mov 16(%rdx), %r8
+    mov %r8, 16(%rcx)
+    mov 24(%rdx), %r8
+    mov %r8, 24(%rcx)
+    inc %r13
+    jmp 857b
+858: dec %r9
+    mov %r9, 8(%rbx)
+    add $8, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    mov $1, %eax
+    ret
+856: xor %eax, %eax
     ret
 
 # hbc_strcpy: rdi = source bytes, rsi = length. Returns rax = pointer to
