@@ -1,3 +1,3 @@
 procedure main()
-   ? 1.5 + 2
+   ? 1.5 + "x"
    return
