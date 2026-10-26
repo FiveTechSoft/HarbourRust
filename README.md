@@ -1227,5 +1227,18 @@ mixed order (hk142: string casilla == int; hk144: int == string
 casilla; hk139b: numeric casilla == string literal - all hang
 headless; t504/t506/t507 posx). The hk132/hk133 answers also hold on the expressible string-array surface (iteration 43): Harbour builds the cells with Array(2) and indexed assignment - syntax this PoC rejects, since dynamic-array elements stay tagged int/NIL scalars there - while the dedicated DArrS surface ({} + AAdd, indexed overwrite with the old copy freed) reproduces the measured answers exactly (hk132: 1/0/0/1 as t508; hk133: 1/0/1 as t509); mixed-type arrays stay a named rejection.
 
-Battery: 505/505 manifest cases on Linux x86-64 and Wine, plus
+Iteration 44 extends `=`/`#` between two DYNAMIC casillas (hbc_dyn_eq):
+two string casillas now compare by CONTENT with Harbour's prefix rule
+over the right operand's length (oracle hk145: nested FOR EACH over the
+same hb_HKeys array - .T./.F./.F./.T. then .F./.F. for `#`; before this
+fix they answered .T. for ANY two string casillas by tag alone, a real
+divergence caught by the probe). A string casilla against an integer
+casilla is Harbour's BASE/1071 "Argument error: =" (hk146 - the dialog
+hangs headless, so no headless oracle): clean named exit 1 through the
+existing hbc_dyncmp_eq_error stub, registered failure mode, not exact
+equivalence (t511 posx). A string casilla against a NIL casilla is .F.
+in both directions, no error (hk147; t512). t510/t512 run on Linux and
+Wine.
+
+Battery: 508/508 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
