@@ -608,3 +608,4 @@ pos tests/t610_log_dyn_hsetdef_hscan.hb \n.T.\n.T.\nL\n         1\n         0
 pos tests/t611_log_dyn_hclone_hvalues.hb \n.T.\nL\n.T.\nL\n         1
 pos tests/t612_log_dyn_aadd_arrset.hb \n.T.\nL\n.F.
 pos tests/t613_log_dyn_hcopy_hfill.hb \n.T.\nL\n         9\n.F.\n.F.\nL
+pos tests/t614_log_dyn_balance.hb \n         0
