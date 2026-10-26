@@ -518,6 +518,58 @@ hbc_abi_test:
     mov $3, %esi
     call hbc_free
     call abi_check
+    # hbc_hvalues (iteration 46): a 2-entry hash yields a NEW array of
+    # the value cells in insertion order - count, tags and payloads
+    # verified, then freed; canaries/stack/alignment after each call.
+    movq $0, -96(%rbp)
+    movq $0, -88(%rbp)
+    lea .Labi_k1(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $2, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $7, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea .Labi_k2(%rip), %rax
+    mov %rax, -32(%rbp)
+    movq $1, -24(%rbp)
+    movq $0, -48(%rbp)
+    movq $9, -40(%rbp)
+    lea -96(%rbp), %rdi
+    mov -32(%rbp), %rsi
+    mov -24(%rbp), %rdx
+    lea -48(%rbp), %rcx
+    call hbc_hput
+    call abi_check
+    lea -96(%rbp), %rdi
+    call hbc_hvalues
+    # Save the result BEFORE abi_check (it clobbers rax).
+    mov %rax, -32(%rbp)
+    mov %rdx, -24(%rbp)
+    call abi_check
+    cmpq $2, -24(%rbp)
+    jne abi_fail_hv
+    mov -32(%rbp), %rax
+    cmpq $0, (%rax)
+    jne abi_fail_hv
+    cmpq $7, 8(%rax)
+    jne abi_fail_hv
+    cmpq $0, 16(%rax)
+    jne abi_fail_hv
+    cmpq $9, 24(%rax)
+    jne abi_fail_hv
+    mov %rax, %rdi
+    mov $16, %esi
+    call hbc_free
+    call abi_check
+    mov -96(%rbp), %rdi
+    mov $2, %esi
+    call hbc_hfree
+    call abi_check
     lea .Labi_ok(%rip), %rax
     mov $7, %edx
     call hbc_print_str
@@ -608,6 +660,10 @@ abi_fail_dc:
     lea .Labi_f_dc(%rip), %rax
     mov $13, %edx
     jmp abi_fail_common
+abi_fail_hv:
+    lea .Labi_f_hv(%rip), %rax
+    mov $12, %edx
+    jmp abi_fail_common
 abi_fail_common:
     call hbc_print_str
 ASM_EOF
@@ -644,6 +700,7 @@ ASM_EOF
 .Labi_s3:    .ascii "abc"
 .Labi_s6:    .ascii "abcdef"
 .Labi_f_dc: .ascii "ABI FAIL dcp\n"
+.Labi_f_hv: .ascii "ABI FAIL hv\n"
 ASM_EOF
 }
 
