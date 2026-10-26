@@ -1183,7 +1183,11 @@ compare would answer .T. where Harbour answers .F. Object
 identity (cl7/cl19) stays class-gated. Between STRINGS `==` is the
 exact comparison (hk124: "a"=="a" .T., "a"=="a " .F., "a "=="a" .F.
 - not the prefix rule of `=`; t493) via the new leaf helper
-hbc_str_xeq, canaried in the ABI harness on both targets.
+hbc_str_xeq, canaried in the ABI harness on both targets. Against NIL
+identity and equality coincide (hk128: NIL==NIL .T., NIL==1/1==NIL/
+NIL=="" all .F.; hk129: casilla == NIL answers like `=` - live child
+.F., NIL casilla .T.; t494/t495), so `==` reuses the `=` codegen
+paths (constant folds, tag dispatch, casilla read).
 
-Battery: 489/489 manifest cases on Linux x86-64 and Wine, plus
+Battery: 491/491 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
