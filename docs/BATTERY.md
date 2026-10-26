@@ -2538,8 +2538,11 @@ arguments, FOR variable reuse, byref string parameters. Oracles
 hk319-hk324 captured first on pinned hbmk2 -gtstd; sondas published.
 
 - __pragma( WARNINGLEVEL ) evaluates to 0 in the preprocessor (oracle
-  hk320: hbmk2 defaults to warning level 0 without -w). It is the only
-  __pragma selector in the stock headers (hbclass.ch:118); other
+  hk320: hbmk2 defaults to warning level 0 without -w). Scope of the
+  claim: it is the only __pragma selector observed in the INSPECTED
+  corpus (the core .ch headers shipped in harbour-core, hbclass.ch:118)
+  - not a global Harbour statement. The interaction of a SET-level
+  warning pragma with this fixed evaluation is unmodeled; other
   selectors keep a named rejection. The 24 sweep files whose #if stage
   blocked on it now advance to their real next rejection (#command
   match markers and the class RTL - parked, needs new architecture).
@@ -2573,3 +2576,84 @@ hk319-hk324 published. BATTERY 772 -> 780 runner rows + ABI ALL GREEN
 exit.prg and passref.prg flipped and are byte-exact against hbmk2
 -gtstd runs (verified this increment); hello, statfun, lnlenli2,
 calling, nums unchanged. Frozen-csv wording drift policy unchanged.
+
+63zf (local, unpublished at session cut) - computed integer print field.
+Oracles hk325-hk328 captured first on pinned hbmk2 -gtstd.
+
+- Harbour carries three numeric item kinds with distinct `?` fields:
+  HB_IT_INTEGER (value within -999999999..9999999999 -> field 10),
+  HB_IT_LONG (integer outside that ASYMMETRIC range -> field 20), and
+  HB_IT_DOUBLE (a non-negative literal written with ten or more digits,
+  hb_str2number -> the 63zd float rules with literal provenance width).
+  Harbour's compiler also constant-folds pure integer expressions, and
+  the folded value prints with literal provenance (hk326).
+- This PoC printed computed positives as max(10, digits+1): an
+  accumulated integer past 9999999999 came out 15 wide, Harbour 20
+  (found by the bench_int speed probe, not by a test). Fix: new runtime
+  entry hbc_print_i64c in both blobs (10 within the asymmetric range,
+  else 20; one digit-count test covers both signs); the Print codegen
+  constant-folds pure +,-,* literal trees (fold_int) and keeps the
+  literal helper for foldable items; Dyn numeric payloads now route to
+  the computed helper (they are runtime values by construction).
+- Known divergence, documented not modeled: a VARIABLE initialised
+  from a ten-or-more-digit literal carries double provenance in Harbour
+  (hk327's b/c/d print digits+1); this PoC types the local I64 and
+  prints it with the computed rule. Rejecting the init regressed
+  t142/t751 (which never print the value), so it is a named
+  divergence, not a rejection; a provenance-tracking prepass is the
+  candidate fix, not landed.
+
+Tests: t785-t787 (pos mirrors hk325/hk326/hk328), t789/t790 (iif
+owned strings), extended ABI harness. BATTERY 780 -> 785 runner rows +
+ABI ALL GREEN (Linux native and Wine with Linux oracle).
+Sweep: COMPILES unchanged at 7, all byte-exact re-verified after the
+helper change.
+
+KNOWNFAIL (registered divergence, not hidden): sonda hk327 verbatim -
+a local initialised from a ten-or-more-digit literal (b := 5000000000,
+c := 10000000000, d := 50000005000000) is a DOUBLE item in Harbour and
+prints with literal provenance width: expected (hbmk2) " 5000000000"
+(11), " 10000000000" (12), " 50000005000000" (15); this PoC types the
+local I64 and prints the computed field: "5000000000" (10),
+"         10000000000" (20), "     50000005000000" (20). Arithmetic,
+comparisons, array bounds and non-print uses agree (t142/t751 hold);
+only the print field differs. A provenance-tracking prepass is the
+candidate fix, deliberately not landed in this increment.
+
+iif owned-string unification (63zf, oracle hk329): branches Str/StrOwn
+in any mix unify to OWNED - a borrowed arm is cloned on its own taken
+path only, an owned-variable arm moves on its own taken path only (the
+source slot is nulled there, so the epilogue never double-frees), and
+laziness keeps single ownership (t789 mirrors hk329 byte-exact; t790
+proves the ownership model through hb_memcheck: the live local counts
+1 until it moves, 0 after; hb_memcheck is this PoC's instrumentation,
+not a Harbour function, so t790's expectation is model-derived like the
+t659 family, not an hbmk2 oracle). Harbour's iif is actually
+VARIANT-typed (hk330: valtype(iif(.t.,"s",1)) = "C"): mixed-kind
+branches stay a named rejection here and valtype-over-iif keeps its
+own named rejection - no Dyn payload variant is enabled by this
+increment.
+
+ABI canary for the new entry (direct, both targets): tests/
+abi_harness.sh now calls hbc_print_i64c with a small positive, both
+sides of the 9999999999 threshold, both sides of the -999999999
+threshold and a tag-0 Dyn payload through hbc_print_dyn; canaries,
+16-alignment and stack balance are checked around every call, and the
+printed fields are part of the byte-exact expected stdout on Linux
+native AND under Wine (not only end-to-end).
+
+Speed (frozen protocol: native Linux both sides, pinned hbmk2 -gtstd,
+output byte-compare gate, 15 runs after warmup, median; libharbour.so
+load time included in Harbour's cost; HarbourRust compiler built with
+rustc -O, generated asm unoptimised - loop present in bench_int.s):
+bench_int (10M integer accumulation, byte-identical): hbmk2 837.8ms
+median vs HarbourRust 33.7ms = 24.9x. bench_float (2M float
+accumulation, byte-identical): 233.3ms vs 15.5ms = 15.1x. Startup-
+dominated trivial programs (hello/nums/statfun): ~5x, labelled as
+startup, not engine. These are two concrete programs, not an engine
+claim. Bench sources are sondas/bench_int.prg and sondas/bench_float.prg
+(raw loops, no elimination: the add and the Lforc label are present in
+the emitted .s). Toolchain record: hbc sha256
+e1a9de1df483f990df0f26049b4e294ec4f81859ee442d3ec5011bd1d1322e88,
+rustc 1.99.1 (58cf8f9c3 2026-10-13) via rustup, hbmk2 from the pinned harbour-core
+checkout (3.2.1dev r2026-10-24 21:11), flags -gtstd -o<name>; machine: this sandbox.
