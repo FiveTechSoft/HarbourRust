@@ -799,3 +799,12 @@ pos tests/t800_dollar_if.hb \nyes\nno2\n.T.
 neg tests/t801_dollar_int_neg.hb containment `$` is measured for string-in-string only
 neg tests/t802_mod_str_neg.hb `%` needs numeric operands
 neg tests/t803_dollar_arr_neg.hb containment `$` is measured for string-in-string only
+pos tests/t804_pow_literals.hb \n         8.00\n         1.00\n         0.50\n       100.00\n      1024.00
+pos tests/t805_pow_float_neg.hb \n         6.25\n         4.00\n        -8.00\n         2.00\n         1.22
+pos tests/t806_pow_vars.hb \n        81.00\n        64.00\n         9.00\n         8.00\n         1.73
+pos tests/t807_pow_edges.hb \n         1.00\n         0.00\n         1.00\n        64.00\n        64.00\n       512.00
+pos tests/t808_pow_dec.hb \n        49.00\n        49.00\n         0.02\n       1000000000000.00\n         0.01
+pos tests/t809_pow_nan_inf.hb \n*************\n***********************\n*************
+pos tests/t810_pow_starstar.hb \n         8.00\n        81.00\n         4.00
+neg tests/t811_pow_str_neg.hb `^` needs numeric operands
+neg tests/t812_pow_arr_neg.hb `^` needs numeric operands
