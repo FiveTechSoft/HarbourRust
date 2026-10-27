@@ -1071,3 +1071,8 @@ pos tests/t1072_bitops_nested_effects.hb \n 9223372036854775807  922337203685477
 neg tests/t1073_bitops_float_neg.hb arguments must be integers
 neg tests/t1074_bitops_arity_neg.hb needs at least two argument(s)
 neg tests/t1075_bitnot_arity_neg.hb needs exactly one argument(s)
+pos tests/t1076_bitindex_values.hb \n.F. .T. .F. .T.\n.T. .F.\n         1          5          2         14\n         9          1 .T.          2\n 9223372036854775807 -9223372036854775808         -1
+neg tests/t1077_bitindex_dynamic_neg.hb bit index must be a literal from 0 to 63
+neg tests/t1078_bitindex_range_neg.hb bit index must be a literal from 0 to 63
+neg tests/t1079_bitindex_type_neg.hb value must be an integer
+neg tests/t1080_bitindex_arity_neg.hb takes two arguments

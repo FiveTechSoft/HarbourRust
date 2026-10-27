@@ -3931,3 +3931,22 @@ allocation or ownership change. Five cases t1071-t1075 give1070manifest
 successful originals plus the separate errsys failure-mode original).
 No new complete original is claimed. hk455 assembly stays byte-identical;
 no new speed claim.
+
+
+## 64ba - hb_bitTest/Set/Reset with literal 0..63 indices
+
+hk477 matches Harbour for integer bit tests and set/reset operations,
+including bit63/sign bit, negative inputs, byref effects and literal versus
+runtime print provenance. Test returns logical; Set/Reset return integer.
+Native BT/BTS/BTR operate on the existing 64-bit value. The first argument
+evaluates once; the index is a required literal in this bounded increment.
+No helper, allocation, representation or ownership change.
+
+Dynamic, negative and >=64 indices remain named rejections; no C undefined
+shift behavior or machine masking is assumed as Harbour semantics. Float
+values are rejected too. Exactly two arguments are required, rather than
+silently ignoring extras as Harbour's current hbbit.c does. Shift is still
+unsupported. Five cases t1076-t1080 give1075manifest+5harness=1080PASS
+Linux/Wine. Frozen175 stays20COMPILES (19 accumulated successful originals
+plus the separate errsys failure-mode original). No new complete original
+or speed claim. Existing hk455 assembly remains byte-identical.

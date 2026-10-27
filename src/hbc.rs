@@ -1285,7 +1285,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -1294,6 +1294,8 @@ fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
 fn is_output_call(id: &str) -> bool { ["qout", "qqout", "outstd", "outerr"].iter().any(|v| is_builtin(id, v)) }
 
 fn is_bitop(id: &str) -> bool { ["hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot"].iter().any(|v| is_builtin(id,v)) }
+
+fn is_bitindex(id: &str) -> bool { ["hb_bittest", "hb_bitset", "hb_bitreset"].iter().any(|v| is_builtin(id,v)) }
 
 fn check_ident(id: &str, n: usize) -> Result<(), String> {
     if id.is_empty() || id.len() > 64 {
@@ -3565,6 +3567,17 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             Some(v) => Ok(v.ty),
         },
         Expr::Call(id, args) => {
+            if is_bitindex(id) {
+                if args.len() != 2 { return Err(format!("line {}: `{}` takes two arguments in this increment",n,id)); }
+                if type_expr(&args[0],env,sigs,n)? != Ty::I64 {
+                    return Err(format!("line {}: `{}` value must be an integer in this increment",n,id));
+                }
+                match &args[1] {
+                    Expr::Int(v) if v.parse::<u32>().ok().map_or(false, |v| v < 64) => {}
+                    _ => return Err(format!("line {}: `{}` bit index must be a literal from 0 to 63; dynamic/out-of-range semantics are not in this increment",n,id)),
+                }
+                return Ok(if is_builtin(id,"hb_bittest") {Ty::Bool} else {Ty::I64});
+            }
             if is_bitop(id) {
                 let unary = is_builtin(id, "hb_bitnot");
                 if (unary && args.len() != 1) || (!unary && args.len() < 2) {
@@ -6454,6 +6467,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 return;
             }
             if is_builtin(id, "procline") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return; }
+            if is_bitindex(id) { apply_moves(&args[0],env,sigs,false); return; }
             if is_bitop(id) { for a in args { apply_moves(a, env, sigs, false); } return; }
             if is_builtin(id, "min") || is_builtin(id, "max") {
                 for a in args { apply_moves(a, env, sigs, false); } return;
@@ -6616,6 +6630,13 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 // with literal provenance (digits+1), unlike a runtime-computed value.
 fn fold_int(e: &Expr) -> Option<i64> {
     match e {
+        Expr::Call(id,args) if is_bitindex(id) && !is_builtin(id,"hb_bittest") => {
+            let v = fold_int(&args[0])?;
+            let bit = fold_int(&args[1])?;
+            if !(0..64).contains(&bit) { return None; }
+            let mask = 1i64 << bit;
+            Some(if is_builtin(id,"hb_bitset") {v | mask} else {v & !mask})
+        }
         Expr::Call(id, args) if is_bitop(id) => {
             let mut v = fold_int(&args[0])?;
             if is_builtin(id,"hb_bitnot") { return Some(!v); }
@@ -7459,6 +7480,13 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
             }
         }
+        Expr::Call(id,args) if is_bitindex(id) => {
+            cg_expr(&args[0],env,sigs,strs,out,target);
+            let bit = match &args[1] { Expr::Int(v) => v.parse::<u32>().expect("checked"), _ => unreachable!("checked") };
+            let op = if is_builtin(id,"hb_bittest") {"bt"} else if is_builtin(id,"hb_bitset") {"bts"} else {"btr"};
+            out.push_str(&format!("    {} ${}, %rax\n",op,bit));
+            if is_builtin(id,"hb_bittest") { out.push_str("    setc %al\n    movzbq %al, %rax\n"); }
+        }
         Expr::Call(id, args) if is_bitop(id) => {
             cg_expr(&args[0], env, sigs, strs, out, target);
             if is_builtin(id,"hb_bitnot") { out.push_str("    not %rax\n"); }
@@ -8273,6 +8301,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hsetdef") { return Ty::Dyn; }
             if is_builtin(id, "hb_hvalues") { return Ty::DArr; }
             if is_builtin(id, "hb_hclone") { return Ty::Hash; }
+            if is_bitindex(id) { return if is_builtin(id,"hb_bittest") {Ty::Bool} else {Ty::I64}; }
             if is_bitop(id) { return Ty::I64; }
             if is_builtin(id, "min") || is_builtin(id, "max") { return expr_ty(&args[0], env, sigs); }
             if is_builtin(id, "empty") { return Ty::Bool; }
