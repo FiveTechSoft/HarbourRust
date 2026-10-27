@@ -1148,6 +1148,13 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
             "ERROR" => {
                 if emitting { return Err(format!("line {}: #error {}", line, arg)); }
             }
+            "WARNING" => {
+                // Harbour accepts #warning without aborting compilation.
+                // This dialect's warning level is fixed at the measured
+                // default 0 (__pragma(WARNINGLEVEL), hk320/hk451): explicit
+                // warnings are silent there, including unexpanded text.
+                // Do not turn their payload into source or expand macros.
+            }
             "" => {}
             _ => return Err(format!("line {}: unknown directive #{} in this PoC", line, dir.to_lowercase())),
         }

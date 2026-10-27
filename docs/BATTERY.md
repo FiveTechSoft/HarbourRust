@@ -3613,3 +3613,29 @@ Nine alternating uninstrumented Linux startup-inclusive pairs: Harbour
 median0.073611097s, HarbourRust0.007593844s,
 about9.69x faster ONLY for this workload.
 Raw pairs/output retained. Not Windows/general speed or Rust/LLVM parity.
+
+
+## 64am - accept #warning at the established default warning level
+
+Harbour accepts #warning and continues compiling. At its default warning
+level0 the directive is silent; -w3 emits W0001 with the unexpanded text
+(hk451, including case-insensitive spelling and an inactive branch).
+HarbourRust already fixes __pragma(WARNINGLEVEL) at0 (hk320), so #warning
+now follows that same contract: accept/ignore the payload, never expand
+its macros or treat it as source. No -w option or nonzero level is added.
+#error and unknown directives remain fatal. This is not full diagnostic
+format or configurable-warning compatibility.
+
+Upstream define.prg is unchanged as t1007, SHA256
+5f474e3a31544a0c390dda8f0bf461e6e59bfa9593b36310bbf078c31ca23869.
+Complete default output byte-matches Harbour -gtstd on Linux and Wine.
+Frozen175 gains ONLY define.prg,15 to16COMPILES. Eight new regressions
+(t1007-t1014) cover original/defaultlevel, payload inertness, error after
+warning, unknown directive, and preserved runtime callstack source line.
+Compile-time semantic diagnostics still use the existing flattened line
+numbers (t1011 pins line3 after a stripped directive); this checkpoint
+does not fix or claim original-source line remapping for all diagnostics.
+1009 manifest cases +5harness =1014PASS. Both compile matrices unchanged.
+No runtime/codegen change: existing hk449 assembly is byte-identical,
+so its retained Harbour/HarbourRust measurement is unchanged, with no new
+speed claim for a preprocessing-only change.

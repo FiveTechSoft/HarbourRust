@@ -1,0 +1,5 @@
+Harbour 3.2.1dev (r2610242111)
+Copyright (c) 1999-2025, https://harbour.github.io/
+Compiling 'hk451.prg'...
+Lines 9, Functions/Procedures 1
+Generating C source output to '/tmp/hbmk_wsyolj.dir/hk451.c'... Done.

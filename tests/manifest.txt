@@ -1002,3 +1002,11 @@ neg tests/t1003_recursive_inline_wrongarg.hb argument 1
 neg tests/t1004_recursive_inline_nonanchor.hb never returns a value
 neg tests/t1005_recursive_inline_noground.hb never returns a value
 pos tests/t1006_recursive_inline_multiple_returns.hb \n         5
+pos tests/t1007_original_define.hb \ntesting Harbour /d compiler flag\nPlease use /dTEST compiler flag\nOr run 'set HB_USER_PRGFLAGS=/dTEST' if you are using the GNU Make System\nFIRST is defined\nFIRST and SECOND are defined\nFIRST, SECOND and THIRD are defined
+pos tests/t1008_pp_warning.hb \nalive
+pos tests/t1009_pp_warning_payload.hb \npayload inert
+pos tests/t1012_pp_warning_level.hb \nw0
+neg tests/t1010_pp_warning_follow_error_neg.hb #error next remains fatal
+neg tests/t1011_pp_warning_diagnostic_neg.hb line 3: undefined variable
+neg tests/t1013_pp_warning_unknown_directive_neg.hb unknown directive #notadirective
+posx tests/t1014_pp_warning_trace_origin.hb 1 Error: round dec out of range\nCallstack:\n  at main (tests/t1014_pp_warning_trace_origin.hb:4)
