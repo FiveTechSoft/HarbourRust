@@ -174,3 +174,41 @@ publishing their address, matching the existing emitter's entry discipline.
 This is a bounded audit, not a proof of compiler correctness. No scalar/runtime
 surface was broadened to satisfy these tests. The default backend keeps its full
 1086 checks and frozen sweep20 COMPILES. Main remains unchanged.
+
+## Retained-layout sensitivity study
+
+Run `run.sh` first, then run each selection separately (about30seconds on the
+recorded machine):
+
+```
+STUDY_LAYOUT=0 python3 experiments/llvm-scalar/layout_study.py
+STUDY_LAYOUT=1 python3 experiments/llvm-scalar/layout_study.py
+STUDY_LAYOUT=2 python3 experiments/llvm-scalar/layout_study.py
+```
+
+The study pins each process to each available CPU, uses10M dynamic iterations
+with3calls per sample and31rotating samples after3warmups. All three paths have
+native trace writes. It links the IDENTICAL current and LLVM objects for every
+selection; a retained text prefix shifts LLVM code0/32/64bytes. Linker symbol
+addresses and object hashes are saved. The script checks that the prefix is
+retained and the LLVM function begins at the expected16-byte aligned position.
+This is a sensitivity test, not a proposed product padding fix. No source/IR
+optimization is changed. New runs overwrite their layout selection's local data.
+
+Recorded addresses of ll_sumloop:0x251f40,0x251f60,0x251f80, with the same
+study_padding symbol0x251f3f and fixed Rust/current addresses. Sum LLVM/Rust
+trace-equivalent median ratio is about0.86 in layouts0/2 but1.34 in layout1,
+reproduced on both available CPUs. Thus one layout makes LLVM faster, another
+slower than the Rust control. Branch is usually near1.00, recurrence near0.63;
+a layout0/CPU1 run also has a branch outlier near0.75 and sum near1.00. Those
+results are preserved, not dropped. Factorial10 remains too short for a headline.
+Raw samples, per-run medians, CPU affinity, object hashes and symbols are under
+`results/layout-study/`. Shared-host variability remains; these are not
+confidence intervals, a dedicated-machine result or application-level parity.
+
+An earlier local padding attempt was DISCARDED as a layout test because linker
+GC removed its anonymous padding and all function addresses stayed unchanged.
+Its repetitions were never evidence for three layouts. This retained-prefix
+script specifically checks that failure mode before timing. Findings support
+optimizing capability but do not support a general 'as fast as Rust' claim or
+a replacement decision. No compiler/main/runtime change is part of this study.

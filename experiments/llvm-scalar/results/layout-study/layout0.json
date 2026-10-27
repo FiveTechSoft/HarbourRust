@@ -1,0 +1,104 @@
+{
+  "date": "2026-10-27T12:39:24+0100",
+  "layout": 0,
+  "padding_bytes": 0,
+  "cpus": [
+    0,
+    1
+  ],
+  "uname": [
+    "Linux",
+    "e2b.local",
+    "6.1.158+",
+    "#1 SMP PREEMPT_DYNAMIC Wed Sep 30 12:40:02 UTC 2026",
+    "x86_64"
+  ],
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.1\nLLVM version: 23.1.1\n",
+  "method": "All three paths trace-enabled,10M dynamic iterations;31 rotating samples after3warmups;3calls per sample;factorial10x10000 excluded from headline",
+  "hashes": {
+    "corpus.o": "b683da5b2aeab8036b3c0501265b3a49eedbc0638177e3e3ef6b6fcd54950821",
+    "bench_current.o": "e7c0fbbea744cf0df1105276b7d1c58e0b7dcb002a0d60d0de6ce6ef000e7f98",
+    "run/bench-traced-rust.rs": "4aeb658ab2a3754795beff91cb5dd92b32e9fd8537106e138d3c890219cff878"
+  },
+  "runs": [
+    {
+      "cpu": 0,
+      "repeat": 0,
+      "elapsed_s": 13.872327755998413,
+      "csv": "layout0-cpu0-r0.csv",
+      "summary": {
+        "sumloop": {
+          "current_ns": 24165139.0,
+          "llvm_ns": 3893604.6666666665,
+          "rust_traced_ns": 4541809.0,
+          "llvm_over_rust": 0.8572805828397158
+        },
+        "branchloop": {
+          "current_ns": 30778759.333333332,
+          "llvm_ns": 9147348.666666666,
+          "rust_traced_ns": 9094722.666666666,
+          "llvm_over_rust": 1.0057864326300878
+        },
+        "fact": {
+          "current_ns": 70.727,
+          "llvm_ns": 20.5727,
+          "rust_traced_ns": 21.7724,
+          "llvm_over_rust": 0.9448981279050541
+        },
+        "recurrence": {
+          "current_ns": 29813532.0,
+          "llvm_ns": 7641652.666666667,
+          "rust_traced_ns": 12088063.666666666,
+          "llvm_over_rust": 0.6321651570829196
+        }
+      }
+    },
+    {
+      "cpu": 1,
+      "repeat": 0,
+      "elapsed_s": 13.953245810997032,
+      "csv": "layout0-cpu1-r0.csv",
+      "summary": {
+        "sumloop": {
+          "current_ns": 24778445.0,
+          "llvm_ns": 6057460.0,
+          "rust_traced_ns": 6052639.0,
+          "llvm_over_rust": 1.0007965120668851
+        },
+        "branchloop": {
+          "current_ns": 26245269.333333332,
+          "llvm_ns": 9116461.0,
+          "rust_traced_ns": 12101766.333333334,
+          "llvm_over_rust": 0.7533165613096865
+        },
+        "fact": {
+          "current_ns": 71.1096,
+          "llvm_ns": 21.0488,
+          "rust_traced_ns": 21.7735,
+          "llvm_over_rust": 0.966716421337865
+        },
+        "recurrence": {
+          "current_ns": 29780373.333333332,
+          "llvm_ns": 7641269.333333333,
+          "rust_traced_ns": 12078609.666666666,
+          "llvm_over_rust": 0.6326282199863567
+        }
+      }
+    }
+  ],
+  "symbols": {
+    "_RNvCsfNbmgqfoNUC_7harness12rust_sumloop": 2173440,
+    "_RNvCsfNbmgqfoNUC_7harness15rust_branchloop": 2173664,
+    "_RNvCsfNbmgqfoNUC_7harness15rust_recurrence": 2173968,
+    "cur_sumloop": 2432463,
+    "cur_branchloop": 2432501,
+    "cur_fact": 2432539,
+    "cur_recurrence": 2432577,
+    "study_padding": 2432831,
+    "ll_sumloop": 2432832,
+    "ll_branchloop": 2433056,
+    "ll_fact": 2433376,
+    "ll_recurrence": 2433504,
+    "ll_main": 2433712
+  }
+}
