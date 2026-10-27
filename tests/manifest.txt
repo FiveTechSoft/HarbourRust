@@ -959,3 +959,7 @@ neg tests/t960_sequence_lazy_or_move_neg.hb use of moved value
 neg tests/t961_sequence_seq_inside_arg_move_neg.hb use of moved value
 neg tests/t962_sequence_double_consume_neg.hb use of moved value
 pos tests/t963_sequence_lazy_reassign.hb \n         1          1\n         2          2\nreset again\n.F.          2\n.T.          2
+neg tests/t964_qout_seq_sibling_move_neg.hb use of moved value
+neg tests/t965_qout_seq_nested_move_neg.hb use of moved value
+neg tests/t966_qout_seq_print_move_neg.hb use of moved value
+neg tests/t967_qout_call_sibling_move_neg.hb use of moved value

@@ -3444,3 +3444,19 @@ output comparisons. 958 actual manifest cases +3harness =961 PASS on both
 targets. Frozen175 remains13COMPILES. No speed change is claimed: compiler
 and generated runtime are byte-identical to64ac; the prior identical-source
 benchmark remains in the repository. No new original completion.
+
+## 64ae - output-expression move effects reach result siblings
+
+Extending the ownership audit found the same temporary-environment hole
+in expression QOut/QQOut: its items were checked in item_env, but effects
+were not propagated to the caller's environment. The published d7e4060
+accepted `IIF(QQOut((take(s),1)) = NIL, Len(s), 0)` after take consumed s.
+The invalid read was not executed. The hole also existed without sequence,
+using QQOut(take(s)); it is not only a new comma-expression behavior.
+Four lines merge item_env moved flags back into env. Four negative cases
+t964-t967 cover IIF sibling, nested output, following print item and the
+non-sequence call variant on both targets. No runtime or ownership model
+change: only compile-time effect propagation. 962 manifest +3harness =965
+PASS Linux and Windows/Wine. Frozen175 stays13COMPILES. No new original
+or speed claim; successful hk441 emits byte-identical assembly to64ad.
+This audit fixes tested holes, not a general memory-safety proof.

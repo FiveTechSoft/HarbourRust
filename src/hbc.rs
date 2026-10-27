@@ -4004,6 +4004,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     }
                     apply_moves(a, &mut item_env, sigs, false);
                 }
+                // Item evaluation precedes siblings of the QOut result too.
+                for (outer, inner) in env.iter_mut().zip(item_env.iter()) {
+                    outer.moved |= inner.moved;
+                }
                 return Ok(Ty::Dyn); // NIL, using the existing tagged return pair.
             }
             if is_builtin(id, "asc") {
