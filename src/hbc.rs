@@ -1781,7 +1781,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         // a[i, j] := v, a[i, j, k] := v, a[i, j, k, l] := v
                         // (probe m2 extended: the comma form is the same
                         // nested access; 4-level write measured in hk104)
-                        if toks.len() <= rb + 1 || toks[rb + 1] != Tok::Assign {
+                        if toks.len() <= rb + 1 || !matches!(toks[rb + 1], Tok::Assign | Tok::Eq) {
                             return Err(format!("line {}: expected `name[idx, ...] := expr`", n));
                         }
                         if commas.len() > 3 {
@@ -1854,7 +1854,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                                         _ => {}
                                     }
                                 }
-                                if rb4 == 0 || toks.len() <= rb4 + 1 || toks[rb4 + 1] != Tok::Assign {
+                                if rb4 == 0 || toks.len() <= rb4 + 1 || !matches!(toks[rb4 + 1], Tok::Assign | Tok::Eq) {
                                     return Err(format!("line {}: expected `name[idx][idx2][idx3][idx4] := expr`", n));
                                 }
                                 let i1 = parse_expr_tokens(toks[2..rb].to_vec(), n)?;
@@ -1866,7 +1866,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                                 *i += 1;
                                 continue;
                             }
-                            if toks[rb3 + 1] != Tok::Assign {
+                            if !matches!(toks[rb3 + 1], Tok::Assign | Tok::Eq) {
                                 return Err(format!("line {}: expected `name[idx][idx2][idx3] := expr`", n));
                             }
                             let i1 = parse_expr_tokens(toks[2..rb].to_vec(), n)?;
@@ -1877,7 +1877,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                             *i += 1;
                             continue;
                         }
-                        if toks[rb2 + 1] != Tok::Assign {
+                        if !matches!(toks[rb2 + 1], Tok::Assign | Tok::Eq) {
                             return Err(format!("line {}: expected `name[idx][idx2] := expr`", n));
                         }
                         let i1 = parse_expr_tokens(toks[2..rb].to_vec(), n)?;
@@ -1887,7 +1887,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         *i += 1;
                         continue;
                     }
-                    if rb == 2 || toks.len() <= rb + 1 || toks[rb + 1] != Tok::Assign {
+                    if rb == 2 || toks.len() <= rb + 1 || !matches!(toks[rb + 1], Tok::Assign | Tok::Eq) {
                         return Err(format!("line {}: expected `name[idx] := expr`", n));
                     }
                     let idx = parse_expr_tokens(toks[2..rb].to_vec(), n)?;

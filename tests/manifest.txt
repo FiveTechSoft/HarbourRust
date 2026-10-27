@@ -1051,3 +1051,8 @@ pos tests/t1052_procname_return_block.hb \nWHO .F.          3(b)OTHER (b)OTHER\n
 neg tests/t1053_procname_ancestor_neg.hb `ProcName` supports only no argument or literal zero
 neg tests/t1054_procname_effect_arg_neg.hb `ProcName` supports only no argument or literal zero
 pos tests/t1055_procname_byref.hb \nSPECIAL          4
+pos tests/t1056_index_equal.hb \n        11          2          8          9          2\n.T. .T. .T.
+pos tests/t1057_nested_index_equal.hb \n         4          6          8\n.T. .T. .T.
+pos tests/t1058_index_equal_rhs_compare.hb \n.T.          1\n.T.
+neg tests/t1059_index_eqeq_stmt_neg.hb expected `name[idx] := expr`
+neg tests/t1060_index_equal_moved_neg.hb use of moved value

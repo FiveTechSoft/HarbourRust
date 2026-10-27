@@ -3853,3 +3853,22 @@ Five new cases t1051-t1055 give1050manifest +5harness=1055PASS Linux/Wine.
 Frozen175 stays20COMPILES (19 accumulated successful originals plus the
 separate errsys failure-mode original). hk455 assembly remains byte-identical;
 no new speed claim, general stack introspection or Harbour-complete claim.
+
+
+## 64aw - statement-level indexed assignment with single equals
+
+Harbour permits a[i] = value as a statement, like existing a[i] := value.
+The five assignment-token checks now accept single equals for flat/hash,
+two-, three-, four-level and comma-index statement lvalues. These become
+the SAME checked ArrSet nodes and emitted code as colon-equals. No new
+representation, ownership rule, helper or expression assignment is added.
+
+hk468-hk470 match Harbour for array/hash writes, side-effecting indices,
+all supported nested spellings and a comparison on the RHS. Single equals
+INSIDE expressions remains comparison, including indexed comparisons;
+== is never accepted as a statement assignment token. Moved-array checks
+remain in force. Five cases t1056-t1060 give1055manifest+5harness=1060PASS
+Linux/Wine. Frozen175 stays20COMPILES (19 accumulated successful originals
+plus the separate errsys failure-mode original); arrayidx.prg needs
+expression compound assignment, which this does NOT add. hk455 assembly
+is unchanged; no new speed claim.
