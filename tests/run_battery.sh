@@ -73,4 +73,9 @@ if ! python3 tests/compile_shape_matrix.py > gen/compile_shape_matrix.log 2>&1; 
 else
   echo "PASS tests/compile_shape_matrix.py"
 fi
+if ! python3 tests/parser_matrix.py > gen/parser_matrix.log 2>&1; then
+  echo "FAIL tests/parser_matrix.py (see gen/parser_matrix.log)"; fail=1
+else
+  echo "PASS tests/parser_matrix.py"
+fi
 if [ $fail -eq 0 ]; then echo "ALL GREEN"; else echo "BATTERY FAILURES"; exit 1; fi

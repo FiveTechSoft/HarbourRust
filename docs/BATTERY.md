@@ -3531,3 +3531,20 @@ adds 400 target compile/link checks, NOT 400 runtime test cases. Compiler
 and runtime source are byte-identical to64ag, frozen175 stays13COMPILES,
 and existing performance measurements are unchanged (no new speed claim).
 Python3 is required by this standalone harness.
+
+
+## 64aj - deterministic parser mutation regression matrix
+
+Nine small syntax seeds receive deletion/duplication of delimiters and
+trailing-token mutations. The deduplicated 136 sources run through both
+target compiler frontends: 272 checks, 16 accepted and 256 ordinary named
+rejections. Every source pins its acceptance independently. Abnormal exit,
+timeout, non-diagnostic error and acceptance drift fail the harness.
+The 8 accepted sources include original seeds and legal trailing forms;
+this is not a claim that every mutation must reject. The generated probes
+are never executed, and these counts are not runtime/Harbour equivalence
+cases. This is a bounded parser regression, not exhaustive fuzzing or a
+compiler safety proof. 974 manifest cases +5 standalone harnesses =979
+PASS Linux and Windows/Wine. Compiler/runtime source remains unchanged,
+frozen175 remains13COMPILES and no new speed claim is made. Python3 is
+already required by the expression-shape harness from64ah.
