@@ -1037,3 +1037,6 @@ neg tests/t1038_eol_arity_neg.hb `hb_eol` takes no arguments
 neg tests/t1039_outstd_move_neg.hb use of moved value
 neg tests/t1040_seq_dyn_limit_neg.hb parenthesized comma expressions support numeric/logical results only
 pos2 tests/t1041_original_longstr.hb tests/t1041_longstr_linux.out tests/t1041_longstr_windows.out
+streams tests/t1042_outerr_streams.hb tests/t1042.stdout tests/t1042.stderr
+neg tests/t1043_original_longstr2_move_neg.hb use of moved value `short`
+neg tests/t1044_outerr_move_neg.hb use of moved value

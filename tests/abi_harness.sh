@@ -9,7 +9,7 @@
 set -e
 cd "$(dirname "$0")/.."
 mkdir -p gen
-printf 'function incprobe(x)\nreturn x++ + ++x\nfunction oprobe()\nreturn OutStd()\nfunction eprobe()\nreturn Len(hb_eol())\nfunction qprobe()\nreturn QQOut()\nfunction bprobe()\nlocal b := {|n| QQOut(), n+1}\nreturn Eval(b, 6)\nfunction dynshow(x)\nreturn QQOut(x)\nfunction nprobe()\nreturn dynshow(AllTrim(" "))\nfunction main()\nreturn\n' > gen/abi_empty.hb
+printf 'function incprobe(x)\nreturn x++ + ++x\nfunction erprobe()\nreturn OutErr("")\nfunction oprobe()\nreturn OutStd()\nfunction eprobe()\nreturn Len(hb_eol())\nfunction qprobe()\nreturn QQOut()\nfunction bprobe()\nlocal b := {|n| QQOut(), n+1}\nreturn Eval(b, 6)\nfunction dynshow(x)\nreturn QQOut(x)\nfunction nprobe()\nreturn dynshow(AllTrim(" "))\nfunction main()\nreturn\n' > gen/abi_empty.hb
 ./hbc gen/abi_empty.hb gen/abi_l.s --target=linux -I tests >/dev/null
 ./hbc gen/abi_empty.hb gen/abi_w.s --target=windows -I tests >/dev/null
 
@@ -1781,6 +1781,33 @@ hbc_abi_test:
     cmp $2, %rax
     jg abi_fail_chr
     call abi_check
+    call hbc_fn_erprobe
+    cmp $1, %rax
+    jne abi_fail_chr
+    test %rdx, %rdx
+    jne abi_fail_chr
+    call abi_check
+    mov $-1, %rax
+    xor %edx, %edx
+    call hbc_eprint_str
+    call abi_check
+    call hbc_eprint_sep
+    call abi_check
+    mov $7, %eax
+    call hbc_eprint_i64
+    call abi_check
+    mov $8, %eax
+    call hbc_eprint_i64c
+    call abi_check
+    mov $1, %eax
+    xor %edx, %edx
+    call hbc_eprint_dyn
+    call abi_check
+    movabs $0x3ff8000000000000, %rax
+    movq %rax, %xmm0
+    mov $1, %edi
+    call hbc_eprint_f64
+    call abi_check
     call hbc_fn_oprobe
     cmp $1, %rax
     jne abi_fail_chr
@@ -2174,8 +2201,11 @@ as -o gen/abi_l_t.o gen/abi_l_t.s
 ld -o gen/abi_l_t gen/abi_l_t.o
 "$M/x86_64-w64-mingw32-as" -o gen/abi_w_t.o gen/abi_w_t.s
 "$M/x86_64-w64-mingw32-ld" -o gen/abi_w_t.exe gen/abi_w_t.o -e _start --subsystem console -L"$MLIB" -lkernel32
-out_l=$(gen/abi_l_t) && rc_l=0 || rc_l=$?
-out_w=$("$WINE" gen/abi_w_t.exe 2>/dev/null) && rc_w=0 || rc_w=$?
+out_l=$(gen/abi_l_t 2>gen/abi_l.stderr) && rc_l=0 || rc_l=$?
+out_w=$("$WINE" gen/abi_w_t.exe 2>gen/abi_w.stderr) && rc_w=0 || rc_w=$?
+printf '%s' '          7         8NIL1.5' > gen/abi.stderr.expected
+cmp gen/abi.stderr.expected gen/abi_l.stderr
+cmp gen/abi.stderr.expected gen/abi_w.stderr
 echo "linux: $out_l (exit $rc_l)"
 echo "wine:  $out_w (exit $rc_w)"
 if [ "$out_l" = "         1.5         59999999999         10000000000-999999999         -1000000000      50000005000000ABI OK" ] && [ "$out_w" = "         1.5         59999999999         10000000000-999999999         -1000000000      50000005000000ABI OK" ] && [ $rc_l -eq 0 ] && [ $rc_w -eq 0 ]; then

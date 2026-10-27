@@ -1,0 +1,15 @@
+procedure main()
+local a := {1}, h := {"x"=>2}, s := AllTrim(" tmp ")
+OutErr("E[", "tail  ")
+OutErr("]", 7, .T., NIL, 1.25, a, h)
+OutErr()
+OutStd("O[")
+OutErr("[", Side("A"), Side("B"), "]")
+OutStd("]")
+OutStd(ValType(OutErr("N")))
+OutErr(s)
+? Len(s)
+return
+function Side(s)
+OutStd(s)
+return s

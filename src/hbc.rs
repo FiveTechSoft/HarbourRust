@@ -1284,13 +1284,13 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "qout", "qqout", "outstd", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "qout", "qqout", "outstd", "outerr", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
 
 // Output calls share NIL result and existing value/ownership checks.
-fn is_output_call(id: &str) -> bool { ["qout", "qqout", "outstd"].iter().any(|v| is_builtin(id, v)) }
+fn is_output_call(id: &str) -> bool { ["qout", "qqout", "outstd", "outerr"].iter().any(|v| is_builtin(id, v)) }
 
 fn check_ident(id: &str, n: usize) -> Result<(), String> {
     if id.is_empty() || id.len() > 64 {
@@ -6919,7 +6919,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             out.push_str("    add $32, %rsp\n");
         }
         Expr::Call(id, args) if is_output_call(id) => {
-            cg_print_items(args, !is_builtin(id, "qout"), is_builtin(id, "outstd"), env, sigs, strs, out, target);
+            cg_print_items(args, !is_builtin(id, "qout"), !is_builtin(id, "qout") && !is_builtin(id, "qqout"), is_builtin(id, "outerr"), env, sigs, strs, out, target);
             out.push_str("    mov $1, %eax\n    xor %edx, %edx\n"); // NIL tag/payload.
         }
         Expr::Call(id, args) if is_builtin(id, "asc") => {
@@ -8814,7 +8814,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
     }
 }
 
-fn cg_print_items(es: &[Expr], inline: bool, raw: bool, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
                 // Harbour `?` is a QOut( <items> ) call (probes b51-b59,
                 // t12 vs -gtstd binary): ALL items are evaluated FIRST
                 // (side effects like prints inside calls happen before the
@@ -8878,6 +8878,8 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, env: &[CgLocal], sigs: &
                 // `??` skips ONLY the leading newline (hk274-hk276);
                 // item evaluation order, separators, field widths and
                 // the trailing right-trim are identical to `?`.
+                // Arguments (including nested output) have already evaluated.
+                let render_start = out.len();
                 if !inline { out.push_str("    call hbc_print_nl\n"); }
                 // Harbour renders a whole dynamic array or hash as
                 // NOTHING (oracles hk16/hk20/hk21/hk24) and QOut
@@ -8974,6 +8976,11 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, env: &[CgLocal], sigs: &
                 }
                 if !es.is_empty() {
                     out.push_str(&format!("    add ${}, %rsp\n", 16 * es.len()));
+                }
+                if stderr {
+                    // Route only the rendering fragment, never argument effects.
+                    let fragment = out.split_off(render_start);
+                    out.push_str(&fragment.replace("hbc_print_", "hbc_eprint_"));
                 }
 }
 
@@ -9134,7 +9141,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 env.push(CgLocal { name: id.clone(), ty: t, off });
             }
             Stmt::Print(_, es, inline) => {
-                cg_print_items(es, *inline, false, env, sigs, strs, out, target);
+                cg_print_items(es, *inline, false, false, env, sigs, strs, out, target);
             }
             Stmt::Ret(_, Some(e)) => {
                 if let Ty::Arr(k) = expr_ty(e, env, sigs) {
@@ -13774,6 +13781,27 @@ hbc_str_cache: .zero 64
 
 // Unify controlled failures only. Normal _start exits are not rewritten.
 fn finalize_trace(mut out: String, target: Target) -> String {
+    // Add private stderr variants only when used. No mutable routing state:
+    // nested OutStd/QOut and controlled diagnostics retain their destination.
+    if out.contains("call hbc_eprint_") {
+        let original = out.clone();
+        out.push_str("\n    .text\n");
+        for name in ["str", "sep", "i64", "i64c", "dyn", "f64"] {
+            let label = format!("\nhbc_print_{}:", name);
+            let start = original.find(&label).expect("print helper exists") + 1;
+            let rest = &original[start..];
+            let end = rest.find("\nhbc_").unwrap_or(rest.len());
+            let end = rest[..end].find("\n    .section").unwrap_or(end);
+            let mut helper = rest[..end].replace("hbc_print_", "hbc_eprint_")
+                .replace(".Lf64_", ".Lef64_");
+            helper = match target {
+                Target::Linux => helper.replace("mov $1, %edi", "mov $2, %edi"),
+                Target::Windows => helper.replace("mov $-11, %ecx", "mov $-12, %ecx"),
+            };
+            out.push_str(&helper);
+            out.push('\n');
+        }
+    }
     let (old, new) = match target {
         Target::Linux => ("    mov $60, %eax\n    mov $1, %edi\n    syscall", "    jmp hbc_panic_exit"),
         Target::Windows => ("    mov $1, %ecx\n    call ExitProcess", "    jmp hbc_panic_exit"),

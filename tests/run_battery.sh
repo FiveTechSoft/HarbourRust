@@ -8,6 +8,7 @@
 #                                       byte-match the expectation
 #   posx <file> <exit> <escaped stdout> like pos, and BOTH runs must exit
 #                                       with the given code (fail-mode tests)
+#   streams <file> <stdout expected file> <stderr expected file> on both targets
 #   pos2 <file> <linux expected file> <windows expected file> exact target bytes
 #   neg  <file> <error substring>       compile must FAIL with that message
 #                                       on both targets
@@ -57,6 +58,15 @@ while IFS= read -r line; do
          timeout 20 "$WINE" "gen/$base.exe" > "gen/${base}_w.actual" 2>/dev/null &&
          cmp -s "$lexp" "gen/${base}_l.actual" && cmp -s "$wexp" "gen/${base}_w.actual" &&
          [ ! -s "gen/${base}_l.err" ]; then echo "PASS $file"; else echo "FAIL $file (exact target bytes)"; fail=1; fi;;
+    streams)
+      base=$(basename "$file" .hb)
+      sexp=$(echo "$line"|awk '{print $3}'); eexp=$(echo "$line"|awk '{print $4}')
+      if build_linux "$file" && build_win "$file" &&
+         timeout 15 "./gen/$base" >"gen/${base}_l.stdout" 2>"gen/${base}_l.stderr" &&
+         timeout 20 "$WINE" "gen/$base.exe" >"gen/${base}_w.stdout" 2>"gen/${base}_w.stderr" &&
+         cmp -s "$sexp" "gen/${base}_l.stdout" && cmp -s "$sexp" "gen/${base}_w.stdout" &&
+         cmp -s "$eexp" "gen/${base}_l.stderr" && cmp -s "$eexp" "gen/${base}_w.stderr"; then
+        echo "PASS $file"; else echo "FAIL $file (separate stdout/stderr bytes)"; fail=1; fi;;
     neg)  run_neg "$file" "$(echo "$line"|cut -d' ' -f3-)";;
     '') ;;
     *) echo "FAIL unknown manifest kind: $line"; fail=1;;

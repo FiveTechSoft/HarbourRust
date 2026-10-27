@@ -3773,3 +3773,34 @@ one explicitly DIFFERENT errsys failure-mode original. Do not call that
 20 working originals. longstr2 still stops at OutErr. Existing performance
 measurements are retained; hk455 assembly remains unchanged, with no new
 speed claim for stream output or platform line endings.
+
+
+## 64at - OutErr with isolated native stderr rendering
+
+OutErr shares OutStd's checked value shapes and raw formatting: all arguments
+evaluate before rendering, one separator per argument, no trim/newline, NIL
+result. hk462 compares stdout AND stderr separately with Harbour -gtstd;
+the Linux/Wine results match every byte, including trailing spaces, nested
+OutStd argument effects, scalar fields, empty arrays/hashes and temporaries.
+The streams manifest kind uses file comparisons and checks exit0, keeping
+stderr evidence separate instead of merging it or dropping it.
+
+Only the rendering fragment routes to private hbc_eprint_* helpers. Native
+stdout helper bodies are reused with destination fd2 on Linux and
+STD_ERROR_HANDLE (-12) on Windows. Float local labels get their own
+namespace. These helpers are emitted only when stderr rendering is used;
+no mutable routing state means nested output/controlled diagnostics do not
+inherit a destination. No value representation, ownership rule or shared
+storage changed. The ABI harness calls each of str/sep/i64/i64c/dyn/f64
+stderr helpers directly under GPR/XMM/stack canaries and compares both
+stderr files. OutErr's NIL pair is checked too. Existing I/O error handling
+limits remain: no partial-write retry or error result is added.
+
+Original longstr2.prg is now an unchanged negative t1043 (SHA256
+ e6988e6f3320bfc5ac75b66f7c8e51c4d2868f03a284dfe439976687f5f0504a):
+it passes the missing-function frontier but rejects its use of moved short.
+Do not call it a working original or weaken ownership to accept it. t1044
+keeps moved use after an OutErr argument rejected. Three new cases give
+1039manifest +5harness=1044PASS Linux/Wine. Frozen175 stays20COMPILES,
+19 accumulated successful originals plus DIFFERENT errsys failure-mode.
+Existing no-OutErr hk455 assembly is byte-identical; no new speed claim.
