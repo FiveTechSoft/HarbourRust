@@ -3427,3 +3427,20 @@ a claimed Harbour behavior match (Harbour has shared dynamic lifetimes).
 Sweep stays13/175. No new original completion or speed benefit is claimed;
 the previous identical-workload benchmark remains the relevant measurement
 because this changes only compile-time ownership analysis, not emitted code.
+
+## 64ad - ownership branch/sibling regression audit after 64ac
+
+No compiler changes in this checkpoint. Twelve tests t952-t963 exercise
+sequence moves through IIF conditions/taken arms, arithmetic siblings,
+AND/OR siblings, IF joins, loop-back edges, nesting and double consumption.
+They confirm the 64ac checker repair covers those tested shapes only, not
+a general memory-safety proof. Lazy untaken-arm moves remain conservatively
+rejected at the statement join (same static ownership policy, not Harbour
+sharing). A positive compiled Harbour probe hk443 checks taken IIF arms,
+explicit source reassignment and short-circuit counter effects byte-exactly;
+Linux/Wine instrumentation checks balanced frees on that positive path.
+All11 negative cases are OURS/MODEL compile-time restrictions, not Harbour
+output comparisons. 958 actual manifest cases +3harness =961 PASS on both
+targets. Frozen175 remains13COMPILES. No speed change is claimed: compiler
+and generated runtime are byte-identical to64ac; the prior identical-source
+benchmark remains in the repository. No new original completion.

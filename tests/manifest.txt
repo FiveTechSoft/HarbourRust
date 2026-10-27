@@ -947,3 +947,15 @@ pos tests/t948_sequence_nested.hb \n         4          0\n         6\n         
 neg tests/t949_sequence_sibling_move_neg.hb use of moved value
 neg tests/t950_sequence_print_move_neg.hb use of moved value
 neg tests/t951_sequence_nested_move_neg.hb use of moved value
+neg tests/t952_sequence_iif_cond_move_neg.hb use of moved value
+neg tests/t953_sequence_iif_arm_move_neg.hb use of moved value
+neg tests/t954_sequence_and_move_neg.hb use of moved value
+neg tests/t955_sequence_or_move_neg.hb use of moved value
+neg tests/t956_sequence_if_join_move_neg.hb use of moved value
+neg tests/t957_sequence_loop_move_neg.hb moved inside the `for` body
+neg tests/t958_sequence_lazy_arm_move_neg.hb use of moved value
+neg tests/t959_sequence_lazy_and_move_neg.hb use of moved value
+neg tests/t960_sequence_lazy_or_move_neg.hb use of moved value
+neg tests/t961_sequence_seq_inside_arg_move_neg.hb use of moved value
+neg tests/t962_sequence_double_consume_neg.hb use of moved value
+pos tests/t963_sequence_lazy_reassign.hb \n         1          1\n         2          2\nreset again\n.F.          2\n.T.          2
