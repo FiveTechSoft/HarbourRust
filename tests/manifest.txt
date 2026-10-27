@@ -924,3 +924,23 @@ pos tests/t925_paren_temp_balance.hb \n         0
 neg tests/t926_paren_foreach_limit_neg.hb the `for each` variable
 pos tests/t927_paren_typed_channels.hb \n         3
 pos tests/t928_paren_discard_balance.hb \n         0
+pos tests/t929_sequence.hb \n         3\n         3          3\n        22          4\n.F.          4\n         6          5\n         4\n         1.5 .F.\n         7          2
+pos tests/t930_sequence.hb \n 12345678901\n 12345678901          2\n         7          4\n.F.          5\n.T.          6\n         6          7\n         1.5          8
+pos tests/t931_sequence.hb \n         3\n         1\n         2\n         3\n         4\n         4          5\n         7          6\n         0.50          8
+pos tests/t932_sequence.hb \n         2          2\n         3          2\n         3\n6172839450.50          3
+neg tests/t933_sequence_string_neg.hb numeric/logical results only
+neg tests/t934_sequence_dyn_neg.hb numeric/logical results only
+neg tests/t935_sequence_array_neg.hb numeric/logical results only
+neg tests/t936_sequence_block_neg.hb numeric/logical results only
+neg tests/t937_sequence_capture_neg.hb codeblock captures are not in
+neg tests/t938_sequence_lvalue_neg.hb requires a variable lvalue
+neg tests/t939_sequence_missing_neg.hb unexpected token RParen
+neg tests/t940_sequence_empty_neg.hb unexpected token Comma
+neg tests/t941_sequence_assign_neg.hb missing )
+neg tests/t942_sequence_string_last_neg.hb numeric/logical results only
+neg tests/t943_sequence_undefined_neg.hb undefined variable
+neg tests/t944_sequence_nopin_neg.hb cannot infer the type of parameter
+pos tests/t945_sequence_move.hb \n         1          1
+neg tests/t946_sequence_moved_again_neg.hb use of moved value
+neg tests/t947_sequence_moved_later_neg.hb use of moved value
+pos tests/t948_sequence_nested.hb \n         4          0\n         6\n         5.0          1\n.T.          3

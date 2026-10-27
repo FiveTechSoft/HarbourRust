@@ -271,6 +271,14 @@ fn fold_num_bin(op: char, a: &Expr, b: &Expr) -> Option<Expr> {
 // rejected by the checker before codegen.
 fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     match e {
+        Expr::Seq(es) => {
+            for e in &es[..es.len()-1] {
+                if expr_ty(e, env, sigs) == Ty::F64 { cg_f64_load(e, env, sigs, strs, out, target); }
+                else { cg_value(e, env, sigs, strs, out, target); }
+            }
+            cg_f64_load(es.last().expect("nonempty"), env, sigs, strs, out, target);
+        }
+
         Expr::Float(txt, dec) => {
             let v: f64 = harbour_parse_f64(txt).expect("frontier-checked at parse");
             let k = f64_const(v.to_bits());
@@ -718,6 +726,7 @@ enum Expr {
     Int(String),
     Str(String),
     Var(String),
+    Seq(Vec<Expr>), // parenthesized scalar list, value is the last expression
     Inc(String, i8, bool), // variable lvalue, delta +1/-1, prefix flag
     Call(String, Vec<Expr>),
     ByRef(String),             // `@x` call argument: exclusive borrow of the caller's slot (hk216 family; alias rejection diverges from hk219, registered)
@@ -1091,6 +1100,17 @@ impl P {
             }
             Some(Tok::LParen) => {
                 let e = self.or_expr()?;
+                if self.peek() == Some(&Tok::Comma) {
+                    let mut es = vec![e];
+                    while self.peek() == Some(&Tok::Comma) {
+                        self.pos += 1;
+                        es.push(self.or_expr()?);
+                    }
+                    if self.bump() != Some(Tok::RParen) {
+                        return Err(format!("line {}: missing ) after expression list", self.n));
+                    }
+                    return Ok(Expr::Seq(es));
+                }
                 if self.bump() != Some(Tok::RParen) {
                     return Err(format!("line {}: missing )", self.n));
                 }
@@ -2623,6 +2643,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     // float-typed, while +,-,* are float-typed when either side is.
     fn f64_typed(e: &Expr, lit: &[(String, Ty)], sigs: &[Sig], f: &Func, pin: &[Option<Ty>]) -> bool {
         match e {
+            Expr::Seq(es) => f64_typed(es.last().expect("nonempty"), lit, sigs, f, pin),
             Expr::Float(..) | Expr::FloatV(..) => true,
             Expr::Var(v) => lit.iter().any(|(x, t)| x == v && *t == Ty::F64)
                 || is_param(f, v).map(|i| pin[i] == Some(Ty::F64)).unwrap_or(false),
@@ -2718,11 +2739,13 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
         // nothing to pin through.
         if ty == Ty::F64 {
             return match e {
+                Expr::Seq(es) => pin_vars(f, es.last().expect("nonempty"), ty, pin, n),
                 Expr::Var(id) => { if let Some(i) = is_param(f, id) { setpin(pin, i, ty, n)?; } Ok(()) }
                 _ => Ok(()),
             };
         }
         match e {
+            Expr::Seq(es) => pin_vars(f, es.last().expect("nonempty"), ty, pin, n),
             Expr::Inc(id, _, _) => { if let Some(i) = is_param(f, id) { setpin(pin, i, Ty::I64, n)?; } Ok(()) }
             Expr::Var(id) => { if let Some(i) = is_param(f, id) { setpin(pin, i, ty, n)?; } Ok(()) }
             Expr::Bin(_, a, b) => { pin_vars(f, a, Ty::I64, pin, n)?; pin_vars(f, b, Ty::I64, pin, n) }
@@ -2786,6 +2809,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     }
     fn walk(f: &Func, e: &Expr, sigs: &[Sig], lit: &[(String, Ty)], pin: &mut Vec<Option<Ty>>, printed: &mut Vec<bool>, n: usize) -> Result<(), String> {
         match e {
+            Expr::Seq(es) => { for e in es { walk(f, e, sigs, lit, pin, printed, n)?; } Ok(()) }
             Expr::Inc(id, _, _) => pin_vars(f, &Expr::Var(id.clone()), Ty::I64, pin, n),
             Expr::Bin(op, a, b) => {
                 // String `+` (oracle hk215): a `+` with string evidence on
@@ -3330,6 +3354,7 @@ fn expr_has_call(e: &Expr) -> bool {
     // reconciled, so only call-free RHS forms are justified for in-place
     // growth (main's rule: reject or exclude unjustified forms).
     match e {
+        Expr::Seq(_) => true, // effectful form excluded from in-place growth
         Expr::Call(_, _) => true,
         Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => expr_has_call(a) || expr_has_call(b),
         Expr::Var(_) | Expr::Str(_) | Expr::Int(_) | Expr::Log(_) => false,
@@ -3341,6 +3366,7 @@ fn expr_has_call(e: &Expr) -> bool {
 
 fn expr_mentions(e: &Expr, name: &str) -> bool {
     match e {
+        Expr::Seq(es) => es.iter().any(|e| expr_mentions(e, name)),
         Expr::Var(v) | Expr::Inc(v, _, _) => v == name,
         Expr::ByRef(v) => v == name,
         Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => expr_mentions(a, name) || expr_mentions(b, name),
@@ -3368,6 +3394,7 @@ fn expr_mentions(e: &Expr, name: &str) -> bool {
 // whitelist.
 fn borrow_expr_ok(e: &Expr, pname: &str) -> bool {
     match e {
+        Expr::Seq(es) => es.iter().all(|e| borrow_expr_ok(e, pname)),
         Expr::Var(v) => v != pname,
         Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => borrow_expr_ok(a, pname) && borrow_expr_ok(b, pname),
         Expr::Call(id, args) => {
@@ -3455,6 +3482,19 @@ fn borrow_stmts_ok(stmts: &[Stmt], pname: &str) -> Option<usize> {
 
 fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Result<Ty, String> {
     match e {
+        Expr::Seq(es) => {
+            let mut local = env.to_vec();
+            let mut last = Ty::I64;
+            for e in es {
+                let t = type_expr(e, &mut local, sigs, n)?;
+                if !matches!(t, Ty::I64 | Ty::Bool | Ty::F64) {
+                    return Err(format!("line {}: parenthesized comma expressions support numeric/logical results only in this increment; owned, Dyn, array and block results remain a named limit", n));
+                }
+                apply_moves(e, &mut local, sigs, false);
+                last = t;
+            }
+            Ok(last)
+        }
         Expr::Int(_) => Ok(Ty::I64),
         Expr::Float(..) | Expr::FloatV(..) => Ok(Ty::F64),
         Expr::Str(_) => Ok(Ty::Str),
@@ -4740,6 +4780,7 @@ fn ty_name(t: Ty) -> &'static str {
 
 fn free_vars(e: &Expr, out: &mut Vec<String>) {
     match e {
+        Expr::Seq(es) => { for e in es { free_vars(e, out); } }
         Expr::Var(id) | Expr::Inc(id, _, _) => { if !out.iter().any(|x| x == id) { out.push(id.clone()); } }
         Expr::SelfObj | Expr::SelfGet(_) => {}
         Expr::Send(o, _, args) => { free_vars(o, out); for a in args { free_vars(a, out); } }
@@ -4870,6 +4911,7 @@ fn unify_ret(ret: Option<Ty>, t: Ty, n: usize) -> Result<Ty, String> {
 fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
     fn expr_ok(e: &Expr, name: &str) -> bool {
         match e {
+            Expr::Seq(es) => es.iter().all(|e| expr_ok(e, name)),
             Expr::Call(id, args) => {
                 if (is_builtin(id, "AAdd") || is_builtin(id, "ASize"))
                     && matches!(args.first(), Some(Expr::Var(v)) if v == name)
@@ -4924,6 +4966,7 @@ fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
 fn foreach_barr_lv_ok(stmts: &[Stmt], name: &str) -> bool {
     fn mentions(e: &Expr, name: &str) -> bool {
         match e {
+            Expr::Seq(es) => es.iter().any(|e| mentions(e, name)),
             Expr::Var(v) => v == name,
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => mentions(a, name) || mentions(b, name),
             Expr::Call(_, args) => args.iter().any(|a| mentions(a, name)),
@@ -4970,6 +5013,7 @@ fn foreach_barr_lv_ok(stmts: &[Stmt], name: &str) -> bool {
 fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     fn mentions(e: &Expr, name: &str) -> bool {
         match e {
+            Expr::Seq(es) => es.iter().any(|e| mentions(e, name)),
             Expr::Var(v) => v == name,
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => mentions(a, name) || mentions(b, name),
             Expr::Call(_, args) => args.iter().any(|a| mentions(a, name)),
@@ -4979,6 +5023,7 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     }
     fn in_call(e: &Expr, name: &str) -> bool {
         match e {
+            Expr::Seq(es) => es.iter().any(|e| in_call(e, name)),
             Expr::Call(_, args) => args.iter().any(|a| mentions(a, name)),
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => in_call(a, name) || in_call(b, name),
             Expr::Index(_, i) | Expr::Index2(_, i, _) | Expr::Index3(_, i, _, _) | Expr::Index4(_, i, ..) => in_call(i, name),
@@ -6278,6 +6323,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
 // i64 and codeblocks never move (Copy).
 fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
     match e {
+        Expr::Seq(es) => { for e in es { apply_moves(e, env, sigs, false); } }
         Expr::ByRef(_) => {} // `@x` borrows the slot for the call; the owner keeps it (hk216)
         Expr::Var(id) => {
             if moving {
@@ -6447,6 +6493,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 // with literal provenance (digits+1), unlike a runtime-computed value.
 fn fold_int(e: &Expr) -> Option<i64> {
     match e {
+        Expr::Seq(es) => fold_int(es.last().expect("nonempty")), // provenance only; NEVER skip prefix effects
         Expr::Int(t) => t.parse().ok(),
         Expr::Bin('+', a, b) => fold_int(a)?.checked_add(fold_int(b)?),
         Expr::Bin('-', a, b) => fold_int(a)?.checked_sub(fold_int(b)?),
@@ -6467,6 +6514,13 @@ struct CgLocal {
 
 fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     match e {
+        Expr::Seq(es) => {
+            for e in es {
+                if expr_ty(e, env, sigs) == Ty::F64 {
+                    cg_f64_load(e, env, sigs, strs, out, target);
+                } else { cg_value(e, env, sigs, strs, out, target); }
+            }
+        }
         Expr::SelfObj | Expr::SelfGet(_) | Expr::Send(_, _, _) => unreachable!("rejected before codegen"),
         Expr::ByRef(_) => unreachable!("`@` arguments are emitted at the call site"),
         Expr::Int(v) => {
@@ -7958,6 +8012,7 @@ fn cg_array_value(e: &Expr, off: usize, env: &[CgLocal], sigs: &[Sig], strs: &mu
 
 fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
     match e {
+        Expr::Seq(es) => expr_ty(es.last().expect("nonempty"), env, sigs),
         Expr::Float(..) | Expr::FloatV(..) => Ty::F64,
         Expr::Int(_) | Expr::Inc(..) => Ty::I64,
         Expr::Bin(op, a, b) => {
@@ -8050,6 +8105,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
 fn byref_names_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
     fn ex(e: &Expr, out: &mut std::collections::HashSet<String>) {
         match e {
+            Expr::Seq(es) => { for x in es { ex(x, out); } }
             Expr::Call(_, args) => {
                 for a in args {
                     match a {
@@ -8093,6 +8149,7 @@ fn byref_names_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
 fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String, Vec<bool>)> {
     fn ex(e: &Expr, out: &mut std::collections::BTreeSet<(String, Vec<bool>)>) {
         match e {
+            Expr::Seq(es) => { for x in es { ex(x, out); } }
             Expr::Call(id, args) => {
                 let mask: Vec<bool> = args.iter().map(|a| matches!(a, Expr::ByRef(_))).collect();
                 if mask.iter().any(|b| *b) {
@@ -10406,8 +10463,10 @@ fn collect_blocks_expr(e: &Expr, out: &mut Vec<(usize, Vec<String>, Vec<Expr>)>)
     }
     if matches!(e, Expr::SelfObj | Expr::SelfGet(_)) { return; }
     match e {
+        Expr::Seq(es) => { for x in es { collect_blocks_expr(x, out); } }
         Expr::BlockLit(id, ps, body) => {
             out.push((*id, ps.clone(), body.clone()));
+            for e in body { collect_blocks_expr(e, out); }
         }
         Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => { collect_blocks_expr(a, out); collect_blocks_expr(b, out); }
         Expr::Call(_, args) => { for a in args { collect_blocks_expr(a, out); } }
@@ -15419,6 +15478,7 @@ fn main() {
             }
         }
         match e {
+            Expr::Seq(es) => { for x in es { scan_byref_expr(x, cur, params, names, variants); } }
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => { scan_byref_expr(a, cur, params, names, variants); scan_byref_expr(b, cur, params, names, variants); }
             Expr::LNot(a) => scan_byref_expr(a, cur, params, names, variants),
             Expr::Call(_, args) => { for a in args { if !matches!(a, Expr::ByRef(_)) { scan_byref_expr(a, cur, params, names, variants); } } }

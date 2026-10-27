@@ -1,0 +1,175 @@
+adir.prg|error: line 25: unexpected token Comma in expression
+ains.prg|error: line 12: unknown function `aclone` (must be defined before use)
+alias.prg|error: line 12: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+aliaslck.prg|error: line 14: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+altd.prg|error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+and_or.prg|error: line 20: argument 1 of `andor` must be a boolean, got an integer
+array.prg|error: line 7: array elements must be integers in this increment
+array16.prg|error: line 24: expected `name[idx, ...] := expr`
+arrayidx.prg|error: line 13: unexpected token Eq in expression
+arrays.prg|error: line 24: expected `name[idx, ...] := expr`
+arreval.prg|error: line 5: unknown function `aeval` (must be defined before use)
+arrindex.prg|error: line 5: unexpected token Comma in expression
+asort.prg|error: line 12: unexpected token Comma in expression
+base2.prg|error: line 9: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error
+base64.prg|error: line 57: hash values are tagged scalars (integer, logical or NIL) in this increment
+begin.prg|error: line 10: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+big5_gen.prg|error: line 57: trailing tokens after expression
+box.prg|error: line 64: unknown function `dispbox` (must be defined before use)
+byref.prg|error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+calling.prg|COMPILES
+cdow.prg|error: line 3: unknown function `cmonth` (must be defined before use)
+cgi.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+clasinh.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+clasinit.prg|error: line 25: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+clasname.prg|error: line 13: unknown function `aeval` (must be defined before use)
+classch.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+classes.prg|error: line 15: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+cls.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+clsccast.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+clsdata.prg|error: line 15: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+clsicast.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+clsnv.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+clsscast.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+clsscope.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+cmphello.prg|error: line 15: unknown function `hb_run` (must be defined before use)
+codebl.prg|error: line 1: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works
+codebl2.prg|error: line 14: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error
+codebloc.prg|error: line 48: expression ++/-- requires a variable lvalue in this increment
+com.prg|error: line 94: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+comments.prg|COMPILES
+cpinfo.prg|error: line 96: unterminated dotted word `.txt` (Harbour logical tokens need a closing dot)
+curdirt.prg|error: line 3: unknown function `curdir` (must be defined before use)
+dates.prg|error: line 12: trailing tokens after expression
+dates2.prg|error: line 3: unknown function `hb_stod` (must be defined before use)
+dates3.prg|error: line 7: unknown function `set` (must be defined before use)
+datetime.prg|error: line 59: unknown function `outstd` (must be defined before use)
+dbeval.prg|error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+dbgcls.prg|error: line 1: unknown directive #pragma in this PoC
+dbi.prg|error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+ddate.prg|error: line 27: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error
+declare.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+define.prg|error: line 2: unknown directive #warning in this PoC
+delim.prg|error: line 45: unterminated dotted word `.txt` (Harbour logical tokens need a closing dot)
+destruct.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+dev.prg|error: line 10: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)
+directry.prg|error: line 62: `==` against NIL is measured only for numbers, strings, NIL and dynamic casillas (hk128/hk129)
+diskspac.prg|error: line 100: unknown function `empty` (must be defined before use)
+docase.prg|COMPILES
+dupvars.prg|error: line 7: duplicate local `a`
+dyn.prg|error: line 124: character not allowed `;` (U+003B)
+dynobj.prg|error: line 22: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+dynsym.prg|error: line 3: unknown function `__dynscount` (must be defined before use)
+errsys.prg|error: line 12: unknown function `hb_symbol_unused` (must be defined before use)
+exit.prg|COMPILES
+extend1.prg|error: line 39: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+fib.prg|error: line 6: `fibr` never returns a value; its result cannot be used in an expression in this PoC
+fileio.prg|error: line 9: unknown function `fcreate` (must be defined before use)
+fileio2.prg|error: line 9: unknown function `fcreate` (must be defined before use)
+files.prg|error: line 19: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+flink.prg|error: line 59: unknown function `hb_memowrit` (must be defined before use)
+for.prg|error: line 8: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works
+foreach2.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+fornext.prg|COMPILES
+funcarr.prg|error: line 13: trailing tokens after expression
+fwdref.prg|error: line 5: codeblock captures are not in this increment (`nspan` is not a codeblock parameter)
+gfx2.prg|error: line 37: macro hb_gfxMakeColor takes 4 argument(s), got 3
+gtxfnt.prg|error: line 122: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+guestbk.prg|error: line 66: classes are not in this increment yet (parser landed; runtime representation pending)
+hbdoc.prg|error: line 149: expected `,` or `)` in call arguments, got Some(Assign)
+hbinline.prg|error: line 11: character not allowed `;` (U+003B)
+hello.prg|COMPILES
+hrb.prg|error: line 102: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error
+hrbext.prg|error: line 12: INIT/EXIT PROCEDURE is not in this increment (startup/teardown ordering needs its own design)
+hsx.prg|error: line 140: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+html.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+ifelse.prg|COMPILES
+ifinline.prg|error: line 10: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+inherit.prg|error: line 136: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+inhprob.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+inifile.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+inifiles.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+initexit.prg|error: line 4: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works
+initproc.prg|error: line 1: INIT/EXIT PROCEDURE is not in this increment (startup/teardown ordering needs its own design)
+inline.prg|error: line 18: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+inline_c.prg|error: line 9: unknown directive #pragma in this PoC
+iotcp.prg|error: line 486: unsupported escape \r
+ipclnt.prg|error: line 76: expected `,` or `)` in call arguments, got Some(Assign)
+keywords.prg|error: line 761: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error
+langapi.prg|error: line 4: REQUEST `hb_lang_hu` cannot be honored: the subset has no module linking; only functions defined in this file may be requested
+lbl.prg|error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+libname.prg|error: line 59: unknown function `outstd` (must be defined before use)
+linecont.prg|error: line 6: character not allowed `;` (U+003B)
+lnlenli1.prg|error: line 14: expected `,` or `}` in the array literal, got None
+lnlenli2.prg|COMPILES
+longdev.prg|error: line 17: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)
+longstr.prg|error: line 57: unterminated string
+longstr2.prg|error: line 18: unknown function `outerr` (must be defined before use)
+macro.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+math.prg|error: line 65: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+mem.prg|error: line 10: unknown function `hb_symbol_unused` (must be defined before use)
+memfile.prg|error: line 18: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+memmgr.prg|error: line 100: error in #if expression
+memory.prg|error: line 63: unknown function `memory` (must be defined before use)
+memvar.prg|error: line 36: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+money.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+multiarg.prg|error: line 10: `shoutarg` takes 11 argument(s), got 4
+nums.prg|COMPILES
+objarr.prg|error: line 15: trailing tokens after expression
+objasign.prg|error: line 21: expression ++/-- requires a variable lvalue in this increment
+objects.prg|error: line 97: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+omacro.prg|error: line 17: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error
+op.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+os.prg|error: line 5: unknown function `os` (must be defined before use)
+osshell.prg|error: line 18: statement not in the subset (LogNot)
+output.prg|error: line 9: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)
+overload.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+parexpr.prg|error: line 9: unknown directive #pragma in this PoC
+passref.prg|COMPILES
+persist.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+pipes.prg|error: line 177: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+pp.prg|error: line 10: unknown result marker <"z"> (Harbour: E0008)
+ppapi.prg|error: line 10: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+pragma.prg|error: line 3: unknown directive #pragma in this PoC
+procline.prg|error: line 3: unknown function `procline` (must be defined before use)
+procname.prg|error: line 31: unknown function `empty` (must be defined before use)
+rdd.prg|error: line 10: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)
+rdd2.prg|error: line 222: incomplete statement for the command used here (Harbour: E0020)
+readhrb.prg|error: line 93: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works
+recursiv.prg|error: line 8: `f` never returns a value; its result cannot be used in an expression in this PoC
+returns.prg|COMPILES
+round.prg|error: line 11: type mismatch in assignment to `value`
+rpt.prg|error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+say.prg|error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+sdf.prg|error: line 46: unterminated dotted word `.txt` (Harbour logical tokens need a closing dot)
+set.prg|error: line 8: statement not in the subset (At)
+set_num.prg|error: line 7: undefined variable `_set_count`
+sha1.prg|error: line 8: unknown function `hb_sha1` (must be defined before use)
+sha2.prg|error: line 53: expected `name[idx] := expr`
+sortbug.prg|error: line 6: character not allowed `;` (U+003B)
+sound.prg|error: line 3: unknown function `seconds` (must be defined before use)
+speed.prg|error: line 3: unexpected token Comma in expression
+speedstr.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+speedtst.prg|error: line 110: unknown result marker <.info.> (Harbour: E0008)
+statfun.prg|COMPILES
+statics.prg|error: line 4: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works
+statics1.prg|error: line 5: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works
+statics2.prg|error: line 5: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works
+statinit.prg|error: line 6: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works
+str.prg|error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+strdelim.prg|error: line 5: unexpected token LBracket in expression
+stripem.prg|error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)
+switch.prg|error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+symbolt.prg|error: line 6: classes are not in this increment yet (parser landed; runtime representation pending)
+t1.prg|error: line 6: codeblock bodies are integer expressions in this increment
+test.prg|error: line 18: `for each` needs a flat or string array or a hash in this increment
+ticktime.prg|error: line 6: trailing tokens after expression
+uc16_gen.prg|error: line 34: trailing tokens after expression
+use.prg|error: line 62: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+utf8at.prg|error: line 86: unexpected token Comma in expression
+vars.prg|error: line 23: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+vec1.prg|error: line 6: unterminated string
+version.prg|error: line 8: unknown function `version` (must be defined before use)
+vmasort.prg|error: line 10: unknown function `val` (must be defined before use)
+warnings.prg|error: line 3: unknown directive #pragma in this PoC
+while.prg|COMPILES

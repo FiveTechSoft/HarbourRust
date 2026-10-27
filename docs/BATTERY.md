@@ -3374,3 +3374,39 @@ included: Harbour median0.027322761s,
 HarbourRust0.002888720s, about9.46x faster
 for this workload only. Raw pairs/output retained in sondas/hk430-linux-benchmark.json.
 No general or Windows speed claim.
+
+
+## 64ab - numeric/logical parenthesized comma expressions
+
+`(e1, e2, ..., last)` evaluates in order and produces the LAST value. The
+native AST/codegen now supports numeric/logical items only (I64/F64/Bool),
+with a named rejection for Dyn, strings, arrays and block values in the
+list. No assignment expressions, generalized lvalues, evaluator, RC or new
+storage model. Ownership effects inside numeric-returning calls still
+apply: a consumed string cannot be used later in the list or afterward.
+The checker uses a sequential temporary move environment to detect this.
+
+hk433/hk435/hk436/hk438/hk440/hk441/hk442 byte-match compiled Harbour -gtstd.
+They cover arithmetic/float channels, comparisons, lazy IIF, short-circuit
+logic, WHILE, ordinary/byref parameters, numeric calls consuming a string,
+blocks/nested Eval, index expressions and list statements. Earlier effects
+are NOT constant-folded away: fold_int records only final numeric print
+provenance, so `(x++,12345678901)` retains both the mutation and Harbour's
+literal-width output. Float inference follows the final item, not prefixes.
+Nested block collection recurses through body expressions; the discovered
+missing-label regression is pinned by t948.
+
+hk432 strings/Dyn, hk434 mixed parameter pinning, hk437 unpinned parameter
+and hk439 Len-only string expectation remain rejected, not marked exact.
+Distinct successful probes and all initial outputs remain in sondas.
+New t929-t948 add20 cases:943 actual manifest rows +3harness =946 PASS on
+Linux and Windows/Wine. Frozen175 remains13COMPILES. Seven originals move
+past comma parsing to their next real type/function/subsystem limits;
+no new original completion is claimed.
+
+hk441:1M list statements with two postincrements, exact checksum2000000,
+finalFORcounter1000001. Nine alternating uninstrumented Linux pairs,
+including startup: Harbour median0.030397646s,
+HarbourRust0.002380184s, about12.77x faster
+in this workload only. Raw pairs/output in sondas/hk441-linux-benchmark.json;
+no universal or Windows performance claim.
