@@ -3694,3 +3694,21 @@ runtime-verified original here is ONLY mem.prg. Compilation acceptance is
 not an original runtime compatibility percentage.
 No successful generated code changes for existing sources without this
 macro: hk455 assembly byte-identical; retained speed measurements unchanged.
+
+
+## 64aq - classify original errsys as a registered error-mode case
+
+The default macro from64ap also makes stock errsys.prg compile. This is
+not a successful Harbour-equivalent run: the original deliberately applies
+n++ to an uninitialized NIL. A bounded3second Harbour -gtstd run shows
+Error BASE/1086 Argument error: ++ and an interactive Quit dialog, then
+hits timeout124; that is NOT a successful oracle. HarbourRust takes the
+existing clean error path, exits1, and prints Type error: NIL used as a
+number with main's original line13. The input is now a permanent posx
+regression t1030, UNCHANGED original SHA256
+1061bef9a0d5ea39694f7d2b25928faa44d3d78a5f05cc6aee3bdb28dc56bb73.
+No compiler/runtime source changed. This records the established failure
+mode, not a new fix or interactive error-system implementation. Frozen175
+stays19COMPILES; only18 under the prior accumulated successful-original
+count, plus this explicitly DIFFERENT error-mode original.1025 manifest
+cases +5harness=1030PASS Linux and Windows/Wine. No new speed claim.

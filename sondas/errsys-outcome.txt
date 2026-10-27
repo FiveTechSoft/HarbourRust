@@ -1,0 +1,5 @@
+Harbour original errsys.prg, -gtstd, bounded3seconds:
+stdout contains Error BASE/1086 Argument error: ++, interactive Quit dialog.
+Process reached timeout124. Not a successful output match.
+HarbourRust same original: clean exit1 with NIL number error and line13.
+Registered error-mode difference, not a new successful original.

@@ -1,0 +1,5 @@
+Harbour 3.2.1dev (r2610242111)
+Copyright (c) 1999-2025, https://harbour.github.io/
+Compiling '/home/sandbox/win/harbour-core/tests/errsys.prg'...
+Lines 17, Functions/Procedures 1
+Generating C source output to '/tmp/hbmk_yv6j2d.dir/errsys.c'... Done.
