@@ -2824,8 +2824,9 @@ outside strings/comments, but an old probe (b39c, lost to a sandbox
 wipe) claimed even a COMMENT after the `;` blocked the join. Fresh
 measurement on the pinned hbmk2 says the opposite: hk362 (`; //
 comment`) and hk367 (`; /* block */`, even a MULTI-LINE block
-comment with code after its close) JOIN, while hk368 confirms CODE
-after the `;` is a Harbour E0030 syntax error. The guard is removed;
+comment with code after its close) JOIN, while hk368 confirms an INCOMPLETE
+expression before a statement separator is a Harbour E0030 syntax error
+(64bb adds complete same-line statements). The guard is removed;
 comments are stripped before the check, so a stripped line ending in
 `;` had only whitespace/comments after it by construction. Measured
 rules preserved: tokens never merge across the break (hk363: `ab;` +
@@ -2837,7 +2838,7 @@ probe's wrong behavior; its new expected output is hk362's measured
 one (`\n         3`), same maneuver as the t783 flip in 63zh.
 
 Tests: t816-t819 pos (mirrors of hk357/hk362/hk367/hk364), t820-t822
-neg (code after `;`, unterminated string, no token merge), t622 row
+neg (incomplete expression before `;`, unterminated string, no token merge), t622 row
 flip. BATTERY 810 -> 817 runner rows + ABI ALL GREEN (Linux native
 and Wine with Linux oracle). Sweep: 9 COMPILES unchanged;
 keywords.prg - a NEGATIVE original (Harbour itself rejects it:
@@ -3950,3 +3951,26 @@ unsupported. Five cases t1076-t1080 give1075manifest+5harness=1080PASS
 Linux/Wine. Frozen175 stays20COMPILES (19 accumulated successful originals
 plus the separate errsys failure-mode original). No new complete original
 or speed claim. Existing hk455 assembly remains byte-identical.
+
+
+### 64bb: semicolon-separated statements (hk478-hk482)
+
+Complete statements may share a physical line with an unquoted `;` between
+statements. Each source statement matches preprocessor commands separately;
+expanded macro/command results may also contain statement separators. Ordinary
+single/double quoted strings keep embedded semicolons as data. Physical trailing
+semicolons still join the next physical line before statement splitting.
+ProcLine retains the physical line, including the final line of a continuation.
+
+The old hk368/t112/t820 probes have an incomplete expression before the separator;
+they remain rejected, now with an incomplete-expression diagnostic rather than a
+blanket rejection of the separator. t03 remains rejected for trailing expression
+tokens. Unbalanced expressions remain errors. A complete statement followed by a final
+semicolon at EOF is accepted, as measured by hk482.
+This does not add bracket strings, escape strings, new storage or runtime helpers.
+
+Six new manifest cases (t1081-t1086), checked against Harbour hk478-hk482, bring
+the full Linux/Wine battery to 1081 manifest cases plus five harness checks.
+The frozen 175-original sweep stays at 20 COMPILES, including errsys's separately
+registered different failure mode; no new original execution success is claimed.
+The hk455 no-feature assembly is unchanged; no new timing claim is made.

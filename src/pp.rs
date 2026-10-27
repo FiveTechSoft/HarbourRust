@@ -920,6 +920,21 @@ fn strip_line(raw: &str, in_block: &mut bool, block_line: &mut usize, line: usiz
     out
 }
 
+// Physical trailing semicolons are continuation markers, consumed earlier.
+// Remaining unquoted semicolons separate statements, including macro results.
+fn split_statements(text: &str) -> Vec<&str> {
+    let mut q = None;
+    let mut start = 0;
+    let mut parts = Vec::new();
+    for (i,c) in text.char_indices() {
+        if let Some(v) = q { if c == v { q = None; } }
+        else if c == '\'' || c == '"' { q = Some(c); }
+        else if c == ';' { parts.push(&text[start..i]); start = i+1; }
+    }
+    parts.push(&text[start..]);
+    parts
+}
+
 pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Result<(), String> {
     if depth > 16 { return Err("too many nested #include levels".to_string()); }
     let text = fs::read_to_string(path).map_err(|e| format!("cannot read {}: {}", path, e))?;
@@ -931,7 +946,9 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
     // the `;` - hk362 measures `; // comment` joining (prints 3), hk367
     // measures `; /* block */` joining, even a MULTI-LINE block comment
     // with code after its close; hk368 measures CODE after the `;` as a
-    // Harbour E0030 syntax error. (The old b39c probe claimed even a
+    // Harbour E0030 syntax error for an INCOMPLETE first expression.
+    // Complete statements separated by semicolons are supported below.
+    // (The old b39c probe claimed even a
     // comment blocked the join; hk362/hk367 on the pinned hbmk2 supersede
     // it - the original probe text was lost to a sandbox wipe, so the
     // fresh oracles are the record.) Comments are stripped before this
@@ -969,7 +986,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                 if !ch.is_whitespace() { last_non_ws = Some(ch); }
             }
             if in_str || last_non_ws != Some(';') { break; }
-            if li + 1 >= raws.len() { break; } // dangling `;` at EOF: leave it; the lexer reports it
+            if li + 1 >= raws.len() { break; } // Harbour accepts a final separator at EOF (hk482).
             joined.pop(); // the ';' itself (it is the last char only if no trailing ws)
             while joined.ends_with(|c: char| c.is_whitespace()) { joined.pop(); }
             if joined.ends_with(';') { joined.pop(); }
@@ -981,27 +998,31 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
         let t = raw.trim_start();
         if !t.starts_with('#') {
             if emitting {
-                // commands can expand into other commands (probe c04):
-                // re-match the result, capped like macro expansion
-                let mut cur = t.to_string();
-                let mut depth = 0usize;
-                loop {
-                    match apply_commands(&cur, &pp.cmds, line)? {
-                        Some(x) => {
-                            depth += 1;
-                            if depth > 16 { return Err(format!("line {}: command expansion too deep (recursive command?)", line)); }
-                            cur = x;
+                for statement in split_statements(t) {
+                    // Match each source statement separately. Expansion can
+                    // itself emit separators; split again only after expansion.
+                    let mut cur = statement.trim().to_string();
+                    let mut depth = 0usize;
+                    loop {
+                        match apply_commands(&cur, &pp.cmds, line)? {
+                            Some(x) => {
+                                depth += 1;
+                                if depth > 16 { return Err(format!("line {}: command expansion too deep (recursive command?)", line)); }
+                                cur = x;
+                            }
+                            None => break,
                         }
-                        None => break,
+                    }
+                    let expanded = expand(&cur, &pp.defs, line)?;
+                    for part in split_statements(&expanded) {
+                        for _ in 0..part.split('\n').count() {
+                            pp.origins.push((path.to_string(), line));
+                            pp.end_lines.push(li + 1);
+                        }
+                        out.push_str(part);
+                        out.push('\n');
                     }
                 }
-                let expanded = expand(&cur, &pp.defs, line)?;
-                for _ in 0..expanded.split('\n').count() {
-                    pp.origins.push((path.to_string(), line));
-                    pp.end_lines.push(li + 1);
-                }
-                out.push_str(&expanded);
-                out.push('\n');
             }
             li += 1;
             continue;

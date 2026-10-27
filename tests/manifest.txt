@@ -2,7 +2,7 @@ pos ejemplos/hola.hb \nresultado de z:\n        32\nhola desde una funcion
 neg ejemplos/prestamo_roto.hb line 5: use of moved value
 neg tests/t01_injection_colons.hb trailing tokens after expression
 neg tests/t02_injection_unsafe.hb trailing tokens after expression
-neg tests/t03_injection_macro.hb U+003B
+neg tests/t03_injection_macro.hb trailing tokens after expression
 neg tests/t04_unicode_ident.hb U+00F1
 neg tests/t05_keyword_boundary.hb statement not in the subset
 neg tests/t06_undefined_var.hb undefined variable
@@ -112,7 +112,7 @@ neg tests/t108_pp_uncommand_neg.hb statement not in the subset
 pos tests/t109_pp_include_angle.hb \n         9
 neg tests/t110_pp_include_angle_neg.hb cannot find include
 pos tests/t111_pp_semicolon.hb \n         3\na;b\n         6
-neg tests/t112_pp_semicolon_neg.hb character not allowed
+neg tests/t112_pp_semicolon_neg.hb incomplete expression
 pos tests/t113_pp_empty_result.hb \n         6
 neg tests/t114_pp_bad_marker.hb bad match marker
 pos tests/t115_pp_abbrev.hb \n         1\n         2\n         3\n        14
@@ -815,7 +815,7 @@ pos tests/t816_cont_basic.hb \n         3\nabcdef
 pos tests/t817_cont_comment.hb \n         3
 pos tests/t818_cont_block.hb \n         3\n         7
 pos tests/t819_cont_chain.hb \n         6
-neg tests/t820_cont_code_after_neg.hb character not allowed `;`
+neg tests/t820_cont_code_after_neg.hb incomplete expression
 neg tests/t821_cont_string_neg.hb unterminated string
 neg tests/t822_cont_nomerge_neg.hb expected `local name [:= expr]`
 pos tests/t823_docase_basic.hb \ntwo\nsecond line\nafter
@@ -1076,3 +1076,9 @@ neg tests/t1077_bitindex_dynamic_neg.hb bit index must be a literal from 0 to 63
 neg tests/t1078_bitindex_range_neg.hb bit index must be a literal from 0 to 63
 neg tests/t1079_bitindex_type_neg.hb value must be an integer
 neg tests/t1080_bitindex_arity_neg.hb takes two arguments
+pos tests/t1081_semicolon_statements.hb \nA\n         1 a;b\nif\n         1\n         2
+pos tests/t1082_semicolon_expansion_lines.hb \nmacro1\nmacro2\ncommand\nend\n         6\n         6\n         3\n         8
+neg tests/t1083_semicolon_incomplete_neg.hb incomplete expression
+neg tests/t1085_semicolon_unbalanced_neg.hb missing )
+pos tests/t1084_semicolon_quotes_comments.hb \n         2 a;b x;/*notcomment*/\nquoted;macro\nsecond\nend\nnext
+pos tests/t1086_semicolon_eof.hb \n         1
