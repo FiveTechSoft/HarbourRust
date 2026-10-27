@@ -9,7 +9,7 @@
 set -e
 cd "$(dirname "$0")/.."
 mkdir -p gen
-printf 'function qprobe()\nreturn QQOut()\nfunction bprobe()\nlocal b := {|n| QQOut(), n+1}\nreturn Eval(b, 6)\nfunction main()\nreturn\n' > gen/abi_empty.hb
+printf 'function qprobe()\nreturn QQOut()\nfunction bprobe()\nlocal b := {|n| QQOut(), n+1}\nreturn Eval(b, 6)\nfunction dynshow(x)\nreturn QQOut(x)\nfunction nprobe()\nreturn dynshow(AllTrim(" "))\nfunction main()\nreturn\n' > gen/abi_empty.hb
 ./hbc gen/abi_empty.hb gen/abi_l.s --target=linux -I tests >/dev/null
 ./hbc gen/abi_empty.hb gen/abi_w.s --target=windows -I tests >/dev/null
 
@@ -1708,6 +1708,50 @@ hbc_abi_test:
     mov -112(%rbp), %rdi
     call hbc_freestr
     call abi_check
+    call hbc_str_cache_flush
+    call abi_check
+    # Freed-block cache: simultaneous live copies must be distinct.
+    lea abi_cache_src(%rip), %rdi
+    mov $8, %esi
+    call hbc_strcpy
+    mov %rax, -112(%rbp)
+    call abi_check
+    lea abi_cache_src(%rip), %rdi
+    mov $8, %esi
+    call hbc_strcpy
+    cmp -112(%rbp), %rax
+    je abi_fail_chr
+    mov %rax, -120(%rbp)
+    call abi_check
+    mov -112(%rbp), %rdi
+    call hbc_freestr
+    call abi_check
+    mov -120(%rbp), %rdi
+    call hbc_freestr
+    call abi_check
+    lea abi_cache_src(%rip), %rdi
+    mov $8, %esi
+    call hbc_strcpy
+    cmp -112(%rbp), %rax
+    jne abi_fail_chr
+    cmpq $8, -16(%rax)
+    jne abi_fail_chr
+    cmpq $8, -8(%rax)
+    jne abi_fail_chr
+    cmpb $97, (%rax)
+    jne abi_fail_chr
+    mov %rax, -112(%rbp)
+    call abi_check
+    # A cache flush cannot release this still-live allocation.
+    call hbc_str_cache_flush
+    call abi_check
+    mov -112(%rbp), %rdi
+    cmpb $97, (%rdi)
+    jne abi_fail_chr
+    call hbc_freestr
+    call abi_check
+    call hbc_str_cache_flush
+    call abi_check
     # Generated QQOut expression: NIL pair, no extra runtime helper.
     movabs $0x6161616161616101, %rax
     movq %rax, %xmm6
@@ -1715,6 +1759,12 @@ hbc_abi_test:
     movq %rax, %xmm7
     call hbc_fn_bprobe
     cmp $7, %rax
+    jne abi_fail_chr
+    call abi_check
+    call hbc_fn_nprobe
+    cmp $1, %rax
+    jne abi_fail_chr
+    test %rdx, %rdx
     jne abi_fail_chr
     call abi_check
     call hbc_fn_qprobe
@@ -2093,6 +2143,8 @@ ASM_EOF
 .Labi_s6:    .ascii "abcdef"
 .Labi_f_dc: .ascii "ABI FAIL dcp\n"
 .Labi_f_hv: .ascii "ABI FAIL hv\n"
+    .section .rodata
+abi_cache_src: .byte 97,98,99,100,101,102,103,104
 ASM_EOF
 }
 

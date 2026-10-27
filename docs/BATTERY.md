@@ -3150,3 +3150,101 @@ pairs, checksum1000000. Harbour median0.054402s, HarbourRust0.003688s,
 ratio14.75x for this empty-call workload including startup, not console I/O
 throughput or general application speed. Outputs match exactly. Raw samples
 retained with checkpoint. No Windows speed claim.
+
+## 63zw - expression print-only parameter evidence and temporary cleanup
+
+Checkpoint based on 771e152. QOut/QQOut expressions now
+record the same delayed weak print-only parameter evidence as ?/??. The
+whole body is scanned before selecting the existing Dyn fallback: stronger
+integer, float or string evidence wins regardless of statement order.
+Nested calls and forwarding reuse the current inference pass. There is no
+new value representation or interpreter. Copy-only parameter inference,
+float-in-Dyn and static-array-to-Dyn boundaries remain named rejections.
+
+The existing StrOwn-to-Dyn call boundary clones a string for the callee.
+It now frees an owned input TEMPORARY after that copy; a named owned string
+remains valid in its caller. This also fixes an old statement-print-only
+case: the unmodified 771e152 compiler leaks two inputs in t883 (memcheck2),
+whereas the local compiler returns memcheck0. No aliasing or MOVE rule is
+changed, and no allocation is silently shared. Tests cover Chr, empty and
+nonempty AllTrim, nested owned inputs and a preserved named source.
+
+hk400-hk404 are byte-identical to Harbour on Linux. t876-t884 add nine
+regressions; 879 manifest rows + separate ABI = 880 PASS, Linux and Windows
+via Wine. ABI also calls generated dynshow(AllTrim(" ")) and checks its
+NIL pair, stack/GPR and XMM sentinels. Sweep stays exactly 12/175 with no
+new original or changed first diagnostic. Final-block NIL/Eval, FOR EACH
+string, expression ++/-- and output limits from 63zv remain open.
+
+Performance caveat: hk404 performs 1million show("") calls, each using the
+existing copied-string Dyn parameter, QQOut and a NIL check. Seven alternating
+uninstrumented Linux pairs give Harbour median 0.121516s and HarbourRust
+10.904254s: HarbourRust is about 89.7x SLOWER on this workload, including
+startup, checksum1000000 on both. This is not console throughput or a
+Windows speed claim. The generated boundary copies and frees even an empty string. The
+existing statement-print-only control has base median1.185059s versus
+local1.137277s for100k calls (five alternating pairs); that does not show a
+regression from this change or by itself isolate the cause. This newly compilable program has no old binary to
+compare against; an existing statement-print-only boundary control and raw
+paired samples are retained beside hk404. No performance fix is claimed.
+
+## 63zx - bounded reuse of freed short-string blocks
+
+Checkpoint after63zw. The unfavorable hk404 samples
+from63zw remain intact. An eight-slot cache stores ONLY logically freed
+string allocations with capacity <=256, indexed by capacity mod8. Reuse
+requires exact capacity equality and removes the entry before returning it
+as a fresh uniquely owned string. Miss, collision, occupied slot and >256
+use the existing OS allocation/free paths. Capacity/length headers and
+caller-to-Dyn copies are unchanged. No live storage is shared, no reference
+count or immortal empty-string singleton is introduced. This is a bounded
+free-block cache, not a general allocator or threading design. No concurrent
+runtime is supported by the current compiler.
+
+Each cache hit re-registers a live allocation and each logical free removes
+it; alloc/free counters retain ownership meaning. Cached blocks are not
+live leaks: normal _start completion flushes every cached mapping/heap
+block, without modifying live-object registry/counters. Controlled error
+exit relies on OS process cleanup, as before. At most eight blocks of up to
+272requested bytes are retained during execution; Linux mmap rounding can
+retain up to eight pages. Large strings and collision-heavy distributions
+can still have the old OS cost. No general speed claim.
+
+Tests885-887 cover empty simultaneous live values, named-source preservation,
+short-capacity collisions, all eight buckets,256/257boundary and memcheck0.
+ABI checks independent simultaneous copies, exact-pointer reuse only after
+free, correct headers and bytes, flush preserving a live copy and GPR/stack
+preservation. Separate cache_registry.sh, run by the battery, checks logical
+balance, cache flush emptiness, and rejection of double-free or wrong-size
+free even for cached entries on both Linux and Windows/Wine. No production
+helper bypasses the instrumented live-pointer registry.
+
+Same unchanged hk404 source,1million empty Dyn-copy calls+QQOut/NIL checks:
+three alternating old/Harbour/candidate Linux triples, uninstrumented,
+checksum1000000 and byte-identical outputs. Medians old6.888951s,
+Harbour0.101726s,candidate0.137492s: about50.1x faster than old in these
+paired runs, still about1.35x slower than Harbour. Earlier seven new
+Harbour/candidate pairs give0.097530s/0.136159s. The original unfavorable
+10.904254s baseline is retained, not substituted or used as the main
+improvement ratio. These include process startup, not general application
+speed or Windows speed measurements.
+
+A1k-call strace control goes from1000mmap+1000munmap to1mmap+1munmap
+(including normal-exit flush);1003write calls remain unchanged. Silent
+Dyn-boundary controls hk405/hk406 improve8/256byte strings. The initial
+257byte control is slower(candidate0.084571s vsold0.071420s/10k), so no
+improvement is claimed outside the cache and a15-pair recheck is retained.
+
+Long-output probes with Harbour gtstd inserted80-column wrapping absent
+from BOTH old and candidate outputs. The failed hk408 long-output source
+and all three outputs are retained as evidence; a distinct revised hk408
+uses length/equality checks instead, and hk409 checks empty/multiple-live
+copies. Those revised probes byte-match Harbour, not retroactive proof of
+long-output equivalence. Console wrapping remains a named preexisting limit.
+
+The257byte15-pair recheck medians are old0.071269s/candidate0.066542s,
+in contrast to the smaller earlier sample. This is consistent with noise
+rather than a stable large regression, but does not demonstrate benefit
+for >256. Both complete sample sets are retained. Final checkpoint battery:
+882manifest rows + ABI + cache registry harness =884PASS Linux/Wine.
+Sweep12/175 unchanged; no syntax or original completion is claimed here.

@@ -2762,7 +2762,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             _ => Ok(()),
         }
     }
-    fn walk(f: &Func, e: &Expr, sigs: &[Sig], lit: &[(String, Ty)], pin: &mut Vec<Option<Ty>>, n: usize) -> Result<(), String> {
+    fn walk(f: &Func, e: &Expr, sigs: &[Sig], lit: &[(String, Ty)], pin: &mut Vec<Option<Ty>>, printed: &mut Vec<bool>, n: usize) -> Result<(), String> {
         match e {
             Expr::Bin(op, a, b) => {
                 // String `+` (oracle hk215): a `+` with string evidence on
@@ -2786,8 +2786,8 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     pin_vars(f, a, Ty::I64, pin, n)?;
                     pin_vars(f, b, Ty::I64, pin, n)?;
                 }
-                walk(f, a, sigs, lit, pin, n)?;
-                walk(f, b, sigs, lit, pin, n)
+                walk(f, a, sigs, lit, pin, printed, n)?;
+                walk(f, b, sigs, lit, pin, printed, n)
             }
             Expr::Cmp(_, a, b) => {
                 let ta = match a.as_ref() {
@@ -2808,17 +2808,26 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 };
                 if let Some(t) = ta { pin_vars(f, b, t, pin, n)?; }
                 if let Some(t) = tb { pin_vars(f, a, t, pin, n)?; }
-                walk(f, a, sigs, lit, pin, n)?; walk(f, b, sigs, lit, pin, n)
+                walk(f, a, sigs, lit, pin, printed, n)?; walk(f, b, sigs, lit, pin, printed, n)
             }
             Expr::Log(_) => Ok(()),
-            Expr::LNot(a) => { pin_vars(f, a, Ty::Bool, pin, n)?; walk(f, a, sigs, lit, pin, n) }
+            Expr::LNot(a) => { pin_vars(f, a, Ty::Bool, pin, n)?; walk(f, a, sigs, lit, pin, printed, n) }
             Expr::LAnd(a, b) | Expr::LOr(a, b) => {
                 pin_vars(f, a, Ty::Bool, pin, n)?;
                 pin_vars(f, b, Ty::Bool, pin, n)?;
-                walk(f, a, sigs, lit, pin, n)?;
-                walk(f, b, sigs, lit, pin, n)
+                walk(f, a, sigs, lit, pin, printed, n)?;
+                walk(f, b, sigs, lit, pin, printed, n)
             }
             Expr::Call(id, args) => {
+                if is_builtin(id, "qout") || is_builtin(id, "qqout") {
+                    for a in args {
+                        if let Expr::Var(v) = a {
+                            if let Some(i) = is_param(f, v) { printed[i] = true; }
+                        }
+                        walk(f, a, sigs, lit, pin, printed, n)?;
+                    }
+                    return Ok(());
+                }
                 if is_builtin(id, "hb_memcheck") {
                     return Ok(());
                 }
@@ -2841,14 +2850,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                         }
                         _ => pin_vars(f, &args[0], Ty::DArr, pin, n)?,
                     }
-                    return walk(f, &args[0], sigs, lit, pin, n);
+                    return walk(f, &args[0], sigs, lit, pin, printed, n);
                 }
                 if ["asc", "ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) {
-                    for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,n)?; }
+                    for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
                 if is_builtin(id, "chr") {
-                    for a in args { pin_vars(f, a, Ty::I64, pin, n)?; walk(f, a, sigs, lit, pin, n)?; }
+                    for a in args { pin_vars(f, a, Ty::I64, pin, n)?; walk(f, a, sigs, lit, pin, printed, n)?; }
                     return Ok(());
                 }
                 if is_builtin(id, "eval") {
@@ -2864,13 +2873,13 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                         // contract as the checker), so they pin I64 too.
                         for a in &args[1..] { pin_vars(f, a, Ty::I64, pin, n)?; }
                     }
-                    for a in args { walk(f, a, sigs, lit, pin, n)?; }
+                    for a in args { walk(f, a, sigs, lit, pin, printed, n)?; }
                     return Ok(());
                 }
                 if is_builtin(id, "array") {
                     // Array(n[, m]) dimensions are integers (oracles
                     // m3/m10); a parameter used as a dimension pins I64.
-                    for a in args { pin_vars(f, a, Ty::I64, pin, n)?; walk(f, a, sigs, lit, pin, n)?; }
+                    for a in args { pin_vars(f, a, Ty::I64, pin, n)?; walk(f, a, sigs, lit, pin, printed, n)?; }
                     return Ok(());
                 }
                 if let Some(sig) = sigs.iter().find(|v| v.name == *id) {
@@ -2886,11 +2895,11 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                         }
                     }
                 }
-                for a in args { walk(f, a, sigs, lit, pin, n)?; }
+                for a in args { walk(f, a, sigs, lit, pin, printed, n)?; }
                 Ok(())
             }
             Expr::ArrLit(es) => {
-                for e in es { pin_vars(f, e, Ty::I64, pin, n)?; walk(f, e, sigs, lit, pin, n)?; }
+                for e in es { pin_vars(f, e, Ty::I64, pin, n)?; walk(f, e, sigs, lit, pin, printed, n)?; }
                 Ok(())
             }
             Expr::Index(id, ie) => {
@@ -2905,7 +2914,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     }
                 }
                 pin_vars(f, ie, Ty::I64, pin, n)?;
-                walk(f, ie, sigs, lit, pin, n)
+                walk(f, ie, sigs, lit, pin, printed, n)
             }
             Expr::Index2(id, ie, ie2) => {
                 if is_param(f, id).is_some() {
@@ -2915,8 +2924,8 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 }
                 pin_vars(f, ie, Ty::I64, pin, n)?;
                 pin_vars(f, ie2, Ty::I64, pin, n)?;
-                walk(f, ie, sigs, lit, pin, n)?;
-                walk(f, ie2, sigs, lit, pin, n)
+                walk(f, ie, sigs, lit, pin, printed, n)?;
+                walk(f, ie2, sigs, lit, pin, printed, n)
             }
             Expr::Index3(id, ie, ie2, ie3) => {
                 if is_param(f, id).is_some() {
@@ -2927,9 +2936,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 pin_vars(f, ie, Ty::I64, pin, n)?;
                 pin_vars(f, ie2, Ty::I64, pin, n)?;
                 pin_vars(f, ie3, Ty::I64, pin, n)?;
-                walk(f, ie, sigs, lit, pin, n)?;
-                walk(f, ie2, sigs, lit, pin, n)?;
-                walk(f, ie3, sigs, lit, pin, n)
+                walk(f, ie, sigs, lit, pin, printed, n)?;
+                walk(f, ie2, sigs, lit, pin, printed, n)?;
+                walk(f, ie3, sigs, lit, pin, printed, n)
             }
             Expr::Index4(id, ie, ie2, ie3, ie4) => {
                 if is_param(f, id).is_some() {
@@ -2941,16 +2950,16 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 pin_vars(f, ie2, Ty::I64, pin, n)?;
                 pin_vars(f, ie3, Ty::I64, pin, n)?;
                 pin_vars(f, ie4, Ty::I64, pin, n)?;
-                walk(f, ie, sigs, lit, pin, n)?;
-                walk(f, ie2, sigs, lit, pin, n)?;
-                walk(f, ie3, sigs, lit, pin, n)?;
-                walk(f, ie4, sigs, lit, pin, n)
+                walk(f, ie, sigs, lit, pin, printed, n)?;
+                walk(f, ie2, sigs, lit, pin, printed, n)?;
+                walk(f, ie3, sigs, lit, pin, printed, n)?;
+                walk(f, ie4, sigs, lit, pin, printed, n)
             }
             Expr::DArrNew => Ok(()),
             Expr::SelfObj | Expr::SelfGet(_) => Ok(()),
             Expr::Send(o, _, args) => {
-                walk(f, o, sigs, lit, pin, n)?;
-                for a in args { walk(f, a, sigs, lit, pin, n)?; }
+                walk(f, o, sigs, lit, pin, printed, n)?;
+                for a in args { walk(f, a, sigs, lit, pin, printed, n)?; }
                 Ok(())
             }
             _ => Ok(()),
@@ -2960,7 +2969,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
         for st in stmts {
             match st {
                 Stmt::Local(n, name, e) => {
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                     match e {
                         Expr::Str(_) => lit.push((name.clone(), Ty::Str)),
                         Expr::Int(_) => lit.push((name.clone(), Ty::I64)),
@@ -2984,7 +2993,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     if str_typed(e, lit, sigs, f, pin) {
                         pin_vars(f, &Expr::Var(id.clone()), Ty::Str, pin, *n)?;
                     }
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::Print(n, es, _) => {
                     for e in es {
@@ -2995,7 +3004,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                         if let Expr::Var(v) = e {
                             if let Some(idx) = is_param(f, v) { printed[idx] = true; }
                         }
-                        walk(f, e, sigs, lit, pin, *n)?;
+                        walk(f, e, sigs, lit, pin, printed, *n)?;
                     }
                 }
                 Stmt::Ret(n, Some(e)) => {
@@ -3003,16 +3012,16 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     // nil` elsewhere): the value is tagged, so a returned
                     // parameter pins Dyn (probe n2).
                     if nil_ret { pin_vars(f, e, Ty::Dyn, pin, *n)?; }
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::Ret(_, None) => {}
                 Stmt::If(n, c, a, b) => {
-                    walk(f, c, sigs, lit, pin, *n)?;
+                    walk(f, c, sigs, lit, pin, printed, *n)?;
                     walk_stmts(f, a, sigs, lit, pin, printed, nil_ret)?;
                     walk_stmts(f, b, sigs, lit, pin, printed, nil_ret)?;
                 }
                 Stmt::While(n, c, body) => {
-                    walk(f, c, sigs, lit, pin, *n)?;
+                    walk(f, c, sigs, lit, pin, printed, *n)?;
                     walk_stmts(f, body, sigs, lit, pin, printed, nil_ret)?;
                 }
                 Stmt::For(n, _, a, b, _, body) => {
@@ -3020,11 +3029,11 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     // only): they pin a parameter used as a bound (t61).
                     pin_vars(f, a, Ty::I64, pin, *n)?;
                     pin_vars(f, b, Ty::I64, pin, *n)?;
-                    walk(f, a, sigs, lit, pin, *n)?; walk(f, b, sigs, lit, pin, *n)?;
+                    walk(f, a, sigs, lit, pin, printed, *n)?; walk(f, b, sigs, lit, pin, printed, *n)?;
                     walk_stmts(f, body, sigs, lit, pin, printed, nil_ret)?;
                 }
                 Stmt::ForEach(n, _, c, body) => {
-                    walk(f, c, sigs, lit, pin, *n)?;
+                    walk(f, c, sigs, lit, pin, printed, *n)?;
                     walk_stmts(f, body, sigs, lit, pin, printed, nil_ret)?;
                 }
                 Stmt::ArrSet(n, id, ie, e) => {
@@ -3041,22 +3050,22 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                         pin_vars(f, &Expr::Var(id.clone()), Ty::DArr, pin, *n)?;
                     }
                     pin_vars(f, ie, Ty::I64, pin, *n)?;
-                    walk(f, ie, sigs, lit, pin, *n)?;
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, ie, sigs, lit, pin, printed, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::HDel(n, id, e) => {
                     // hb_HDel's target is a hash (hk155): pins a
                     // parameter; the key's string shape is enforced by
                     // the semantic pass.
                     pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::HDelAt(n, id, e) => {
                     // hb_HDelAt's target is a hash (hk187): pins a
                     // parameter; the position's integer shape is
                     // enforced by the semantic pass.
                     pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::HClear(n, id) => {
                     // hb_HClear's target is a hash (hk191): pins a
@@ -3068,22 +3077,22 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     // parameter; the value shape is enforced by the
                     // semantic pass.
                     pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::HSetCaseMatch(n, id, e) => {
                     // hb_HSetCaseMatch's target is a hash (hk169): pins
                     // a parameter; the flag's integer shape is enforced
                     // by the semantic pass.
                     pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::HSet(n, id, ke, ve) => {
                     // hb_HSet's target is a hash (hk159): pins a
                     // parameter; key and value shapes are enforced by
                     // the semantic pass.
                     pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
-                    walk(f, ke, sigs, lit, pin, *n)?;
-                    walk(f, ve, sigs, lit, pin, *n)?;
+                    walk(f, ke, sigs, lit, pin, printed, *n)?;
+                    walk(f, ve, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::HMerge(n, id, s) => {
                     // hb_HMerge's target AND source are hashes (hk164):
@@ -3097,8 +3106,8 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     // both pin parameters; start/count pin as integers.
                     pin_vars(f, &Expr::Var(id.clone()), Ty::Hash, pin, *n)?;
                     pin_vars(f, &Expr::Var(s2.clone()), Ty::Hash, pin, *n)?;
-                    if let Some(e) = se { walk(f, e, sigs, lit, pin, *n)?; }
-                    if let Some(e) = ce { walk(f, e, sigs, lit, pin, *n)?; }
+                    if let Some(e) = se { walk(f, e, sigs, lit, pin, printed, *n)?; }
+                    if let Some(e) = ce { walk(f, e, sigs, lit, pin, printed, *n)?; }
                 }
                 Stmt::AAdd(n, id, e) => {
                     // AAdd's target is a dynamic array: pins a parameter.
@@ -3117,12 +3126,12 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                         pin_vars(f, &Expr::Var(id.clone()), Ty::DArr, pin, *n)?;
                         pin_vars(f, e, Ty::I64, pin, *n)?;
                     }
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::ASize(n, id, e) => {
                     pin_vars(f, &Expr::Var(id.clone()), Ty::DArr, pin, *n)?;
                     pin_vars(f, e, Ty::I64, pin, *n)?;
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::AAddSub(n, id, ie, e) | Stmt::ASizeSub(n, id, ie, e) => {
                     if is_param(f, id).is_some() {
@@ -3132,8 +3141,8 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     }
                     pin_vars(f, ie, Ty::I64, pin, *n)?;
                     pin_vars(f, e, Ty::I64, pin, *n)?;
-                    walk(f, ie, sigs, lit, pin, *n)?;
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, ie, sigs, lit, pin, printed, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::ArrSet2(n, id, ie, ie2, e) => {
                     if is_param(f, id).is_some() {
@@ -3146,16 +3155,16 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     pin_vars(f, ie, Ty::I64, pin, *n)?;
                     pin_vars(f, ie2, Ty::I64, pin, *n)?;
                     pin_vars(f, e, Ty::I64, pin, *n)?;
-                    walk(f, ie, sigs, lit, pin, *n)?;
-                    walk(f, ie2, sigs, lit, pin, *n)?;
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, ie, sigs, lit, pin, printed, *n)?;
+                    walk(f, ie2, sigs, lit, pin, printed, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::SelfSet(n, _, e) | Stmt::SendStmt(n, e) | Stmt::CallStmt(n, e) => {
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::SendSet(n, o, _, e) => {
-                    walk(f, o, sigs, lit, pin, *n)?;
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, o, sigs, lit, pin, printed, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::AAddSub3(n, id, ie, ie2, ie3, e) | Stmt::ASizeSub3(n, id, ie, ie2, ie3, e) => {
                     if is_param(f, id).is_some() {
@@ -3165,10 +3174,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     pin_vars(f, ie2, Ty::I64, pin, *n)?;
                     pin_vars(f, ie3, Ty::I64, pin, *n)?;
                     pin_vars(f, e, Ty::I64, pin, *n)?;
-                    walk(f, ie, sigs, lit, pin, *n)?;
-                    walk(f, ie2, sigs, lit, pin, *n)?;
-                    walk(f, ie3, sigs, lit, pin, *n)?;
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, ie, sigs, lit, pin, printed, *n)?;
+                    walk(f, ie2, sigs, lit, pin, printed, *n)?;
+                    walk(f, ie3, sigs, lit, pin, printed, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::AAddSub2(n, id, ie, ie2, e) | Stmt::ASizeSub2(n, id, ie, ie2, e) => {
                     if is_param(f, id).is_some() {
@@ -3182,9 +3191,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     pin_vars(f, ie, Ty::I64, pin, *n)?;
                     pin_vars(f, ie2, Ty::I64, pin, *n)?;
                     pin_vars(f, e, Ty::I64, pin, *n)?;
-                    walk(f, ie, sigs, lit, pin, *n)?;
-                    walk(f, ie2, sigs, lit, pin, *n)?;
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, ie, sigs, lit, pin, printed, *n)?;
+                    walk(f, ie2, sigs, lit, pin, printed, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::ArrSet3(n, id, ie, ie2, ie3, e) => {
                     if is_param(f, id).is_some() {
@@ -3201,10 +3210,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     pin_vars(f, ie2, Ty::I64, pin, *n)?;
                     pin_vars(f, ie3, Ty::I64, pin, *n)?;
                     pin_vars(f, e, Ty::I64, pin, *n)?;
-                    walk(f, ie, sigs, lit, pin, *n)?;
-                    walk(f, ie2, sigs, lit, pin, *n)?;
-                    walk(f, ie3, sigs, lit, pin, *n)?;
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, ie, sigs, lit, pin, printed, *n)?;
+                    walk(f, ie2, sigs, lit, pin, printed, *n)?;
+                    walk(f, ie3, sigs, lit, pin, printed, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::ArrSet4(n, id, ie, ie2, ie3, ie4, e) => {
                     if is_param(f, id).is_some() {
@@ -3222,11 +3231,11 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     pin_vars(f, ie3, Ty::I64, pin, *n)?;
                     pin_vars(f, ie4, Ty::I64, pin, *n)?;
                     pin_vars(f, e, Ty::I64, pin, *n)?;
-                    walk(f, ie, sigs, lit, pin, *n)?;
-                    walk(f, ie2, sigs, lit, pin, *n)?;
-                    walk(f, ie3, sigs, lit, pin, *n)?;
-                    walk(f, ie4, sigs, lit, pin, *n)?;
-                    walk(f, e, sigs, lit, pin, *n)?;
+                    walk(f, ie, sigs, lit, pin, printed, *n)?;
+                    walk(f, ie2, sigs, lit, pin, printed, *n)?;
+                    walk(f, ie3, sigs, lit, pin, printed, *n)?;
+                    walk(f, ie4, sigs, lit, pin, printed, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::Exit(_) | Stmt::Loop(_) => {}
             }
@@ -7385,7 +7394,14 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     // hands over a fresh owned copy tagged 4 - caller and
                     // callee never share an allocation (hk259; same
                     // contract as Dyn->Dyn, cg_dyn_clone_if_str).
+                    let temp = ta == Ty::StrOwn && !matches!(a, Expr::Var(_));
+                    if temp { out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"); }
                     out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                    if temp {
+                        // The callee gets its own copy; discard the input
+                        // temporary only after copying (existing Dyn model).
+                        out.push_str("    mov %rax, 8(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    add $16, %rsp\n");
+                    }
                     out.push_str("    sub $16, %rsp\n    movq $4, (%rsp)\n    mov %rax, 8(%rsp)\n");
                     continue;
                 }
@@ -12089,8 +12105,27 @@ hbc_strcpy:
     sub $8, %rsp
     mov %rdi, %r13
     mov %rsi, %r12
+    # Bounded cache of logically FREE short-string blocks only.
+    # Eight slots indexed by capacity mod8, exact capacity match.
+    # Remove before reuse: every live allocation still has one owner.
+    cmp $256, %rsi
+    ja .Lstr_cache_miss
+    mov %rsi, %rcx
+    and $7, %ecx
+    lea hbc_str_cache(%rip), %r10
+    mov (%r10,%rcx,8), %rax
+    test %rax, %rax
+    jz .Lstr_cache_miss
+    cmp %rsi, (%rax)
+    jne .Lstr_cache_miss
+    movq $0, (%r10,%rcx,8)
+    add $16, %rsi
+@REG_CACHE_ALLOC@    incq hbc_mem_allocs(%rip)
+    jmp .Lstr_cache_got
+.Lstr_cache_miss:
     lea 16(%rsi), %rdi
     call hbc_alloc
+.Lstr_cache_got:
     mov %rax, %rbx
     mov %r12, (%rbx)
     mov %r12, 8(%rbx)
@@ -12279,7 +12314,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
     match target {
         Target::Linux => {
             out.push_str("    .text\n    .globl _start\n_start:\n");
-            out.push_str("    call hbc_fn_main\n");
+            out.push_str("    call hbc_fn_main\n    call hbc_str_cache_flush\n");
             out.push_str("    mov $60, %eax\n    xor %edi, %edi\n    syscall\n\n");
         }
         Target::Windows => {
@@ -12291,7 +12326,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
             // The Win64 loader does not guarantee one specific rsp % 16 at
             // the entry point; align explicitly instead of assuming.
             out.push_str("    and $-16, %rsp\n    sub $48, %rsp\n");
-            out.push_str("    call hbc_fn_main\n");
+            out.push_str("    call hbc_fn_main\n    call hbc_str_cache_flush\n");
             out.push_str("    xor %ecx, %ecx\n");
             out.push_str("    call ExitProcess\n\n");
         }
@@ -12322,6 +12357,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
             emit_strings(&mut out, &strs);
     emit_f64_consts(&mut out);
             // Allocation registry only in instrumented builds (--instrument).
+            out = out.replace("@REG_CACHE_ALLOC@", if instrument { REG_ALLOC_L } else { "" });
             out = out.replace("@REG_ALLOC_W@", if instrument { REG_ALLOC_W } else { "" });
             out = out.replace("@REG_FREE_W@", if instrument { REG_FREE_W } else { "" });
             out = out.replace("@REG_SFREE_W@", if instrument { REG_SFREE_W } else { "" });
@@ -12899,6 +12935,35 @@ hbc_type_error:
     mov $1, %edi
     syscall
 
+# hbc_str_cache_flush: release only logically freed cached blocks.
+# Registry/counters track live ownership, so flushing changes neither.
+hbc_str_cache_flush:
+    push %rbp
+    mov %rsp, %rbp
+    push %r12
+    push %r13
+    xor %r12d, %r12d
+    lea hbc_str_cache(%rip), %r13
+.Lcache_flush_l_next:
+    mov (%r13,%r12,8), %rdi
+    movq $0, (%r13,%r12,8)
+    test %rdi, %rdi
+    jz .Lcache_flush_l_skip
+    mov (%rdi), %rsi
+    add $16, %rsi
+    mov $11, %eax
+    syscall
+    test %rax, %rax
+    jnz hbc_os_bad
+.Lcache_flush_l_skip:
+    inc %r12
+    cmp $8, %r12
+    jb .Lcache_flush_l_next
+    pop %r13
+    pop %r12
+    pop %rbp
+    ret
+
 # ---- dynamic array heap (mmap) ----
 # hbc_alloc: rdi = bytes -> rax = base of a zeroed anonymous mapping.
 # mmap failure is a negative errno in rax (range -4095..-1), never NULL.
@@ -13125,7 +13190,18 @@ hbc_freestr:
     mov -16(%rdi), %rsi
     add $16, %rsi
     sub $16, %rdi
-@REG_FREE_L@    mov $11, %eax
+@REG_FREE_L@    cmp $272, %rsi
+    ja .Lstr_release_l
+    mov (%rdi), %rcx
+    and $7, %ecx
+    lea hbc_str_cache(%rip), %r11
+    cmpq $0, (%r11,%rcx,8)
+    jne .Lstr_release_l
+    mov %rdi, (%r11,%rcx,8)
+    incq hbc_mem_frees(%rip)
+    ret
+.Lstr_release_l:
+    mov $11, %eax
     syscall
     test %rax, %rax
     jnz hbc_os_bad
@@ -13467,6 +13543,7 @@ hbc_asize:
     .align 8
 hbc_mem_allocs: .quad 0
 hbc_mem_frees:  .quad 0
+hbc_str_cache: .zero 64
 @REG_DATA@    .text
 "#);
     out.push_str(CTOR_HELPERS);
@@ -13482,7 +13559,8 @@ hbc_mem_frees:  .quad 0
     out = out.replace("@REG_FREE_L@", if instrument { REG_FREE_L } else { "" });
     out = out.replace("@REG_HFREE_W@", if instrument { REG_HFREE_W } else { "" });
     out = out.replace("@REG_BAD_L@", if instrument { REG_BAD_L } else { "" });
-    out = out.replace("@REG_ALLOC_W@", if instrument { REG_ALLOC_W } else { "" });
+    out = out.replace("@REG_CACHE_ALLOC@", if instrument { REG_ALLOC_L } else { "" });
+            out = out.replace("@REG_ALLOC_W@", if instrument { REG_ALLOC_W } else { "" });
     out = out.replace("@REG_FREE_W@", if instrument { REG_FREE_W } else { "" });
     out = out.replace("@REG_SFREE_W@", if instrument { REG_SFREE_W } else { "" });
     out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
@@ -14563,6 +14641,38 @@ hbc_round_range_error:
     mov $1, %ecx
     call ExitProcess
 
+# Release only logically freed blocks, not live registry entries.
+hbc_str_cache_flush:
+    push %rbp
+    mov %rsp, %rbp
+    push %r12
+    push %r13
+    sub $48, %rsp
+    xor %r12d, %r12d
+    lea hbc_str_cache(%rip), %r13
+.Lcache_flush_w_next:
+    mov (%r13,%r12,8), %r8
+    movq $0, (%r13,%r12,8)
+    test %r8, %r8
+    jz .Lcache_flush_w_skip
+    mov %r8, -32(%rbp)
+    call GetProcessHeap
+    mov %rax, %rcx
+    xor %edx, %edx
+    mov -32(%rbp), %r8
+    call HeapFree
+    test %rax, %rax
+    jz hbc_os_bad
+.Lcache_flush_w_skip:
+    inc %r12
+    cmp $8, %r12
+    jb .Lcache_flush_w_next
+    add $48, %rsp
+    pop %r13
+    pop %r12
+    pop %rbp
+    ret
+
 # ---- dynamic array heap (kernel32 Heap API) ----
 # hbc_alloc: rdi = bytes -> rax = base. HeapAlloc failure returns NULL.
 hbc_alloc:
@@ -14782,7 +14892,20 @@ hbc_freestr:
     push %rbp
     mov %rsp, %rbp
     sub $48, %rsp
-@REG_SFREE_W@    sub $16, %rdi
+@REG_SFREE_W@    cmpq $256, -16(%rdi)
+    ja .Lstr_release_w
+    mov -16(%rdi), %rcx
+    and $7, %ecx
+    lea hbc_str_cache(%rip), %r11
+    cmpq $0, (%r11,%rcx,8)
+    jne .Lstr_release_w
+    lea -16(%rdi), %rax
+    mov %rax, (%r11,%rcx,8)
+    incq hbc_mem_frees(%rip)
+    leave
+    ret
+.Lstr_release_w:
+    sub $16, %rdi
     mov %rdi, %r8
     call GetProcessHeap
     mov %rax, %rcx
@@ -15142,6 +15265,7 @@ hbc_asize:
     .align 8
 hbc_mem_allocs: .quad 0
 hbc_mem_frees:  .quad 0
+hbc_str_cache: .zero 64
 @REG_DATA@    .text
 "#;
 

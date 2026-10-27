@@ -58,4 +58,9 @@ if ! bash tests/abi_harness.sh > gen/abi_harness.log 2>&1; then
 else
   echo "PASS tests/abi_harness.sh"
 fi
+if ! bash tests/cache_registry.sh > gen/cache_registry.log 2>&1; then
+  echo "FAIL tests/cache_registry.sh (see gen/cache_registry.log)"; fail=1
+else
+  echo "PASS tests/cache_registry.sh"
+fi
 if [ $fail -eq 0 ]; then echo "ALL GREEN"; else echo "BATTERY FAILURES"; exit 1; fi
