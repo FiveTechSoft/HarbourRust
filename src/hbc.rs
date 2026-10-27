@@ -927,6 +927,10 @@ impl P {
                     _ => Err(format!("line {}: expression ++/-- requires a variable lvalue in this increment", self.n)),
                 }
             }
+            // Harbour parser discards unary plus without coercion:
+            // harbour.y: '+' Expression %prec UNARY { $$ = $2; }.
+            // Keep lexical ++ distinct, so spaced + +x is not a mutation.
+            Some(Tok::Plus) => self.factor(),
             // Harbour unary minus (probe q1: `? -7`): sugar for 0 - e, so
             // the i64 typing/codegen path applies unchanged.
             Some(Tok::Minus) => {

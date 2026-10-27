@@ -3306,3 +3306,30 @@ All pairs, outputs and the prior unfavorable baselines remain available.
 Final local checkpoint:904 nonblank manifest rows + ABI + cache registry +
 pre-store overflow harness =907 PASS on Linux and Windows/Wine. The manifest
 has907 physical lines, including3 blank lines, not907 test cases.
+
+
+## 63zz - unary plus preserves the operand
+
+Harbour grammar (`src/compiler/harbour.y:932`) discards unary plus without
+numeric coercion. The native parser now does the same: +x, + +x, x + +x,
++d, +NIL, +.T., +string, +array, and +(effectful expression) retain the
+operand's type, order and ownership. Adjacent ++ remains a separate token;
+x+++x is x++ + x (hk423). Parenthesized +x is the same writable lvalue as
+x in Harbour (++(+x), (+x)++, hk425). Invalid literal/float increments and
+moved string reuse remain rejected; no new mutable lvalue form or Dyn leaf.
+
+hk421 is NOT called an exact match: Harbour accepts the return-only generic
+parameter; HarbourRust keeps the preexisting inference rejection. hk422
+adds independent arithmetic evidence and matches. hk422-hk425 and converted
+t901 byte-match compiled Harbour -gtstd; successful test expectations run
+on Linux and Windows/Wine. Seven new rows t910-t916 cover successful and
+rejected boundaries. Final checkpoint911 actual manifest rows +3harness
+=914 PASS both targets. Frozen175 sweep remains13COMPILES, byte-identical
+to63zy, no new original completion.
+
+hk424 uses the same source on both compilers,1M additions with unary plus,
+checksum500000500000,finalcounter1000001. Nine alternating uninstrumented
+Linux pairs including process startup: Harbour median0.044575464s,
+HarbourRust0.003473755s, about12.83x faster
+for this workload only. Full pairs and exact output are retained in
+sondas/hk424-linux-benchmark.json. No Windows/general performance claim.
