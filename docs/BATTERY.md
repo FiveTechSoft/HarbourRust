@@ -3804,3 +3804,29 @@ keeps moved use after an OutErr argument rejected. Three new cases give
 1039manifest +5harness=1044PASS Linux/Wine. Frozen175 stays20COMPILES,
 19 accumulated successful originals plus DIFFERENT errsys failure-mode.
 Existing no-OutErr hk455 assembly is byte-identical; no new speed claim.
+
+
+## 64au - Empty for existing statically known value shapes
+
+hk463/hk464 match Harbour -gtstd for zero/nonzero integer and floating
+values (including negative zero), logicals, literal NIL, codeblocks,
+strings, fixed/dynamic array variables and hash variables. Empty strings
+contain only space, tab, LF or CR; vertical tab, form feed, NUL and 0xA0
+are NOT empty. This matches hb_strEmpty/HB_ISSPACE, not a guessed C or
+Unicode whitespace class. The emitted byte loop borrows string variables
+and frees an owned temporary after reading it. Side effects execute once;
+returned numeric/string values and byref effects are covered too.
+
+No new helper or tagged representation. Generic Dyn values, borrowed
+nested-array views and temporary arrays/hashes remain named rejections.
+Existing moved-value checks apply. This is not a claim to all Harbour
+Empty types: dates, timestamps, object/pointer/symbol types and generic
+Dyn dispatch remain outside this increment. Arity is exactly one here,
+rather than silently discarding extra arguments.
+
+Six new cases t1045-t1050 give1045manifest +5harness=1050PASS Linux/Wine.
+Frozen175 remains20COMPILES:19 accumulated successful originals and the
+separate errsys failure-mode original. No new complete original is claimed;
+procname.prg passes Empty but stops at unsupported ProcName. Existing
+hk455 assembly is byte-identical; no new speed claim or general safety
+proof follows from these bounded checks.

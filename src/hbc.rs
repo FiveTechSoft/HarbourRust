@@ -1284,7 +1284,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "qout", "qqout", "outstd", "outerr", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "qout", "qqout", "outstd", "outerr", "empty", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -3556,6 +3556,21 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             Some(v) => Ok(v.ty),
         },
         Expr::Call(id, args) => {
+            if is_builtin(id, "empty") {
+                if args.len() != 1 { return Err(format!("line {}: `Empty` takes one argument in this increment", n)); }
+                let t = type_expr(&args[0], env, sigs, n)?;
+                let arr = matches!(t, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash);
+                if arr && !matches!(&args[0], Expr::Var(_)) {
+                    return Err(format!("line {}: `Empty` on an array/hash needs a variable in this increment", n));
+                }
+                if t == Ty::Dyn && !matches!(&args[0], Expr::Nil) {
+                    return Err(format!("line {}: `Empty` on generic Dyn values is not in this increment", n));
+                }
+                if matches!(t, Ty::DArrRef | Ty::DArrRef2) {
+                    return Err(format!("line {}: `Empty` on borrowed nested arrays is not in this increment", n));
+                }
+                return Ok(Ty::Bool);
+            }
             if is_builtin(id, "hb_eol") {
                 if !args.is_empty() { return Err(format!("line {}: `hb_eol` takes no arguments in this increment", n)); }
                 return Ok(Ty::Str);
@@ -6401,6 +6416,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 return;
             }
             if is_builtin(id, "procline") || is_builtin(id, "hb_eol") { return; }
+            if is_builtin(id, "empty") { apply_moves(&args[0], env, sigs, false); return; }
             if is_builtin(id, "len") {
                 apply_moves(&args[0], env, sigs, false);
                 return;
@@ -7388,6 +7404,36 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
             }
         }
+        Expr::Call(id, args) if is_builtin(id, "empty") => {
+            let e = &args[0];
+            let t = expr_ty(e, env, sigs);
+            match t {
+                Ty::F64 => {
+                    cg_f64_load(e, env, sigs, strs, out, target);
+                    out.push_str("    xorpd %xmm1, %xmm1\n    ucomisd %xmm1, %xmm0\n    sete %al\n    setnp %dl\n    and %dl, %al\n    movzbq %al, %rax\n");
+                }
+                Ty::Str | Ty::StrOwn => {
+                    cg_value(e, env, sigs, strs, out, target);
+                    let tmp = t == Ty::StrOwn && !matches!(e, Expr::Var(_));
+                    if tmp { out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"); }
+                    let k = fresh_lbl();
+                    out.push_str(&format!("    mov %rax, %r10\n    mov %rdx, %rcx\n    mov $1, %eax\n.Lempty_loop{}:\n    test %rcx, %rcx\n    jz .Lempty_done{}\n    movzbl (%r10), %edx\n    cmp $32, %edx\n    je .Lempty_next{}\n    cmp $9, %edx\n    je .Lempty_next{}\n    cmp $10, %edx\n    je .Lempty_next{}\n    cmp $13, %edx\n    jne .Lempty_bad{}\n.Lempty_next{}:\n    inc %r10\n    dec %rcx\n    jmp .Lempty_loop{}\n.Lempty_bad{}:\n    xor %eax, %eax\n.Lempty_done{}:\n", k,k,k,k,k,k,k,k,k,k));
+                    if tmp { out.push_str("    mov %rax, 8(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    add $16, %rsp\n"); }
+                }
+                Ty::Arr(k) => { out.push_str(&format!("    mov ${}, %eax\n", if k == 0 {1} else {0})); }
+                Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash => {
+                    cg_value(e, env, sigs, strs, out, target);
+                    out.push_str("    test %rdx, %rdx\n    sete %al\n    movzbq %al, %rax\n");
+                }
+                Ty::Dyn => { out.push_str("    mov $1, %eax\n"); } // literal NIL only
+                Ty::Block(_) => { cg_expr(e, env, sigs, strs, out, target); out.push_str("    xor %eax, %eax\n"); }
+                Ty::I64 | Ty::Bool => {
+                    cg_expr(e, env, sigs, strs, out, target);
+                    out.push_str("    test %rax, %rax\n    sete %al\n    movzbq %al, %rax\n");
+                }
+                _ => unreachable!("checked Empty shape"),
+            }
+        }
         Expr::Call(id, _) if is_builtin(id, "hb_eol") => {
             let eol = if matches!(target, Target::Windows) { "\r\n" } else { "\n" };
             let ix = strs.len(); strs.push(eol.to_string());
@@ -8136,6 +8182,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hsetdef") { return Ty::Dyn; }
             if is_builtin(id, "hb_hvalues") { return Ty::DArr; }
             if is_builtin(id, "hb_hclone") { return Ty::Hash; }
+            if is_builtin(id, "empty") { return Ty::Bool; }
             if is_output_call(id) { return Ty::Dyn; }
             if is_builtin(id, "asc") || is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
             if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") { return Ty::Str; } // hk88-hk92

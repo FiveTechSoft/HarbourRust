@@ -1040,3 +1040,9 @@ pos2 tests/t1041_original_longstr.hb tests/t1041_longstr_linux.out tests/t1041_l
 streams tests/t1042_outerr_streams.hb tests/t1042.stdout tests/t1042.stderr
 neg tests/t1043_original_longstr2_move_neg.hb use of moved value `short`
 neg tests/t1044_outerr_move_neg.hb use of moved value
+pos tests/t1045_empty_values.hb \n.T. .F. .F. .T. .T. .F.\n.T. .F. .T. .F.\n.T. .T. .T. .T. .T.\n.F. .F. .F. .F.\n.T. .F.\n.T. .F. .F.          3\n.T.
+pos tests/t1046_empty_effects.hb \n.F.          3 .T. .F.\n.T.          1\n.T. .F. .T.
+neg tests/t1047_empty_dyn_neg.hb `Empty` on generic Dyn values
+neg tests/t1048_empty_temp_array_neg.hb `Empty` on an array/hash needs a variable
+neg tests/t1049_empty_arity_neg.hb `Empty` takes one argument
+neg tests/t1050_empty_moved_neg.hb use of moved value
