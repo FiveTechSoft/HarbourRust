@@ -1,0 +1,124 @@
+name: Publish approved Asc and QOut patch
+'on':
+  workflow_dispatch:
+    inputs:
+      patch_b64:
+        description: Approved Asc+QOut gzip/base64 patch only
+        required: true
+        type: string
+permissions: {}
+concurrency:
+  group: harbourrust-manual-publisher
+  cancel-in-progress: false
+jobs:
+  validate:
+    if: github.repository == 'FiveTechSoft/HarbourRust' && github.ref == 'refs/heads/main' && github.actor == 'FiveTechSoft'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      with:
+        ref: ${{ github.sha }}
+        persist-credentials: false
+        fetch-depth: 2
+        path: repo
+    - name: Install validation tools
+      run: |-
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends rustc binutils binutils-mingw-w64-x86-64 mingw-w64-x86-64-dev wine64 wine
+    - name: Decode fixed approved patch
+      working-directory: repo
+      shell: python
+      run: |
+        import base64,gzip,hashlib,json,pathlib,subprocess,os,io
+        assert subprocess.check_output(["git","show","-s","--format=%P","HEAD"],text=True).strip()=="2b148ad8354f61762c5b1a7948c2cbd6e5d71cd1", "dispatch must be installation commit directly after approved base"
+        expected="3e8ea91e0c29f78b31c90c72a71ff0ed3cd3bd50e8d1fb3dc9390802feeac6cb"
+        event=json.loads(pathlib.Path(os.environ['GITHUB_EVENT_PATH']).read_text())
+        encoded=event['inputs']['patch_b64']
+        assert len(encoded)<=20000, 'payload too large'
+        with gzip.GzipFile(fileobj=io.BytesIO(base64.b64decode(encoded,validate=True))) as stream:
+            patch=stream.read(100001)
+        assert len(patch)<=100000, 'decoded patch too large'
+        assert hashlib.sha256(patch).hexdigest()==expected, 'not the approved patch'
+        pathlib.Path('../approved.patch').write_bytes(patch)
+        subprocess.run(['git','apply','--check','../approved.patch'],check=True)
+        subprocess.run(['git','apply','../approved.patch'],check=True)
+        hashes={'docs/BATTERY.md': 'b85c9c8379a57eaef6064bda42f6a8ddb1b20a70694a0104ad965139a6f8bb32', 'sondas/hk393.prg': '89e25e618137afb7b8d55f17f5a8b9337675384ca7a20eb96761e7653c0bfc61', 'sondas/hk394.prg': '0186fc3ab05911b6def5504ea1c14dcf80517f27c1063e71d5f8158f3346b5bb', 'sondas/hk395.prg': 'd6a0c9b434d75f0871dc31c5cd213de8697ee547cc9922fa38b7a639b748ec23', 'sondas/hk396.prg': 'ed4b17d4819e782aa92f2f484d57e1d73a98fa7f71d60a71123a3ab9d4e66064', 'sondas/hk397.prg': '4413781026145eab81b4d70e41f43b8e589b36bb41f9b356c69f674df960c095', 'sondas/hk398.prg': '46fbeca0abf9e010c6906bdccb72c300f4ff1633d90d7ed1018d0c8b240d5cbd', 'sondas/hk399.prg': '935239bedf8a13a588ad00c2d90b5a84ecdf1730883a0eadae139c1e94c99387', 'src/hbc.rs': 'cb3fda674f75ee63e7d07cc6666c1283f80150954c87fb2df66b33da318959b8', 'tests/abi_harness.sh': 'b4caf9e927622342021d96ed0bd050107105f83a8c82a5db76afa5951bc4b5ec', 'tests/manifest.txt': '6ed4425bd76362c9b6b74123ca5d92bf272ef86a6e97d567bc00f559ad8cc235', 'tests/t859_asc_forms.hb': '89e25e618137afb7b8d55f17f5a8b9337675384ca7a20eb96761e7653c0bfc61', 'tests/t860_asc_ownership.hb': '2fa17e7361f515b32d7c9efca275e4e0181c24404eaa7908ff6f86d23b4238c6', 'tests/t861_asc_parameter.hb': '664e626d313565201e76ddc0a06311fe88e0c1a54609e3b8c756dfb2e3e78a26', 'tests/t862_asc_type_neg.hb': '202ecb5b925f9f708bc4d5d027e9503db030ad0548e7adf31ca71ff495383ae5', 'tests/t863_asc_arity_neg.hb': '4bec6d54966bcbe87bcd727ec55dbedeb9cfdc02e45d6c0196e2fa212900790f', 'tests/t864_asc_extra_neg.hb': '646e3ec91a768a15492dd3ab130dbb689562ae1bf1454028c5e1b0c325506f35', 'tests/t865_asc_dyn_neg.hb': '4156dd9a180b868ac231c25afd59edd77a60e6403356e4fa3e2d5cb382ea0a7b', 'tests/t866_qout_nil.hb': 'ed4b17d4819e782aa92f2f484d57e1d73a98fa7f71d60a71123a3ab9d4e66064', 'tests/t867_qout_effects.hb': '4413781026145eab81b4d70e41f43b8e589b36bb41f9b356c69f674df960c095', 'tests/t868_qout_ownership.hb': '46fbeca0abf9e010c6906bdccb72c300f4ff1633d90d7ed1018d0c8b240d5cbd', 'tests/t869_qout_memcheck.hb': '4e5ead7918ae0180d813ad6c90fdb7a37e912f28bf834e194998e758c7cb3a7c', 'tests/t870_qout_block_result_neg.hb': 'f76e2758fbabd728e673868f089fa4fb328ce710121372b4833795a8d3987c88', 'tests/t871_qqout_array_temp_neg.hb': '3320ff028de86e6bd66336ae646af052986342830ed562536386774cb0ab7bd9', 'tests/t872_qout_block_arg_neg.hb': '83eb1008ba86c6088353d47087cd4283d8fea8221fd0ee8e303b559e3da739e7', 'tests/t873_qout_move_neg.hb': '479f69d519439da03a1dd4bdc7c1ce8e80874b2589f67a6197e1db77b16a70b6', 'tests/t874_qout_move_after_neg.hb': 'b8f51dc0bcf3743d9747495d1b70b6289a04475131a2e66c468d35ff3ea9dbef', 'tests/t875_qqout_collection.hb': '54c547363ced8b2f70fbb732a535529fd1e6637e91c10ec9c19fc7bc9080112b'}
+        changed=subprocess.check_output(['git','diff','--name-only'],text=True).splitlines()
+        new=subprocess.check_output(['git','ls-files','--others','--exclude-standard'],text=True).splitlines()
+        assert set(changed+new)==set(hashes), 'unexpected paths'
+        for name,digest in hashes.items():
+            p=pathlib.Path(name)
+            assert p.is_file() and not p.is_symlink(), 'not regular file'
+            assert hashlib.sha256(p.read_bytes()).hexdigest()==digest, 'tree mismatch'
+        print('Approved patch and 28 hashes verified')
+    - name: Build and run Linux and Windows Wine battery
+      working-directory: repo
+      env:
+        M: /usr/bin
+        MLIB: /usr/x86_64-w64-mingw32/lib
+        WINE: /usr/bin/wine
+        WINEDEBUG: -all
+      run: |
+        set -euo pipefail
+        export WINEPREFIX="$RUNNER_TEMP/hr-wine"
+        mkdir -p gen
+        rustc --edition 2021 -O src/hbc.rs -o hbc
+        bash tests/run_battery.sh | tee "$RUNNER_TEMP/hr-battery.log"
+        test "$(grep -c '^PASS ' "$RUNNER_TEMP/hr-battery.log")" -eq 871
+        grep -qx 'ALL GREEN' "$RUNNER_TEMP/hr-battery.log"
+  publish:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      with:
+        ref: ${{ github.sha }}
+        persist-credentials: false
+        fetch-depth: 2
+        path: repo
+    - name: Recheck patch without executing candidate code
+      working-directory: repo
+      shell: python
+      run: |
+        import base64,gzip,hashlib,json,pathlib,subprocess,os,io
+        assert subprocess.check_output(["git","show","-s","--format=%P","HEAD"],text=True).strip()=="2b148ad8354f61762c5b1a7948c2cbd6e5d71cd1", "dispatch must be installation commit directly after approved base"
+        expected="3e8ea91e0c29f78b31c90c72a71ff0ed3cd3bd50e8d1fb3dc9390802feeac6cb"
+        event=json.loads(pathlib.Path(os.environ['GITHUB_EVENT_PATH']).read_text())
+        encoded=event['inputs']['patch_b64']
+        assert len(encoded)<=20000, 'payload too large'
+        with gzip.GzipFile(fileobj=io.BytesIO(base64.b64decode(encoded,validate=True))) as stream:
+            patch=stream.read(100001)
+        assert len(patch)<=100000, 'decoded patch too large'
+        assert hashlib.sha256(patch).hexdigest()==expected, 'not the approved patch'
+        pathlib.Path('../approved.patch').write_bytes(patch)
+        subprocess.run(['git','apply','--check','../approved.patch'],check=True)
+        subprocess.run(['git','apply','../approved.patch'],check=True)
+        hashes={'docs/BATTERY.md': 'b85c9c8379a57eaef6064bda42f6a8ddb1b20a70694a0104ad965139a6f8bb32', 'sondas/hk393.prg': '89e25e618137afb7b8d55f17f5a8b9337675384ca7a20eb96761e7653c0bfc61', 'sondas/hk394.prg': '0186fc3ab05911b6def5504ea1c14dcf80517f27c1063e71d5f8158f3346b5bb', 'sondas/hk395.prg': 'd6a0c9b434d75f0871dc31c5cd213de8697ee547cc9922fa38b7a639b748ec23', 'sondas/hk396.prg': 'ed4b17d4819e782aa92f2f484d57e1d73a98fa7f71d60a71123a3ab9d4e66064', 'sondas/hk397.prg': '4413781026145eab81b4d70e41f43b8e589b36bb41f9b356c69f674df960c095', 'sondas/hk398.prg': '46fbeca0abf9e010c6906bdccb72c300f4ff1633d90d7ed1018d0c8b240d5cbd', 'sondas/hk399.prg': '935239bedf8a13a588ad00c2d90b5a84ecdf1730883a0eadae139c1e94c99387', 'src/hbc.rs': 'cb3fda674f75ee63e7d07cc6666c1283f80150954c87fb2df66b33da318959b8', 'tests/abi_harness.sh': 'b4caf9e927622342021d96ed0bd050107105f83a8c82a5db76afa5951bc4b5ec', 'tests/manifest.txt': '6ed4425bd76362c9b6b74123ca5d92bf272ef86a6e97d567bc00f559ad8cc235', 'tests/t859_asc_forms.hb': '89e25e618137afb7b8d55f17f5a8b9337675384ca7a20eb96761e7653c0bfc61', 'tests/t860_asc_ownership.hb': '2fa17e7361f515b32d7c9efca275e4e0181c24404eaa7908ff6f86d23b4238c6', 'tests/t861_asc_parameter.hb': '664e626d313565201e76ddc0a06311fe88e0c1a54609e3b8c756dfb2e3e78a26', 'tests/t862_asc_type_neg.hb': '202ecb5b925f9f708bc4d5d027e9503db030ad0548e7adf31ca71ff495383ae5', 'tests/t863_asc_arity_neg.hb': '4bec6d54966bcbe87bcd727ec55dbedeb9cfdc02e45d6c0196e2fa212900790f', 'tests/t864_asc_extra_neg.hb': '646e3ec91a768a15492dd3ab130dbb689562ae1bf1454028c5e1b0c325506f35', 'tests/t865_asc_dyn_neg.hb': '4156dd9a180b868ac231c25afd59edd77a60e6403356e4fa3e2d5cb382ea0a7b', 'tests/t866_qout_nil.hb': 'ed4b17d4819e782aa92f2f484d57e1d73a98fa7f71d60a71123a3ab9d4e66064', 'tests/t867_qout_effects.hb': '4413781026145eab81b4d70e41f43b8e589b36bb41f9b356c69f674df960c095', 'tests/t868_qout_ownership.hb': '46fbeca0abf9e010c6906bdccb72c300f4ff1633d90d7ed1018d0c8b240d5cbd', 'tests/t869_qout_memcheck.hb': '4e5ead7918ae0180d813ad6c90fdb7a37e912f28bf834e194998e758c7cb3a7c', 'tests/t870_qout_block_result_neg.hb': 'f76e2758fbabd728e673868f089fa4fb328ce710121372b4833795a8d3987c88', 'tests/t871_qqout_array_temp_neg.hb': '3320ff028de86e6bd66336ae646af052986342830ed562536386774cb0ab7bd9', 'tests/t872_qout_block_arg_neg.hb': '83eb1008ba86c6088353d47087cd4283d8fea8221fd0ee8e303b559e3da739e7', 'tests/t873_qout_move_neg.hb': '479f69d519439da03a1dd4bdc7c1ce8e80874b2589f67a6197e1db77b16a70b6', 'tests/t874_qout_move_after_neg.hb': 'b8f51dc0bcf3743d9747495d1b70b6289a04475131a2e66c468d35ff3ea9dbef', 'tests/t875_qqout_collection.hb': '54c547363ced8b2f70fbb732a535529fd1e6637e91c10ec9c19fc7bc9080112b'}
+        changed=subprocess.check_output(['git','diff','--name-only'],text=True).splitlines()
+        new=subprocess.check_output(['git','ls-files','--others','--exclude-standard'],text=True).splitlines()
+        assert set(changed+new)==set(hashes), 'unexpected paths'
+        for name,digest in hashes.items():
+            p=pathlib.Path(name)
+            assert p.is_file() and not p.is_symlink(), 'not regular file'
+            assert hashlib.sha256(p.read_bytes()).hexdigest()==digest, 'tree mismatch'
+        print('Approved patch and 28 hashes verified')
+    - name: Commit and fast-forward only unchanged main
+      working-directory: repo
+      env:
+        PUSH_TOKEN: ${{ github.token }}
+      run: |
+        set -euo pipefail
+        AUTH=$(printf 'x-access-token:%s' "$PUSH_TOKEN" | base64 -w0)
+        REMOTE=$(git -c http.extraheader="AUTHORIZATION: basic $AUTH" ls-remote origin refs/heads/main | cut -f1)
+        test "$REMOTE" = "$GITHUB_SHA"
+        git -c core.hooksPath=/dev/null add -- docs/BATTERY.md sondas/hk393.prg sondas/hk394.prg sondas/hk395.prg sondas/hk396.prg sondas/hk397.prg sondas/hk398.prg sondas/hk399.prg src/hbc.rs tests/abi_harness.sh tests/manifest.txt tests/t859_asc_forms.hb tests/t860_asc_ownership.hb tests/t861_asc_parameter.hb tests/t862_asc_type_neg.hb tests/t863_asc_arity_neg.hb tests/t864_asc_extra_neg.hb tests/t865_asc_dyn_neg.hb tests/t866_qout_nil.hb tests/t867_qout_effects.hb tests/t868_qout_ownership.hb tests/t869_qout_memcheck.hb tests/t870_qout_block_result_neg.hb tests/t871_qqout_array_temp_neg.hb tests/t872_qout_block_arg_neg.hb tests/t873_qout_move_neg.hb tests/t874_qout_move_after_neg.hb tests/t875_qqout_collection.hb
+        git -c core.hooksPath=/dev/null -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Add Asc and QOut expression effects with tested cleanup'
+        git -c core.hooksPath=/dev/null -c http.extraheader="AUTHORIZATION: basic $AUTH" push origin HEAD:refs/heads/main
+        unset AUTH PUSH_TOKEN
+        echo "Published commit $(git rev-parse HEAD)"
