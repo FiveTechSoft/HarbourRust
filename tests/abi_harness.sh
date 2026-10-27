@@ -9,7 +9,7 @@
 set -e
 cd "$(dirname "$0")/.."
 mkdir -p gen
-printf 'function incprobe(x)\nreturn x++ + ++x\nfunction qprobe()\nreturn QQOut()\nfunction bprobe()\nlocal b := {|n| QQOut(), n+1}\nreturn Eval(b, 6)\nfunction dynshow(x)\nreturn QQOut(x)\nfunction nprobe()\nreturn dynshow(AllTrim(" "))\nfunction main()\nreturn\n' > gen/abi_empty.hb
+printf 'function incprobe(x)\nreturn x++ + ++x\nfunction oprobe()\nreturn OutStd()\nfunction eprobe()\nreturn Len(hb_eol())\nfunction qprobe()\nreturn QQOut()\nfunction bprobe()\nlocal b := {|n| QQOut(), n+1}\nreturn Eval(b, 6)\nfunction dynshow(x)\nreturn QQOut(x)\nfunction nprobe()\nreturn dynshow(AllTrim(" "))\nfunction main()\nreturn\n' > gen/abi_empty.hb
 ./hbc gen/abi_empty.hb gen/abi_l.s --target=linux -I tests >/dev/null
 ./hbc gen/abi_empty.hb gen/abi_w.s --target=windows -I tests >/dev/null
 
@@ -1770,6 +1770,18 @@ hbc_abi_test:
     jne abi_fail_chr
     call abi_check
     call hbc_fn_nprobe
+    cmp $1, %rax
+    jne abi_fail_chr
+    test %rdx, %rdx
+    jne abi_fail_chr
+    call abi_check
+    call hbc_fn_eprobe
+    test %rax, %rax
+    jle abi_fail_chr
+    cmp $2, %rax
+    jg abi_fail_chr
+    call abi_check
+    call hbc_fn_oprobe
     cmp $1, %rax
     jne abi_fail_chr
     test %rdx, %rdx

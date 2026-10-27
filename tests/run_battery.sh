@@ -8,6 +8,7 @@
 #                                       byte-match the expectation
 #   posx <file> <exit> <escaped stdout> like pos, and BOTH runs must exit
 #                                       with the given code (fail-mode tests)
+#   pos2 <file> <linux expected file> <windows expected file> exact target bytes
 #   neg  <file> <error substring>       compile must FAIL with that message
 #                                       on both targets
 cd "$(dirname "$0")/.." || exit 2
@@ -48,6 +49,14 @@ while IFS= read -r line; do
   case "$kind" in
     pos)  run_pos_kind "$file" "$(echo "$line"|cut -d' ' -f3-|printf '%b' "$(cat)")" "" </dev/null;;
     posx) run_pos_kind "$file" "$(echo "$line"|cut -d' ' -f4-|printf '%b' "$(cat)")" "$(echo "$line"|awk '{print $3}')" </dev/null;;
+    pos2)
+      base=$(basename "$file" .hb)
+      lexp=$(echo "$line"|awk '{print $3}'); wexp=$(echo "$line"|awk '{print $4}')
+      if build_linux "$file" && build_win "$file" &&
+         timeout 15 "./gen/$base" > "gen/${base}_l.actual" 2>"gen/${base}_l.err" &&
+         timeout 20 "$WINE" "gen/$base.exe" > "gen/${base}_w.actual" 2>/dev/null &&
+         cmp -s "$lexp" "gen/${base}_l.actual" && cmp -s "$wexp" "gen/${base}_w.actual" &&
+         [ ! -s "gen/${base}_l.err" ]; then echo "PASS $file"; else echo "FAIL $file (exact target bytes)"; fail=1; fi;;
     neg)  run_neg "$file" "$(echo "$line"|cut -d' ' -f3-)";;
     '') ;;
     *) echo "FAIL unknown manifest kind: $line"; fail=1;;

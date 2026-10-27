@@ -1030,3 +1030,10 @@ pos tests/t1031_raw_double_quotes.hb \nC:\\temp\\path a\\\\b \\n \\r \\t\nend\\\
 pos tests/t1032_raw_quote_macro.hb \nNAME\\n /*not comment*/ // && \\ expanded
 neg tests/t1033_raw_quote_unterminated_neg.hb unterminated string
 neg tests/t1034_raw_quote_backslash_escape_neg.hb unterminated string
+pos tests/t1035_outstd_values.hb [ a  ]    [          7 .T. NIL          1.25   ]N[ U ]AB[ A B ][ tail   ][ tmp ]
+pos tests/t1036_outstd_borrows.hb abc str   dyn     \n         3          1          1x\n         4TAB\n         1
+pos tests/t1037_eol.hb \n.T. .T.\nC
+neg tests/t1038_eol_arity_neg.hb `hb_eol` takes no arguments
+neg tests/t1039_outstd_move_neg.hb use of moved value
+neg tests/t1040_seq_dyn_limit_neg.hb parenthesized comma expressions support numeric/logical results only
+pos2 tests/t1041_original_longstr.hb tests/t1041_longstr_linux.out tests/t1041_longstr_windows.out

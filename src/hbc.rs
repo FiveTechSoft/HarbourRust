@@ -1284,10 +1284,13 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "qout", "qqout", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "qout", "qqout", "outstd", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
+
+// Output calls share NIL result and existing value/ownership checks.
+fn is_output_call(id: &str) -> bool { ["qout", "qqout", "outstd"].iter().any(|v| is_builtin(id, v)) }
 
 fn check_ident(id: &str, n: usize) -> Result<(), String> {
     if id.is_empty() || id.len() > 64 {
@@ -2894,7 +2897,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 walk(f, b, sigs, lit, pin, printed, n)
             }
             Expr::Call(id, args) => {
-                if is_builtin(id, "qout") || is_builtin(id, "qqout") {
+                if is_output_call(id) {
                     for a in args {
                         if let Expr::Var(v) = a {
                             if let Some(i) = is_param(f, v) { printed[i] = true; }
@@ -3516,7 +3519,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             let mut last = Ty::I64;
             for e in es {
                 let t = type_expr(e, &mut local, sigs, n)?;
-                if !matches!(t, Ty::I64 | Ty::Bool | Ty::F64) {
+                // Only direct output calls add a payload-free NIL result.
+                // Generic Dyn variables/calls retain the ownership limit.
+                let nil_output = matches!(e, Expr::Call(id, _) if is_output_call(id));
+                if !matches!(t, Ty::I64 | Ty::Bool | Ty::F64) && !nil_output {
                     return Err(format!("line {}: parenthesized comma expressions support numeric/logical results only in this increment; owned, Dyn, array and block results remain a named limit", n));
                 }
                 apply_moves(e, &mut local, sigs, false);
@@ -3550,6 +3556,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             Some(v) => Ok(v.ty),
         },
         Expr::Call(id, args) => {
+            if is_builtin(id, "hb_eol") {
+                if !args.is_empty() { return Err(format!("line {}: `hb_eol` takes no arguments in this increment", n)); }
+                return Ok(Ty::Str);
+            }
             if is_builtin(id, "procline") {
                 if args.len() > 1 || (args.len() == 1 && !matches!(&args[0], Expr::Int(v) if v == "0")) {
                     return Err(format!("line {}: `ProcLine` supports only no argument or literal zero (current frame); ancestor/dynamic levels are not in this increment", n));
@@ -3595,7 +3605,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 match &args[0] {
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
-                    Expr::Call(id, _) if is_builtin(id, "qout") || is_builtin(id, "qqout") => {}
+                    Expr::Call(id, _) if is_output_call(id) => {}
                     Expr::Index(v, _) => {
                         // DArr4 first level: child-array casilla -
                         // "A" (hk114, byte-measured via hk117 markers).
@@ -4018,7 +4028,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // payload. Do not generalize this to Dyn variables/owned
                 // tag4 strings without a separate transfer/lifetime design.
                 let nil_arm = |e: &Expr| matches!(e, Expr::Nil)
-                    || matches!(e, Expr::Call(id, _) if is_builtin(id, "qout") || is_builtin(id, "qqout"));
+                    || matches!(e, Expr::Call(id, _) if is_output_call(id));
                 if ta == Ty::Dyn && tb == Ty::Dyn && nil_arm(&args[1]) && nil_arm(&args[2]) { return Ok(Ty::Dyn); }
                 if matches!((ta, tb), (Ty::F64, Ty::I64) | (Ty::I64, Ty::F64)) { return Ok(Ty::F64); }
                 // Owned-string unification (63zf, hk329): the result is
@@ -4035,7 +4045,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::StrOwn);
             }
-            if is_builtin(id, "qout") || is_builtin(id, "qqout") {
+            if is_output_call(id) {
                 let mut item_env = env.to_vec();
                 for a in args {
                     let t = type_expr(a, &mut item_env, sigs, n)?;
@@ -4774,7 +4784,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             let mut benv: Vec<Local> = params.iter().map(|p| Local { name: p.clone(), ty: Ty::I64, moved: false, ro: false, byref: false }).collect();
             for (i, e) in body.iter().enumerate() {
                 let t = type_expr(e, &mut benv, sigs, n)?;
-                let discarded_print = i + 1 < body.len() && matches!(e, Expr::Call(id, _) if is_builtin(id, "qout") || is_builtin(id, "qqout"));
+                let discarded_print = i + 1 < body.len() && matches!(e, Expr::Call(id, _) if is_output_call(id));
                 if t != Ty::I64 && !discarded_print {
                     return Err(format!("line {}: codeblock bodies are integer expressions in this increment", n));
                 }
@@ -6390,7 +6400,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id, "hb_memcheck") {
                 return;
             }
-            if is_builtin(id, "procline") { return; }
+            if is_builtin(id, "procline") || is_builtin(id, "hb_eol") { return; }
             if is_builtin(id, "len") {
                 apply_moves(&args[0], env, sigs, false);
                 return;
@@ -6404,7 +6414,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 apply_moves(&args[0],env,sigs,false);
                 return;
             }
-            if is_builtin(id, "qout") || is_builtin(id, "qqout") {
+            if is_output_call(id) {
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
@@ -6737,7 +6747,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 Expr::Int(_) => vt_letter(strs, out, "N"),
                 Expr::Str(_) => vt_letter(strs, out, "C"),
                 Expr::Nil => vt_letter(strs, out, "U"),
-                Expr::Call(id, _) if is_builtin(id, "qout") || is_builtin(id, "qqout") => {
+                Expr::Call(id, _) if is_output_call(id) => {
                     cg_expr(&args[0], env, sigs, strs, out, target);
                     vt_letter(strs, out, "U");
                 }
@@ -6908,8 +6918,8 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             }
             out.push_str("    add $32, %rsp\n");
         }
-        Expr::Call(id, args) if is_builtin(id, "qout") || is_builtin(id, "qqout") => {
-            cg_print_items(args, is_builtin(id, "qqout"), env, sigs, strs, out, target);
+        Expr::Call(id, args) if is_output_call(id) => {
+            cg_print_items(args, !is_builtin(id, "qout"), is_builtin(id, "outstd"), env, sigs, strs, out, target);
             out.push_str("    mov $1, %eax\n    xor %edx, %edx\n"); // NIL tag/payload.
         }
         Expr::Call(id, args) if is_builtin(id, "asc") => {
@@ -7377,6 +7387,11 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str("    mov %rsp, %rdi\n    call hbc_array4m\n");
                 out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
             }
+        }
+        Expr::Call(id, _) if is_builtin(id, "hb_eol") => {
+            let eol = if matches!(target, Target::Windows) { "\r\n" } else { "\n" };
+            let ix = strs.len(); strs.push(eol.to_string());
+            out.push_str(&format!("    lea .Lstr{}(%rip), %rax\n    mov ${}, %edx\n", ix, eol.len()));
         }
         Expr::Call(id, _) if is_builtin(id, "procline") => {
             let line = TRACE_LINE.with(|v| v.get());
@@ -8121,9 +8136,9 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hsetdef") { return Ty::Dyn; }
             if is_builtin(id, "hb_hvalues") { return Ty::DArr; }
             if is_builtin(id, "hb_hclone") { return Ty::Hash; }
-            if is_builtin(id, "qout") || is_builtin(id, "qqout") { return Ty::Dyn; }
+            if is_output_call(id) { return Ty::Dyn; }
             if is_builtin(id, "asc") || is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
-            if is_builtin(id, "valtype") { return Ty::Str; } // hk88-hk92
+            if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id, "chr") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
@@ -8799,7 +8814,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
     }
 }
 
-fn cg_print_items(es: &[Expr], inline: bool, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+fn cg_print_items(es: &[Expr], inline: bool, raw: bool, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
                 // Harbour `?` is a QOut( <items> ) call (probes b51-b59,
                 // t12 vs -gtstd binary): ALL items are evaluated FIRST
                 // (side effects like prints inside calls happen before the
@@ -8876,7 +8891,9 @@ fn cg_print_items(es: &[Expr], inline: bool, env: &[CgLocal], sigs: &[Sig], strs
                 // Registered edge: a trailing ALL-SPACES string still
                 // leaves the separator before it in this PoC; exact
                 // fidelity there needs a buffered line.
-                let last_vis = es.iter().rposition(|e| !renders_empty(e));
+                // OutStd preserves every separator and trailing byte.
+                // QOut/QQOut keep their existing line-end trimming.
+                let last_vis = if raw { es.len().checked_sub(1) } else { es.iter().rposition(|e| !renders_empty(e)) };
                 // Right-trim spaces (0x20) off %rdx bytes at %rax.
                 let rtrim = "97:    cmp $0, %rdx\n    je 98f\n    cmpb $0x20, -1(%rax,%rdx)\n    jne 98f\n    dec %rdx\n    jmp 97b\n98:\n";
                 for (i, e) in es.iter().enumerate() {
@@ -8885,7 +8902,7 @@ fn cg_print_items(es: &[Expr], inline: bool, env: &[CgLocal], sigs: &[Sig], strs
                     let off = 16 * (es.len() - 1 - i);
                     if i > 0 { out.push_str("    call hbc_print_sep\n"); }
                     if renders_empty(e) { continue; }
-                    let is_last = last_vis == Some(i);
+                    let is_last = !raw && last_vis == Some(i);
                     if darrs_elem(e, env) {
                         // A grown NIL casilla prints NIL (hk13); a string
                         // element prints its bytes, borrowed (no copy).
@@ -9117,7 +9134,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 env.push(CgLocal { name: id.clone(), ty: t, off });
             }
             Stmt::Print(_, es, inline) => {
-                cg_print_items(es, *inline, env, sigs, strs, out, target);
+                cg_print_items(es, *inline, false, env, sigs, strs, out, target);
             }
             Stmt::Ret(_, Some(e)) => {
                 if let Ty::Arr(k) = expr_ty(e, env, sigs) {

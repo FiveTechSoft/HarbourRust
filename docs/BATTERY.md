@@ -3733,3 +3733,43 @@ longstr.prg move past quote errors to later unsupported statements/OutStd;
 NEITHER is claimed as a newly working original. No runtime helper or
 ownership change. Existing hk455 assembly is byte-identical and retained
 performance measurements are unchanged, with no new speed claim.
+
+
+## 64as - OutStd, native hb_eol and unchanged original longstr
+
+OutStd reuses the existing evaluated-item emitter with a raw-output flag:
+no leading newline, no right trim, one separator between EVERY argument,
+including empty-rendering arrays/hashes. Zero arguments print nothing;
+the result is NIL. hk460/hk461 byte-match Harbour -gtstd for scalar values,
+trailing spaces, empty values, side-effect order, temporaries, string-array
+items, NIL result inspection, discarded block output and lazy IF arms.
+Existing QOut/QQOut trimming is unchanged. OutErr/output routing remain
+unsupported. Existing codeblock, temporary-array and ownership limits still
+apply; this does not add general dynamic argument support.
+
+hb_eol() returns a borrowed constant: LF on Linux, CRLF on Windows, following
+Harbour src/rtl/console.c's native platform branch. Arguments are a named
+rejection. Direct output calls are now permitted in parenthesized comma
+lists (needed by simpleio.ch); only their payload-free NIL is added. Generic
+Dyn variables/calls, strings, arrays and blocks remain rejected there.
+No new runtime helper, allocation scheme, interpreter or shared storage.
+The ABI harness exercises OutStd's NIL pair and hb_eol length under its
+nonvolatile-register/stack canaries on both targets.
+
+Original longstr.prg is UNCHANGED as t1041, SHA256
+ccc83f05e2f8f0aa89dc2f90807586c9cbf584066a41177dd7457d9f914bbdb1.
+Its exact simpleio.ch is copied unchanged into tests. The longstr Linux
+output byte-matches a live Harbour oracle. Native Windows hb_eol adds one
+CR before the leading LF; internal explicit CR/LF strings stay unchanged.
+The new pos2 runner compares separate binary expectation files with cmp,
+including all trailing bytes, instead of shell substitution. The Windows
+expectation is source-derived from Harbour's CRLF platform branch, not
+claimed as a live Windows Harbour oracle. Linux/Wine both exit0 and match
+these exact expectations. No normalization of either output is performed.
+
+Seven new cases t1035-t1041 give1036manifest +5harness=1041PASS. Frozen175
+compilation sweep rises19 to20; accumulated successful originals19 plus
+one explicitly DIFFERENT errsys failure-mode original. Do not call that
+20 working originals. longstr2 still stops at OutErr. Existing performance
+measurements are retained; hk455 assembly remains unchanged, with no new
+speed claim for stream output or platform line endings.
