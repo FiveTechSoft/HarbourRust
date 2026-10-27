@@ -68,4 +68,9 @@ if ! bash tests/inc_overflow_store.sh > gen/inc_overflow_store.log 2>&1; then
 else
   echo "PASS tests/inc_overflow_store.sh"
 fi
+if ! python3 tests/compile_shape_matrix.py > gen/compile_shape_matrix.log 2>&1; then
+  echo "FAIL tests/compile_shape_matrix.py (see gen/compile_shape_matrix.log)"; fail=1
+else
+  echo "PASS tests/compile_shape_matrix.py"
+fi
 if [ $fail -eq 0 ]; then echo "ALL GREEN"; else echo "BATTERY FAILURES"; exit 1; fi

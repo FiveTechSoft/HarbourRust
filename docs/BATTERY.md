@@ -3510,3 +3510,24 @@ rejection. Original probes remain unchanged. 974 actual manifest cases
 +3harness =977 PASS Linux and Windows/Wine. Frozen175 remains13COMPILES,
 byte-identical to64ab. No new original completion or speed claim: this
 changes rejected inputs only, not successful generated code.
+
+
+## 64ah - bounded expression-shape compile/link matrix
+
+A new standalone harness crosses 25 expression shapes with eight contexts
+on Linux and Windows: 400 target checks. Each cell pins success or named
+rejection independently, so replacing an accepted shape with a rejection
+cannot silently pass. All 196 accepted target cases assemble and link;
+204 reject with ordinary compiler diagnostics, not a Rust panic. This
+checks integer/float/string/array/hash/block/NIL shapes under expression
+statements, print, Len, ValType, IIF, equality, Round and Eval wrappers.
+It never executes these synthetic probes: some intentionally contain
+uninitialized array elements, moves or invalid runtime operands. Existing
+manifest tests remain responsible for runtime semantics and Harbour
+oracles. The matrix is a bounded compiler/linker regression, NOT a memory
+safety proof, new compatibility or exhaustive compiler-panic audit.
+974 actual manifest cases +4 standalone harnesses =978 PASS. The matrix
+adds 400 target compile/link checks, NOT 400 runtime test cases. Compiler
+and runtime source are byte-identical to64ag, frozen175 stays13COMPILES,
+and existing performance measurements are unchanged (no new speed claim).
+Python3 is required by this standalone harness.
