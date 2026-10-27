@@ -152,3 +152,25 @@ Next gates remain larger data/runtime workloads, broad error-path coverage,
 repeatable dedicated-machine performance and packaging. No merge is recommended. Latest trace-enabled corpus file sizes: Linux24864bytes
 versus22048current; Windows24032bytes (same-runtime corpus with trace globals).
 These supersede the original untraced prototype sizes for the new configuration.
+
+## Bounded correctness audit follow-up
+
+Two experimental-only defects found by differential tests are fixed:
+- FOR must store the initial counter before evaluating its bound. `for i := 1
+  to i+2` previously used the old i in the bound. The new fixture also tests a
+  bound that increments i, negative steps and the final counter.
+- QOut/QQOut must remove trailing spaces from the final literal-string item.
+  Interior strings retain their bytes and separators. The existing all-space
+  final-string separator behavior is preserved, not silently changed.
+
+`audit.hb` compares complete output on Linux and Wine for both fixes, argument
+side effects before printing, lazy IIF, branch-local names and WHILE. Ten
+fail-closed checks cover logical output through branches/IIF, float, array, NIL,
+string variable, byref, unsupported builtin/logical operator/EXIT, and instrument.
+`--instrument` with LLVM is now an explicit rejection: allocator-registry checks
+must not be silently omitted. Native trace records initialize text/length before
+publishing their address, matching the existing emitter's entry discipline.
+
+This is a bounded audit, not a proof of compiler correctness. No scalar/runtime
+surface was broadened to satisfy these tests. The default backend keeps its full
+1086 checks and frozen sweep20 COMPILES. Main remains unchanged.

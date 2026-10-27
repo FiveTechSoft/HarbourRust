@@ -15717,6 +15717,7 @@ fn main() {
         eprintln!("usage: hbc <input.hb> <output.s> [--target=linux|windows] [-I dir]...");
         process::exit(2);
     }
+    if llvm && instrument { eprintln!("error: LLVM scalar: --instrument is not supported; registry checks must not be silently omitted"); process::exit(1); }
     // Preprocessing runs automatically on every compile. Errors cite the
     // line in the ORIGINAL file for the main input; lines injected by an
     // #include report against that include file.
