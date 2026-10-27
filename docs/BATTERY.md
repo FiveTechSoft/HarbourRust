@@ -3890,3 +3890,24 @@ preserving the existing fixed-stack-array iteration rejection. Frozen175
 stays20COMPILES (19 accumulated successful originals plus the separate
 errsys failure-mode original); no new complete original is claimed.
 hk455 assembly is byte-identical; no new speed claim.
+
+
+## 64ay - same-type scalar Min/Max with first-item tie metadata
+
+hk473/hk474 match Harbour for pairs of integers, floats or logicals.
+Both arguments evaluate once, left to right (including nested/byref calls).
+Float selection preserves BOTH the value and its decimal/width metadata;
+ties select the FIRST item, as minmax.c specifies. Integer literal-only
+selection keeps literal print provenance, including >10-digit values;
+runtime results keep the existing computed-integer field convention.
+The provenance classifier does not skip evaluation of argument effects.
+No helper, tagged return union, allocation or ownership change is added.
+
+Mixed integer/float pairs remain a named rejection: Harbour returns the
+actual selected item's type, so blindly converting both sides to float
+would change its formatting/type. Dyn, strings, dates and timestamps are
+also outside this increment. Exactly two arguments are required here.
+Five cases t1066-t1070 give1065manifest+5harness=1070PASS Linux/Wine.
+Frozen175 stays20COMPILES (19 accumulated successful originals plus the
+separate errsys failure-mode original); no new complete original claimed.
+hk455 assembly is unchanged; no new speed claim.

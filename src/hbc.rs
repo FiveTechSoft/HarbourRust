@@ -1285,7 +1285,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "qout", "qqout", "outstd", "outerr", "empty", "procname", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -3563,6 +3563,16 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             Some(v) => Ok(v.ty),
         },
         Expr::Call(id, args) => {
+            if is_builtin(id, "min") || is_builtin(id, "max") {
+                if args.len() != 2 { return Err(format!("line {}: `{}` takes two arguments in this increment", n, id)); }
+                let a = type_expr(&args[0], env, sigs, n)?;
+                apply_moves(&args[0], env, sigs, false);
+                let b = type_expr(&args[1], env, sigs, n)?;
+                if a != b || !matches!(a, Ty::I64 | Ty::F64 | Ty::Bool) {
+                    return Err(format!("line {}: `{}` needs matching integer, float or logical arguments; mixed numeric/Dyn/other types are not in this increment", n, id));
+                }
+                return Ok(a);
+            }
             if is_builtin(id, "empty") {
                 if args.len() != 1 { return Err(format!("line {}: `Empty` takes one argument in this increment", n)); }
                 let t = type_expr(&args[0], env, sigs, n)?;
@@ -6429,6 +6439,9 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 return;
             }
             if is_builtin(id, "procline") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return; }
+            if is_builtin(id, "min") || is_builtin(id, "max") {
+                for a in args { apply_moves(a, env, sigs, false); } return;
+            }
             if is_builtin(id, "empty") { apply_moves(&args[0], env, sigs, false); return; }
             if is_builtin(id, "len") {
                 apply_moves(&args[0], env, sigs, false);
@@ -6587,6 +6600,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 // with literal provenance (digits+1), unlike a runtime-computed value.
 fn fold_int(e: &Expr) -> Option<i64> {
     match e {
+        Expr::Call(id, args) if (is_builtin(id, "min") || is_builtin(id, "max")) && args.len() == 2 => {
+            let a = fold_int(&args[0])?; let b = fold_int(&args[1])?;
+            Some(if is_builtin(id, "min") { a.min(b) } else { a.max(b) })
+        }
         Expr::Seq(es) => fold_int(es.last().expect("nonempty")), // provenance only; NEVER skip prefix effects
         Expr::Int(t) => t.parse().ok(),
         Expr::Bin('+', a, b) => fold_int(a)?.checked_add(fold_int(b)?),
@@ -7417,6 +7434,25 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
             }
         }
+        Expr::Call(id, args) if is_builtin(id, "min") || is_builtin(id, "max") => {
+            let k = fresh_lbl();
+            if expr_ty(&args[0], env, sigs) == Ty::F64 {
+                cg_f64_load(&args[0], env, sigs, strs, out, target);
+                out.push_str("    sub $32, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rdi, 8(%rsp)\n");
+                cg_f64_load(&args[1], env, sigs, strs, out, target);
+                out.push_str("    movsd (%rsp), %xmm1\n    ucomisd %xmm0, %xmm1\n");
+                let jump = if is_builtin(id, "min") { "jbe" } else { "jae" };
+                // Ordered ties choose the FIRST item, including decimal metadata.
+                out.push_str(&format!("    jp .Lmm_done{}\n    {} .Lmm_first{}\n    jmp .Lmm_done{}\n.Lmm_first{}:\n    movsd (%rsp), %xmm0\n    mov 8(%rsp), %rdi\n.Lmm_done{}:\n    add $32, %rsp\n", k,jump,k,k,k,k));
+            } else {
+                cg_expr(&args[0], env, sigs, strs, out, target);
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                cg_expr(&args[1], env, sigs, strs, out, target);
+                out.push_str("    mov (%rsp), %r10\n    cmp %rax, %r10\n");
+                let jump = if is_builtin(id, "min") { "jle" } else { "jge" };
+                out.push_str(&format!("    {} .Lmm_first{}\n    jmp .Lmm_done{}\n.Lmm_first{}:\n    mov %r10, %rax\n.Lmm_done{}:\n    add $16, %rsp\n", jump,k,k,k,k));
+            }
+        }
         Expr::Call(id, args) if is_builtin(id, "empty") => {
             let e = &args[0];
             let t = expr_ty(e, env, sigs);
@@ -8200,6 +8236,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hsetdef") { return Ty::Dyn; }
             if is_builtin(id, "hb_hvalues") { return Ty::DArr; }
             if is_builtin(id, "hb_hclone") { return Ty::Hash; }
+            if is_builtin(id, "min") || is_builtin(id, "max") { return expr_ty(&args[0], env, sigs); }
             if is_builtin(id, "empty") { return Ty::Bool; }
             if is_output_call(id) { return Ty::Dyn; }
             if is_builtin(id, "asc") || is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
