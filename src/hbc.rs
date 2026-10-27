@@ -1285,13 +1285,15 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
 
 // Output calls share NIL result and existing value/ownership checks.
 fn is_output_call(id: &str) -> bool { ["qout", "qqout", "outstd", "outerr"].iter().any(|v| is_builtin(id, v)) }
+
+fn is_bitop(id: &str) -> bool { ["hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot"].iter().any(|v| is_builtin(id,v)) }
 
 fn check_ident(id: &str, n: usize) -> Result<(), String> {
     if id.is_empty() || id.len() > 64 {
@@ -3563,6 +3565,19 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             Some(v) => Ok(v.ty),
         },
         Expr::Call(id, args) => {
+            if is_bitop(id) {
+                let unary = is_builtin(id, "hb_bitnot");
+                if (unary && args.len() != 1) || (!unary && args.len() < 2) {
+                    return Err(format!("line {}: `{}` needs {} argument(s) in this increment", n,id, if unary {"exactly one"} else {"at least two"}));
+                }
+                for a in args {
+                    if type_expr(a, env, sigs, n)? != Ty::I64 {
+                        return Err(format!("line {}: `{}` arguments must be integers in this increment; float/Dyn conversions are not covered", n,id));
+                    }
+                    apply_moves(a,env,sigs,false);
+                }
+                return Ok(Ty::I64);
+            }
             if is_builtin(id, "min") || is_builtin(id, "max") {
                 if args.len() != 2 { return Err(format!("line {}: `{}` takes two arguments in this increment", n, id)); }
                 let a = type_expr(&args[0], env, sigs, n)?;
@@ -6439,6 +6454,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 return;
             }
             if is_builtin(id, "procline") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return; }
+            if is_bitop(id) { for a in args { apply_moves(a, env, sigs, false); } return; }
             if is_builtin(id, "min") || is_builtin(id, "max") {
                 for a in args { apply_moves(a, env, sigs, false); } return;
             }
@@ -6600,6 +6616,15 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 // with literal provenance (digits+1), unlike a runtime-computed value.
 fn fold_int(e: &Expr) -> Option<i64> {
     match e {
+        Expr::Call(id, args) if is_bitop(id) => {
+            let mut v = fold_int(&args[0])?;
+            if is_builtin(id,"hb_bitnot") { return Some(!v); }
+            for a in &args[1..] {
+                let b = fold_int(a)?;
+                v = if is_builtin(id,"hb_bitand") {v & b} else if is_builtin(id,"hb_bitor") {v | b} else {v ^ b};
+            }
+            Some(v)
+        }
         Expr::Call(id, args) if (is_builtin(id, "min") || is_builtin(id, "max")) && args.len() == 2 => {
             let a = fold_int(&args[0])?; let b = fold_int(&args[1])?;
             Some(if is_builtin(id, "min") { a.min(b) } else { a.max(b) })
@@ -7434,6 +7459,18 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
             }
         }
+        Expr::Call(id, args) if is_bitop(id) => {
+            cg_expr(&args[0], env, sigs, strs, out, target);
+            if is_builtin(id,"hb_bitnot") { out.push_str("    not %rax\n"); }
+            else {
+                for a in &args[1..] {
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                    cg_expr(a, env, sigs, strs, out, target);
+                    let op = if is_builtin(id,"hb_bitand") {"and"} else if is_builtin(id,"hb_bitor") {"or"} else {"xor"};
+                    out.push_str(&format!("    {} (%rsp), %rax\n    add $16, %rsp\n",op));
+                }
+            }
+        }
         Expr::Call(id, args) if is_builtin(id, "min") || is_builtin(id, "max") => {
             let k = fresh_lbl();
             if expr_ty(&args[0], env, sigs) == Ty::F64 {
@@ -8236,6 +8273,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hsetdef") { return Ty::Dyn; }
             if is_builtin(id, "hb_hvalues") { return Ty::DArr; }
             if is_builtin(id, "hb_hclone") { return Ty::Hash; }
+            if is_bitop(id) { return Ty::I64; }
             if is_builtin(id, "min") || is_builtin(id, "max") { return expr_ty(&args[0], env, sigs); }
             if is_builtin(id, "empty") { return Ty::Bool; }
             if is_output_call(id) { return Ty::Dyn; }

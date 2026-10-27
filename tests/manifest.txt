@@ -1066,3 +1066,8 @@ pos tests/t1067_minmax_metadata_effects.hb \n         1.000          1.000      
 neg tests/t1068_minmax_mixed_neg.hb needs matching integer, float or logical arguments
 neg tests/t1069_minmax_string_neg.hb needs matching integer, float or logical arguments
 neg tests/t1070_minmax_arity_neg.hb takes two arguments
+pos tests/t1071_bitops_values.hb \n         3          7          5         -1\n       255         -3          0\n         1          3\n        -8  9223372036854775806\n 9223372036854775807\n 10000000001          10000000007
+pos tests/t1072_bitops_nested_effects.hb \n 9223372036854775807  9223372036854775807\n         0          3\n         3         -4
+neg tests/t1073_bitops_float_neg.hb arguments must be integers
+neg tests/t1074_bitops_arity_neg.hb needs at least two argument(s)
+neg tests/t1075_bitnot_arity_neg.hb needs exactly one argument(s)

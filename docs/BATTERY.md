@@ -3911,3 +3911,23 @@ Five cases t1066-t1070 give1065manifest+5harness=1070PASS Linux/Wine.
 Frozen175 stays20COMPILES (19 accumulated successful originals plus the
 separate errsys failure-mode original); no new complete original claimed.
 hk455 assembly is unchanged; no new speed claim.
+
+
+## 64az - integer hb_bitAnd/Or/Xor/Not
+
+hk475/hk476 match Harbour for 64-bit signed integer bit operations,
+variadic And/Or/Xor (at least two arguments), unary Not, negative values,
+large values, double Not and nested/effectful calls. Argument order is
+left to right, once per argument, including byref mutations. Bit patterns
+use native x86-64 AND/OR/XOR/NOT; no shift-range semantics are inferred.
+Literal-only results retain literal integer print provenance; runtime
+results retain the existing computed field width. Provenance classification
+does not remove effects from generated evaluation.
+
+Float/Dyn conversions are a named rejection, not a guessed truncation.
+Not requires exactly one argument here. No runtime helper, representation,
+allocation or ownership change. Five cases t1071-t1075 give1070manifest
++5harness=1075PASS Linux/Wine. Frozen175 stays20COMPILES (19 accumulated
+successful originals plus the separate errsys failure-mode original).
+No new complete original is claimed. hk455 assembly stays byte-identical;
+no new speed claim.
