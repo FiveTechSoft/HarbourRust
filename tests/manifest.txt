@@ -854,3 +854,20 @@ pos tests/t855_trim_whitespace.hb \n.T.\n.T. .F. .F. .T.\n.T. .T.\n.T. .T.\n[ x]
 pos tests/t856_trim_ownership.hb \n  abc   abc          0          2\nq\nz\n         0
 neg tests/t857_trim_type_neg.hb `ltrim` expects a string
 neg tests/t858_trim_arity_neg.hb `rtrim` takes one argument
+pos tests/t859_asc_forms.hb \n         0         65         65          0        255        128\n        97        255          1         65\n         9         10         13         32\n        65         90         66
+pos tests/t860_asc_ownership.hb \n       255          1        128          0         65\n        66         66\n       255          1\n         0
+pos tests/t861_asc_parameter.hb \n        65        255          0         90\n         0
+neg tests/t862_asc_type_neg.hb `asc` expects a string
+neg tests/t863_asc_arity_neg.hb `asc` takes one argument
+neg tests/t864_asc_extra_neg.hb `asc` takes one argument
+neg tests/t865_asc_dyn_neg.hb `asc` expects a string
+pos tests/t866_qout_nil.hb \nA         65 .T.\nU .T.B C\nU .T.\n\ndone
+pos tests/t867_qout_effects.hb P          1P          2\n         1          2 A          1.25 NIL\n.T.          1\nblock          4 Btail\n         5\ninnerside\nNIL NIL outer\n\nU U
+pos tests/t868_qout_ownership.hb B C A\n.T.          1         65\nDE\n.T.
+pos tests/t869_qout_memcheck.hb \nC DE F A\n.T.          1         65\nGB\n        72\n         0
+neg tests/t870_qout_block_result_neg.hb codeblock bodies are integer expressions
+neg tests/t871_qqout_array_temp_neg.hb cannot print a temporary array or hash
+neg tests/t872_qout_block_arg_neg.hb cannot print a codeblock
+neg tests/t873_qout_move_neg.hb use of moved value
+neg tests/t874_qout_move_after_neg.hb use of moved value
+pos tests/t875_qqout_collection.hb left  mid  end\n.T.          2          1

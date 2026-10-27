@@ -9,7 +9,7 @@
 set -e
 cd "$(dirname "$0")/.."
 mkdir -p gen
-printf 'function main()\nreturn\n' > gen/abi_empty.hb
+printf 'function qprobe()\nreturn QQOut()\nfunction bprobe()\nlocal b := {|n| QQOut(), n+1}\nreturn Eval(b, 6)\nfunction main()\nreturn\n' > gen/abi_empty.hb
 ./hbc gen/abi_empty.hb gen/abi_l.s --target=linux -I tests >/dev/null
 ./hbc gen/abi_empty.hb gen/abi_w.s --target=windows -I tests >/dev/null
 
@@ -1705,6 +1705,60 @@ hbc_abi_test:
     cmpb $99, 2(%rax)
     jne abi_fail_trim
     call abi_check
+    mov -112(%rbp), %rdi
+    call hbc_freestr
+    call abi_check
+    # Generated QQOut expression: NIL pair, no extra runtime helper.
+    movabs $0x6161616161616101, %rax
+    movq %rax, %xmm6
+    movabs $0x6262626262626202, %rax
+    movq %rax, %xmm7
+    call hbc_fn_bprobe
+    cmp $7, %rax
+    jne abi_fail_chr
+    call abi_check
+    call hbc_fn_qprobe
+    cmp $1, %rax
+    jne abi_fail_chr
+    test %rdx, %rdx
+    jne abi_fail_chr
+    call abi_check
+    movabs $0x6161616161616101, %rax
+    movq %xmm6, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    movabs $0x6262626262626202, %rax
+    movq %xmm7, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    # hbc_asc: empty with invalid pointer proves no read; unsigned byte.
+    movabs $0x5151515151515101, %rax
+    movq %rax, %xmm6
+    movabs $0x5252525252525202, %rax
+    movq %rax, %xmm7
+    mov $-1, %rdi
+    xor %esi, %esi
+    call hbc_asc
+    test %rax, %rax
+    jne abi_fail_chr
+    call abi_check
+    mov $255, %edi
+    call hbc_chr
+    mov %rax, -112(%rbp)
+    mov %rax, %rdi
+    mov %rdx, %rsi
+    call hbc_asc
+    cmp $255, %rax
+    jne abi_fail_chr
+    call abi_check
+    movabs $0x5151515151515101, %rax
+    movq %xmm6, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
+    movabs $0x5252525252525202, %rax
+    movq %xmm7, %rdx
+    cmp %rax, %rdx
+    jne abi_fail_xmm
     mov -112(%rbp), %rdi
     call hbc_freestr
     call abi_check

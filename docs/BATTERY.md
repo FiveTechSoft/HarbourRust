@@ -3080,3 +3080,73 @@ test.prg advances from LTrim unknown at8 to FOR EACH over a string at18,
 a representation boundary of existing iteration, not a completed original.
 NUL print difference from63zs remains; not claimed bytecompatible output.
 Combined change is based on30fe54808ec4f45a7364077a2ad75391cda87865 (63zr).
+
+
+## 63zu - Asc first byte
+
+Based on 2b148ad8354f61762c5b1a7948c2cbd6e5d71cd1. hk393 and
+src/rtl/chrasc.c establish unsigned first-byte Asc(string): empty/NUL=0,
+128/255 stay unsigned, later bytes ignored. Byte-codepage only, no Unicode
+selection. hk394 measures Harbour error1107 for non-string inputs; here a
+named static type rejection. Wrong arity is rejected by both compilers.
+
+hbc_asc borrows ptr/len, returns an integer, and never reads empty input.
+No new representation or allocation. Codegen frees an owned non-variable
+argument exactly once after preserving the result. String variables remain
+usable; ordinary user-function calls retain existing MOVE semantics.
+t859 matches hk393 bytes; t860 covers nested Chr/Trim/IIf temporaries,
+function results, repeated cleanup, source preservation and memcheck0 after
+function return. t861 covers string parameter inference and function cleanup.
+t862-t865 reject numeric/Dyn and wrong arity. The direct helper ABI canary
+checks invalid-pointer/zero-length, unsigned255, nonvolatile GPR and XMM6/7
+sentinels on Linux and Windows via Wine, plus matching free of test input.
+
+63zu checkpoint battery860 runner rows+ABI=861 ALL GREEN Linux/Wine. Sweep unchanged
+12/175; no new original. FOR EACH string and visible-NUL output remain
+separate limits, not implemented by Asc.
+
+hk395 microbenchmark:10million Asc(s), checksum2550000000. Seven alternating
+paired Linux runs (uninstrumented): Harbour median0.632773s, HarbourRust
+median0.033049s, ratio19.15x for this workload only, including process startup.
+Both outputs byte-identical. Not an application-wide performance claim and
+not a Windows speed measurement. Raw paired samples retained with checkpoint.
+
+
+## 63zv - QOut/QQOut expression effects (after 63zu)
+
+Asc and this change are published together after their separate checkpoints.
+hk396-hk398 measure NIL return, evaluation effects and temporary strings.
+QOut(args) emits a leading newline after all arguments evaluate left-to-right;
+QQOut(args) omits it. Both reuse the exact Stmt::Print emission via
+cg_print_items, including widths, separators, string cleanup and existing
+line-end trim behavior. Result is the existing Dyn NIL pair tag1/payload0.
+ValType(QOut/QQOut(...)) executes the call and returns U. No new runtime
+helper, value model, sharing, output device or interpreter is introduced.
+
+QOut/QQOut can be intermediate codeblock expressions when their NIL is
+discarded and the final expression remains integer. A final print call is
+rejected under the existing integer-block/Eval return contract. t1.prg
+therefore advances from unknown QOut to the named integer-block restriction;
+it is NOT a completed original. No fake integer return for a NIL result.
+Print-only parameter inference through expression QOut is not expanded;
+parameters need existing independent type evidence. Captures stay rejected.
+
+Tests t866-t875 cover NIL/ValType, nested output, argument evaluation order,
+float formatting, intermediate block effects, owned string temporaries,
+memcheck0 after cleanup, collection borrowing, invalid collection/codeblock
+arguments and use-after-MOVE rejections within/after the call. The checker
+uses a sequential temporary environment for argument MOVE checks. Existing
+print-only statement behavior and formatter limits remain unchanged.
+The ABI canary calls generated QQOut() through qprobe and checks NIL pair,
+stack/GPR/XMM6/7 preservation on Linux and Windows via Wine.
+
+Combined battery870 runner rows+ABI=871 ALL GREEN Linux/Wine. Sweep12/175;
+only t1.prg's first diagnostic changes, with no new compile success.
+NUL rendering, output device routing/SET ALTERNATE, all-space trailing
+separator edge and final-block NIL results remain named limits.
+
+hk399 benchmark:1million empty QQOut()+NIL checks, seven alternating Linux
+pairs, checksum1000000. Harbour median0.054402s, HarbourRust0.003688s,
+ratio14.75x for this empty-call workload including startup, not console I/O
+throughput or general application speed. Outputs match exactly. Raw samples
+retained with checkpoint. No Windows speed claim.

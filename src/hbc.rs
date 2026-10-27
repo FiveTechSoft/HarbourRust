@@ -1240,7 +1240,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "qout", "qqout", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -2843,7 +2843,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     }
                     return walk(f, &args[0], sigs, lit, pin, n);
                 }
-                if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) {
+                if ["asc", "ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) {
                     for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,n)?; }
                     return Ok(());
                 }
@@ -3471,6 +3471,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 match &args[0] {
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
+                    Expr::Call(id, _) if is_builtin(id, "qout") || is_builtin(id, "qqout") => {}
                     Expr::Index(v, _) => {
                         // DArr4 first level: child-array casilla -
                         // "A" (hk114, byte-measured via hk117 markers).
@@ -3903,6 +3904,25 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `{}` expects a string",n,id));
                 }
                 return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id, "qout") || is_builtin(id, "qqout") {
+                let mut item_env = env.to_vec();
+                for a in args {
+                    let t = type_expr(a, &mut item_env, sigs, n)?;
+                    if matches!(t, Ty::Block(_)) { return Err(format!("line {}: cannot print a codeblock in this increment", n)); }
+                    if matches!(t, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash) && !matches!(a, Expr::Var(_)) {
+                        return Err(format!("line {}: cannot print a temporary array or hash directly in this increment (assign it to a variable and print the variable)", n));
+                    }
+                    apply_moves(a, &mut item_env, sigs, false);
+                }
+                return Ok(Ty::Dyn); // NIL, using the existing tagged return pair.
+            }
+            if is_builtin(id, "asc") {
+                if args.len() != 1 { return Err(format!("line {}: `asc` takes one argument", n)); }
+                if !matches!(type_expr(&args[0], env, sigs, n)?, Ty::Str | Ty::StrOwn) {
+                    return Err(format!("line {}: `asc` expects a string (Harbour raises 1107; statically typed here)", n));
+                }
+                return Ok(Ty::I64);
             }
             if is_builtin(id, "chr") {
                 if args.len() != 1 { return Err(format!("line {}: `chr` takes one argument", n)); }
@@ -4618,8 +4638,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
             }
             let mut benv: Vec<Local> = params.iter().map(|p| Local { name: p.clone(), ty: Ty::I64, moved: false, ro: false, byref: false }).collect();
-            for e in body {
-                if type_expr(e, &mut benv, sigs, n)? != Ty::I64 {
+            for (i, e) in body.iter().enumerate() {
+                let t = type_expr(e, &mut benv, sigs, n)?;
+                let discarded_print = i + 1 < body.len() && matches!(e, Expr::Call(id, _) if is_builtin(id, "qout") || is_builtin(id, "qqout"));
+                if t != Ty::I64 && !discarded_print {
                     return Err(format!("line {}: codeblock bodies are integer expressions in this increment", n));
                 }
             }
@@ -6233,6 +6255,14 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 apply_moves(&args[0],env,sigs,false);
                 return;
             }
+            if is_builtin(id, "qout") || is_builtin(id, "qqout") {
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
+            if is_builtin(id, "asc") {
+                apply_moves(&args[0], env, sigs, false);
+                return;
+            }
             if is_builtin(id, "chr") {
                 apply_moves(&args[0], env, sigs, false);
                 return;
@@ -6538,6 +6568,10 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 Expr::Int(_) => vt_letter(strs, out, "N"),
                 Expr::Str(_) => vt_letter(strs, out, "C"),
                 Expr::Nil => vt_letter(strs, out, "U"),
+                Expr::Call(id, _) if is_builtin(id, "qout") || is_builtin(id, "qqout") => {
+                    cg_expr(&args[0], env, sigs, strs, out, target);
+                    vt_letter(strs, out, "U");
+                }
                 Expr::Var(v) => {
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                     match var.ty {
@@ -6704,6 +6738,19 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str("    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n");
             }
             out.push_str("    add $32, %rsp\n");
+        }
+        Expr::Call(id, args) if is_builtin(id, "qout") || is_builtin(id, "qqout") => {
+            cg_print_items(args, is_builtin(id, "qqout"), env, sigs, strs, out, target);
+            out.push_str("    mov $1, %eax\n    xor %edx, %edx\n"); // NIL tag/payload.
+        }
+        Expr::Call(id, args) if is_builtin(id, "asc") => {
+            let temp = expr_ty(&args[0], env, sigs) == Ty::StrOwn && !matches!(&args[0], Expr::Var(_));
+            cg_value(&args[0], env, sigs, strs, out, target);
+            out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_asc\n");
+            if temp {
+                out.push_str("    mov %rax, 8(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n");
+            }
+            out.push_str("    add $16, %rsp\n");
         }
         Expr::Call(id, args) if is_builtin(id, "chr") => {
             cg_expr(&args[0], env, sigs, strs, out, target);
@@ -7893,7 +7940,8 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hsetdef") { return Ty::Dyn; }
             if is_builtin(id, "hb_hvalues") { return Ty::DArr; }
             if is_builtin(id, "hb_hclone") { return Ty::Hash; }
-            if is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") { return Ty::I64; }
+            if is_builtin(id, "qout") || is_builtin(id, "qqout") { return Ty::Dyn; }
+            if is_builtin(id, "asc") || is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") { return Ty::I64; }
             if is_builtin(id, "valtype") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id, "chr") { return Ty::StrOwn; }
@@ -8568,157 +8616,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
     }
 }
 
-fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, ll: &Option<(String, String)>, slots: &[(usize, u8)], dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
-    for (si, s) in stmts.iter().enumerate() {
-        trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
-        match s {
-            Stmt::SelfSet(..) | Stmt::SendSet(..) | Stmt::SendStmt(..) => unreachable!("rejected before codegen"),
-            Stmt::CallStmt(_, e) => {
-                // Run the call, then release the discarded owned return
-                // with the same helper the epilogue would use on a slot
-                // of that type (oracle hk256: the discard is legal).
-                cg_expr(e, env, sigs, strs, out, target);
-                match expr_ty(e, env, sigs) {
-                    Ty::StrOwn => out.push_str("    mov %rax, %rdi
-    call hbc_freestr
-"),
-                    Ty::DArr => out.push_str("    mov %rax, %rdi
-    mov $16, %esi
-    call hbc_free
-"),
-                    Ty::DArrS => out.push_str("    mov %rax, %rdi
-    mov %rdx, %rsi
-    call hbc_sfree
-"),
-                    Ty::DArr2 => out.push_str("    mov %rax, %rdi
-    mov %rdx, %rsi
-    call hbc_free2
-"),
-                    _ => {}
-                }
-            }
-            Stmt::Local(_, id, e) => {
-                let mut t = expr_ty(e, env, sigs);
-                // Prescan widening (probe n2): an i64 initializer whose
-                // local later receives a Dyn value gets the 16-byte slot;
-                // the i64 initializer is tagged in as {0, payload}.
-                let i64_init = t == Ty::I64 && dyn_names.contains(id);
-                if i64_init { t = Ty::Dyn; }
-                // `@s` widening (hk218): a local passed by reference needs an
-                // owned-capable slot from the start (the callee frees and
-                // re-stores through the pointer), so a rodata literal
-                // initializer is copied into an owned buffer.
-                let byref_str = t == Ty::Str && byref_names.contains(id);
-                if byref_str { t = Ty::StrOwn; }
-                // Bare-local FOR counter (hk336): i64 slot, in lockstep
-                // with the checker and layout through the one shared
-                // predicate. The NIL the slot would hold before the FOR
-                // is unobservable (mention-clean rule); it starts at 0
-                // and the FOR writes it.
-                let bare_cnt = t == Ty::Dyn && matches!(e, Expr::Nil) && !byref_names.contains(id) && bare_local_is_for_counter(stmts, si, id);
-                if bare_cnt { t = Ty::I64; }
-                *frame += size_of(t);
-                let off = *frame;
-                if bare_cnt {
-                    out.push_str(&format!("    movq $0, -{}(%rbp)\n", off));
-                    env.push(CgLocal { name: id.clone(), ty: t, off });
-                    continue;
-                }
-                if t == Ty::Hash {
-                    if let Expr::HashLit(ps) = e {
-                        // The slot starts zeroed by the prologue. Pairs are
-                        // inserted in source order, key first then value
-                        // (probe h9); hbc_hput copies the key bytes and the
-                        // 16-byte value, so the temporaries stay owned here.
-                        for (k, v) in ps {
-                            cg_value(k, env, sigs, strs, out, target);
-                            out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                            cg_value(v, env, sigs, strs, out, target);
-                            if expr_ty(v, env, sigs) == Ty::I64 {
-                                out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
-                            }
-                            if expr_ty(v, env, sigs) == Ty::Bool {
-                                out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
-                            }
-                            out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                            out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n    add $32, %rsp\n", off));
-                        }
-                        env.push(CgLocal { name: id.clone(), ty: t, off });
-                        continue;
-                    }
-                }
-                match t {
-                    Ty::F64 => {
-                        // Two dynamic slots: value + decimal metadata
-                        // (reassignment replaces both; copies carry both).
-                        cg_f64_load(e, env, sigs, strs, out, target);
-                        out.push_str(&format!("    movsd %xmm0, -{}(%rbp)\n    mov %rdi, -{}(%rbp)\n", off, off - 8));
-                    }
-                    Ty::Arr(_) => cg_array_value(e, off, env, sigs, strs, out, target),
-                    _ => {
-                        cg_value(e, env, sigs, strs, out, target);
-                        if i64_init {
-                            out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
-                        }
-                        if byref_str {
-                            // rodata -> owned copy (hbc_strcpy), or the
-                            // epilogue / a `@` callee would free rodata.
-                            out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
-                        }
-                        // A moved-out DArr SOURCE slot is nulled right after
-                        // the load: every allocation keeps exactly one owner.
-                        if let Expr::Var(src) = e {
-                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
-                                out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
-                            }
-                        }
-                        match t {
-                            Ty::I64 | Ty::Block(_) | Ty::Bool => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
-                            Ty::Str => {
-                                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
-                                out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
-                            }
-                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::Dyn => {
-                                // A Dyn initialized FROM A VAR borrows its
-                                // pair: clone any string payload so the new
-                                // slot owns its own copy (the same boundary
-                                // rule as Dyn-to-Dyn assignment).
-                                if t == Ty::Dyn && matches!(e, Expr::Var(_)) {
-                                    cg_dyn_clone_if_str(out);
-                                }
-                                // The slot can hold a live value when a
-                                // `local` re-declares inside a loop body:
-                                // free the old allocation first (null-safe).
-                                // The new value waits on the stack: hbc_free
-                                // clobbers caller-saved registers (syscall).
-                                let class = slots.iter().find(|(o, _)| *o == off).map(|(_, c)| *c).unwrap_or(0);
-                                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                                if class == 1 {
-                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_free2\n85:\n", off, off - 8));
-                                } else if class == 3 {
-                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    mov $2, %edx\n    call hbc_rfree\n85:\n", off, off - 8));
-                                } else if class == 6 {
-                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    mov $3, %edx\n    call hbc_rfree\n85:\n", off, off - 8));
-                                } else if class == 2 {
-                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_hfree\n85:\n", off, off - 8));
-                                } else if class == 4 {
-                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_sfree\n85:\n", off, off - 8));
-                                } else if class == 5 {
-                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n85:\n", off));
-                                } else if class == 7 {
-                                    out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne 85f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n85:\n", off, off - 8));
-                                } else {
-                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov $16, %esi\n    call hbc_free\n85:\n", off));
-                                }
-                                out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
-                            }
-                            _ => unreachable!("booleans rejected in analysis"),
-                        }
-                    }
-                }
-                env.push(CgLocal { name: id.clone(), ty: t, off });
-            }
-            Stmt::Print(_, es, inline) => {
+fn cg_print_items(es: &[Expr], inline: bool, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
                 // Harbour `?` is a QOut( <items> ) call (probes b51-b59,
                 // t12 vs -gtstd binary): ALL items are evaluated FIRST
                 // (side effects like prints inside calls happen before the
@@ -8877,6 +8775,160 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 if !es.is_empty() {
                     out.push_str(&format!("    add ${}, %rsp\n", 16 * es.len()));
                 }
+}
+
+fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, ll: &Option<(String, String)>, slots: &[(usize, u8)], dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
+    for (si, s) in stmts.iter().enumerate() {
+        trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
+        match s {
+            Stmt::SelfSet(..) | Stmt::SendSet(..) | Stmt::SendStmt(..) => unreachable!("rejected before codegen"),
+            Stmt::CallStmt(_, e) => {
+                // Run the call, then release the discarded owned return
+                // with the same helper the epilogue would use on a slot
+                // of that type (oracle hk256: the discard is legal).
+                cg_expr(e, env, sigs, strs, out, target);
+                match expr_ty(e, env, sigs) {
+                    Ty::StrOwn => out.push_str("    mov %rax, %rdi
+    call hbc_freestr
+"),
+                    Ty::DArr => out.push_str("    mov %rax, %rdi
+    mov $16, %esi
+    call hbc_free
+"),
+                    Ty::DArrS => out.push_str("    mov %rax, %rdi
+    mov %rdx, %rsi
+    call hbc_sfree
+"),
+                    Ty::DArr2 => out.push_str("    mov %rax, %rdi
+    mov %rdx, %rsi
+    call hbc_free2
+"),
+                    _ => {}
+                }
+            }
+            Stmt::Local(_, id, e) => {
+                let mut t = expr_ty(e, env, sigs);
+                // Prescan widening (probe n2): an i64 initializer whose
+                // local later receives a Dyn value gets the 16-byte slot;
+                // the i64 initializer is tagged in as {0, payload}.
+                let i64_init = t == Ty::I64 && dyn_names.contains(id);
+                if i64_init { t = Ty::Dyn; }
+                // `@s` widening (hk218): a local passed by reference needs an
+                // owned-capable slot from the start (the callee frees and
+                // re-stores through the pointer), so a rodata literal
+                // initializer is copied into an owned buffer.
+                let byref_str = t == Ty::Str && byref_names.contains(id);
+                if byref_str { t = Ty::StrOwn; }
+                // Bare-local FOR counter (hk336): i64 slot, in lockstep
+                // with the checker and layout through the one shared
+                // predicate. The NIL the slot would hold before the FOR
+                // is unobservable (mention-clean rule); it starts at 0
+                // and the FOR writes it.
+                let bare_cnt = t == Ty::Dyn && matches!(e, Expr::Nil) && !byref_names.contains(id) && bare_local_is_for_counter(stmts, si, id);
+                if bare_cnt { t = Ty::I64; }
+                *frame += size_of(t);
+                let off = *frame;
+                if bare_cnt {
+                    out.push_str(&format!("    movq $0, -{}(%rbp)\n", off));
+                    env.push(CgLocal { name: id.clone(), ty: t, off });
+                    continue;
+                }
+                if t == Ty::Hash {
+                    if let Expr::HashLit(ps) = e {
+                        // The slot starts zeroed by the prologue. Pairs are
+                        // inserted in source order, key first then value
+                        // (probe h9); hbc_hput copies the key bytes and the
+                        // 16-byte value, so the temporaries stay owned here.
+                        for (k, v) in ps {
+                            cg_value(k, env, sigs, strs, out, target);
+                            out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                            cg_value(v, env, sigs, strs, out, target);
+                            if expr_ty(v, env, sigs) == Ty::I64 {
+                                out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                            }
+                            if expr_ty(v, env, sigs) == Ty::Bool {
+                                out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
+                            }
+                            out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                            out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n    add $32, %rsp\n", off));
+                        }
+                        env.push(CgLocal { name: id.clone(), ty: t, off });
+                        continue;
+                    }
+                }
+                match t {
+                    Ty::F64 => {
+                        // Two dynamic slots: value + decimal metadata
+                        // (reassignment replaces both; copies carry both).
+                        cg_f64_load(e, env, sigs, strs, out, target);
+                        out.push_str(&format!("    movsd %xmm0, -{}(%rbp)\n    mov %rdi, -{}(%rbp)\n", off, off - 8));
+                    }
+                    Ty::Arr(_) => cg_array_value(e, off, env, sigs, strs, out, target),
+                    _ => {
+                        cg_value(e, env, sigs, strs, out, target);
+                        if i64_init {
+                            out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                        }
+                        if byref_str {
+                            // rodata -> owned copy (hbc_strcpy), or the
+                            // epilogue / a `@` callee would free rodata.
+                            out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                        }
+                        // A moved-out DArr SOURCE slot is nulled right after
+                        // the load: every allocation keeps exactly one owner.
+                        if let Expr::Var(src) = e {
+                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
+                                out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
+                            }
+                        }
+                        match t {
+                            Ty::I64 | Ty::Block(_) | Ty::Bool => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
+                            Ty::Str => {
+                                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
+                                out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
+                            }
+                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::Dyn => {
+                                // A Dyn initialized FROM A VAR borrows its
+                                // pair: clone any string payload so the new
+                                // slot owns its own copy (the same boundary
+                                // rule as Dyn-to-Dyn assignment).
+                                if t == Ty::Dyn && matches!(e, Expr::Var(_)) {
+                                    cg_dyn_clone_if_str(out);
+                                }
+                                // The slot can hold a live value when a
+                                // `local` re-declares inside a loop body:
+                                // free the old allocation first (null-safe).
+                                // The new value waits on the stack: hbc_free
+                                // clobbers caller-saved registers (syscall).
+                                let class = slots.iter().find(|(o, _)| *o == off).map(|(_, c)| *c).unwrap_or(0);
+                                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                                if class == 1 {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_free2\n85:\n", off, off - 8));
+                                } else if class == 3 {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    mov $2, %edx\n    call hbc_rfree\n85:\n", off, off - 8));
+                                } else if class == 6 {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    mov $3, %edx\n    call hbc_rfree\n85:\n", off, off - 8));
+                                } else if class == 2 {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_hfree\n85:\n", off, off - 8));
+                                } else if class == 4 {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_sfree\n85:\n", off, off - 8));
+                                } else if class == 5 {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n85:\n", off));
+                                } else if class == 7 {
+                                    out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne 85f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n85:\n", off, off - 8));
+                                } else {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov $16, %esi\n    call hbc_free\n85:\n", off));
+                                }
+                                out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
+                            }
+                            _ => unreachable!("booleans rejected in analysis"),
+                        }
+                    }
+                }
+                env.push(CgLocal { name: id.clone(), ty: t, off });
+            }
+            Stmt::Print(_, es, inline) => {
+                cg_print_items(es, *inline, env, sigs, strs, out, target);
             }
             Stmt::Ret(_, Some(e)) => {
                 if let Ty::Arr(k) = expr_ty(e, env, sigs) {
@@ -10342,7 +10394,8 @@ fn emit_block(id: usize, params: &[String], body: &[Expr], sigs: &[Sig], strs: &
     frame = trace_off;
     out.push_str(&format!("hbc_blk_{}:\n", id));
     out.push_str("    push %rbp\n    mov %rsp, %rbp\n");
-    let frame = if target == Target::Windows { (frame + 15) & !15 } else { frame };
+    // Blocks can now call output/string helpers: align both targets.
+    let frame = (frame + 15) & !15;
     if frame > 0 {
         out.push_str(&format!("    sub ${}, %rsp\n", frame));
     }
@@ -11995,6 +12048,16 @@ hbc_trim:
     jmp .Ltrim_again
 .Ltrim_copy:
     jmp hbc_strcpy
+
+# hbc_asc: borrowed rdi/length rsi -> unsigned first byte, empty ->0.
+# Byte-codepage only (src/rtl/chrasc.c). Never dereference empty input.
+hbc_asc:
+    xor %eax, %eax
+    test %rsi, %rsi
+    jz .Lasc_done
+    movzbl (%rdi), %eax
+.Lasc_done:
+    ret
 
 # hbc_chr: rdi = signed integer -> owned one-byte string rax/rdx.
 # Byte-codepage semantics (hk387/hk389): n &255, NUL is still len1.
