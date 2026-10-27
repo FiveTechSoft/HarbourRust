@@ -15696,6 +15696,7 @@ fn main() {
     let mut incdirs: Vec<String> = Vec::new();
     let mut instrument = false;
     let mut llvm = false;
+    let mut llvm_trace = true;
     let mut ai = 1;
     while ai < args.len() {
         let a = &args[ai];
@@ -15704,6 +15705,7 @@ fn main() {
             "--target=windows" => target = Target::Windows,
             "--instrument" => instrument = true,
             "--experimental-llvm" => llvm = true,
+            "--experimental-llvm-no-trace" => {llvm = true; llvm_trace = false;},
             "-I" => { ai += 1; incdirs.push(args.get(ai).expect("-I needs a directory").clone()); }
             _ if a.starts_with("-I") => incdirs.push(a[2..].to_string()),
             _ if a.starts_with("--") => { eprintln!("usage: hbc <input.hb> <output.s> [--target=linux|windows] [-I dir]..."); process::exit(2); }
@@ -16017,10 +16019,11 @@ fn main() {
 
     // Pass 2: generate x86-64 assembly from the validated AST only.
     if llvm {
-        match llvm_scalar::emit(&funcs, &sigs, target) {
+        match llvm_scalar::emit(&funcs, &sigs, target, llvm_trace) {
             Ok(ir) => { fs::write(pos[1], ir).unwrap();
                 let mut rt = emit_asm(&[], &[], target, false);
                 rt = rt.replace("call hbc_fn_main", "call ll_main");
+                rt.push_str("\n.globl hbc_trace_top\n");
                 fs::write(format!("{}.runtime.s",pos[1]), rt).unwrap();
                 return;
             },

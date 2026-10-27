@@ -13,6 +13,7 @@ s+='    mov $10, %'+('rcx' if win else 'rdi')+'\n    call ll_fact\n    cmp $3628
 for j,r in enumerate(regs):s+=f'    cmp ${0x123400+j}, %{r}\n    jne abi_fail\n'
 if win:
  for j in range(10):s+=f'    movq %xmm{j+6}, %rax\n    cmp ${0x567800+j}, %rax\n    jne abi_fail\n'
+s+='    cmpq $0, hbc_trace_top(%rip)\n    jne abi_fail\n'
 s+='    cmp %rsp, 216(%rsp)\n    jne abi_fail\n    leave\n    ret\nabi_fail:\n    ud2\n'
 s+='\n.section .rdata,"r"\n' if win else '\n.section .rodata\n'
 s+='abi_text: .ascii "ABI"\n'

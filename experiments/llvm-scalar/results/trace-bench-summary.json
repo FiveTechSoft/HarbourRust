@@ -1,0 +1,82 @@
+{
+  "sumloop": {
+    "current": {
+      "median_ns": 2458362.0,
+      "min_ns": 2366054.1,
+      "max_ns": 3785499.8,
+      "n": 31
+    },
+    "llvm_traced": {
+      "median_ns": 616553.0,
+      "min_ns": 600932.6,
+      "max_ns": 1555183.6,
+      "n": 31
+    },
+    "rust_untraced": {
+      "median_ns": 303649.9,
+      "min_ns": 300808.8,
+      "max_ns": 418257.7,
+      "n": 31
+    }
+  },
+  "branchloop": {
+    "current": {
+      "median_ns": 3513471.8,
+      "min_ns": 3381338.8,
+      "max_ns": 4863151.8,
+      "n": 31
+    },
+    "llvm_traced": {
+      "median_ns": 985514.4,
+      "min_ns": 910087.3,
+      "max_ns": 1401916.3,
+      "n": 31
+    },
+    "rust_untraced": {
+      "median_ns": 797367.0,
+      "min_ns": 767142.2,
+      "max_ns": 973516.8,
+      "n": 31
+    }
+  },
+  "fact": {
+    "current": {
+      "median_ns": 71.1851,
+      "min_ns": 69.2636,
+      "max_ns": 75.4222,
+      "n": 31
+    },
+    "llvm_traced": {
+      "median_ns": 25.6836,
+      "min_ns": 24.1254,
+      "max_ns": 27.4525,
+      "n": 31
+    },
+    "rust_untraced": {
+      "median_ns": 4.4124,
+      "min_ns": 4.3954,
+      "max_ns": 6.0048,
+      "n": 31
+    }
+  },
+  "recurrence": {
+    "current": {
+      "median_ns": 3453718.4,
+      "min_ns": 3114042.7,
+      "max_ns": 4657810.2,
+      "n": 31
+    },
+    "llvm_traced": {
+      "median_ns": 768945.4,
+      "min_ns": 761005.2,
+      "max_ns": 1138057.8,
+      "n": 31
+    },
+    "rust_untraced": {
+      "median_ns": 931093.8,
+      "min_ns": 924361.5,
+      "max_ns": 949736.0,
+      "n": 31
+    }
+  }
+}

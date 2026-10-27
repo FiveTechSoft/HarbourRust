@@ -1,0 +1,248 @@
+{
+  "run/bench.csv": {
+    "sumloop": {
+      "current_traced": {
+        "median_ns": 2364238.1,
+        "min_ns": 2339466.7,
+        "max_ns": 2559020.8,
+        "n": 31
+      },
+      "llvm_traced": {
+        "median_ns": 604904.0,
+        "min_ns": 600512.2,
+        "max_ns": 676074.7,
+        "n": 31
+      },
+      "rust_untraced": {
+        "median_ns": 302424.0,
+        "min_ns": 299333.7,
+        "max_ns": 343627.5,
+        "n": 31
+      }
+    },
+    "branchloop": {
+      "current_traced": {
+        "median_ns": 3309149.6,
+        "min_ns": 3284988.5,
+        "max_ns": 4796596.7,
+        "n": 31
+      },
+      "llvm_traced": {
+        "median_ns": 907780.3,
+        "min_ns": 902190.9,
+        "max_ns": 2188929.8,
+        "n": 31
+      },
+      "rust_untraced": {
+        "median_ns": 762289.2,
+        "min_ns": 759724.9,
+        "max_ns": 1205702.1,
+        "n": 31
+      }
+    },
+    "fact": {
+      "current_traced": {
+        "median_ns": 70.8259,
+        "min_ns": 69.4186,
+        "max_ns": 74.1059,
+        "n": 31
+      },
+      "llvm_traced": {
+        "median_ns": 20.32,
+        "min_ns": 20.2335,
+        "max_ns": 25.6508,
+        "n": 31
+      },
+      "rust_untraced": {
+        "median_ns": 4.41,
+        "min_ns": 4.3939,
+        "max_ns": 6.885,
+        "n": 31
+      }
+    },
+    "recurrence": {
+      "current_traced": {
+        "median_ns": 3311026.1,
+        "min_ns": 3027729.1,
+        "max_ns": 4151757.4,
+        "n": 31
+      },
+      "llvm_traced": {
+        "median_ns": 765184.9,
+        "min_ns": 761854.4,
+        "max_ns": 1042265.5,
+        "n": 31
+      },
+      "rust_untraced": {
+        "median_ns": 928049.4,
+        "min_ns": 922838.5,
+        "max_ns": 1097762.3,
+        "n": 31
+      }
+    }
+  },
+  "run/bench-no-trace.csv": {
+    "sumloop": {
+      "current_control_no_trace": {
+        "median_ns": 2818517.3,
+        "min_ns": 2558890.2,
+        "max_ns": 3059942.9,
+        "n": 31
+      },
+      "llvm_no_trace": {
+        "median_ns": 303439.6,
+        "min_ns": 299294.0,
+        "max_ns": 333772.8,
+        "n": 31
+      },
+      "rust_no_trace": {
+        "median_ns": 303028.0,
+        "min_ns": 299387.8,
+        "max_ns": 338152.5,
+        "n": 31
+      }
+    },
+    "branchloop": {
+      "current_control_no_trace": {
+        "median_ns": 2754803.9,
+        "min_ns": 2517286.7,
+        "max_ns": 4242586.2,
+        "n": 31
+      },
+      "llvm_no_trace": {
+        "median_ns": 764337.3,
+        "min_ns": 757810.7,
+        "max_ns": 1055431.6,
+        "n": 31
+      },
+      "rust_no_trace": {
+        "median_ns": 762597.6,
+        "min_ns": 757817.8,
+        "max_ns": 1444327.6,
+        "n": 31
+      }
+    },
+    "fact": {
+      "current_control_no_trace": {
+        "median_ns": 67.0008,
+        "min_ns": 53.9436,
+        "max_ns": 69.2494,
+        "n": 31
+      },
+      "llvm_no_trace": {
+        "median_ns": 4.33,
+        "min_ns": 4.2255,
+        "max_ns": 6.6284,
+        "n": 31
+      },
+      "rust_no_trace": {
+        "median_ns": 4.41,
+        "min_ns": 4.3911,
+        "max_ns": 6.6486,
+        "n": 31
+      }
+    },
+    "recurrence": {
+      "current_control_no_trace": {
+        "median_ns": 3711278.0,
+        "min_ns": 3624465.8,
+        "max_ns": 4145038.2,
+        "n": 31
+      },
+      "llvm_no_trace": {
+        "median_ns": 811203.2,
+        "min_ns": 802978.5,
+        "max_ns": 1172682.6,
+        "n": 31
+      },
+      "rust_no_trace": {
+        "median_ns": 930391.7,
+        "min_ns": 923400.8,
+        "max_ns": 1210667.6,
+        "n": 31
+      }
+    }
+  },
+  "run/bench-traced-rust.csv": {
+    "sumloop": {
+      "current_traced": {
+        "median_ns": 2386096.9,
+        "min_ns": 2352080.2,
+        "max_ns": 2774694.0,
+        "n": 31
+      },
+      "llvm_traced": {
+        "median_ns": 389346.7,
+        "min_ns": 386696.9,
+        "max_ns": 438286.6,
+        "n": 31
+      },
+      "rust_traced_control": {
+        "median_ns": 454333.1,
+        "min_ns": 450696.4,
+        "max_ns": 804764.5,
+        "n": 31
+      }
+    },
+    "branchloop": {
+      "current_traced": {
+        "median_ns": 2991335.4,
+        "min_ns": 2892303.6,
+        "max_ns": 3326373.0,
+        "n": 31
+      },
+      "llvm_traced": {
+        "median_ns": 991503.0,
+        "min_ns": 912565.9,
+        "max_ns": 1243994.2,
+        "n": 31
+      },
+      "rust_traced_control": {
+        "median_ns": 920523.1,
+        "min_ns": 902918.8,
+        "max_ns": 1284772.6,
+        "n": 31
+      }
+    },
+    "fact": {
+      "current_traced": {
+        "median_ns": 71.0528,
+        "min_ns": 69.1784,
+        "max_ns": 74.7224,
+        "n": 31
+      },
+      "llvm_traced": {
+        "median_ns": 20.2889,
+        "min_ns": 20.1328,
+        "max_ns": 24.0608,
+        "n": 31
+      },
+      "rust_traced_control": {
+        "median_ns": 21.4788,
+        "min_ns": 19.5103,
+        "max_ns": 29.339,
+        "n": 31
+      }
+    },
+    "recurrence": {
+      "current_traced": {
+        "median_ns": 3005558.5,
+        "min_ns": 2949573.0,
+        "max_ns": 3410433.8,
+        "n": 31
+      },
+      "llvm_traced": {
+        "median_ns": 770829.6,
+        "min_ns": 760880.5,
+        "max_ns": 1201763.4,
+        "n": 31
+      },
+      "rust_traced_control": {
+        "median_ns": 1213124.9,
+        "min_ns": 1190888.5,
+        "max_ns": 1791052.7,
+        "n": 31
+      }
+    }
+  }
+}

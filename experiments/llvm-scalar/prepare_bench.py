@@ -1,5 +1,6 @@
 import pathlib
 s=pathlib.Path('current.s').read_text();a=s.index('_start:');b=s.index('hbc_fn_sumloop:');s=s[:a]+s[b:];s=s.replace('    .globl _start','')
+s+='\n.globl hbc_trace_top\n'
 for name in ['sumloop','branchloop','fact','recurrence']:
  s+='\n.text\n.globl cur_'+name+'\ncur_'+name+':\n'
  for r in ['rbx','rbp','r12','r13','r14','r15']:s+='    push %'+r+'\n'

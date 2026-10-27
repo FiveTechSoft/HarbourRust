@@ -114,3 +114,41 @@ Official references:
 - https://www.llvm.org/docs/UndefinedBehavior.html
 - https://doc.rust-lang.org/stable/std/hint/fn.black_box.html
 - https://llvm.org/docs/CMake.html
+
+## Trace parity follow-up (supersedes the untraced configuration above)
+
+The experimental flag now emits native three-word trace records with the same
+runtime chain as the existing backend. No value storage model changes. Records
+link on entry, update original file/line before statements, update again before
+WHILE tests, and unlink on every return. Updates are volatile so LLVM cannot
+remove observable diagnostic state. ProcLine current-frame/literal0 uses the
+existing physical-line map, including macro-separated statements and continued
+lines. Prefix/postfix scalar increment expressions retain the existing clean
+promotion-boundary error; standalone `x++` remains the existing parser's +1
+assignment form, not an invented overflow check.
+
+Four controlled-error fixtures compare stdout, exit1 and full callstack bytes
+on Linux and Wine: nested calls, recursion, error after a completed call, and
+included-file origins. Successful corpus, edge, ProcLine and ABI tests remain.
+The ABI canary additionally checks trace-chain restoration after recursion.
+This establishes these registered cases, not universal signal/crash/error parity.
+
+Objects now use PIC relocation with the small code model; static relocation
+with pointer globals produced COFF address32 overflow at the normal 64-bit PE
+image base. Generated programs remain freestanding/no LLVM runtime dependency.
+
+`--experimental-llvm-no-trace` is an explicit analysis-only control, not a product
+replacement. The run script measures both, and builds a Rust control with matching
+native trace entry/update/leave writes. Results are in `trace-comparisons.json`.
+Traced LLVM sum measured0.605ms versus untraced Rust0.302ms in one linked harness.
+In a separately linked harness with traced Rust the same LLVM sum measured0.389ms
+versus Rust0.454ms. This large layout sensitivity is evidence not to claim a
+precise speed multiple or general parity. Branch measured0.992ms LLVM versus
+0.921ms traced Rust; recurrence0.771ms versus1.213ms. These are medians of31rotating
+samples, not real applications or a dedicated-machine result. The previous
+untraced near-Rust result is not transferable to diagnostic builds.
+
+Next gates remain larger data/runtime workloads, broad error-path coverage,
+repeatable dedicated-machine performance and packaging. No merge is recommended. Latest trace-enabled corpus file sizes: Linux24864bytes
+versus22048current; Windows24032bytes (same-runtime corpus with trace globals).
+These supersede the original untraced prototype sizes for the new configuration.

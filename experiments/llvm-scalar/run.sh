@@ -7,7 +7,7 @@ RUSTC=${RUSTC:-rustc}
 mkdir -p run
 "$RUSTC" -O ../../src/hbc.rs -o run/hbc
 # Linux end-to-end output and code generation.
-for case in corpus edge; do
+for case in corpus edge procline; do
  run/hbc "$case.hb" "run/$case-current.s"
  as -o "run/$case-current.o" "run/$case-current.s"
  ld -o "run/$case-current" "run/$case-current.o"
@@ -33,6 +33,14 @@ for c in validate bench; do
 done
 run/validate
 run/bench "${BENCH_N:-1000000}" > run/bench.csv
+# Deliberately untraced control for comparison to untraced Rust. Not product parity.
+run/hbc corpus.hb run/corpus-no-trace.ll --experimental-llvm-no-trace
+python3 llvm_aot.py run/corpus-no-trace.ll run/corpus-no-trace.o
+"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current_notrace.o -C link-arg=run/corpus-no-trace.o -C relocation-model=static bench.rs -o run/bench-no-trace
+run/bench-no-trace "${BENCH_N:-1000000}" > run/bench-no-trace.csv
+python3 make_traced_rust.py
+"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C relocation-model=static run/bench-traced-rust.rs -o run/bench-traced-rust
+run/bench-traced-rust "${BENCH_N:-1000000}" > run/bench-traced-rust.csv
 python3 abi_check.py
 as -o run/abi.o abi_l.s
 as -o run/abi-runtime.o abi_rt_l.s
@@ -42,7 +50,7 @@ echo 'PASS Linux ABI canary'
 # Optional cross-target verification. M is the MinGW bin directory.
 if [ -n "${M:-}" ]; then
  : "${MLIB:?MinGW import-library directory}"
- for case in corpus edge; do
+ for case in corpus edge procline; do
   run/hbc "$case.hb" "run/${case}_w.ll" --target=windows --experimental-llvm
   python3 llvm_aot.py "run/${case}_w.ll" "run/${case}_w.o" windows
   python3 link_runtime.py "run/${case}_w.ll.runtime.s" windows
@@ -65,3 +73,5 @@ if [ -n "${M:-}" ]; then
   echo 'PASS Wine ABI canary'
  fi
 fi
+
+python3 check_errors.py
