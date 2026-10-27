@@ -3639,3 +3639,32 @@ does not fix or claim original-source line remapping for all diagnostics.
 No runtime/codegen change: existing hk449 assembly is byte-identical,
 so its retained Harbour/HarbourRust measurement is unchanged, with no new
 speed claim for a preprocessing-only change.
+
+
+## 64an - ProcLine for the current native frame
+
+ProcLine() and ProcLine(0) now return the original source line of the
+current statement. Ancestor levels, variable levels, side-effecting level
+expressions and extra arguments remain named rejections: this is NOT full
+stack introspection. No runtime frame representation is changed. The
+current-frame result is emitted as a constant, including native codeblock
+source lines. The preprocessor retains a separate final-line map for
+ProcLine while preserving the existing FIRST-line origin used by diagnostic
+callstacks. Oracle hk453 showed why these maps differ: a semicolon-continued
+statement returns its FINAL physical line in Harbour. Includes, stripped
+directives, block bodies and nested functions retain their own source map.
+
+Original procline.prg is unchanged as t1015, SHA256
+8bdaa18da5476c96b1c76688c013673ccb82049470606fba3367e93c125b5121.
+Its complete output matches compiled Harbour -gtstd on Linux and Wine.
+Do not repair the original's stale Expected text (8/10/12): actual lines
+are3/5/7, and both compilers print the unchanged text. Frozen175 gains ONLY
+procline.prg,16 to17COMPILES. Nine regressions t1015-t1023 give1018 manifest
+cases +5harness =1023PASS. Prior diagnostic callstack/origin tests remain.
+
+hk455 sums1M current-frame ProcLine calls, SAME source/output,checksum
+5000000/finalcounter1000001. Nine alternating Linux startup-inclusive pairs:
+Harbour median0.059524770s, HarbourRust0.004037724s,
+about14.74x faster for THIS constant-lowered
+shape only. This does not measure generic stack inspection, Windows speed,
+overall Harbour compatibility or Rust/LLVM parity. Raw pairs/output retained.

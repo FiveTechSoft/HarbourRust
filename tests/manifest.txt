@@ -1010,3 +1010,12 @@ neg tests/t1010_pp_warning_follow_error_neg.hb #error next remains fatal
 neg tests/t1011_pp_warning_diagnostic_neg.hb line 3: undefined variable
 neg tests/t1013_pp_warning_unknown_directive_neg.hb unknown directive #notadirective
 posx tests/t1014_pp_warning_trace_origin.hb 1 Error: round dec out of range\nCallstack:\n  at main (tests/t1014_pp_warning_trace_origin.hb:4)
+pos tests/t1015_original_procline.hb \nhello 1          3 Expected:           8\nhello 2          5 Expected:          10\nhello 3          7 Expected:          12
+pos tests/t1016_procline_calls_block.hb \n         2          2\n         7          7\n         4
+pos tests/t1017_procline_continuation.hb \n         3          3\n         4\n         5\n         7
+pos tests/t1018_procline_return_if.hb \n         2\n         4\n         7\n         9
+neg tests/t1019_procline_ancestor_neg.hb current frame
+neg tests/t1020_procline_dynamic_neg.hb current frame
+neg tests/t1021_procline_arity_neg.hb current frame
+neg tests/t1022_procline_effect_arg_neg.hb current frame
+pos tests/t1023_procline_include.hb \n         2          4

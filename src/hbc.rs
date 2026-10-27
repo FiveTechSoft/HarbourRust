@@ -425,6 +425,8 @@ fn cg_f64_operand(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String
 thread_local! {
     static TRACE_ORIGINS: std::cell::RefCell<Vec<(String, usize)>> = std::cell::RefCell::new(Vec::new());
     static TRACE_BLOCK_LINES: std::cell::RefCell<std::collections::HashMap<usize, usize>> = std::cell::RefCell::new(std::collections::HashMap::new());
+    static PROC_LINES: std::cell::RefCell<Vec<usize>> = std::cell::RefCell::new(Vec::new());
+    static TRACE_LINE: std::cell::Cell<usize> = std::cell::Cell::new(0);
     static TRACE_OFFSET: std::cell::Cell<usize> = std::cell::Cell::new(0);
 }
 fn new_block_id() -> usize { BLOCK_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst) }
@@ -433,6 +435,8 @@ fn new_block_id() -> usize { BLOCK_ID.fetch_add(1, std::sync::atomic::Ordering::
 fn trace_location(name: &str, line: usize, strs: &mut Vec<String>, out: &mut String) {
     let (path, original) = TRACE_ORIGINS.with(|m| m.borrow().get(line.saturating_sub(1)).cloned())
         .unwrap_or_else(|| ("<unknown>".to_string(), line));
+    let proc_line = PROC_LINES.with(|v| v.borrow().get(line.saturating_sub(1)).copied()).unwrap_or(original);
+    TRACE_LINE.with(|v| v.set(proc_line));
     let text = format!("  at {} ({}:{})\n", name, path, original);
     let len = text.len();
     let id = strs.len(); strs.push(text);
@@ -1284,7 +1288,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "qout", "qqout", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "qout", "qqout", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -2906,6 +2910,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 if is_builtin(id, "hb_memcheck") {
                     return Ok(());
                 }
+                if is_builtin(id, "procline") { return Ok(()); }
                 if is_builtin(id, "len") && !args.is_empty() {
                     match &args[0] {
                         Expr::Index(v, _) if is_param(f, v).is_some() => {
@@ -3549,6 +3554,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             Some(v) => Ok(v.ty),
         },
         Expr::Call(id, args) => {
+            if is_builtin(id, "procline") {
+                if args.len() > 1 || (args.len() == 1 && !matches!(&args[0], Expr::Int(v) if v == "0")) {
+                    return Err(format!("line {}: `ProcLine` supports only no argument or literal zero (current frame); ancestor/dynamic levels are not in this increment", n));
+                }
+                return Ok(Ty::I64);
+            }
             if is_builtin(id, "hb_memcheck") {
                 // alloc/free balance counters (test harness only).
                 if !args.is_empty() {
@@ -6383,6 +6394,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id, "hb_memcheck") {
                 return;
             }
+            if is_builtin(id, "procline") { return; }
             if is_builtin(id, "len") {
                 apply_moves(&args[0], env, sigs, false);
                 return;
@@ -7370,6 +7382,10 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
             }
         }
+        Expr::Call(id, _) if is_builtin(id, "procline") => {
+            let line = TRACE_LINE.with(|v| v.get());
+            out.push_str(&format!("    mov ${}, %rax\n", line));
+        }
         Expr::Call(id, _) if is_builtin(id, "hb_memcheck") => {
             // alloc/free balance counters (test harness only).
             out.push_str("    mov hbc_mem_allocs(%rip), %rax\n    sub hbc_mem_frees(%rip), %rax\n");
@@ -8110,7 +8126,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hvalues") { return Ty::DArr; }
             if is_builtin(id, "hb_hclone") { return Ty::Hash; }
             if is_builtin(id, "qout") || is_builtin(id, "qqout") { return Ty::Dyn; }
-            if is_builtin(id, "asc") || is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") { return Ty::I64; }
+            if is_builtin(id, "asc") || is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
             if is_builtin(id, "valtype") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id, "chr") { return Ty::StrOwn; }
@@ -15494,6 +15510,7 @@ fn main() {
     }
 
     TRACE_ORIGINS.with(|m| *m.borrow_mut() = pre.origins.clone());
+    PROC_LINES.with(|m| *m.borrow_mut() = pre.end_lines.clone());
     let prog = match parse(&src) {
         Ok(p) => p,
         Err(msg) => { eprintln!("error: {}", msg); process::exit(1); }
