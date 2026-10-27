@@ -944,3 +944,6 @@ pos tests/t945_sequence_move.hb \n         1          1
 neg tests/t946_sequence_moved_again_neg.hb use of moved value
 neg tests/t947_sequence_moved_later_neg.hb use of moved value
 pos tests/t948_sequence_nested.hb \n         4          0\n         6\n         5.0          1\n.T.          3
+neg tests/t949_sequence_sibling_move_neg.hb use of moved value
+neg tests/t950_sequence_print_move_neg.hb use of moved value
+neg tests/t951_sequence_nested_move_neg.hb use of moved value

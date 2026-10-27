@@ -3410,3 +3410,20 @@ including startup: Harbour median0.030397646s,
 HarbourRust0.002380184s, about12.77x faster
 in this workload only. Raw pairs/output in sondas/hk441-linux-benchmark.json;
 no universal or Windows performance claim.
+
+## 64ac - sequence move effects reach following sibling expressions
+
+Post-64ab audit found a real ownership bug: the sequence checker rejected
+use-after-move INSIDE its temporary environment, but failed to propagate
+that environment's moved flags to following sibling expressions. Thus
+`(consume(s),1) + Len(s)` could be accepted after consume freed s. No live
+sharing or representation change fixes this: the checker must keep the
+ownership effect at the enclosing expression boundary. Six lines now OR
+the sequence-local moved flags back into the caller's environment. Three
+regressions t949-t951 reject the arithmetic sibling, later print argument
+and nested-list forms on both targets. This is a correctness repair, not
+a claimed Harbour behavior match (Harbour has shared dynamic lifetimes).
+946 actual manifest cases +3harness =949 PASS Linux and Windows/Wine.
+Sweep stays13/175. No new original completion or speed benefit is claimed;
+the previous identical-workload benchmark remains the relevant measurement
+because this changes only compile-time ownership analysis, not emitted code.

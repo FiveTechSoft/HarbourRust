@@ -3493,6 +3493,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 apply_moves(e, &mut local, sigs, false);
                 last = t;
             }
+            // Effects inside the list also precede sibling expressions.
+            // Keep the caller's ownership state, not only the list-local
+            // checks, so `(consume(s),1) + Len(s)` cannot read freed memory.
+            for (outer, inner) in env.iter_mut().zip(local.iter()) {
+                outer.moved |= inner.moved;
+            }
             Ok(last)
         }
         Expr::Int(_) => Ok(Ty::I64),
