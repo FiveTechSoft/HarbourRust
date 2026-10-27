@@ -527,12 +527,9 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                     it.next();
                     match c2 {
                         '"' => { closed = true; break; }
-                        '\\' => match it.next() {
-                            Some((_, '"')) => s.push('"'),
-                            Some((_, '\\')) => s.push('\\'),
-                            Some((_, o)) => return Err(format!("line {}: unsupported escape \\{}", n, o)),
-                            None => return Err(format!("line {}: unterminated string", n)),
-                        },
+                        // Ordinary Harbour quotes are raw, including a
+                        // backslash directly before the closing quote.
+                        // Escape strings e"..." are a separate syntax.
                         c3 => s.push(c3),
                     }
                 }
@@ -542,8 +539,7 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             '\'' => {
                 // Single-quoted strings (oracle hk213): same string type,
                 // the other quote nests freely. NO escapes (hk213b: a
-                // backslash is a literal character) - unlike our "..."
-                // strings, whose \" \\ deviation is registered.
+                // backslash is a literal character), like ordinary double quotes.
                 it.next();
                 let mut s = String::new();
                 let mut closed = false;

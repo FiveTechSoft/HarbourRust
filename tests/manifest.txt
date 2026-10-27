@@ -1026,3 +1026,7 @@ neg tests/t1027_default_unused_missing_neg.hb undefined variable `missing`
 neg tests/t1028_default_unused_moved_neg.hb use of moved value `s`
 pos tests/t1029_default_unused_array_hash.hb \n         2          1
 posx tests/t1030_original_errsys_failure.hb 1 \nWe are running and now an error will raiseType error: NIL used as a number\nCallstack:\n  at main (tests/t1030_original_errsys_failure.hb:13)
+pos tests/t1031_raw_double_quotes.hb \nC:\\temp\\path a\\\\b \\n \\r \\t\nend\\\nsingle\\backslash
+pos tests/t1032_raw_quote_macro.hb \nNAME\\n /*not comment*/ // && \\ expanded
+neg tests/t1033_raw_quote_unterminated_neg.hb unterminated string
+neg tests/t1034_raw_quote_backslash_escape_neg.hb unterminated string

@@ -3712,3 +3712,24 @@ mode, not a new fix or interactive error-system implementation. Frozen175
 stays19COMPILES; only18 under the prior accumulated successful-original
 count, plus this explicitly DIFFERENT error-mode original.1025 manifest
 cases +5harness=1030PASS Linux and Windows/Wine. No new speed claim.
+
+
+## 64ar - ordinary double-quoted strings are raw Harbour strings
+
+Oracle hk459 confirms ordinary double-quoted strings preserve backslashes:
+paths, literal backslash-n/r/t and doubled backslashes all remain data,
+and a backslash before the closing quote does not escape that quote.
+The old C-like escape interpretation was a registered divergence; it is
+now removed. Escaped e"..." strings remain a separate unsupported syntax,
+not silently confused with ordinary strings. Single-quote behavior stays
+unchanged. Macro/comment passes already treat ordinary quotes as raw,
+so this aligns the lexer with the complete existing quote pipeline.
+
+Four regressions t1031-t1034 cover exact output, quoted macro/comment
+markers, final backslash and malformed/unclosed quotes.1029 manifest cases
++5harness=1034PASS Linux and Windows/Wine. Sweep175 remains19COMPILES
+(18successful originals +1registered errsys failure-mode). iotcp.prg and
+longstr.prg move past quote errors to later unsupported statements/OutStd;
+NEITHER is claimed as a newly working original. No runtime helper or
+ownership change. Existing hk455 assembly is byte-identical and retained
+performance measurements are unchanged, with no new speed claim.
