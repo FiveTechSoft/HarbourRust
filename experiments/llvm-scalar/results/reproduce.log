@@ -1,0 +1,9 @@
+corpus.hb -> run/corpus-current.s (5 functions)
+PASS Linux exact output corpus
+edge.hb -> run/edge-current.s (2 functions)
+PASS Linux exact output edge
+3063 differential scalar calls PASS
+PASS Linux ABI canary
+PASS Wine exact output corpus
+PASS Wine exact output edge
+PASS Wine ABI canary

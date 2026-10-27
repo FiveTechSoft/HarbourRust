@@ -1,0 +1,82 @@
+{
+  "sumloop": {
+    "current_no_trace_control": {
+      "median_ns": 2746508.1,
+      "min_ns": 2548893.5,
+      "max_ns": 3275232.8,
+      "n": 31
+    },
+    "llvm": {
+      "median_ns": 304107.2,
+      "min_ns": 299567.4,
+      "max_ns": 657317.4,
+      "n": 31
+    },
+    "rust": {
+      "median_ns": 304610.3,
+      "min_ns": 299291.4,
+      "max_ns": 543147.2,
+      "n": 31
+    }
+  },
+  "branchloop": {
+    "current_no_trace_control": {
+      "median_ns": 2814675.4,
+      "min_ns": 2619650.6,
+      "max_ns": 4228824.7,
+      "n": 31
+    },
+    "llvm": {
+      "median_ns": 766670.0,
+      "min_ns": 761489.5,
+      "max_ns": 1090514.1,
+      "n": 31
+    },
+    "rust": {
+      "median_ns": 767930.6,
+      "min_ns": 760083.6,
+      "max_ns": 1248862.4,
+      "n": 31
+    }
+  },
+  "fact": {
+    "current_no_trace_control": {
+      "median_ns": 65.8224,
+      "min_ns": 57.1387,
+      "max_ns": 68.3069,
+      "n": 31
+    },
+    "llvm": {
+      "median_ns": 4.2289,
+      "min_ns": 4.2134,
+      "max_ns": 6.185,
+      "n": 31
+    },
+    "rust": {
+      "median_ns": 4.4074,
+      "min_ns": 4.391,
+      "max_ns": 6.2912,
+      "n": 31
+    }
+  },
+  "recurrence": {
+    "current_no_trace_control": {
+      "median_ns": 3758553.4,
+      "min_ns": 3635165.0,
+      "max_ns": 4383226.5,
+      "n": 31
+    },
+    "llvm": {
+      "median_ns": 809870.4,
+      "min_ns": 803294.8,
+      "max_ns": 1206807.3,
+      "n": 31
+    },
+    "rust": {
+      "median_ns": 929793.9,
+      "min_ns": 924102.4,
+      "max_ns": 1012436.5,
+      "n": 31
+    }
+  }
+}

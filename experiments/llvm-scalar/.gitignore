@@ -1,0 +1,7 @@
+/run/
+/current.s
+/bench_current*.s
+/bench_current*.o
+/corpus.o
+/corpus*.runtime.s
+/abi_*.s
