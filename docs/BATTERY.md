@@ -3830,3 +3830,26 @@ separate errsys failure-mode original. No new complete original is claimed;
 procname.prg passes Empty but stops at unsupported ProcName. Existing
 hk455 assembly is byte-identical; no new speed claim or general safety
 proof follows from these bounded checks.
+
+
+## 64av - ProcName current frame, including lexical block owner
+
+ProcName()/ProcName(0) return a borrowed compile-time string for the current
+function, uppercased like Harbour. A codeblock reports (b) plus the function
+where the block was DEFINED, not the function calling Eval; hk465/hk466
+measure MAIN/MIXCASE, (b)MAIN/(b)OTHER, nested call output and returned
+names. hk467 verifies a byref-specialized function still reports its source
+name SPECIAL, without an internal specialization suffix. The existing
+integer-result block limit stays: a block can print the name as an
+intermediate output argument, but cannot newly return strings through Eval.
+
+No new runtime helper, stack walker or allocation. The codegen context
+records the lexical function/block owner without changing diagnostic names.
+Ancestor/dynamic levels and side-effecting level arguments remain named
+rejections, consistent with ProcLine's current-frame-only limit. This does
+NOT complete stock procname.prg: its variable-level loop still rejects.
+
+Five new cases t1051-t1055 give1050manifest +5harness=1055PASS Linux/Wine.
+Frozen175 stays20COMPILES (19 accumulated successful originals plus the
+separate errsys failure-mode original). hk455 assembly remains byte-identical;
+no new speed claim, general stack introspection or Harbour-complete claim.

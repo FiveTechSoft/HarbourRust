@@ -426,6 +426,7 @@ thread_local! {
     static TRACE_ORIGINS: std::cell::RefCell<Vec<(String, usize)>> = std::cell::RefCell::new(Vec::new());
     static TRACE_BLOCK_LINES: std::cell::RefCell<std::collections::HashMap<usize, usize>> = std::cell::RefCell::new(std::collections::HashMap::new());
     static PROC_LINES: std::cell::RefCell<Vec<usize>> = std::cell::RefCell::new(Vec::new());
+    static PROC_NAME: std::cell::RefCell<String> = std::cell::RefCell::new(String::new());
     static TRACE_LINE: std::cell::Cell<usize> = std::cell::Cell::new(0);
     static TRACE_OFFSET: std::cell::Cell<usize> = std::cell::Cell::new(0);
 }
@@ -1284,7 +1285,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "qout", "qqout", "outstd", "outerr", "empty", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "qout", "qqout", "outstd", "outerr", "empty", "procname", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -3570,6 +3571,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `Empty` on borrowed nested arrays is not in this increment", n));
                 }
                 return Ok(Ty::Bool);
+            }
+            if is_builtin(id, "procname") {
+                if args.len() > 1 || (args.len() == 1 && !matches!(&args[0], Expr::Int(v) if v == "0")) {
+                    return Err(format!("line {}: `ProcName` supports only no argument or literal zero (current frame); ancestor/dynamic levels are not in this increment", n));
+                }
+                return Ok(Ty::Str);
             }
             if is_builtin(id, "hb_eol") {
                 if !args.is_empty() { return Err(format!("line {}: `hb_eol` takes no arguments in this increment", n)); }
@@ -6415,7 +6422,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id, "hb_memcheck") {
                 return;
             }
-            if is_builtin(id, "procline") || is_builtin(id, "hb_eol") { return; }
+            if is_builtin(id, "procline") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return; }
             if is_builtin(id, "empty") { apply_moves(&args[0], env, sigs, false); return; }
             if is_builtin(id, "len") {
                 apply_moves(&args[0], env, sigs, false);
@@ -7434,6 +7441,11 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 _ => unreachable!("checked Empty shape"),
             }
         }
+        Expr::Call(id, _) if is_builtin(id, "procname") => {
+            let name = PROC_NAME.with(|v| v.borrow().clone());
+            let ix = strs.len(); let len = name.len(); strs.push(name);
+            out.push_str(&format!("    lea .Lstr{}(%rip), %rax\n    mov ${}, %edx\n", ix, len));
+        }
         Expr::Call(id, _) if is_builtin(id, "hb_eol") => {
             let eol = if matches!(target, Target::Windows) { "\r\n" } else { "\n" };
             let ix = strs.len(); strs.push(eol.to_string());
@@ -8185,7 +8197,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "empty") { return Ty::Bool; }
             if is_output_call(id) { return Ty::Dyn; }
             if is_builtin(id, "asc") || is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
-            if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") { return Ty::Str; } // hk88-hk92
+            if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id, "chr") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
@@ -10644,7 +10656,7 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
 // order, the LAST one's value returned in %rax (probe c4). Integer
 // parameters and bodies only in this increment (checked in analysis), so
 // no strings, no drops, no heap.
-fn emit_block(id: usize, params: &[String], body: &[Expr], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     let mut lenv: Vec<CgLocal> = Vec::new();
     let mut frame = 0usize;
     for p in params {
@@ -10661,6 +10673,7 @@ fn emit_block(id: usize, params: &[String], body: &[Expr], sigs: &[Sig], strs: &
     if frame > 0 {
         out.push_str(&format!("    sub ${}, %rsp\n", frame));
     }
+    PROC_NAME.with(|v| *v.borrow_mut() = format!("(b){}", owner.split("__br").next().unwrap_or(owner).to_ascii_uppercase()));
     trace_link(trace_off, out);
     let block_line = TRACE_BLOCK_LINES.with(|m| m.borrow().get(&id).copied()).unwrap_or(0);
     trace_location(&format!("<block#{}>", id), block_line, strs, out);
@@ -10763,6 +10776,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     if frame > 0 {
         out.push_str(&format!("    sub ${}, %rsp\n", frame));
     }
+    PROC_NAME.with(|v| *v.borrow_mut() = f.name.split("__br").next().unwrap_or(&f.name).to_ascii_uppercase());
     trace_link(trace_off, out);
     trace_location(&f.name, f.stmts.first().map(stmt_line).unwrap_or(0), strs, out);
     // Zero-init every dynamic-array slot (parameters included): the
@@ -10861,7 +10875,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     let mut blocks = Vec::new();
     collect_blocks_stmts(&f.stmts, &mut blocks);
     for (id, ps, body) in blocks {
-        emit_block(id, &ps, &body, sigs, strs, out, target);
+        emit_block(&f.name, id, &ps, &body, sigs, strs, out, target);
     }
 }
 

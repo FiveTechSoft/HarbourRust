@@ -1046,3 +1046,8 @@ neg tests/t1047_empty_dyn_neg.hb `Empty` on generic Dyn values
 neg tests/t1048_empty_temp_array_neg.hb `Empty` on an array/hash needs a variable
 neg tests/t1049_empty_arity_neg.hb `Empty` takes one argument
 neg tests/t1050_empty_moved_neg.hb use of moved value
+pos tests/t1051_procname_current.hb \nMAIN MAIN\nMIXCASE MIXCASE(b)MAIN\n         1
+pos tests/t1052_procname_return_block.hb \nWHO .F.          3(b)OTHER (b)OTHER\n         2 OTHER
+neg tests/t1053_procname_ancestor_neg.hb `ProcName` supports only no argument or literal zero
+neg tests/t1054_procname_effect_arg_neg.hb `ProcName` supports only no argument or literal zero
+pos tests/t1055_procname_byref.hb \nSPECIAL          4
