@@ -963,3 +963,11 @@ neg tests/t964_qout_seq_sibling_move_neg.hb use of moved value
 neg tests/t965_qout_seq_nested_move_neg.hb use of moved value
 neg tests/t966_qout_seq_print_move_neg.hb use of moved value
 neg tests/t967_qout_call_sibling_move_neg.hb use of moved value
+neg tests/t968_clone_if_else_move_neg.hb use of moved value
+neg tests/t969_clone_while_exit_move_neg.hb use of moved value
+neg tests/t970_clone_for_exit_move_neg.hb use of moved value
+neg tests/t971_clone_foreach_exit_move_neg.hb use of moved value
+neg tests/t972_clone_nested_output_move_neg.hb use of moved value
+neg tests/t973_clone_loop_continue_move_neg.hb not reassigned before `loop`
+neg tests/t974_clone_block_capture_move_neg.hb codeblock captures are not in
+pos tests/t975_clone_reassign_paths.hb \n        97\nb\n        98\n       100\nd\n       100\ne\n       101\n       102\nf

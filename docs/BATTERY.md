@@ -3460,3 +3460,35 @@ change: only compile-time effect propagation. 962 manifest +3harness =965
 PASS Linux and Windows/Wine. Frozen175 stays13COMPILES. No new original
 or speed claim; successful hk441 emits byte-identical assembly to64ad.
 This audit fixes tested holes, not a general memory-safety proof.
+
+## 64af - checker environment-copy pattern audit
+
+No compiler changes. Reviewed ALL ownership-checker Local environment
+copies in current source (not only discovered repros):
+
+- Sequence env.to_vec: sequential effects, merged moved flags (64ac).
+- QOut/QQOut item_env.to_vec: item order, merged moved flags (64ae).
+- IF then/else env.clone: both branches share the post-condition seed;
+  post-branch state ORs moved flags for all outer variables. Conservatively
+  includes returning branches; over-rejection is not a lifetime hole.
+- WHILE/FOR/FOR EACH env.clone: back-edge move checks, exit move snapshots,
+  and post-loop joins include pre/body/exit states. Reassignment restores
+  a live owner. FOR EACH restores the borrowed variable's type/ro fields.
+- Block benv is constructed only from integer parameters: enclosing captures
+  are explicitly rejected. There is no outer owner state to merge.
+- Codegen CgLocal clones, prescan name sets and individual Ty clones carry
+  no checker ownership flags; they are not alternate Local effect states.
+
+Eight new t968-t975 cases pin IF else joins, WHILE/FOR/FOR EACH exit joins,
+LOOP back edges, nested output and rejected captures. Positive hk445 uses
+explicit reassignment through IF, FOR, WHILE exit and FOR EACH paths and
+byte-matches compiled Harbour -gtstd with instrumentation on both targets.
+970 actual manifest cases +3harness =973 PASS Linux and Windows/Wine.
+Frozen175 stays13COMPILES. This is a bounded copy/merge-pattern audit, NOT
+a claim that all ownership, aliasing or memory-safety bugs are excluded.
+hk444 using a static array as the FOR EACH collection exposed a separate
+preexisting codegen panic (whole-array value through scalar emitter).
+Its source/output are retained as a failed probe, not a match. Distinct
+hk445 uses Array(2), the supported dynamic-collection route. The static
+FOR EACH panic remains OPEN for follow-up, not hidden by this audit.
+No new original or performance claim: source/runtime unchanged from64ae.
