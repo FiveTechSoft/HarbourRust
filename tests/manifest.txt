@@ -992,3 +992,13 @@ pos tests/t993_inline_if_discard_balance.hb \n         0
 neg tests/t994_inline_if_missing_condition_neg.hb unexpected token Comma
 neg tests/t995_inline_if_extra_branch_neg.hb takes 3 arguments
 neg tests/t996_regular_call_empty_arg_neg.hb unexpected token Comma
+pos tests/t997_original_recursiv.hb \nTesting recursive calls\n\n   3628800\n   3628800
+pos tests/t998_recursive_inline_mutual.hb \n   3628800     362880
+pos tests/t999_recursive_inline_float.hb \n         4.25
+pos tests/t1000_recursive_inline_bool.hb \n.T.
+pos tests/t1001_recursive_inline_str.hb \nyes
+neg tests/t1002_recursive_inline_mixed.hb branches must share a scalar type
+neg tests/t1003_recursive_inline_wrongarg.hb argument 1
+neg tests/t1004_recursive_inline_nonanchor.hb never returns a value
+neg tests/t1005_recursive_inline_noground.hb never returns a value
+pos tests/t1006_recursive_inline_multiple_returns.hb \n         5

@@ -3584,3 +3584,32 @@ alternating uninstrumented Linux pairs including startup: Harbour median
 0.065851097s, HarbourRust0.016498614s, about3.99x
 faster for THIS workload only. Raw pairs/output retained. No Windows speed
 claim, no general Harbour claim and no comparison to Rust/LLVM performance.
+
+
+## 64al - literal base-case anchors for recursive inline-IF returns
+
+Stock recursiv.prg has a single RETURN IIF(a<2,1,a*f(a-1)). Its
+signature previously stayed void because checking the recursive call
+failed before the return type could be learned. The existing signature
+fixpoint now accepts a provisional literal scalar anchor from one inline-IF
+return: integer, float, logical or borrowed string. This only seeds the
+initial signature table. All arms, parameter uses and calls still undergo
+the ordinary converged-table check before codegen. Multiple return sites
+use the previous inference path; mixed/unknown/owned arms are not guessed.
+A recursion with no literal anchor remains a named rejection. No new VM,
+representation or runtime mechanism is introduced.
+
+Original recursiv.prg is unchanged as t997, SHA256
+48239c4d3d37cc414d4a6fca7ee7ba3c302b7bc210247792a8e83db9de0f8e5f.
+Its complete output byte-matches Harbour -gtstd on Linux and Wine. Sweep175
+gains ONLY recursiv.prg from14 to15COMPILES. Ten regressions t997-t1006 cover
+original factorial, mutual recursion, float/logical/string return channels,
+wrong argument and mixed-arm errors, no-anchor limits, and unchanged
+multiple-return inference.1001 manifest cases +5harness =1006PASS.
+
+hk449 measures100000 recursive factorial(10) calls from the SAME source
+on Harbour and HarbourRust, checksum362880000000/finalcounter100001.
+Nine alternating uninstrumented Linux startup-inclusive pairs: Harbour
+median0.073611097s, HarbourRust0.007593844s,
+about9.69x faster ONLY for this workload.
+Raw pairs/output retained. Not Windows/general speed or Rust/LLVM parity.

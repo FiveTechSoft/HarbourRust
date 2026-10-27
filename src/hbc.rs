@@ -15580,12 +15580,51 @@ fn main() {
     // below. Reaching the cap means the monotonicity argument broke -
     // an explicit diagnostic, never a silent assumption.
     let cap = 2 + 4 * funcs.iter().map(|f| f.params.len() + 1).sum::<usize>();
+    // A single inline-IF return can carry its own concrete base-case
+    // anchor before recursive signatures exist (stock recursiv.prg).
+    // This is ONLY a provisional scalar seed: every arm and every call
+    // must pass ordinary type checking against the converged table before
+    // codegen. Do not seed unknown calls/owned values or mixed return sites.
+    fn inline_ret_seed(f: &Func) -> Option<Ty> {
+        fn literal(e: &Expr) -> Option<Ty> {
+            match e {
+                Expr::Int(_) => Some(Ty::I64),
+                Expr::Float(..) | Expr::FloatV(..) => Some(Ty::F64),
+                Expr::Log(_) => Some(Ty::Bool),
+                Expr::Str(_) => Some(Ty::Str),
+                _ => None,
+            }
+        }
+        let mut returns = Vec::new();
+        fn collect<'a>(ss: &'a [Stmt], out: &mut Vec<Option<&'a Expr>>) {
+            for s in ss {
+                match s {
+                    Stmt::Ret(_, e) => out.push(e.as_ref()),
+                    Stmt::If(_, _, a, b) => { collect(a, out); collect(b, out); }
+                    Stmt::While(_, _, b) | Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => collect(b, out),
+                    _ => {}
+                }
+            }
+        }
+        collect(&f.stmts, &mut returns);
+        if returns.len() != 1 { return None; }
+        if let Some(Expr::Call(id, args)) = returns[0] {
+            if is_builtin(id, "iif") && args.len() == 3 {
+                return match (literal(&args[1]), literal(&args[2])) {
+                    (Some(a), Some(b)) if a == b => Some(a),
+                    (Some(a), None) | (None, Some(a)) => Some(a),
+                    _ => None,
+                };
+            }
+        }
+        None
+    }
     let mut view: Vec<Sig> = funcs.iter().map(|f| Sig {
         name: f.name.clone(),
         borrowed: vec![false; f.params.len()],
         arr_moved: vec![false; f.params.len()],
         params: vec![Ty::I64; f.params.len()],
-        ret: None,
+        ret: if f.name == "main" { None } else { inline_ret_seed(f) },
         inferred: vec![false; f.params.len()],
         arg_ev: vec![None; f.params.len()],
     }).collect();
