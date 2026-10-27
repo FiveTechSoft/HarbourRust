@@ -1,0 +1,5 @@
+Harbour 3.2.1dev (r2610242111)
+Copyright (c) 1999-2025, https://harbour.github.io/
+Compiling 'sondas/hk420.prg'...
+Lines 8, Functions/Procedures 1
+Generating C source output to '/tmp/hbmk_bm40t7.dir/hk420.c'... Done.

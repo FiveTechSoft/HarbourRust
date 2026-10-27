@@ -46,7 +46,7 @@ enum Tok {
     Ident(String),
     Int(String),
     Str(String), // already unescaped content
-    Plus, Minus, Star, Slash, Pct, Dollar, Caret,
+    IncTok, DecTok, Plus, Minus, Star, Slash, Pct, Dollar, Caret,
     LParen, RParen, Comma,
     LBrace, RBrace, LBracket, RBracket, Pipe,
     Assign,   // :=
@@ -474,8 +474,8 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                 toks.push(Tok::Slash);
                 it.next();
             }
-            '+' => { toks.push(Tok::Plus); it.next(); }
-            '-' => { toks.push(Tok::Minus); it.next(); }
+            '+' => { it.next(); if it.peek().map(|&(_,c)|c) == Some('+') { it.next(); toks.push(Tok::IncTok); } else { toks.push(Tok::Plus); } }
+            '-' => { it.next(); if it.peek().map(|&(_,c)|c) == Some('-') { it.next(); toks.push(Tok::DecTok); } else { toks.push(Tok::Minus); } }
             '*' => {
                 // Harbour `**` is the same power operator as `^` (hk356).
                 it.next();
@@ -718,6 +718,7 @@ enum Expr {
     Int(String),
     Str(String),
     Var(String),
+    Inc(String, i8, bool), // variable lvalue, delta +1/-1, prefix flag
     Call(String, Vec<Expr>),
     ByRef(String),             // `@x` call argument: exclusive borrow of the caller's slot (hk216 family; alias rejection diverges from hk219, registered)
     Bin(char, Box<Expr>, Box<Expr>),
@@ -809,16 +810,10 @@ impl P {
             let op = match self.peek() {
                 Some(Tok::Plus) => {
                     self.pos += 1;
-                    if self.peek() == Some(&Tok::Plus) {
-                        return Err(format!("line {}: `++`/`--` inside expressions is not in this increment (oracle hk246 measures postfix `x++` as the OLD value and prefix `++x` as the NEW one; the statement forms `++x`, `x++`, `--x`, `x--` work)", self.n));
-                    }
                     '+'
                 }
                 Some(Tok::Minus) => {
                     self.pos += 1;
-                    if self.peek() == Some(&Tok::Minus) {
-                        return Err(format!("line {}: `++`/`--` inside expressions is not in this increment (oracle hk246 measures postfix `x++` as the OLD value and prefix `++x` as the NEW one; the statement forms `++x`, `x++`, `--x`, `x--` work)", self.n));
-                    }
                     '-'
                 }
                 _ => break,
@@ -905,18 +900,36 @@ impl P {
             }
             e = Expr::Send(Box::new(e), name, args);
         }
+        if matches!(self.peek(), Some(Tok::IncTok | Tok::DecTok)) {
+            let delta = if self.peek() == Some(&Tok::IncTok) { 1 } else { -1 };
+            self.pos += 1;
+            let id = match e {
+                Expr::Var(id) => id,
+                _ => return Err(format!("line {}: expression ++/-- requires a variable lvalue in this increment", self.n)),
+            };
+            e = Expr::Inc(id, delta, false);
+        }
         Ok(e)
     }
     fn factor_primary(&mut self) -> Result<Expr, String> {
         match self.bump() {
+            Some(Tok::IncTok) => {
+                let e = self.factor()?;
+                match e {
+                    Expr::Var(id) => Ok(Expr::Inc(id, 1, true)),
+                    _ => Err(format!("line {}: expression ++/-- requires a variable lvalue in this increment", self.n)),
+                }
+            }
+            Some(Tok::DecTok) => {
+                let e = self.factor()?;
+                match e {
+                    Expr::Var(id) => Ok(Expr::Inc(id, -1, true)),
+                    _ => Err(format!("line {}: expression ++/-- requires a variable lvalue in this increment", self.n)),
+                }
+            }
             // Harbour unary minus (probe q1: `? -7`): sugar for 0 - e, so
             // the i64 typing/codegen path applies unchanged.
             Some(Tok::Minus) => {
-                if self.peek() == Some(&Tok::Minus) {
-                    // Adjacent `--` is Harbour pre-decrement, not double
-                    // negation; without this guard it parsed as -(-x) = x.
-                    return Err(format!("line {}: `++`/`--` inside expressions is not in this increment (oracle hk246 measures postfix `x++` as the OLD value and prefix `++x` as the NEW one; the statement forms `++x`, `x++`, `--x`, `x--` work)", self.n));
-                }
                 let e = self.factor()?;
                 // Unary minus on a float LITERAL folds at parse time (hk278
                 // measures -5.5 printing; float arithmetic is not in).
@@ -934,9 +947,6 @@ impl P {
                     return Ok(Expr::Int(format!("-{}", v)));
                 }
                 Ok(Expr::Bin('-', Box::new(Expr::Int("0".to_string())), Box::new(e)))
-            }
-            Some(Tok::Plus) if self.peek() == Some(&Tok::Plus) => {
-                Err(format!("line {}: `++`/`--` inside expressions is not in this increment (oracle hk246 measures postfix `x++` as the OLD value and prefix `++x` as the NEW one; the statement forms `++x`, `x++`, `--x`, `x--` work)", self.n))
             }
             Some(Tok::Int(v)) => {
                 match v.parse::<u128>() {
@@ -2153,16 +2163,16 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         continue;
                     }
                 }
-                // Postfix ++/-- and compound assignment, statement level
-                // only (oracle hk246): `x++`/`x--` desugar to `x := x +/- 1`
+                // Standalone ++/-- retain their existing desugaring
+                // (oracle hk246): `x++`/`x--` desugar to `x := x +/- 1`
                 // and `x op= e` desugars to `x := x op e` for +, -, *.
-                if toks.len() == 3 && toks[1] == Tok::Plus && toks[2] == Tok::Plus {
+                if toks.len() == 2 && toks[1] == Tok::IncTok {
                     check_ident(&id, n)?;
                     out.push(Stmt::Assign(n, id.clone(), Expr::Bin('+', Box::new(Expr::Var(id.clone())), Box::new(Expr::Int("1".to_string())))));
                     *i += 1;
                     continue;
                 }
-                if toks.len() == 3 && toks[1] == Tok::Minus && toks[2] == Tok::Minus {
+                if toks.len() == 2 && toks[1] == Tok::DecTok {
                     check_ident(&id, n)?;
                     out.push(Stmt::Assign(n, id.clone(), Expr::Bin('-', Box::new(Expr::Var(id.clone())), Box::new(Expr::Int("1".to_string())))));
                     *i += 1;
@@ -2208,30 +2218,30 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     }
                 }
             }
-            Tok::Plus if toks.len() >= 2 && toks[1] == Tok::Plus => {
+            Tok::IncTok => {
                 // Prefix increment statement (oracle hk246): `++x` desugars
                 // to `x := x + 1`. Longer shapes keep a named rejection.
-                if toks.len() == 3 {
-                    if let Tok::Ident(pid) = &toks[2] {
+                if toks.len() == 2 {
+                    if let Tok::Ident(pid) = &toks[1] {
                         check_ident(pid, n)?;
                         out.push(Stmt::Assign(n, pid.clone(), Expr::Bin('+', Box::new(Expr::Var(pid.clone())), Box::new(Expr::Int("1".to_string())))));
                         *i += 1;
                         continue;
                     }
                 }
-                return Err(format!("line {}: expected the statement form `++x`; `++`/`--` inside expressions is not in this increment (oracle hk246 measures postfix `x++` as the OLD value and prefix `++x` as the NEW one; the statement forms `++x`, `x++`, `--x`, `x--` work)", n));
+                return Err(format!("line {}: expected the statement form `++x`; expression increments require a variable lvalue and an expression context", n));
             }
-            Tok::Minus if toks.len() >= 2 && toks[1] == Tok::Minus => {
+            Tok::DecTok => {
                 // Prefix decrement statement (oracle hk246): `--x`.
-                if toks.len() == 3 {
-                    if let Tok::Ident(pid) = &toks[2] {
+                if toks.len() == 2 {
+                    if let Tok::Ident(pid) = &toks[1] {
                         check_ident(pid, n)?;
                         out.push(Stmt::Assign(n, pid.clone(), Expr::Bin('-', Box::new(Expr::Var(pid.clone())), Box::new(Expr::Int("1".to_string())))));
                         *i += 1;
                         continue;
                     }
                 }
-                return Err(format!("line {}: expected the statement form `--x`; `++`/`--` inside expressions is not in this increment (oracle hk246 measures postfix `x++` as the OLD value and prefix `++x` as the NEW one; the statement forms `++x`, `x++`, `--x`, `x--` work)", n));
+                return Err(format!("line {}: expected the statement form `--x`; expression increments require a variable lvalue and an expression context", n));
             }
             t => return Err(format!("line {}: statement not in the subset ({:?})", n, t)),
         }
@@ -2702,6 +2712,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             };
         }
         match e {
+            Expr::Inc(id, _, _) => { if let Some(i) = is_param(f, id) { setpin(pin, i, Ty::I64, n)?; } Ok(()) }
             Expr::Var(id) => { if let Some(i) = is_param(f, id) { setpin(pin, i, ty, n)?; } Ok(()) }
             Expr::Bin(_, a, b) => { pin_vars(f, a, Ty::I64, pin, n)?; pin_vars(f, b, Ty::I64, pin, n) }
             Expr::Cmp(_, a, b) => { pin_vars(f, a, ty, pin, n)?; pin_vars(f, b, ty, pin, n) }
@@ -2764,6 +2775,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     }
     fn walk(f: &Func, e: &Expr, sigs: &[Sig], lit: &[(String, Ty)], pin: &mut Vec<Option<Ty>>, printed: &mut Vec<bool>, n: usize) -> Result<(), String> {
         match e {
+            Expr::Inc(id, _, _) => pin_vars(f, &Expr::Var(id.clone()), Ty::I64, pin, n),
             Expr::Bin(op, a, b) => {
                 // String `+` (oracle hk215): a `+` with string evidence on
                 // either side pins both sides to strings, not integers.
@@ -3318,9 +3330,10 @@ fn expr_has_call(e: &Expr) -> bool {
 
 fn expr_mentions(e: &Expr, name: &str) -> bool {
     match e {
-        Expr::Var(v) => v == name,
+        Expr::Var(v) | Expr::Inc(v, _, _) => v == name,
         Expr::ByRef(v) => v == name,
-        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => expr_mentions(a, name) || expr_mentions(b, name),
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => expr_mentions(a, name) || expr_mentions(b, name),
+        Expr::LNot(a) => expr_mentions(a, name),
         Expr::Call(_, args) => args.iter().any(|a| expr_mentions(a, name)),
         Expr::Index(id, i) => id == name || expr_mentions(i, name),
         Expr::Index2(id, i, j) => id == name || expr_mentions(i, name) || expr_mentions(j, name),
@@ -3434,6 +3447,16 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         Expr::Int(_) => Ok(Ty::I64),
         Expr::Float(..) | Expr::FloatV(..) => Ok(Ty::F64),
         Expr::Str(_) => Ok(Ty::Str),
+        Expr::Inc(id, _, _) => {
+            let v = env.iter().find(|v| v.name == *id)
+                .ok_or_else(|| format!("line {}: undefined variable `{}`", n, id))?;
+            if v.moved { return Err(format!("line {}: use of moved value `{}`", n, id)); }
+            if v.ro { return Err(format!("line {}: expression ++/-- cannot modify read-only variable `{}`", n, id)); }
+            if v.ty != Ty::I64 {
+                return Err(format!("line {}: expression ++/-- supports integer variable lvalues only; floats, Dyn and other lvalues remain a named limit", n));
+            }
+            Ok(Ty::I64)
+        }
         Expr::Var(id) => match env.iter().find(|v| v.name == *id) {
             None => Err(format!("line {}: undefined variable `{}`", n, id)),
             Some(v) if v.moved => Err(format!(
@@ -4706,10 +4729,11 @@ fn ty_name(t: Ty) -> &'static str {
 
 fn free_vars(e: &Expr, out: &mut Vec<String>) {
     match e {
-        Expr::Var(id) => { if !out.iter().any(|x| x == id) { out.push(id.clone()); } }
+        Expr::Var(id) | Expr::Inc(id, _, _) => { if !out.iter().any(|x| x == id) { out.push(id.clone()); } }
         Expr::SelfObj | Expr::SelfGet(_) => {}
         Expr::Send(o, _, args) => { free_vars(o, out); for a in args { free_vars(a, out); } }
-        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => { free_vars(a, out); free_vars(b, out); }
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => { free_vars(a, out); free_vars(b, out); }
+        Expr::LNot(a) => free_vars(a, out),
         Expr::Call(_, args) => { for a in args { free_vars(a, out); } }
         Expr::ArrLit(es) => { for e in es { free_vars(e, out); } }
         Expr::Index(_, ie) => free_vars(ie, out),
@@ -6454,6 +6478,18 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             cg_cond_jump(e, env, sigs, strs, out, target, &format!(".Lbt{}", k));
             out.push_str(&format!("    xor %eax, %eax\n    jmp .Lbe{}\n.Lbt{}:\n    mov $1, %rax\n.Lbe{}:\n", k, k, k));
         }
+        Expr::Inc(id, delta, prefix) => {
+            let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
+            if v.ty == Ty::RefI64 {
+                out.push_str(&format!("    mov -{}(%rbp), %r10\n", v.off));
+            } else {
+                out.push_str(&format!("    lea -{}(%rbp), %r10\n", v.off));
+            }
+            out.push_str("    mov (%r10), %rax\n    mov %rax, %r11\n");
+            out.push_str(if *delta > 0 { "    add $1, %r11\n" } else { "    sub $1, %r11\n" });
+            out.push_str("    jo hbc_inc_overflow\n    mov %r11, (%r10)\n");
+            if *prefix { out.push_str("    mov %r11, %rax\n"); }
+        }
         Expr::Var(id) => {
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
             match v.ty {
@@ -7908,7 +7944,7 @@ fn cg_array_value(e: &Expr, off: usize, env: &[CgLocal], sigs: &[Sig], strs: &mu
 fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
     match e {
         Expr::Float(..) | Expr::FloatV(..) => Ty::F64,
-        Expr::Int(_) => Ty::I64,
+        Expr::Int(_) | Expr::Inc(..) => Ty::I64,
         Expr::Bin(op, a, b) => {
             if matches!(expr_ty(a, env, sigs), Ty::Str | Ty::StrOwn) || matches!(expr_ty(b, env, sigs), Ty::Str | Ty::StrOwn) {
                 Ty::StrOwn
@@ -12829,6 +12865,18 @@ hbc_div0_error:
     mov $1, %edi
     syscall
 
+# Integer increment cannot silently wrap. Harbour promotes to double;
+# this fixed-I64 increment reports that uncovered boundary before store.
+hbc_inc_overflow:
+    lea .Lincmsg(%rip), %rsi
+    mov $50, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 # hbc_f64range_error: a float field (padding + digits, or a non-finite
 # star fill) exceeds the helper's bounded compose scratch (456 bytes).
 # Harbour grows its print buffer dynamically; beyond this measured
@@ -13652,6 +13700,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Lboundmsg:\n    .byte 66,111,117,110,100,32,101,114,114,111,114,58,32,97,114,114,97,121,32,97,99,99,101,115,115,10\n");
     // "Error: division by zero\n" (24 bytes; EG_ZERODIV, probe hk294)
     out.push_str(".Ldiv0msg:\n    .byte 69,114,114,111,114,58,32,100,105,118,105,115,105,111,110,32,98,121,32,122,101,114,111,10\n");
+    out.push_str(".Lincmsg:\n    .byte 76,105,109,105,116,58,32,105,110,99,114,101,109,101,110,116,32,111,118,101,114,102,108,111,119,32,110,101,101,100,115,32,110,117,109,101,114,105,99,32,112,114,111,109,111,116,105,111,110,10\n");
     out.push_str(".Lf64rangemsg:\n    .byte 69,114,114,111,114,58,32,102,108,111,97,116,32,102,105,101,108,100,32,111,117,116,32,111,102,32,114,97,110,103,101,10\n");
     out.push_str(".Lroundmsg:\n    .byte 69,114,114,111,114,58,32,114,111,117,110,100,32,100,101,99,32,111,117,116,32,111,102,32,114,97,110,103,101,10\n");
     out.push_str(".Lround_pow10:\n    .quad 4607182418800017408, 4621819117588971520, 4636737291354636288, 4652007308841189376\n    .quad 4666723172467343360, 4681608360884174848, 4696837146684686336, 4711630319722168320\n    .quad 4726483295884279808, 4741671816366391296, 4756540486875873280, 4771362005757984768\n    .quad 4786511204640096256, 4801453603149578240, 4816244402031689728, 4831355200913801216\n");
@@ -14549,6 +14598,17 @@ hbc_div0_error:
     sub $48, %rsp
     lea .Ldiv0msg(%rip), %rax
     mov $24, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+hbc_inc_overflow:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Lincmsg(%rip), %rax
+    mov $50, %edx
     call hbc_print_str
     mov $1, %ecx
     call ExitProcess

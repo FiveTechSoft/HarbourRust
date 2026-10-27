@@ -9,7 +9,7 @@
 set -e
 cd "$(dirname "$0")/.."
 mkdir -p gen
-printf 'function qprobe()\nreturn QQOut()\nfunction bprobe()\nlocal b := {|n| QQOut(), n+1}\nreturn Eval(b, 6)\nfunction dynshow(x)\nreturn QQOut(x)\nfunction nprobe()\nreturn dynshow(AllTrim(" "))\nfunction main()\nreturn\n' > gen/abi_empty.hb
+printf 'function incprobe(x)\nreturn x++ + ++x\nfunction qprobe()\nreturn QQOut()\nfunction bprobe()\nlocal b := {|n| QQOut(), n+1}\nreturn Eval(b, 6)\nfunction dynshow(x)\nreturn QQOut(x)\nfunction nprobe()\nreturn dynshow(AllTrim(" "))\nfunction main()\nreturn\n' > gen/abi_empty.hb
 ./hbc gen/abi_empty.hb gen/abi_l.s --target=linux -I tests >/dev/null
 ./hbc gen/abi_empty.hb gen/abi_w.s --target=windows -I tests >/dev/null
 
@@ -1751,6 +1751,14 @@ hbc_abi_test:
     call hbc_freestr
     call abi_check
     call hbc_str_cache_flush
+    call abi_check
+    # Generated prefix/postfix mutation preserves ABI across both targets.
+    sub $8, %rsp
+    pushq $2
+    call hbc_fn_incprobe
+    add $16, %rsp
+    cmp $6, %rax
+    jne abi_fail_chr
     call abi_check
     # Generated QQOut expression: NIL pair, no extra runtime helper.
     movabs $0x6161616161616101, %rax

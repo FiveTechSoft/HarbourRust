@@ -228,6 +228,9 @@ function name()            opens a function (main is the entry point)
                              Harbour's single `=` in statement position
                              assigns too (oracle hk214); `=` stays a
                              comparison inside expressions
+    x++ / x-- / ++x / --x  integer variable expressions: old / new value;
+                             writable variables only, overflow is a named
+                             controlled limit before store, not wrapping
     ? <expr>               prints
     f(<args>)              a call as a statement: the callee runs and the
                              return value is discarded (an owned string is

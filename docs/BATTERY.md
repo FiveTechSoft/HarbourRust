@@ -3248,3 +3248,61 @@ rather than a stable large regression, but does not demonstrate benefit
 for >256. Both complete sample sets are retained. Final checkpoint battery:
 882manifest rows + ABI + cache registry harness =884PASS Linux/Wine.
 Sweep12/175 unchanged; no syntax or original completion is claimed here.
+
+## 63zy - integer variable prefix/postfix expressions
+
+`x++`, `x--`, `++x`, `--x` now yield the old/new value in expressions,
+respectively, for writable integer variables and integer parameters,
+including existing by-reference integer calls and integer block parameters.
+The lexer recognizes adjacent ++/-- as distinct tokens: `old + ++x` is
+not misread as `old++ + x`. Spaced unary-plus remains a named rejection;
+`x - -x` remains subtraction of a negation. Prior standalone statements
+retain their existing assignment desugaring, not a new overflow policy.
+
+hk410-hk414, hk416-hk417, hk419-hk420 are compiled Harbour -gtstd
+byte-exact probes for mutation order, multiargument QOut, arithmetic,
+comparisons, modulo/division, lazy IIF and short-circuit logic, WHILE,
+LOOP/EXIT, block parameters, ordinary/by-reference parameters and array
+assignment order (RHS before index, hk420). Regression rows t672-t674
+become positive; their source names are retained for continuity and their
+new expectations were checked directly with Harbour, not only the candidate.
+New t888-t909 include successful behavior and explicit rejected boundaries.
+The generated incprobe has an ABI canary on Linux and Windows/Wine.
+
+This does NOT add arbitrary incrementable lvalues, floating-point/Dyn
+increments, block captures or dynamic numeric promotion. Those boundaries
+stay named. Harbour promotes signed overflow to double; expressions here
+exit with `Limit: increment overflow needs numeric promotion` and native
+callstack BEFORE updating the slot. Four max/min prefix/postfix cases
+check exit text/status on both targets. An independent test-only overflow
+exit in inc_overflow_store.sh verifies the original slot, old result and
+wrapped scratch on both targets; it is not a returning runtime ABI claim.
+
+Two experimental probes are retained as failures, not matches. hk415 is
+accepted by Harbour but rejected for block capture by HarbourRust.
+hk418 reaches a Harbour BASE/1133 array-assignment error, because RHS
+mutation changes the index before assignment. Its partial output/error
+dialog is retained; the process was timed out, not claimed successful.
+Distinct hk419 removes that invalid assignment; hk420 explicitly verifies
+valid RHS-before-index mutations byte-exactly. No failed source was silently
+replaced or used as an oracle for a positive test.
+
+Frozen175 sweep rises from12 to13 COMPILES: only while.prg is newly
+accepted. The original while.prg at harbour/core694428e1c12f726675b19324d62167fa77d68185
+is copied UNCHANGED into t907_original_while.hb, SHA256
+81542a0a84c8ce27b7205a6c475ed811847b0dd913eac4a19e0f3dc62c40bf57.
+All1000 printed numbers match compiled Harbour byte-for-byte on both
+Linux and Windows/Wine. The other162 examples remain uncompiled, not
+implicitly completed. Full sweep/errors are retained in sondas/sweep175-63zy.csv.
+
+Linux, uninstrumented,9 alternating pairs, same source and exact outputs:
+hk414 performs500000 postincrement additions within a nominal1M FOR range
+(the expression also updates the FOR counter); checksum250000000000,
+finalcounter1000001. Harbour median0.025000677s, HarbourRust0.002790662s,
+about8.96x faster in this small case, including process startup. This is
+not a universal or Windows speed claim. Unchanged hk4041M Dyn-copy control:
+Harbour0.097710643s, HarbourRust0.134169195s, still about1.37x slower.
+All pairs, outputs and the prior unfavorable baselines remain available.
+Final local checkpoint:904 nonblank manifest rows + ABI + cache registry +
+pre-store overflow harness =907 PASS on Linux and Windows/Wine. The manifest
+has907 physical lines, including3 blank lines, not907 test cases.
