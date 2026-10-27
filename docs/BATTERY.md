@@ -3668,3 +3668,29 @@ Harbour median0.059524770s, HarbourRust0.004037724s,
 about14.74x faster for THIS constant-lowered
 shape only. This does not measure generic stack inspection, Windows speed,
 overall Harbour compatibility or Rust/LLVM parity. Raw pairs/output retained.
+
+
+## 64ap - default HB_SYMBOL_UNUSED standard macro
+
+The default preprocessor environment now supplies ONLY the exact
+HB_SYMBOL_UNUSED(symbol) -> ((symbol)) definition from std.ch:55.
+The existing parenthesized statement implementation evaluates expressions
+and borrows bare variables; this adds the default macro availability
+seen in Harbour without loading the entire unsupported std.ch command set.
+#undef and user redefinition still work. No lowercase alias, wildcard
+header support, deleted argument effects or unchecked undefined variables
+are introduced. hk458 matches Harbour for postfix effects and overriding
+this macro with QOut; moved/undefined variables remain rejected.
+
+Original mem.prg is unchanged as t1024, SHA256
+1bf2e483a27bedd1cbb93f4b5df5ed896c10b9fe9afa052247e8cf7721ed0078.
+It compiles and exits with the same EMPTY output as Harbour on Linux and
+Wine. Six new tests t1024-t1029 give1024 manifest cases +5harness=1029PASS.
+Frozen175 compilation sweep rises17 to19: mem.prg AND errsys.prg compile.
+Do NOT count errsys.prg as a new working/byte-equivalent original: it
+intentionally increments an uninitialized NIL to test the Harbour error
+system, which this checkpoint does not implement or validate. The new
+runtime-verified original here is ONLY mem.prg. Compilation acceptance is
+not an original runtime compatibility percentage.
+No successful generated code changes for existing sources without this
+macro: hk455 assembly byte-identical; retained speed measurements unchanged.

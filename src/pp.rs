@@ -68,6 +68,13 @@ impl Pp {
         } else {
             defs.insert("__PLATFORM__UNIX".to_string(), Def { params: Vec::new(), funclike: false, body: String::new(), dup: 1 });
         }
+        // Scoped default standard macro (std.ch:55, measured hk458):
+        // only this exact function-like definition, NOT the whole std.ch
+        // command set. Existing #undef/redefinition remain authoritative.
+        defs.insert("HB_SYMBOL_UNUSED".to_string(), Def {
+            params: vec!["symbol".to_string()], funclike: true,
+            body: "( ( symbol ) )".to_string(), dup: 1,
+        });
         Pp { defs, cmds: Vec::new(), incdirs, origins: Vec::new(), end_lines: Vec::new() }
     }
 }
