@@ -2247,6 +2247,13 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 }
                 return Err(format!("line {}: expected the statement form `--x`; expression increments require a variable lvalue and an expression context", n));
             }
+            Tok::LParen => {
+                // HB_SYMBOL_UNUSED expands to ((symbol)). Evaluate the
+                // expression; a bare variable is only read, never moved.
+                let e = parse_expr_tokens(toks.clone(), n)?;
+                out.push(Stmt::CallStmt(n, e));
+                *i += 1;
+            }
             t => return Err(format!("line {}: statement not in the subset ({:?})", n, t)),
         }
     }
@@ -5118,6 +5125,10 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 return Err(format!("line {}: classes are not in this increment yet (parser landed; runtime representation pending)", n));
             }
             Stmt::CallStmt(n, e) => {
+                if matches!(e, Expr::Var(_)) {
+                    type_expr(e, env, sigs, *n)?;
+                    continue; // parenthesized variable: borrow for a read
+                }
                 // Bare call (hk216): runs for effect; the return is
                 // DISCARDED. Discarding is defined only for returns the
                 // established discipline can release: no value, scalars
@@ -8839,10 +8850,15 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
         match s {
             Stmt::SelfSet(..) | Stmt::SendSet(..) | Stmt::SendStmt(..) => unreachable!("rejected before codegen"),
             Stmt::CallStmt(_, e) => {
+                if matches!(e, Expr::Var(_)) { continue; } // no owned result
+                if expr_ty(e, env, sigs) == Ty::F64 {
+                    cg_f64_load(e, env, sigs, strs, out, target);
+                    continue;
+                }
                 // Run the call, then release the discarded owned return
                 // with the same helper the epilogue would use on a slot
                 // of that type (oracle hk256: the discard is legal).
-                cg_expr(e, env, sigs, strs, out, target);
+                cg_value(e, env, sigs, strs, out, target);
                 match expr_ty(e, env, sigs) {
                     Ty::StrOwn => out.push_str("    mov %rax, %rdi
     call hbc_freestr
@@ -8859,6 +8875,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     mov %rdx, %rsi
     call hbc_free2
 "),
+                    Ty::Dyn => out.push_str("    cmp $4, %rax\n    jne 95f\n    mov %rdx, %rdi\n    test %rdi, %rdi\n    je 95f\n    call hbc_freestr\n95:\n"),
                     _ => {}
                 }
             }

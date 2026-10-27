@@ -912,3 +912,15 @@ neg tests/t913_unary_plus_move_neg.hb use of moved value
 neg tests/t914_unary_plus_no_pin_neg.hb cannot infer the type of parameter
 neg tests/t915_unary_plus_literal_inc_neg.hb requires a variable lvalue
 neg tests/t916_unary_plus_float_inc_neg.hb integer variable lvalues only
+pos tests/t917_paren_stmt.hb \neffect\n         2 abc          1
+pos tests/t918_paren_stmt.hb \nvoid\n         2 keep          2          3          1
+neg tests/t919_paren_moved_neg.hb use of moved value
+neg tests/t920_paren_hash_temp_neg.hb discarding a hash
+neg tests/t921_paren_block_temp_neg.hb discarding a codeblock
+neg tests/t922_paren_array_temp_neg.hb discarding an array
+neg tests/t923_paren_capture_neg.hb codeblock captures are not in
+neg tests/t924_paren_undefined_neg.hb undefined variable
+pos tests/t925_paren_temp_balance.hb \n         0
+neg tests/t926_paren_foreach_limit_neg.hb the `for each` variable
+pos tests/t927_paren_typed_channels.hb \n         3
+pos tests/t928_paren_discard_balance.hb \n         0

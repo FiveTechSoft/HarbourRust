@@ -3333,3 +3333,44 @@ Linux pairs including process startup: Harbour median0.044575464s,
 HarbourRust0.003473755s, about12.83x faster
 for this workload only. Full pairs and exact output are retained in
 sondas/hk424-linux-benchmark.json. No Windows/general performance claim.
+
+
+## 64aa - parenthesized expression statements
+
+A parenthesized expression can now run as a statement, including the exact
+HB_SYMBOL_UNUSED(symbol) expansion ((symbol)) from Harbour std.ch. A bare
+variable is type-checked and borrowed, never moved or freed. Calls and
+computed expressions retain effects; a discarded owned string/array uses
+the existing release discipline. Scalar/Dyn/F64 channels stay distinct;
+a float discarded expression uses cg_f64_load instead of the integer path.
+The call-statement path now frees a discarded owned tag4 Dyn string when
+present, and uses cg_value for literal strings. No ownership representation
+change, evaluator or class architecture is introduced.
+
+Probes hk427/hk428/hk430/hk431 byte-match compiled Harbour -gtstd. Coverage
+includes variables of scalar/string/array/hash/block types, literal values,
+float calls with increment effects, string temporaries, Eval and NIL array
+cells, ordinary calls/void statements and mutation-only statements. The
+first candidate float-literal panic is fixed by the typed discard path;
+that path is exercised on both targets. t925 repeats3000 string-producing
+discards under instrumentation and checks zero logical live allocations.
+t928 checks tagged Dyn string returns, string-index temporaries and
+dynamic-array temporaries leave no logical live allocations.
+Invalid temporary hash/block/static-array discard, undefined/moved variables
+and existing FOR EACH borrowed-variable restrictions stay named rejections.
+
+Do not overread the macro result: hk426 with the WHOLE std.ch still fails
+on unsupported <*x*> preprocessor markers; hk427 uses ONLY the verbatim
+macro definition, not an adapted success claimed for the whole header.
+hk429 succeeds in Harbour but keeps the FOR EACH escape/read restriction
+in HarbourRust. Seven upstream examples advance from generic LParen errors
+to `missing )` (still unsupported parenthesized comma expressions).
+Frozen175 remains13COMPILES, no new original completion. New t917-t928:
+923 actual manifest rows +3harness =926 PASS Linux and Windows/Wine.
+
+hk430:1M parenthesized postincrements, exact checksum1000000 and finalFOR
+counter1000001. Nine alternating uninstrumented Linux pairs, startup
+included: Harbour median0.027322761s,
+HarbourRust0.002888720s, about9.46x faster
+for this workload only. Raw pairs/output retained in sondas/hk430-linux-benchmark.json.
+No general or Windows speed claim.

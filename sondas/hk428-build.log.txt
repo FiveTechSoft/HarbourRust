@@ -1,0 +1,5 @@
+Harbour 3.2.1dev (r2610242111)
+Copyright (c) 1999-2025, https://harbour.github.io/
+Compiling 'sondas/hk428.prg'...
+Lines 28, Functions/Procedures 3
+Generating C source output to '/tmp/hbmk_zga1vi.dir/hk428.c'... Done.
