@@ -1056,3 +1056,8 @@ pos tests/t1057_nested_index_equal.hb \n         4          6          8\n.T. .T
 pos tests/t1058_index_equal_rhs_compare.hb \n.T.          1\n.T.
 neg tests/t1059_index_eqeq_stmt_neg.hb expected `name[idx] := expr`
 neg tests/t1060_index_equal_moved_neg.hb use of moved value
+pos tests/t1061_generic_end.hb \nif\n         2\n         1\n         2\ndone
+pos tests/t1062_nested_end_identifier.hb \n         1\n         2\n         9\n        10
+neg tests/t1063_stray_end_neg.hb statement not in the subset
+neg tests/t1064_end_payload_neg.hb `endif` takes no expression
+neg tests/t1065_mismatched_end_neg.hb `if` without `endif`

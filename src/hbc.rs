@@ -1313,6 +1313,12 @@ fn parse_expr_tokens(toks: Vec<Tok>, n: usize) -> Result<Expr, String> {
     Ok(e)
 }
 
+// Bare END closes the innermost supported block; END used as an assigned
+// identifier remains a statement in parse_stmts's existing disambiguation.
+fn closes_block(t: &Tok, expected: &Tok) -> bool {
+    t == expected || matches!(t, Tok::Ident(id) if id.eq_ignore_ascii_case("end"))
+}
+
 const MAX_DEPTH: usize = 64;
 
 // Parses statements until a line starting with else / endif / return /
@@ -1383,7 +1389,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     *i += 1;
                     let mut body = Vec::new();
                     parse_stmts(lines, i, &mut body, depth + 1)?;
-                    if *i >= lines.len() || lines[*i].1[0] != Tok::KwNext {
+                    if *i >= lines.len() || !closes_block(&lines[*i].1[0], &Tok::KwNext) {
                         return Err(format!("line {}: `for each` without `next`", n));
                     }
                     if lines[*i].1.len() != 1 {
@@ -1439,7 +1445,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 *i += 1;
                 let mut body = Vec::new();
                 parse_stmts(lines, i, &mut body, depth + 1)?;
-                if *i >= lines.len() || lines[*i].1[0] != Tok::KwNext {
+                if *i >= lines.len() || !closes_block(&lines[*i].1[0], &Tok::KwNext) {
                     return Err(format!("line {}: `for` without `next`", n));
                 }
                 if lines[*i].1.len() != 1 {
@@ -1456,7 +1462,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 *i += 1;
                 let mut body = Vec::new();
                 parse_stmts(lines, i, &mut body, depth + 1)?;
-                if *i >= lines.len() || lines[*i].1[0] != Tok::KwEnddo {
+                if *i >= lines.len() || !closes_block(&lines[*i].1[0], &Tok::KwEnddo) {
                     return Err(format!("line {}: `while` without `enddo`", n));
                 }
                 if lines[*i].1.len() != 1 {
@@ -1517,7 +1523,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 for (en, ec, ebody) in arms.into_iter().rev() {
                     else_stmts = vec![Stmt::If(en, ec, ebody, else_stmts)];
                 }
-                if *i >= lines.len() || lines[*i].1[0] != Tok::KwEndif {
+                if *i >= lines.len() || !closes_block(&lines[*i].1[0], &Tok::KwEndif) {
                     return Err(format!("line {}: `if` without `endif`", n));
                 }
                 if lines[*i].1.len() != 1 {
@@ -1639,7 +1645,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     *i += 1;
                     let mut body = Vec::new();
                     parse_stmts(lines, i, &mut body, depth + 1)?;
-                    if *i >= lines.len() || lines[*i].1[0] != Tok::KwEnddo {
+                    if *i >= lines.len() || !closes_block(&lines[*i].1[0], &Tok::KwEnddo) {
                         return Err(format!("line {}: `do while` without `enddo`", n));
                     }
                     if lines[*i].1.len() != 1 {

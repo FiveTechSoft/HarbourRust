@@ -3872,3 +3872,21 @@ Linux/Wine. Frozen175 stays20COMPILES (19 accumulated successful originals
 plus the separate errsys failure-mode original); arrayidx.prg needs
 expression compound assignment, which this does NOT add. hk455 assembly
 is unchanged; no new speed claim.
+
+
+## 64ax - generic END closes the innermost supported block
+
+hk471/hk472 confirm Harbour's bare END closes IF, WHILE/DO WHILE,
+FOR and FOR EACH, including nesting and ELSEIF/ELSE. DO CASE already
+supported END. Five closing-token checks now accept this alias through one
+predicate; the parser's existing terminator recognition and identifier
+assignment disambiguation stay in place. A local called end can still be
+read or assigned. Stray END, an END with payload, and a mismatched NEXT
+inside IF remain compile errors. No runtime/type/ownership changes.
+
+Five cases t1061-t1065 give1060manifest+5harness=1065PASS Linux/Wine.
+The nested FOR EACH oracle uses a declared iterator and dynamic array,
+preserving the existing fixed-stack-array iteration rejection. Frozen175
+stays20COMPILES (19 accumulated successful originals plus the separate
+errsys failure-mode original); no new complete original is claimed.
+hk455 assembly is byte-identical; no new speed claim.
