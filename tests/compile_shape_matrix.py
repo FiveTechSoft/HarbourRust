@@ -33,7 +33,7 @@ expected = [
     '11001110', '11001110', '11111100', '11111100', '11101100',
     '11111100', '11101100', '00000000', '11110000', '10000000',
     '10000000', '00000000', '11100000', '00000001', '10000001',
-    '11010100', '11010100', '11011100', '11001110', '11001110',
+    '11011100', '11010100', '11011100', '11001110', '11001110',
 ]
 accepted = rejected = 0
 for i, expr in enumerate(expressions):
@@ -73,6 +73,6 @@ for i, expr in enumerate(expressions):
 # Pin the current boundary, rather than silently counting a newly rejected
 # successful case as a passing no-panic test. Individual manifest rows own
 # detailed diagnostics and runtime/Harbour behavior.
-if (accepted, rejected) != (196, 204):
+if (accepted, rejected) != (198, 202):
     raise RuntimeError(f'shape boundary changed: linked={accepted} rejected={rejected}')
 print(f'COMPILE SHAPE MATRIX PASS: {accepted} linked, {rejected} named rejects, 400 target checks')

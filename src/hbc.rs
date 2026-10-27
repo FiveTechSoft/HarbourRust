@@ -922,6 +922,12 @@ impl P {
     }
     fn factor_primary(&mut self) -> Result<Expr, String> {
         match self.bump() {
+            Some(Tok::KwIf) if self.peek() == Some(&Tok::LParen) => {
+                // IF(...) is Harbour's inline IIF alias, not a block IF.
+                self.pos -= 1;
+                self.toks[self.pos] = Tok::Ident("iif".to_string());
+                self.factor_primary()
+            }
             Some(Tok::IncTok) => {
                 let e = self.factor()?;
                 match e {
@@ -1009,7 +1015,11 @@ impl P {
                     let mut args: Vec<Expr> = Vec::new();
                     if self.peek() != Some(&Tok::RParen) {
                         loop {
-                            if self.peek() == Some(&Tok::At) {
+                            if id == "iif" && !args.is_empty() && matches!(self.peek(), Some(Tok::Comma | Tok::RParen)) {
+                                // Only inline-IF branch arguments may be empty
+                                // here. Harbour Argument -> empty means NIL.
+                                args.push(Expr::Nil);
+                            } else if self.peek() == Some(&Tok::At) {
                                 // `@x`: by-reference argument (hk216). One
                                 // variable only, never an expression -
                                 // Harbour rejects `@x + 1` at compile time
@@ -1452,6 +1462,24 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 out.push(Stmt::While(n, cond, body));
             }
             Tok::KwIf => {
+                // A comma at the outer call depth distinguishes IF(c,a,b)
+                // from block IF (condition), including parenthesized lists.
+                let mut parens = 0i32;
+                let inline = toks.get(1) == Some(&Tok::LParen) && toks.iter().any(|t| {
+                    match t {
+                        Tok::LParen | Tok::LBracket | Tok::LBrace => parens += 1,
+                        Tok::RParen | Tok::RBracket | Tok::RBrace => parens -= 1,
+                        Tok::Comma if parens == 1 => return true,
+                        _ => {}
+                    }
+                    false
+                });
+                if inline {
+                    let e = parse_expr_tokens(toks.clone(), n)?;
+                    out.push(Stmt::CallStmt(n, e));
+                    *i += 1;
+                    continue;
+                }
                 if toks.len() < 2 {
                     return Err(format!("line {}: expected `if <expr> <comparison> <expr>`", n));
                 }
@@ -3979,6 +4007,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 let ta = type_expr(&args[1], env, sigs, n)?;
                 let tb = type_expr(&args[2], env, sigs, n)?;
                 if ta == tb && matches!(ta, Ty::I64 | Ty::Bool | Ty::Str | Ty::F64) { return Ok(ta); }
+                // NIL-producing arms use the existing Dyn pair but own no
+                // payload. Do not generalize this to Dyn variables/owned
+                // tag4 strings without a separate transfer/lifetime design.
+                let nil_arm = |e: &Expr| matches!(e, Expr::Nil)
+                    || matches!(e, Expr::Call(id, _) if is_builtin(id, "qout") || is_builtin(id, "qqout"));
+                if ta == Ty::Dyn && tb == Ty::Dyn && nil_arm(&args[1]) && nil_arm(&args[2]) { return Ok(Ty::Dyn); }
                 if matches!((ta, tb), (Ty::F64, Ty::I64) | (Ty::I64, Ty::F64)) { return Ok(Ty::F64); }
                 // Owned-string unification (63zf, hk329): the result is
                 // OWNED. A borrowed side materializes a clone only when

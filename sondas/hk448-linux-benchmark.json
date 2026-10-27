@@ -1,0 +1,52 @@
+{
+  "pairs": [
+    {
+      "harbour": 0.06539009900006931,
+      "rust": 0.0164986140007386,
+      "equal": true
+    },
+    {
+      "rust": 0.01633384700107854,
+      "harbour": 0.06455814799846848,
+      "equal": true
+    },
+    {
+      "harbour": 0.06585109700245084,
+      "rust": 0.01660221900237957,
+      "equal": true
+    },
+    {
+      "rust": 0.016747143999964464,
+      "harbour": 0.06898536000517197,
+      "equal": true
+    },
+    {
+      "harbour": 0.06529153200244764,
+      "rust": 0.01644562900037272,
+      "equal": true
+    },
+    {
+      "rust": 0.016339885005436372,
+      "harbour": 0.06661417500436073,
+      "equal": true
+    },
+    {
+      "harbour": 0.06611733599856962,
+      "rust": 0.016660760004015174,
+      "equal": true
+    },
+    {
+      "rust": 0.01686866800446296,
+      "harbour": 0.06516406900482252,
+      "equal": true
+    },
+    {
+      "harbour": 0.06631775400455808,
+      "rust": 0.016434736004157458,
+      "equal": true
+    }
+  ],
+  "harbour_median": 0.06585109700245084,
+  "rust_median": 0.0164986140007386,
+  "context": "Linux uninstrumented startup inclusive; same source;9 alternating pairs; not Rust/LLVM comparison"
+}

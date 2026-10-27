@@ -975,3 +975,20 @@ neg tests/t976_foreach_static_neg.hb over fixed-size stack arrays is not in this
 neg tests/t977_foreach_static_copy_neg.hb over fixed-size stack arrays is not in this increment
 neg tests/t978_foreach_static_empty_neg.hb over fixed-size stack arrays is not in this increment
 neg tests/t979_original_failed_foreach_neg.hb over fixed-size stack arrays is not in this increment
+pos tests/t980_inline_if_qout.hb \nchosen\nnot NIL
+pos tests/t981_inline_if_lazy_nil.hb \n        11         22\n         3\n         6\nleft\nright\nNIL NIL\n         2\nblock\n         3
+pos tests/t982_original_ifinline.hb \nTesting Harbour If inline\n         1\nnot NIL\nNow changing n to 2\n         2\nnot NIL\nok!
+pos tests/t983_inline_if_float.hb \n         1.25          2.50\nleft
+pos tests/t984_inline_if_nil_value.hb \nNIL NIL
+pos tests/t985_inline_if_owned.hb \nleft
+pos tests/t992_inline_if_block_condition.hb \n         1\nnested
+neg tests/t986_inline_if_move_neg.hb use of moved value
+neg tests/t987_inline_if_qout_move_neg.hb use of moved value
+neg tests/t988_inline_if_dyn_limit_neg.hb branches must share a scalar type
+neg tests/t989_inline_if_numeric_nil_neg.hb branches must share a scalar type
+neg tests/t990_inline_if_condition_neg.hb condition must be logical
+neg tests/t991_inline_if_arity_neg.hb takes 3 arguments
+pos tests/t993_inline_if_discard_balance.hb \n         0
+neg tests/t994_inline_if_missing_condition_neg.hb unexpected token Comma
+neg tests/t995_inline_if_extra_branch_neg.hb takes 3 arguments
+neg tests/t996_regular_call_empty_arg_neg.hb unexpected token Comma

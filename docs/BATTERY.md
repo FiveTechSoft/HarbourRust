@@ -3548,3 +3548,39 @@ compiler safety proof. 974 manifest cases +5 standalone harnesses =979
 PASS Linux and Windows/Wine. Compiler/runtime source remains unchanged,
 frozen175 remains13COMPILES and no new speed claim is made. Python3 is
 already required by the expression-shape harness from64ah.
+
+
+## 64ak - inline IF alias, empty IIF branches and NIL-only arms
+
+Harbour's IF(condition,a,b) alias now parses to the existing lazy IIF
+node in expressions and bare statements. Block IF(condition) retains its
+normal path, including nested parenthesized conditions. Empty SECOND or
+THIRD inline-IF arguments parse as NIL (harbour.y IfInline/Argument);
+the condition is still required. Ordinary calls do not acquire omitted
+argument support. Existing lazy scalar/float/owned-string paths are reused.
+
+Only NIL-producing Dyn arms are newly admitted: literal NIL or QOut/QQOut
+calls on both sides, with a common existing tag/payload convention. Generic
+Dyn variables, array cells or user-call returns stay rejected even when a
+particular run might return NIL: this does NOT establish a new owned-Dyn
+transfer policy. Numeric/NIL mixed branches stay rejected. QOut side effects
+run only in the selected arm; omitted/dead arms produce no output. Existing
+move checks and owned-string cleanup remain in force, with consume/later-use
+negative tests and2000 discarded owned-string IIFs under hb_memcheck.
+
+The upstream tests/ifinline.prg is copied UNCHANGED as t982, SHA256
+cef71077a08117c32e49ec468be7f38a5ca5817aa2a6175136ba4ed5cf3afa08.
+Its output matches compiled Harbour -gtstd byte-for-byte on Linux and Wine.
+Frozen175 gains ONLY ifinline.prg, from13 to14COMPILES. Seventeen new
+manifest regressions t980-t996 produce991 actual cases +5harness =996PASS.
+The compile-shape harness intentionally changes ONLY the NIL/NIL IIF cell:
+198 accepted target cases now link and202 reject; still400 checks, not
+400 runtime cases. Parser matrix272 checks stays unchanged.
+
+hk446/hk447 oracles retain alias/laziness/NIL/float/string coverage. hk448
+uses the same unmodified source on Harbour and HarbourRust,1M alternating
+inline-IF numeric selections, checksum2000000/finalcounter1000001. Nine
+alternating uninstrumented Linux pairs including startup: Harbour median
+0.065851097s, HarbourRust0.016498614s, about3.99x
+faster for THIS workload only. Raw pairs/output retained. No Windows speed
+claim, no general Harbour claim and no comparison to Rust/LLVM performance.
