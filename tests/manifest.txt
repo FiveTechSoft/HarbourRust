@@ -971,3 +971,7 @@ neg tests/t972_clone_nested_output_move_neg.hb use of moved value
 neg tests/t973_clone_loop_continue_move_neg.hb not reassigned before `loop`
 neg tests/t974_clone_block_capture_move_neg.hb codeblock captures are not in
 pos tests/t975_clone_reassign_paths.hb \n        97\nb\n        98\n       100\nd\n       100\ne\n       101\n       102\nf
+neg tests/t976_foreach_static_neg.hb over fixed-size stack arrays is not in this increment
+neg tests/t977_foreach_static_copy_neg.hb over fixed-size stack arrays is not in this increment
+neg tests/t978_foreach_static_empty_neg.hb over fixed-size stack arrays is not in this increment
+neg tests/t979_original_failed_foreach_neg.hb over fixed-size stack arrays is not in this increment

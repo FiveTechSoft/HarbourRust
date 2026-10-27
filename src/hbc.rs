@@ -5537,7 +5537,10 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     if !matches!(coll, Expr::Var(_) | Expr::Call(..) | Expr::Index3(..)) && !sub && !sub2 && !sub3 && !sub_mid {
                     return Err(format!("line {}: `for each` iterates a variable or a function result in this increment (assign the expression to a variable first)", n));
                 }
-                if !matches!(ct, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArrS | Ty::Hash) {
+                if matches!(ct, Ty::Arr(_)) {
+                    return Err(format!("line {}: `for each` over fixed-size stack arrays is not in this increment; use a dynamic array collection (the native iterator requires tagged cells)", n));
+                }
+                if !matches!(ct, Ty::DArr | Ty::DArrU | Ty::DArrS | Ty::Hash) {
                     return Err(format!("line {}: `for each` needs a flat or string array or a hash in this increment", n));
                 }
                 let kp = match env.iter().position(|v| v.name == *var) {

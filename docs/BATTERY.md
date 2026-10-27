@@ -3492,3 +3492,21 @@ Its source/output are retained as a failed probe, not a match. Distinct
 hk445 uses Array(2), the supported dynamic-collection route. The static
 FOR EACH panic remains OPEN for follow-up, not hidden by this audit.
 No new original or performance claim: source/runtime unchanged from64ae.
+
+## 64ag - fail closed instead of fixed-array FOR EACH compiler panic
+
+The checker previously accepted fixed-size stack arrays as FOR EACH
+collections, but native iteration reads tagged heap cells; passing the
+fixed-array variable through cg_expr panicked (hk444). This checkpoint
+adds a named compile-time rejection before codegen. It does NOT implement
+fixed-array iteration or choose copy/sharing/conversion semantics. Dynamic
+Array(n), supported array-returning calls, nested collection borrows and
+hash paths retain their established behavior. Four new regressions
+(t976-t979, including the unchanged failed hk444 source) check a diagnostic,
+not a compiler panic, on both targets. Earlier negative tests t899/t926/t971
+now use dynamic Array(n) so their original readonly/borrow/move checks stay
+reachable; their expected diagnostic was NOT weakened to the new early
+rejection. Original probes remain unchanged. 974 actual manifest cases
++3harness =977 PASS Linux and Windows/Wine. Frozen175 remains13COMPILES,
+byte-identical to64ab. No new original completion or speed claim: this
+changes rejected inputs only, not successful generated code.
