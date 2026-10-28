@@ -212,3 +212,48 @@ Its repetitions were never evidence for three layouts. This retained-prefix
 script specifically checks that failure mode before timing. Findings support
 optimizing capability but do not support a general 'as fast as Rust' claim or
 a replacement decision. No compiler/main/runtime change is part of this study.
+
+## Fixed I64 array vertical follow-up, 28 October 2026 (new host, new baseline)
+
+Different host and toolchain than the 27 October study: rustc 1.99.1 (same
+version), libLLVM 23.1.5 from the official apt.llvm.org package (was 23.1.1).
+Numbers below are a NEW baseline and are only comparable within this section.
+
+Language slice added under --experimental-llvm only: fixed-size stack arrays
+of I64 (literal initialization, a[i] reads, a[i] := v writes, len(a)), with
+the same 1..=k bound checks and the same hbc_bound_error failure mode as the
+current backend, and the same 3-word native trace frames. Write evaluation
+order is value-then-index, matching the current backend (probe adv2).
+Still fail-closed, with explicit rejection tests: dynamic Array(n), AAdd
+growth, nested arrays, array parameters, whole-array copies, FOR EACH.
+
+Correctness: arraywork.hb joins the exact-output differential set (Linux);
+error-bound.hb and error-bound-write.hb compare stdout/stderr/exit 1
+byte-exact against the current backend, including the trace callstack.
+validate.rs runs 4076 differential calls (1013 of them arraywalk).
+
+Workload: arraywork.hb arraywalk(n): a fixed 16-element I64 array,
+n iterations of a[j] := a[j] + i with rotating j (bounds-checked every
+access), then a full reduce with len(a). Trace-equivalent medians
+(31 samples after warmup, CPU pinned, input 1M, ns/call):
+
+  kernel     current     LLVM    Rust-traced   LLVM/Rust
+  arraywalk  4026689   1192244       1229630      0.97   (CPU0)
+  arraywalk  4020905   1229315       1228588      1.00   (CPU1)
+
+Read: on this host and this kernel the LLVM backend with traces runs at
+about the same time as the equivalent traced Rust control, while the
+current backend with traces is slower in this workload. This is a
+single-kernel, single-host result; it is not a general parity claim and
+not a closed gate.
+
+Code quality: disassembly shows both LLVM and rustc eliminate the
+redundant 1..=16 bound checks inside the loop (both prove j stays in
+range) while keeping the volatile trace stores and the FOR overflow
+intrinsic. The remaining inner-loop cost is dominated by the trace
+bookkeeping itself in all three implementations.
+
+Open: a larger-than-16-element data workload (accepted next step), the
+Windows cross-check (no wine/mingw on this host, no sudo), and fresh
+remote verification. The 27 October layout-sensitivity caveats still
+apply: percentages move with code layout and host.
