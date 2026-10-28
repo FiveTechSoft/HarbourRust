@@ -3,7 +3,11 @@ os.chdir(pathlib.Path(__file__).resolve().parent)
 cases={
  'bool-branch': 'function main()\nlocal b := .T.\nlocal z := .F.\nif b\nz := .T.\nendif\n? If(b,z,.F.)\nreturn\n',
  'float': 'function main()\n? 1.2\nreturn\n',
- 'array': 'function main()\nlocal a := {1,2}\n? a[1]\nreturn\n',
+ 'array-dynamic': 'function main()\nlocal a := Array(2)\nreturn\n',
+ 'array-param': 'function f(a)\nreturn a[1]\nfunction main()\nlocal a := {1,2}\n? f(a)\nreturn\n',
+ 'array-nested': 'function main()\nlocal a := {{1,2},{3,4}}\n? a[1][1]\nreturn\n',
+ 'array-copy': 'function main()\nlocal a := {1,2}\nlocal b := a\nreturn\n',
+ 'array-aadd': 'function main()\nlocal a := {1,2}\nAAdd(a,3)\nreturn\n',
  'nil': 'function main()\n? nil\nreturn\n',
  'string-var': 'function main()\nlocal a := "x"\n? a\nreturn\n',
  'byref': 'function f(x)\nreturn x+1\nfunction main()\nlocal a := 1\n? f(@a)\nreturn\n',
