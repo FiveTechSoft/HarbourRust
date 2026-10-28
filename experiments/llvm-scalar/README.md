@@ -269,6 +269,46 @@ ms), another instance of the host variability already registered. Read:
 close times between LLVM and traced Rust with real data access and
 checks, not a closed gate. validate.rs now runs 5089 differential calls.
 
-Open: the Windows cross-check (no wine/mingw on this host, no sudo).
-The 27 October layout-sensitivity caveats still apply: percentages move
-with code layout and host.
+Windows cross-check: RESOLVED on this host without privileges - see the
+next section. The 27 October layout-sensitivity caveats still apply:
+percentages move with code layout and host.
+
+## Windows validation route resolved, 28 October 2026 (userspace Wine, no privileges)
+
+The cross-check left open above is closed on this host without sudo, admin
+changes or spend, using only user-space downloads extracted under /tmp.
+
+Tool provenance (verifiable):
+
+- Wine: Kron4ek Wine-Builds release 10.0, asset
+  `wine-10.0-amd64-wow64.tar.xz`
+  (https://github.com/Kron4ek/Wine-Builds/releases/download/10.0/wine-10.0-amd64-wow64.tar.xz),
+  extracted to /tmp/wine-10.0-amd64-wow64. WINEPREFIX must point at a
+  user-owned directory: Wine refuses a prefix inside root-owned /tmp.
+- MinGW binutils + kernel32 import library: Ubuntu packages
+  `binutils-mingw-w64-x86-64` 2.38-3ubuntu1+9build1 (amd64) and
+  `mingw-w64-x86-64-dev` 8.0.0-1 (all) from archive.ubuntu.com, extracted
+  with dpkg -x to /tmp/mingw (used as M=/tmp/mingw/usr/bin,
+  MLIB=/tmp/mingw/usr/x86_64-w64-mingw32/lib).
+- libLLVM 23.1.5 + libz3: official apt.llvm.org packages extracted to
+  /tmp/llvm23, used via LD_LIBRARY_PATH / HARBOUR_LLVM_LIB (no install).
+- rustc 1.99.1 via rustup in the user profile.
+
+Discarded routes (recorded so they are not retried blindly): Kron4ek
+wine-11.20 plain amd64 needs the 32-bit loader /lib/ld-linux.so.2, absent
+on this host; wine-11.20 wow64 SIGSEGVs during early ntdll initialisation.
+The 10.0 wow64 build runs every PE binary used here.
+
+New verification on this host (28 October 2026, distinct from the
+historical 27 October runs): `tests/run_battery.sh` re-run in full with
+M/MLIB/WINE set - 1086 manifest rows PASS, 0 FAIL (ALL GREEN), Linux +
+Wine byte comparison. This experiment's `run.sh` with WINE set: 26 PASS /
+0 FAIL, including byte-exact Windows output for corpus, audit, edge,
+procline and arraywork, the Windows ABI canary, and the Windows
+ERROR TRACE EXACT cases (increment overflow, array bound error) comparing
+the current backend against LLVM.
+
+Caveat: this is validation under Wine (user-space emulation of the Windows
+API), not native Windows. It validates byte equality of the PE target and
+its failure modes; it says nothing about behaviour or performance on real
+Windows.
