@@ -34,5 +34,16 @@ fn frame()->Frame {Frame{prev:std::ptr::null_mut(),text:std::ptr::null(),len:0}}
  while i<=n{f.at("  at recurrence (corpus.hb:25)\\n");s=s.wrapping_mul(3).wrapping_add(i);if let Some(v)=i.checked_add(1){i=v}else{break}}
  f.at("  at recurrence (corpus.hb:27)\\n");f.leave();s
 }
+#[inline(never)] fn rust_arraywalk(n:i64)->i64 {
+ let mut f=frame();f.enter();f.at("  at arraywalk (arraywork.hb:2)\\n");f.at("  at arraywalk (arraywork.hb:2)\\n");let mut a=[1i64,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
+ f.at("  at arraywalk (arraywork.hb:3)\\n");let mut i=0i64;
+ f.at("  at arraywalk (arraywork.hb:4)\\n");let mut j=1i64;
+ f.at("  at arraywalk (arraywork.hb:5)\\n");let mut s=0i64;
+ f.at("  at arraywalk (arraywork.hb:6)\\n");i=1;
+ while i<=n {f.at("  at arraywalk (arraywork.hb:7)\\n");let ji=(j-1) as usize;a[ji]=a[ji].wrapping_add(i);f.at("  at arraywalk (arraywork.hb:8)\\n");j=j.wrapping_add(1);f.at("  at arraywalk (arraywork.hb:9)\\n");if j>16{f.at("  at arraywalk (arraywork.hb:10)\\n");j=1}if let Some(v)=i.checked_add(1){i=v}else{break}}
+ f.at("  at arraywalk (arraywork.hb:13)\\n");i=1;
+ while i<=16{f.at("  at arraywalk (arraywork.hb:14)\\n");s=s.wrapping_add(a[(i-1) as usize]);if let Some(v)=i.checked_add(1){i=v}else{break}}
+ f.at("  at arraywalk (arraywork.hb:16)\\n");f.leave();s
+}
 '''
 pathlib.Path('run/bench-traced-rust.rs').write_text(s[:a]+new+s[b:])

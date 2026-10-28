@@ -25,21 +25,26 @@ done
 cp run/corpus-current.s current.s
 cp run/corpus.ll.runtime.s corpus.ll.runtime.s
 cp run/corpus.o corpus.o
+cp run/arraywork-current.s arraywork-current.s
+objcopy --redefine-sym ll_main=ll_main_arraywork run/arraywork.o
 python3 prepare_bench.py
 as -o bench_current.o bench_current.s
 as -o bench_current_notrace.o bench_current_notrace.s
 for c in validate bench; do
- "$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C relocation-model=static "$c.rs" -o "run/$c"
+ "$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static "$c.rs" -o "run/$c"
 done
 run/validate
 run/bench "${BENCH_N:-1000000}" > run/bench.csv
 # Deliberately untraced control for comparison to untraced Rust. Not product parity.
 run/hbc corpus.hb run/corpus-no-trace.ll --experimental-llvm-no-trace
 python3 llvm_aot.py run/corpus-no-trace.ll run/corpus-no-trace.o
-"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current_notrace.o -C link-arg=run/corpus-no-trace.o -C relocation-model=static bench.rs -o run/bench-no-trace
+run/hbc arraywork.hb run/arraywork-no-trace.ll --experimental-llvm-no-trace
+python3 llvm_aot.py run/arraywork-no-trace.ll run/arraywork-no-trace.o
+objcopy --redefine-sym ll_main=ll_main_arraywork run/arraywork-no-trace.o
+"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current_notrace.o -C link-arg=run/corpus-no-trace.o -C link-arg=run/arraywork-no-trace.o -C relocation-model=static bench.rs -o run/bench-no-trace
 run/bench-no-trace "${BENCH_N:-1000000}" > run/bench-no-trace.csv
 python3 make_traced_rust.py
-"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C relocation-model=static run/bench-traced-rust.rs -o run/bench-traced-rust
+"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static run/bench-traced-rust.rs -o run/bench-traced-rust
 run/bench-traced-rust "${BENCH_N:-1000000}" > run/bench-traced-rust.csv
 python3 abi_check.py
 as -o run/abi.o abi_l.s
