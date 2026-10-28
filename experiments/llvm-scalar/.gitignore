@@ -5,3 +5,4 @@
 /corpus.o
 /corpus*.runtime.s
 /abi_*.s
+arraywork-current.s
