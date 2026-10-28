@@ -253,7 +253,22 @@ range) while keeping the volatile trace stores and the FOR overflow
 intrinsic. The remaining inner-loop cost is dominated by the trace
 bookkeeping itself in all three implementations.
 
-Open: a larger-than-16-element data workload (accepted next step), the
-Windows cross-check (no wine/mingw on this host, no sudo), and fresh
-remote verification. The 27 October layout-sensitivity caveats still
-apply: percentages move with code layout and host.
+Larger data workload (same follow-up): arraywalk2 adds a fixed
+256-element I64 array, n iterations of a[j] := a[j] + i with j advancing
+17 slots per step (visits every element, crosses cache lines), then a
+full reduce. Same measurement method, input 1M:
+
+  kernel      current     LLVM    Rust-traced   LLVM/Rust
+  arraywalk2  4407691   1238324       1285116      0.96   (CPU0)
+  arraywalk2  4447034   1238616       1282729      0.97   (CPU1)
+
+The LLVM time is essentially unchanged from the 16-element kernel
+(data fits L1/L2 in both), while the traced Rust control moved up; the
+16-element Rust control median also drifted between runs (1.23 vs 1.55
+ms), another instance of the host variability already registered. Read:
+close times between LLVM and traced Rust with real data access and
+checks, not a closed gate. validate.rs now runs 5089 differential calls.
+
+Open: the Windows cross-check (no wine/mingw on this host, no sudo).
+The 27 October layout-sensitivity caveats still apply: percentages move
+with code layout and host.

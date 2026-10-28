@@ -16,11 +16,12 @@ defs=''.join(m.group(0) for m in re.finditer(r'(?m)^\.Lstr[0-9]+:\n(?:    \.byte
 seg+='    .section .rodata\n'+defs
 seg=seg.replace('.Lstr','.Lstraw')
 s+=seg
-s+='\n.text\n.globl cur_arraywalk\ncur_arraywalk:\n'
-for r in ['rbx','rbp','r12','r13','r14','r15']:s+='    push %'+r+'\n'
-s+='    sub $24, %rsp\n    mov %rdi, (%rsp)\n    call hbc_fn_arraywalk\n    add $24, %rsp\n'
-for r in ['r15','r14','r13','r12','rbp','rbx']:s+='    pop %'+r+'\n'
-s+='    ret\n'
+for name in ['arraywalk','arraywalk2']:
+ s+='\n.text\n.globl cur_'+name+'\ncur_'+name+':\n'
+ for r in ['rbx','rbp','r12','r13','r14','r15']:s+='    push %'+r+'\n'
+ s+='    sub $24, %rsp\n    mov %rdi, (%rsp)\n    call hbc_fn_'+name+'\n    add $24, %rsp\n'
+ for r in ['r15','r14','r13','r12','rbp','rbx']:s+='    pop %'+r+'\n'
+ s+='    ret\n'
 r=pathlib.Path('corpus.ll.runtime.s').read_text();s+=r[r.index('\n.text\n.globl rt_nl'):]
 pathlib.Path('bench_current.s').write_text(s)
 
