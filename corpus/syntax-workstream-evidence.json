@@ -1,0 +1,378 @@
+{
+  "meaning": "Planning evidence crosswalk,not coverage. Sources may appear in multiple workstreams; never sum memberships as distinct programs. No new compile/run/check result. Seed provenance remains b105ae0 compile-only.",
+  "workstreams": [
+    {
+      "workstream": "lexical-preprocessor",
+      "phase": "P2",
+      "manual_source_paths": [
+        "tests/lnlenli2.prg",
+        "tests/dynwin.prg",
+        "tests/arrindex.prg",
+        "tests/hbpp/compare.hb",
+        "tests/stripdoc.hb",
+        "tests/hbdocext.hb",
+        "tests/strdelim.prg",
+        "tests/vec1.prg",
+        "tests/test.prg"
+      ],
+      "seed_regression_paths": [
+        "tests/t07_unicode_string.hb",
+        "tests/t105_pp_cmd_optresult.hb",
+        "tests/t695_strlit.hb",
+        "tests/t76_pp_define.hb",
+        "tests/t779_pragma_warninglevel.hb",
+        "tests/t77_pp_ifdef.hb"
+      ],
+      "seed_case_count": 6,
+      "missing_seed_link": false,
+      "status": "routing-evidence-only;not-complete-or-supported"
+    },
+    {
+      "workstream": "scope-storage",
+      "phase": "P3",
+      "manual_source_paths": [
+        "tests/mt/mttest01.prg",
+        "tests/mt/mttest05.prg",
+        "tests/mt/mttest06.prg",
+        "tests/mt/mttest08.prg",
+        "tests/mt/mttest12.prg",
+        "tests/mem.prg",
+        "tests/errsys.prg",
+        "tests/funcarr.prg",
+        "tests/dupvars.prg",
+        "tests/fwdref.prg",
+        "tests/vars.prg",
+        "tests/statics2.prg",
+        "tests/statinit.prg",
+        "tests/statics1.prg"
+      ],
+      "seed_regression_paths": [
+        "tests/t678_static_func_proc_note.hb",
+        "tests/t679_func_alias.hb",
+        "tests/t682_static_var_neg.hb",
+        "tests/t685_memvar_ref_neg.hb"
+      ],
+      "seed_case_count": 4,
+      "missing_seed_link": false,
+      "status": "routing-evidence-only;not-complete-or-supported"
+    },
+    {
+      "workstream": "control-effects",
+      "phase": "P3",
+      "manual_source_paths": [
+        "tests/mt/mttest02.prg",
+        "tests/mt/mttest03.prg",
+        "tests/mt/mttest07.prg",
+        "tests/errsys.prg",
+        "tests/stripdoc.hb",
+        "tests/hbdocext.hb",
+        "tests/t1.prg",
+        "tests/for2.prg",
+        "tests/test.prg",
+        "tests/round.prg"
+      ],
+      "seed_regression_paths": [
+        "tests/t358_foreach_strord_num.hb",
+        "tests/t782_iif_lazy.hb",
+        "tests/t791_elseif.hb",
+        "tests/t792_barelocal_for.hb",
+        "tests/t978_foreach_static_empty_neg.hb"
+      ],
+      "seed_case_count": 5,
+      "missing_seed_link": false,
+      "status": "routing-evidence-only;not-complete-or-supported"
+    },
+    {
+      "workstream": "functions-lvalues",
+      "phase": "P3",
+      "manual_source_paths": [
+        "tests/mt/mttest02.prg",
+        "tests/mt/mttest03.prg",
+        "tests/mt/mttest05.prg",
+        "tests/mt/mttest06.prg",
+        "tests/calling.prg",
+        "tests/lnlenli2.prg",
+        "tests/passref.prg",
+        "tests/errsys.prg",
+        "tests/dates.prg",
+        "tests/funcarr.prg",
+        "tests/hbinline.prg",
+        "tests/fileio.prg",
+        "tests/ipclnt.prg",
+        "tests/arreval.prg",
+        "tests/t1.prg",
+        "tests/vars.prg",
+        "tests/procname.prg",
+        "tests/arrayidx.prg"
+      ],
+      "seed_regression_paths": [
+        "tests/t1040_seq_dyn_limit_neg.hb",
+        "tests/t774_f64_forward_ref.hb",
+        "tests/t778_byref_str_param.hb",
+        "tests/t948_sequence_nested.hb"
+      ],
+      "seed_case_count": 4,
+      "missing_seed_link": false,
+      "status": "routing-evidence-only;not-complete-or-supported"
+    },
+    {
+      "workstream": "numeric",
+      "phase": "P4",
+      "manual_source_paths": [
+        "tests/mt/mttest01.prg",
+        "tests/mt/mttest07.prg",
+        "tests/nums.prg",
+        "tests/funcarr.prg",
+        "tests/diskspac.prg",
+        "tests/round.prg",
+        "tests/arrayidx.prg"
+      ],
+      "seed_regression_paths": [
+        "tests/t750_float_arith_mixed.hb",
+        "tests/t758_f64_param_basic.hb",
+        "tests/t787_int_width_computed.hb",
+        "tests/t797_mod_runtime.hb"
+      ],
+      "seed_case_count": 4,
+      "missing_seed_link": false,
+      "status": "routing-evidence-only;not-complete-or-supported"
+    },
+    {
+      "workstream": "containers-lifetimes",
+      "phase": "P4",
+      "manual_source_paths": [
+        "tests/mt/mttest04.prg",
+        "tests/mt/mttest05.prg",
+        "tests/mt/mttest06.prg",
+        "tests/mt/mttest07.prg",
+        "tests/mt/mttest12.prg",
+        "tests/lnlenli2.prg",
+        "tests/arrindex.prg",
+        "tests/funcarr.prg",
+        "tests/usrrdd/exarr.prg",
+        "tests/arreval.prg",
+        "tests/array.prg",
+        "tests/strdelim.prg",
+        "tests/statics2.prg",
+        "tests/statics1.prg"
+      ],
+      "seed_regression_paths": [
+        "tests/t208_nil_literal.hb",
+        "tests/t212_nil_neg_order.hb",
+        "tests/t231_hash_lit_read.hb",
+        "tests/t243_hash_grow.hb",
+        "tests/t325_darrs_grow_print.hb",
+        "tests/t424_static_arg_read.hb"
+      ],
+      "seed_case_count": 6,
+      "missing_seed_link": false,
+      "status": "routing-evidence-only;not-complete-or-supported"
+    },
+    {
+      "workstream": "closures-dynamic-objects",
+      "phase": "P5",
+      "manual_source_paths": [
+        "tests/multifnc/t0.prg",
+        "tests/multifnc/t1.prg",
+        "tests/multifnc/t2.prg",
+        "tests/mt/mttest01.prg",
+        "tests/mt/mttest08.prg",
+        "tests/mt/mttest09.prg",
+        "tests/arreval.prg",
+        "tests/fwdref.prg",
+        "tests/t1.prg",
+        "tests/statinit.prg",
+        "tests/symbolt.prg",
+        "tests/sortbug.prg"
+      ],
+      "seed_regression_paths": [
+        "tests/t150_cb_eval1.hb",
+        "tests/t157_cb_neg_capture.hb",
+        "tests/t290_neg_class_gate.hb",
+        "tests/t291_neg_class_multi.hb"
+      ],
+      "seed_case_count": 4,
+      "missing_seed_link": false,
+      "status": "routing-evidence-only;not-complete-or-supported"
+    },
+    {
+      "workstream": "modules-extensions",
+      "phase": "P5",
+      "manual_source_paths": [
+        "tests/multifnc/t0.prg",
+        "tests/multifnc/t1.prg",
+        "tests/multifnc/t2.prg",
+        "tests/mt/mttest02.prg",
+        "tests/mt/mttest03.prg",
+        "tests/dynwin.prg",
+        "tests/initproc.prg",
+        "tests/hrbext.prg",
+        "tests/inline_c.prg",
+        "tests/hbinline.prg",
+        "tests/hbpp/compare.hb",
+        "tests/statics2.prg",
+        "tests/statinit.prg",
+        "tests/statics1.prg"
+      ],
+      "seed_regression_paths": [
+        "tests/t681_init_proc_neg.hb",
+        "tests/t686_request_undef_neg.hb"
+      ],
+      "seed_case_count": 2,
+      "missing_seed_link": false,
+      "status": "routing-evidence-only;not-complete-or-supported"
+    },
+    {
+      "workstream": "strings-dates-settings",
+      "phase": "P6",
+      "manual_source_paths": [
+        "tests/mem.prg",
+        "tests/dates.prg",
+        "tests/set_num.prg",
+        "tests/fileio2.prg",
+        "tests/directry.prg",
+        "tests/langchk.hb",
+        "tests/usrrdd/exarr.prg",
+        "tests/cdow.prg",
+        "tests/test.prg"
+      ],
+      "seed_regression_paths": [],
+      "seed_case_count": 0,
+      "missing_seed_link": true,
+      "status": "routing-evidence-only;not-complete-or-supported"
+    },
+    {
+      "workstream": "threads-synchronization",
+      "phase": "P6",
+      "manual_source_paths": [
+        "tests/mt/mttest01.prg",
+        "tests/mt/mttest02.prg",
+        "tests/mt/mttest03.prg",
+        "tests/mt/mttest04.prg",
+        "tests/mt/mttest05.prg",
+        "tests/mt/mttest06.prg",
+        "tests/mt/mttest07.prg",
+        "tests/mt/mttest08.prg",
+        "tests/mt/mttest09.prg",
+        "tests/mt/mttest10.prg",
+        "tests/mt/mttest11.prg",
+        "tests/mt/mttest12.prg"
+      ],
+      "seed_regression_paths": [],
+      "seed_case_count": 0,
+      "missing_seed_link": true,
+      "status": "routing-evidence-only;not-complete-or-supported"
+    },
+    {
+      "workstream": "RDD-reports",
+      "phase": "P6",
+      "manual_source_paths": [
+        "tests/mt/mttest09.prg",
+        "tests/mt/mttest10.prg",
+        "tests/lbl.prg",
+        "tests/rpt.prg",
+        "tests/dbeval.prg",
+        "tests/usrrdd/exmemo.prg",
+        "tests/usrrdd/exarr.prg",
+        "tests/usrrdd/exfcm.prg",
+        "tests/usrrdd/exhsx.prg",
+        "tests/usrrdd/exlog.prg",
+        "tests/usrrdd/exrlx.prg",
+        "tests/sortbug.prg"
+      ],
+      "seed_regression_paths": [],
+      "seed_case_count": 0,
+      "missing_seed_link": true,
+      "status": "routing-evidence-only;not-complete-or-supported"
+    },
+    {
+      "workstream": "filesystem-process-network",
+      "phase": "P6",
+      "manual_source_paths": [
+        "tests/mt/mttest09.prg",
+        "tests/curdirt.prg",
+        "tests/osshell.prg",
+        "tests/fileio.prg",
+        "tests/fileio2.prg",
+        "tests/ipclnt.prg",
+        "tests/directry.prg",
+        "tests/diskspac.prg",
+        "tests/hbpp/compare.hb",
+        "tests/stripdoc.hb",
+        "tests/hbdocext.hb",
+        "tests/langchk.hb",
+        "tests/usrrdd/exmemo.prg",
+        "tests/usrrdd/exhsx.prg",
+        "tests/usrrdd/exlog.prg",
+        "tests/usrrdd/exrlx.prg",
+        "tests/cmphello.prg",
+        "tests/sortbug.prg"
+      ],
+      "seed_regression_paths": [],
+      "seed_case_count": 0,
+      "missing_seed_link": true,
+      "status": "routing-evidence-only;not-complete-or-supported"
+    },
+    {
+      "workstream": "GT-GUI-input-audio",
+      "phase": "P6",
+      "manual_source_paths": [
+        "tests/mt/mttest04.prg",
+        "tests/mt/mttest08.prg",
+        "tests/mt/mttest09.prg",
+        "tests/mt/mttest10.prg",
+        "tests/mt/mttest11.prg",
+        "tests/mt/mttest12.prg",
+        "tests/dynwin.prg",
+        "tests/sound.prg",
+        "tests/usrrdd/exarr.prg",
+        "tests/usrrdd/exfcm.prg",
+        "tests/usrrdd/exhsx.prg",
+        "tests/for2.prg"
+      ],
+      "seed_regression_paths": [],
+      "seed_case_count": 0,
+      "missing_seed_link": true,
+      "status": "routing-evidence-only;not-complete-or-supported"
+    },
+    {
+      "workstream": "environment-introspection",
+      "phase": "P6",
+      "manual_source_paths": [
+        "tests/multifnc/t0.prg",
+        "tests/mt/mttest11.prg",
+        "tests/funcarr.prg",
+        "tests/os.prg",
+        "tests/curdirt.prg",
+        "tests/sound.prg",
+        "tests/osshell.prg",
+        "tests/memory.prg",
+        "tests/diskspac.prg",
+        "tests/langchk.hb",
+        "tests/usrrdd/exlog.prg",
+        "tests/cdow.prg",
+        "tests/dynsym.prg",
+        "tests/procname.prg"
+      ],
+      "seed_regression_paths": [],
+      "seed_case_count": 0,
+      "missing_seed_link": true,
+      "status": "routing-evidence-only;not-complete-or-supported"
+    },
+    {
+      "workstream": "diagnostic-boundaries",
+      "phase": "P7",
+      "manual_source_paths": [
+        "tests/dupvars.prg",
+        "tests/dynsym.prg"
+      ],
+      "seed_regression_paths": [
+        "tests/t1016_procline_calls_block.hb",
+        "tests/t1055_procname_byref.hb"
+      ],
+      "seed_case_count": 2,
+      "missing_seed_link": false,
+      "status": "routing-evidence-only;not-complete-or-supported"
+    }
+  ]
+}

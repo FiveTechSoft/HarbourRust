@@ -1,0 +1,323 @@
+{
+  "schema": 1,
+  "purpose": "Planning taxonomy for evidence routing,not a complete Harbour grammar or implemented-family count. Each observed manual tag has one primary workstream; sources can span workstreams. Seed compile evidence is linked,not promoted to runtime or complete coverage.",
+  "scope_reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "current_manual_review_sources": 74,
+  "current_seed_families": 17,
+  "contracts_note": "Phase/next-gate text does not authorize changes. In particular shared preprocessor permission and new representation/ownership/Dyn effects remain separate.",
+  "workstreams": [
+    {
+      "id": "lexical-preprocessor",
+      "roadmap_phase": "P2",
+      "observed_manual_tags": [
+        "lexical-strings",
+        "string-literal",
+        "inline-comments",
+        "star-comments",
+        "line-length",
+        "text-endtext",
+        "pragmas",
+        "preprocessor",
+        "preprocessor-platform",
+        "embedded-NUL"
+      ],
+      "seed_family_ids": [
+        "lexical-comments",
+        "preprocessor"
+      ],
+      "next_evidence_gate": "Token/escape/comment/line/directive and command-marker rules,with positive and negative boundaries.",
+      "grammar_completeness": "not-claimed",
+      "implementation_completion": "not-inferred",
+      "seed_absence_note": "No seed assigned is a missing evidence link,not proof feature absent."
+    },
+    {
+      "id": "scope-storage",
+      "roadmap_phase": "P3",
+      "observed_manual_tags": [
+        "duplicate-declarations",
+        "forward-reference",
+        "lexical-scope",
+        "file-static",
+        "thread-static",
+        "memvars-dynamic-binding",
+        "nil-local",
+        "string-local"
+      ],
+      "seed_family_ids": [
+        "function-scope",
+        "file-storage"
+      ],
+      "next_evidence_gate": "Declaration visibility,shadowing,storage duration and dynamic-name scope require separate contracts.",
+      "grammar_completeness": "not-claimed",
+      "implementation_completion": "not-inferred",
+      "seed_absence_note": "No seed assigned is a missing evidence link,not proof feature absent."
+    },
+    {
+      "id": "control-effects",
+      "roadmap_phase": "P3",
+      "observed_manual_tags": [
+        "for-control",
+        "while-control",
+        "foreach",
+        "loop-variable-assignment",
+        "exceptions-always",
+        "error-system"
+      ],
+      "seed_family_ids": [
+        "flow",
+        "foreach"
+      ],
+      "next_evidence_gate": "Loop transitions and exceptions require exit/continue/fault and state-order evidence.",
+      "grammar_completeness": "not-claimed",
+      "implementation_completion": "not-inferred",
+      "seed_absence_note": "No seed assigned is a missing evidence link,not proof feature absent."
+    },
+    {
+      "id": "functions-lvalues",
+      "roadmap_phase": "P3",
+      "observed_manual_tags": [
+        "functions",
+        "do-with",
+        "varargs",
+        "byref",
+        "byref-buffer",
+        "assignment-expression",
+        "compound-assignment",
+        "increment",
+        "postincrement",
+        "function-result-lvalue",
+        "array-lvalue",
+        "function-name-shadow",
+        "discard-return",
+        "nil-return",
+        "conditional-expression",
+        "callback-arity",
+        "callback-effects"
+      ],
+      "seed_family_ids": [
+        "calls",
+        "sequence"
+      ],
+      "next_evidence_gate": "Expression/lvalue evaluation order,call signatures,aliasing and discarded effects are independent gates.",
+      "grammar_completeness": "not-claimed",
+      "implementation_completion": "not-inferred",
+      "seed_absence_note": "No seed assigned is a missing evidence link,not proof feature absent."
+    },
+    {
+      "id": "numeric",
+      "roadmap_phase": "P4",
+      "observed_manual_tags": [
+        "floating-point",
+        "rounding",
+        "numeric-formatting",
+        "hexadecimal",
+        "power-modulus"
+      ],
+      "seed_family_ids": [
+        "integers",
+        "f64"
+      ],
+      "next_evidence_gate": "Representation,overflow,decimal metadata/formatting and operator domains need matched numeric oracles.",
+      "grammar_completeness": "not-claimed",
+      "implementation_completion": "not-inferred",
+      "seed_absence_note": "No seed assigned is a missing evidence link,not proof feature absent."
+    },
+    {
+      "id": "containers-lifetimes",
+      "roadmap_phase": "P4",
+      "observed_manual_tags": [
+        "arrays",
+        "array-literal",
+        "array-literal-missing-elements",
+        "multidimensional-array",
+        "nested-arrays",
+        "nested-index",
+        "array-aliasing",
+        "cycles",
+        "lifetime",
+        "shared-aliasing",
+        "hashes",
+        "nil-value"
+      ],
+      "seed_family_ids": [
+        "arrays",
+        "hashes",
+        "nil"
+      ],
+      "next_evidence_gate": "Fixed scalar cells do not establish dynamic/nested/tagged values,cycles or ownership semantics.",
+      "grammar_completeness": "not-claimed",
+      "implementation_completion": "not-inferred",
+      "seed_absence_note": "No seed assigned is a missing evidence link,not proof feature absent."
+    },
+    {
+      "id": "closures-dynamic-objects",
+      "roadmap_phase": "P5",
+      "observed_manual_tags": [
+        "closures",
+        "closures-detached-locals",
+        "codeblocks",
+        "classes",
+        "symbol-values",
+        "function-symbol-values",
+        "dynamic-dispatch",
+        "runtime-macro"
+      ],
+      "seed_family_ids": [
+        "blocks",
+        "classes"
+      ],
+      "next_evidence_gate": "Captured state,eval,symbol values,classes and runtime macro evaluation remain different execution contracts.",
+      "grammar_completeness": "not-claimed",
+      "implementation_completion": "not-inferred",
+      "seed_absence_note": "No seed assigned is a missing evidence link,not proof feature absent."
+    },
+    {
+      "id": "modules-extensions",
+      "roadmap_phase": "P5",
+      "observed_manual_tags": [
+        "modules-linking",
+        "module-startup",
+        "script-startup",
+        "init-procedure",
+        "init-order",
+        "exit-procedures",
+        "HRB-module",
+        "embedded-C",
+        "inline-C",
+        "extension-ABI",
+        "dynamic-library-ABI"
+      ],
+      "seed_family_ids": [
+        "module-lifecycle"
+      ],
+      "next_evidence_gate": "Module order,symbol selection,HRB,C extensions and DLL ABI require isolated project-level evidence.",
+      "grammar_completeness": "not-claimed",
+      "implementation_completion": "not-inferred",
+      "seed_absence_note": "No seed assigned is a missing evidence link,not proof feature absent."
+    },
+    {
+      "id": "strings-dates-settings",
+      "roadmap_phase": "P6",
+      "observed_manual_tags": [
+        "strings",
+        "string-read",
+        "trim-library",
+        "dates",
+        "date-arithmetic",
+        "set-format",
+        "set-runtime",
+        "configuration-query",
+        "localization",
+        "unused-symbol"
+      ],
+      "seed_family_ids": [],
+      "next_evidence_gate": "Library signatures,string/date/SET semantics and locale/clock fixtures need explicit contracts.",
+      "grammar_completeness": "not-claimed",
+      "implementation_completion": "not-inferred",
+      "seed_absence_note": "No seed assigned is a missing evidence link,not proof feature absent."
+    },
+    {
+      "id": "threads-synchronization",
+      "roadmap_phase": "P6",
+      "observed_manual_tags": [
+        "threads",
+        "mutexes",
+        "mutex-messages"
+      ],
+      "seed_family_ids": [],
+      "next_evidence_gate": "Thread lifetime,shared state,mutex/message protocols and termination require invariant/event harnesses.",
+      "grammar_completeness": "not-claimed",
+      "implementation_completion": "not-inferred",
+      "seed_absence_note": "No seed assigned is a missing evidence link,not proof feature absent."
+    },
+    {
+      "id": "RDD-reports",
+      "roadmap_phase": "P6",
+      "observed_manual_tags": [
+        "RDD-workarea",
+        "record-traversal",
+        "record-locking",
+        "CSV-driver",
+        "memo-drivers",
+        "fulltext-index",
+        "sorting",
+        "logging",
+        "report-label"
+      ],
+      "seed_family_ids": [],
+      "next_evidence_gate": "Driver registration,workarea state,record/index/memo fixtures and data effects must be separated.",
+      "grammar_completeness": "not-claimed",
+      "implementation_completion": "not-inferred",
+      "seed_absence_note": "No seed assigned is a missing evidence link,not proof feature absent."
+    },
+    {
+      "id": "filesystem-process-network",
+      "roadmap_phase": "P6",
+      "observed_manual_tags": [
+        "filesystem",
+        "file-handles",
+        "directory-metadata",
+        "source-rewrite",
+        "documentation-extraction",
+        "process-shell",
+        "compiler-invocation",
+        "network-sockets"
+      ],
+      "seed_family_ids": [],
+      "next_evidence_gate": "Fixture isolation,artifact checks,subprocess/socket destinations and cleanup are prerequisite gates.",
+      "grammar_completeness": "not-claimed",
+      "implementation_completion": "not-inferred",
+      "seed_absence_note": "No seed assigned is a missing evidence link,not proof feature absent."
+    },
+    {
+      "id": "GT-GUI-input-audio",
+      "roadmap_phase": "P6",
+      "observed_manual_tags": [
+        "GT-screen",
+        "GT-windows",
+        "GUI",
+        "input-terminal",
+        "audio",
+        "OS-settings"
+      ],
+      "seed_family_ids": [],
+      "next_evidence_gate": "Interactive and device/desktop effects cannot use a generic stdout harness.",
+      "grammar_completeness": "not-claimed",
+      "implementation_completion": "not-inferred",
+      "seed_absence_note": "No seed assigned is a missing evidence link,not proof feature absent."
+    },
+    {
+      "id": "environment-introspection",
+      "roadmap_phase": "P6",
+      "observed_manual_tags": [
+        "environment-clock",
+        "environment-query",
+        "identity-query",
+        "runtime-memory-query",
+        "runtime-symbol-introspection",
+        "debug-runtime",
+        "call-stack-introspection"
+      ],
+      "seed_family_ids": [],
+      "next_evidence_gate": "Environment/registry/identity fields and VM metadata require declared comparison semantics,not blind normalization.",
+      "grammar_completeness": "not-claimed",
+      "implementation_completion": "not-inferred",
+      "seed_absence_note": "No seed assigned is a missing evidence link,not proof feature absent."
+    },
+    {
+      "id": "diagnostic-boundaries",
+      "roadmap_phase": "P7",
+      "observed_manual_tags": [
+        "compiler-diagnostic",
+        "invalid-argument-boundaries"
+      ],
+      "seed_family_ids": [
+        "diagnostics"
+      ],
+      "next_evidence_gate": "Rejection/error conditions and exact diagnostic bytes stay distinct from successful feature support.",
+      "grammar_completeness": "not-claimed",
+      "implementation_completion": "not-inferred",
+      "seed_absence_note": "No seed assigned is a missing evidence link,not proof feature absent."
+    }
+  ]
+}

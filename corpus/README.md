@@ -240,3 +240,31 @@ test.prg writes embedded NULs and needs binary capture. for2 waits for keyboard
 input despite its small size. Arrays with cycles,closures with later locals,
 static initialization,PUBLIC lookup and symbol objects need their own existing
 contract gates. This review does not grant them or imply acceptance.
+
+## Normalized planning workstreams,not grammar coverage
+
+`syntax-workstream-taxonomy.json` replaces ad-hoc counting of observed tags with
+an explicit routing crosswalk. Each of122 observed tags from74 manual reviews
+has one primary workstream; each of17 compile-only seed-family IDs is linked
+once. Sources can belong to multiple workstreams,so memberships must not be
+summed as distinct examples.15 workstreams are planning buckets,not15 completed
+families or the full Harbour grammar. Phase labels are intended dependencies,
+not permission to implement a new contract.
+
+`syntax-workstream-evidence.json` joins original-source paths and existing
+regression paths per workstream. Six workstreams have no assigned seed-family
+link: strings/dates/settings,threads,RDD/reports,filesystem/process/network,
+GT/GUI/input/audio and environment/introspection. This is a visible missing
+matrix link,not proof that every feature is absent from the compiler. Existing
+unmapped regression tests may exist; reconcile them before calling a capability
+unsupported. A seed link similarly does not establish complete syntax or runtime.
+
+```
+python3 tools/check_syntax_workstreams.py --output /tmp/workstream-evidence.json
+cmp /tmp/workstream-evidence.json corpus/syntax-workstream-evidence.json
+```
+
+The check rejects duplicate/missing tag or seed assignments. It calls no
+compiler and executes no reference program. The original seed's compiler SHA,
+source hashes and compile acceptance/rejection remain the supporting evidence;
+this metadata operation does not refresh them or create a new test pass.
