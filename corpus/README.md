@@ -192,3 +192,30 @@ The ledger now reconciles the25 manual reviews alongside existing execution:
 execution evidence (25+19-5 overlap). Only19 default/14LLVM have exact execution
 results. Neither39 nor25 is an automatic execution allowlist. Earlier per-gate
 compiler provenance is preserved, including pending states for other profiles.
+
+### Expanded review:48 sources /62 distinct reviewed-or-executed
+
+A second pass adds23 small source/script records to the initial25, bringing
+manual full-source review to48 and the union with19 previously executed
+sources to62 (48+19-5overlap). Prior25/39 counts above describe the first batch.
+Execution remains19default/14LLVM. No new original was compiled or run.
+
+The additional pass separates environment queries, report/DBF fixtures,
+module exports/INIT procedures, C-embedded builds, audio, subprocesses,
+loopback sockets, file effects and utility scripts. Small file size does not
+mean safe console example:
+- stripdoc.hb overwrites matching .c/.prg in its current directory.
+- hbpp/compare.hb runs Harbour,Clipper and diff, then deletes intermediates.
+- osshell.prg is marked NOTEST and starts an interactive OS shell.
+- ipclnt connects to127.0.0.1:10000 and sends a quit message. Loopback is not
+  permission to contact a pre-existing service.
+- fileio/fileio2 truncate test.txt; usrrdd/exmemo creates three memo tables.
+- hrbext is a module with exports and INIT,not a standalone Main program.
+- initproc has both INIT and Main; startup behavior needs its own measured
+  oracle rather than inferring semantics from a comment.
+- environment/memory/disk/date outputs require declared field/invariant
+  comparisons,not fixed numbers,blind normalization or generic speed claims.
+
+The family index now has83 observed tags across48 sources. This is a navigation
+index only. It does not replace the17-family implementation-test seed or assert
+83 implemented/full grammar families. The unreviewed inventory remains pending.

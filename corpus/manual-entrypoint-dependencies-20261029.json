@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "25 manually read source records:12MT,3multifnc,10frontier/default-only. Metadata only, no reference body copied. Five overlap prior19 execution records. No new compile/link/run or execution authorization. Dependencies name requirements, not verified installed availability. No total-language coverage percentage.",
+  "scope": "48 manually read source records:12MT,3multifnc,10frontier/default-only,23effect/dependency/startup reviews. Metadata only,no source bodies copied. Five overlap prior19execution records. No new compile/link/run or execution authorization. Dependency requirements are not installed availability. No language coverage percentage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -1271,6 +1271,952 @@
           "symbol_or_construct": "__dbgVMStkGList",
           "lines": [
             48
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/os.prg",
+      "sha256": "18e978cb594856a9692b5b156d9bc6c7153bdc47218240ba94e1f14e47a8c258",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "environment-query"
+      ],
+      "dependency_requirements": [
+        "OS runtime query"
+      ],
+      "effects_or_harness_risks": [
+        "reads OS identity"
+      ],
+      "output_comparison": "environment-dependent",
+      "next_gate": "declare platform comparison fields",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "? OS()",
+          "lines": [
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/lbl.prg",
+      "sha256": "3c32ed40077961792c17bb1026e97fe10508edd977af2ec3016f598dbde9ef82",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "report-label"
+      ],
+      "dependency_requirements": [
+        "test DBF",
+        "test label form template",
+        "label engine"
+      ],
+      "effects_or_harness_risks": [
+        "opens table; label output/routing"
+      ],
+      "output_comparison": "fixture/template dependent",
+      "next_gate": "disposable table/template fixture and output routing",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "USE test NEW",
+          "lines": [
+            3
+          ]
+        },
+        {
+          "symbol_or_construct": "LABEL FORM test",
+          "lines": [
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/rpt.prg",
+      "sha256": "739fdc4a87e0b5b41750dcdacdd16045ed1013d6461039f5a3a0a4161170e7f2",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "report-label"
+      ],
+      "dependency_requirements": [
+        "test DBF",
+        "test report form template",
+        "report engine"
+      ],
+      "effects_or_harness_risks": [
+        "opens table; report output/routing"
+      ],
+      "output_comparison": "fixture/template dependent",
+      "next_gate": "disposable table/template fixture and output routing",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "USE test NEW",
+          "lines": [
+            3
+          ]
+        },
+        {
+          "symbol_or_construct": "REPORT FORM test",
+          "lines": [
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/set_num.prg",
+      "sha256": "5366e13b0dfc0fe7000348bda7b50a32260bb85a27aa681fed978817170279b3",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "set-runtime",
+        "configuration-query"
+      ],
+      "dependency_requirements": [
+        "_SET_COUNT compile constant",
+        "SET query forms"
+      ],
+      "effects_or_harness_risks": [
+        "reads all runtime settings"
+      ],
+      "output_comparison": "default/runtime/driver dependent",
+      "next_gate": "declare startup settings and per-setting semantics",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "_SET_COUNT",
+          "lines": [
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "Set( n )",
+          "lines": [
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/initproc.prg",
+      "sha256": "890c8d8d8ae1333a923dfe323f6820349d500f30a48d6a3623b2eea73fc10406",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "INIT Init plus Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "module-startup",
+        "init-procedure"
+      ],
+      "dependency_requirements": [
+        "INIT startup selection and procedure dispatch"
+      ],
+      "effects_or_harness_risks": [
+        "startup console output; source contains surprising Main-output assertion"
+      ],
+      "output_comparison": "startup behavior requires independent oracle,not guessed from comment",
+      "next_gate": "characterize module startup before ordinary Main harness",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "INIT PROCEDURE Init",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "PROCEDURE Main",
+          "lines": [
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "NEVER",
+          "lines": [
+            9
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/curdirt.prg",
+      "sha256": "eb45e59b5a57d26657d606809e51dc1273980956a7b1cf62a12e1e36d19d8e57",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "filesystem",
+        "environment-query"
+      ],
+      "dependency_requirements": [
+        "CurDir drive-specific semantics"
+      ],
+      "effects_or_harness_risks": [
+        "queries current directory and several drives"
+      ],
+      "output_comparison": "cwd/platform/drive dependent",
+      "next_gate": "isolated declared cwd and platform-specific absent-drive expectations",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "CurDir()",
+          "lines": [
+            3
+          ]
+        },
+        {
+          "symbol_or_construct": "CurDir( \"D:\" )",
+          "lines": [
+            6
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/dbeval.prg",
+      "sha256": "99aafb5ace82a04c3dbcaea8ca263fc44f5bc4865617f1002c1f504849a5ffdb",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "record-traversal"
+      ],
+      "dependency_requirements": [
+        "test DBF data",
+        "USE/dbGoto/COUNT/RecNo"
+      ],
+      "effects_or_harness_risks": [
+        "reads existing table and mutates current record position"
+      ],
+      "output_comparison": "record fixture dependent",
+      "next_gate": "copy of known table with counts/record-position assertions",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "USE test",
+          "lines": [
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "dbGoto( 4 )",
+          "lines": [
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "COUNT TO",
+          "lines": [
+            9,
+            11
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/hrbext.prg",
+      "sha256": "64a6aa486ad84baee537ef98bbbf49584bdda1f469af8cf3906459c9ebe7e3a1",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Msg/Msg2 exports and INIT MsgInit,no Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "modules-linking",
+        "HRB-module",
+        "init-procedure"
+      ],
+      "dependency_requirements": [
+        "separate HRB host/loader, see hrb.prg"
+      ],
+      "effects_or_harness_risks": [
+        "module-load INIT output"
+      ],
+      "output_comparison": "not standalone application",
+      "next_gate": "review HRB loader and module lifecycle together",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "FUNCTION Msg()",
+          "lines": [
+            3
+          ]
+        },
+        {
+          "symbol_or_construct": "INIT PROCEDURE MsgInit",
+          "lines": [
+            12
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/inline_c.prg",
+      "sha256": "7326cba837c7b9348f6ca4fa6faf6803db0359915a4eebbe2fa7f40d9c598d03",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "embedded-C",
+        "extension-ABI"
+      ],
+      "dependency_requirements": [
+        "C compiler and hbapi.h",
+        "HB_FUNC C binding"
+      ],
+      "effects_or_harness_risks": [
+        "build executes C compilation,then console output"
+      ],
+      "output_comparison": "deterministic-looking only after extension contract",
+      "next_gate": "own C-extension ABI decision, no compile attempt",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "#pragma begindump",
+          "lines": [
+            9
+          ]
+        },
+        {
+          "symbol_or_construct": "HB_FUNC( C_FUNC )",
+          "lines": [
+            13
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/sound.prg",
+      "sha256": "17d192637574ff5fb23ccc745fff1b12eadedb0bb662e3b56ce9b835b6d7e4e8",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "audio",
+        "environment-clock"
+      ],
+      "dependency_requirements": [
+        "Tone audio and Seconds clock"
+      ],
+      "effects_or_harness_risks": [
+        "audible tones and elapsed delay"
+      ],
+      "output_comparison": "clock/device timing variable",
+      "next_gate": "audio capability and explicit non-disruptive test plan",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Tone( 440",
+          "lines": [
+            6,
+            8
+          ]
+        },
+        {
+          "symbol_or_construct": "Seconds()",
+          "lines": [
+            3,
+            9
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/hbinline.prg",
+      "sha256": "2ecb2f20d091b354501e079b54cd575bbcb1f84fda869bd37a9a74c8f6d8c556",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "embedded-C",
+        "inline-C",
+        "function-name-shadow"
+      ],
+      "dependency_requirements": [
+        "hb_inLine embedded C forms",
+        "hb_retc/hb_parc ABI"
+      ],
+      "effects_or_harness_risks": [
+        "build compiles C snippets"
+      ],
+      "output_comparison": "not pure language-only console test",
+      "next_gate": "inline C and name-resolution review",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_inLine {",
+          "lines": [
+            2,
+            11
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_retc( hb_parc",
+          "lines": [
+            12
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/osshell.prg",
+      "sha256": "e220a922c815fff837f8e171a6a01f8c2344423091b9ba6e75be19d5f2f04798",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "process-shell",
+        "environment-query"
+      ],
+      "dependency_requirements": [
+        "SHELL or COMSPEC env",
+        "OS shell"
+      ],
+      "effects_or_harness_risks": [
+        "spawns interactive shell; explicitly NOTEST"
+      ],
+      "output_comparison": "unbounded/environment-dependent",
+      "next_gate": "never bulk execute; isolated explicit process plan",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "//NOTEST",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "GetEnv( \"SHELL\" )",
+          "lines": [
+            16
+          ]
+        },
+        {
+          "symbol_or_construct": "! ( cShell )",
+          "lines": [
+            22
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/fileio.prg",
+      "sha256": "b9bc1b8b5bd65473b145044a4cf885a1a508bd5955638da59da96da24518829f",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "filesystem",
+        "byref-buffer",
+        "file-handles"
+      ],
+      "dependency_requirements": [
+        "FCreate/FWrite/FClose/FOpen/FRead"
+      ],
+      "effects_or_harness_risks": [
+        "creates or truncates test.txt; reads it; leaves artifact"
+      ],
+      "output_comparison": "handle numbers environment dependent",
+      "next_gate": "disposable cwd, exact file bytes and handle semantics, cleanup plan",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "FCreate( \"test.txt\" )",
+          "lines": [
+            9
+          ]
+        },
+        {
+          "symbol_or_construct": "FRead( h, @cstr",
+          "lines": [
+            21
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/fileio2.prg",
+      "sha256": "0a2ec8f9852ddb51af707286e832b5ea2c150c73c08ebd8df8f8b7743d16b52a",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "filesystem",
+        "file-handles",
+        "string-read"
+      ],
+      "dependency_requirements": [
+        "FCreate/FWrite/FClose/FOpen/FReadStr"
+      ],
+      "effects_or_harness_risks": [
+        "creates or truncates test.txt; reads it; leaves artifact"
+      ],
+      "output_comparison": "handle numbers environment dependent",
+      "next_gate": "disposable cwd and output/file-effect assertions",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "FCreate( \"test.txt\" )",
+          "lines": [
+            9
+          ]
+        },
+        {
+          "symbol_or_construct": "FReadStr( h, 1 )",
+          "lines": [
+            21
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/ipclnt.prg",
+      "sha256": "c731de98e53f0f335a8d93abbe46db9f59189ba8c40ea5fb623a8f075364acaa",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "network-sockets",
+        "assignment-expression"
+      ],
+      "dependency_requirements": [
+        "hbsocket.ch",
+        "socket runtime",
+        "listener at127.0.0.1:10000"
+      ],
+      "effects_or_harness_risks": [
+        "connects and sends protocol messages including quit; loopback is still external effect"
+      ],
+      "output_comparison": "depends on server and socket status",
+      "next_gate": "explicit isolated paired-server fixture; no contact with existing listeners",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "#include \"hbsocket.ch\"",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "PORT                        10000",
+          "lines": [
+            4
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_socketConnect",
+          "lines": [
+            14
+          ]
+        },
+        {
+          "symbol_or_construct": "\"quit\" + EOT",
+          "lines": [
+            21
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/directry.prg",
+      "sha256": "d989546b67bb6af337326cfed4dd2c20f6cdbd9f79c8da7b9eef7c3c5533576d",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main(filespec,attribs,cshort)",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "filesystem",
+        "directory-metadata",
+        "dates",
+        "set-format"
+      ],
+      "dependency_requirements": [
+        "directry.ch",
+        "Directory and metadata constants",
+        "SET date formatting"
+      ],
+      "effects_or_harness_risks": [
+        "lists filesystem names/sizes/dates/attributes; changes process format"
+      ],
+      "output_comparison": "directory order/metadata/arguments depend on fixture",
+      "next_gate": "disposable fixed metadata fixture; no live filesystem disclosure",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Directory( filespec",
+          "lines": [
+            14,
+            15
+          ]
+        },
+        {
+          "symbol_or_construct": "_SET_DATEFORMAT",
+          "lines": [
+            17
+          ]
+        },
+        {
+          "symbol_or_construct": "F_NAME",
+          "lines": [
+            14,
+            21
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/memory.prg",
+      "sha256": "52433b41f01058ccacbcd3435e90c27db1629ae7d900eb75117ecbf0ec04c97d",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "runtime-memory-query"
+      ],
+      "dependency_requirements": [
+        "hbmemory.ch",
+        "Memory query codes"
+      ],
+      "effects_or_harness_risks": [
+        "reads runtime memory counters"
+      ],
+      "output_comparison": "allocator/runtime/environment dependent",
+      "next_gate": "defined counter semantics, not numeric stdout parity",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "#include \"hbmemory.ch\"",
+          "lines": [
+            4
+          ]
+        },
+        {
+          "symbol_or_construct": "HB_MEM_USEDMAX",
+          "lines": [
+            19
+          ]
+        },
+        {
+          "symbol_or_construct": "HB_MEM_STACKITEMS",
+          "lines": [
+            20
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/diskspac.prg",
+      "sha256": "f922decdb282320f4293baefbe000220784ffbe30ed53ca3052153a5fdfaf425",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main(cDisk)",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "filesystem",
+        "environment-query",
+        "floating-point"
+      ],
+      "dependency_requirements": [
+        "fileio.ch",
+        "disk quota/capacity APIs",
+        "hb_DirBase"
+      ],
+      "effects_or_harness_risks": [
+        "queries filesystem free/used/total bytes"
+      ],
+      "output_comparison": "space/quota can change between samples",
+      "next_gate": "validate relations/API semantics, not fixed free-space numbers",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_DiskSpace",
+          "lines": [
+            26,
+            27,
+            28,
+            29
+          ]
+        },
+        {
+          "symbol_or_construct": "HB_DISK_AVAIL",
+          "lines": [
+            27
+          ]
+        },
+        {
+          "symbol_or_construct": "HB_DISK_TOTAL",
+          "lines": [
+            29
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/hbpp/compare.hb",
+      "sha256": "bce28eafc7ea745d913d87117e1c39ae68806e9fc7c1bde8342aa5dc723bd4eb",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "top-level .hb script,no Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "script-startup",
+        "process-shell",
+        "filesystem",
+        "preprocessor"
+      ],
+      "dependency_requirements": [
+        "harbour,clipper.exe,diff executables",
+        "_pp_test.prg input"
+      ],
+      "effects_or_harness_risks": [
+        "copies/deletes files,executes three subprocess commands,writes pp_test.dif"
+      ],
+      "output_comparison": "external tools and whitespace-ignore diff policy",
+      "next_gate": "isolated tools fixture and separate semantic comparison; do not execute from original directory",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_FCopy",
+          "lines": [
+            1,
+            2
+          ]
+        },
+        {
+          "symbol_or_construct": "clipper.exe",
+          "lines": [
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "diff -u -w",
+          "lines": [
+            10
+          ]
+        },
+        {
+          "symbol_or_construct": "FErase",
+          "lines": [
+            7,
+            8,
+            12,
+            13
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/stripdoc.hb",
+      "sha256": "c7d7e51aaab0011a6b32162c546c41d564ae23a0c269404182494fd42ce53819",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "filesystem",
+        "source-rewrite",
+        "foreach",
+        "pragmas"
+      ],
+      "dependency_requirements": [
+        "directry.ch",
+        "HBDOC read/filter/write helpers"
+      ],
+      "effects_or_harness_risks": [
+        "overwrites every matching .c/.prg in current directory"
+      ],
+      "output_comparison": "destructive source transformation,not console example",
+      "next_gate": "never run against source tree; copied disposable fixtures and explicit rewrite approval",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_MemoWrit",
+          "lines": [
+            22
+          ]
+        },
+        {
+          "symbol_or_construct": "Directory( hb_osFileMask() )",
+          "lines": [
+            18
+          ]
+        },
+        {
+          "symbol_or_construct": "__hbdoc_FilterOut",
+          "lines": [
+            22
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/hbdocext.hb",
+      "sha256": "a1ec8dd634fd6f8c24ce0a33099bfeb8d4c790da1b45c150a51c71fd607d2bf3",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "filesystem",
+        "documentation-extraction",
+        "foreach",
+        "pragmas"
+      ],
+      "dependency_requirements": [
+        "directry.ch,simpleio.ch",
+        "HBDOC helpers"
+      ],
+      "effects_or_harness_risks": [
+        "reads directory files and writes missing .txt siblings"
+      ],
+      "output_comparison": "input set/output files depend on cwd",
+      "next_gate": "copied fixture directory and checked generated artifacts",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_MemoWrit",
+          "lines": [
+            29
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_FileExists",
+          "lines": [
+            27
+          ]
+        },
+        {
+          "symbol_or_construct": "__hbdoc_FromSource",
+          "lines": [
+            24
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/langchk.hb",
+      "sha256": "3aa32581e3c4b4cef9eb8092be599005cb5a2cbb698d480a9f88ede1f701ab4b",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "runtime-symbol-introspection",
+        "localization",
+        "environment-clock",
+        "filesystem"
+      ],
+      "dependency_requirements": [
+        "hblang.ch",
+        "registered language symbols",
+        "date conversion",
+        "memo write"
+      ],
+      "effects_or_harness_risks": [
+        "enumerates dynamic symbols and writes source-named .txt"
+      ],
+      "output_comparison": "installed-language/runtime/date dependent",
+      "next_gate": "declared language registry/date fixture and isolated output location",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "__dynsCount",
+          "lines": [
+            30
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_langMessage",
+          "lines": [
+            37
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_MemoWrit",
+          "lines": [
+            42
+          ]
+        },
+        {
+          "symbol_or_construct": "Date()",
+          "lines": [
+            27
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/usrrdd/exmemo.prg",
+      "sha256": "d6d586207e4ee5999aefdb50d9fff2c6bd20f482653cfaccd1d5e9664863f654",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with explicit profile; not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "memo-drivers",
+        "filesystem"
+      ],
+      "dependency_requirements": [
+        "DBTCDX,FPTCDX,SMTCDX registered drivers"
+      ],
+      "effects_or_harness_risks": [
+        "creates table1/table2/table3 and associated memo/index artifacts"
+      ],
+      "output_comparison": "driver/storage fixture dependent",
+      "next_gate": "three drivers and disposable data directory, verify file effects/cleanup",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "REQUEST DBTCDX",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "REQUEST FPTCDX",
+          "lines": [
+            2
+          ]
+        },
+        {
+          "symbol_or_construct": "REQUEST SMTCDX",
+          "lines": [
+            3
+          ]
+        },
+        {
+          "symbol_or_construct": "dbCreate",
+          "lines": [
+            7,
+            8,
+            9
           ]
         }
       ]
