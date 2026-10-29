@@ -134,3 +134,13 @@ lnlenli2/mem output is empty; successful execution is not proof of no leaks or
 complete lifetime semantics. errsys is intentionally excluded because its
 reference error handler needs a separate controlled-error harness. No adaptation
 or removal of error behavior is authorized by this result.
+
+## Reconciled ledger
+
+`coverage-ledger.json` joins the1203 inventory,268 compile profiles, frozen175
+baseline and reviewed19/14 execution evidence without overwriting originals.
+Each gate retains its compiler SHA and evidence filename. Source hashes must
+match before joining. No tests execute during this operation. Missing gates
+are unknown, not failed/passed; review is limited to the Linux console profile.
+The reference Linux execution count19 is separate from default19 and LLVM14,
+not57 independent original programs. Run tools/coverage_ledger.py to regenerate.
