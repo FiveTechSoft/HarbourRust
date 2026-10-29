@@ -1036,3 +1036,30 @@ results/expanded-speed-20261029/. Build paths are recorded for evidence only;
 use the portable scripts with explicit HBMK2 for reproduction. The default
 1086-row battery was last rebuilt and passed at77f972a; these additions change
 only tests/docs, not production lowering, and do not claim a new default run.
+
+## Diagnostic text interning (2026-10-29)
+
+The experimental emitter now reuses identical immutable diagnostic text bytes.
+Every volatile pointer/length update is preserved, including repeated updates
+on the same source line. No new value representation, ownership rule or runtime
+helper/trace ABI is introduced. Trace text pointers are only consumed as bytes
+by the existing formatter; no pointer-identity promise is made. No `unnamed_addr`
+assumption is added: the emitter simply refers to one private constant for the
+same text. General program strings and production trace enablement are unchanged.
+
+The paired IR guard compares decoded constant byte sequences at every volatile
+text/length store and trace-chain operations before/after. Fresh full suites:
+default1086PASS, LLVM194PASS on Linux/PE-Wine, plus10218/10130 Rust control
+comparisons and46 separate exact failure checks. This is correctness evidence,
+not Windows-native validation or a language completion claim.
+
+Same-basename, same-driver object sizes (file bytes / GNU text including constants):
+perfextra9496/4619 ->9192/4315; corpus8112/3678 ->7856/3422;
+arraywork8336/5761 ->8224/5649. Sized function symbols remain separate in the
+versioned result. These are object-size savings, not whole-binary Rust parity.
+
+Fresh traced inverse medians after the change were0.9932-1.0005 LLVM/Rust,
+untraced1.0005-1.0015. Host/layout variability remains; do not attribute the
+previous ~20% observation to duplicated constants or claim a durable speed fix.
+The reproducible inverse control and before/after guard are opt-in tools, not
+timing gates in the routine battery. Shared src/pp.rs is untouched.

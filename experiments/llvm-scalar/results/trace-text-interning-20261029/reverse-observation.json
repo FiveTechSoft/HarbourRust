@@ -1,0 +1,66 @@
+{
+  "compiler": "uncommitted-trace-interning",
+  "compiler_sha256": "04893242d7728f20301532e2371148fa05c138e4f60bc1d2be8ad510f1e4940a",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.1\nLLVM version: 23.1.1\n",
+  "uname": [
+    "Linux",
+    "e2b.local",
+    "6.1.158+",
+    "#1 SMP PREEMPT_DYNAMIC Wed Sep 30 12:40:02 UTC 2026",
+    "x86_64"
+  ],
+  "cpu": 0,
+  "method": "Two modes, LLVM and Rust both traced or both analysis-only untraced. n1M;100calls/sample;31 rotating samples after3warmups;1013 correctness inputs and null trace restoration. Ratios are medians LLVM/Rust. No cause attribution or production parity claim.",
+  "modes": {
+    "traced": {
+      "series": [
+        {
+          "csv": "series-1.csv",
+          "llvm_median_ns_per100calls": 37933524,
+          "rust_median_ns_per100calls": 37916091,
+          "ratio": 1.0004597784091191
+        },
+        {
+          "csv": "series-2.csv",
+          "llvm_median_ns_per100calls": 38858049,
+          "rust_median_ns_per100calls": 39124229,
+          "ratio": 0.993196543246897
+        },
+        {
+          "csv": "series-3.csv",
+          "llvm_median_ns_per100calls": 37825005,
+          "rust_median_ns_per100calls": 37830902,
+          "ratio": 0.9998441221412061
+        }
+      ],
+      "binary_sha256": "04624f86de0c97edff77280df7d11c07cd1650b0ba085e6d04cc90c8260fb347",
+      "llvm_object_sha256": "4775ea70f96f5fb00c9ac2722daf1d6b8e0aa338294638c08a6a2635416da20e",
+      "ir_sha256": "05f01c175cacd8b41c21b00e0bb77772334fa351f380fcb1d9f9dbc03fb7d09b"
+    },
+    "analysis-untraced": {
+      "series": [
+        {
+          "csv": "series-1.csv",
+          "llvm_median_ns_per100calls": 18934073,
+          "rust_median_ns_per100calls": 18905773,
+          "ratio": 1.0014968972704792
+        },
+        {
+          "csv": "series-2.csv",
+          "llvm_median_ns_per100calls": 18914705,
+          "rust_median_ns_per100calls": 18905870,
+          "ratio": 1.0004673151777728
+        },
+        {
+          "csv": "series-3.csv",
+          "llvm_median_ns_per100calls": 18931273,
+          "rust_median_ns_per100calls": 18915080,
+          "ratio": 1.0008560894270604
+        }
+      ],
+      "binary_sha256": "a663e3fd67dc0b3a2e1f3b3bc85995526112184f87337b1d194e6b4151581f38",
+      "llvm_object_sha256": "4d55356cd6c63c338d67288694eb7903a0363166542fb22d0da60822dd4c2547",
+      "ir_sha256": "5e2b37f6111e455aeea736a9063cc7ba79673f327b032d79e147b71b2e58f334"
+    }
+  }
+}

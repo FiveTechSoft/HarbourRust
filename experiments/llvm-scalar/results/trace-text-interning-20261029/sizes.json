@@ -1,0 +1,203 @@
+{
+  "method": "Same source basename/cwd and tool flags, separate output directories. text column includes constants; function bytes separate. Before89f3ead production77f972a; after only trace text interning.",
+  "rows": [
+    {
+      "case": "perfextra",
+      "mode": "before",
+      "object_bytes": 9496,
+      "gnu_text": 4619,
+      "gnu_data": 0,
+      "functions": [
+        {
+          "name": "ll_bitmix",
+          "bytes": 179
+        },
+        {
+          "name": "ll_callloop",
+          "bytes": 230
+        },
+        {
+          "name": "ll_main",
+          "bytes": 1407
+        },
+        {
+          "name": "ll_minmaxloop",
+          "bytes": 273
+        },
+        {
+          "name": "ll_mixstep",
+          "bytes": 77
+        },
+        {
+          "name": "ll_reverse",
+          "bytes": 391
+        },
+        {
+          "name": "ll_whileflow",
+          "bytes": 343
+        }
+      ]
+    },
+    {
+      "case": "perfextra",
+      "mode": "after",
+      "object_bytes": 9192,
+      "gnu_text": 4315,
+      "gnu_data": 0,
+      "functions": [
+        {
+          "name": "ll_bitmix",
+          "bytes": 179
+        },
+        {
+          "name": "ll_callloop",
+          "bytes": 230
+        },
+        {
+          "name": "ll_main",
+          "bytes": 1407
+        },
+        {
+          "name": "ll_minmaxloop",
+          "bytes": 273
+        },
+        {
+          "name": "ll_mixstep",
+          "bytes": 77
+        },
+        {
+          "name": "ll_reverse",
+          "bytes": 391
+        },
+        {
+          "name": "ll_whileflow",
+          "bytes": 343
+        }
+      ]
+    },
+    {
+      "case": "corpus",
+      "mode": "before",
+      "object_bytes": 8112,
+      "gnu_text": 3678,
+      "gnu_data": 0,
+      "functions": [
+        {
+          "name": "ll_boolflip",
+          "bytes": 71
+        },
+        {
+          "name": "ll_branchloop",
+          "bytes": 304
+        },
+        {
+          "name": "ll_fact",
+          "bytes": 113
+        },
+        {
+          "name": "ll_main",
+          "bytes": 1189
+        },
+        {
+          "name": "ll_recurrence",
+          "bytes": 216
+        },
+        {
+          "name": "ll_sumloop",
+          "bytes": 212
+        },
+        {
+          "name": "ll_voideffect",
+          "bytes": 152
+        },
+        {
+          "name": "ll_voidlogical",
+          "bytes": 94
+        }
+      ]
+    },
+    {
+      "case": "corpus",
+      "mode": "after",
+      "object_bytes": 7856,
+      "gnu_text": 3422,
+      "gnu_data": 0,
+      "functions": [
+        {
+          "name": "ll_boolflip",
+          "bytes": 71
+        },
+        {
+          "name": "ll_branchloop",
+          "bytes": 304
+        },
+        {
+          "name": "ll_fact",
+          "bytes": 113
+        },
+        {
+          "name": "ll_main",
+          "bytes": 1189
+        },
+        {
+          "name": "ll_recurrence",
+          "bytes": 216
+        },
+        {
+          "name": "ll_sumloop",
+          "bytes": 212
+        },
+        {
+          "name": "ll_voideffect",
+          "bytes": 152
+        },
+        {
+          "name": "ll_voidlogical",
+          "bytes": 94
+        }
+      ]
+    },
+    {
+      "case": "arraywork",
+      "mode": "before",
+      "object_bytes": 8336,
+      "gnu_text": 5761,
+      "gnu_data": 0,
+      "functions": [
+        {
+          "name": "ll_arraywalk",
+          "bytes": 843
+        },
+        {
+          "name": "ll_arraywalk2",
+          "bytes": 3455
+        },
+        {
+          "name": "ll_main",
+          "bytes": 173
+        }
+      ]
+    },
+    {
+      "case": "arraywork",
+      "mode": "after",
+      "object_bytes": 8224,
+      "gnu_text": 5649,
+      "gnu_data": 0,
+      "functions": [
+        {
+          "name": "ll_arraywalk",
+          "bytes": 843
+        },
+        {
+          "name": "ll_arraywalk2",
+          "bytes": 3455
+        },
+        {
+          "name": "ll_main",
+          "bytes": 173
+        }
+      ]
+    }
+  ]
+}
