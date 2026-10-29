@@ -35,6 +35,23 @@ impl Ir {
    Expr::Var(n)=>{if self.arrays.contains_key(n){return Err(format!("LLVM scalar: whole-array value `{}` unsupported",n))}let p=self.ptr(n)?;let v=self.tmp();self.line(format!("{} = load i64, ptr {}",v,p));v},
    Expr::Index(n,ie)=>{let ie=self.expr(ie)?;let p=self.slot(n,&ie)?;let v=self.tmp();self.line(format!("{} = load i64, ptr {}",v,p));v},
    Expr::Bin(op,a,b) if matches!(op,'+'|'-'|'*')=>{let a=self.expr(a)?;let b=self.expr(b)?;let v=self.tmp();self.line(format!("{} = {} i64 {}, {}",v,match op {'+'=>"add",'-'=>"sub",_=>"mul"},a,b));v},
+   Expr::LNot(a)=>{
+    let c=self.cond(a)?;
+    let neg=self.tmp();self.line(format!("{} = xor i1 {}, true",neg,c));
+    let r=self.tmp();self.line(format!("{} = zext i1 {} to i64",r,neg));r
+   },
+   Expr::LAnd(a,b)|Expr::LOr(a,b)=>{
+    // Branch before lowering the RHS: calls, increments and errors must
+    // occur only when the existing backend would evaluate that operand.
+    let c=self.cond(a)?;
+    let rhs=self.lab();let short=self.lab();let end=self.lab();
+    let slot=self.tmp();self.allocas.push(format!("  {} = alloca i64\n",slot));
+    let is_and=matches!(e,Expr::LAnd(..));
+    self.line(format!("br i1 {}, label %{}, label %{}",c,if is_and{&rhs}else{&short},if is_and{&short}else{&rhs}));
+    self.block(&short);self.line(format!("store i64 {}, ptr {}",if is_and{0}else{1},slot));self.line(format!("br label %{}",end));
+    self.block(&rhs);let c=self.cond(b)?;let v=self.tmp();self.line(format!("{} = zext i1 {} to i64",v,c));self.line(format!("store i64 {}, ptr {}",v,slot));self.line(format!("br label %{}",end));
+    self.block(&end);let r=self.tmp();self.line(format!("{} = load i64, ptr {}",r,slot));r
+   },
    Expr::Cmp(op,a,b)=>{let a=self.expr(a)?;let b=self.expr(b)?;let v=self.tmp();self.line(format!("{} = icmp {} i64 {}, {}",v,match op{CmpOp::Eq|CmpOp::EqEq=>"eq",CmpOp::Ne=>"ne",CmpOp::Lt=>"slt",CmpOp::Le=>"sle",CmpOp::Gt=>"sgt",CmpOp::Ge=>"sge",_=>return Err("LLVM scalar: comparison unsupported".into())},a,b));let r=self.tmp();self.line(format!("{} = zext i1 {} to i64",r,v));r},
    Expr::Call(n,args) if is_builtin(n,"len") && args.len()==1=>{match &args[0] {Expr::Var(v) if self.asz.contains_key(v)=>self.asz[v].to_string(),_=>return Err("LLVM scalar: len() only on fixed I64 arrays".into())}},
    Expr::Call(n,args) if is_builtin(n,"procline") && (args.is_empty() || matches!(&args[..], [Expr::Int(v)] if v=="0"))=>PROC_LINES.with(|m|m.borrow().get(self.current_line.saturating_sub(1)).copied()).unwrap_or(self.current_line).to_string(),

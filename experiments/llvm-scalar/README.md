@@ -9,24 +9,21 @@ ownership/collection representation is introduced.
 
 ## Status and boundaries
 
-Supported for this experiment: I64 function signatures/locals, integer + - *,
-signed comparisons, IF, WHILE, FOR with its existing signed overflow termination,
-user calls/recursion, lazy IIF, integer output and literal string output. Arithmetic
-uses ordinary LLVM wrapping operations, never invented `nsw`/`nuw` promises.
-FOR increment uses signed-overflow intrinsic and keeps the old counter on overflow.
-Everything else is rejected by the existing checker or experimental emitter.
-This is not full Harbour integer-promotion semantics beyond the current backend.
+Current supported slice: I64 function signatures/locals, integer + - *,
+signed comparisons, logical .AND./.OR./.NOT. with short-circuit evaluation,
+IF, WHILE, FOR with its existing signed-overflow termination, user calls and
+recursion, lazy IIF, integer and literal-string output, ProcLine current-frame
+or literal0, and fixed I64 stack-array literals/index reads/writes/len.
+Arithmetic uses wrapping LLVM operations, without invented nsw/nuw promises.
+Native three-word trace frames preserve the tested diagnostic paths. See the
+dated follow-ups below for the evidence and historical configurations.
 
-Not implemented: arrays, dynamic values, floats, owned strings, byref ABI,
-EXIT/LOOP, most builtins including ProcLine, logical output, native Windows
-compiler packaging, and per-statement diagnostic trace parity. The prototype
-therefore cannot pass the full compatibility battery through LLVM. The normal
-(nonexperimental) path passes 1081 manifest cases plus five harness checks on
-Linux and Wine, with the frozen sweep unchanged at 20 COMPILES.
-
-Diagnostic trace updates in the current backend are not emitted by the LLVM
-path yet. Successful-output equality does not establish error-trace equality.
-Do not replace the current backend or claim general Rust parity from these tests.
+Still rejected: dynamic values, floats, owned strings, byref ABI, EXIT/LOOP,
+most builtins, logical output, dynamic/growing/nested arrays, array parameters
+and whole-array copies. No native-Windows compiler packaging is provided.
+This is not full Harbour integer-promotion semantics or a replacement backend.
+The normal backend is unchanged; its latest full battery re-run is documented
+below. The LLVM path cannot pass the full language compatibility battery.
 
 ## Reproduce
 
@@ -312,3 +309,40 @@ Caveat: this is validation under Wine (user-space emulation of the Windows
 API), not native Windows. It validates byte equality of the PE target and
 its failure modes; it says nothing about behaviour or performance on real
 Windows.
+
+## Short-circuit control-flow increment, 29 October 2026
+
+The experimental emitter now supports .AND., .OR. and .NOT. in the existing
+logical/I64 value model, without adding signatures, ownership rules or runtime
+helpers. AND/OR lower to conditional branches before evaluating the RHS; the
+merge normalizes the result to 0/1. NOT inverts the normalized condition.
+Logical output and logical function signatures remain outside the slice.
+
+`logic.hb` covers all eight three-input truth combinations, nested operators,
+logical-local assignments, IIF value contexts, WHILE termination, prefix
+increment effects, ordered calls, and skipped invalid array indices. Its
+88 integer outputs are checked against an independent Python truth/effect
+oracle (including 27 signed input triples through an I64 function), in addition to byte-exact comparison against the current backend.
+The compiler's current-backend short-circuit implementation and the existing
+`t601_shortcircuit.hb` regression establish the expected lazy evaluation.
+`error-logic-and.hb` and `error-logic-or.hb` cover RHS bounds failures that MUST
+execute, including full nested callstack bytes and exit1. The fixtures use
+variable indices so the existing static checker does not reject the program
+before runtime. I64 helper parameters use arithmetic to pin inference; no
+parameter-inference change is part of this increment.
+
+The successful fixture is checked on Linux and PE under Wine; both error
+fixtures are checked against the current backend on both targets. All prior
+5089 differential calls and ABI canaries remain part of run.sh. No new
+performance claim or Rust comparison follows from this control-flow increment.
+The same host/toolchain and Wine limitations as the 28 October run apply.
+
+Fresh result for this increment: run.sh reports 28 PASS lines, including the
+independent logic oracle; 5089 prior function comparisons pass, and eight
+controlled-error fixtures match on each target (16 exact error comparisons).
+The normal backend battery was rebuilt and re-run: 1086 PASS, zero FAIL.
+Disassembly of the parameterized logiccode function shows no logical-result
+stack spills after optimization (trace-frame storage remains); pure conditions
+become setcc/cmov/bit operations. That local code-quality observation is not a
+Rust comparison or a performance result. Side-effecting operands are tested
+separately, where their required evaluation order must remain observable.

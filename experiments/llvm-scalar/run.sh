@@ -7,7 +7,7 @@ RUSTC=${RUSTC:-rustc}
 mkdir -p run
 "$RUSTC" -O ../../src/hbc.rs -o run/hbc
 # Linux end-to-end output and code generation.
-for case in corpus edge procline audit arraywork; do
+for case in corpus edge procline audit arraywork logic; do
  run/hbc "$case.hb" "run/$case-current.s"
  as -o "run/$case-current.o" "run/$case-current.s"
  ld -o "run/$case-current" "run/$case-current.o"
@@ -21,6 +21,7 @@ for case in corpus edge procline audit arraywork; do
  cmp "run/$case-current.out" "run/$case-llvm.out"
  echo "PASS Linux exact output $case"
 done
+python3 check_logic.py
 # Bench preparation reads current.s and corpus.ll.runtime.s; copy generated artifacts.
 cp run/corpus-current.s current.s
 cp run/corpus.ll.runtime.s corpus.ll.runtime.s
@@ -55,7 +56,7 @@ echo 'PASS Linux ABI canary'
 # Optional cross-target verification. M is the MinGW bin directory.
 if [ -n "${M:-}" ]; then
  : "${MLIB:?MinGW import-library directory}"
- for case in corpus edge procline audit arraywork; do
+ for case in corpus edge procline audit arraywork logic; do
   run/hbc "$case.hb" "run/${case}_w.ll" --target=windows --experimental-llvm
   python3 llvm_aot.py "run/${case}_w.ll" "run/${case}_w.o" windows
   python3 link_runtime.py "run/${case}_w.ll.runtime.s" windows
