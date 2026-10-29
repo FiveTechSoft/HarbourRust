@@ -14,6 +14,11 @@ s+='    mov $10, %'+('rcx' if win else 'rdi')+'\n    call ll_fact\n    cmp $3628
 for value,expected in [(0,1),(1,0)]:
  s+=f'    mov ${value}, %'+('rcx' if win else 'rdi')+'\n    call ll_boolflip\n'
  s+=f'    cmp ${expected}, %rax\n    jne abi_fail\n'
+# NIL-only effect helper uses void/call-void; return registers are unspecified.
+for value in [0,2,5]:
+ s+=f'    mov ${value}, %'+('rcx' if win else 'rdi')+'\n    call ll_voideffect\n'
+for value in [0,1]:
+ s+=f'    mov ${value}, %'+('rcx' if win else 'rdi')+'\n    call ll_voidlogical\n'
 for j,r in enumerate(regs):s+=f'    cmp ${0x123400+j}, %{r}\n    jne abi_fail\n'
 if win:
  for j in range(10):s+=f'    movq %xmm{j+6}, %rax\n    cmp ${0x567800+j}, %rax\n    jne abi_fail\n'

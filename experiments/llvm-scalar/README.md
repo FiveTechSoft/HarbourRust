@@ -821,3 +821,50 @@ empty/all-space literals, interior spaces and nested output contexts.
 
 Full correctness suite: 149 PASS lines. Rebuilt default battery: 1086 PASS,
 ALL GREEN. No general string support, fresh Harbour run or speed claim.
+
+## NIL-only internal effect functions, 29 October 2026
+
+Authorized scope: specialize internal calls whose result is always discarded,
+without adding general Dyn/NIL values. The frontend remains unchanged: a bare
+RETURN / RETURN NIL still gives helpers a Dyn return type. LLVM now proves
+structurally that each candidate has no value return (including dead code),
+only known statement forms, and no normal path falling out without an explicit
+NIL return. Candidates cannot be main and still require I64/Bool parameters.
+Loops are conservatively assumed to fall through; both IF arms must terminate
+before an IF can establish termination. Unknown constructs reject.
+
+A whole-AST expression-use pass inspects dead arms and post-terminator code.
+A candidate call is legal only in discarded effect context. Arguments, print
+items, conditions, assignments, value returns and value-producing sequence
+positions cannot use its result. Discard context propagates through IIF arms
+and sequence prefixes only. The existing frontend may reject some such effect
+contexts first; its limits are preserved, not bypassed. Unsupported statement
+forms reject in this pass as well as in lowering.
+
+Only these proven helpers use the new internal void/call-void ABI. No dummy
+I64 result stands for NIL; expr rejects candidate calls as values. Trace frames
+unlink before every ret void. No frontend inference, tagged pair, string/array
+ownership, main entry ABI or runtime helper ABI changes. Function pointers and
+exports are not part of this slice. Recursive/mutually recursive discarded
+calls preserve the same rules.
+
+Unchanged originals from harbour/core 694428e1:
+- returns.prg SHA256 52d62274849940932670b12d7929f63e88e87432437a5b5a2f7f181eb6319758
+- ifelse.prg SHA256 3514e2804a8090bfe025af3e036294fdd8afafdf8554ededb3bcb888b1f03836
+- statfun.prg SHA256 febada350286c04c874b1b3777aa3d1a4523645cdd06d71f5ec207c7a9129d71
+
+The run checks their full output against explicit expected bytes and the default
+backend on Linux and PE/Wine. Historical Harbour evidence exists for statfun
+(63n) and ifelse (hk333 record); returns is checked against its source-defined
+control path and default, not claimed as a fresh Harbour comparison. No new
+Harbour compiler was built or run in this increment.
+
+Tests cover recursion/mutual recursion, early returns in loops, three error
+fixtures (inside recursive helpers, after return to caller, and in arguments),
+result uses including unreachable code, and rejection of mixed/value returns,
+Dyn parameters and unsupported candidate constructs. Direct ABI canaries call
+void helpers with integer and logical inputs, check preserved registers/stack
+and restored trace top on Linux and PE/Wine. An IR-shape check pins void calls
+and trace unlink at every return. Full suite: 175 PASS lines; error fixture
+checks are separate (22 fixtures x2 targets). Default battery: 1086 PASS and
+ALL GREEN, rebuilt after the production changes. No new performance claim.

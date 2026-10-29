@@ -30,3 +30,16 @@ function main()
 return
 function boolflip(b)
 return .NOT. b
+function voideffect(n)
+local i := 0
+for i := 1 to n
+if i == 2
+return
+endif
+next
+return nil
+function voidlogical(b)
+if .NOT. b
+return
+endif
+return nil

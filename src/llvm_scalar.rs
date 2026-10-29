@@ -1,7 +1,54 @@
 // Experimental scalar-only LLVM IR lowering. Shares the existing checked AST.
 use super::*;
+// Conservative structural proof, including unreachable statements. Unknown
+// statement forms are never evidence for a NIL-only function.
+fn nil_only_body(ss:&[Stmt])->Option<bool>{
+ let mut terminates=false;
+ for s in ss {let ends=match s {
+  Stmt::Ret(_,None)=>true,
+  Stmt::Ret(_,Some(_))=>return None,
+  Stmt::If(_,_,a,b)=>{let a=nil_only_body(a)?;let b=nil_only_body(b)?;a&&b},
+  Stmt::While(_,_,b)|Stmt::For(_,_,_,_,_,b)=>{nil_only_body(b)?;false},
+  Stmt::Local(..)|Stmt::Assign(..)|Stmt::Print(..)|Stmt::CallStmt(..)|Stmt::ArrSet(..)|Stmt::Exit(_)|Stmt::Loop(_)=>false,
+  _=>return None
+ };terminates|=ends;}
+ Some(terminates)
+}
+// Check every expression, including dead arms and post-return code. Discard
+// context propagates only through sequence prefixes and lazy IIF arms.
+fn effect_uses(e:&Expr,discard:bool,voids:&std::collections::BTreeSet<String>)->Result<(),String>{
+ match e {
+  Expr::Call(n,args)=>{
+   if voids.contains(n)&&!discard{return Err(format!("LLVM scalar: NIL-only effect call `{}` cannot be used as a value",n))}
+   for(i,a)in args.iter().enumerate(){effect_uses(a,discard&&is_builtin(n,"iif")&&i>0,voids)?;}
+  },
+  Expr::Seq(es)=>for(i,a)in es.iter().enumerate(){effect_uses(a,discard||i+1<es.len(),voids)?;},
+  Expr::Bin(_,a,b)|Expr::Cmp(_,a,b)|Expr::LAnd(a,b)|Expr::LOr(a,b)=>{effect_uses(a,false,voids)?;effect_uses(b,false,voids)?;},
+  Expr::LNot(a)|Expr::Index(_,a)=>effect_uses(a,false,voids)?,
+  Expr::ArrLit(es)|Expr::BlockLit(_,_,es)=>for a in es{effect_uses(a,false,voids)?;},
+  Expr::Index2(_,a,b)=>{effect_uses(a,false,voids)?;effect_uses(b,false,voids)?;},
+  Expr::Index3(_,a,b,c)=>for e in [a,b,c]{effect_uses(e,false,voids)?;},
+  Expr::Index4(_,a,b,c,d)=>for e in [a,b,c,d]{effect_uses(e,false,voids)?;},
+  Expr::HashLit(es)=>for(a,b)in es{effect_uses(a,false,voids)?;effect_uses(b,false,voids)?;},
+  Expr::Send(a,_,args)=>{effect_uses(a,false,voids)?;for e in args{effect_uses(e,false,voids)?;}},
+  Expr::FloatV(..)|Expr::Float(..)|Expr::Int(_)|Expr::Str(_)|Expr::Var(_)|Expr::Inc(..)|Expr::ByRef(_)|Expr::DArrNew|Expr::SelfObj|Expr::SelfGet(_)|Expr::Nil|Expr::Log(_)=>{}
+ }Ok(())
+}
+fn check_effect_uses(ss:&[Stmt],voids:&std::collections::BTreeSet<String>)->Result<(),String>{
+ for s in ss {match s {
+  Stmt::CallStmt(_,e)=>effect_uses(e,true,voids)?,
+  Stmt::Local(_,_,e)|Stmt::Assign(_,_,e)|Stmt::Ret(_,Some(e))=>effect_uses(e,false,voids)?,
+  Stmt::Print(_,es,_)=>for e in es{effect_uses(e,false,voids)?;},
+  Stmt::If(_,e,a,b)=>{effect_uses(e,false,voids)?;check_effect_uses(a,voids)?;check_effect_uses(b,voids)?;},
+  Stmt::While(_,e,b)=>{effect_uses(e,false,voids)?;check_effect_uses(b,voids)?;},
+  Stmt::For(_,_,a,b,_,body)=>{effect_uses(a,false,voids)?;effect_uses(b,false,voids)?;check_effect_uses(body,voids)?;},
+  Stmt::ArrSet(_,_,a,b)=>{effect_uses(a,false,voids)?;effect_uses(b,false,voids)?;},
+  Stmt::Ret(_,None)|Stmt::Exit(_)|Stmt::Loop(_)=>{},
+  _=>return Err("LLVM scalar: statement outside effect-use proof".into())
+ }}Ok(())
+}
 #[derive(Clone)]
-struct Ir { out: String, n: usize, label: usize, vars: std::collections::BTreeMap<String,String>, arrays: std::collections::BTreeMap<String,String>, asz: std::collections::BTreeMap<String,usize>, globals: Vec<String>, allocas: Vec<String>, sig_names: std::collections::BTreeSet<String>, bool_returns: std::collections::BTreeSet<String>, bools: std::collections::BTreeSet<String>, traced: bool, frame: String, fname: String, current_line: usize, loops: Vec<(String,String)> }
+struct Ir { voids: std::collections::BTreeSet<String>, void_return: bool, out: String, n: usize, label: usize, vars: std::collections::BTreeMap<String,String>, arrays: std::collections::BTreeMap<String,String>, asz: std::collections::BTreeMap<String,usize>, globals: Vec<String>, allocas: Vec<String>, sig_names: std::collections::BTreeSet<String>, bool_returns: std::collections::BTreeSet<String>, bools: std::collections::BTreeSet<String>, traced: bool, frame: String, fname: String, current_line: usize, loops: Vec<(String,String)> }
 impl Ir {
  fn tmp(&mut self)->String { self.n+=1; format!("%v{}",self.n) }
  fn line(&mut self,s:String){self.out.push_str(&format!("  {}\n",s));}
@@ -96,6 +143,7 @@ impl Ir {
    Expr::Call(n,args) if is_builtin(n,"procline") && (args.is_empty() || matches!(&args[..], [Expr::Int(v)] if v=="0"))=>PROC_LINES.with(|m|m.borrow().get(self.current_line.saturating_sub(1)).copied()).unwrap_or(self.current_line).to_string(),
    Expr::Inc(n,delta,prefix)=>{let ptr=self.ptr(n)?;let old=self.tmp();self.line(format!("{} = load i64, ptr {}",old,ptr));let pair=self.tmp();self.line(format!("{} = call {{i64,i1}} @llvm.sadd.with.overflow.i64(i64 {}, i64 {})",pair,old,delta));let next=self.tmp();let ov=self.tmp();self.line(format!("{} = extractvalue {{i64,i1}} {}, 0",next,pair));self.line(format!("{} = extractvalue {{i64,i1}} {}, 1",ov,pair));let bad=self.lab();let good=self.lab();self.line(format!("br i1 {}, label %{}, label %{}",ov,bad,good));self.block(&bad);self.line("call void @rt_inc_error()".into());self.line("unreachable".into());self.block(&good);self.line(format!("store i64 {}, ptr {}",next,ptr));if *prefix {next}else{old}},
    Expr::Call(n,args) if is_builtin(n,"iif") && args.len()==3=>{let c=self.cond(&args[0])?;let t=self.lab();let f=self.lab();let end=self.lab();let slot=self.tmp();self.allocas.push(format!("  {} = alloca i64\n",slot));self.line(format!("br i1 {}, label %{}, label %{}",c,t,f));self.block(&t);let a=self.expr(&args[1])?;self.line(format!("store i64 {}, ptr {}",a,slot));self.line(format!("br label %{}",end));self.block(&f);let b=self.expr(&args[2])?;self.line(format!("store i64 {}, ptr {}",b,slot));self.line(format!("br label %{}",end));self.block(&end);let r=self.tmp();self.line(format!("{} = load i64, ptr {}",r,slot));r},
+   Expr::Call(n,_) if self.voids.contains(n)=>return Err(format!("LLVM scalar: NIL-only effect call `{}` cannot be used as a value",n)),
    Expr::Call(n,args) if self.sig_names.contains(n)=>{let mut aa=Vec::new();for a in args {aa.push(format!("i64 {}",self.expr(a)?));}let r=self.tmp();self.line(format!("{} = call i64 @ll_{}({})",r,n,aa.join(", ")));r},
    _=>return Err(format!("LLVM scalar: expression unsupported: {:?}",e))
   })
@@ -104,6 +152,10 @@ impl Ir {
  fn effect(&mut self,e:&Expr)->Result<(),String>{
   match e {
    Expr::Nil=>Ok(()),
+   Expr::Call(n,args) if self.voids.contains(n)=>{
+    let mut aa=Vec::new();for a in args{aa.push(format!("i64 {}",self.expr(a)?));}
+    self.line(format!("call void @ll_{}({})",n,aa.join(", ")));Ok(())
+   },
    Expr::Seq(es)=>{for e in es{self.effect(e)?;}Ok(())},
    Expr::Call(n,args) if (is_builtin(n,"qout") || is_builtin(n,"qqout"))=>self.print_items(args,is_builtin(n,"qqout")),
    Expr::Call(n,args) if is_builtin(n,"iif") && args.len()==3=>{
@@ -227,7 +279,7 @@ impl Ir {
    }
   },
   Stmt::Assign(_,n,e)=>{if self.arrays.contains_key(n){return Err(format!("LLVM scalar: whole-array assignment `{}` unsupported",n))}if self.isbool(e){self.bools.insert(n.clone());}let v=self.expr(e)?;let p=self.ptr(n)?;self.line(format!("store i64 {}, ptr {}",v,p));},
-  Stmt::Ret(_,e)=>{let v=if let Some(e)=e{self.expr(e)?}else{"0".into()};self.unlink();self.line(format!("ret i64 {}",v));self.check_dead(&ss[si+1..])?;return Ok(true)},
+  Stmt::Ret(_,e)=>{if self.void_return{if e.is_some(){return Err("LLVM scalar: value return in NIL-only effect function".into())}self.unlink();self.line("ret void".into());}else{let v=if let Some(e)=e{self.expr(e)?}else{"0".into()};self.unlink();self.line(format!("ret i64 {}",v));}self.check_dead(&ss[si+1..])?;return Ok(true)},
   Stmt::Print(_,es,inline)=>{self.print_items(es,*inline)?;},
   Stmt::If(_,c,a,b)=>{let c=self.cond(c)?;let t=self.lab();let f=self.lab();let end=self.lab();self.line(format!("br i1 {}, label %{}, label %{}",c,t,f));self.block(&t);let ta=self.stmts(a)?;if !ta{self.line(format!("br label %{}",end));}self.block(&f);let tb=self.stmts(b)?;if !tb{self.line(format!("br label %{}",end));}if ta&&tb{self.check_dead(&ss[si+1..])?;return Ok(true)}self.block(&end);},
   Stmt::While(_,c,b)=>{let h=self.lab();let body=self.lab();let end=self.lab();self.line(format!("br label %{}",h));self.block(&h);self.trace_at(stmt_line(s));let c=self.cond(c)?;self.line(format!("br i1 {}, label %{}, label %{}",c,body,end));self.block(&body);self.loops.push((h.clone(),end.clone()));let done=self.stmts(b)?;self.loops.pop();if !done{self.line(format!("br label %{}",h));}self.block(&end);},
@@ -251,8 +303,10 @@ impl Ir {
  }}Ok(false)}
 }
 pub fn emit(funcs:&[Func],sigs:&[Sig],_target:Target,traced:bool)->Result<String,String>{
- for s in sigs{if !s.params.iter().all(|t|matches!(t,Ty::I64|Ty::Bool)) || !matches!(s.ret,None|Some(Ty::I64)|Some(Ty::Bool)){return Err("LLVM scalar: only I64/logical scalar signatures supported".into())}}
- let mut ir=Ir{out:String::new(),n:0,label:0,vars:Default::default(),arrays:Default::default(),asz:Default::default(),globals:Vec::new(),allocas:Vec::new(),sig_names:funcs.iter().map(|f|f.name.clone()).collect(),bool_returns:sigs.iter().filter(|s|matches!(s.ret,Some(Ty::Bool))).map(|s|s.name.clone()).collect(),bools:Default::default(),traced,frame:String::new(),fname:String::new(),current_line:0,loops:Vec::new()};
- for f in funcs{ir.vars.clear();ir.arrays.clear();ir.asz.clear();ir.bools.clear();ir.allocas.clear();ir.fname=f.name.clone();let begin=ir.out.len();ir.out.push_str(&format!("define i64 @ll_{}({}) {{\nentry:\n",f.name,f.params.iter().enumerate().map(|(i,_)|format!("i64 %arg{}",i)).collect::<Vec<_>>().join(", ")));if traced {ir.frame=ir.tmp();ir.line(format!("{} = alloca [3 x i64]",ir.frame));let old=ir.tmp();ir.line(format!("{} = load ptr, ptr @hbc_trace_top",old));ir.line(format!("store ptr {}, ptr {}",old,ir.frame));let text=ir.tmp();let len=ir.tmp();ir.line(format!("{} = getelementptr [3 x i64], ptr {}, i64 0, i64 1",text,ir.frame));ir.line(format!("{} = getelementptr [3 x i64], ptr {}, i64 0, i64 2",len,ir.frame));ir.line(format!("store ptr null, ptr {}",text));ir.line(format!("store i64 0, ptr {}",len));ir.line(format!("store volatile ptr {}, ptr @hbc_trace_top",ir.frame));}ir.trace_at(f.stmts.first().map(stmt_line).unwrap_or(0));for n in &f.params{let p=ir.tmp();ir.line(format!("{} = alloca i64",p));ir.vars.insert(n.clone(),p);}for(i,p)in f.params.iter().enumerate(){if matches!(sigs.iter().find(|s|s.name==f.name).unwrap().params[i],Ty::Bool){ir.bools.insert(p.clone());}let ptr=ir.ptr(p)?;ir.line(format!("store i64 %arg{}, ptr {}",i,ptr));}if !ir.stmts(&f.stmts)?{ir.unlink();ir.line("ret i64 0".into());}let idx=begin+ir.out[begin..].find("entry:\n").unwrap()+7;ir.out.insert_str(idx,&ir.allocas.concat());ir.out.push_str("}\n");}
+ let voids:std::collections::BTreeSet<String>=funcs.iter().filter(|f|f.name!="main"&&sigs.iter().any(|s|s.name==f.name&&s.ret==Some(Ty::Dyn))&&nil_only_body(&f.stmts)==Some(true)).map(|f|f.name.clone()).collect();
+ for f in funcs{check_effect_uses(&f.stmts,&voids)?;}
+ for s in sigs{if !s.params.iter().all(|t|matches!(t,Ty::I64|Ty::Bool)) || (!matches!(s.ret,None|Some(Ty::I64)|Some(Ty::Bool))&&!voids.contains(&s.name)){return Err("LLVM scalar: only I64/logical scalar signatures supported".into())}}
+ let mut ir=Ir{voids,void_return:false,out:String::new(),n:0,label:0,vars:Default::default(),arrays:Default::default(),asz:Default::default(),globals:Vec::new(),allocas:Vec::new(),sig_names:funcs.iter().map(|f|f.name.clone()).collect(),bool_returns:sigs.iter().filter(|s|matches!(s.ret,Some(Ty::Bool))).map(|s|s.name.clone()).collect(),bools:Default::default(),traced,frame:String::new(),fname:String::new(),current_line:0,loops:Vec::new()};
+ for f in funcs{ir.vars.clear();ir.arrays.clear();ir.asz.clear();ir.bools.clear();ir.allocas.clear();ir.fname=f.name.clone();ir.void_return=ir.voids.contains(&f.name);let begin=ir.out.len();ir.out.push_str(&format!("define {} @ll_{}({}) {{\nentry:\n",if ir.void_return{"void"}else{"i64"},f.name,f.params.iter().enumerate().map(|(i,_)|format!("i64 %arg{}",i)).collect::<Vec<_>>().join(", ")));if traced {ir.frame=ir.tmp();ir.line(format!("{} = alloca [3 x i64]",ir.frame));let old=ir.tmp();ir.line(format!("{} = load ptr, ptr @hbc_trace_top",old));ir.line(format!("store ptr {}, ptr {}",old,ir.frame));let text=ir.tmp();let len=ir.tmp();ir.line(format!("{} = getelementptr [3 x i64], ptr {}, i64 0, i64 1",text,ir.frame));ir.line(format!("{} = getelementptr [3 x i64], ptr {}, i64 0, i64 2",len,ir.frame));ir.line(format!("store ptr null, ptr {}",text));ir.line(format!("store i64 0, ptr {}",len));ir.line(format!("store volatile ptr {}, ptr @hbc_trace_top",ir.frame));}ir.trace_at(f.stmts.first().map(stmt_line).unwrap_or(0));for n in &f.params{let p=ir.tmp();ir.line(format!("{} = alloca i64",p));ir.vars.insert(n.clone(),p);}for(i,p)in f.params.iter().enumerate(){if matches!(sigs.iter().find(|s|s.name==f.name).unwrap().params[i],Ty::Bool){ir.bools.insert(p.clone());}let ptr=ir.ptr(p)?;ir.line(format!("store i64 %arg{}, ptr {}",i,ptr));}if !ir.stmts(&f.stmts)?{ir.unlink();ir.line(if ir.void_return{"ret void".into()}else{"ret i64 0".into()});}let idx=begin+ir.out[begin..].find("entry:\n").unwrap()+7;ir.out.insert_str(idx,&ir.allocas.concat());ir.out.push_str("}\n");}
  Ok(format!("{}\n{}\n@hbc_trace_top = external global ptr\ndeclare void @rt_inc_error() noreturn\ndeclare void @rt_bound_error() noreturn\ndeclare void @rt_nl()\ndeclare void @rt_sep()\ndeclare void @rt_str(ptr, i64)\ndeclare void @rt_int(i64)\ndeclare void @rt_computed(i64)\ndeclare {{i64,i1}} @llvm.sadd.with.overflow.i64(i64,i64)\n",ir.globals.join("\n"),ir.out))
 }

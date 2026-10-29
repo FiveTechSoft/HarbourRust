@@ -177,3 +177,15 @@ for name in ['printchoice-current.out','printchoice-llvm.out']:
 for name in ['exit-original-current.out','exit-original-llvm.out']:
     assert pathlib.Path('run',name).read_bytes()==b'\ndo exit test passed\nfor exit test passed',name
 print('PASS static literal IIF print selection and unchanged original exit bytes')
+
+# Unchanged originals: expected bytes from existing semantic/oracle records.
+void_expected={
+ 'returns-original':b'\nFrom Main()\nn == 1\nback to Main()\nn == 2\nback to Main()',
+ 'ifelse-original':b'\nTesting Harbour IF ELSEIF ELSE ENDIF'+b''.join((f'\nx is {i}\nOk!').encode() for i in range(1,5))+b'\nx is not 1 or 2 or 3 or 4\nOk!',
+ 'statfun-original':b'\nFrom Main()\nFrom Second()\nFrom Main() again',
+ 'voideffects':b'         0         1         2early          2endpong'
+}
+for case,want in void_expected.items():
+ for backend in ['current','llvm']:
+  assert pathlib.Path('run',case+'-'+backend+'.out').read_bytes()==want,case
+print('PASS NIL-only void originals and recursive/early-return effects exact bytes')

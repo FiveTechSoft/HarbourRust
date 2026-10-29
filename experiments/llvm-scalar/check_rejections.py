@@ -1,6 +1,22 @@
 import pathlib,subprocess,os
 os.chdir(pathlib.Path(__file__).resolve().parent)
 cases={
+ 'void-unknown-proof': 'procedure f()\nlocal a := Array(1)\nAAdd(a,1)\nreturn\nprocedure main()\nf()\nreturn\n',
+ 'void-dyn-parameter': 'procedure f(n)\n? n\nreturn\nprocedure main()\nf(1)\nreturn\n',
+ 'void-value-sequence-last': 'procedure f()\nreturn\nprocedure main()\n? (1,f())\nreturn\n',
+ 'void-value-dead-iif': 'procedure f()\nreturn\nprocedure main()\n? IIF(.T.,NIL,f())\nreturn\n',
+ 'void-value-array': 'procedure f()\nreturn\nprocedure main()\nlocal a := {f()}\nreturn\n',
+ 'void-nil-local': 'procedure f()\nlocal n\nreturn\nprocedure main()\nf()\nreturn\n',
+ 'void-value-print': 'procedure f()\nreturn\nprocedure main()\n? f()\nreturn\n',
+ 'void-value-dead': 'procedure f()\nreturn\nprocedure main()\nreturn\n? f()\n',
+ 'void-value-branch': 'procedure f()\nreturn\nprocedure main()\nif .F.\n? f()\nendif\nreturn\n',
+ 'void-value-arg': 'procedure f()\nreturn\nprocedure main()\nQOut(f())\nreturn\n',
+ 'void-value-local': 'procedure f()\nreturn\nprocedure main()\nlocal n := f()\nreturn\n',
+ 'void-value-cmp': 'procedure f()\nreturn\nprocedure main()\n? f() = NIL\nreturn\n',
+ 'void-value-return': 'procedure f()\nreturn\nfunction g()\nreturn f()\nprocedure main()\ng()\nreturn\n',
+ 'void-mixed-return': 'function f(n)\nif n+0 > 0\nreturn 1\nendif\nreturn nil\nprocedure main()\nf(1)\nreturn\n',
+ 'void-output-return': 'function f()\nreturn QOut(1)\nprocedure main()\nf()\nreturn\n',
+ 'void-dead-value-return': 'function f()\nreturn nil\nreturn 1\nprocedure main()\nf()\nreturn\n',
  'sequence-float': 'function main()\nlocal x := 0\n? (x++, 1.5)\nreturn\n',
  'bitindex-dynamic': 'function main()\nlocal n := 1\n? hb_bitSet(0,n)\nreturn\n',
  'bitindex-range': 'function main()\n? hb_bitSet(0,64)\nreturn\n',
