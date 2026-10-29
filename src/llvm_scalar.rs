@@ -59,6 +59,12 @@ impl Ir {
     self.block(&end);let r=self.tmp();self.line(format!("{} = load i64, ptr {}",r,slot));r
    },
    Expr::Cmp(op,a,b)=>{let a=self.expr(a)?;let b=self.expr(b)?;let v=self.tmp();self.line(format!("{} = icmp {} i64 {}, {}",v,match op{CmpOp::Eq|CmpOp::EqEq=>"eq",CmpOp::Ne=>"ne",CmpOp::Lt=>"slt",CmpOp::Le=>"sle",CmpOp::Gt=>"sgt",CmpOp::Ge=>"sge",_=>return Err("LLVM scalar: comparison unsupported".into())},a,b));let r=self.tmp();self.line(format!("{} = zext i1 {} to i64",r,v));r},
+   Expr::Call(n,args) if (is_builtin(n,"min")||is_builtin(n,"max")) && args.len()==2=>{
+    if args.iter().any(|a|self.isbool(a)){return Err("LLVM scalar: Min/Max only supports I64 operands".into())}
+    let a=self.expr(&args[0])?;let b=self.expr(&args[1])?;
+    let c=self.tmp();self.line(format!("{} = icmp {} i64 {}, {}",c,if is_builtin(n,"min"){"sle"}else{"sge"},a,b));
+    let r=self.tmp();self.line(format!("{} = select i1 {}, i64 {}, i64 {}",r,c,a,b));r
+   },
    Expr::Call(n,args) if is_builtin(n,"len") && args.len()==1=>{match &args[0] {Expr::Var(v) if self.asz.contains_key(v)=>self.asz[v].to_string(),_=>return Err("LLVM scalar: len() only on fixed I64 arrays".into())}},
    Expr::Call(n,args) if is_builtin(n,"procline") && (args.is_empty() || matches!(&args[..], [Expr::Int(v)] if v=="0"))=>PROC_LINES.with(|m|m.borrow().get(self.current_line.saturating_sub(1)).copied()).unwrap_or(self.current_line).to_string(),
    Expr::Inc(n,delta,prefix)=>{let ptr=self.ptr(n)?;let old=self.tmp();self.line(format!("{} = load i64, ptr {}",old,ptr));let pair=self.tmp();self.line(format!("{} = call {{i64,i1}} @llvm.sadd.with.overflow.i64(i64 {}, i64 {})",pair,old,delta));let next=self.tmp();let ov=self.tmp();self.line(format!("{} = extractvalue {{i64,i1}} {}, 0",next,pair));self.line(format!("{} = extractvalue {{i64,i1}} {}, 1",ov,pair));let bad=self.lab();let good=self.lab();self.line(format!("br i1 {}, label %{}, label %{}",ov,bad,good));self.block(&bad);self.line("call void @rt_inc_error()".into());self.line("unreachable".into());self.block(&good);self.line(format!("store i64 {}, ptr {}",next,ptr));if *prefix {next}else{old}},

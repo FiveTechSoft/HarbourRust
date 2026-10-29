@@ -36,3 +36,10 @@ for name in ['sequence-current.out', 'sequence-llvm.out']:
     actual = list(map(int, pathlib.Path('run', name).read_text().split()))
     assert actual == sequence_expected, (name, actual, sequence_expected)
 print('PASS independent sequence observations (25 integers)')
+
+minmax_expected = [3,8,-4,0,-9223372036854775808,9223372036854775807,
+                   5,5,1,2,4,4,8,3,3,2,9,9,2,5,12345678901,6]
+for name in ['minmax-current.out','minmax-llvm.out']:
+    actual = list(map(int,pathlib.Path('run',name).read_text().split()))
+    assert actual == minmax_expected, (name,actual,minmax_expected)
+print('PASS independent Min/Max observations (22 integers)')

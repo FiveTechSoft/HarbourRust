@@ -456,3 +456,25 @@ count: the broader frozen-corpus status is unchanged/unrechecked by this step.
 
 Fresh full run.sh result: 59 PASS lines, 5089 function comparisons and 22 exact
 diagnostic comparisons. No performance, executable-size or broad Rust claim.
+
+## I64 Min/Max increment, 29 October 2026
+
+Min/Max on two I64 operands now evaluates both arguments left to right and
+selects using signed <=/>=, choosing the first on ties. The existing frontend
+arity/type checks remain. Logical and float variants stay outside the LLVM
+slice and are rejected; no new representation or runtime helper is added.
+The current backend's matching-type rules and first-on-tie signed comparison
+establish the semantics; the broader existing t1066/t1067 regressions include
+variants (byref/float/logical) not admitted by this increment.
+
+minmax.hb covers signed extremes, ties, nested calls, prefix/sequence effects,
+argument-call order, and large literal print provenance. Complete bytes match
+the current backend on Linux and PE under Wine, with 22 independent expected
+integer observations. error-minmax.hb checks that the first argument's effect
+precedes a failing second-argument index, including exact diagnostic bytes.
+There are no new speed, size or Rust-comparison claims.
+
+Fresh result: full run.sh 64 PASS lines, 5089 function comparisons, twelve
+controlled-error fixtures on two targets (24 exact diagnostics), and seven
+unchanged-source regressions on both backends/targets. Rebuilt normal-backend
+battery 1086 PASS, zero FAIL. Windows validation remains PE under Wine only.
