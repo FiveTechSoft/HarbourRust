@@ -501,3 +501,19 @@ and float operands. No new performance or Rust-quality claim follows.
 Fresh result: full run.sh 72 PASS lines, 5089 function comparisons and thirteen
 error fixtures on two targets (26 exact diagnostic comparisons). Rebuilt normal
 battery: 1086 PASS, zero FAIL. No native-Windows result is claimed.
+
+## Admitted-source Linux audit, 29 October 2026
+
+`python3 experiments/llvm-scalar/check_regressions.py --scan-supported-linux`
+selects existing tests/ successful-output (`pos`) manifest sources admitted
+by the experimental emitter, then builds/runs each on Linux through both
+backends against frozen expected bytes. The audit currently admits 126
+sources and all 252 executions pass. This includes preprocessor paths,
+Unicode output, arrays, control flow and original-source fixtures without
+editing their source. Includes use -I tests, and expected escape decoding
+uses printf %b to preserve UTF8. Generated inputs, rejected sources and
+non-pos manifest kinds are outside this audit. A rejection is not counted
+as a runtime pass. No inference is made about the full compatibility corpus,
+Windows support for those 126 sources, or native-Windows behavior. The regular
+seven-source paired-target regression subset remains in the normal run.sh.
+This is a bounded correctness audit, not a benchmark or broader language claim.

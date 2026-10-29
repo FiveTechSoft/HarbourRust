@@ -1,5 +1,6 @@
 """Run existing repository regressions unchanged through both backends/targets."""
 import os
+import sys
 import pathlib
 import subprocess
 
@@ -23,14 +24,26 @@ for line in pathlib.Path('tests/manifest.txt').read_text().splitlines():
 def run(cmd):
     return subprocess.run(list(map(str, cmd)), check=True, capture_output=True)
 
+# Optional answer-only compatibility audit: run each existing successful-output
+# manifest case the LLVM emitter admits. Rejections are not language support.
+scan = '--scan-supported-linux' in sys.argv
+if scan:
+    selected = []
+    for source in manifest:
+        if not source.startswith('tests/'):
+            continue  # generated inputs are not part of the source audit
+        trial = subprocess.run([hbc,source,str(work/'scan.ll'),'--experimental-llvm','-I','tests'],capture_output=True)
+        if trial.returncode == 0:
+            selected.append(source.removeprefix('tests/'))
+    print('AUDIT admitted successful-output sources',len(selected),flush=True)
 for case in selected:
     source = 'tests/' + case
-    expected = manifest[source].encode().decode('unicode_escape').encode()
-    for target in ['linux'] + (['windows'] if env.get('M') and env.get('WINE') else []):
+    expected = subprocess.run(['printf','%b',manifest[source]], capture_output=True, check=True).stdout
+    for target in ['linux'] + (['windows'] if not scan and env.get('M') and env.get('WINE') else []):
         for backend in ['current', 'llvm']:
             p = str(work / ('reg-' + pathlib.Path(case).stem + '-' + target + '-' + backend))
             asm = p + '.s'
-            args = [hbc, source, p + '.ll' if backend == 'llvm' else asm, '--target=' + target]
+            args = [hbc, source, p + '.ll' if backend == 'llvm' else asm, '--target=' + target, '-I', 'tests']
             if backend == 'llvm':
                 args += ['--experimental-llvm']
             run(args)
