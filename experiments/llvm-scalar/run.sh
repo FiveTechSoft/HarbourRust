@@ -83,3 +83,5 @@ fi
 python3 check_errors.py
 
 python3 check_rejections.py
+
+python3 check_regressions.py

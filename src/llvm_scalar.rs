@@ -115,7 +115,7 @@ impl Ir {
   _=>return Err(format!("LLVM scalar: statement unsupported: {:?}",s))
  }}Ok(false)}
 }
-fn locals(ss:&[Stmt],out:&mut std::collections::BTreeSet<String>,arrays:&mut std::collections::BTreeMap<String,usize>){for s in ss{match s{Stmt::Local(_,n,e)=>{match e {Expr::ArrLit(items) if !items.iter().any(|x|matches!(x,Expr::ArrLit(_)|Expr::DArrNew))=>{arrays.insert(n.clone(),items.len());},_=>{out.insert(n.clone());}}},Stmt::If(_,_,a,b)=>{locals(a,out,arrays);locals(b,out,arrays)},Stmt::For(_,_,_,_,_,b)|Stmt::While(_,_,b)=>locals(b,out,arrays),_=>{}}}}
+fn locals(ss:&[Stmt],out:&mut std::collections::BTreeSet<String>,arrays:&mut std::collections::BTreeMap<String,usize>){for s in ss{match s{Stmt::Local(_,n,e)=>{match e {Expr::ArrLit(items) if !items.iter().any(|x|matches!(x,Expr::ArrLit(_)|Expr::DArrNew))=>{arrays.insert(n.clone(),items.len());},_=>{out.insert(n.clone());}}},Stmt::If(_,_,a,b)=>{locals(a,out,arrays);locals(b,out,arrays)},Stmt::For(_,n,_,_,_,b)=>{out.insert(n.clone());locals(b,out,arrays)},Stmt::While(_,_,b)=>locals(b,out,arrays),_=>{}}}}
 pub fn emit(funcs:&[Func],sigs:&[Sig],_target:Target,traced:bool)->Result<String,String>{
  for s in sigs{if !s.params.iter().all(|t|matches!(t,Ty::I64)) || !matches!(s.ret,None|Some(Ty::I64)){return Err("LLVM scalar: only I64 signatures supported".into())}}
  let mut ir=Ir{out:String::new(),n:0,label:0,vars:Default::default(),arrays:Default::default(),asz:Default::default(),globals:Vec::new(),allocas:Vec::new(),sig_names:funcs.iter().map(|f|f.name.clone()).collect(),bools:Default::default(),traced,frame:String::new(),fname:String::new(),current_line:0,loops:Vec::new()};

@@ -437,3 +437,22 @@ Fresh result: run.sh 45 PASS lines, 5089 function comparisons and eleven
 controlled-error fixtures on two targets (22 exact diagnostic comparisons).
 Rebuilt default-backend battery 1086 PASS, zero failures. Linux and PE/Wine
 only, on the same 28 October host/toolchain; no native-Windows measurement.
+
+## Existing-source regression integration, 29 October 2026
+
+The LLVM local collector now includes the implicit counter introduced by FOR,
+matching the checked frontend/current backend. Existing t42/t48/t49/t129 sources
+previously failed experimental emission with `unknown local` unless a redundant
+LOCAL declaration was added. No source edits or frontend changes are required.
+
+`check_regressions.py` builds seven existing tests unchanged through both
+backends on Linux and PE/Wine: t28/t42/t48/t49 loop control, t129 array fill,
+and original-source t907 (while.prg) / t997 (recursiv.prg) fixtures already
+preserved in tests/. Each execution must match the frozen manifest bytes,
+exit0 and empty stderr, not merely agree with the other backend. The sources
+remain untouched. This checks 28 executions across seven sources, two backends
+and two targets. It is not a new sweep of all 175 originals or a new compatibility
+count: the broader frozen-corpus status is unchanged/unrechecked by this step.
+
+Fresh full run.sh result: 59 PASS lines, 5089 function comparisons and 22 exact
+diagnostic comparisons. No performance, executable-size or broad Rust claim.
