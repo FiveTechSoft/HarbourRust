@@ -104,3 +104,21 @@ Missing ads.ch is an include/dependency lookup result under the audit's stated
 include policy,not proof that the driver is unavailable in every environment.
 Those originals are not executed. No package install,driver/linking change or
 new runtime contract is attempted as part of characterization.
+
+## End-to-end guard on limits of the token oracle
+
+Two own-source safe console probes verify older gaps before and after the
+marker increment in both backends. A command capturing `.T.` re-emits `. T .`,
+which fails the language lexer. A result `#<x>` does not stringify its capture.
+Live reference programs compile/run and their output bytes are stored as hex;
+our two backends reject in both old/current compilers. No fix is included.
+
+This matters when interpreting190 marker probes: comparing punctuation tokens
+is enough to characterize match/nonmatch,but NOT enough to prove correct
+lexical re-emission or end-to-end execution of arbitrary captured expressions.
+The six positive scalar execution regressions still pass; they do not cover
+all expression types. The four first dotted diagnostics in the268 audit are
+therefore not proof the language lexer itself is the root cause. A minimized
+own-source re-emission failure is now separately preserved. Multiple earlier
+command capture/result issues can coexist; accepting a header marker cannot
+be promoted to full header/language/runtime support.

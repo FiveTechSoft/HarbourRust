@@ -1,0 +1,71 @@
+{
+  "before": "89f3ead production77f972a",
+  "current": "e71b0ed",
+  "scope": "Two own-source end-to-end reference programs. Reference run safe console only. Both own backends reject before and after marker increment;preexisting gaps,not fixed. Exact stdout bytes retained as hex;token-stream-only comparison is insufficient for lexical adjacency. No original reference sources executed.",
+  "rows": [
+    {
+      "case": "logical",
+      "source_sha256": "6186ecde24d5e37c834b557ed98e2a92e57d774d019aee8a2f51b132a980f3f5",
+      "reference_exit": 0,
+      "reference_stdout_hex": "0a2e542e",
+      "own_results": {
+        "before-default": {
+          "compile_exit": 1,
+          "diagnostic": [
+            "error: line 2: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+          ]
+        },
+        "before-llvm": {
+          "compile_exit": 1,
+          "diagnostic": [
+            "error: line 2: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+          ]
+        },
+        "current-default": {
+          "compile_exit": 1,
+          "diagnostic": [
+            "error: line 2: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+          ]
+        },
+        "current-llvm": {
+          "compile_exit": 1,
+          "diagnostic": [
+            "error: line 2: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+          ]
+        }
+      }
+    },
+    {
+      "case": "stringify",
+      "source_sha256": "9940c2c87923c511ccba67ae2c8ccd961fc8d97b7f6a95c6f63dbbc151443934",
+      "reference_exit": 0,
+      "reference_stdout_hex": "0a616c706861202b2031",
+      "own_results": {
+        "before-default": {
+          "compile_exit": 1,
+          "diagnostic": [
+            "error: line 2: character not allowed `#` (U+0023)"
+          ]
+        },
+        "before-llvm": {
+          "compile_exit": 1,
+          "diagnostic": [
+            "error: line 2: character not allowed `#` (U+0023)"
+          ]
+        },
+        "current-default": {
+          "compile_exit": 1,
+          "diagnostic": [
+            "error: line 2: character not allowed `#` (U+0023)"
+          ]
+        },
+        "current-llvm": {
+          "compile_exit": 1,
+          "diagnostic": [
+            "error: line 2: character not allowed `#` (U+0023)"
+          ]
+        }
+      }
+    }
+  ]
+}
