@@ -58,6 +58,13 @@ impl Ir {
     self.block(&rhs);let c=self.cond(b)?;let v=self.tmp();self.line(format!("{} = zext i1 {} to i64",v,c));self.line(format!("store i64 {}, ptr {}",v,slot));self.line(format!("br label %{}",end));
     self.block(&end);let r=self.tmp();self.line(format!("{} = load i64, ptr {}",r,slot));r
    },
+   Expr::Cmp(op,a,b) if matches!(op,CmpOp::Eq|CmpOp::Ne|CmpOp::EqEq) && (matches!(&**a,Expr::Nil)^matches!(&**b,Expr::Nil))=>{
+    // The checked other operand must lower as an existing I64/logical scalar.
+    // Evaluate it even though the different-type equality result is constant.
+    // NIL itself has no LLVM value or storage representation.
+    let other=if matches!(&**a,Expr::Nil){b}else{a};self.expr(other)?;
+    if matches!(op,CmpOp::Ne){"1".into()}else{"0".into()}
+   },
    Expr::Cmp(op,a,b)=>{let a=self.expr(a)?;let b=self.expr(b)?;let v=self.tmp();self.line(format!("{} = icmp {} i64 {}, {}",v,match op{CmpOp::Eq|CmpOp::EqEq=>"eq",CmpOp::Ne=>"ne",CmpOp::Lt=>"slt",CmpOp::Le=>"sle",CmpOp::Gt=>"sgt",CmpOp::Ge=>"sge",_=>return Err("LLVM scalar: comparison unsupported".into())},a,b));let r=self.tmp();self.line(format!("{} = zext i1 {} to i64",r,v));r},
    Expr::Call(n,args) if is_builtin(n,"empty") && args.len()==1=>{
     if let Expr::Var(v)=&args[0]{if let Some(k)=self.asz.get(v){return Ok(if *k==0{"1".into()}else{"0".into()})}}

@@ -774,3 +774,27 @@ comma-sequence effects, against explicit bytes and the default backend. Full
 suite: 129 PASS lines on Linux and PE/Wine. This does not yet admit the unchanged
 ifinline original: its scalar-versus-NIL comparison remains outside this step.
 No new Harbour run or performance claim is made.
+
+## Literal NIL versus checked scalar equality, 29 October 2026
+
+Exactly one literal NIL under =, #/!=, or == now compares with an operand
+that must lower through the existing I64/logical expression path. The scalar
+operand still evaluates once, including increments, calls, output prefixes and
+bounds checks. The equality result is a constant logical value, not a NIL
+representation: distinct categories are false under =/==, true under !=.
+The frontend remains authoritative: Bool == NIL and ordering literal NIL
+still reject. Strings, arrays, NIL/NIL, output-call results and stored Dyn
+remain outside this LLVM change. Neither checker nor runtime/ABI is changed.
+
+The unchanged t982_original_ifinline.hb now runs on Linux and PE/Wine against
+its existing manifest bytes and default-backend output. Its SHA256 is
+cef71077a08117c32e49ec468be7f38a5ca5817aa2a6175136ba4ed5cf3afa08, identical
+to upstream harbour/core 694428e1 tests/ifinline.prg. The existing 64ak Harbour
+comparison is historical, not a new Harbour execution. Existing t980 also
+runs unchanged. The nilcompare fixture pins exact output/effect order; two
+error fixtures verify that bound failures survive folding, in both orders.
+
+Full suite: 141 PASS lines, plus 19 error fixtures checked on each target
+against exact default diagnostics (38 paired-target error checks). Default
+battery rebuilt: 1086 PASS and ALL GREEN. These counts are separate; no claim
+of runtime success for all 175 originals or general performance is made.
