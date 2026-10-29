@@ -81,7 +81,6 @@ impl Ir {
     } else {let r=self.tmp();self.line(format!("{} = {} i64 {}, {}",r,if is_builtin(n,"hb_bitset"){"or"}else{"and"},v,if is_builtin(n,"hb_bitset"){mask}else{!mask}));r}
    },
    Expr::Call(n,args) if (is_builtin(n,"min")||is_builtin(n,"max")) && args.len()==2=>{
-    if args.iter().any(|a|self.isbool(a)){return Err("LLVM scalar: Min/Max only supports I64 operands".into())}
     let a=self.expr(&args[0])?;let b=self.expr(&args[1])?;
     let c=self.tmp();self.line(format!("{} = icmp {} i64 {}, {}",c,if is_builtin(n,"min"){"sle"}else{"sge"},a,b));
     let r=self.tmp();self.line(format!("{} = select i1 {}, i64 {}, i64 {}",r,c,a,b));r
@@ -94,7 +93,7 @@ impl Ir {
    _=>return Err(format!("LLVM scalar: expression unsupported: {:?}",e))
   })
  }
- fn isbool(&self,e:&Expr)->bool {match e {Expr::Seq(es)=>es.last().map(|e|self.isbool(e)).unwrap_or(false),Expr::Log(_)|Expr::Cmp(..)|Expr::LNot(_)|Expr::LAnd(..)|Expr::LOr(..)=>true,Expr::Var(n)=>self.bools.contains(n),Expr::Call(n,_) if self.bool_returns.contains(n)=>true,Expr::Call(n,_) if is_builtin(n,"hb_bittest")||is_builtin(n,"empty")=>true,Expr::Call(n,a) if is_builtin(n,"iif") && a.len()==3=>self.isbool(&a[1]),_=>false}}
+ fn isbool(&self,e:&Expr)->bool {match e {Expr::Seq(es)=>es.last().map(|e|self.isbool(e)).unwrap_or(false),Expr::Log(_)|Expr::Cmp(..)|Expr::LNot(_)|Expr::LAnd(..)|Expr::LOr(..)=>true,Expr::Var(n)=>self.bools.contains(n),Expr::Call(n,_) if self.bool_returns.contains(n)=>true,Expr::Call(n,_) if is_builtin(n,"hb_bittest")||is_builtin(n,"empty")=>true,Expr::Call(n,a) if is_builtin(n,"iif") && a.len()==3=>self.isbool(&a[1]),Expr::Call(n,a) if (is_builtin(n,"min")||is_builtin(n,"max")) && a.len()==2=>self.isbool(&a[0]),_=>false}}
  fn cond(&mut self,e:&Expr)->Result<String,String>{let v=self.expr(e)?;let c=self.tmp();self.line(format!("{} = icmp ne i64 {}, 0",c,v));Ok(c)}
  fn check_dead(&self,ss:&[Stmt])->Result<(),String>{
   // Reuse the exact lowering checks with the same locals and enclosing

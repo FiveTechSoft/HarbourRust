@@ -625,3 +625,18 @@ nine new success/oracle lines added), 5089 previous function comparisons,
 sixteen error fixtures on two targets (32 exact diagnostics). Rebuilt normal
 battery 1086 PASS, zero FAIL. Counts are actual runner lines, not language
 coverage percentages. Windows remains PE under Wine, not native Windows.
+
+## Matching logical Min/Max, 29 October 2026
+
+Min/Max now also admits matching logical operands using the existing0/1 scalar
+representation and signed selection, with both arguments evaluated left to
+right. Result classification follows the first operand's checked type. The
+frontend still rejects mixed logical/integer inputs and floats remain outside
+the emitter. No coercion, representation or ABI change is introduced.
+
+boolminmax.hb checks the complete two-input truth table, nested results and
+locals, Empty/NOT/conditions, and both argument effects even when the first
+would determine the result. Independent expected bytes and current-backend
+comparison cover Linux and PE/Wine. Two former rejection fixtures are removed
+because this matching-logical form is now admitted; full run.sh has94PASS
+lines,5089 prior comparisons and32 exact diagnostics. No performance claim.

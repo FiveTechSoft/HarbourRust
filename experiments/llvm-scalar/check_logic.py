@@ -104,3 +104,10 @@ booloutput_expected = (b'\n.T. .T. .F.\n.T.          1 .T. .T.'
 for name in ['booloutput-current.out','booloutput-llvm.out']:
     assert pathlib.Path('run',name).read_bytes() == booloutput_expected, name
 print('PASS independent logical-output byte oracle')
+
+boolminmax_expected = (b'\n.F. .F. .F. .T.\n.F. .T. .T. .T.\n.T. .F. .F.'
+                       b'\n         0\n         1\n.F.\n         2\n         0\n.T.'
+                       b'\n         0          1')
+for name in ['boolminmax-current.out','boolminmax-llvm.out']:
+    assert pathlib.Path('run',name).read_bytes() == boolminmax_expected, name
+print('PASS independent logical Min/Max byte oracle')
