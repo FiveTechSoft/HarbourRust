@@ -12,6 +12,7 @@ for path in sorted(root.rglob('*')):
  # Search hints are not a parser and must not be used as readiness/coverage proof.
  r['review_hints']={'includes':sorted(set(re.findall(r'(?im)^\s*#\s*include\s*[<"]([^>"]+)',text))),'main_declaration_hint':bool(re.search(r'(?im)^\s*(?:static\s+)?(?:function|procedure)\s+main\b',text))}
  if rel in audit:
+  assert audit[rel]['sha256']==r['sha256'],f'stale audit hash for {rel}'
   for key,field in [('current','default_compile'),('llvm','llvm_compile')]:
    z=audit[rel][key];r[field]='accepted'if z['compiled']else'rejected';r[field+'_diagnostic']=z.get('diagnostic',[])
   r['compile_evidence']='frozen175-audit';r['compile_compiler']=d['compiler']
