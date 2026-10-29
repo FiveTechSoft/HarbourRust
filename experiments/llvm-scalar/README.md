@@ -758,3 +758,19 @@ The barecounter fixture checks bound effects, zero-trip counter value, disjoint
 block slots and scope restoration. The full local run has 119 PASS lines;
 the rebuilt default battery has 1086 PASS lines and ALL GREEN. These are
 correctness results only, not a new performance comparison.
+
+## Discarded output effects, 29 October 2026
+
+A separate effect lowering path handles CallStmt and discarded sequence prefixes.
+QOut/QQOut reuse the existing checked print_items path; IIF evaluates only its
+selected arm, and discarded literal NIL emits nothing. No scalar sentinel is
+created for NIL. Value-position output/NIL still rejects, as do stored NIL/Dyn
+and OutStd/OutErr. Unsupported dead arms and statements after a terminator are
+still inspected before admission. Frontend type/ownership rules are unchanged.
+
+The discardeffects fixture checks output-before-outer-newline order, output
+argument order, lazy chosen/dead arms, NIL no-op arms, nested numeric IIF and
+comma-sequence effects, against explicit bytes and the default backend. Full
+suite: 129 PASS lines on Linux and PE/Wine. This does not yet admit the unchanged
+ifinline original: its scalar-versus-NIL comparison remains outside this step.
+No new Harbour run or performance claim is made.

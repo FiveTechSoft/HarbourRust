@@ -163,3 +163,7 @@ print('PASS unchanged fornext/hk339 expected bytes (337 bytes)')
 for name in ['barecounter-current.out','barecounter-llvm.out']:
     assert pathlib.Path('run',name).read_bytes()==b'bound\n         2\n        80         1         2\n         3\n        80',name
 print('PASS bare counter effects, zero-trip and scope restoration')
+
+for name in ['discardeffects-current.out','discardeffects-llvm.out']:
+    assert pathlib.Path('run',name).read_bytes()==b'         1\nchosen          1         2inline          2\nprefix\n         1          1         7seq         3         3',name
+print('PASS discarded output effects: lazy arms, sequence order and NIL no-op')

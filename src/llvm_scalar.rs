@@ -34,7 +34,7 @@ impl Ir {
   Ok(match e {
    Expr::Seq(es)=>{
     let mut value=None;
-    for item in es {value=Some(self.expr(item)?);}
+    for (i,item) in es.iter().enumerate() {if i+1<es.len(){self.effect(item)?;}else{value=Some(self.expr(item)?);}}
     value.ok_or("LLVM scalar: empty sequence")?
    },
    Expr::Int(v)=>v.clone(), Expr::Log(v)=>if *v {"1".into()}else{"0".into()},
@@ -92,6 +92,21 @@ impl Ir {
    Expr::Call(n,args) if self.sig_names.contains(n)=>{let mut aa=Vec::new();for a in args {aa.push(format!("i64 {}",self.expr(a)?));}let r=self.tmp();self.line(format!("{} = call i64 @ll_{}({})",r,n,aa.join(", ")));r},
    _=>return Err(format!("LLVM scalar: expression unsupported: {:?}",e))
   })
+ }
+ // A discarded NIL effect has no scalar value or storage representation.
+ fn effect(&mut self,e:&Expr)->Result<(),String>{
+  match e {
+   Expr::Nil=>Ok(()),
+   Expr::Seq(es)=>{for e in es{self.effect(e)?;}Ok(())},
+   Expr::Call(n,args) if (is_builtin(n,"qout") || is_builtin(n,"qqout"))=>self.print_items(args,is_builtin(n,"qqout")),
+   Expr::Call(n,args) if is_builtin(n,"iif") && args.len()==3=>{
+    let c=self.cond(&args[0])?;let t=self.lab();let f=self.lab();let end=self.lab();
+    self.line(format!("br i1 {}, label %{}, label %{}",c,t,f));
+    self.block(&t);self.effect(&args[1])?;self.line(format!("br label %{}",end));
+    self.block(&f);self.effect(&args[2])?;self.line(format!("br label %{}",end));self.block(&end);Ok(())
+   },
+   _=>{self.expr(e)?;Ok(())}
+  }
  }
  fn isbool(&self,e:&Expr)->bool {match e {Expr::Seq(es)=>es.last().map(|e|self.isbool(e)).unwrap_or(false),Expr::Log(_)|Expr::Cmp(..)|Expr::LNot(_)|Expr::LAnd(..)|Expr::LOr(..)=>true,Expr::Var(n)=>self.bools.contains(n),Expr::Call(n,_) if self.bool_returns.contains(n)=>true,Expr::Call(n,_) if is_builtin(n,"hb_bittest")||is_builtin(n,"empty")=>true,Expr::Call(n,a) if is_builtin(n,"iif") && a.len()==3=>self.isbool(&a[1]),Expr::Call(n,a) if (is_builtin(n,"min")||is_builtin(n,"max")) && a.len()==2=>self.isbool(&a[0]),_=>false}}
  fn cond(&mut self,e:&Expr)->Result<String,String>{let v=self.expr(e)?;let c=self.tmp();self.line(format!("{} = icmp ne i64 {}, 0",c,v));Ok(c)}
@@ -209,7 +224,7 @@ impl Ir {
    // lowering still emits any reachable merge or exit block.
    self.check_dead(&ss[si+1..])?;return Ok(true)
   },
-  Stmt::CallStmt(_,e)=>{self.expr(e)?;},
+  Stmt::CallStmt(_,e)=>{self.effect(e)?;},
   _=>return Err(format!("LLVM scalar: statement unsupported: {:?}",s))
  }}Ok(false)}
 }
