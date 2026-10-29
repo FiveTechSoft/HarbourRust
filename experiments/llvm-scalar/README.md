@@ -550,3 +550,14 @@ This is scoped builtin support, not a speed/size or broad Rust-quality claim.
 Fresh result: run.sh 79 PASS lines, 5089 function comparisons and fourteen
 error fixtures on two targets (28 exact diagnostics). Rebuilt normal-backend
 battery 1086 PASS, zero FAIL. Linux and PE/Wine only, not native Windows.
+
+## Cross-feature correctness interaction, 29 October 2026
+
+interaction.hb combines fixed-array updates, signed Min/Max, bit operations,
+Empty, short-circuit conditions, sequences, LOOP/EXIT and a final bounds-guarded
+WHILE across 33 signed inputs. An independent Python state-machine oracle checks
+the full resulting integers in addition to exact current/LLVM output on Linux
+and Wine. This is an untimed correctness case designed to exercise feature
+interactions; it is not another performance kernel or a general language claim.
+No production code changed. Full suite now reports 82 PASS lines with previous
+5089 function comparisons and 28 exact diagnostic comparisons unchanged.

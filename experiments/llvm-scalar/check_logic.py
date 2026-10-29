@@ -58,3 +58,31 @@ for name in ['empty-current.out','empty-llvm.out']:
     actual = list(map(int,pathlib.Path('run',name).read_text().split()))
     assert actual == empty_expected, (name,actual,empty_expected)
 print('PASS independent Empty observations (20 integers)')
+
+
+def interact(n):
+    a = [3,5,7,11]
+    s = n
+    i = 1
+    while i <= 12:
+        j = (i & 3) + 1
+        b = (i & 1) == 0 and a[j-1] != 0
+        if b and i < 10:
+            a[j-1] = max(a[j-1],min(s+i,100))
+        else:
+            a[j-1] ^= i
+        if i != 4:
+            s = s + 1 + a[j-1]
+            if i > 8 and s > 200:
+                break
+        i += 1
+    j = 1
+    while j <= 4 and a[j-1] != 0:
+        s += a[j-1]
+        j += 1
+    return s+i+j
+interaction_expected = [interact(n) for n in range(-16,17)]
+for name in ['interaction-current.out','interaction-llvm.out']:
+    actual = list(map(int,pathlib.Path('run',name).read_text().split()))
+    assert actual == interaction_expected, (name,actual,interaction_expected)
+print('PASS independent cross-feature interaction oracle (33 inputs)')
