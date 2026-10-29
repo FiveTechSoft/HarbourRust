@@ -12,7 +12,7 @@ hbc = str(work / 'hbc')
 env = os.environ
 selected = ['t28_exit_loop.hb', 't42_for_exit_loop.hb', 't48_nested_exit.hb',
             't49_nested_loop.hb', 't129_arr_loop.hb',
-            't907_original_while.hb', 't997_original_recursiv.hb']
+            't601_shortcircuit.hb', 't907_original_while.hb', 't997_original_recursiv.hb']
 manifest = {}
 for line in pathlib.Path('tests/manifest.txt').read_text().splitlines():
     if line.startswith(('pos ','posx ')):

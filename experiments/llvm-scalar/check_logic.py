@@ -86,3 +86,12 @@ for name in ['interaction-current.out','interaction-llvm.out']:
     actual = list(map(int,pathlib.Path('run',name).read_text().split()))
     assert actual == interaction_expected, (name,actual,interaction_expected)
 print('PASS independent cross-feature interaction oracle (33 inputs)')
+
+boolcalls_expected = [1,0,0,0]
+for i in range(9):
+    boolcalls_expected += [int(i%2==0),int(i%2==0),int(i%2==1)]
+boolcalls_expected += [0,1,3,1,4,1]
+for name in ['boolcalls-current.out','boolcalls-llvm.out']:
+    actual = list(map(int,pathlib.Path('run',name).read_text().split()))
+    assert actual == boolcalls_expected, (name,actual,boolcalls_expected)
+print('PASS independent logical-call observations (37 integers)')

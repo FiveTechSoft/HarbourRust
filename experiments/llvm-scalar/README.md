@@ -9,7 +9,7 @@ ownership/collection representation is introduced.
 
 ## Status and boundaries
 
-Current supported slice: I64 function signatures/locals, integer + - *,
+Current supported slice: I64/logical scalar function signatures/locals, integer + - *,
 signed comparisons, logical .AND./.OR./.NOT. with short-circuit evaluation,
 IF, WHILE, EXIT/LOOP, FOR with its existing signed-overflow termination, user calls and
 recursion, left-to-right scalar sequences, lazy IIF, integer and literal-string output, ProcLine current-frame
@@ -316,7 +316,8 @@ The experimental emitter now supports .AND., .OR. and .NOT. in the existing
 logical/I64 value model, without adding signatures, ownership rules or runtime
 helpers. AND/OR lower to conditional branches before evaluating the RHS; the
 merge normalizes the result to 0/1. NOT inverts the normalized condition.
-Logical output and logical function signatures remain outside the slice.
+Logical output remains outside the slice; logical function signatures were added
+in the later logical-call increment.
 
 `logic.hb` covers all eight three-input truth combinations, nested operators,
 logical-local assignments, IIF value contexts, WHILE termination, prefix
@@ -561,3 +562,29 @@ and Wine. This is an untimed correctness case designed to exercise feature
 interactions; it is not another performance kernel or a general language claim.
 No production code changed. Full suite now reports 82 PASS lines with previous
 5089 function comparisons and 28 exact diagnostic comparisons unchanged.
+
+## Existing logical scalar signatures, 29 October 2026
+
+The emitter now accepts frontend-checked Bool parameters/returns as well as
+I64. The physical lowering remains i64 arguments/return and 8-byte local
+slots containing 0/1, as already used for local logical expressions; no tagged
+representation, ownership rule or external adapter contract changes. Signature
+metadata now marks logical parameters and return-call expressions, including
+assignments/IIF/sequences, so they cannot bypass logical-output rejection.
+No inferred integer/logical coercion is added. Byref remains unsupported.
+
+boolcalls.hb checks argument/return propagation, nested calls, self recursion,
+mutual recursion and short-circuited calls with effects, with 37 independent
+expected integers and exact normal/LLVM bytes on both targets. Existing
+`t601_shortcircuit.hb` now runs unchanged against its frozen expected output
+on Linux and Wine (eight unchanged-source regressions in the regular suite).
+error-boolcalls.hb checks the complete callstack across logical call frames.
+Direct returned-logical output, logical parameter output, local copies of
+logical returns and logical byref retain explicit rejection fixtures. Existing
+t602 output remains outside the slice: adding signatures does not add logical
+printing. This is scoped type propagation, not a general Rust-quality claim.
+
+Fresh result: full run.sh 91 PASS lines, 5089 previous function comparisons,
+fifteen error fixtures on two targets (30 exact diagnostic comparisons), and
+eight unchanged-source paired-target regressions. Rebuilt default battery:
+1086 PASS, zero FAIL. Windows means PE under Wine, not native Windows.
