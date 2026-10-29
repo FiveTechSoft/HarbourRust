@@ -13,6 +13,8 @@ cases={
  'array-logical': 'function main()\nlocal a := {.T.,.F.}\n? a[1]\nreturn\n',
  'array-mixed-logical': 'function main()\nlocal a := {1,.T.}\n? a[2]\nreturn\n',
  'array-dead-logical': 'function main()\nwhile .T.\nexit\nlocal a := {.T.,.F.}\nenddo\nreturn\n',
+ 'disjoint-array-sizes': 'function main()\nlocal n := 0\nif n == 0\nlocal a := {1,2}\n? a[1]\nelse\nlocal a := {3,4,5}\n? a[1]\nendif\nreturn\n',
+ 'disjoint-array-scalar': 'function main()\nlocal n := 0\nif n == 0\nlocal a := {1,2}\n? a[1]\nelse\nlocal a := 7\n? a\nendif\nreturn\n',
  'array-dynamic': 'function main()\nlocal a := Array(2)\nreturn\n',
  'array-param': 'function f(a)\nreturn a[1]\nfunction main()\nlocal a := {1,2}\n? f(a)\nreturn\n',
  'array-nested': 'function main()\nlocal a := {{1,2},{3,4}}\n? a[1][1]\nreturn\n',

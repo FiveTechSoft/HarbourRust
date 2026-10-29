@@ -657,3 +657,20 @@ types and existing physical slots are unchanged. boolscope.hb checks both
 runtime arms, both Bool/I64 declaration orders, enclosing logical locals and
 nested disjoint locals, against independent full bytes and current-backend
 output on Linux and Wine. No checker, representation, ownership or ABI change.
+
+## Post-scope array boundary check, 29 October 2026
+
+The adjacent array/scalar name case is a registered experimental limitation:
+disjoint arms that reuse an array name with different lengths, or reuse the
+name for a scalar, are rejected by the current name-keyed slot collection.
+No wrong execution was observed for these cases because emission fails.
+Two paired-target rejection regressions preserve that boundary. This follow-up
+does not implement a new scoped storage model or claim those valid default-
+backend programs are supported by LLVM.
+
+The existing-source audit was re-run after the logical/scope increments:
+134 admitted successful-output test sources (268 Linux executions across two
+backends) and seven admitted failure sources (14 Linux executions) pass their
+registered checks. This supersedes the earlier126/127 admitted-success counts
+for this branch state only. It does not count rejected programs, rerun the175
+original corpus, or establish those134 cases on Windows. No benchmark added.
