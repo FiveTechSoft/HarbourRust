@@ -186,3 +186,9 @@ cmp /tmp/manual-review-index.json corpus/manual-review-family-index.json
 This verifies hashes and line witnesses without compiling or executing any
 reference program. It intentionally does not infer safe execution from those
 witnesses. Entry/dependency review of the remaining inventory stays pending.
+
+The ledger now reconciles the25 manual reviews alongside existing execution:
+39 distinct sources have either manual entrypoint/dependency review or reviewed
+execution evidence (25+19-5 overlap). Only19 default/14LLVM have exact execution
+results. Neither39 nor25 is an automatic execution allowlist. Earlier per-gate
+compiler provenance is preserved, including pending states for other profiles.
