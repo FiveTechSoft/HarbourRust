@@ -43,3 +43,12 @@ for name in ['minmax-current.out','minmax-llvm.out']:
     actual = list(map(int,pathlib.Path('run',name).read_text().split()))
     assert actual == minmax_expected, (name,actual,minmax_expected)
 print('PASS independent Min/Max observations (22 integers)')
+
+bitops_expected = [3,7,5,-1,255,-3,0,9223372036854775807,
+                   0,3,1,2,4,7,-9223372036854775808,3,
+                   -9223372036854775808,9223372036854775807,-1,
+                   1,5,1,1,0,3,1,3,12,4]
+for name in ['bitops-current.out','bitops-llvm.out']:
+    actual = list(map(int,pathlib.Path('run',name).read_text().split()))
+    assert actual == bitops_expected, (name,actual,bitops_expected)
+print('PASS independent bit-operation observations (29 integers)')

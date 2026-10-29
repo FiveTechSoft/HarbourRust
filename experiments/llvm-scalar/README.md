@@ -478,3 +478,26 @@ Fresh result: full run.sh 64 PASS lines, 5089 function comparisons, twelve
 controlled-error fixtures on two targets (24 exact diagnostics), and seven
 unchanged-source regressions on both backends/targets. Rebuilt normal-backend
 battery 1086 PASS, zero FAIL. Windows validation remains PE under Wine only.
+
+## I64 bit-operation increment, 29 October 2026
+
+hb_bitAnd/hb_bitOr/hb_bitXor/hb_bitNot now lower to I64 bit operations,
+with all arguments evaluated left to right. hb_bitSet/hb_bitReset/hb_bitTest
+support only the existing frontend's literal bit-index range 0..63. Masks
+use unsigned construction, including bit63, without undefined signed shifts.
+BitTest is tracked as logical so direct or local logical output remains a
+named rejection; it works in conditions/IIF inside the existing slice.
+No dynamic indices, float conversion, new value representation or ABI helper
+is introduced. Existing frontend restrictions and default codegen are unchanged.
+
+bitops.hb checks negative operands, bit63, variadic evaluation effects,
+nested operations, conditionals/short-circuiting and sequence operands. Full
+output matches the normal backend on Linux and PE/Wine, with 29 independently
+expected integers. error-bitops.hb checks an error in the second of three
+arguments, preserving the first effect and suppressing the third. Regression
+rejections cover BitTest output (direct/local), dynamic/out-of-range indices
+and float operands. No new performance or Rust-quality claim follows.
+
+Fresh result: full run.sh 72 PASS lines, 5089 function comparisons and thirteen
+error fixtures on two targets (26 exact diagnostic comparisons). Rebuilt normal
+battery: 1086 PASS, zero FAIL. No native-Windows result is claimed.
