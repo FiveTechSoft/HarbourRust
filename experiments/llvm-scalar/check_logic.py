@@ -95,3 +95,12 @@ for name in ['boolcalls-current.out','boolcalls-llvm.out']:
     actual = list(map(int,pathlib.Path('run',name).read_text().split()))
     assert actual == boolcalls_expected, (name,actual,boolcalls_expected)
 print('PASS independent logical-call observations (37 integers)')
+
+# Full bytes matter here: three-byte logical tokens, mixed-field spaces,
+# side effects before outer output, QQOut concatenation and trailing trim.
+booloutput_expected = (b'\n.T. .T. .F.\n.T.          1 .T. .T.'
+                       b'\n.T.\n.F.\n.F. .T.\n.F. .T.\n         1\n         2'
+                       b'\n.T. .T..T..F.\nend\na   .T. z\n.T. ')
+for name in ['booloutput-current.out','booloutput-llvm.out']:
+    assert pathlib.Path('run',name).read_bytes() == booloutput_expected, name
+print('PASS independent logical-output byte oracle')

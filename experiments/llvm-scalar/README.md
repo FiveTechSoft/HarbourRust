@@ -19,7 +19,7 @@ Native three-word trace frames preserve the tested diagnostic paths. See the
 dated follow-ups below for the evidence and historical configurations.
 
 Still rejected: dynamic values, floats, owned strings, byref ABI,
-most builtins, logical output, dynamic/growing/nested arrays, array parameters
+most builtins, dynamic/growing/nested arrays, array parameters
 and whole-array copies. No native-Windows compiler packaging is provided.
 This is not full Harbour integer-promotion semantics or a replacement backend.
 The normal backend is unchanged; its latest full battery re-run is documented
@@ -600,3 +600,28 @@ New rejections cover Min with logical-return calls, sequence printing of a
 logical return and an integer passed to a logical parameter. A focused audit
 also confirmed the frontend rejects logical-call array literals and logical
 writes to fixed I64 arrays. No new production defect was found by this follow-up.
+
+## Logical output through the existing string adapter, 29 October 2026
+
+Logical QOut/QQOut items now select a pointer to the three-byte literal .T.
+or .F. and use the existing rt_str/hbc_print_str adapter. No helper, physical
+ABI, tagged value or ownership change is introduced. All arguments still
+execute before the outer print starts; separators/newlines and final literal
+string trimming retain the current backend's behavior. Prior logical-output
+rejection fixtures were removed because that feature is now explicitly admitted.
+
+booloutput.hb covers logical locals/branches/IIF/sequences/returned values,
+BitTest/Empty, ordered nested printing, short-circuited effects, QQOut joining,
+and mixed literal/string spacing. A full independent byte oracle checks these
+spaces/tokens, in addition to current-vs-LLVM parity. error-booloutput.hb
+confirms an error while evaluating a later item prevents the outer newline or
+earlier logical item from printing. Existing t602/t606/t722 now pass unchanged
+against manifest bytes on Linux and Wine; eleven existing sources are checked
+in the regular target-paired regression subset. Logical arrays/dynamic types
+remain rejected. No speed, size or general Rust-quality claim is added.
+
+Fresh result: run.sh 93 PASS lines (ten obsolete rejection lines removed,
+nine new success/oracle lines added), 5089 previous function comparisons,
+sixteen error fixtures on two targets (32 exact diagnostics). Rebuilt normal
+battery 1086 PASS, zero FAIL. Counts are actual runner lines, not language
+coverage percentages. Windows remains PE under Wine, not native Windows.
