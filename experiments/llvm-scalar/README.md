@@ -34,6 +34,10 @@ C API. Set `HARBOUR_LLVM_LIB` to that library and run:
 bash experiments/llvm-scalar/run.sh
 ```
 
+Routine run.sh checks correctness without timing samples. To run the historical
+measurement harness explicitly, set RUN_BENCHMARKS=1 (and optionally BENCH_N).
+A timing run does not by itself establish comparable results across hosts/layouts.
+
 Optionally set `RUSTC`, `M` (MinGW bin dir), `MLIB` (MinGW import libraries),
 `WINE` and its normal environment. Windows tests are cross-generated and run
 under Wine, not native Windows. Run output is ignored by git. No automatic
@@ -674,3 +678,14 @@ backends) and seven admitted failure sources (14 Linux executions) pass their
 registered checks. This supersedes the earlier126/127 admitted-success counts
 for this branch state only. It does not count rejected programs, rerun the175
 original corpus, or establish those134 cases on Windows. No benchmark added.
+
+## Separate correctness from timing, 29 October 2026
+
+Routine run.sh no longer reruns the three historical timing series. It still
+builds/runs differential validation, output/error comparisons, independent
+oracles, unchanged-source regressions and ABI canaries. Set RUN_BENCHMARKS=1
+to explicitly build/run the traced, untraced and traced-Rust measurement
+harnesses with the previous method. A correctness-only run removes their
+ignored run/*.csv samples to avoid leaving stale samples mistaken for fresh
+ones. Published historical results/ files are untouched. This is a test-process
+change, not a performance improvement or language expansion.

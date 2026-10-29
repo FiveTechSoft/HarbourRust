@@ -31,10 +31,11 @@ objcopy --redefine-sym ll_main=ll_main_arraywork run/arraywork.o
 python3 prepare_bench.py
 as -o bench_current.o bench_current.s
 as -o bench_current_notrace.o bench_current_notrace.s
-for c in validate bench; do
- "$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static "$c.rs" -o "run/$c"
-done
+"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static validate.rs -o run/validate
 run/validate
+# Timings are opt-in; routine correctness runs must not create new samples.
+if [ "${RUN_BENCHMARKS:-0}" = 1 ]; then
+"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static bench.rs -o run/bench
 run/bench "${BENCH_N:-1000000}" > run/bench.csv
 # Deliberately untraced control for comparison to untraced Rust. Not product parity.
 run/hbc corpus.hb run/corpus-no-trace.ll --experimental-llvm-no-trace
@@ -47,6 +48,10 @@ run/bench-no-trace "${BENCH_N:-1000000}" > run/bench-no-trace.csv
 python3 make_traced_rust.py
 "$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static run/bench-traced-rust.rs -o run/bench-traced-rust
 run/bench-traced-rust "${BENCH_N:-1000000}" > run/bench-traced-rust.csv
+else
+ rm -f run/bench.csv run/bench-no-trace.csv run/bench-traced-rust.csv
+ echo 'SKIP timing samples (set RUN_BENCHMARKS=1 explicitly)'
+fi
 python3 abi_check.py
 as -o run/abi.o abi_l.s
 as -o run/abi-runtime.o abi_rt_l.s
