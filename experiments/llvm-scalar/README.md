@@ -531,3 +531,22 @@ runtime prints one. Successful pos sources continue to require exact manifest
 bytes. No source/expected output was changed to make the audit pass.
 This is Linux-only and covers admitted failure cases, not every error or the
 full language battery. All seven pass; no new production defect was found.
+
+## Scalar/fixed-array Empty increment, 29 October 2026
+
+Empty() now accepts the already-lowered I64/logical expressions and variables
+of fixed I64 arrays. Zero/false are empty; a nonempty fixed array is not empty,
+even if its elements are zero. Its logical result is tracked through locals
+and sequences; logical output remains rejected. String, NIL, float and dynamic
+collection operands remain unsupported. No representation or helper is added.
+
+empty.hb checks signed limits, scalar/logical values, all-zero nonempty arrays,
+indexed elements, call/increment/sequence effects and short-circuited logical
+operands, with exact backend output and 20 independent expected integers.
+error-empty.hb checks exact diagnostic bytes on an invalid element operand.
+Direct/local output and string/NIL operands have explicit rejection tests.
+This is scoped builtin support, not a speed/size or broad Rust-quality claim.
+
+Fresh result: run.sh 79 PASS lines, 5089 function comparisons and fourteen
+error fixtures on two targets (28 exact diagnostics). Rebuilt normal-backend
+battery 1086 PASS, zero FAIL. Linux and PE/Wine only, not native Windows.

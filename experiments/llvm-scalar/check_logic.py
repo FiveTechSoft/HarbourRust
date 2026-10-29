@@ -52,3 +52,9 @@ for name in ['bitops-current.out','bitops-llvm.out']:
     actual = list(map(int,pathlib.Path('run',name).read_text().split()))
     assert actual == bitops_expected, (name,actual,bitops_expected)
 print('PASS independent bit-operation observations (29 integers)')
+
+empty_expected = [1,0,0,0,1,0,0,1,1,0,2,0,9,1,0,1,2,1,3,1]
+for name in ['empty-current.out','empty-llvm.out']:
+    actual = list(map(int,pathlib.Path('run',name).read_text().split()))
+    assert actual == empty_expected, (name,actual,empty_expected)
+print('PASS independent Empty observations (20 integers)')
