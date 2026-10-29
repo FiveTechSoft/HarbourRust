@@ -149,6 +149,12 @@ impl Ir {
    // Physical slots are unique per declaration and live in the entry block;
    // only initialization executes here (including inside repeated loops).
    let p=self.tmp();
+   // Same frontend-only counter exception as the default backend, not NIL coercion.
+   if matches!(e,Expr::Nil) && bare_local_is_for_counter(ss,si,n){
+    self.allocas.push(format!("  {} = alloca i64\n",p));
+    self.line(format!("store i64 0, ptr {}",p));self.vars.insert(n.clone(),p);
+    continue
+   }
    if let Expr::ArrLit(items)=e {
     if items.iter().any(|e|matches!(e,Expr::Log(_)|Expr::ArrLit(_)|Expr::DArrNew)){
      return Err("LLVM scalar: tagged logical/mixed or nested array literals unsupported".into())

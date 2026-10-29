@@ -147,3 +147,19 @@ scopedslots_expected=('\n'+'\n'.join(scope_lines)+'\n         0          0').enc
 for name in ['scopedslots-current.out','scopedslots-llvm.out']:
     assert pathlib.Path('run',name).read_bytes()==scopedslots_expected,name
 print('PASS independent scoped declaration/array byte oracle')
+
+# Original hk339/fornext expected control path, independent of either backend.
+fornext_lines=['Testing Harbour For Next loops. Going up quick']
+fornext_lines += [str(n).rjust(10) for n in (1,5,9)]
+fornext_lines += ['Going down']+[str(n).rjust(10) for n in range(10,0,-1)]
+fornext_lines += ['No step']+[str(n).rjust(10) for n in range(1,11)]
+fornext_lines += ['No production','Ok!']
+fornext_expected=('\n'+'\n'.join(fornext_lines)).encode()
+assert len(fornext_expected)==337
+for name in ['fornext-original-current.out','fornext-original-llvm.out']:
+    assert pathlib.Path('run',name).read_bytes()==fornext_expected,name
+print('PASS unchanged fornext/hk339 expected bytes (337 bytes)')
+
+for name in ['barecounter-current.out','barecounter-llvm.out']:
+    assert pathlib.Path('run',name).read_bytes()==b'bound\n         2\n        80         1         2\n         3\n        80',name
+print('PASS bare counter effects, zero-trip and scope restoration')

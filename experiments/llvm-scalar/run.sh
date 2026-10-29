@@ -7,11 +7,12 @@ RUSTC=${RUSTC:-rustc}
 mkdir -p run
 "$RUSTC" -O ../../src/hbc.rs -o run/hbc
 # Linux end-to-end output and code generation.
-for case in corpus edge procline audit arraywork logic loopcontrol sequence minmax bitops empty interaction boolcalls booloutput boolminmax boolscope integeredges scopedslots; do
- run/hbc "$case.hb" "run/$case-current.s"
+for case in corpus edge procline audit arraywork logic loopcontrol sequence minmax bitops empty interaction boolcalls booloutput boolminmax boolscope integeredges scopedslots barecounter fornext-original; do
+ source="$case.hb"; [ "$case" != fornext-original ] || source=fornext-original.prg
+ run/hbc "$source" "run/$case-current.s"
  as -o "run/$case-current.o" "run/$case-current.s"
  ld -o "run/$case-current" "run/$case-current.o"
- run/hbc "$case.hb" "run/$case.ll" --experimental-llvm
+ run/hbc "$source" "run/$case.ll" --experimental-llvm
  python3 llvm_aot.py "run/$case.ll" "run/$case.o"
  python3 link_runtime.py "run/$case.ll.runtime.s"
  as -o "run/$case-runtime.o" "run/$case.ll.runtime.s"
@@ -61,8 +62,9 @@ echo 'PASS Linux ABI canary'
 # Optional cross-target verification. M is the MinGW bin directory.
 if [ -n "${M:-}" ]; then
  : "${MLIB:?MinGW import-library directory}"
- for case in corpus edge procline audit arraywork logic loopcontrol sequence minmax bitops empty interaction boolcalls booloutput boolminmax boolscope integeredges scopedslots; do
-  run/hbc "$case.hb" "run/${case}_w.ll" --target=windows --experimental-llvm
+ for case in corpus edge procline audit arraywork logic loopcontrol sequence minmax bitops empty interaction boolcalls booloutput boolminmax boolscope integeredges scopedslots barecounter fornext-original; do
+  source="$case.hb"; [ "$case" != fornext-original ] || source=fornext-original.prg
+  run/hbc "$source" "run/${case}_w.ll" --target=windows --experimental-llvm
   python3 llvm_aot.py "run/${case}_w.ll" "run/${case}_w.o" windows
   python3 link_runtime.py "run/${case}_w.ll.runtime.s" windows
   "$M/x86_64-w64-mingw32-as" -o "run/${case}_rt_w.o" "run/${case}_w.ll.runtime.s"

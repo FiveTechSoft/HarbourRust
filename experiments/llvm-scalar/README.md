@@ -734,3 +734,27 @@ Linux audits134pos/7posx pass, and rebuilt default battery1086PASS,zeroFAIL.
 These are bounded correctness results, not a benchmark or full compatibility
 claim. Native Windows is not tested. The former disjoint-array limit above is
 historical and superseded by this increment, not silently removed.
+
+## Original fornext and mention-clean bare counter, 29 October 2026
+
+Bare LOCAL (NIL initializer) now lowers to an I64 zero-initialized slot ONLY
+when the existing shared bare_local_is_for_counter predicate proves the same-
+block first mention is a FOR counter with mention-free bounds. This exactly
+matches the frontend/default special case. It is not general NIL/Dyn support:
+observed-before-loop, self-referencing bounds and nested-first-use remain
+rejected. A normal declaration binding is created at its original site.
+
+fornext-original.prg is unchanged upstream harbour/core 694428e1's fornext.prg,
+SHA256 7df8bbea5c9daacfe9d8a439ab2d4ebce3417ce4b15628276819b451cc6aa585,
+also identical to the preserved sondas/hk339.prg. Its 337-byte output matches
+an independent expected loop sequence and the historical hk339 record, as
+well as current-vs-LLVM exact output on Linux and PE/Wine. No fresh Harbour
+binary/oracle was built in this increment; that historical reference is stated
+rather than claimed as a new Harbour run. Existing t792 now passes unchanged
+in the paired-target manifest regression subset. Source originals are not edited.
+This establishes this original's execution, not runtime success for all 175.
+
+The barecounter fixture checks bound effects, zero-trip counter value, disjoint
+block slots and scope restoration. The full local run has 119 PASS lines;
+the rebuilt default battery has 1086 PASS lines and ALL GREEN. These are
+correctness results only, not a new performance comparison.
