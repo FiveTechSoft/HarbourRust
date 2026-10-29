@@ -1,0 +1,765 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "89f3eadc013e30abb17d71d58cf999197b44848e",
+  "method": "Actual byte-exact reviewed-original Linux artifacts. Whole file and GNU size fields are distinct from per-function sizes. Default/Harbour symbols do not supply comparable exact function sizes here. Runtime/CRT and paths differ. No Rust translation or speed claim.",
+  "rows": [
+    {
+      "file": "tests/comments.prg",
+      "sha256": "6d6e0744f7beeec597f35dffbdb4aec2faa1da7b12b0c0c778b56db647adb615",
+      "targets": {
+        "default": {
+          "file_bytes": 21376,
+          "executable_sha256": "08e7fa48f571424d503e6c7ca63c4715b825d81d64b2ed768d210d2877a0e3fd",
+          "gnu_size_fields": [
+            "9248",
+            "88",
+            "0",
+            "9336",
+            "2478",
+            "/downloads/87remote/comments-default"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "llvm": {
+          "file_bytes": 24760,
+          "executable_sha256": "3d7e38b56f098fafa76c2643d208805b1b0f226c889bd81f70f5d5b41a2dfb62",
+          "gnu_size_fields": [
+            "9482",
+            "88",
+            "0",
+            "9570",
+            "2562",
+            "/downloads/87remote/comments-llvm"
+          ],
+          "function_bytes": [
+            {
+              "name": "ll_main",
+              "bytes": 117
+            }
+          ],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "harbour": {
+          "file_bytes": 1431488,
+          "executable_sha256": "ea0113014add7e83bf41d697b9fd9fa16bb4a7c2abf2bfda9ce335cdfdf0c749",
+          "gnu_size_fields": [
+            "1242582",
+            "29400",
+            "9344",
+            "1281326",
+            "138d2e",
+            "/downloads/87remote/comments-harbour"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        }
+      }
+    },
+    {
+      "file": "tests/define.prg",
+      "sha256": "5f474e3a31544a0c390dda8f0bf461e6e59bfa9593b36310bbf078c31ca23869",
+      "targets": {
+        "default": {
+          "file_bytes": 21896,
+          "executable_sha256": "efd3c2f68598a2b656434cca85d7f3dc5f1e4b92f3c8f9f1e7b4161ea3325ee5",
+          "gnu_size_fields": [
+            "10144",
+            "88",
+            "0",
+            "10232",
+            "27f8",
+            "/downloads/87remote/define-default"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "llvm": {
+          "file_bytes": 24760,
+          "executable_sha256": "fc461f21497917b2e1a3383123cd817ae4b8d2ae68c0000797fc16318dc57e98",
+          "gnu_size_fields": [
+            "10202",
+            "88",
+            "0",
+            "10290",
+            "2832",
+            "/downloads/87remote/define-llvm"
+          ],
+          "function_bytes": [
+            {
+              "name": "ll_main",
+              "bytes": 307
+            }
+          ],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "harbour": {
+          "file_bytes": 1435584,
+          "executable_sha256": "008c638e47bbf049aadde7b76e6722139182f04b369f2b6b12aec7493797f418",
+          "gnu_size_fields": [
+            "1242838",
+            "29400",
+            "9344",
+            "1281582",
+            "138e2e",
+            "/downloads/87remote/define-harbour"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        }
+      }
+    },
+    {
+      "file": "tests/docase.prg",
+      "sha256": "fcb9869eb4407d2bc312d97277809380c2dc8414eb237afef1036dcc12c74d88",
+      "targets": {
+        "default": {
+          "file_bytes": 22304,
+          "executable_sha256": "ee25c2524c54e77cc4458022517633573208574f7241820fa8641ab23914f836",
+          "gnu_size_fields": [
+            "11022",
+            "88",
+            "0",
+            "11110",
+            "2b66",
+            "/downloads/87remote/docase-default"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "llvm": {
+          "file_bytes": 24760,
+          "executable_sha256": "9fef21f2c034cf62633b9660fe34af54bbc6e6bc2a5830c677da9f148ab77722",
+          "gnu_size_fields": [
+            "10084",
+            "88",
+            "0",
+            "10172",
+            "27bc",
+            "/downloads/87remote/docase-llvm"
+          ],
+          "function_bytes": [
+            {
+              "name": "ll_main",
+              "bytes": 285
+            }
+          ],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "harbour": {
+          "file_bytes": 1435584,
+          "executable_sha256": "601293056b7b2f121a14e67c685af08223c1c6df02f990ef2fc28b9f0e5d83ad",
+          "gnu_size_fields": [
+            "1242838",
+            "29400",
+            "9344",
+            "1281582",
+            "138e2e",
+            "/downloads/87remote/docase-harbour"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        }
+      }
+    },
+    {
+      "file": "tests/exit.prg",
+      "sha256": "a14961def1156ec029d6c93bfbda7ce05b9ee5900f842e42843046bff1a9163d",
+      "targets": {
+        "default": {
+          "file_bytes": 22016,
+          "executable_sha256": "41f33acdfff491fce066219110880e58512467964b455ac03bf41137ccd288a8",
+          "gnu_size_fields": [
+            "10421",
+            "88",
+            "0",
+            "10509",
+            "290d",
+            "/downloads/87remote/exit-default"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "llvm": {
+          "file_bytes": 24752,
+          "executable_sha256": "4d9d07e7a1ccefd998944d10ca208be2a9c7559273ef86592cea5dee525d9dff",
+          "gnu_size_fields": [
+            "10666",
+            "88",
+            "0",
+            "10754",
+            "2a02",
+            "/downloads/87remote/exit-llvm"
+          ],
+          "function_bytes": [
+            {
+              "name": "ll_main",
+              "bytes": 645
+            }
+          ],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "harbour": {
+          "file_bytes": 1435568,
+          "executable_sha256": "d3cdc69c5b4733f131d017bd2941743faa784980efe760c4b5570fe21ee647e8",
+          "gnu_size_fields": [
+            "1242742",
+            "29400",
+            "9344",
+            "1281486",
+            "138dce",
+            "/downloads/87remote/exit-harbour"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        }
+      }
+    },
+    {
+      "file": "tests/fornext.prg",
+      "sha256": "7df8bbea5c9daacfe9d8a439ab2d4ebce3417ce4b15628276819b451cc6aa585",
+      "targets": {
+        "default": {
+          "file_bytes": 22288,
+          "executable_sha256": "2942dc397f7742998648778fc2a506a3fe033cc6ddd2c939a06a44939e6de3b5",
+          "gnu_size_fields": [
+            "10949",
+            "88",
+            "0",
+            "11037",
+            "2b1d",
+            "/downloads/87remote/fornext-default"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "llvm": {
+          "file_bytes": 24760,
+          "executable_sha256": "3f35ef7b382b623e61d28fbb07144b4eaa5620693194badf5082090292b4ba3f",
+          "gnu_size_fields": [
+            "11494",
+            "88",
+            "0",
+            "11582",
+            "2d3e",
+            "/downloads/87remote/fornext-llvm"
+          ],
+          "function_bytes": [
+            {
+              "name": "ll_main",
+              "bytes": 1118
+            }
+          ],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "harbour": {
+          "file_bytes": 1435584,
+          "executable_sha256": "32b7c16aab7f22c7138e9b306301eb69e5d1d656f6b313cfa3da20d86453252d",
+          "gnu_size_fields": [
+            "1242838",
+            "29400",
+            "9344",
+            "1281582",
+            "138e2e",
+            "/downloads/87remote/fornext-harbour"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        }
+      }
+    },
+    {
+      "file": "tests/hello.prg",
+      "sha256": "98dc39ac220990b0cbc2df0b9f7f619cdeb00131408020df5378fe6897de6b11",
+      "targets": {
+        "default": {
+          "file_bytes": 21368,
+          "executable_sha256": "86c790ce520170d8d7e217a1dd95b818ec96990bb31bc388eaef6da76c5afbc1",
+          "gnu_size_fields": [
+            "9246",
+            "88",
+            "0",
+            "9334",
+            "2476",
+            "/downloads/87remote/hello-default"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "llvm": {
+          "file_bytes": 24752,
+          "executable_sha256": "ca496a70900dfadabb8e25852c096faae2386ac4b3bc0be066535e98f3ddc652",
+          "gnu_size_fields": [
+            "9462",
+            "88",
+            "0",
+            "9550",
+            "254e",
+            "/downloads/87remote/hello-llvm"
+          ],
+          "function_bytes": [
+            {
+              "name": "ll_main",
+              "bytes": 117
+            }
+          ],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "harbour": {
+          "file_bytes": 1431488,
+          "executable_sha256": "763f9afe7b327d4e60e85a85df9989f8e4573dcf50a1e1baf180bbb7402e2b3e",
+          "gnu_size_fields": [
+            "1242582",
+            "29400",
+            "9344",
+            "1281326",
+            "138d2e",
+            "/downloads/87remote/hello-harbour"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        }
+      }
+    },
+    {
+      "file": "tests/ifelse.prg",
+      "sha256": "3514e2804a8090bfe025af3e036294fdd8afafdf8554ededb3bcb888b1f03836",
+      "targets": {
+        "default": {
+          "file_bytes": 22504,
+          "executable_sha256": "0febd862b2d9a5c17a199617513b681d79ed79f6d11d0bd784c725858adf56c6",
+          "gnu_size_fields": [
+            "11252",
+            "88",
+            "0",
+            "11340",
+            "2c4c",
+            "/downloads/87remote/ifelse-default"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "llvm": {
+          "file_bytes": 24792,
+          "executable_sha256": "059238c9d16b387acc289bdcb9edcdf5897caa9e20d99200f19f0f367a1ec4a8",
+          "gnu_size_fields": [
+            "11283",
+            "88",
+            "0",
+            "11371",
+            "2c6b",
+            "/downloads/87remote/ifelse-llvm"
+          ],
+          "function_bytes": [
+            {
+              "name": "ll_main",
+              "bytes": 293
+            },
+            {
+              "name": "ll_testvalue",
+              "bytes": 395
+            }
+          ],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "harbour": {
+          "file_bytes": 1435680,
+          "executable_sha256": "63b610a88253afcf076246fd3c2c1d175c507fa77a6f76d711841d5177f668a1",
+          "gnu_size_fields": [
+            "1242942",
+            "29432",
+            "9344",
+            "1281718",
+            "138eb6",
+            "/downloads/87remote/ifelse-harbour"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        }
+      }
+    },
+    {
+      "file": "tests/ifinline.prg",
+      "sha256": "cef71077a08117c32e49ec468be7f38a5ca5817aa2a6175136ba4ed5cf3afa08",
+      "targets": {
+        "default": {
+          "file_bytes": 21960,
+          "executable_sha256": "c5a3eedc2af68c6f4f6e7545d268f9705e24ffe2d37fe194a6c2ce7db7746ccb",
+          "gnu_size_fields": [
+            "10600",
+            "88",
+            "0",
+            "10688",
+            "29c0",
+            "/downloads/87remote/ifinline-default"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "llvm": {
+          "file_bytes": 24760,
+          "executable_sha256": "70b17d6ca6d8923f72871a5f87f1779463f2bdb74a53ecb875056e99e322fd3b",
+          "gnu_size_fields": [
+            "10444",
+            "88",
+            "0",
+            "10532",
+            "2924",
+            "/downloads/87remote/ifinline-llvm"
+          ],
+          "function_bytes": [
+            {
+              "name": "ll_main",
+              "bytes": 371
+            }
+          ],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "harbour": {
+          "file_bytes": 1435584,
+          "executable_sha256": "92095b00da77ec6ea3ba3c383c6693acf1220ad6e568c3a050f6d3198eb1b417",
+          "gnu_size_fields": [
+            "1242774",
+            "29400",
+            "9344",
+            "1281518",
+            "138dee",
+            "/downloads/87remote/ifinline-harbour"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        }
+      }
+    },
+    {
+      "file": "tests/longstr.prg",
+      "sha256": "ccc83f05e2f8f0aa89dc2f90807586c9cbf584066a41177dd7457d9f914bbdb1",
+      "targets": {
+        "default": {
+          "file_bytes": 21920,
+          "executable_sha256": "d6287c14ebbb35f21f034b8de321de592efc5c8b862b982adb35f9b7d64b42bd",
+          "gnu_size_fields": [
+            "10764",
+            "88",
+            "0",
+            "10852",
+            "2a64",
+            "/downloads/87remote/longstr-default"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "llvm": {
+          "file_bytes": 24760,
+          "executable_sha256": "be4a4f842d4f19625377fc477e545655aa3622fecbe4f267af71fb0832a95f68",
+          "gnu_size_fields": [
+            "10069",
+            "88",
+            "0",
+            "10157",
+            "27ad",
+            "/downloads/87remote/longstr-llvm"
+          ],
+          "function_bytes": [
+            {
+              "name": "ll_main",
+              "bytes": 145
+            }
+          ],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "harbour": {
+          "file_bytes": 1435616,
+          "executable_sha256": "848f5e0ea37dcb08a59866a7f2b6647862893a074de7b0d2cea099c1be9ed41b",
+          "gnu_size_fields": [
+            "1243142",
+            "29432",
+            "9344",
+            "1281918",
+            "138f7e",
+            "/downloads/87remote/longstr-harbour"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        }
+      }
+    },
+    {
+      "file": "tests/procline.prg",
+      "sha256": "8bdaa18da5476c96b1c76688c013673ccb82049470606fba3367e93c125b5121",
+      "targets": {
+        "default": {
+          "file_bytes": 21552,
+          "executable_sha256": "f62f41afbd4c8b1360f002d0daa2fa3179d29a5a262e43530c2ddf1ff2742530",
+          "gnu_size_fields": [
+            "9793",
+            "88",
+            "0",
+            "9881",
+            "2699",
+            "/downloads/87remote/procline-default"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "llvm": {
+          "file_bytes": 24760,
+          "executable_sha256": "79f6102ea27c7c3a8a035986ab04d2ef898c0becfff5f51e9737689b49b0bb36",
+          "gnu_size_fields": [
+            "9919",
+            "88",
+            "0",
+            "10007",
+            "2717",
+            "/downloads/87remote/procline-llvm"
+          ],
+          "function_bytes": [
+            {
+              "name": "ll_main",
+              "bytes": 343
+            }
+          ],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "harbour": {
+          "file_bytes": 1431520,
+          "executable_sha256": "a758ec3ab2bc5d9dc695140b99cac529e0d2d4e698ace354bc66de46e29096e0",
+          "gnu_size_fields": [
+            "1242726",
+            "29432",
+            "9344",
+            "1281502",
+            "138dde",
+            "/downloads/87remote/procline-harbour"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        }
+      }
+    },
+    {
+      "file": "tests/recursiv.prg",
+      "sha256": "48239c4d3d37cc414d4a6fca7ee7ba3c302b7bc210247792a8e83db9de0f8e5f",
+      "targets": {
+        "default": {
+          "file_bytes": 21752,
+          "executable_sha256": "6d81b962bca75b8aacc93e479879939c4e9f521c6c422aa3fd39da65b4ceeab7",
+          "gnu_size_fields": [
+            "9937",
+            "88",
+            "0",
+            "10025",
+            "2729",
+            "/downloads/87remote/recursiv-default"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "llvm": {
+          "file_bytes": 24792,
+          "executable_sha256": "49d3700070599b522885e39360ebbe9522eb2edb1ffcaca5e469900ab280f25d",
+          "gnu_size_fields": [
+            "10123",
+            "88",
+            "0",
+            "10211",
+            "27e3",
+            "/downloads/87remote/recursiv-llvm"
+          ],
+          "function_bytes": [
+            {
+              "name": "ll_f",
+              "bytes": 113
+            },
+            {
+              "name": "ll_main",
+              "bytes": 223
+            }
+          ],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "harbour": {
+          "file_bytes": 1435672,
+          "executable_sha256": "2e4d71747d80038e7376d2783e43cdd3cac214b0f3a0336b673bf03b19a01de5",
+          "gnu_size_fields": [
+            "1242782",
+            "29432",
+            "9344",
+            "1281558",
+            "138e16",
+            "/downloads/87remote/recursiv-harbour"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        }
+      }
+    },
+    {
+      "file": "tests/returns.prg",
+      "sha256": "52d62274849940932670b12d7929f63e88e87432437a5b5a2f7f181eb6319758",
+      "targets": {
+        "default": {
+          "file_bytes": 22320,
+          "executable_sha256": "50ac555629dbdbc29b2d6c8f2a6d0ffcfdbd6f21bf73a7bae67da308c5b7326d",
+          "gnu_size_fields": [
+            "10936",
+            "88",
+            "0",
+            "11024",
+            "2b10",
+            "/downloads/87remote/returns-default"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "llvm": {
+          "file_bytes": 24792,
+          "executable_sha256": "03014dcd092e63f22c852cb239053fe409d3503a73ce58809c1602897c3cbe33",
+          "gnu_size_fields": [
+            "11125",
+            "88",
+            "0",
+            "11213",
+            "2bcd",
+            "/downloads/87remote/returns-llvm"
+          ],
+          "function_bytes": [
+            {
+              "name": "ll_main",
+              "bytes": 498
+            },
+            {
+              "name": "ll_two",
+              "bytes": 254
+            }
+          ],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "harbour": {
+          "file_bytes": 1435672,
+          "executable_sha256": "aa876efd89efec5fba15efa3f76fcc8e900ea457a7ffae40aa0d09c5521bf348",
+          "gnu_size_fields": [
+            "1242910",
+            "29432",
+            "9344",
+            "1281686",
+            "138e96",
+            "/downloads/87remote/returns-harbour"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        }
+      }
+    },
+    {
+      "file": "tests/statfun.prg",
+      "sha256": "febada350286c04c874b1b3777aa3d1a4523645cdd06d71f5ec207c7a9129d71",
+      "targets": {
+        "default": {
+          "file_bytes": 21792,
+          "executable_sha256": "6cc3bbe65e24e389c15a9fe6c6e4fc2a92c8ea3e94c30c4928155448e7bdc763",
+          "gnu_size_fields": [
+            "9942",
+            "88",
+            "0",
+            "10030",
+            "272e",
+            "/downloads/87remote/statfun-default"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "llvm": {
+          "file_bytes": 24800,
+          "executable_sha256": "48405df3194ac3b67f0eba2f5b5bb3ee2dfb0a11aa630f93132a84a59ebacdbb",
+          "gnu_size_fields": [
+            "10200",
+            "88",
+            "0",
+            "10288",
+            "2830",
+            "/downloads/87remote/statfun-llvm"
+          ],
+          "function_bytes": [
+            {
+              "name": "ll_main",
+              "bytes": 287
+            },
+            {
+              "name": "ll_secondone",
+              "bytes": 115
+            }
+          ],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "harbour": {
+          "file_bytes": 1435680,
+          "executable_sha256": "bd938ebeb4bf94db91ea9fdf1811fa8ff7a33285314ad76a18e5dc1e72cbd720",
+          "gnu_size_fields": [
+            "1242782",
+            "29432",
+            "9344",
+            "1281558",
+            "138e16",
+            "/downloads/87remote/statfun-harbour"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        }
+      }
+    },
+    {
+      "file": "tests/while.prg",
+      "sha256": "81542a0a84c8ce27b7205a6c475ed811847b0dd913eac4a19e0f3dc62c40bf57",
+      "targets": {
+        "default": {
+          "file_bytes": 21544,
+          "executable_sha256": "4bd242719a4c4da4ba5840f56b1e891671d2e1a12c6711bcfeb9127955f9817f",
+          "gnu_size_fields": [
+            "9503",
+            "88",
+            "0",
+            "9591",
+            "2577",
+            "/downloads/87remote/while-default"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "llvm": {
+          "file_bytes": 24752,
+          "executable_sha256": "1415b9cace203b15d0beddc80896ee8ce4e12b91294cfb61b6bb6ebe6bfb501f",
+          "gnu_size_fields": [
+            "9741",
+            "88",
+            "0",
+            "9829",
+            "2665",
+            "/downloads/87remote/while-llvm"
+          ],
+          "function_bytes": [
+            {
+              "name": "ll_main",
+              "bytes": 211
+            }
+          ],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        },
+        "harbour": {
+          "file_bytes": 1431488,
+          "executable_sha256": "97f09a4c753e83549cd7eb613578e648f374979c9e6ecb07d247473cf520d4b2",
+          "gnu_size_fields": [
+            "1242614",
+            "29400",
+            "9344",
+            "1281358",
+            "138d4e",
+            "/downloads/87remote/while-harbour"
+          ],
+          "function_bytes": [],
+          "function_bytes_note": "Only LLVM ELF sized symbols measured; not guessed for default/Harbour"
+        }
+      }
+    }
+  ]
+}

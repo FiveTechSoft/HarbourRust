@@ -107,3 +107,16 @@ names refer to existing data-shape tests, not file-scope STATIC storage.
 Run `python3 tools/check_syntax_family_seed.py --compiler /path/to/hbc` to
 recheck source hashes, diagnostics and acceptance. This check does not run
 any test program. Original source coverage remains in the175/268 audits.
+
+## Bytes for reviewed originals
+
+`console14-89f3ead-sizes.json` measures the actual14 Linux programs from the
+exact-output reference run: executable bytes/hash, GNU size fields, and LLVM
+sized function symbols. Default assembler and Harbour artifacts do not expose
+comparable precise function-boundary sizes here; those values are NOT guessed.
+`tools/size_reviewed_originals.py` regenerates the report from a successful
+execution directory. These are not runtime-equivalent whole-binary codegen
+comparisons (Harbour bundles a runtime, HR is freestanding); source-path/layout
+changes can alter artifacts. There is no Rust translation or timing claim for
+these14 originals. Rust comparison remains the separate reviewed kernels and
+bounded-process cases until equivalent programs are defined and validated.
