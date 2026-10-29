@@ -1,0 +1,2173 @@
+
+experiments/llvm-scalar/run/bench-traced-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000213970 <_RNvCs3tHvo97hyfj_17bench_traced_rust12rust_sumloop>:
+  213970:	48 8b 0d 31 8d 04 00 	mov    rcx,QWORD PTR [rip+0x48d31]        # 25c6a8 <hbc_trace_top>
+  213977:	48 8d 44 24 e8       	lea    rax,[rsp-0x18]
+  21397c:	48 89 05 25 8d 04 00 	mov    QWORD PTR [rip+0x48d25],rax        # 25c6a8 <hbc_trace_top>
+  213983:	48 c7 44 24 f0 ed 16 	mov    QWORD PTR [rsp-0x10],0x2016ed
+  21398a:	20 00 
+  21398c:	48 c7 44 24 f8 1b 00 	mov    QWORD PTR [rsp-0x8],0x1b
+  213993:	00 00 
+  213995:	48 c7 44 24 f0 ed 16 	mov    QWORD PTR [rsp-0x10],0x2016ed
+  21399c:	20 00 
+  21399e:	48 c7 44 24 f8 1b 00 	mov    QWORD PTR [rsp-0x8],0x1b
+  2139a5:	00 00 
+  2139a7:	48 c7 44 24 f0 08 17 	mov    QWORD PTR [rsp-0x10],0x201708
+  2139ae:	20 00 
+  2139b0:	48 c7 44 24 f8 1b 00 	mov    QWORD PTR [rsp-0x8],0x1b
+  2139b7:	00 00 
+  2139b9:	48 c7 44 24 f0 23 17 	mov    QWORD PTR [rsp-0x10],0x201723
+  2139c0:	20 00 
+  2139c2:	48 c7 44 24 f8 1b 00 	mov    QWORD PTR [rsp-0x8],0x1b
+  2139c9:	00 00 
+  2139cb:	48 85 ff             	test   rdi,rdi
+  2139ce:	7e 50                	jle    213a20 <_RNvCs3tHvo97hyfj_17bench_traced_rust12rust_sumloop+0xb0>
+  2139d0:	48 c7 44 24 f0 3e 17 	mov    QWORD PTR [rsp-0x10],0x20173e
+  2139d7:	20 00 
+  2139d9:	48 c7 44 24 f8 1b 00 	mov    QWORD PTR [rsp-0x8],0x1b
+  2139e0:	00 00 
+  2139e2:	b8 02 00 00 00       	mov    eax,0x2
+  2139e7:	ba 05 00 00 00       	mov    edx,0x5
+  2139ec:	0f 1f 40 00          	nop    DWORD PTR [rax+0x0]
+  2139f0:	48 39 f8             	cmp    rax,rdi
+  2139f3:	7f 32                	jg     213a27 <_RNvCs3tHvo97hyfj_17bench_traced_rust12rust_sumloop+0xb7>
+  2139f5:	48 c7 44 24 f0 3e 17 	mov    QWORD PTR [rsp-0x10],0x20173e
+  2139fc:	20 00 
+  2139fe:	48 c7 44 24 f8 1b 00 	mov    QWORD PTR [rsp-0x8],0x1b
+  213a05:	00 00 
+  213a07:	48 83 c2 05          	add    rdx,0x5
+  213a0b:	48 ff c0             	inc    rax
+  213a0e:	71 e0                	jno    2139f0 <_RNvCs3tHvo97hyfj_17bench_traced_rust12rust_sumloop+0x80>
+  213a10:	48 ba fb ff ff ff ff 	movabs rdx,0x7ffffffffffffffb
+  213a17:	ff ff 7f 
+  213a1a:	48 8d 42 04          	lea    rax,[rdx+0x4]
+  213a1e:	eb 07                	jmp    213a27 <_RNvCs3tHvo97hyfj_17bench_traced_rust12rust_sumloop+0xb7>
+  213a20:	b8 01 00 00 00       	mov    eax,0x1
+  213a25:	31 d2                	xor    edx,edx
+  213a27:	48 01 d0             	add    rax,rdx
+  213a2a:	48 c7 44 24 f0 59 17 	mov    QWORD PTR [rsp-0x10],0x201759
+  213a31:	20 00 
+  213a33:	48 c7 44 24 f8 1b 00 	mov    QWORD PTR [rsp-0x8],0x1b
+  213a3a:	00 00 
+  213a3c:	48 89 0d 65 8c 04 00 	mov    QWORD PTR [rip+0x48c65],rcx        # 25c6a8 <hbc_trace_top>
+  213a43:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+experiments/llvm-scalar/run/bench-traced-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000213a50 <_RNvCs3tHvo97hyfj_17bench_traced_rust14rust_arraywalk>:
+  213a50:	48 83 ec 18          	sub    rsp,0x18
+  213a54:	48 8b 0d 4d 8c 04 00 	mov    rcx,QWORD PTR [rip+0x48c4d]        # 25c6a8 <hbc_trace_top>
+  213a5b:	48 8d 44 24 80       	lea    rax,[rsp-0x80]
+  213a60:	48 89 05 41 8c 04 00 	mov    QWORD PTR [rip+0x48c41],rax        # 25c6a8 <hbc_trace_top>
+  213a67:	48 c7 44 24 88 f4 17 	mov    QWORD PTR [rsp-0x78],0x2017f4
+  213a6e:	20 00 
+  213a70:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  213a77:	00 00 
+  213a79:	48 c7 44 24 88 f4 17 	mov    QWORD PTR [rsp-0x78],0x2017f4
+  213a80:	20 00 
+  213a82:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  213a89:	00 00 
+  213a8b:	48 c7 44 24 98 01 00 	mov    QWORD PTR [rsp-0x68],0x1
+  213a92:	00 00 
+  213a94:	48 c7 44 24 a0 02 00 	mov    QWORD PTR [rsp-0x60],0x2
+  213a9b:	00 00 
+  213a9d:	48 c7 44 24 a8 03 00 	mov    QWORD PTR [rsp-0x58],0x3
+  213aa4:	00 00 
+  213aa6:	48 c7 44 24 b0 04 00 	mov    QWORD PTR [rsp-0x50],0x4
+  213aad:	00 00 
+  213aaf:	48 c7 44 24 b8 05 00 	mov    QWORD PTR [rsp-0x48],0x5
+  213ab6:	00 00 
+  213ab8:	48 c7 44 24 c0 06 00 	mov    QWORD PTR [rsp-0x40],0x6
+  213abf:	00 00 
+  213ac1:	48 c7 44 24 c8 07 00 	mov    QWORD PTR [rsp-0x38],0x7
+  213ac8:	00 00 
+  213aca:	48 c7 44 24 d0 08 00 	mov    QWORD PTR [rsp-0x30],0x8
+  213ad1:	00 00 
+  213ad3:	48 c7 44 24 d8 09 00 	mov    QWORD PTR [rsp-0x28],0x9
+  213ada:	00 00 
+  213adc:	48 c7 44 24 e0 0a 00 	mov    QWORD PTR [rsp-0x20],0xa
+  213ae3:	00 00 
+  213ae5:	48 c7 44 24 e8 0b 00 	mov    QWORD PTR [rsp-0x18],0xb
+  213aec:	00 00 
+  213aee:	48 c7 44 24 f0 0c 00 	mov    QWORD PTR [rsp-0x10],0xc
+  213af5:	00 00 
+  213af7:	48 c7 44 24 f8 0d 00 	mov    QWORD PTR [rsp-0x8],0xd
+  213afe:	00 00 
+  213b00:	48 c7 04 24 0e 00 00 	mov    QWORD PTR [rsp],0xe
+  213b07:	00 
+  213b08:	48 c7 44 24 08 0f 00 	mov    QWORD PTR [rsp+0x8],0xf
+  213b0f:	00 00 
+  213b11:	48 c7 44 24 10 10 00 	mov    QWORD PTR [rsp+0x10],0x10
+  213b18:	00 00 
+  213b1a:	48 c7 44 24 88 94 17 	mov    QWORD PTR [rsp-0x78],0x201794
+  213b21:	20 00 
+  213b23:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  213b2a:	00 00 
+  213b2c:	48 c7 44 24 88 d4 17 	mov    QWORD PTR [rsp-0x78],0x2017d4
+  213b33:	20 00 
+  213b35:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  213b3c:	00 00 
+  213b3e:	48 c7 44 24 88 34 18 	mov    QWORD PTR [rsp-0x78],0x201834
+  213b45:	20 00 
+  213b47:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  213b4e:	00 00 
+  213b50:	48 c7 44 24 88 94 18 	mov    QWORD PTR [rsp-0x78],0x201894
+  213b57:	20 00 
+  213b59:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  213b60:	00 00 
+  213b62:	48 85 ff             	test   rdi,rdi
+  213b65:	0f 8e db 00 00 00    	jle    213c46 <_RNvCs3tHvo97hyfj_17bench_traced_rust14rust_arraywalk+0x1f6>
+  213b6b:	b8 01 00 00 00       	mov    eax,0x1
+  213b70:	ba 01 00 00 00       	mov    edx,0x1
+  213b75:	48 c7 44 24 88 b4 17 	mov    QWORD PTR [rsp-0x78],0x2017b4
+  213b7c:	20 00 
+  213b7e:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  213b85:	00 00 
+  213b87:	48 01 44 d4 90       	add    QWORD PTR [rsp+rdx*8-0x70],rax
+  213b8c:	48 c7 44 24 88 74 17 	mov    QWORD PTR [rsp-0x78],0x201774
+  213b93:	20 00 
+  213b95:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  213b9c:	00 00 
+  213b9e:	48 c7 44 24 88 54 18 	mov    QWORD PTR [rsp-0x78],0x201854
+  213ba5:	20 00 
+  213ba7:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  213bae:	00 00 
+  213bb0:	48 83 fa 10          	cmp    rdx,0x10
+  213bb4:	73 0a                	jae    213bc0 <_RNvCs3tHvo97hyfj_17bench_traced_rust14rust_arraywalk+0x170>
+  213bb6:	48 ff c2             	inc    rdx
+  213bb9:	eb 1c                	jmp    213bd7 <_RNvCs3tHvo97hyfj_17bench_traced_rust14rust_arraywalk+0x187>
+  213bbb:	0f 1f 44 00 00       	nop    DWORD PTR [rax+rax*1+0x0]
+  213bc0:	48 c7 44 24 88 e7 2f 	mov    QWORD PTR [rsp-0x78],0x202fe7
+  213bc7:	20 00 
+  213bc9:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213bd0:	00 00 
+  213bd2:	ba 01 00 00 00       	mov    edx,0x1
+  213bd7:	48 ff c0             	inc    rax
+  213bda:	40 0f 90 c6          	seto   sil
+  213bde:	48 39 f8             	cmp    rax,rdi
+  213be1:	41 0f 9f c0          	setg   r8b
+  213be5:	41 08 f0             	or     r8b,sil
+  213be8:	74 8b                	je     213b75 <_RNvCs3tHvo97hyfj_17bench_traced_rust14rust_arraywalk+0x125>
+  213bea:	f3 0f 6f 44 24 e8    	movdqu xmm0,XMMWORD PTR [rsp-0x18]
+  213bf0:	f3 0f 6f 4c 24 08    	movdqu xmm1,XMMWORD PTR [rsp+0x8]
+  213bf6:	f3 0f 6f 54 24 d8    	movdqu xmm2,XMMWORD PTR [rsp-0x28]
+  213bfc:	f3 0f 6f 5c 24 f8    	movdqu xmm3,XMMWORD PTR [rsp-0x8]
+  213c02:	f3 0f 6f 64 24 98    	movdqu xmm4,XMMWORD PTR [rsp-0x68]
+  213c08:	66 0f d4 e2          	paddq  xmm4,xmm2
+  213c0c:	f3 0f 6f 54 24 a8    	movdqu xmm2,XMMWORD PTR [rsp-0x58]
+  213c12:	66 0f d4 d0          	paddq  xmm2,xmm0
+  213c16:	f3 0f 6f 44 24 b8    	movdqu xmm0,XMMWORD PTR [rsp-0x48]
+  213c1c:	66 0f d4 c3          	paddq  xmm0,xmm3
+  213c20:	66 0f d4 c4          	paddq  xmm0,xmm4
+  213c24:	f3 0f 6f 5c 24 c8    	movdqu xmm3,XMMWORD PTR [rsp-0x38]
+  213c2a:	66 0f d4 d9          	paddq  xmm3,xmm1
+  213c2e:	66 0f d4 da          	paddq  xmm3,xmm2
+  213c32:	66 0f d4 d8          	paddq  xmm3,xmm0
+  213c36:	66 0f 70 c3 ee       	pshufd xmm0,xmm3,0xee
+  213c3b:	66 0f d4 c3          	paddq  xmm0,xmm3
+  213c3f:	66 48 0f 7e c0       	movq   rax,xmm0
+  213c44:	eb 05                	jmp    213c4b <_RNvCs3tHvo97hyfj_17bench_traced_rust14rust_arraywalk+0x1fb>
+  213c46:	b8 88 00 00 00       	mov    eax,0x88
+  213c4b:	48 c7 44 24 88 08 30 	mov    QWORD PTR [rsp-0x78],0x203008
+  213c52:	20 00 
+  213c54:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213c5b:	00 00 
+  213c5d:	48 c7 44 24 88 29 30 	mov    QWORD PTR [rsp-0x78],0x203029
+  213c64:	20 00 
+  213c66:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213c6d:	00 00 
+  213c6f:	48 c7 44 24 88 29 30 	mov    QWORD PTR [rsp-0x78],0x203029
+  213c76:	20 00 
+  213c78:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213c7f:	00 00 
+  213c81:	48 c7 44 24 88 29 30 	mov    QWORD PTR [rsp-0x78],0x203029
+  213c88:	20 00 
+  213c8a:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213c91:	00 00 
+  213c93:	48 c7 44 24 88 29 30 	mov    QWORD PTR [rsp-0x78],0x203029
+  213c9a:	20 00 
+  213c9c:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213ca3:	00 00 
+  213ca5:	48 c7 44 24 88 29 30 	mov    QWORD PTR [rsp-0x78],0x203029
+  213cac:	20 00 
+  213cae:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213cb5:	00 00 
+  213cb7:	48 c7 44 24 88 29 30 	mov    QWORD PTR [rsp-0x78],0x203029
+  213cbe:	20 00 
+  213cc0:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213cc7:	00 00 
+  213cc9:	48 c7 44 24 88 29 30 	mov    QWORD PTR [rsp-0x78],0x203029
+  213cd0:	20 00 
+  213cd2:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213cd9:	00 00 
+  213cdb:	48 c7 44 24 88 29 30 	mov    QWORD PTR [rsp-0x78],0x203029
+  213ce2:	20 00 
+  213ce4:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213ceb:	00 00 
+  213ced:	48 c7 44 24 88 29 30 	mov    QWORD PTR [rsp-0x78],0x203029
+  213cf4:	20 00 
+  213cf6:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213cfd:	00 00 
+  213cff:	48 c7 44 24 88 29 30 	mov    QWORD PTR [rsp-0x78],0x203029
+  213d06:	20 00 
+  213d08:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213d0f:	00 00 
+  213d11:	48 c7 44 24 88 29 30 	mov    QWORD PTR [rsp-0x78],0x203029
+  213d18:	20 00 
+  213d1a:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213d21:	00 00 
+  213d23:	48 c7 44 24 88 29 30 	mov    QWORD PTR [rsp-0x78],0x203029
+  213d2a:	20 00 
+  213d2c:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213d33:	00 00 
+  213d35:	48 c7 44 24 88 29 30 	mov    QWORD PTR [rsp-0x78],0x203029
+  213d3c:	20 00 
+  213d3e:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213d45:	00 00 
+  213d47:	48 c7 44 24 88 29 30 	mov    QWORD PTR [rsp-0x78],0x203029
+  213d4e:	20 00 
+  213d50:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213d57:	00 00 
+  213d59:	48 c7 44 24 88 29 30 	mov    QWORD PTR [rsp-0x78],0x203029
+  213d60:	20 00 
+  213d62:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213d69:	00 00 
+  213d6b:	48 c7 44 24 88 29 30 	mov    QWORD PTR [rsp-0x78],0x203029
+  213d72:	20 00 
+  213d74:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213d7b:	00 00 
+  213d7d:	48 c7 44 24 88 4a 30 	mov    QWORD PTR [rsp-0x78],0x20304a
+  213d84:	20 00 
+  213d86:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  213d8d:	00 00 
+  213d8f:	48 89 0d 12 89 04 00 	mov    QWORD PTR [rip+0x48912],rcx        # 25c6a8 <hbc_trace_top>
+  213d96:	48 83 c4 18          	add    rsp,0x18
+  213d9a:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+experiments/llvm-scalar/run/bench-traced-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000213da0 <_RNvCs3tHvo97hyfj_17bench_traced_rust15rust_arraywalk2>:
+  213da0:	48 81 ec 98 07 00 00 	sub    rsp,0x798
+  213da7:	48 8b 05 fa 88 04 00 	mov    rax,QWORD PTR [rip+0x488fa]        # 25c6a8 <hbc_trace_top>
+  213dae:	48 89 44 24 80       	mov    QWORD PTR [rsp-0x80],rax
+  213db3:	48 8d 44 24 80       	lea    rax,[rsp-0x80]
+  213db8:	48 89 05 e9 88 04 00 	mov    QWORD PTR [rip+0x488e9],rax        # 25c6a8 <hbc_trace_top>
+  213dbf:	48 c7 44 24 88 6b 30 	mov    QWORD PTR [rsp-0x78],0x20306b
+  213dc6:	20 00 
+  213dc8:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  213dcf:	00 00 
+  213dd1:	48 c7 44 24 88 6b 30 	mov    QWORD PTR [rsp-0x78],0x20306b
+  213dd8:	20 00 
+  213dda:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  213de1:	00 00 
+  213de3:	48 c7 44 24 98 01 00 	mov    QWORD PTR [rsp-0x68],0x1
+  213dea:	00 00 
+  213dec:	48 c7 44 24 a0 02 00 	mov    QWORD PTR [rsp-0x60],0x2
+  213df3:	00 00 
+  213df5:	48 c7 44 24 a8 03 00 	mov    QWORD PTR [rsp-0x58],0x3
+  213dfc:	00 00 
+  213dfe:	48 c7 44 24 b0 04 00 	mov    QWORD PTR [rsp-0x50],0x4
+  213e05:	00 00 
+  213e07:	48 c7 44 24 b8 05 00 	mov    QWORD PTR [rsp-0x48],0x5
+  213e0e:	00 00 
+  213e10:	48 c7 44 24 c0 06 00 	mov    QWORD PTR [rsp-0x40],0x6
+  213e17:	00 00 
+  213e19:	48 c7 44 24 c8 07 00 	mov    QWORD PTR [rsp-0x38],0x7
+  213e20:	00 00 
+  213e22:	48 c7 44 24 d0 08 00 	mov    QWORD PTR [rsp-0x30],0x8
+  213e29:	00 00 
+  213e2b:	48 c7 44 24 d8 09 00 	mov    QWORD PTR [rsp-0x28],0x9
+  213e32:	00 00 
+  213e34:	48 c7 44 24 e0 0a 00 	mov    QWORD PTR [rsp-0x20],0xa
+  213e3b:	00 00 
+  213e3d:	48 c7 44 24 e8 0b 00 	mov    QWORD PTR [rsp-0x18],0xb
+  213e44:	00 00 
+  213e46:	48 c7 44 24 f0 0c 00 	mov    QWORD PTR [rsp-0x10],0xc
+  213e4d:	00 00 
+  213e4f:	48 c7 44 24 f8 0d 00 	mov    QWORD PTR [rsp-0x8],0xd
+  213e56:	00 00 
+  213e58:	48 c7 04 24 0e 00 00 	mov    QWORD PTR [rsp],0xe
+  213e5f:	00 
+  213e60:	48 c7 44 24 08 0f 00 	mov    QWORD PTR [rsp+0x8],0xf
+  213e67:	00 00 
+  213e69:	48 c7 44 24 10 10 00 	mov    QWORD PTR [rsp+0x10],0x10
+  213e70:	00 00 
+  213e72:	48 c7 44 24 18 11 00 	mov    QWORD PTR [rsp+0x18],0x11
+  213e79:	00 00 
+  213e7b:	48 c7 44 24 20 12 00 	mov    QWORD PTR [rsp+0x20],0x12
+  213e82:	00 00 
+  213e84:	48 c7 44 24 28 13 00 	mov    QWORD PTR [rsp+0x28],0x13
+  213e8b:	00 00 
+  213e8d:	48 c7 44 24 30 14 00 	mov    QWORD PTR [rsp+0x30],0x14
+  213e94:	00 00 
+  213e96:	48 c7 44 24 38 15 00 	mov    QWORD PTR [rsp+0x38],0x15
+  213e9d:	00 00 
+  213e9f:	48 c7 44 24 40 16 00 	mov    QWORD PTR [rsp+0x40],0x16
+  213ea6:	00 00 
+  213ea8:	48 c7 44 24 48 17 00 	mov    QWORD PTR [rsp+0x48],0x17
+  213eaf:	00 00 
+  213eb1:	48 c7 44 24 50 18 00 	mov    QWORD PTR [rsp+0x50],0x18
+  213eb8:	00 00 
+  213eba:	48 c7 44 24 58 19 00 	mov    QWORD PTR [rsp+0x58],0x19
+  213ec1:	00 00 
+  213ec3:	48 c7 44 24 60 1a 00 	mov    QWORD PTR [rsp+0x60],0x1a
+  213eca:	00 00 
+  213ecc:	48 c7 44 24 68 1b 00 	mov    QWORD PTR [rsp+0x68],0x1b
+  213ed3:	00 00 
+  213ed5:	48 c7 44 24 70 1c 00 	mov    QWORD PTR [rsp+0x70],0x1c
+  213edc:	00 00 
+  213ede:	48 c7 44 24 78 1d 00 	mov    QWORD PTR [rsp+0x78],0x1d
+  213ee5:	00 00 
+  213ee7:	48 c7 84 24 80 00 00 	mov    QWORD PTR [rsp+0x80],0x1e
+  213eee:	00 1e 00 00 00 
+  213ef3:	48 c7 84 24 88 00 00 	mov    QWORD PTR [rsp+0x88],0x1f
+  213efa:	00 1f 00 00 00 
+  213eff:	48 c7 84 24 90 00 00 	mov    QWORD PTR [rsp+0x90],0x20
+  213f06:	00 20 00 00 00 
+  213f0b:	48 c7 84 24 98 00 00 	mov    QWORD PTR [rsp+0x98],0x21
+  213f12:	00 21 00 00 00 
+  213f17:	48 c7 84 24 a0 00 00 	mov    QWORD PTR [rsp+0xa0],0x22
+  213f1e:	00 22 00 00 00 
+  213f23:	48 c7 84 24 a8 00 00 	mov    QWORD PTR [rsp+0xa8],0x23
+  213f2a:	00 23 00 00 00 
+  213f2f:	48 c7 84 24 b0 00 00 	mov    QWORD PTR [rsp+0xb0],0x24
+  213f36:	00 24 00 00 00 
+  213f3b:	48 c7 84 24 b8 00 00 	mov    QWORD PTR [rsp+0xb8],0x25
+  213f42:	00 25 00 00 00 
+  213f47:	48 c7 84 24 c0 00 00 	mov    QWORD PTR [rsp+0xc0],0x26
+  213f4e:	00 26 00 00 00 
+  213f53:	48 c7 84 24 c8 00 00 	mov    QWORD PTR [rsp+0xc8],0x27
+  213f5a:	00 27 00 00 00 
+  213f5f:	48 c7 84 24 d0 00 00 	mov    QWORD PTR [rsp+0xd0],0x28
+  213f66:	00 28 00 00 00 
+  213f6b:	48 c7 84 24 d8 00 00 	mov    QWORD PTR [rsp+0xd8],0x29
+  213f72:	00 29 00 00 00 
+  213f77:	48 c7 84 24 e0 00 00 	mov    QWORD PTR [rsp+0xe0],0x2a
+  213f7e:	00 2a 00 00 00 
+  213f83:	48 c7 84 24 e8 00 00 	mov    QWORD PTR [rsp+0xe8],0x2b
+  213f8a:	00 2b 00 00 00 
+  213f8f:	48 c7 84 24 f0 00 00 	mov    QWORD PTR [rsp+0xf0],0x2c
+  213f96:	00 2c 00 00 00 
+  213f9b:	48 c7 84 24 f8 00 00 	mov    QWORD PTR [rsp+0xf8],0x2d
+  213fa2:	00 2d 00 00 00 
+  213fa7:	48 c7 84 24 00 01 00 	mov    QWORD PTR [rsp+0x100],0x2e
+  213fae:	00 2e 00 00 00 
+  213fb3:	48 c7 84 24 08 01 00 	mov    QWORD PTR [rsp+0x108],0x2f
+  213fba:	00 2f 00 00 00 
+  213fbf:	48 c7 84 24 10 01 00 	mov    QWORD PTR [rsp+0x110],0x30
+  213fc6:	00 30 00 00 00 
+  213fcb:	48 c7 84 24 18 01 00 	mov    QWORD PTR [rsp+0x118],0x31
+  213fd2:	00 31 00 00 00 
+  213fd7:	48 c7 84 24 20 01 00 	mov    QWORD PTR [rsp+0x120],0x32
+  213fde:	00 32 00 00 00 
+  213fe3:	48 c7 84 24 28 01 00 	mov    QWORD PTR [rsp+0x128],0x33
+  213fea:	00 33 00 00 00 
+  213fef:	48 c7 84 24 30 01 00 	mov    QWORD PTR [rsp+0x130],0x34
+  213ff6:	00 34 00 00 00 
+  213ffb:	48 c7 84 24 38 01 00 	mov    QWORD PTR [rsp+0x138],0x35
+  214002:	00 35 00 00 00 
+  214007:	48 c7 84 24 40 01 00 	mov    QWORD PTR [rsp+0x140],0x36
+  21400e:	00 36 00 00 00 
+  214013:	48 c7 84 24 48 01 00 	mov    QWORD PTR [rsp+0x148],0x37
+  21401a:	00 37 00 00 00 
+  21401f:	48 c7 84 24 50 01 00 	mov    QWORD PTR [rsp+0x150],0x38
+  214026:	00 38 00 00 00 
+  21402b:	48 c7 84 24 58 01 00 	mov    QWORD PTR [rsp+0x158],0x39
+  214032:	00 39 00 00 00 
+  214037:	48 c7 84 24 60 01 00 	mov    QWORD PTR [rsp+0x160],0x3a
+  21403e:	00 3a 00 00 00 
+  214043:	48 c7 84 24 68 01 00 	mov    QWORD PTR [rsp+0x168],0x3b
+  21404a:	00 3b 00 00 00 
+  21404f:	48 c7 84 24 70 01 00 	mov    QWORD PTR [rsp+0x170],0x3c
+  214056:	00 3c 00 00 00 
+  21405b:	48 c7 84 24 78 01 00 	mov    QWORD PTR [rsp+0x178],0x3d
+  214062:	00 3d 00 00 00 
+  214067:	48 c7 84 24 80 01 00 	mov    QWORD PTR [rsp+0x180],0x3e
+  21406e:	00 3e 00 00 00 
+  214073:	48 c7 84 24 88 01 00 	mov    QWORD PTR [rsp+0x188],0x3f
+  21407a:	00 3f 00 00 00 
+  21407f:	48 c7 84 24 90 01 00 	mov    QWORD PTR [rsp+0x190],0x40
+  214086:	00 40 00 00 00 
+  21408b:	48 c7 84 24 98 01 00 	mov    QWORD PTR [rsp+0x198],0x41
+  214092:	00 41 00 00 00 
+  214097:	48 c7 84 24 a0 01 00 	mov    QWORD PTR [rsp+0x1a0],0x42
+  21409e:	00 42 00 00 00 
+  2140a3:	48 c7 84 24 a8 01 00 	mov    QWORD PTR [rsp+0x1a8],0x43
+  2140aa:	00 43 00 00 00 
+  2140af:	48 c7 84 24 b0 01 00 	mov    QWORD PTR [rsp+0x1b0],0x44
+  2140b6:	00 44 00 00 00 
+  2140bb:	48 c7 84 24 b8 01 00 	mov    QWORD PTR [rsp+0x1b8],0x45
+  2140c2:	00 45 00 00 00 
+  2140c7:	48 c7 84 24 c0 01 00 	mov    QWORD PTR [rsp+0x1c0],0x46
+  2140ce:	00 46 00 00 00 
+  2140d3:	48 c7 84 24 c8 01 00 	mov    QWORD PTR [rsp+0x1c8],0x47
+  2140da:	00 47 00 00 00 
+  2140df:	48 c7 84 24 d0 01 00 	mov    QWORD PTR [rsp+0x1d0],0x48
+  2140e6:	00 48 00 00 00 
+  2140eb:	48 c7 84 24 d8 01 00 	mov    QWORD PTR [rsp+0x1d8],0x49
+  2140f2:	00 49 00 00 00 
+  2140f7:	48 c7 84 24 e0 01 00 	mov    QWORD PTR [rsp+0x1e0],0x4a
+  2140fe:	00 4a 00 00 00 
+  214103:	48 c7 84 24 e8 01 00 	mov    QWORD PTR [rsp+0x1e8],0x4b
+  21410a:	00 4b 00 00 00 
+  21410f:	48 c7 84 24 f0 01 00 	mov    QWORD PTR [rsp+0x1f0],0x4c
+  214116:	00 4c 00 00 00 
+  21411b:	48 c7 84 24 f8 01 00 	mov    QWORD PTR [rsp+0x1f8],0x4d
+  214122:	00 4d 00 00 00 
+  214127:	48 c7 84 24 00 02 00 	mov    QWORD PTR [rsp+0x200],0x4e
+  21412e:	00 4e 00 00 00 
+  214133:	48 c7 84 24 08 02 00 	mov    QWORD PTR [rsp+0x208],0x4f
+  21413a:	00 4f 00 00 00 
+  21413f:	48 c7 84 24 10 02 00 	mov    QWORD PTR [rsp+0x210],0x50
+  214146:	00 50 00 00 00 
+  21414b:	48 c7 84 24 18 02 00 	mov    QWORD PTR [rsp+0x218],0x51
+  214152:	00 51 00 00 00 
+  214157:	48 c7 84 24 20 02 00 	mov    QWORD PTR [rsp+0x220],0x52
+  21415e:	00 52 00 00 00 
+  214163:	48 c7 84 24 28 02 00 	mov    QWORD PTR [rsp+0x228],0x53
+  21416a:	00 53 00 00 00 
+  21416f:	48 c7 84 24 30 02 00 	mov    QWORD PTR [rsp+0x230],0x54
+  214176:	00 54 00 00 00 
+  21417b:	48 c7 84 24 38 02 00 	mov    QWORD PTR [rsp+0x238],0x55
+  214182:	00 55 00 00 00 
+  214187:	48 c7 84 24 40 02 00 	mov    QWORD PTR [rsp+0x240],0x56
+  21418e:	00 56 00 00 00 
+  214193:	48 c7 84 24 48 02 00 	mov    QWORD PTR [rsp+0x248],0x57
+  21419a:	00 57 00 00 00 
+  21419f:	48 c7 84 24 50 02 00 	mov    QWORD PTR [rsp+0x250],0x58
+  2141a6:	00 58 00 00 00 
+  2141ab:	48 c7 84 24 58 02 00 	mov    QWORD PTR [rsp+0x258],0x59
+  2141b2:	00 59 00 00 00 
+  2141b7:	48 c7 84 24 60 02 00 	mov    QWORD PTR [rsp+0x260],0x5a
+  2141be:	00 5a 00 00 00 
+  2141c3:	48 c7 84 24 68 02 00 	mov    QWORD PTR [rsp+0x268],0x5b
+  2141ca:	00 5b 00 00 00 
+  2141cf:	48 c7 84 24 70 02 00 	mov    QWORD PTR [rsp+0x270],0x5c
+  2141d6:	00 5c 00 00 00 
+  2141db:	48 c7 84 24 78 02 00 	mov    QWORD PTR [rsp+0x278],0x5d
+  2141e2:	00 5d 00 00 00 
+  2141e7:	48 c7 84 24 80 02 00 	mov    QWORD PTR [rsp+0x280],0x5e
+  2141ee:	00 5e 00 00 00 
+  2141f3:	48 c7 84 24 88 02 00 	mov    QWORD PTR [rsp+0x288],0x5f
+  2141fa:	00 5f 00 00 00 
+  2141ff:	48 c7 84 24 90 02 00 	mov    QWORD PTR [rsp+0x290],0x60
+  214206:	00 60 00 00 00 
+  21420b:	48 c7 84 24 98 02 00 	mov    QWORD PTR [rsp+0x298],0x61
+  214212:	00 61 00 00 00 
+  214217:	48 c7 84 24 a0 02 00 	mov    QWORD PTR [rsp+0x2a0],0x62
+  21421e:	00 62 00 00 00 
+  214223:	48 c7 84 24 a8 02 00 	mov    QWORD PTR [rsp+0x2a8],0x63
+  21422a:	00 63 00 00 00 
+  21422f:	48 c7 84 24 b0 02 00 	mov    QWORD PTR [rsp+0x2b0],0x64
+  214236:	00 64 00 00 00 
+  21423b:	48 c7 84 24 b8 02 00 	mov    QWORD PTR [rsp+0x2b8],0x65
+  214242:	00 65 00 00 00 
+  214247:	48 c7 84 24 c0 02 00 	mov    QWORD PTR [rsp+0x2c0],0x66
+  21424e:	00 66 00 00 00 
+  214253:	48 c7 84 24 c8 02 00 	mov    QWORD PTR [rsp+0x2c8],0x67
+  21425a:	00 67 00 00 00 
+  21425f:	48 c7 84 24 d0 02 00 	mov    QWORD PTR [rsp+0x2d0],0x68
+  214266:	00 68 00 00 00 
+  21426b:	48 c7 84 24 d8 02 00 	mov    QWORD PTR [rsp+0x2d8],0x69
+  214272:	00 69 00 00 00 
+  214277:	48 c7 84 24 e0 02 00 	mov    QWORD PTR [rsp+0x2e0],0x6a
+  21427e:	00 6a 00 00 00 
+  214283:	48 c7 84 24 e8 02 00 	mov    QWORD PTR [rsp+0x2e8],0x6b
+  21428a:	00 6b 00 00 00 
+  21428f:	48 c7 84 24 f0 02 00 	mov    QWORD PTR [rsp+0x2f0],0x6c
+  214296:	00 6c 00 00 00 
+  21429b:	48 c7 84 24 f8 02 00 	mov    QWORD PTR [rsp+0x2f8],0x6d
+  2142a2:	00 6d 00 00 00 
+  2142a7:	48 c7 84 24 00 03 00 	mov    QWORD PTR [rsp+0x300],0x6e
+  2142ae:	00 6e 00 00 00 
+  2142b3:	48 c7 84 24 08 03 00 	mov    QWORD PTR [rsp+0x308],0x6f
+  2142ba:	00 6f 00 00 00 
+  2142bf:	48 c7 84 24 10 03 00 	mov    QWORD PTR [rsp+0x310],0x70
+  2142c6:	00 70 00 00 00 
+  2142cb:	48 c7 84 24 18 03 00 	mov    QWORD PTR [rsp+0x318],0x71
+  2142d2:	00 71 00 00 00 
+  2142d7:	48 c7 84 24 20 03 00 	mov    QWORD PTR [rsp+0x320],0x72
+  2142de:	00 72 00 00 00 
+  2142e3:	48 c7 84 24 28 03 00 	mov    QWORD PTR [rsp+0x328],0x73
+  2142ea:	00 73 00 00 00 
+  2142ef:	48 c7 84 24 30 03 00 	mov    QWORD PTR [rsp+0x330],0x74
+  2142f6:	00 74 00 00 00 
+  2142fb:	48 c7 84 24 38 03 00 	mov    QWORD PTR [rsp+0x338],0x75
+  214302:	00 75 00 00 00 
+  214307:	48 c7 84 24 40 03 00 	mov    QWORD PTR [rsp+0x340],0x76
+  21430e:	00 76 00 00 00 
+  214313:	48 c7 84 24 48 03 00 	mov    QWORD PTR [rsp+0x348],0x77
+  21431a:	00 77 00 00 00 
+  21431f:	48 c7 84 24 50 03 00 	mov    QWORD PTR [rsp+0x350],0x78
+  214326:	00 78 00 00 00 
+  21432b:	48 c7 84 24 58 03 00 	mov    QWORD PTR [rsp+0x358],0x79
+  214332:	00 79 00 00 00 
+  214337:	48 c7 84 24 60 03 00 	mov    QWORD PTR [rsp+0x360],0x7a
+  21433e:	00 7a 00 00 00 
+  214343:	48 c7 84 24 68 03 00 	mov    QWORD PTR [rsp+0x368],0x7b
+  21434a:	00 7b 00 00 00 
+  21434f:	48 c7 84 24 70 03 00 	mov    QWORD PTR [rsp+0x370],0x7c
+  214356:	00 7c 00 00 00 
+  21435b:	48 c7 84 24 78 03 00 	mov    QWORD PTR [rsp+0x378],0x7d
+  214362:	00 7d 00 00 00 
+  214367:	48 c7 84 24 80 03 00 	mov    QWORD PTR [rsp+0x380],0x7e
+  21436e:	00 7e 00 00 00 
+  214373:	48 c7 84 24 88 03 00 	mov    QWORD PTR [rsp+0x388],0x7f
+  21437a:	00 7f 00 00 00 
+  21437f:	48 c7 84 24 90 03 00 	mov    QWORD PTR [rsp+0x390],0x80
+  214386:	00 80 00 00 00 
+  21438b:	48 c7 84 24 98 03 00 	mov    QWORD PTR [rsp+0x398],0x81
+  214392:	00 81 00 00 00 
+  214397:	48 c7 84 24 a0 03 00 	mov    QWORD PTR [rsp+0x3a0],0x82
+  21439e:	00 82 00 00 00 
+  2143a3:	48 c7 84 24 a8 03 00 	mov    QWORD PTR [rsp+0x3a8],0x83
+  2143aa:	00 83 00 00 00 
+  2143af:	48 c7 84 24 b0 03 00 	mov    QWORD PTR [rsp+0x3b0],0x84
+  2143b6:	00 84 00 00 00 
+  2143bb:	48 c7 84 24 b8 03 00 	mov    QWORD PTR [rsp+0x3b8],0x85
+  2143c2:	00 85 00 00 00 
+  2143c7:	48 c7 84 24 c0 03 00 	mov    QWORD PTR [rsp+0x3c0],0x86
+  2143ce:	00 86 00 00 00 
+  2143d3:	48 c7 84 24 c8 03 00 	mov    QWORD PTR [rsp+0x3c8],0x87
+  2143da:	00 87 00 00 00 
+  2143df:	48 c7 84 24 d0 03 00 	mov    QWORD PTR [rsp+0x3d0],0x88
+  2143e6:	00 88 00 00 00 
+  2143eb:	48 c7 84 24 d8 03 00 	mov    QWORD PTR [rsp+0x3d8],0x89
+  2143f2:	00 89 00 00 00 
+  2143f7:	48 c7 84 24 e0 03 00 	mov    QWORD PTR [rsp+0x3e0],0x8a
+  2143fe:	00 8a 00 00 00 
+  214403:	48 c7 84 24 e8 03 00 	mov    QWORD PTR [rsp+0x3e8],0x8b
+  21440a:	00 8b 00 00 00 
+  21440f:	48 c7 84 24 f0 03 00 	mov    QWORD PTR [rsp+0x3f0],0x8c
+  214416:	00 8c 00 00 00 
+  21441b:	48 c7 84 24 f8 03 00 	mov    QWORD PTR [rsp+0x3f8],0x8d
+  214422:	00 8d 00 00 00 
+  214427:	48 c7 84 24 00 04 00 	mov    QWORD PTR [rsp+0x400],0x8e
+  21442e:	00 8e 00 00 00 
+  214433:	48 c7 84 24 08 04 00 	mov    QWORD PTR [rsp+0x408],0x8f
+  21443a:	00 8f 00 00 00 
+  21443f:	48 c7 84 24 10 04 00 	mov    QWORD PTR [rsp+0x410],0x90
+  214446:	00 90 00 00 00 
+  21444b:	48 c7 84 24 18 04 00 	mov    QWORD PTR [rsp+0x418],0x91
+  214452:	00 91 00 00 00 
+  214457:	48 c7 84 24 20 04 00 	mov    QWORD PTR [rsp+0x420],0x92
+  21445e:	00 92 00 00 00 
+  214463:	48 c7 84 24 28 04 00 	mov    QWORD PTR [rsp+0x428],0x93
+  21446a:	00 93 00 00 00 
+  21446f:	48 c7 84 24 30 04 00 	mov    QWORD PTR [rsp+0x430],0x94
+  214476:	00 94 00 00 00 
+  21447b:	48 c7 84 24 38 04 00 	mov    QWORD PTR [rsp+0x438],0x95
+  214482:	00 95 00 00 00 
+  214487:	48 c7 84 24 40 04 00 	mov    QWORD PTR [rsp+0x440],0x96
+  21448e:	00 96 00 00 00 
+  214493:	48 c7 84 24 48 04 00 	mov    QWORD PTR [rsp+0x448],0x97
+  21449a:	00 97 00 00 00 
+  21449f:	48 c7 84 24 50 04 00 	mov    QWORD PTR [rsp+0x450],0x98
+  2144a6:	00 98 00 00 00 
+  2144ab:	48 c7 84 24 58 04 00 	mov    QWORD PTR [rsp+0x458],0x99
+  2144b2:	00 99 00 00 00 
+  2144b7:	48 c7 84 24 60 04 00 	mov    QWORD PTR [rsp+0x460],0x9a
+  2144be:	00 9a 00 00 00 
+  2144c3:	48 c7 84 24 68 04 00 	mov    QWORD PTR [rsp+0x468],0x9b
+  2144ca:	00 9b 00 00 00 
+  2144cf:	48 c7 84 24 70 04 00 	mov    QWORD PTR [rsp+0x470],0x9c
+  2144d6:	00 9c 00 00 00 
+  2144db:	48 c7 84 24 78 04 00 	mov    QWORD PTR [rsp+0x478],0x9d
+  2144e2:	00 9d 00 00 00 
+  2144e7:	48 c7 84 24 80 04 00 	mov    QWORD PTR [rsp+0x480],0x9e
+  2144ee:	00 9e 00 00 00 
+  2144f3:	48 c7 84 24 88 04 00 	mov    QWORD PTR [rsp+0x488],0x9f
+  2144fa:	00 9f 00 00 00 
+  2144ff:	48 c7 84 24 90 04 00 	mov    QWORD PTR [rsp+0x490],0xa0
+  214506:	00 a0 00 00 00 
+  21450b:	48 c7 84 24 98 04 00 	mov    QWORD PTR [rsp+0x498],0xa1
+  214512:	00 a1 00 00 00 
+  214517:	48 c7 84 24 a0 04 00 	mov    QWORD PTR [rsp+0x4a0],0xa2
+  21451e:	00 a2 00 00 00 
+  214523:	48 c7 84 24 a8 04 00 	mov    QWORD PTR [rsp+0x4a8],0xa3
+  21452a:	00 a3 00 00 00 
+  21452f:	48 c7 84 24 b0 04 00 	mov    QWORD PTR [rsp+0x4b0],0xa4
+  214536:	00 a4 00 00 00 
+  21453b:	48 c7 84 24 b8 04 00 	mov    QWORD PTR [rsp+0x4b8],0xa5
+  214542:	00 a5 00 00 00 
+  214547:	48 c7 84 24 c0 04 00 	mov    QWORD PTR [rsp+0x4c0],0xa6
+  21454e:	00 a6 00 00 00 
+  214553:	48 c7 84 24 c8 04 00 	mov    QWORD PTR [rsp+0x4c8],0xa7
+  21455a:	00 a7 00 00 00 
+  21455f:	48 c7 84 24 d0 04 00 	mov    QWORD PTR [rsp+0x4d0],0xa8
+  214566:	00 a8 00 00 00 
+  21456b:	48 c7 84 24 d8 04 00 	mov    QWORD PTR [rsp+0x4d8],0xa9
+  214572:	00 a9 00 00 00 
+  214577:	48 c7 84 24 e0 04 00 	mov    QWORD PTR [rsp+0x4e0],0xaa
+  21457e:	00 aa 00 00 00 
+  214583:	48 c7 84 24 e8 04 00 	mov    QWORD PTR [rsp+0x4e8],0xab
+  21458a:	00 ab 00 00 00 
+  21458f:	48 c7 84 24 f0 04 00 	mov    QWORD PTR [rsp+0x4f0],0xac
+  214596:	00 ac 00 00 00 
+  21459b:	48 c7 84 24 f8 04 00 	mov    QWORD PTR [rsp+0x4f8],0xad
+  2145a2:	00 ad 00 00 00 
+  2145a7:	48 c7 84 24 00 05 00 	mov    QWORD PTR [rsp+0x500],0xae
+  2145ae:	00 ae 00 00 00 
+  2145b3:	48 c7 84 24 08 05 00 	mov    QWORD PTR [rsp+0x508],0xaf
+  2145ba:	00 af 00 00 00 
+  2145bf:	48 c7 84 24 10 05 00 	mov    QWORD PTR [rsp+0x510],0xb0
+  2145c6:	00 b0 00 00 00 
+  2145cb:	48 c7 84 24 18 05 00 	mov    QWORD PTR [rsp+0x518],0xb1
+  2145d2:	00 b1 00 00 00 
+  2145d7:	48 c7 84 24 20 05 00 	mov    QWORD PTR [rsp+0x520],0xb2
+  2145de:	00 b2 00 00 00 
+  2145e3:	48 c7 84 24 28 05 00 	mov    QWORD PTR [rsp+0x528],0xb3
+  2145ea:	00 b3 00 00 00 
+  2145ef:	48 c7 84 24 30 05 00 	mov    QWORD PTR [rsp+0x530],0xb4
+  2145f6:	00 b4 00 00 00 
+  2145fb:	48 c7 84 24 38 05 00 	mov    QWORD PTR [rsp+0x538],0xb5
+  214602:	00 b5 00 00 00 
+  214607:	48 c7 84 24 40 05 00 	mov    QWORD PTR [rsp+0x540],0xb6
+  21460e:	00 b6 00 00 00 
+  214613:	48 c7 84 24 48 05 00 	mov    QWORD PTR [rsp+0x548],0xb7
+  21461a:	00 b7 00 00 00 
+  21461f:	48 c7 84 24 50 05 00 	mov    QWORD PTR [rsp+0x550],0xb8
+  214626:	00 b8 00 00 00 
+  21462b:	48 c7 84 24 58 05 00 	mov    QWORD PTR [rsp+0x558],0xb9
+  214632:	00 b9 00 00 00 
+  214637:	48 c7 84 24 60 05 00 	mov    QWORD PTR [rsp+0x560],0xba
+  21463e:	00 ba 00 00 00 
+  214643:	48 c7 84 24 68 05 00 	mov    QWORD PTR [rsp+0x568],0xbb
+  21464a:	00 bb 00 00 00 
+  21464f:	48 c7 84 24 70 05 00 	mov    QWORD PTR [rsp+0x570],0xbc
+  214656:	00 bc 00 00 00 
+  21465b:	48 c7 84 24 78 05 00 	mov    QWORD PTR [rsp+0x578],0xbd
+  214662:	00 bd 00 00 00 
+  214667:	48 c7 84 24 80 05 00 	mov    QWORD PTR [rsp+0x580],0xbe
+  21466e:	00 be 00 00 00 
+  214673:	48 c7 84 24 88 05 00 	mov    QWORD PTR [rsp+0x588],0xbf
+  21467a:	00 bf 00 00 00 
+  21467f:	48 c7 84 24 90 05 00 	mov    QWORD PTR [rsp+0x590],0xc0
+  214686:	00 c0 00 00 00 
+  21468b:	48 c7 84 24 98 05 00 	mov    QWORD PTR [rsp+0x598],0xc1
+  214692:	00 c1 00 00 00 
+  214697:	48 c7 84 24 a0 05 00 	mov    QWORD PTR [rsp+0x5a0],0xc2
+  21469e:	00 c2 00 00 00 
+  2146a3:	48 c7 84 24 a8 05 00 	mov    QWORD PTR [rsp+0x5a8],0xc3
+  2146aa:	00 c3 00 00 00 
+  2146af:	48 c7 84 24 b0 05 00 	mov    QWORD PTR [rsp+0x5b0],0xc4
+  2146b6:	00 c4 00 00 00 
+  2146bb:	48 c7 84 24 b8 05 00 	mov    QWORD PTR [rsp+0x5b8],0xc5
+  2146c2:	00 c5 00 00 00 
+  2146c7:	48 c7 84 24 c0 05 00 	mov    QWORD PTR [rsp+0x5c0],0xc6
+  2146ce:	00 c6 00 00 00 
+  2146d3:	48 c7 84 24 c8 05 00 	mov    QWORD PTR [rsp+0x5c8],0xc7
+  2146da:	00 c7 00 00 00 
+  2146df:	48 c7 84 24 d0 05 00 	mov    QWORD PTR [rsp+0x5d0],0xc8
+  2146e6:	00 c8 00 00 00 
+  2146eb:	48 c7 84 24 d8 05 00 	mov    QWORD PTR [rsp+0x5d8],0xc9
+  2146f2:	00 c9 00 00 00 
+  2146f7:	48 c7 84 24 e0 05 00 	mov    QWORD PTR [rsp+0x5e0],0xca
+  2146fe:	00 ca 00 00 00 
+  214703:	48 c7 84 24 e8 05 00 	mov    QWORD PTR [rsp+0x5e8],0xcb
+  21470a:	00 cb 00 00 00 
+  21470f:	48 c7 84 24 f0 05 00 	mov    QWORD PTR [rsp+0x5f0],0xcc
+  214716:	00 cc 00 00 00 
+  21471b:	48 c7 84 24 f8 05 00 	mov    QWORD PTR [rsp+0x5f8],0xcd
+  214722:	00 cd 00 00 00 
+  214727:	48 c7 84 24 00 06 00 	mov    QWORD PTR [rsp+0x600],0xce
+  21472e:	00 ce 00 00 00 
+  214733:	48 c7 84 24 08 06 00 	mov    QWORD PTR [rsp+0x608],0xcf
+  21473a:	00 cf 00 00 00 
+  21473f:	48 c7 84 24 10 06 00 	mov    QWORD PTR [rsp+0x610],0xd0
+  214746:	00 d0 00 00 00 
+  21474b:	48 c7 84 24 18 06 00 	mov    QWORD PTR [rsp+0x618],0xd1
+  214752:	00 d1 00 00 00 
+  214757:	48 c7 84 24 20 06 00 	mov    QWORD PTR [rsp+0x620],0xd2
+  21475e:	00 d2 00 00 00 
+  214763:	48 c7 84 24 28 06 00 	mov    QWORD PTR [rsp+0x628],0xd3
+  21476a:	00 d3 00 00 00 
+  21476f:	48 c7 84 24 30 06 00 	mov    QWORD PTR [rsp+0x630],0xd4
+  214776:	00 d4 00 00 00 
+  21477b:	48 c7 84 24 38 06 00 	mov    QWORD PTR [rsp+0x638],0xd5
+  214782:	00 d5 00 00 00 
+  214787:	48 c7 84 24 40 06 00 	mov    QWORD PTR [rsp+0x640],0xd6
+  21478e:	00 d6 00 00 00 
+  214793:	48 c7 84 24 48 06 00 	mov    QWORD PTR [rsp+0x648],0xd7
+  21479a:	00 d7 00 00 00 
+  21479f:	48 c7 84 24 50 06 00 	mov    QWORD PTR [rsp+0x650],0xd8
+  2147a6:	00 d8 00 00 00 
+  2147ab:	48 c7 84 24 58 06 00 	mov    QWORD PTR [rsp+0x658],0xd9
+  2147b2:	00 d9 00 00 00 
+  2147b7:	48 c7 84 24 60 06 00 	mov    QWORD PTR [rsp+0x660],0xda
+  2147be:	00 da 00 00 00 
+  2147c3:	48 c7 84 24 68 06 00 	mov    QWORD PTR [rsp+0x668],0xdb
+  2147ca:	00 db 00 00 00 
+  2147cf:	48 c7 84 24 70 06 00 	mov    QWORD PTR [rsp+0x670],0xdc
+  2147d6:	00 dc 00 00 00 
+  2147db:	48 c7 84 24 78 06 00 	mov    QWORD PTR [rsp+0x678],0xdd
+  2147e2:	00 dd 00 00 00 
+  2147e7:	48 c7 84 24 80 06 00 	mov    QWORD PTR [rsp+0x680],0xde
+  2147ee:	00 de 00 00 00 
+  2147f3:	48 c7 84 24 88 06 00 	mov    QWORD PTR [rsp+0x688],0xdf
+  2147fa:	00 df 00 00 00 
+  2147ff:	48 c7 84 24 90 06 00 	mov    QWORD PTR [rsp+0x690],0xe0
+  214806:	00 e0 00 00 00 
+  21480b:	48 c7 84 24 98 06 00 	mov    QWORD PTR [rsp+0x698],0xe1
+  214812:	00 e1 00 00 00 
+  214817:	48 c7 84 24 a0 06 00 	mov    QWORD PTR [rsp+0x6a0],0xe2
+  21481e:	00 e2 00 00 00 
+  214823:	48 c7 84 24 a8 06 00 	mov    QWORD PTR [rsp+0x6a8],0xe3
+  21482a:	00 e3 00 00 00 
+  21482f:	48 c7 84 24 b0 06 00 	mov    QWORD PTR [rsp+0x6b0],0xe4
+  214836:	00 e4 00 00 00 
+  21483b:	48 c7 84 24 b8 06 00 	mov    QWORD PTR [rsp+0x6b8],0xe5
+  214842:	00 e5 00 00 00 
+  214847:	48 c7 84 24 c0 06 00 	mov    QWORD PTR [rsp+0x6c0],0xe6
+  21484e:	00 e6 00 00 00 
+  214853:	48 c7 84 24 c8 06 00 	mov    QWORD PTR [rsp+0x6c8],0xe7
+  21485a:	00 e7 00 00 00 
+  21485f:	48 c7 84 24 d0 06 00 	mov    QWORD PTR [rsp+0x6d0],0xe8
+  214866:	00 e8 00 00 00 
+  21486b:	48 c7 84 24 d8 06 00 	mov    QWORD PTR [rsp+0x6d8],0xe9
+  214872:	00 e9 00 00 00 
+  214877:	48 c7 84 24 e0 06 00 	mov    QWORD PTR [rsp+0x6e0],0xea
+  21487e:	00 ea 00 00 00 
+  214883:	48 c7 84 24 e8 06 00 	mov    QWORD PTR [rsp+0x6e8],0xeb
+  21488a:	00 eb 00 00 00 
+  21488f:	48 c7 84 24 f0 06 00 	mov    QWORD PTR [rsp+0x6f0],0xec
+  214896:	00 ec 00 00 00 
+  21489b:	48 c7 84 24 f8 06 00 	mov    QWORD PTR [rsp+0x6f8],0xed
+  2148a2:	00 ed 00 00 00 
+  2148a7:	48 c7 84 24 00 07 00 	mov    QWORD PTR [rsp+0x700],0xee
+  2148ae:	00 ee 00 00 00 
+  2148b3:	48 c7 84 24 08 07 00 	mov    QWORD PTR [rsp+0x708],0xef
+  2148ba:	00 ef 00 00 00 
+  2148bf:	48 c7 84 24 10 07 00 	mov    QWORD PTR [rsp+0x710],0xf0
+  2148c6:	00 f0 00 00 00 
+  2148cb:	48 c7 84 24 18 07 00 	mov    QWORD PTR [rsp+0x718],0xf1
+  2148d2:	00 f1 00 00 00 
+  2148d7:	48 c7 84 24 20 07 00 	mov    QWORD PTR [rsp+0x720],0xf2
+  2148de:	00 f2 00 00 00 
+  2148e3:	48 c7 84 24 28 07 00 	mov    QWORD PTR [rsp+0x728],0xf3
+  2148ea:	00 f3 00 00 00 
+  2148ef:	48 c7 84 24 30 07 00 	mov    QWORD PTR [rsp+0x730],0xf4
+  2148f6:	00 f4 00 00 00 
+  2148fb:	48 c7 84 24 38 07 00 	mov    QWORD PTR [rsp+0x738],0xf5
+  214902:	00 f5 00 00 00 
+  214907:	48 c7 84 24 40 07 00 	mov    QWORD PTR [rsp+0x740],0xf6
+  21490e:	00 f6 00 00 00 
+  214913:	48 c7 84 24 48 07 00 	mov    QWORD PTR [rsp+0x748],0xf7
+  21491a:	00 f7 00 00 00 
+  21491f:	48 c7 84 24 50 07 00 	mov    QWORD PTR [rsp+0x750],0xf8
+  214926:	00 f8 00 00 00 
+  21492b:	48 c7 84 24 58 07 00 	mov    QWORD PTR [rsp+0x758],0xf9
+  214932:	00 f9 00 00 00 
+  214937:	48 c7 84 24 60 07 00 	mov    QWORD PTR [rsp+0x760],0xfa
+  21493e:	00 fa 00 00 00 
+  214943:	48 c7 84 24 68 07 00 	mov    QWORD PTR [rsp+0x768],0xfb
+  21494a:	00 fb 00 00 00 
+  21494f:	48 c7 84 24 70 07 00 	mov    QWORD PTR [rsp+0x770],0xfc
+  214956:	00 fc 00 00 00 
+  21495b:	48 c7 84 24 78 07 00 	mov    QWORD PTR [rsp+0x778],0xfd
+  214962:	00 fd 00 00 00 
+  214967:	48 c7 84 24 80 07 00 	mov    QWORD PTR [rsp+0x780],0xfe
+  21496e:	00 fe 00 00 00 
+  214973:	48 c7 84 24 88 07 00 	mov    QWORD PTR [rsp+0x788],0xff
+  21497a:	00 ff 00 00 00 
+  21497f:	48 c7 84 24 90 07 00 	mov    QWORD PTR [rsp+0x790],0x100
+  214986:	00 00 01 00 00 
+  21498b:	48 c7 44 24 88 8d 30 	mov    QWORD PTR [rsp-0x78],0x20308d
+  214992:	20 00 
+  214994:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  21499b:	00 00 
+  21499d:	48 c7 44 24 88 af 30 	mov    QWORD PTR [rsp-0x78],0x2030af
+  2149a4:	20 00 
+  2149a6:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  2149ad:	00 00 
+  2149af:	48 c7 44 24 88 d1 30 	mov    QWORD PTR [rsp-0x78],0x2030d1
+  2149b6:	20 00 
+  2149b8:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  2149bf:	00 00 
+  2149c1:	48 c7 44 24 88 f3 30 	mov    QWORD PTR [rsp-0x78],0x2030f3
+  2149c8:	20 00 
+  2149ca:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  2149d1:	00 00 
+  2149d3:	48 85 ff             	test   rdi,rdi
+  2149d6:	0f 8e 8a 00 00 00    	jle    214a66 <_RNvCs3tHvo97hyfj_17bench_traced_rust15rust_arraywalk2+0xcc6>
+  2149dc:	b8 01 00 00 00       	mov    eax,0x1
+  2149e1:	b9 01 00 00 00       	mov    ecx,0x1
+  2149e6:	48 c7 44 24 88 15 31 	mov    QWORD PTR [rsp-0x78],0x203115
+  2149ed:	20 00 
+  2149ef:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  2149f6:	00 00 
+  2149f8:	48 01 44 cc 90       	add    QWORD PTR [rsp+rcx*8-0x70],rax
+  2149fd:	48 c7 44 24 88 37 31 	mov    QWORD PTR [rsp-0x78],0x203137
+  214a04:	20 00 
+  214a06:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  214a0d:	00 00 
+  214a0f:	48 c7 44 24 88 59 31 	mov    QWORD PTR [rsp-0x78],0x203159
+  214a16:	20 00 
+  214a18:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  214a1f:	00 00 
+  214a21:	48 81 f9 f0 00 00 00 	cmp    rcx,0xf0
+  214a28:	72 26                	jb     214a50 <_RNvCs3tHvo97hyfj_17bench_traced_rust15rust_arraywalk2+0xcb0>
+  214a2a:	48 c7 44 24 88 7b 31 	mov    QWORD PTR [rsp-0x78],0x20317b
+  214a31:	20 00 
+  214a33:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  214a3a:	00 00 
+  214a3c:	48 81 c1 11 ff ff ff 	add    rcx,0xffffffffffffff11
+  214a43:	eb 0f                	jmp    214a54 <_RNvCs3tHvo97hyfj_17bench_traced_rust15rust_arraywalk2+0xcb4>
+  214a45:	66 66 2e 0f 1f 84 00 	data16 cs nop WORD PTR [rax+rax*1+0x0]
+  214a4c:	00 00 00 00 
+  214a50:	48 83 c1 11          	add    rcx,0x11
+  214a54:	48 ff c0             	inc    rax
+  214a57:	0f 90 c2             	seto   dl
+  214a5a:	48 39 f8             	cmp    rax,rdi
+  214a5d:	40 0f 9f c6          	setg   sil
+  214a61:	40 08 d6             	or     sil,dl
+  214a64:	74 80                	je     2149e6 <_RNvCs3tHvo97hyfj_17bench_traced_rust15rust_arraywalk2+0xc46>
+  214a66:	48 c7 44 24 88 9d 31 	mov    QWORD PTR [rsp-0x78],0x20319d
+  214a6d:	20 00 
+  214a6f:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  214a76:	00 00 
+  214a78:	31 c0                	xor    eax,eax
+  214a7a:	31 c9                	xor    ecx,ecx
+  214a7c:	0f 1f 40 00          	nop    DWORD PTR [rax+0x0]
+  214a80:	48 c7 44 24 88 bf 31 	mov    QWORD PTR [rsp-0x78],0x2031bf
+  214a87:	20 00 
+  214a89:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  214a90:	00 00 
+  214a92:	48 03 44 cc 98       	add    rax,QWORD PTR [rsp+rcx*8-0x68]
+  214a97:	48 c7 44 24 88 bf 31 	mov    QWORD PTR [rsp-0x78],0x2031bf
+  214a9e:	20 00 
+  214aa0:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  214aa7:	00 00 
+  214aa9:	48 03 44 cc a0       	add    rax,QWORD PTR [rsp+rcx*8-0x60]
+  214aae:	48 c7 44 24 88 bf 31 	mov    QWORD PTR [rsp-0x78],0x2031bf
+  214ab5:	20 00 
+  214ab7:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  214abe:	00 00 
+  214ac0:	48 03 44 cc a8       	add    rax,QWORD PTR [rsp+rcx*8-0x58]
+  214ac5:	48 c7 44 24 88 bf 31 	mov    QWORD PTR [rsp-0x78],0x2031bf
+  214acc:	20 00 
+  214ace:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  214ad5:	00 00 
+  214ad7:	48 03 44 cc b0       	add    rax,QWORD PTR [rsp+rcx*8-0x50]
+  214adc:	48 83 c1 04          	add    rcx,0x4
+  214ae0:	48 81 f9 00 01 00 00 	cmp    rcx,0x100
+  214ae7:	75 97                	jne    214a80 <_RNvCs3tHvo97hyfj_17bench_traced_rust15rust_arraywalk2+0xce0>
+  214ae9:	48 c7 44 24 88 e1 31 	mov    QWORD PTR [rsp-0x78],0x2031e1
+  214af0:	20 00 
+  214af2:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  214af9:	00 00 
+  214afb:	48 8b 4c 24 80       	mov    rcx,QWORD PTR [rsp-0x80]
+  214b00:	48 89 0d a1 7b 04 00 	mov    QWORD PTR [rip+0x47ba1],rcx        # 25c6a8 <hbc_trace_top>
+  214b07:	48 81 c4 98 07 00 00 	add    rsp,0x798
+  214b0e:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+experiments/llvm-scalar/run/bench-traced-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000214b10 <_RNvCs3tHvo97hyfj_17bench_traced_rust15rust_branchloop>:
+  214b10:	48 8b 0d 91 7b 04 00 	mov    rcx,QWORD PTR [rip+0x47b91]        # 25c6a8 <hbc_trace_top>
+  214b17:	48 8d 44 24 e8       	lea    rax,[rsp-0x18]
+  214b1c:	48 89 05 85 7b 04 00 	mov    QWORD PTR [rip+0x47b85],rax        # 25c6a8 <hbc_trace_top>
+  214b23:	48 c7 44 24 f0 03 32 	mov    QWORD PTR [rsp-0x10],0x203203
+  214b2a:	20 00 
+  214b2c:	48 c7 44 24 f8 1e 00 	mov    QWORD PTR [rsp-0x8],0x1e
+  214b33:	00 00 
+  214b35:	48 c7 44 24 f0 03 32 	mov    QWORD PTR [rsp-0x10],0x203203
+  214b3c:	20 00 
+  214b3e:	48 c7 44 24 f8 1e 00 	mov    QWORD PTR [rsp-0x8],0x1e
+  214b45:	00 00 
+  214b47:	48 c7 44 24 f0 21 32 	mov    QWORD PTR [rsp-0x10],0x203221
+  214b4e:	20 00 
+  214b50:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  214b57:	00 00 
+  214b59:	48 c7 44 24 f0 40 32 	mov    QWORD PTR [rsp-0x10],0x203240
+  214b60:	20 00 
+  214b62:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  214b69:	00 00 
+  214b6b:	48 85 ff             	test   rdi,rdi
+  214b6e:	0f 8e a8 00 00 00    	jle    214c1c <_RNvCs3tHvo97hyfj_17bench_traced_rust15rust_branchloop+0x10c>
+  214b74:	48 8d 77 f9          	lea    rsi,[rdi-0x7]
+  214b78:	48 c7 44 24 f0 5f 32 	mov    QWORD PTR [rsp-0x10],0x20325f
+  214b7f:	20 00 
+  214b81:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  214b88:	00 00 
+  214b8a:	31 c0                	xor    eax,eax
+  214b8c:	48 83 ff 09          	cmp    rdi,0x9
+  214b90:	0f 9d c0             	setge  al
+  214b93:	41 b8 9d 32 20 00    	mov    r8d,0x20329d
+  214b99:	41 b9 7e 32 20 00    	mov    r9d,0x20327e
+  214b9f:	4d 0f 4d c8          	cmovge r9,r8
+  214ba3:	48 8d 14 45 01 00 00 	lea    rdx,[rax*2+0x1]
+  214baa:	00 
+  214bab:	4c 89 4c 24 f0       	mov    QWORD PTR [rsp-0x10],r9
+  214bb0:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  214bb7:	00 00 
+  214bb9:	41 b9 02 00 00 00    	mov    r9d,0x2
+  214bbf:	48 b8 ff ff ff ff ff 	movabs rax,0x7fffffffffffffff
+  214bc6:	ff ff 7f 
+  214bc9:	0f 1f 80 00 00 00 00 	nop    DWORD PTR [rax+0x0]
+  214bd0:	49 39 f9             	cmp    r9,rdi
+  214bd3:	7f 42                	jg     214c17 <_RNvCs3tHvo97hyfj_17bench_traced_rust15rust_branchloop+0x107>
+  214bd5:	48 c7 44 24 f0 5f 32 	mov    QWORD PTR [rsp-0x10],0x20325f
+  214bdc:	20 00 
+  214bde:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  214be5:	00 00 
+  214be7:	45 31 d2             	xor    r10d,r10d
+  214bea:	49 39 f1             	cmp    r9,rsi
+  214bed:	41 0f 9c c2          	setl   r10b
+  214bf1:	41 bb 7e 32 20 00    	mov    r11d,0x20327e
+  214bf7:	4d 0f 4c d8          	cmovl  r11,r8
+  214bfb:	4c 89 5c 24 f0       	mov    QWORD PTR [rsp-0x10],r11
+  214c00:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  214c07:	00 00 
+  214c09:	4a 8d 14 52          	lea    rdx,[rdx+r10*2]
+  214c0d:	48 ff c2             	inc    rdx
+  214c10:	49 ff c1             	inc    r9
+  214c13:	71 bb                	jno    214bd0 <_RNvCs3tHvo97hyfj_17bench_traced_rust15rust_branchloop+0xc0>
+  214c15:	eb 0c                	jmp    214c23 <_RNvCs3tHvo97hyfj_17bench_traced_rust15rust_branchloop+0x113>
+  214c17:	4c 89 c8             	mov    rax,r9
+  214c1a:	eb 07                	jmp    214c23 <_RNvCs3tHvo97hyfj_17bench_traced_rust15rust_branchloop+0x113>
+  214c1c:	b8 01 00 00 00       	mov    eax,0x1
+  214c21:	31 d2                	xor    edx,edx
+  214c23:	48 01 d0             	add    rax,rdx
+  214c26:	48 c7 44 24 f0 bc 32 	mov    QWORD PTR [rsp-0x10],0x2032bc
+  214c2d:	20 00 
+  214c2f:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  214c36:	00 00 
+  214c38:	48 89 0d 69 7a 04 00 	mov    QWORD PTR [rip+0x47a69],rcx        # 25c6a8 <hbc_trace_top>
+  214c3f:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+experiments/llvm-scalar/run/bench-traced-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000214c40 <_RNvCs3tHvo97hyfj_17bench_traced_rust15rust_recurrence>:
+  214c40:	48 8b 0d 61 7a 04 00 	mov    rcx,QWORD PTR [rip+0x47a61]        # 25c6a8 <hbc_trace_top>
+  214c47:	48 8d 44 24 e8       	lea    rax,[rsp-0x18]
+  214c4c:	48 89 05 55 7a 04 00 	mov    QWORD PTR [rip+0x47a55],rax        # 25c6a8 <hbc_trace_top>
+  214c53:	48 c7 44 24 f0 db 32 	mov    QWORD PTR [rsp-0x10],0x2032db
+  214c5a:	20 00 
+  214c5c:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  214c63:	00 00 
+  214c65:	48 c7 44 24 f0 db 32 	mov    QWORD PTR [rsp-0x10],0x2032db
+  214c6c:	20 00 
+  214c6e:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  214c75:	00 00 
+  214c77:	48 c7 44 24 f0 fa 32 	mov    QWORD PTR [rsp-0x10],0x2032fa
+  214c7e:	20 00 
+  214c80:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  214c87:	00 00 
+  214c89:	48 c7 44 24 f0 19 33 	mov    QWORD PTR [rsp-0x10],0x203319
+  214c90:	20 00 
+  214c92:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  214c99:	00 00 
+  214c9b:	48 85 ff             	test   rdi,rdi
+  214c9e:	7e 62                	jle    214d02 <_RNvCs3tHvo97hyfj_17bench_traced_rust15rust_recurrence+0xc2>
+  214ca0:	be 01 00 00 00       	mov    esi,0x1
+  214ca5:	31 d2                	xor    edx,edx
+  214ca7:	41 b8 01 00 00 00    	mov    r8d,0x1
+  214cad:	48 ff c2             	inc    rdx
+  214cb0:	48 c7 44 24 f0 38 33 	mov    QWORD PTR [rsp-0x10],0x203338
+  214cb7:	20 00 
+  214cb9:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  214cc0:	00 00 
+  214cc2:	48 8d 04 76          	lea    rax,[rsi+rsi*2]
+  214cc6:	49 01 c0             	add    r8,rax
+  214cc9:	4c 89 c6             	mov    rsi,r8
+  214ccc:	49 89 d0             	mov    r8,rdx
+  214ccf:	49 ff c0             	inc    r8
+  214cd2:	41 0f 90 c1          	seto   r9b
+  214cd6:	41 f6 d1             	not    r9b
+  214cd9:	49 39 f8             	cmp    r8,rdi
+  214cdc:	41 0f 9e c2          	setle  r10b
+  214ce0:	45 84 d1             	test   r9b,r10b
+  214ce3:	75 c8                	jne    214cad <_RNvCs3tHvo97hyfj_17bench_traced_rust15rust_recurrence+0x6d>
+  214ce5:	48 01 d0             	add    rax,rdx
+  214ce8:	48 c7 44 24 f0 57 33 	mov    QWORD PTR [rsp-0x10],0x203357
+  214cef:	20 00 
+  214cf1:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  214cf8:	00 00 
+  214cfa:	48 89 0d a7 79 04 00 	mov    QWORD PTR [rip+0x479a7],rcx        # 25c6a8 <hbc_trace_top>
+  214d01:	c3                   	ret    
+  214d02:	b8 01 00 00 00       	mov    eax,0x1
+  214d07:	48 c7 44 24 f0 57 33 	mov    QWORD PTR [rsp-0x10],0x203357
+  214d0e:	20 00 
+  214d10:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  214d17:	00 00 
+  214d19:	48 89 0d 88 79 04 00 	mov    QWORD PTR [rip+0x47988],rcx        # 25c6a8 <hbc_trace_top>
+  214d20:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+experiments/llvm-scalar/run/bench-traced-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000002157e0 <_RNvCs3tHvo97hyfj_17bench_traced_rust9rust_fact>:
+  2157e0:	53                   	push   rbx
+  2157e1:	48 83 ec 20          	sub    rsp,0x20
+  2157e5:	48 8b 0d bc 6e 04 00 	mov    rcx,QWORD PTR [rip+0x46ebc]        # 25c6a8 <hbc_trace_top>
+  2157ec:	48 89 4c 24 08       	mov    QWORD PTR [rsp+0x8],rcx
+  2157f1:	48 8d 44 24 08       	lea    rax,[rsp+0x8]
+  2157f6:	48 89 05 ab 6e 04 00 	mov    QWORD PTR [rip+0x46eab],rax        # 25c6a8 <hbc_trace_top>
+  2157fd:	48 c7 44 24 10 c0 33 	mov    QWORD PTR [rsp+0x10],0x2033c0
+  215804:	20 00 
+  215806:	48 c7 44 24 18 19 00 	mov    QWORD PTR [rsp+0x18],0x19
+  21580d:	00 00 
+  21580f:	48 c7 44 24 10 c0 33 	mov    QWORD PTR [rsp+0x10],0x2033c0
+  215816:	20 00 
+  215818:	48 c7 44 24 18 19 00 	mov    QWORD PTR [rsp+0x18],0x19
+  21581f:	00 00 
+  215821:	b8 01 00 00 00       	mov    eax,0x1
+  215826:	48 83 ff 02          	cmp    rdi,0x2
+  21582a:	7c 18                	jl     215844 <_RNvCs3tHvo97hyfj_17bench_traced_rust9rust_fact+0x64>
+  21582c:	48 8d 47 ff          	lea    rax,[rdi-0x1]
+  215830:	48 89 fb             	mov    rbx,rdi
+  215833:	48 89 c7             	mov    rdi,rax
+  215836:	e8 a5 ff ff ff       	call   2157e0 <_RNvCs3tHvo97hyfj_17bench_traced_rust9rust_fact>
+  21583b:	48 0f af c3          	imul   rax,rbx
+  21583f:	48 8b 4c 24 08       	mov    rcx,QWORD PTR [rsp+0x8]
+  215844:	48 89 0d 5d 6e 04 00 	mov    QWORD PTR [rip+0x46e5d],rcx        # 25c6a8 <hbc_trace_top>
+  21584b:	48 83 c4 20          	add    rsp,0x20
+  21584f:	5b                   	pop    rbx
+  215850:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+experiments/llvm-scalar/run/bench-traced-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000256180 <ll_arraywalk>:
+  256180:	48 83 ec 18          	sub    rsp,0x18
+  256184:	48 8b 0d 1d 65 00 00 	mov    rcx,QWORD PTR [rip+0x651d]        # 25c6a8 <hbc_trace_top>
+  25618b:	48 8d 44 24 80       	lea    rax,[rsp-0x80]
+  256190:	48 89 05 11 65 00 00 	mov    QWORD PTR [rip+0x6511],rax        # 25c6a8 <hbc_trace_top>
+  256197:	48 c7 44 24 88 d0 84 	mov    QWORD PTR [rsp-0x78],0x2084d0
+  25619e:	20 00 
+  2561a0:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  2561a7:	00 00 
+  2561a9:	48 c7 44 24 88 f0 84 	mov    QWORD PTR [rsp-0x78],0x2084f0
+  2561b0:	20 00 
+  2561b2:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  2561b9:	00 00 
+  2561bb:	48 c7 44 24 98 01 00 	mov    QWORD PTR [rsp-0x68],0x1
+  2561c2:	00 00 
+  2561c4:	48 c7 44 24 a0 02 00 	mov    QWORD PTR [rsp-0x60],0x2
+  2561cb:	00 00 
+  2561cd:	48 c7 44 24 a8 03 00 	mov    QWORD PTR [rsp-0x58],0x3
+  2561d4:	00 00 
+  2561d6:	48 c7 44 24 b0 04 00 	mov    QWORD PTR [rsp-0x50],0x4
+  2561dd:	00 00 
+  2561df:	48 c7 44 24 b8 05 00 	mov    QWORD PTR [rsp-0x48],0x5
+  2561e6:	00 00 
+  2561e8:	48 c7 44 24 c0 06 00 	mov    QWORD PTR [rsp-0x40],0x6
+  2561ef:	00 00 
+  2561f1:	48 c7 44 24 c8 07 00 	mov    QWORD PTR [rsp-0x38],0x7
+  2561f8:	00 00 
+  2561fa:	48 c7 44 24 d0 08 00 	mov    QWORD PTR [rsp-0x30],0x8
+  256201:	00 00 
+  256203:	48 c7 44 24 d8 09 00 	mov    QWORD PTR [rsp-0x28],0x9
+  25620a:	00 00 
+  25620c:	48 c7 44 24 e0 0a 00 	mov    QWORD PTR [rsp-0x20],0xa
+  256213:	00 00 
+  256215:	48 c7 44 24 e8 0b 00 	mov    QWORD PTR [rsp-0x18],0xb
+  25621c:	00 00 
+  25621e:	48 c7 44 24 f0 0c 00 	mov    QWORD PTR [rsp-0x10],0xc
+  256225:	00 00 
+  256227:	48 c7 44 24 f8 0d 00 	mov    QWORD PTR [rsp-0x8],0xd
+  25622e:	00 00 
+  256230:	48 c7 04 24 0e 00 00 	mov    QWORD PTR [rsp],0xe
+  256237:	00 
+  256238:	48 c7 44 24 08 0f 00 	mov    QWORD PTR [rsp+0x8],0xf
+  25623f:	00 00 
+  256241:	48 c7 44 24 10 10 00 	mov    QWORD PTR [rsp+0x10],0x10
+  256248:	00 00 
+  25624a:	48 c7 44 24 88 10 85 	mov    QWORD PTR [rsp-0x78],0x208510
+  256251:	20 00 
+  256253:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  25625a:	00 00 
+  25625c:	48 c7 44 24 88 30 85 	mov    QWORD PTR [rsp-0x78],0x208530
+  256263:	20 00 
+  256265:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  25626c:	00 00 
+  25626e:	48 c7 44 24 88 50 85 	mov    QWORD PTR [rsp-0x78],0x208550
+  256275:	20 00 
+  256277:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  25627e:	00 00 
+  256280:	48 c7 44 24 88 70 85 	mov    QWORD PTR [rsp-0x78],0x208570
+  256287:	20 00 
+  256289:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  256290:	00 00 
+  256292:	48 85 ff             	test   rdi,rdi
+  256295:	0f 8e 86 00 00 00    	jle    256321 <ll_arraywalk+0x1a1>
+  25629b:	b8 01 00 00 00       	mov    eax,0x1
+  2562a0:	ba 01 00 00 00       	mov    edx,0x1
+  2562a5:	66 66 2e 0f 1f 84 00 	data16 cs nop WORD PTR [rax+rax*1+0x0]
+  2562ac:	00 00 00 00 
+  2562b0:	48 c7 44 24 88 90 85 	mov    QWORD PTR [rsp-0x78],0x208590
+  2562b7:	20 00 
+  2562b9:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  2562c0:	00 00 
+  2562c2:	48 01 44 d4 90       	add    QWORD PTR [rsp+rdx*8-0x70],rax
+  2562c7:	48 c7 44 24 88 b0 85 	mov    QWORD PTR [rsp-0x78],0x2085b0
+  2562ce:	20 00 
+  2562d0:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  2562d7:	00 00 
+  2562d9:	48 c7 44 24 88 d0 85 	mov    QWORD PTR [rsp-0x78],0x2085d0
+  2562e0:	20 00 
+  2562e2:	48 c7 44 24 90 20 00 	mov    QWORD PTR [rsp-0x70],0x20
+  2562e9:	00 00 
+  2562eb:	48 83 fa 10          	cmp    rdx,0x10
+  2562ef:	73 0f                	jae    256300 <ll_arraywalk+0x180>
+  2562f1:	48 ff c2             	inc    rdx
+  2562f4:	48 ff c0             	inc    rax
+  2562f7:	71 23                	jno    25631c <ll_arraywalk+0x19c>
+  2562f9:	eb 26                	jmp    256321 <ll_arraywalk+0x1a1>
+  2562fb:	0f 1f 44 00 00       	nop    DWORD PTR [rax+rax*1+0x0]
+  256300:	48 c7 44 24 88 f0 85 	mov    QWORD PTR [rsp-0x78],0x2085f0
+  256307:	20 00 
+  256309:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  256310:	00 00 
+  256312:	ba 01 00 00 00       	mov    edx,0x1
+  256317:	48 ff c0             	inc    rax
+  25631a:	70 05                	jo     256321 <ll_arraywalk+0x1a1>
+  25631c:	48 39 f8             	cmp    rax,rdi
+  25631f:	7e 8f                	jle    2562b0 <ll_arraywalk+0x130>
+  256321:	48 c7 44 24 88 20 86 	mov    QWORD PTR [rsp-0x78],0x208620
+  256328:	20 00 
+  25632a:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  256331:	00 00 
+  256333:	48 c7 44 24 88 50 86 	mov    QWORD PTR [rsp-0x78],0x208650
+  25633a:	20 00 
+  25633c:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  256343:	00 00 
+  256345:	48 c7 44 24 88 50 86 	mov    QWORD PTR [rsp-0x78],0x208650
+  25634c:	20 00 
+  25634e:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  256355:	00 00 
+  256357:	48 c7 44 24 88 50 86 	mov    QWORD PTR [rsp-0x78],0x208650
+  25635e:	20 00 
+  256360:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  256367:	00 00 
+  256369:	48 c7 44 24 88 50 86 	mov    QWORD PTR [rsp-0x78],0x208650
+  256370:	20 00 
+  256372:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  256379:	00 00 
+  25637b:	48 c7 44 24 88 50 86 	mov    QWORD PTR [rsp-0x78],0x208650
+  256382:	20 00 
+  256384:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  25638b:	00 00 
+  25638d:	48 c7 44 24 88 50 86 	mov    QWORD PTR [rsp-0x78],0x208650
+  256394:	20 00 
+  256396:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  25639d:	00 00 
+  25639f:	48 c7 44 24 88 50 86 	mov    QWORD PTR [rsp-0x78],0x208650
+  2563a6:	20 00 
+  2563a8:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  2563af:	00 00 
+  2563b1:	48 c7 44 24 88 50 86 	mov    QWORD PTR [rsp-0x78],0x208650
+  2563b8:	20 00 
+  2563ba:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  2563c1:	00 00 
+  2563c3:	48 c7 44 24 88 50 86 	mov    QWORD PTR [rsp-0x78],0x208650
+  2563ca:	20 00 
+  2563cc:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  2563d3:	00 00 
+  2563d5:	48 c7 44 24 88 50 86 	mov    QWORD PTR [rsp-0x78],0x208650
+  2563dc:	20 00 
+  2563de:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  2563e5:	00 00 
+  2563e7:	48 c7 44 24 88 50 86 	mov    QWORD PTR [rsp-0x78],0x208650
+  2563ee:	20 00 
+  2563f0:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  2563f7:	00 00 
+  2563f9:	48 c7 44 24 88 50 86 	mov    QWORD PTR [rsp-0x78],0x208650
+  256400:	20 00 
+  256402:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  256409:	00 00 
+  25640b:	48 c7 44 24 88 50 86 	mov    QWORD PTR [rsp-0x78],0x208650
+  256412:	20 00 
+  256414:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  25641b:	00 00 
+  25641d:	48 c7 44 24 88 50 86 	mov    QWORD PTR [rsp-0x78],0x208650
+  256424:	20 00 
+  256426:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  25642d:	00 00 
+  25642f:	48 c7 44 24 88 50 86 	mov    QWORD PTR [rsp-0x78],0x208650
+  256436:	20 00 
+  256438:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  25643f:	00 00 
+  256441:	48 c7 44 24 88 50 86 	mov    QWORD PTR [rsp-0x78],0x208650
+  256448:	20 00 
+  25644a:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  256451:	00 00 
+  256453:	f3 0f 6f 44 24 e8    	movdqu xmm0,XMMWORD PTR [rsp-0x18]
+  256459:	f3 0f 6f 4c 24 08    	movdqu xmm1,XMMWORD PTR [rsp+0x8]
+  25645f:	f3 0f 6f 54 24 d8    	movdqu xmm2,XMMWORD PTR [rsp-0x28]
+  256465:	f3 0f 6f 5c 24 f8    	movdqu xmm3,XMMWORD PTR [rsp-0x8]
+  25646b:	f3 0f 6f 64 24 98    	movdqu xmm4,XMMWORD PTR [rsp-0x68]
+  256471:	66 0f d4 e2          	paddq  xmm4,xmm2
+  256475:	f3 0f 6f 54 24 a8    	movdqu xmm2,XMMWORD PTR [rsp-0x58]
+  25647b:	66 0f d4 d0          	paddq  xmm2,xmm0
+  25647f:	f3 0f 6f 44 24 b8    	movdqu xmm0,XMMWORD PTR [rsp-0x48]
+  256485:	66 0f d4 c3          	paddq  xmm0,xmm3
+  256489:	66 0f d4 c4          	paddq  xmm0,xmm4
+  25648d:	f3 0f 6f 5c 24 c8    	movdqu xmm3,XMMWORD PTR [rsp-0x38]
+  256493:	66 0f d4 d9          	paddq  xmm3,xmm1
+  256497:	66 0f d4 da          	paddq  xmm3,xmm2
+  25649b:	66 0f d4 d8          	paddq  xmm3,xmm0
+  25649f:	66 0f 70 c3 ee       	pshufd xmm0,xmm3,0xee
+  2564a4:	66 0f d4 c3          	paddq  xmm0,xmm3
+  2564a8:	66 48 0f 7e c0       	movq   rax,xmm0
+  2564ad:	48 c7 44 24 88 80 86 	mov    QWORD PTR [rsp-0x78],0x208680
+  2564b4:	20 00 
+  2564b6:	48 c7 44 24 90 21 00 	mov    QWORD PTR [rsp-0x70],0x21
+  2564bd:	00 00 
+  2564bf:	48 89 0d e2 61 00 00 	mov    QWORD PTR [rip+0x61e2],rcx        # 25c6a8 <hbc_trace_top>
+  2564c6:	48 83 c4 18          	add    rsp,0x18
+  2564ca:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+experiments/llvm-scalar/run/bench-traced-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000002564d0 <ll_arraywalk2>:
+  2564d0:	48 81 ec 98 07 00 00 	sub    rsp,0x798
+  2564d7:	48 8b 05 ca 61 00 00 	mov    rax,QWORD PTR [rip+0x61ca]        # 25c6a8 <hbc_trace_top>
+  2564de:	48 89 44 24 80       	mov    QWORD PTR [rsp-0x80],rax
+  2564e3:	48 8d 44 24 80       	lea    rax,[rsp-0x80]
+  2564e8:	48 89 05 b9 61 00 00 	mov    QWORD PTR [rip+0x61b9],rax        # 25c6a8 <hbc_trace_top>
+  2564ef:	48 c7 44 24 88 b0 86 	mov    QWORD PTR [rsp-0x78],0x2086b0
+  2564f6:	20 00 
+  2564f8:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  2564ff:	00 00 
+  256501:	48 c7 44 24 88 e0 86 	mov    QWORD PTR [rsp-0x78],0x2086e0
+  256508:	20 00 
+  25650a:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  256511:	00 00 
+  256513:	48 c7 44 24 98 01 00 	mov    QWORD PTR [rsp-0x68],0x1
+  25651a:	00 00 
+  25651c:	48 c7 44 24 a0 02 00 	mov    QWORD PTR [rsp-0x60],0x2
+  256523:	00 00 
+  256525:	48 c7 44 24 a8 03 00 	mov    QWORD PTR [rsp-0x58],0x3
+  25652c:	00 00 
+  25652e:	48 c7 44 24 b0 04 00 	mov    QWORD PTR [rsp-0x50],0x4
+  256535:	00 00 
+  256537:	48 c7 44 24 b8 05 00 	mov    QWORD PTR [rsp-0x48],0x5
+  25653e:	00 00 
+  256540:	48 c7 44 24 c0 06 00 	mov    QWORD PTR [rsp-0x40],0x6
+  256547:	00 00 
+  256549:	48 c7 44 24 c8 07 00 	mov    QWORD PTR [rsp-0x38],0x7
+  256550:	00 00 
+  256552:	48 c7 44 24 d0 08 00 	mov    QWORD PTR [rsp-0x30],0x8
+  256559:	00 00 
+  25655b:	48 c7 44 24 d8 09 00 	mov    QWORD PTR [rsp-0x28],0x9
+  256562:	00 00 
+  256564:	48 c7 44 24 e0 0a 00 	mov    QWORD PTR [rsp-0x20],0xa
+  25656b:	00 00 
+  25656d:	48 c7 44 24 e8 0b 00 	mov    QWORD PTR [rsp-0x18],0xb
+  256574:	00 00 
+  256576:	48 c7 44 24 f0 0c 00 	mov    QWORD PTR [rsp-0x10],0xc
+  25657d:	00 00 
+  25657f:	48 c7 44 24 f8 0d 00 	mov    QWORD PTR [rsp-0x8],0xd
+  256586:	00 00 
+  256588:	48 c7 04 24 0e 00 00 	mov    QWORD PTR [rsp],0xe
+  25658f:	00 
+  256590:	48 c7 44 24 08 0f 00 	mov    QWORD PTR [rsp+0x8],0xf
+  256597:	00 00 
+  256599:	48 c7 44 24 10 10 00 	mov    QWORD PTR [rsp+0x10],0x10
+  2565a0:	00 00 
+  2565a2:	48 c7 44 24 18 11 00 	mov    QWORD PTR [rsp+0x18],0x11
+  2565a9:	00 00 
+  2565ab:	48 c7 44 24 20 12 00 	mov    QWORD PTR [rsp+0x20],0x12
+  2565b2:	00 00 
+  2565b4:	48 c7 44 24 28 13 00 	mov    QWORD PTR [rsp+0x28],0x13
+  2565bb:	00 00 
+  2565bd:	48 c7 44 24 30 14 00 	mov    QWORD PTR [rsp+0x30],0x14
+  2565c4:	00 00 
+  2565c6:	48 c7 44 24 38 15 00 	mov    QWORD PTR [rsp+0x38],0x15
+  2565cd:	00 00 
+  2565cf:	48 c7 44 24 40 16 00 	mov    QWORD PTR [rsp+0x40],0x16
+  2565d6:	00 00 
+  2565d8:	48 c7 44 24 48 17 00 	mov    QWORD PTR [rsp+0x48],0x17
+  2565df:	00 00 
+  2565e1:	48 c7 44 24 50 18 00 	mov    QWORD PTR [rsp+0x50],0x18
+  2565e8:	00 00 
+  2565ea:	48 c7 44 24 58 19 00 	mov    QWORD PTR [rsp+0x58],0x19
+  2565f1:	00 00 
+  2565f3:	48 c7 44 24 60 1a 00 	mov    QWORD PTR [rsp+0x60],0x1a
+  2565fa:	00 00 
+  2565fc:	48 c7 44 24 68 1b 00 	mov    QWORD PTR [rsp+0x68],0x1b
+  256603:	00 00 
+  256605:	48 c7 44 24 70 1c 00 	mov    QWORD PTR [rsp+0x70],0x1c
+  25660c:	00 00 
+  25660e:	48 c7 44 24 78 1d 00 	mov    QWORD PTR [rsp+0x78],0x1d
+  256615:	00 00 
+  256617:	48 c7 84 24 80 00 00 	mov    QWORD PTR [rsp+0x80],0x1e
+  25661e:	00 1e 00 00 00 
+  256623:	48 c7 84 24 88 00 00 	mov    QWORD PTR [rsp+0x88],0x1f
+  25662a:	00 1f 00 00 00 
+  25662f:	48 c7 84 24 90 00 00 	mov    QWORD PTR [rsp+0x90],0x20
+  256636:	00 20 00 00 00 
+  25663b:	48 c7 84 24 98 00 00 	mov    QWORD PTR [rsp+0x98],0x21
+  256642:	00 21 00 00 00 
+  256647:	48 c7 84 24 a0 00 00 	mov    QWORD PTR [rsp+0xa0],0x22
+  25664e:	00 22 00 00 00 
+  256653:	48 c7 84 24 a8 00 00 	mov    QWORD PTR [rsp+0xa8],0x23
+  25665a:	00 23 00 00 00 
+  25665f:	48 c7 84 24 b0 00 00 	mov    QWORD PTR [rsp+0xb0],0x24
+  256666:	00 24 00 00 00 
+  25666b:	48 c7 84 24 b8 00 00 	mov    QWORD PTR [rsp+0xb8],0x25
+  256672:	00 25 00 00 00 
+  256677:	48 c7 84 24 c0 00 00 	mov    QWORD PTR [rsp+0xc0],0x26
+  25667e:	00 26 00 00 00 
+  256683:	48 c7 84 24 c8 00 00 	mov    QWORD PTR [rsp+0xc8],0x27
+  25668a:	00 27 00 00 00 
+  25668f:	48 c7 84 24 d0 00 00 	mov    QWORD PTR [rsp+0xd0],0x28
+  256696:	00 28 00 00 00 
+  25669b:	48 c7 84 24 d8 00 00 	mov    QWORD PTR [rsp+0xd8],0x29
+  2566a2:	00 29 00 00 00 
+  2566a7:	48 c7 84 24 e0 00 00 	mov    QWORD PTR [rsp+0xe0],0x2a
+  2566ae:	00 2a 00 00 00 
+  2566b3:	48 c7 84 24 e8 00 00 	mov    QWORD PTR [rsp+0xe8],0x2b
+  2566ba:	00 2b 00 00 00 
+  2566bf:	48 c7 84 24 f0 00 00 	mov    QWORD PTR [rsp+0xf0],0x2c
+  2566c6:	00 2c 00 00 00 
+  2566cb:	48 c7 84 24 f8 00 00 	mov    QWORD PTR [rsp+0xf8],0x2d
+  2566d2:	00 2d 00 00 00 
+  2566d7:	48 c7 84 24 00 01 00 	mov    QWORD PTR [rsp+0x100],0x2e
+  2566de:	00 2e 00 00 00 
+  2566e3:	48 c7 84 24 08 01 00 	mov    QWORD PTR [rsp+0x108],0x2f
+  2566ea:	00 2f 00 00 00 
+  2566ef:	48 c7 84 24 10 01 00 	mov    QWORD PTR [rsp+0x110],0x30
+  2566f6:	00 30 00 00 00 
+  2566fb:	48 c7 84 24 18 01 00 	mov    QWORD PTR [rsp+0x118],0x31
+  256702:	00 31 00 00 00 
+  256707:	48 c7 84 24 20 01 00 	mov    QWORD PTR [rsp+0x120],0x32
+  25670e:	00 32 00 00 00 
+  256713:	48 c7 84 24 28 01 00 	mov    QWORD PTR [rsp+0x128],0x33
+  25671a:	00 33 00 00 00 
+  25671f:	48 c7 84 24 30 01 00 	mov    QWORD PTR [rsp+0x130],0x34
+  256726:	00 34 00 00 00 
+  25672b:	48 c7 84 24 38 01 00 	mov    QWORD PTR [rsp+0x138],0x35
+  256732:	00 35 00 00 00 
+  256737:	48 c7 84 24 40 01 00 	mov    QWORD PTR [rsp+0x140],0x36
+  25673e:	00 36 00 00 00 
+  256743:	48 c7 84 24 48 01 00 	mov    QWORD PTR [rsp+0x148],0x37
+  25674a:	00 37 00 00 00 
+  25674f:	48 c7 84 24 50 01 00 	mov    QWORD PTR [rsp+0x150],0x38
+  256756:	00 38 00 00 00 
+  25675b:	48 c7 84 24 58 01 00 	mov    QWORD PTR [rsp+0x158],0x39
+  256762:	00 39 00 00 00 
+  256767:	48 c7 84 24 60 01 00 	mov    QWORD PTR [rsp+0x160],0x3a
+  25676e:	00 3a 00 00 00 
+  256773:	48 c7 84 24 68 01 00 	mov    QWORD PTR [rsp+0x168],0x3b
+  25677a:	00 3b 00 00 00 
+  25677f:	48 c7 84 24 70 01 00 	mov    QWORD PTR [rsp+0x170],0x3c
+  256786:	00 3c 00 00 00 
+  25678b:	48 c7 84 24 78 01 00 	mov    QWORD PTR [rsp+0x178],0x3d
+  256792:	00 3d 00 00 00 
+  256797:	48 c7 84 24 80 01 00 	mov    QWORD PTR [rsp+0x180],0x3e
+  25679e:	00 3e 00 00 00 
+  2567a3:	48 c7 84 24 88 01 00 	mov    QWORD PTR [rsp+0x188],0x3f
+  2567aa:	00 3f 00 00 00 
+  2567af:	48 c7 84 24 90 01 00 	mov    QWORD PTR [rsp+0x190],0x40
+  2567b6:	00 40 00 00 00 
+  2567bb:	48 c7 84 24 98 01 00 	mov    QWORD PTR [rsp+0x198],0x41
+  2567c2:	00 41 00 00 00 
+  2567c7:	48 c7 84 24 a0 01 00 	mov    QWORD PTR [rsp+0x1a0],0x42
+  2567ce:	00 42 00 00 00 
+  2567d3:	48 c7 84 24 a8 01 00 	mov    QWORD PTR [rsp+0x1a8],0x43
+  2567da:	00 43 00 00 00 
+  2567df:	48 c7 84 24 b0 01 00 	mov    QWORD PTR [rsp+0x1b0],0x44
+  2567e6:	00 44 00 00 00 
+  2567eb:	48 c7 84 24 b8 01 00 	mov    QWORD PTR [rsp+0x1b8],0x45
+  2567f2:	00 45 00 00 00 
+  2567f7:	48 c7 84 24 c0 01 00 	mov    QWORD PTR [rsp+0x1c0],0x46
+  2567fe:	00 46 00 00 00 
+  256803:	48 c7 84 24 c8 01 00 	mov    QWORD PTR [rsp+0x1c8],0x47
+  25680a:	00 47 00 00 00 
+  25680f:	48 c7 84 24 d0 01 00 	mov    QWORD PTR [rsp+0x1d0],0x48
+  256816:	00 48 00 00 00 
+  25681b:	48 c7 84 24 d8 01 00 	mov    QWORD PTR [rsp+0x1d8],0x49
+  256822:	00 49 00 00 00 
+  256827:	48 c7 84 24 e0 01 00 	mov    QWORD PTR [rsp+0x1e0],0x4a
+  25682e:	00 4a 00 00 00 
+  256833:	48 c7 84 24 e8 01 00 	mov    QWORD PTR [rsp+0x1e8],0x4b
+  25683a:	00 4b 00 00 00 
+  25683f:	48 c7 84 24 f0 01 00 	mov    QWORD PTR [rsp+0x1f0],0x4c
+  256846:	00 4c 00 00 00 
+  25684b:	48 c7 84 24 f8 01 00 	mov    QWORD PTR [rsp+0x1f8],0x4d
+  256852:	00 4d 00 00 00 
+  256857:	48 c7 84 24 00 02 00 	mov    QWORD PTR [rsp+0x200],0x4e
+  25685e:	00 4e 00 00 00 
+  256863:	48 c7 84 24 08 02 00 	mov    QWORD PTR [rsp+0x208],0x4f
+  25686a:	00 4f 00 00 00 
+  25686f:	48 c7 84 24 10 02 00 	mov    QWORD PTR [rsp+0x210],0x50
+  256876:	00 50 00 00 00 
+  25687b:	48 c7 84 24 18 02 00 	mov    QWORD PTR [rsp+0x218],0x51
+  256882:	00 51 00 00 00 
+  256887:	48 c7 84 24 20 02 00 	mov    QWORD PTR [rsp+0x220],0x52
+  25688e:	00 52 00 00 00 
+  256893:	48 c7 84 24 28 02 00 	mov    QWORD PTR [rsp+0x228],0x53
+  25689a:	00 53 00 00 00 
+  25689f:	48 c7 84 24 30 02 00 	mov    QWORD PTR [rsp+0x230],0x54
+  2568a6:	00 54 00 00 00 
+  2568ab:	48 c7 84 24 38 02 00 	mov    QWORD PTR [rsp+0x238],0x55
+  2568b2:	00 55 00 00 00 
+  2568b7:	48 c7 84 24 40 02 00 	mov    QWORD PTR [rsp+0x240],0x56
+  2568be:	00 56 00 00 00 
+  2568c3:	48 c7 84 24 48 02 00 	mov    QWORD PTR [rsp+0x248],0x57
+  2568ca:	00 57 00 00 00 
+  2568cf:	48 c7 84 24 50 02 00 	mov    QWORD PTR [rsp+0x250],0x58
+  2568d6:	00 58 00 00 00 
+  2568db:	48 c7 84 24 58 02 00 	mov    QWORD PTR [rsp+0x258],0x59
+  2568e2:	00 59 00 00 00 
+  2568e7:	48 c7 84 24 60 02 00 	mov    QWORD PTR [rsp+0x260],0x5a
+  2568ee:	00 5a 00 00 00 
+  2568f3:	48 c7 84 24 68 02 00 	mov    QWORD PTR [rsp+0x268],0x5b
+  2568fa:	00 5b 00 00 00 
+  2568ff:	48 c7 84 24 70 02 00 	mov    QWORD PTR [rsp+0x270],0x5c
+  256906:	00 5c 00 00 00 
+  25690b:	48 c7 84 24 78 02 00 	mov    QWORD PTR [rsp+0x278],0x5d
+  256912:	00 5d 00 00 00 
+  256917:	48 c7 84 24 80 02 00 	mov    QWORD PTR [rsp+0x280],0x5e
+  25691e:	00 5e 00 00 00 
+  256923:	48 c7 84 24 88 02 00 	mov    QWORD PTR [rsp+0x288],0x5f
+  25692a:	00 5f 00 00 00 
+  25692f:	48 c7 84 24 90 02 00 	mov    QWORD PTR [rsp+0x290],0x60
+  256936:	00 60 00 00 00 
+  25693b:	48 c7 84 24 98 02 00 	mov    QWORD PTR [rsp+0x298],0x61
+  256942:	00 61 00 00 00 
+  256947:	48 c7 84 24 a0 02 00 	mov    QWORD PTR [rsp+0x2a0],0x62
+  25694e:	00 62 00 00 00 
+  256953:	48 c7 84 24 a8 02 00 	mov    QWORD PTR [rsp+0x2a8],0x63
+  25695a:	00 63 00 00 00 
+  25695f:	48 c7 84 24 b0 02 00 	mov    QWORD PTR [rsp+0x2b0],0x64
+  256966:	00 64 00 00 00 
+  25696b:	48 c7 84 24 b8 02 00 	mov    QWORD PTR [rsp+0x2b8],0x65
+  256972:	00 65 00 00 00 
+  256977:	48 c7 84 24 c0 02 00 	mov    QWORD PTR [rsp+0x2c0],0x66
+  25697e:	00 66 00 00 00 
+  256983:	48 c7 84 24 c8 02 00 	mov    QWORD PTR [rsp+0x2c8],0x67
+  25698a:	00 67 00 00 00 
+  25698f:	48 c7 84 24 d0 02 00 	mov    QWORD PTR [rsp+0x2d0],0x68
+  256996:	00 68 00 00 00 
+  25699b:	48 c7 84 24 d8 02 00 	mov    QWORD PTR [rsp+0x2d8],0x69
+  2569a2:	00 69 00 00 00 
+  2569a7:	48 c7 84 24 e0 02 00 	mov    QWORD PTR [rsp+0x2e0],0x6a
+  2569ae:	00 6a 00 00 00 
+  2569b3:	48 c7 84 24 e8 02 00 	mov    QWORD PTR [rsp+0x2e8],0x6b
+  2569ba:	00 6b 00 00 00 
+  2569bf:	48 c7 84 24 f0 02 00 	mov    QWORD PTR [rsp+0x2f0],0x6c
+  2569c6:	00 6c 00 00 00 
+  2569cb:	48 c7 84 24 f8 02 00 	mov    QWORD PTR [rsp+0x2f8],0x6d
+  2569d2:	00 6d 00 00 00 
+  2569d7:	48 c7 84 24 00 03 00 	mov    QWORD PTR [rsp+0x300],0x6e
+  2569de:	00 6e 00 00 00 
+  2569e3:	48 c7 84 24 08 03 00 	mov    QWORD PTR [rsp+0x308],0x6f
+  2569ea:	00 6f 00 00 00 
+  2569ef:	48 c7 84 24 10 03 00 	mov    QWORD PTR [rsp+0x310],0x70
+  2569f6:	00 70 00 00 00 
+  2569fb:	48 c7 84 24 18 03 00 	mov    QWORD PTR [rsp+0x318],0x71
+  256a02:	00 71 00 00 00 
+  256a07:	48 c7 84 24 20 03 00 	mov    QWORD PTR [rsp+0x320],0x72
+  256a0e:	00 72 00 00 00 
+  256a13:	48 c7 84 24 28 03 00 	mov    QWORD PTR [rsp+0x328],0x73
+  256a1a:	00 73 00 00 00 
+  256a1f:	48 c7 84 24 30 03 00 	mov    QWORD PTR [rsp+0x330],0x74
+  256a26:	00 74 00 00 00 
+  256a2b:	48 c7 84 24 38 03 00 	mov    QWORD PTR [rsp+0x338],0x75
+  256a32:	00 75 00 00 00 
+  256a37:	48 c7 84 24 40 03 00 	mov    QWORD PTR [rsp+0x340],0x76
+  256a3e:	00 76 00 00 00 
+  256a43:	48 c7 84 24 48 03 00 	mov    QWORD PTR [rsp+0x348],0x77
+  256a4a:	00 77 00 00 00 
+  256a4f:	48 c7 84 24 50 03 00 	mov    QWORD PTR [rsp+0x350],0x78
+  256a56:	00 78 00 00 00 
+  256a5b:	48 c7 84 24 58 03 00 	mov    QWORD PTR [rsp+0x358],0x79
+  256a62:	00 79 00 00 00 
+  256a67:	48 c7 84 24 60 03 00 	mov    QWORD PTR [rsp+0x360],0x7a
+  256a6e:	00 7a 00 00 00 
+  256a73:	48 c7 84 24 68 03 00 	mov    QWORD PTR [rsp+0x368],0x7b
+  256a7a:	00 7b 00 00 00 
+  256a7f:	48 c7 84 24 70 03 00 	mov    QWORD PTR [rsp+0x370],0x7c
+  256a86:	00 7c 00 00 00 
+  256a8b:	48 c7 84 24 78 03 00 	mov    QWORD PTR [rsp+0x378],0x7d
+  256a92:	00 7d 00 00 00 
+  256a97:	48 c7 84 24 80 03 00 	mov    QWORD PTR [rsp+0x380],0x7e
+  256a9e:	00 7e 00 00 00 
+  256aa3:	48 c7 84 24 88 03 00 	mov    QWORD PTR [rsp+0x388],0x7f
+  256aaa:	00 7f 00 00 00 
+  256aaf:	48 c7 84 24 90 03 00 	mov    QWORD PTR [rsp+0x390],0x80
+  256ab6:	00 80 00 00 00 
+  256abb:	48 c7 84 24 98 03 00 	mov    QWORD PTR [rsp+0x398],0x81
+  256ac2:	00 81 00 00 00 
+  256ac7:	48 c7 84 24 a0 03 00 	mov    QWORD PTR [rsp+0x3a0],0x82
+  256ace:	00 82 00 00 00 
+  256ad3:	48 c7 84 24 a8 03 00 	mov    QWORD PTR [rsp+0x3a8],0x83
+  256ada:	00 83 00 00 00 
+  256adf:	48 c7 84 24 b0 03 00 	mov    QWORD PTR [rsp+0x3b0],0x84
+  256ae6:	00 84 00 00 00 
+  256aeb:	48 c7 84 24 b8 03 00 	mov    QWORD PTR [rsp+0x3b8],0x85
+  256af2:	00 85 00 00 00 
+  256af7:	48 c7 84 24 c0 03 00 	mov    QWORD PTR [rsp+0x3c0],0x86
+  256afe:	00 86 00 00 00 
+  256b03:	48 c7 84 24 c8 03 00 	mov    QWORD PTR [rsp+0x3c8],0x87
+  256b0a:	00 87 00 00 00 
+  256b0f:	48 c7 84 24 d0 03 00 	mov    QWORD PTR [rsp+0x3d0],0x88
+  256b16:	00 88 00 00 00 
+  256b1b:	48 c7 84 24 d8 03 00 	mov    QWORD PTR [rsp+0x3d8],0x89
+  256b22:	00 89 00 00 00 
+  256b27:	48 c7 84 24 e0 03 00 	mov    QWORD PTR [rsp+0x3e0],0x8a
+  256b2e:	00 8a 00 00 00 
+  256b33:	48 c7 84 24 e8 03 00 	mov    QWORD PTR [rsp+0x3e8],0x8b
+  256b3a:	00 8b 00 00 00 
+  256b3f:	48 c7 84 24 f0 03 00 	mov    QWORD PTR [rsp+0x3f0],0x8c
+  256b46:	00 8c 00 00 00 
+  256b4b:	48 c7 84 24 f8 03 00 	mov    QWORD PTR [rsp+0x3f8],0x8d
+  256b52:	00 8d 00 00 00 
+  256b57:	48 c7 84 24 00 04 00 	mov    QWORD PTR [rsp+0x400],0x8e
+  256b5e:	00 8e 00 00 00 
+  256b63:	48 c7 84 24 08 04 00 	mov    QWORD PTR [rsp+0x408],0x8f
+  256b6a:	00 8f 00 00 00 
+  256b6f:	48 c7 84 24 10 04 00 	mov    QWORD PTR [rsp+0x410],0x90
+  256b76:	00 90 00 00 00 
+  256b7b:	48 c7 84 24 18 04 00 	mov    QWORD PTR [rsp+0x418],0x91
+  256b82:	00 91 00 00 00 
+  256b87:	48 c7 84 24 20 04 00 	mov    QWORD PTR [rsp+0x420],0x92
+  256b8e:	00 92 00 00 00 
+  256b93:	48 c7 84 24 28 04 00 	mov    QWORD PTR [rsp+0x428],0x93
+  256b9a:	00 93 00 00 00 
+  256b9f:	48 c7 84 24 30 04 00 	mov    QWORD PTR [rsp+0x430],0x94
+  256ba6:	00 94 00 00 00 
+  256bab:	48 c7 84 24 38 04 00 	mov    QWORD PTR [rsp+0x438],0x95
+  256bb2:	00 95 00 00 00 
+  256bb7:	48 c7 84 24 40 04 00 	mov    QWORD PTR [rsp+0x440],0x96
+  256bbe:	00 96 00 00 00 
+  256bc3:	48 c7 84 24 48 04 00 	mov    QWORD PTR [rsp+0x448],0x97
+  256bca:	00 97 00 00 00 
+  256bcf:	48 c7 84 24 50 04 00 	mov    QWORD PTR [rsp+0x450],0x98
+  256bd6:	00 98 00 00 00 
+  256bdb:	48 c7 84 24 58 04 00 	mov    QWORD PTR [rsp+0x458],0x99
+  256be2:	00 99 00 00 00 
+  256be7:	48 c7 84 24 60 04 00 	mov    QWORD PTR [rsp+0x460],0x9a
+  256bee:	00 9a 00 00 00 
+  256bf3:	48 c7 84 24 68 04 00 	mov    QWORD PTR [rsp+0x468],0x9b
+  256bfa:	00 9b 00 00 00 
+  256bff:	48 c7 84 24 70 04 00 	mov    QWORD PTR [rsp+0x470],0x9c
+  256c06:	00 9c 00 00 00 
+  256c0b:	48 c7 84 24 78 04 00 	mov    QWORD PTR [rsp+0x478],0x9d
+  256c12:	00 9d 00 00 00 
+  256c17:	48 c7 84 24 80 04 00 	mov    QWORD PTR [rsp+0x480],0x9e
+  256c1e:	00 9e 00 00 00 
+  256c23:	48 c7 84 24 88 04 00 	mov    QWORD PTR [rsp+0x488],0x9f
+  256c2a:	00 9f 00 00 00 
+  256c2f:	48 c7 84 24 90 04 00 	mov    QWORD PTR [rsp+0x490],0xa0
+  256c36:	00 a0 00 00 00 
+  256c3b:	48 c7 84 24 98 04 00 	mov    QWORD PTR [rsp+0x498],0xa1
+  256c42:	00 a1 00 00 00 
+  256c47:	48 c7 84 24 a0 04 00 	mov    QWORD PTR [rsp+0x4a0],0xa2
+  256c4e:	00 a2 00 00 00 
+  256c53:	48 c7 84 24 a8 04 00 	mov    QWORD PTR [rsp+0x4a8],0xa3
+  256c5a:	00 a3 00 00 00 
+  256c5f:	48 c7 84 24 b0 04 00 	mov    QWORD PTR [rsp+0x4b0],0xa4
+  256c66:	00 a4 00 00 00 
+  256c6b:	48 c7 84 24 b8 04 00 	mov    QWORD PTR [rsp+0x4b8],0xa5
+  256c72:	00 a5 00 00 00 
+  256c77:	48 c7 84 24 c0 04 00 	mov    QWORD PTR [rsp+0x4c0],0xa6
+  256c7e:	00 a6 00 00 00 
+  256c83:	48 c7 84 24 c8 04 00 	mov    QWORD PTR [rsp+0x4c8],0xa7
+  256c8a:	00 a7 00 00 00 
+  256c8f:	48 c7 84 24 d0 04 00 	mov    QWORD PTR [rsp+0x4d0],0xa8
+  256c96:	00 a8 00 00 00 
+  256c9b:	48 c7 84 24 d8 04 00 	mov    QWORD PTR [rsp+0x4d8],0xa9
+  256ca2:	00 a9 00 00 00 
+  256ca7:	48 c7 84 24 e0 04 00 	mov    QWORD PTR [rsp+0x4e0],0xaa
+  256cae:	00 aa 00 00 00 
+  256cb3:	48 c7 84 24 e8 04 00 	mov    QWORD PTR [rsp+0x4e8],0xab
+  256cba:	00 ab 00 00 00 
+  256cbf:	48 c7 84 24 f0 04 00 	mov    QWORD PTR [rsp+0x4f0],0xac
+  256cc6:	00 ac 00 00 00 
+  256ccb:	48 c7 84 24 f8 04 00 	mov    QWORD PTR [rsp+0x4f8],0xad
+  256cd2:	00 ad 00 00 00 
+  256cd7:	48 c7 84 24 00 05 00 	mov    QWORD PTR [rsp+0x500],0xae
+  256cde:	00 ae 00 00 00 
+  256ce3:	48 c7 84 24 08 05 00 	mov    QWORD PTR [rsp+0x508],0xaf
+  256cea:	00 af 00 00 00 
+  256cef:	48 c7 84 24 10 05 00 	mov    QWORD PTR [rsp+0x510],0xb0
+  256cf6:	00 b0 00 00 00 
+  256cfb:	48 c7 84 24 18 05 00 	mov    QWORD PTR [rsp+0x518],0xb1
+  256d02:	00 b1 00 00 00 
+  256d07:	48 c7 84 24 20 05 00 	mov    QWORD PTR [rsp+0x520],0xb2
+  256d0e:	00 b2 00 00 00 
+  256d13:	48 c7 84 24 28 05 00 	mov    QWORD PTR [rsp+0x528],0xb3
+  256d1a:	00 b3 00 00 00 
+  256d1f:	48 c7 84 24 30 05 00 	mov    QWORD PTR [rsp+0x530],0xb4
+  256d26:	00 b4 00 00 00 
+  256d2b:	48 c7 84 24 38 05 00 	mov    QWORD PTR [rsp+0x538],0xb5
+  256d32:	00 b5 00 00 00 
+  256d37:	48 c7 84 24 40 05 00 	mov    QWORD PTR [rsp+0x540],0xb6
+  256d3e:	00 b6 00 00 00 
+  256d43:	48 c7 84 24 48 05 00 	mov    QWORD PTR [rsp+0x548],0xb7
+  256d4a:	00 b7 00 00 00 
+  256d4f:	48 c7 84 24 50 05 00 	mov    QWORD PTR [rsp+0x550],0xb8
+  256d56:	00 b8 00 00 00 
+  256d5b:	48 c7 84 24 58 05 00 	mov    QWORD PTR [rsp+0x558],0xb9
+  256d62:	00 b9 00 00 00 
+  256d67:	48 c7 84 24 60 05 00 	mov    QWORD PTR [rsp+0x560],0xba
+  256d6e:	00 ba 00 00 00 
+  256d73:	48 c7 84 24 68 05 00 	mov    QWORD PTR [rsp+0x568],0xbb
+  256d7a:	00 bb 00 00 00 
+  256d7f:	48 c7 84 24 70 05 00 	mov    QWORD PTR [rsp+0x570],0xbc
+  256d86:	00 bc 00 00 00 
+  256d8b:	48 c7 84 24 78 05 00 	mov    QWORD PTR [rsp+0x578],0xbd
+  256d92:	00 bd 00 00 00 
+  256d97:	48 c7 84 24 80 05 00 	mov    QWORD PTR [rsp+0x580],0xbe
+  256d9e:	00 be 00 00 00 
+  256da3:	48 c7 84 24 88 05 00 	mov    QWORD PTR [rsp+0x588],0xbf
+  256daa:	00 bf 00 00 00 
+  256daf:	48 c7 84 24 90 05 00 	mov    QWORD PTR [rsp+0x590],0xc0
+  256db6:	00 c0 00 00 00 
+  256dbb:	48 c7 84 24 98 05 00 	mov    QWORD PTR [rsp+0x598],0xc1
+  256dc2:	00 c1 00 00 00 
+  256dc7:	48 c7 84 24 a0 05 00 	mov    QWORD PTR [rsp+0x5a0],0xc2
+  256dce:	00 c2 00 00 00 
+  256dd3:	48 c7 84 24 a8 05 00 	mov    QWORD PTR [rsp+0x5a8],0xc3
+  256dda:	00 c3 00 00 00 
+  256ddf:	48 c7 84 24 b0 05 00 	mov    QWORD PTR [rsp+0x5b0],0xc4
+  256de6:	00 c4 00 00 00 
+  256deb:	48 c7 84 24 b8 05 00 	mov    QWORD PTR [rsp+0x5b8],0xc5
+  256df2:	00 c5 00 00 00 
+  256df7:	48 c7 84 24 c0 05 00 	mov    QWORD PTR [rsp+0x5c0],0xc6
+  256dfe:	00 c6 00 00 00 
+  256e03:	48 c7 84 24 c8 05 00 	mov    QWORD PTR [rsp+0x5c8],0xc7
+  256e0a:	00 c7 00 00 00 
+  256e0f:	48 c7 84 24 d0 05 00 	mov    QWORD PTR [rsp+0x5d0],0xc8
+  256e16:	00 c8 00 00 00 
+  256e1b:	48 c7 84 24 d8 05 00 	mov    QWORD PTR [rsp+0x5d8],0xc9
+  256e22:	00 c9 00 00 00 
+  256e27:	48 c7 84 24 e0 05 00 	mov    QWORD PTR [rsp+0x5e0],0xca
+  256e2e:	00 ca 00 00 00 
+  256e33:	48 c7 84 24 e8 05 00 	mov    QWORD PTR [rsp+0x5e8],0xcb
+  256e3a:	00 cb 00 00 00 
+  256e3f:	48 c7 84 24 f0 05 00 	mov    QWORD PTR [rsp+0x5f0],0xcc
+  256e46:	00 cc 00 00 00 
+  256e4b:	48 c7 84 24 f8 05 00 	mov    QWORD PTR [rsp+0x5f8],0xcd
+  256e52:	00 cd 00 00 00 
+  256e57:	48 c7 84 24 00 06 00 	mov    QWORD PTR [rsp+0x600],0xce
+  256e5e:	00 ce 00 00 00 
+  256e63:	48 c7 84 24 08 06 00 	mov    QWORD PTR [rsp+0x608],0xcf
+  256e6a:	00 cf 00 00 00 
+  256e6f:	48 c7 84 24 10 06 00 	mov    QWORD PTR [rsp+0x610],0xd0
+  256e76:	00 d0 00 00 00 
+  256e7b:	48 c7 84 24 18 06 00 	mov    QWORD PTR [rsp+0x618],0xd1
+  256e82:	00 d1 00 00 00 
+  256e87:	48 c7 84 24 20 06 00 	mov    QWORD PTR [rsp+0x620],0xd2
+  256e8e:	00 d2 00 00 00 
+  256e93:	48 c7 84 24 28 06 00 	mov    QWORD PTR [rsp+0x628],0xd3
+  256e9a:	00 d3 00 00 00 
+  256e9f:	48 c7 84 24 30 06 00 	mov    QWORD PTR [rsp+0x630],0xd4
+  256ea6:	00 d4 00 00 00 
+  256eab:	48 c7 84 24 38 06 00 	mov    QWORD PTR [rsp+0x638],0xd5
+  256eb2:	00 d5 00 00 00 
+  256eb7:	48 c7 84 24 40 06 00 	mov    QWORD PTR [rsp+0x640],0xd6
+  256ebe:	00 d6 00 00 00 
+  256ec3:	48 c7 84 24 48 06 00 	mov    QWORD PTR [rsp+0x648],0xd7
+  256eca:	00 d7 00 00 00 
+  256ecf:	48 c7 84 24 50 06 00 	mov    QWORD PTR [rsp+0x650],0xd8
+  256ed6:	00 d8 00 00 00 
+  256edb:	48 c7 84 24 58 06 00 	mov    QWORD PTR [rsp+0x658],0xd9
+  256ee2:	00 d9 00 00 00 
+  256ee7:	48 c7 84 24 60 06 00 	mov    QWORD PTR [rsp+0x660],0xda
+  256eee:	00 da 00 00 00 
+  256ef3:	48 c7 84 24 68 06 00 	mov    QWORD PTR [rsp+0x668],0xdb
+  256efa:	00 db 00 00 00 
+  256eff:	48 c7 84 24 70 06 00 	mov    QWORD PTR [rsp+0x670],0xdc
+  256f06:	00 dc 00 00 00 
+  256f0b:	48 c7 84 24 78 06 00 	mov    QWORD PTR [rsp+0x678],0xdd
+  256f12:	00 dd 00 00 00 
+  256f17:	48 c7 84 24 80 06 00 	mov    QWORD PTR [rsp+0x680],0xde
+  256f1e:	00 de 00 00 00 
+  256f23:	48 c7 84 24 88 06 00 	mov    QWORD PTR [rsp+0x688],0xdf
+  256f2a:	00 df 00 00 00 
+  256f2f:	48 c7 84 24 90 06 00 	mov    QWORD PTR [rsp+0x690],0xe0
+  256f36:	00 e0 00 00 00 
+  256f3b:	48 c7 84 24 98 06 00 	mov    QWORD PTR [rsp+0x698],0xe1
+  256f42:	00 e1 00 00 00 
+  256f47:	48 c7 84 24 a0 06 00 	mov    QWORD PTR [rsp+0x6a0],0xe2
+  256f4e:	00 e2 00 00 00 
+  256f53:	48 c7 84 24 a8 06 00 	mov    QWORD PTR [rsp+0x6a8],0xe3
+  256f5a:	00 e3 00 00 00 
+  256f5f:	48 c7 84 24 b0 06 00 	mov    QWORD PTR [rsp+0x6b0],0xe4
+  256f66:	00 e4 00 00 00 
+  256f6b:	48 c7 84 24 b8 06 00 	mov    QWORD PTR [rsp+0x6b8],0xe5
+  256f72:	00 e5 00 00 00 
+  256f77:	48 c7 84 24 c0 06 00 	mov    QWORD PTR [rsp+0x6c0],0xe6
+  256f7e:	00 e6 00 00 00 
+  256f83:	48 c7 84 24 c8 06 00 	mov    QWORD PTR [rsp+0x6c8],0xe7
+  256f8a:	00 e7 00 00 00 
+  256f8f:	48 c7 84 24 d0 06 00 	mov    QWORD PTR [rsp+0x6d0],0xe8
+  256f96:	00 e8 00 00 00 
+  256f9b:	48 c7 84 24 d8 06 00 	mov    QWORD PTR [rsp+0x6d8],0xe9
+  256fa2:	00 e9 00 00 00 
+  256fa7:	48 c7 84 24 e0 06 00 	mov    QWORD PTR [rsp+0x6e0],0xea
+  256fae:	00 ea 00 00 00 
+  256fb3:	48 c7 84 24 e8 06 00 	mov    QWORD PTR [rsp+0x6e8],0xeb
+  256fba:	00 eb 00 00 00 
+  256fbf:	48 c7 84 24 f0 06 00 	mov    QWORD PTR [rsp+0x6f0],0xec
+  256fc6:	00 ec 00 00 00 
+  256fcb:	48 c7 84 24 f8 06 00 	mov    QWORD PTR [rsp+0x6f8],0xed
+  256fd2:	00 ed 00 00 00 
+  256fd7:	48 c7 84 24 00 07 00 	mov    QWORD PTR [rsp+0x700],0xee
+  256fde:	00 ee 00 00 00 
+  256fe3:	48 c7 84 24 08 07 00 	mov    QWORD PTR [rsp+0x708],0xef
+  256fea:	00 ef 00 00 00 
+  256fef:	48 c7 84 24 10 07 00 	mov    QWORD PTR [rsp+0x710],0xf0
+  256ff6:	00 f0 00 00 00 
+  256ffb:	48 c7 84 24 18 07 00 	mov    QWORD PTR [rsp+0x718],0xf1
+  257002:	00 f1 00 00 00 
+  257007:	48 c7 84 24 20 07 00 	mov    QWORD PTR [rsp+0x720],0xf2
+  25700e:	00 f2 00 00 00 
+  257013:	48 c7 84 24 28 07 00 	mov    QWORD PTR [rsp+0x728],0xf3
+  25701a:	00 f3 00 00 00 
+  25701f:	48 c7 84 24 30 07 00 	mov    QWORD PTR [rsp+0x730],0xf4
+  257026:	00 f4 00 00 00 
+  25702b:	48 c7 84 24 38 07 00 	mov    QWORD PTR [rsp+0x738],0xf5
+  257032:	00 f5 00 00 00 
+  257037:	48 c7 84 24 40 07 00 	mov    QWORD PTR [rsp+0x740],0xf6
+  25703e:	00 f6 00 00 00 
+  257043:	48 c7 84 24 48 07 00 	mov    QWORD PTR [rsp+0x748],0xf7
+  25704a:	00 f7 00 00 00 
+  25704f:	48 c7 84 24 50 07 00 	mov    QWORD PTR [rsp+0x750],0xf8
+  257056:	00 f8 00 00 00 
+  25705b:	48 c7 84 24 58 07 00 	mov    QWORD PTR [rsp+0x758],0xf9
+  257062:	00 f9 00 00 00 
+  257067:	48 c7 84 24 60 07 00 	mov    QWORD PTR [rsp+0x760],0xfa
+  25706e:	00 fa 00 00 00 
+  257073:	48 c7 84 24 68 07 00 	mov    QWORD PTR [rsp+0x768],0xfb
+  25707a:	00 fb 00 00 00 
+  25707f:	48 c7 84 24 70 07 00 	mov    QWORD PTR [rsp+0x770],0xfc
+  257086:	00 fc 00 00 00 
+  25708b:	48 c7 84 24 78 07 00 	mov    QWORD PTR [rsp+0x778],0xfd
+  257092:	00 fd 00 00 00 
+  257097:	48 c7 84 24 80 07 00 	mov    QWORD PTR [rsp+0x780],0xfe
+  25709e:	00 fe 00 00 00 
+  2570a3:	48 c7 84 24 88 07 00 	mov    QWORD PTR [rsp+0x788],0xff
+  2570aa:	00 ff 00 00 00 
+  2570af:	48 c7 84 24 90 07 00 	mov    QWORD PTR [rsp+0x790],0x100
+  2570b6:	00 00 01 00 00 
+  2570bb:	48 c7 44 24 88 10 87 	mov    QWORD PTR [rsp-0x78],0x208710
+  2570c2:	20 00 
+  2570c4:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  2570cb:	00 00 
+  2570cd:	48 c7 44 24 88 40 87 	mov    QWORD PTR [rsp-0x78],0x208740
+  2570d4:	20 00 
+  2570d6:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  2570dd:	00 00 
+  2570df:	48 c7 44 24 88 70 87 	mov    QWORD PTR [rsp-0x78],0x208770
+  2570e6:	20 00 
+  2570e8:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  2570ef:	00 00 
+  2570f1:	48 c7 44 24 88 a0 87 	mov    QWORD PTR [rsp-0x78],0x2087a0
+  2570f8:	20 00 
+  2570fa:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  257101:	00 00 
+  257103:	48 85 ff             	test   rdi,rdi
+  257106:	0f 8e 92 00 00 00    	jle    25719e <ll_arraywalk2+0xcce>
+  25710c:	b8 01 00 00 00       	mov    eax,0x1
+  257111:	b9 01 00 00 00       	mov    ecx,0x1
+  257116:	66 2e 0f 1f 84 00 00 	cs nop WORD PTR [rax+rax*1+0x0]
+  25711d:	00 00 00 
+  257120:	48 c7 44 24 88 d0 87 	mov    QWORD PTR [rsp-0x78],0x2087d0
+  257127:	20 00 
+  257129:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  257130:	00 00 
+  257132:	48 01 44 cc 90       	add    QWORD PTR [rsp+rcx*8-0x70],rax
+  257137:	48 c7 44 24 88 00 88 	mov    QWORD PTR [rsp-0x78],0x208800
+  25713e:	20 00 
+  257140:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  257147:	00 00 
+  257149:	48 c7 44 24 88 30 88 	mov    QWORD PTR [rsp-0x78],0x208830
+  257150:	20 00 
+  257152:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  257159:	00 00 
+  25715b:	48 81 f9 f0 00 00 00 	cmp    rcx,0xf0
+  257162:	72 2c                	jb     257190 <ll_arraywalk2+0xcc0>
+  257164:	48 c7 44 24 88 60 88 	mov    QWORD PTR [rsp-0x78],0x208860
+  25716b:	20 00 
+  25716d:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  257174:	00 00 
+  257176:	48 81 c1 11 ff ff ff 	add    rcx,0xffffffffffffff11
+  25717d:	48 ff c0             	inc    rax
+  257180:	71 17                	jno    257199 <ll_arraywalk2+0xcc9>
+  257182:	eb 1a                	jmp    25719e <ll_arraywalk2+0xcce>
+  257184:	66 66 66 2e 0f 1f 84 	data16 data16 cs nop WORD PTR [rax+rax*1+0x0]
+  25718b:	00 00 00 00 00 
+  257190:	48 83 c1 11          	add    rcx,0x11
+  257194:	48 ff c0             	inc    rax
+  257197:	70 05                	jo     25719e <ll_arraywalk2+0xcce>
+  257199:	48 39 f8             	cmp    rax,rdi
+  25719c:	7e 82                	jle    257120 <ll_arraywalk2+0xc50>
+  25719e:	48 c7 44 24 88 90 88 	mov    QWORD PTR [rsp-0x78],0x208890
+  2571a5:	20 00 
+  2571a7:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  2571ae:	00 00 
+  2571b0:	31 c0                	xor    eax,eax
+  2571b2:	31 c9                	xor    ecx,ecx
+  2571b4:	66 66 66 2e 0f 1f 84 	data16 data16 cs nop WORD PTR [rax+rax*1+0x0]
+  2571bb:	00 00 00 00 00 
+  2571c0:	48 c7 44 24 88 c0 88 	mov    QWORD PTR [rsp-0x78],0x2088c0
+  2571c7:	20 00 
+  2571c9:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  2571d0:	00 00 
+  2571d2:	48 03 44 cc 98       	add    rax,QWORD PTR [rsp+rcx*8-0x68]
+  2571d7:	48 c7 44 24 88 c0 88 	mov    QWORD PTR [rsp-0x78],0x2088c0
+  2571de:	20 00 
+  2571e0:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  2571e7:	00 00 
+  2571e9:	48 03 44 cc a0       	add    rax,QWORD PTR [rsp+rcx*8-0x60]
+  2571ee:	48 c7 44 24 88 c0 88 	mov    QWORD PTR [rsp-0x78],0x2088c0
+  2571f5:	20 00 
+  2571f7:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  2571fe:	00 00 
+  257200:	48 03 44 cc a8       	add    rax,QWORD PTR [rsp+rcx*8-0x58]
+  257205:	48 c7 44 24 88 c0 88 	mov    QWORD PTR [rsp-0x78],0x2088c0
+  25720c:	20 00 
+  25720e:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  257215:	00 00 
+  257217:	48 03 44 cc b0       	add    rax,QWORD PTR [rsp+rcx*8-0x50]
+  25721c:	48 83 c1 04          	add    rcx,0x4
+  257220:	48 81 f9 00 01 00 00 	cmp    rcx,0x100
+  257227:	75 97                	jne    2571c0 <ll_arraywalk2+0xcf0>
+  257229:	48 c7 44 24 88 f0 88 	mov    QWORD PTR [rsp-0x78],0x2088f0
+  257230:	20 00 
+  257232:	48 c7 44 24 90 22 00 	mov    QWORD PTR [rsp-0x70],0x22
+  257239:	00 00 
+  25723b:	48 8b 4c 24 80       	mov    rcx,QWORD PTR [rsp-0x80]
+  257240:	48 89 0d 61 54 00 00 	mov    QWORD PTR [rip+0x5461],rcx        # 25c6a8 <hbc_trace_top>
+  257247:	48 81 c4 98 07 00 00 	add    rsp,0x798
+  25724e:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+experiments/llvm-scalar/run/bench-traced-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000002558f0 <ll_branchloop>:
+  2558f0:	48 8b 0d b1 6d 00 00 	mov    rcx,QWORD PTR [rip+0x6db1]        # 25c6a8 <hbc_trace_top>
+  2558f7:	48 8d 44 24 e8       	lea    rax,[rsp-0x18]
+  2558fc:	48 89 05 a5 6d 00 00 	mov    QWORD PTR [rip+0x6da5],rax        # 25c6a8 <hbc_trace_top>
+  255903:	48 c7 44 24 f0 f0 80 	mov    QWORD PTR [rsp-0x10],0x2080f0
+  25590a:	20 00 
+  25590c:	48 c7 44 24 f8 1e 00 	mov    QWORD PTR [rsp-0x8],0x1e
+  255913:	00 00 
+  255915:	48 c7 44 24 f0 10 81 	mov    QWORD PTR [rsp-0x10],0x208110
+  25591c:	20 00 
+  25591e:	48 c7 44 24 f8 1e 00 	mov    QWORD PTR [rsp-0x8],0x1e
+  255925:	00 00 
+  255927:	48 c7 44 24 f0 30 81 	mov    QWORD PTR [rsp-0x10],0x208130
+  25592e:	20 00 
+  255930:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  255937:	00 00 
+  255939:	48 c7 44 24 f0 50 81 	mov    QWORD PTR [rsp-0x10],0x208150
+  255940:	20 00 
+  255942:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  255949:	00 00 
+  25594b:	48 85 ff             	test   rdi,rdi
+  25594e:	0f 8e a3 00 00 00    	jle    2559f7 <ll_branchloop+0x107>
+  255954:	48 8d 77 f9          	lea    rsi,[rdi-0x7]
+  255958:	48 c7 44 24 f0 70 81 	mov    QWORD PTR [rsp-0x10],0x208170
+  25595f:	20 00 
+  255961:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  255968:	00 00 
+  25596a:	31 c0                	xor    eax,eax
+  25596c:	48 83 ff 09          	cmp    rdi,0x9
+  255970:	0f 9d c0             	setge  al
+  255973:	41 b8 90 81 20 00    	mov    r8d,0x208190
+  255979:	41 b9 b0 81 20 00    	mov    r9d,0x2081b0
+  25597f:	4d 0f 4d c8          	cmovge r9,r8
+  255983:	48 8d 14 45 01 00 00 	lea    rdx,[rax*2+0x1]
+  25598a:	00 
+  25598b:	4c 89 4c 24 f0       	mov    QWORD PTR [rsp-0x10],r9
+  255990:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  255997:	00 00 
+  255999:	41 b9 02 00 00 00    	mov    r9d,0x2
+  25599f:	48 b8 ff ff ff ff ff 	movabs rax,0x7fffffffffffffff
+  2559a6:	ff ff 7f 
+  2559a9:	0f 1f 80 00 00 00 00 	nop    DWORD PTR [rax+0x0]
+  2559b0:	49 39 f9             	cmp    r9,rdi
+  2559b3:	7f 4b                	jg     255a00 <ll_branchloop+0x110>
+  2559b5:	48 c7 44 24 f0 70 81 	mov    QWORD PTR [rsp-0x10],0x208170
+  2559bc:	20 00 
+  2559be:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  2559c5:	00 00 
+  2559c7:	45 31 d2             	xor    r10d,r10d
+  2559ca:	49 39 f1             	cmp    r9,rsi
+  2559cd:	41 0f 9c c2          	setl   r10b
+  2559d1:	41 bb b0 81 20 00    	mov    r11d,0x2081b0
+  2559d7:	4d 0f 4c d8          	cmovl  r11,r8
+  2559db:	4c 89 5c 24 f0       	mov    QWORD PTR [rsp-0x10],r11
+  2559e0:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  2559e7:	00 00 
+  2559e9:	4a 8d 14 52          	lea    rdx,[rdx+r10*2]
+  2559ed:	48 ff c2             	inc    rdx
+  2559f0:	49 ff c1             	inc    r9
+  2559f3:	71 bb                	jno    2559b0 <ll_branchloop+0xc0>
+  2559f5:	eb 0c                	jmp    255a03 <ll_branchloop+0x113>
+  2559f7:	b8 01 00 00 00       	mov    eax,0x1
+  2559fc:	31 d2                	xor    edx,edx
+  2559fe:	eb 03                	jmp    255a03 <ll_branchloop+0x113>
+  255a00:	4c 89 c8             	mov    rax,r9
+  255a03:	48 01 d0             	add    rax,rdx
+  255a06:	48 c7 44 24 f0 d0 81 	mov    QWORD PTR [rsp-0x10],0x2081d0
+  255a0d:	20 00 
+  255a0f:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  255a16:	00 00 
+  255a18:	48 89 0d 89 6c 00 00 	mov    QWORD PTR [rip+0x6c89],rcx        # 25c6a8 <hbc_trace_top>
+  255a1f:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+experiments/llvm-scalar/run/bench-traced-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000255a20 <ll_fact>:
+  255a20:	53                   	push   rbx
+  255a21:	48 83 ec 20          	sub    rsp,0x20
+  255a25:	48 8b 0d 7c 6c 00 00 	mov    rcx,QWORD PTR [rip+0x6c7c]        # 25c6a8 <hbc_trace_top>
+  255a2c:	48 89 4c 24 08       	mov    QWORD PTR [rsp+0x8],rcx
+  255a31:	48 8d 44 24 08       	lea    rax,[rsp+0x8]
+  255a36:	48 89 05 6b 6c 00 00 	mov    QWORD PTR [rip+0x6c6b],rax        # 25c6a8 <hbc_trace_top>
+  255a3d:	48 c7 44 24 10 f0 81 	mov    QWORD PTR [rsp+0x10],0x2081f0
+  255a44:	20 00 
+  255a46:	48 c7 44 24 18 19 00 	mov    QWORD PTR [rsp+0x18],0x19
+  255a4d:	00 00 
+  255a4f:	48 c7 44 24 10 10 82 	mov    QWORD PTR [rsp+0x10],0x208210
+  255a56:	20 00 
+  255a58:	48 c7 44 24 18 19 00 	mov    QWORD PTR [rsp+0x18],0x19
+  255a5f:	00 00 
+  255a61:	b8 01 00 00 00       	mov    eax,0x1
+  255a66:	48 83 ff 02          	cmp    rdi,0x2
+  255a6a:	7c 18                	jl     255a84 <ll_fact+0x64>
+  255a6c:	48 8d 47 ff          	lea    rax,[rdi-0x1]
+  255a70:	48 89 fb             	mov    rbx,rdi
+  255a73:	48 89 c7             	mov    rdi,rax
+  255a76:	e8 a5 ff ff ff       	call   255a20 <ll_fact>
+  255a7b:	48 0f af c3          	imul   rax,rbx
+  255a7f:	48 8b 4c 24 08       	mov    rcx,QWORD PTR [rsp+0x8]
+  255a84:	48 89 0d 1d 6c 00 00 	mov    QWORD PTR [rip+0x6c1d],rcx        # 25c6a8 <hbc_trace_top>
+  255a8b:	48 83 c4 20          	add    rsp,0x20
+  255a8f:	5b                   	pop    rbx
+  255a90:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+experiments/llvm-scalar/run/bench-traced-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000255aa0 <ll_recurrence>:
+  255aa0:	48 8b 0d 01 6c 00 00 	mov    rcx,QWORD PTR [rip+0x6c01]        # 25c6a8 <hbc_trace_top>
+  255aa7:	48 8d 44 24 e8       	lea    rax,[rsp-0x18]
+  255aac:	48 89 05 f5 6b 00 00 	mov    QWORD PTR [rip+0x6bf5],rax        # 25c6a8 <hbc_trace_top>
+  255ab3:	48 c7 44 24 f0 30 82 	mov    QWORD PTR [rsp-0x10],0x208230
+  255aba:	20 00 
+  255abc:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  255ac3:	00 00 
+  255ac5:	48 c7 44 24 f0 50 82 	mov    QWORD PTR [rsp-0x10],0x208250
+  255acc:	20 00 
+  255ace:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  255ad5:	00 00 
+  255ad7:	48 c7 44 24 f0 70 82 	mov    QWORD PTR [rsp-0x10],0x208270
+  255ade:	20 00 
+  255ae0:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  255ae7:	00 00 
+  255ae9:	48 c7 44 24 f0 90 82 	mov    QWORD PTR [rsp-0x10],0x208290
+  255af0:	20 00 
+  255af2:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  255af9:	00 00 
+  255afb:	48 85 ff             	test   rdi,rdi
+  255afe:	7e 59                	jle    255b59 <ll_recurrence+0xb9>
+  255b00:	ba 01 00 00 00       	mov    edx,0x1
+  255b05:	41 b8 01 00 00 00    	mov    r8d,0x1
+  255b0b:	b8 01 00 00 00       	mov    eax,0x1
+  255b10:	48 c7 44 24 f0 b0 82 	mov    QWORD PTR [rsp-0x10],0x2082b0
+  255b17:	20 00 
+  255b19:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  255b20:	00 00 
+  255b22:	4b 8d 34 40          	lea    rsi,[r8+r8*2]
+  255b26:	48 ff c0             	inc    rax
+  255b29:	70 0e                	jo     255b39 <ll_recurrence+0x99>
+  255b2b:	49 89 d0             	mov    r8,rdx
+  255b2e:	49 01 f0             	add    r8,rsi
+  255b31:	48 89 c2             	mov    rdx,rax
+  255b34:	48 39 f8             	cmp    rax,rdi
+  255b37:	7e d7                	jle    255b10 <ll_recurrence+0x70>
+  255b39:	48 01 f0             	add    rax,rsi
+  255b3c:	48 ff c8             	dec    rax
+  255b3f:	48 c7 44 24 f0 d0 82 	mov    QWORD PTR [rsp-0x10],0x2082d0
+  255b46:	20 00 
+  255b48:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  255b4f:	00 00 
+  255b51:	48 89 0d 50 6b 00 00 	mov    QWORD PTR [rip+0x6b50],rcx        # 25c6a8 <hbc_trace_top>
+  255b58:	c3                   	ret    
+  255b59:	b8 01 00 00 00       	mov    eax,0x1
+  255b5e:	48 c7 44 24 f0 d0 82 	mov    QWORD PTR [rsp-0x10],0x2082d0
+  255b65:	20 00 
+  255b67:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  255b6e:	00 00 
+  255b70:	48 89 0d 31 6b 00 00 	mov    QWORD PTR [rip+0x6b31],rcx        # 25c6a8 <hbc_trace_top>
+  255b77:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+experiments/llvm-scalar/run/bench-traced-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000255810 <ll_sumloop>:
+  255810:	48 8b 0d 91 6e 00 00 	mov    rcx,QWORD PTR [rip+0x6e91]        # 25c6a8 <hbc_trace_top>
+  255817:	48 8d 44 24 e8       	lea    rax,[rsp-0x18]
+  25581c:	48 89 05 85 6e 00 00 	mov    QWORD PTR [rip+0x6e85],rax        # 25c6a8 <hbc_trace_top>
+  255823:	48 c7 44 24 f0 30 80 	mov    QWORD PTR [rsp-0x10],0x208030
+  25582a:	20 00 
+  25582c:	48 c7 44 24 f8 1b 00 	mov    QWORD PTR [rsp-0x8],0x1b
+  255833:	00 00 
+  255835:	48 c7 44 24 f0 50 80 	mov    QWORD PTR [rsp-0x10],0x208050
+  25583c:	20 00 
+  25583e:	48 c7 44 24 f8 1b 00 	mov    QWORD PTR [rsp-0x8],0x1b
+  255845:	00 00 
+  255847:	48 c7 44 24 f0 70 80 	mov    QWORD PTR [rsp-0x10],0x208070
+  25584e:	20 00 
+  255850:	48 c7 44 24 f8 1b 00 	mov    QWORD PTR [rsp-0x8],0x1b
+  255857:	00 00 
+  255859:	48 c7 44 24 f0 90 80 	mov    QWORD PTR [rsp-0x10],0x208090
+  255860:	20 00 
+  255862:	48 c7 44 24 f8 1b 00 	mov    QWORD PTR [rsp-0x8],0x1b
+  255869:	00 00 
+  25586b:	48 85 ff             	test   rdi,rdi
+  25586e:	7e 50                	jle    2558c0 <ll_sumloop+0xb0>
+  255870:	48 c7 44 24 f0 b0 80 	mov    QWORD PTR [rsp-0x10],0x2080b0
+  255877:	20 00 
+  255879:	48 c7 44 24 f8 1b 00 	mov    QWORD PTR [rsp-0x8],0x1b
+  255880:	00 00 
+  255882:	b8 02 00 00 00       	mov    eax,0x2
+  255887:	ba 05 00 00 00       	mov    edx,0x5
+  25588c:	0f 1f 40 00          	nop    DWORD PTR [rax+0x0]
+  255890:	48 39 f8             	cmp    rax,rdi
+  255893:	7f 32                	jg     2558c7 <ll_sumloop+0xb7>
+  255895:	48 c7 44 24 f0 b0 80 	mov    QWORD PTR [rsp-0x10],0x2080b0
+  25589c:	20 00 
+  25589e:	48 c7 44 24 f8 1b 00 	mov    QWORD PTR [rsp-0x8],0x1b
+  2558a5:	00 00 
+  2558a7:	48 83 c2 05          	add    rdx,0x5
+  2558ab:	48 ff c0             	inc    rax
+  2558ae:	71 e0                	jno    255890 <ll_sumloop+0x80>
+  2558b0:	48 ba fb ff ff ff ff 	movabs rdx,0x7ffffffffffffffb
+  2558b7:	ff ff 7f 
+  2558ba:	48 8d 42 04          	lea    rax,[rdx+0x4]
+  2558be:	eb 07                	jmp    2558c7 <ll_sumloop+0xb7>
+  2558c0:	b8 01 00 00 00       	mov    eax,0x1
+  2558c5:	31 d2                	xor    edx,edx
+  2558c7:	48 01 d0             	add    rax,rdx
+  2558ca:	48 c7 44 24 f0 d0 80 	mov    QWORD PTR [rsp-0x10],0x2080d0
+  2558d1:	20 00 
+  2558d3:	48 c7 44 24 f8 1b 00 	mov    QWORD PTR [rsp-0x8],0x1b
+  2558da:	00 00 
+  2558dc:	48 89 0d c5 6d 00 00 	mov    QWORD PTR [rip+0x6dc5],rcx        # 25c6a8 <hbc_trace_top>
+  2558e3:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:

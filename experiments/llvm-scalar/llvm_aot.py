@@ -15,7 +15,11 @@ if fn('LLVMParseIRInContext',i,p,p,C.POINTER(p),C.POINTER(c))(ctx,buf,C.byref(mo
 for n in ['LLVMInitializeX86TargetInfo','LLVMInitializeX86Target','LLVMInitializeX86TargetMC','LLVMInitializeX86AsmPrinter']:fn(n,None)()
 triple=b'x86_64-pc-windows-gnu' if len(sys.argv)>3 and sys.argv[3]=='windows' else b'x86_64-unknown-linux-gnu'
 if fn('LLVMGetTargetFromTriple',i,c,C.POINTER(p),C.POINTER(c))(triple,C.byref(target),C.byref(err)):raise RuntimeError(err.value)
-tm=fn('LLVMCreateTargetMachine',p,p,c,c,c,i,i,i)(target,triple,b'x86-64',b'',3,2,3)
+# LLVM C API enums: Static=1, PIC=2, Small=3. PE needs PIC for its high image base.
+RELOC_STATIC=1
+RELOC_PIC=2
+CODE_MODEL_SMALL=3
+tm=fn('LLVMCreateTargetMachine',p,p,c,c,c,i,i,i)(target,triple,b'x86-64',b'',3,RELOC_PIC if triple.endswith(b"windows-gnu") else RELOC_STATIC,CODE_MODEL_SMALL)
 fn('LLVMSetTarget',None,p,c)(mod,triple)
 dl=fn('LLVMCreateTargetDataLayout',p,p)(tm);ds=fn('LLVMCopyStringRepOfTargetData',c,p)(dl);fn('LLVMSetDataLayout',None,p,c)(mod,ds)
 if fn('LLVMVerifyModule',i,p,i,C.POINTER(c))(mod,2,C.byref(err)):raise RuntimeError(err.value)

@@ -44,7 +44,8 @@ under Wine, not native Windows. Run output is ignored by git. No automatic
 installation or network download occurs. LLVM shared-library path is explicit;
 the rustc-distribution C API used in this test is not a stable packaging contract.
 The driver assumes LLVM23, X86 target, x86-64 baseline CPU, small code model,
-static relocation and `default<O3>`. It fails if the required API is missing.
+static relocation on Linux, PIC on Windows, and `default<O3>`. It fails if the
+required API is missing. The target-specific relocation policy is explained below.
 
 ## Evidence, 27 October 2026
 
@@ -134,7 +135,7 @@ included-file origins. Successful corpus, edge, ProcLine and ABI tests remain.
 The ABI canary additionally checks trace-chain restoration after recursion.
 This establishes these registered cases, not universal signal/crash/error parity.
 
-Objects now use PIC relocation with the small code model; static relocation
+At this stage objects used PIC relocation with the small code model; static relocation
 with pointer globals produced COFF address32 overflow at the normal 64-bit PE
 image base. Generated programs remain freestanding/no LLVM runtime dependency.
 
@@ -913,3 +914,54 @@ copy/reassignment/capture, return and value-position OutStd, including dead
 uses. Full suite: 191 PASS lines and 23 error fixtures x2 targets (separate
 from PASS count). Default rebuilt battery: 1086 PASS, ALL GREEN. No new speed
 or size claim. main and the frontend/default backend remain untouched.
+
+
+## Trace-global binding and target relocation, 29 October 2026
+
+The experimental freestanding executable links the generated runtime object,
+which defines `hbc_trace_top`, into the same executable. Its LLVM declaration now
+says `external dso_local global ptr`. This expresses the existing linkage, not
+a new shared-library runtime contract. It permits direct access rather than a
+GOT address kept in a callee-saved register. Trace entry, statement writes,
+restoration, overflow and bounds checks are unchanged. A future DSO runtime must
+revisit this declaration; dynamic interposition is not supported by this slice.
+
+The AOT driver's formerly opaque relocation value 2 means PIC, not static.
+The initial method description above was wrong; the later PE note was correct.
+Linux now uses named Static=1 with Small=3; Windows retains PIC=2 because static
+string addresses overflow ADDR32 at the current 64-bit PE base. The failed local
+static-Windows build is not counted as a pass. Enum source (release/23.x):
+https://raw.githubusercontent.com/llvm/llvm-project/release/23.x/llvm/include/llvm-c/TargetMachine.h
+Binding semantics: https://llvm.org/docs/LangRef.html#runtime-preemption-specifiers
+
+One fresh x86-64/Linux harness with equivalent manually instrumented Rust trace
+writes, the same checks, O3/baseline CPU and linked runtime gives these function
+sizes in bytes. This is machine-code size, not instruction count or whole-file
+size:
+
+| Kernel | Previous LLVM (PIC) | New LLVM | Rust control |
+|---|---:|---:|---:|
+| sum | 223 | 212 | 212 |
+| branch | 317 | 304 | 304 |
+| factorial | 114 | 113 | 113 |
+| recurrence | 220 | 216 | 225 |
+| array16 | 817 | 843 | 843 |
+| array256 | 3470 | 3455 | 3439 |
+
+The new factorial removes the extra saved register/address materialization.
+Three 31-sample runs pinned to CPU0 had LLVM/Rust median-time ratios of
+0.980/1.007/0.993 for factorial and 0.747/0.750/0.999 for sum. Other kernels still
+show layout/host variability. This is evidence for these six kernels, not
+language-wide speed parity or a stable speedup percentage. The relocation and
+binding changes can trade code size in either direction (array16 grows).
+Raw samples, sizes, assembly, environment and validation logs are saved under
+`results/trace-binding-20261029/`. Previous comparisons used PIC LLVM, despite the
+old initial documentation calling it static; they must not be called
+static-vs-static evidence.
+
+Validation after this change: 192 PASS runner rows on Linux and cross-generated
+PE/Wine, 5089 differential calls, ABI/trace-restoration canaries, plus 23 error
+fixtures on both targets (46 exact stdout/exit/callstack comparisons, reported
+separately). A freshly rebuilt default backend passed 1086 manifest rows and
+ended ALL GREEN. The new linkage guard checks direct non-GOT trace-global
+relocations on ELF and absence of absolute ADDR32 string relocations on PE.
