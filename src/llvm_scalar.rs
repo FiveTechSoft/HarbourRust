@@ -121,12 +121,27 @@ impl Ir {
   // Evaluate every item before emitting the outer newline or separator.
   let mut vals=Vec::new();
   for (ei,e) in es.iter().enumerate() {
+   // Print-only selection between static literals: no string value ABI,
+   // local storage, owned result or general expression support is introduced.
+   if let Expr::Call(n,args)=e {if is_builtin(n,"iif") && args.len()==3 {
+    if let (Expr::Str(a),Expr::Str(b))=(&args[1],&args[2]) {
+     let c=self.cond(&args[0])?;let k=self.globals.len();let mut lens=Vec::new();
+     for text in [a,b] {
+      let text=if ei+1==es.len(){text.trim_end_matches(' ')}else{text.as_str()};
+      let bytes=text.as_bytes();lens.push(bytes.len());
+      self.globals.push(format!("@str{} = private constant [{} x i8] c\"{}\"",self.globals.len(),bytes.len(),bytes.iter().map(|b|format!("\\{:02X}",b)).collect::<String>()));
+     }
+     let p=self.tmp();self.line(format!("{} = select i1 {}, ptr @str{}, ptr @str{}",p,c,k,k+1));
+     let len=self.tmp();self.line(format!("{} = select i1 {}, i64 {}, i64 {}",len,c,lens[0],lens[1]));
+     vals.push((p,Some(len),false));continue
+    }
+   }}
    if self.isbool(e){
     let c=self.cond(e)?;let k=self.globals.len();
     self.globals.push(format!("@str{} = private constant [3 x i8] c\".T.\"",k));
     self.globals.push(format!("@str{} = private constant [3 x i8] c\".F.\"",k+1));
     let p=self.tmp();self.line(format!("{} = select i1 {}, ptr @str{}, ptr @str{}",p,c,k,k+1));
-    vals.push((p,Some(3),false));continue
+    vals.push((p,Some("3".to_string()),false));continue
    }
    match e {
     Expr::Str(s)=>{
@@ -134,7 +149,7 @@ impl Ir {
      let text=if ei+1==es.len(){s.trim_end_matches(' ')}else{s.as_str()};
      let bytes=text.as_bytes();
      self.globals.push(format!("@str{} = private constant [{} x i8] c\"{}\"",k,bytes.len(),bytes.iter().map(|b|format!("\\{:02X}",b)).collect::<String>()));
-     vals.push((format!("@str{}",k),Some(bytes.len()),false));
+     vals.push((format!("@str{}",k),Some(bytes.len().to_string()),false));
     },
     _=>{
      let v=self.expr(e)?;

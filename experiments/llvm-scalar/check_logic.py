@@ -171,3 +171,9 @@ print('PASS discarded output effects: lazy arms, sequence order and NIL no-op')
 for name in ['nilcompare-current.out','nilcompare-llvm.out']:
     assert pathlib.Path('run',name).read_bytes()==b'\n.F. .F. .F. .F.\n.T. .T. .F. .T.         3         4\n.T. .F.\n.T. .T.          2\n.F. .T.\nprefix\n.T.\nnot NIL',name
 print('PASS literal NIL/scalar comparison: constants preserve operand effects')
+
+for name in ['printchoice-current.out','printchoice-llvm.out']:
+    assert pathlib.Path('run',name).read_bytes()==b'         1         2\nstart a   b\n\nx            9         1\nnested',name
+for name in ['exit-original-current.out','exit-original-llvm.out']:
+    assert pathlib.Path('run',name).read_bytes()==b'\ndo exit test passed\nfor exit test passed',name
+print('PASS static literal IIF print selection and unchanged original exit bytes')

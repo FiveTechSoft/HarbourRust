@@ -798,3 +798,26 @@ Full suite: 141 PASS lines, plus 19 error fixtures checked on each target
 against exact default diagnostics (38 paired-target error checks). Default
 battery rebuilt: 1086 PASS and ALL GREEN. These counts are separate; no claim
 of runtime success for all 175 originals or general performance is made.
+
+## Print-only static literal IIF selection, 29 October 2026
+
+Only print_items admits IIF(cond, literal-string, literal-string). It evaluates
+the checked condition once while collecting all item values, BEFORE any outer
+newline or separators, then selects pointers and lengths of private constants.
+The existing rt_str ABI prints that pair. Both arms are static literals, with
+no effects, heap ownership or temporary-string lifetime to transfer. When this
+is the last item, space byte 0x20 is trimmed from each constant in advance,
+matching default runtime right-trim. Interior trailing spaces are preserved.
+No string local, string return ABI, general string expression or stored result
+is admitted. Variable arms and nested string IIF remain rejected.
+
+exit-original.prg is unchanged upstream harbour/core 694428e1 tests/exit.prg,
+SHA256 a14961def1156ec029d6c93bfbda7ce05b9ee5900f842e42843046bff1a9163d.
+It is also byte-identical to sondas/hk323.prg and tests/t777_for_reuse.hb.
+Linux and PE/Wine output matches explicit expected bytes, the manifest and
+the default backend. The documented 63ze Harbour comparison is historical,
+not a fresh Harbour execution. printchoice checks effect order, both choices,
+empty/all-space literals, interior spaces and nested output contexts.
+
+Full correctness suite: 149 PASS lines. Rebuilt default battery: 1086 PASS,
+ALL GREEN. No general string support, fresh Harbour run or speed claim.
