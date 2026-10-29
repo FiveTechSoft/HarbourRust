@@ -32,6 +32,11 @@ impl Ir {
  }
  fn expr(&mut self,e:&Expr)->Result<String,String>{
   Ok(match e {
+   Expr::Seq(es)=>{
+    let mut value=None;
+    for item in es {value=Some(self.expr(item)?);}
+    value.ok_or("LLVM scalar: empty sequence")?
+   },
    Expr::Int(v)=>v.clone(), Expr::Log(v)=>if *v {"1".into()}else{"0".into()},
    Expr::Var(n)=>{if self.arrays.contains_key(n){return Err(format!("LLVM scalar: whole-array value `{}` unsupported",n))}let p=self.ptr(n)?;let v=self.tmp();self.line(format!("{} = load i64, ptr {}",v,p));v},
    Expr::Index(n,ie)=>{let ie=self.expr(ie)?;let p=self.slot(n,&ie)?;let v=self.tmp();self.line(format!("{} = load i64, ptr {}",v,p));v},
@@ -62,7 +67,7 @@ impl Ir {
    _=>return Err(format!("LLVM scalar: expression unsupported: {:?}",e))
   })
  }
- fn isbool(&self,e:&Expr)->bool {match e {Expr::Log(_)|Expr::Cmp(..)|Expr::LNot(_)|Expr::LAnd(..)|Expr::LOr(..)=>true,Expr::Var(n)=>self.bools.contains(n),Expr::Call(n,a) if is_builtin(n,"iif") && a.len()==3=>self.isbool(&a[1]),_=>false}}
+ fn isbool(&self,e:&Expr)->bool {match e {Expr::Seq(es)=>es.last().map(|e|self.isbool(e)).unwrap_or(false),Expr::Log(_)|Expr::Cmp(..)|Expr::LNot(_)|Expr::LAnd(..)|Expr::LOr(..)=>true,Expr::Var(n)=>self.bools.contains(n),Expr::Call(n,a) if is_builtin(n,"iif") && a.len()==3=>self.isbool(&a[1]),_=>false}}
  fn cond(&mut self,e:&Expr)->Result<String,String>{let v=self.expr(e)?;let c=self.tmp();self.line(format!("{} = icmp ne i64 {}, 0",c,v));Ok(c)}
  fn check_dead(&self,ss:&[Stmt])->Result<(),String>{
   // Reuse the exact lowering checks with the same locals and enclosing

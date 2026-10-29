@@ -2,6 +2,8 @@ import pathlib,subprocess,os
 os.chdir(pathlib.Path(__file__).resolve().parent)
 cases={
  'bool-branch': 'function main()\nlocal b := .T.\nlocal z := .F.\nif b\nz := .T.\nendif\n? If(b,z,.F.)\nreturn\n',
+ 'sequence-logical-output': 'function main()\nlocal x := 0\n? (x++, .T.)\nreturn\n',
+ 'sequence-float': 'function main()\nlocal x := 0\n? (x++, 1.5)\nreturn\n',
  'float': 'function main()\n? 1.2\nreturn\n',
  'array-logical': 'function main()\nlocal a := {.T.,.F.}\n? a[1]\nreturn\n',
  'array-mixed-logical': 'function main()\nlocal a := {1,.T.}\n? a[2]\nreturn\n',

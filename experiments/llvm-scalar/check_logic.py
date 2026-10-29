@@ -29,3 +29,10 @@ for name in ['loopcontrol-current.out', 'loopcontrol-llvm.out']:
     actual = list(map(int, pathlib.Path('run', name).read_text().split()))
     assert actual == loop_expected, (name, actual, loop_expected)
 print('PASS independent loop-control observations (33 integers)')
+
+sequence_expected = [12345678901, 2, 7, 4, 1, 2, 4, 4, 5, 5,
+                     1, 6, 0, 6, 1, 6, 1, 2, 3, 7, 1, 2, 7, 10, 4]
+for name in ['sequence-current.out', 'sequence-llvm.out']:
+    actual = list(map(int, pathlib.Path('run', name).read_text().split()))
+    assert actual == sequence_expected, (name, actual, sequence_expected)
+print('PASS independent sequence observations (25 integers)')

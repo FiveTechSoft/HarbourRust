@@ -12,7 +12,7 @@ ownership/collection representation is introduced.
 Current supported slice: I64 function signatures/locals, integer + - *,
 signed comparisons, logical .AND./.OR./.NOT. with short-circuit evaluation,
 IF, WHILE, EXIT/LOOP, FOR with its existing signed-overflow termination, user calls and
-recursion, lazy IIF, integer and literal-string output, ProcLine current-frame
+recursion, left-to-right scalar sequences, lazy IIF, integer and literal-string output, ProcLine current-frame
 or literal0, and fixed I64 stack-array literals/index reads/writes/len.
 Arithmetic uses wrapping LLVM operations, without invented nsw/nuw promises.
 Native three-word trace frames preserve the tested diagnostic paths. See the
@@ -413,3 +413,27 @@ correction, not support for dynamic or logical arrays.
 Fresh result: run.sh 40 PASS lines, 5089 differential calls and 20 exact
 error comparisons pass. Rebuilt normal-backend battery: 1086 PASS, zero
 failures. These checks use Linux and PE under Wine, not native Windows.
+
+## Scalar sequence increment, 29 October 2026
+
+Parenthesized comma expressions now evaluate all children left to right and
+return the last value within the existing I64/logical slice. Prefix effects
+are never removed by literal-result folding. The last expression determines
+logical-output rejection and existing integer print provenance, so a logical
+sequence cannot silently print as integer and a large final literal keeps
+its established field width. No float, owned, tagged or NIL value support
+is added; every child passes the existing lowering checks.
+
+`sequence.hb` checks increment/call order, use as a function argument,
+short-circuited sequences, WHILE-test effects, indexed reads and value-before-
+index writes, nested sequences, and a large final integer literal. The full
+output bytes match the current backend, with 25 independent expected integer
+observations. `error-sequence.hb` checks exact callstack/exit/output on a
+failing middle expression, including that later effects do not execute.
+Logical-output and floating-result sequences retain explicit rejection tests.
+This adds evaluation support, not a performance or Rust-quality claim.
+
+Fresh result: run.sh 45 PASS lines, 5089 function comparisons and eleven
+controlled-error fixtures on two targets (22 exact diagnostic comparisons).
+Rebuilt default-backend battery 1086 PASS, zero failures. Linux and PE/Wine
+only, on the same 28 October host/toolchain; no native-Windows measurement.
