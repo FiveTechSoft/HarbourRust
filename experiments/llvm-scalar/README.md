@@ -965,3 +965,20 @@ fixtures on both targets (46 exact stdout/exit/callstack comparisons, reported
 separately). A freshly rebuilt default backend passed 1086 manifest rows and
 ended ALL GREEN. The new linkage guard checks direct non-GOT trace-global
 relocations on ELF and absence of absolute ADDR32 string relocations on PE.
+
+
+## Routine correctness check against traced Rust, 29 October 2026
+
+The regular runner now builds the existing equivalent traced Rust controls
+without taking timing samples. It compares both default and LLVM kernels to
+Rust across n=-12..1000, plus factorial n=-3..40 (wrapping multiplication).
+All 10218 backend/Rust result comparisons pass, and the trace chain is null
+after every batch. Existing 5089 default/LLVM comparisons remain separate.
+This extends result checks for these kernels; the Rust control is manual,
+not a proof of compiler correctness or general performance parity.
+
+Assembler review of the latest Linux comparison: sum has 35 instructions in
+each backend, factorial 23, branch 53. Sum/factorial operations match apart from
+addresses and the recursive call target; branch has a different block layout.
+This is additional reason not to interpret the observed faster sum timings as
+a stable advantage over Rust. Recurrence and arrays still differ structurally.

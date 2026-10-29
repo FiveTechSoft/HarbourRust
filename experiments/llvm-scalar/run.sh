@@ -36,6 +36,11 @@ as -o bench_current.o bench_current.s
 as -o bench_current_notrace.o bench_current_notrace.s
 "$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static validate.rs -o run/validate
 run/validate
+# Correctness-only equivalent traced Rust control. No timing samples here.
+python3 make_traced_rust.py
+python3 make_rust_validation.py
+"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static run/validate-traced-rust.rs -o run/validate-traced-rust
+run/validate-traced-rust
 # Timings are opt-in; routine correctness runs must not create new samples.
 if [ "${RUN_BENCHMARKS:-0}" = 1 ]; then
 "$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static bench.rs -o run/bench
@@ -48,7 +53,6 @@ python3 llvm_aot.py run/arraywork-no-trace.ll run/arraywork-no-trace.o
 objcopy --redefine-sym ll_main=ll_main_arraywork run/arraywork-no-trace.o
 "$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current_notrace.o -C link-arg=run/corpus-no-trace.o -C link-arg=run/arraywork-no-trace.o -C relocation-model=static bench.rs -o run/bench-no-trace
 run/bench-no-trace "${BENCH_N:-1000000}" > run/bench-no-trace.csv
-python3 make_traced_rust.py
 "$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static run/bench-traced-rust.rs -o run/bench-traced-rust
 run/bench-traced-rust "${BENCH_N:-1000000}" > run/bench-traced-rust.csv
 else
