@@ -11,4 +11,7 @@ for row in review['files']:
 for project in review['build_projects']:
  assert hashlib.sha256((core/project['file']).read_bytes()).hexdigest()==project['sha256']
  for member in project['members']:assert member in inventory and member in [r['file'] for r in review['files']]
+for group in review.get('source_groupings',[]):
+ assert len(group['members'])>=2
+ for member in group['members']:assert member in inventory and member in [r['file']for r in review['files']]
 result={'reference':review['reference'],'scope':'Manual review provenance and source-family index only. Not parser-recognized syntax or supported feature counts. Dependencies are not installed-availability claims. No compilation/execution. Does not replace17family seed or268audit.','reviewed_sources':len(review['files']),'build_projects':len(review['build_projects']),'family_index':[{'family':k,'reviewed_sources':v,'implementation_status':'not-inferred-from-source-review','next_gate':'see individual review records; representation/effect authority remains separate'}for k,v in sorted(families.items())]};pathlib.Path(a.output).write_text(json.dumps(result,indent=2)+'\n');print(f"PASS {len(review['files'])} reviewed source hashes/witnesses and {len(review['build_projects'])} project;{len(families)} observed family tags,not coverage")

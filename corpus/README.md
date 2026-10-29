@@ -233,7 +233,7 @@ index and appends fixture records; exrlx exercises repeated locking. This is
 not6 supported drivers or6 runnable cases. No RDD implementation source read.
 
 statics1/statics2 form a source-declared companion pair,distinct from the
-build-verified-file manifest grouping for multifnc; neither was linked here.
+explicit .hbp manifest grouping for multifnc (neither project build-verified here); neither was linked here.
 dupvars is a diagnostic case,not an exit0 test. fwdref's TOFIX and sortbug's
 TOFIX are comments to investigate,not proof of current reference behavior.
 test.prg writes embedded NULs and needs binary capture. for2 waits for keyboard
