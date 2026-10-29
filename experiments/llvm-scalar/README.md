@@ -640,3 +640,20 @@ would determine the result. Independent expected bytes and current-backend
 comparison cover Linux and PE/Wine. Two former rejection fixtures are removed
 because this matching-logical form is now admitted; full run.sh has94PASS
 lines,5089 prior comparisons and32 exact diagnostics. No performance claim.
+
+## Disjoint logical-local scope correction, 29 October 2026
+
+A targeted scope audit found wrong experimental output when disjoint IF arms
+reuse a local name with different types: a Bool local in the first lowered
+arm left its classification behind, causing the integer local in the other
+arm to print .T. instead of7. The frontend correctly allows those disjoint
+locals, and the default backend prints7. This is a confirmed output defect,
+not merely a rejected program or hypothetical concern.
+
+Logical classification is now saved/restored at statement-block boundaries.
+Each arm/nested body starts from the enclosing classifications; block-local
+names cannot contaminate sibling arms. The frontend's fixed outer-variable
+types and existing physical slots are unchanged. boolscope.hb checks both
+runtime arms, both Bool/I64 declaration orders, enclosing logical locals and
+nested disjoint locals, against independent full bytes and current-backend
+output on Linux and Wine. No checker, representation, ownership or ABI change.

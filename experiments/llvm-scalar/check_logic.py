@@ -111,3 +111,9 @@ boolminmax_expected = (b'\n.F. .F. .F. .T.\n.F. .T. .T. .T.\n.T. .F. .F.'
 for name in ['boolminmax-current.out','boolminmax-llvm.out']:
     assert pathlib.Path('run',name).read_bytes() == boolminmax_expected, name
 print('PASS independent logical Min/Max byte oracle')
+
+boolscope_expected = (b'\n.T.\n.T.\n         8\n         9 .T.'
+                      b'\n         7\n.T.\n.F.\n.F. .T.\n         0          0')
+for name in ['boolscope-current.out','boolscope-llvm.out']:
+    assert pathlib.Path('run',name).read_bytes() == boolscope_expected, name
+print('PASS independent disjoint logical-local scope byte oracle')

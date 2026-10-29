@@ -135,7 +135,16 @@ impl Ir {
   if !ss.is_empty(){let mut probe=self.clone();probe.stmts(ss)?;}
   Ok(())
  }
- fn stmts(&mut self,ss:&[Stmt])->Result<bool,String>{for (si,s) in ss.iter().enumerate(){self.trace_at(stmt_line(s));match s {
+ fn stmts(&mut self,ss:&[Stmt])->Result<bool,String>{
+  // Block-local names may be reused with another type in disjoint arms.
+  // Outer variables retain their frontend-checked type; local classifications
+  // must not leak into the sibling arm or enclosing block.
+  let bools=self.bools.clone();
+  let result=self.stmts_inner(ss);
+  self.bools=bools;
+  result
+ }
+ fn stmts_inner(&mut self,ss:&[Stmt])->Result<bool,String>{for (si,s) in ss.iter().enumerate(){self.trace_at(stmt_line(s));match s {
   Stmt::Local(_,n,Expr::ArrLit(items))|Stmt::Assign(_,n,Expr::ArrLit(items)) if self.arrays.contains_key(n)=>{
    // A literal containing logicals is Ty::DArr in the checked frontend,
    // with tagged cells, not a stack I64 array. Do not erase its tags.
