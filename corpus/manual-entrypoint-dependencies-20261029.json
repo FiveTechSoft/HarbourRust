@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "84 full-source manual metadata records,including10GT/input/class boundary reviews. Five overlap prior19execution records. No new compile/link/run or execution authority. Dependencies required,not installed availability. Tags not coverage.",
+  "scope": "90 full-source manual metadata reviews,including6class/inheritance/lvalue/persistence cases. Five overlap prior19execution records. No new compile/link/run or authority. Dependencies are requirements,not installed availability. Tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -3732,6 +3732,282 @@
           "symbol_or_construct": "AChoice",
           "lines": [
             19
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/classch.prg",
+      "sha256": "e26e134ee7547069ec676fd44ee9825615d70c675ec0adba85d18f441fdce6b1",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "class runtime profile;not auto-runnable",
+      "families": [
+        "classes",
+        "dynamic-dispatch"
+      ],
+      "dependency_requirements": [
+        "hbclass.ch; class inheritance; super constructor; inline methods; instance fields"
+      ],
+      "effects_or_harness_risks": [
+        "console output and object mutation"
+      ],
+      "output_comparison": "console-looking but object/super resolution must be specified",
+      "next_gate": "class runtime/inheritance/field semantics before executable oracle",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "CREATE CLASS TTest INHERIT",
+          "lines": [
+            19
+          ]
+        },
+        {
+          "symbol_or_construct": "::super:New()",
+          "lines": [
+            31
+          ]
+        },
+        {
+          "symbol_or_construct": "METHOD Test() INLINE",
+          "lines": [
+            25
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/clasinh.prg",
+      "sha256": "2692fde017dc9ef2422e7114b2299474570020ecf63e8a991930bde5179ea9c6",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "class runtime profile;not auto-runnable",
+      "families": [
+        "classes",
+        "dynamic-dispatch",
+        "input-terminal",
+        "GT-screen"
+      ],
+      "dependency_requirements": [
+        "hbclass.ch; FROM inheritance; super calls; Alert"
+      ],
+      "effects_or_harness_risks": [
+        "super constructor calls Test that opens modal Alert"
+      ],
+      "output_comparison": "not noninteractive despite unused result objects",
+      "next_gate": "class/super contract plus controlled Alert input",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "CREATE CLASS TAnyClass FROM",
+          "lines": [
+            26
+          ]
+        },
+        {
+          "symbol_or_construct": "::super:Test()",
+          "lines": [
+            35
+          ]
+        },
+        {
+          "symbol_or_construct": "Alert( \"Test\" )",
+          "lines": [
+            18
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/inhprob.prg",
+      "sha256": "892d09516432c8e8c21ae130985571d3dfa4f1346c579c28dcf13d74d5bac640",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "class runtime profile;not auto-runnable",
+      "families": [
+        "classes",
+        "dynamic-dispatch"
+      ],
+      "dependency_requirements": [
+        "hbclass.ch; three-level inheritance; super sends; virtual self dispatch"
+      ],
+      "effects_or_harness_risks": [
+        "console output via inherited CheckIt/Test"
+      ],
+      "output_comparison": "dynamic target resolution,not determined by declaration alone",
+      "next_gate": "explicit inherited self/super dispatch oracle",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "CREATE CLASS Three FROM Two",
+          "lines": [
+            26
+          ]
+        },
+        {
+          "symbol_or_construct": "::super:CheckIt()",
+          "lines": [
+            22
+          ]
+        },
+        {
+          "symbol_or_construct": "METHOD Test() INLINE QOut( \"Three\" )",
+          "lines": [
+            28
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/classes.prg",
+      "sha256": "ba8641fe705f21c1205cb1b3b5e2e8a75630a8392a3c017202f98c3ab9404115",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "class runtime profile;not auto-runnable",
+      "families": [
+        "classes",
+        "file-static",
+        "symbol-values",
+        "dynamic-dispatch"
+      ],
+      "dependency_requirements": [
+        "HBClass runtime AddData/AddMethod/Create/Instance; symbol handles; QSelf"
+      ],
+      "effects_or_harness_risks": [
+        "lazy static class registration and console output"
+      ],
+      "output_comparison": "runtime-built class,not only syntax/sugar",
+      "next_gate": "class registration/static lifetime/self binding contract",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "HBClass():New",
+          "lines": [
+            18
+          ]
+        },
+        {
+          "symbol_or_construct": "s_oClass:AddMethod",
+          "lines": [
+            26,
+            27
+          ]
+        },
+        {
+          "symbol_or_construct": "s_oClass:Create()",
+          "lines": [
+            29
+          ]
+        },
+        {
+          "symbol_or_construct": "QSelf()",
+          "lines": [
+            36,
+            47
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/objasign.prg",
+      "sha256": "1adccdded71eab12da0066bc96aa52df4cb34be991fd85e6466ef6e64a733323",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "class runtime profile;not auto-runnable",
+      "families": [
+        "classes",
+        "file-static",
+        "compound-assignment",
+        "floating-point",
+        "debug-runtime"
+      ],
+      "dependency_requirements": [
+        "HBClass runtime; mutable object slots with type change; inc/dec/div/power/mod; VM introspection"
+      ],
+      "effects_or_harness_risks": [
+        "object slot mutations; exposes VM stack/static data"
+      ],
+      "output_comparison": "runtime/introspection-dependent outputs; evaluation order matters",
+      "next_gate": "object-lvalue and alias/type contract; separate VM metadata comparisons",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "o:x++",
+          "lines": [
+            21
+          ]
+        },
+        {
+          "symbol_or_construct": "o:x /= 1.5",
+          "lines": [
+            35
+          ]
+        },
+        {
+          "symbol_or_construct": "__dbgVMStkGList()",
+          "lines": [
+            45
+          ]
+        },
+        {
+          "symbol_or_construct": "HBClass():New",
+          "lines": [
+            56
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/persist.prg",
+      "sha256": "a9595803493de7a1ef9b58f3b0b57c049c0cb6c57df2d5ab69008bd1cdb5ab85",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "class runtime profile;not auto-runnable",
+      "families": [
+        "classes",
+        "dynamic-dispatch",
+        "filesystem",
+        "dates"
+      ],
+      "dependency_requirements": [
+        "hbclass.ch; HBPersistent; PROPERTY metadata; nested objects; virtual method"
+      ],
+      "effects_or_harness_risks": [
+        "writes test.txt through SaveToFile; serializes object metadata; property method contains Date call"
+      ],
+      "output_comparison": "persistence format/reachability/date evaluation require oracle",
+      "next_gate": "disposable output fixture and property/serialization behavior; no live-directory execution",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "oTest:SaveToFile( \"test.txt\" )",
+          "lines": [
+            19
+          ]
+        },
+        {
+          "symbol_or_construct": "FROM HBPersistent",
+          "lines": [
+            23,
+            35
+          ]
+        },
+        {
+          "symbol_or_construct": "Date() } PROPERTY",
+          "lines": [
+            30
+          ]
+        },
+        {
+          "symbol_or_construct": "METHOD More()    VIRTUAL",
+          "lines": [
+            31
           ]
         }
       ]

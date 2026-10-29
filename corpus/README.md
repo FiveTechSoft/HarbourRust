@@ -296,3 +296,15 @@ fixture and waits for input. cls is class ON ERROR with modal Alert,despite its
 short generic filename. achoice6 uses fractional coordinates and injected keys;
 its RTE comment is an investigation lead,not a measured result. These records
 specify controlled input/screen/restore requirements without authorizing effects.
+
+### Class batch:90 manual records /104 reviewed-or-executed union
+
+Six class/inheritance/object-lvalue/persistence sources are now fully read and
+recorded. Manual90 plus prior19 execution minus5 overlap yields104 distinct
+reviewed-or-executed sources,not104 passing programs. Runtime remains19/14.
+clasinh calls a modal Alert via a super method;persist writes test.txt and
+has property/date/virtual-method metadata. classes builds HBClass dynamically
+without requiring hbclass.ch,so header-marker acceptance is not a class-runtime
+test. objasign changes object-slot types and prints VM stack/static metadata.
+inhprob needs three-level self/super dispatch evidence. No class program was
+compiled or run;no class runtime,storage or ABI contract was changed.

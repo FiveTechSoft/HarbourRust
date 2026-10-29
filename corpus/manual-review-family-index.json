@@ -1,7 +1,7 @@
 {
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "scope": "Manual review provenance and source-family index only. Not parser-recognized syntax or supported feature counts. Dependencies are not installed-availability claims. No compilation/execution. Does not replace17family seed or268audit.",
-  "reviewed_sources": 84,
+  "reviewed_sources": 90,
   "build_projects": 1,
   "family_index": [
     {
@@ -25,7 +25,8 @@
         "tests/cursor.prg",
         "tests/browse.prg",
         "tests/achoice5.prg",
-        "tests/achoice6.prg"
+        "tests/achoice6.prg",
+        "tests/clasinh.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -196,7 +197,13 @@
       "family": "classes",
       "reviewed_sources": [
         "tests/symbolt.prg",
-        "tests/cls.prg"
+        "tests/cls.prg",
+        "tests/classch.prg",
+        "tests/clasinh.prg",
+        "tests/inhprob.prg",
+        "tests/classes.prg",
+        "tests/objasign.prg",
+        "tests/persist.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -248,7 +255,8 @@
     {
       "family": "compound-assignment",
       "reviewed_sources": [
-        "tests/arrayidx.prg"
+        "tests/arrayidx.prg",
+        "tests/objasign.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -292,7 +300,8 @@
         "tests/directry.prg",
         "tests/usrrdd/exarr.prg",
         "tests/cdow.prg",
-        "tests/say.prg"
+        "tests/say.prg",
+        "tests/persist.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -300,7 +309,8 @@
     {
       "family": "debug-runtime",
       "reviewed_sources": [
-        "tests/funcarr.prg"
+        "tests/funcarr.prg",
+        "tests/objasign.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -349,7 +359,12 @@
       "family": "dynamic-dispatch",
       "reviewed_sources": [
         "tests/symbolt.prg",
-        "tests/cls.prg"
+        "tests/cls.prg",
+        "tests/classch.prg",
+        "tests/clasinh.prg",
+        "tests/inhprob.prg",
+        "tests/classes.prg",
+        "tests/persist.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -454,7 +469,9 @@
         "tests/funcarr.prg",
         "tests/statics2.prg",
         "tests/statinit.prg",
-        "tests/statics1.prg"
+        "tests/statics1.prg",
+        "tests/classes.prg",
+        "tests/objasign.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -477,7 +494,8 @@
         "tests/usrrdd/exlog.prg",
         "tests/usrrdd/exrlx.prg",
         "tests/cmphello.prg",
-        "tests/sortbug.prg"
+        "tests/sortbug.prg",
+        "tests/persist.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -493,7 +511,8 @@
         "tests/round.prg",
         "tests/arrayidx.prg",
         "tests/say.prg",
-        "tests/achoice6.prg"
+        "tests/achoice6.prg",
+        "tests/objasign.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -656,7 +675,8 @@
         "tests/wvt_fs.prg",
         "tests/browse.prg",
         "tests/achoice5.prg",
-        "tests/achoice6.prg"
+        "tests/achoice6.prg",
+        "tests/clasinh.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -1058,7 +1078,8 @@
     {
       "family": "symbol-values",
       "reviewed_sources": [
-        "tests/symbolt.prg"
+        "tests/symbolt.prg",
+        "tests/classes.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"

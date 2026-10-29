@@ -4,8 +4,8 @@
   "counts": {
     "inventory_files": 1203,
     "original_test_sources_compile_audited": 268,
-    "manual_entrypoint_dependency_reviews": 84,
-    "manually_reviewed_or_executed_sources": 98,
+    "manual_entrypoint_dependency_reviews": 90,
+    "manually_reviewed_or_executed_sources": 104,
     "frozen175_default_accepted": 20,
     "frozen175_llvm_accepted": 14,
     "execution_exact_by_profile": {
@@ -12222,8 +12222,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "class runtime profile;not auto-runnable",
+        "families": [
+          "classes",
+          "dynamic-dispatch",
+          "input-terminal",
+          "GT-screen"
+        ],
+        "next_gate": "class/super contract plus controlled Alert input",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -12321,8 +12335,20 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "class runtime profile;not auto-runnable",
+        "families": [
+          "classes",
+          "dynamic-dispatch"
+        ],
+        "next_gate": "class runtime/inheritance/field semantics before executable oracle",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -12354,8 +12380,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "class runtime profile;not auto-runnable",
+        "families": [
+          "classes",
+          "file-static",
+          "symbol-values",
+          "dynamic-dispatch"
+        ],
+        "next_gate": "class registration/static lifetime/self binding contract",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -15636,8 +15676,20 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "class runtime profile;not auto-runnable",
+        "families": [
+          "classes",
+          "dynamic-dispatch"
+        ],
+        "next_gate": "explicit inherited self/super dispatch oracle",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -17800,8 +17852,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "class runtime profile;not auto-runnable",
+        "families": [
+          "classes",
+          "file-static",
+          "compound-assignment",
+          "floating-point",
+          "debug-runtime"
+        ],
+        "next_gate": "object-lvalue and alias/type contract; separate VM metadata comparisons",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -18248,8 +18315,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "class runtime profile;not auto-runnable",
+        "families": [
+          "classes",
+          "dynamic-dispatch",
+          "filesystem",
+          "dates"
+        ],
+        "next_gate": "disposable output fixture and property/serialization behavior; no live-directory execution",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {

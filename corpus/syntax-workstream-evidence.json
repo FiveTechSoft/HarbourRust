@@ -45,7 +45,9 @@
         "tests/vars.prg",
         "tests/statics2.prg",
         "tests/statinit.prg",
-        "tests/statics1.prg"
+        "tests/statics1.prg",
+        "tests/classes.prg",
+        "tests/objasign.prg"
       ],
       "seed_regression_paths": [
         "tests/t678_static_func_proc_note.hb",
@@ -104,7 +106,8 @@
         "tests/t1.prg",
         "tests/vars.prg",
         "tests/procname.prg",
-        "tests/arrayidx.prg"
+        "tests/arrayidx.prg",
+        "tests/objasign.prg"
       ],
       "seed_regression_paths": [
         "tests/t1040_seq_dyn_limit_neg.hb",
@@ -128,7 +131,8 @@
         "tests/round.prg",
         "tests/arrayidx.prg",
         "tests/say.prg",
-        "tests/achoice6.prg"
+        "tests/achoice6.prg",
+        "tests/objasign.prg"
       ],
       "seed_regression_paths": [
         "tests/t750_float_arith_mixed.hb",
@@ -188,7 +192,13 @@
         "tests/statinit.prg",
         "tests/symbolt.prg",
         "tests/sortbug.prg",
-        "tests/cls.prg"
+        "tests/cls.prg",
+        "tests/classch.prg",
+        "tests/clasinh.prg",
+        "tests/inhprob.prg",
+        "tests/classes.prg",
+        "tests/objasign.prg",
+        "tests/persist.prg"
       ],
       "seed_regression_paths": [
         "tests/t150_cb_eval1.hb",
@@ -241,7 +251,8 @@
         "tests/cdow.prg",
         "tests/test.prg",
         "tests/say.prg",
-        "tests/browse.prg"
+        "tests/browse.prg",
+        "tests/persist.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -314,7 +325,8 @@
         "tests/usrrdd/exlog.prg",
         "tests/usrrdd/exrlx.prg",
         "tests/cmphello.prg",
-        "tests/sortbug.prg"
+        "tests/sortbug.prg",
+        "tests/persist.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -346,7 +358,8 @@
         "tests/wvt_fs.prg",
         "tests/browse.prg",
         "tests/achoice5.prg",
-        "tests/achoice6.prg"
+        "tests/achoice6.prg",
+        "tests/clasinh.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -371,7 +384,8 @@
         "tests/cdow.prg",
         "tests/dynsym.prg",
         "tests/procname.prg",
-        "tests/gtcolors.prg"
+        "tests/gtcolors.prg",
+        "tests/objasign.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
