@@ -393,3 +393,23 @@ Fresh audit result: run.sh 37 PASS lines, 5089 function comparisons and 20
 exact diagnostic comparisons pass; rebuilt normal battery 1086 PASS, zero
 failures. The five new rejection fixtures run on both emission targets.
 No performance or size claim is added by this validation-only correction.
+
+## Tagged logical-array boundary correction, 29 October 2026
+
+A type-boundary audit found an experimental wrong-output case: {.T.,.F.}
+was admitted by the emitter's literal-shape collection as a fixed I64 array.
+The checked frontend actually classifies a literal containing logicals as
+Ty::DArr with tagged cells; the current backend prints .T., while the
+experimental lowering erased the tag and treated the element as integer1.
+That path was outside the intended fixed-I64 slice but was not rejected.
+
+The emitter now explicitly rejects logical/mixed logical array literals.
+No tagged-array representation is added. New target-paired regressions cover
+all-logical, integer/logical mixed, and unreachable logical-array literals,
+including the exact experimental rejection reason. Ordinary fixed I64 arrays
+remain covered by both array workloads and error fixtures. This is a boundary
+correction, not support for dynamic or logical arrays.
+
+Fresh result: run.sh 40 PASS lines, 5089 differential calls and 20 exact
+error comparisons pass. Rebuilt normal-backend battery: 1086 PASS, zero
+failures. These checks use Linux and PE under Wine, not native Windows.

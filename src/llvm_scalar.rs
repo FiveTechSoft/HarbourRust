@@ -72,6 +72,11 @@ impl Ir {
  }
  fn stmts(&mut self,ss:&[Stmt])->Result<bool,String>{for (si,s) in ss.iter().enumerate(){self.trace_at(stmt_line(s));match s {
   Stmt::Local(_,n,Expr::ArrLit(items))|Stmt::Assign(_,n,Expr::ArrLit(items)) if self.arrays.contains_key(n)=>{
+   // A literal containing logicals is Ty::DArr in the checked frontend,
+   // with tagged cells, not a stack I64 array. Do not erase its tags.
+   if items.iter().any(|e|matches!(e,Expr::Log(_))){
+    return Err("LLVM scalar: tagged logical/mixed array literals unsupported".into())
+   }
    let k=self.asz[n];
    if items.len()!=k {return Err(format!("LLVM scalar: array `{}` literal size {} does not match its declaration {}",n,items.len(),k))}
    let base=self.arrays[n].clone();
