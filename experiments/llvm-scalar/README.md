@@ -588,3 +588,15 @@ Fresh result: full run.sh 91 PASS lines, 5089 previous function comparisons,
 fifteen error fixtures on two targets (30 exact diagnostic comparisons), and
 eight unchanged-source paired-target regressions. Rebuilt default battery:
 1086 PASS, zero FAIL. Windows means PE under Wine, not native Windows.
+
+## Logical-call ABI and boundary follow-up, 29 October 2026
+
+The existing register/stack canary now calls ll_boolflip with both0 and1,
+checking the opposite0/1 return before validating callee-saved registers,
+stack pointer and trace-chain restoration on Linux and PE/Wine. This directly
+checks the logical scalar signature's unchanged physical calling convention,
+in addition to recursive/end-to-end logical-call tests. No adapter was added.
+New rejections cover Min with logical-return calls, sequence printing of a
+logical return and an integer passed to a logical parameter. A focused audit
+also confirmed the frontend rejects logical-call array literals and logical
+writes to fixed I64 arrays. No new production defect was found by this follow-up.

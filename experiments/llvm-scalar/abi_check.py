@@ -10,6 +10,10 @@ s+='    mov $42, %'+('rcx' if win else 'rdi')+'\n    call rt_computed\n'
 s+='    mov $42, %'+('rcx' if win else 'rdi')+'\n    call rt_int\n'
 s+='    lea abi_text(%rip), %'+('rcx' if win else 'rdi')+'\n    mov $3, %'+('rdx' if win else 'rsi')+'\n    call rt_str\n'
 s+='    mov $10, %'+('rcx' if win else 'rdi')+'\n    call ll_fact\n    cmp $3628800, %rax\n    jne abi_fail\n'
+# Exercise the unchanged scalar physical ABI with both logical input values.
+for value,expected in [(0,1),(1,0)]:
+ s+=f'    mov ${value}, %'+('rcx' if win else 'rdi')+'\n    call ll_boolflip\n'
+ s+=f'    cmp ${expected}, %rax\n    jne abi_fail\n'
 for j,r in enumerate(regs):s+=f'    cmp ${0x123400+j}, %{r}\n    jne abi_fail\n'
 if win:
  for j in range(10):s+=f'    movq %xmm{j+6}, %rax\n    cmp ${0x567800+j}, %rax\n    jne abi_fail\n'

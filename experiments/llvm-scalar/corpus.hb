@@ -28,3 +28,5 @@ return s
 function main()
 ? sumloop(1000000), branchloop(1000000), fact(10), recurrence(20)
 return
+function boolflip(b)
+return .NOT. b
