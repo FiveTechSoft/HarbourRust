@@ -144,3 +144,45 @@ match before joining. No tests execute during this operation. Missing gates
 are unknown, not failed/passed; review is limited to the Linux console profile.
 The reference Linux execution count19 is separate from default19 and LLVM14,
 not57 independent original programs. Run tools/coverage_ledger.py to regenerate.
+
+## Manual entrypoint/dependency review,25 sources
+
+`manual-entrypoint-dependencies-20261029.json` records full-source manual review
+of12 MT tests,3 multifnc modules and10 frontier/default-only originals. Hashes
+and exact line witnesses tie each judgment to the pinned source. This is25
+source review records, not25 new executed/accepted programs. Five overlap the
+existing19 default/reference executions.20 had no prior reviewed execution in
+that allowlist. Dependencies are required capabilities, not verified installs.
+
+Important partitions found by reading, not main-name regex:
+- multifnc's3 sources belong to ONE project. Only t0 has Main; t1/t2 are companion
+  Main2/Main3 procedures. The project permits duplicate linker definitions and
+  t1 embeds C. Isolated-file compile failures are not a full project verdict.
+-12 MT sources require thread/runtime-specific harnesses. Some block on input,
+  one has intentionally racy counters, one creates/writes/deletes a DBF, one
+  opens per-thread GT windows, one has an infinite background clock loop.
+  A future MT harness needs invariants and event assertions, not fixed stdout.
+- dynwin's Linux acceptance skips the Windows feature body. The Windows body
+  loads DLLs, shows a message box and toggles a Windows desktop setting. It
+  must not be executed as an ordinary console regression.
+- dates reads the current date and changes formatting; errsys intentionally
+  faults. funcarr depends on shared static arrays and VM introspection. These
+  need declared comparison semantics, not whitespace/time normalization.
+- arrindex is a deterministic-looking console candidate after manual review,
+  but missing nested/missing-value array semantics remain a separate contract.
+  This review neither implements it nor permits automatic execution.
+
+`manual-review-family-index.json` groups the observed constructs from those25
+sources. Tags are research/navigation aids, not a complete grammar, parser pass,
+implementation count or coverage percentage. They complement the17family seed,
+not expand17 to a larger number of completed families.
+
+```
+python3 tools/check_corpus_review.py --core /path/to/pinned-core \
+  --output /tmp/manual-review-index.json
+cmp /tmp/manual-review-index.json corpus/manual-review-family-index.json
+```
+
+This verifies hashes and line witnesses without compiling or executing any
+reference program. It intentionally does not infer safe execution from those
+witnesses. Entry/dependency review of the remaining inventory stays pending.

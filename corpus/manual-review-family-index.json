@@ -1,0 +1,498 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "scope": "Manual review provenance and source-family index only. Not parser-recognized syntax or supported feature counts. Dependencies are not installed-availability claims. No compilation/execution. Does not replace17family seed or268audit.",
+  "reviewed_sources": 25,
+  "build_projects": 1,
+  "family_index": [
+    {
+      "family": "GT-screen",
+      "reviewed_sources": [
+        "tests/mt/mttest11.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "GT-windows",
+      "reviewed_sources": [
+        "tests/mt/mttest10.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "GUI",
+      "reviewed_sources": [
+        "tests/dynwin.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "OS-settings",
+      "reviewed_sources": [
+        "tests/dynwin.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "RDD-workarea",
+      "reviewed_sources": [
+        "tests/mt/mttest09.prg",
+        "tests/mt/mttest10.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "array-aliasing",
+      "reviewed_sources": [
+        "tests/funcarr.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "array-literal",
+      "reviewed_sources": [
+        "tests/lnlenli2.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "array-literal-missing-elements",
+      "reviewed_sources": [
+        "tests/arrindex.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "arrays",
+      "reviewed_sources": [
+        "tests/mt/mttest04.prg",
+        "tests/mt/mttest05.prg",
+        "tests/mt/mttest06.prg",
+        "tests/mt/mttest07.prg",
+        "tests/mt/mttest12.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "assignment-expression",
+      "reviewed_sources": [
+        "tests/dates.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "byref",
+      "reviewed_sources": [
+        "tests/mt/mttest05.prg",
+        "tests/mt/mttest06.prg",
+        "tests/passref.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "closures",
+      "reviewed_sources": [
+        "tests/mt/mttest09.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "closures-detached-locals",
+      "reviewed_sources": [
+        "tests/mt/mttest01.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "conditional-expression",
+      "reviewed_sources": [
+        "tests/passref.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "date-arithmetic",
+      "reviewed_sources": [
+        "tests/dates.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "dates",
+      "reviewed_sources": [
+        "tests/dates.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "debug-runtime",
+      "reviewed_sources": [
+        "tests/funcarr.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "discard-return",
+      "reviewed_sources": [
+        "tests/lnlenli2.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "do-with",
+      "reviewed_sources": [
+        "tests/calling.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "dynamic-library-ABI",
+      "reviewed_sources": [
+        "tests/dynwin.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "embedded-C",
+      "reviewed_sources": [
+        "tests/multifnc/t1.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "environment-clock",
+      "reviewed_sources": [
+        "tests/multifnc/t0.prg",
+        "tests/mt/mttest11.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "error-system",
+      "reviewed_sources": [
+        "tests/errsys.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "exceptions-always",
+      "reviewed_sources": [
+        "tests/mt/mttest02.prg",
+        "tests/mt/mttest03.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "exit-procedures",
+      "reviewed_sources": [
+        "tests/mt/mttest02.prg",
+        "tests/mt/mttest03.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "file-static",
+      "reviewed_sources": [
+        "tests/mt/mttest01.prg",
+        "tests/funcarr.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "filesystem",
+      "reviewed_sources": [
+        "tests/mt/mttest09.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "floating-point",
+      "reviewed_sources": [
+        "tests/mt/mttest01.prg",
+        "tests/mt/mttest07.prg",
+        "tests/nums.prg",
+        "tests/funcarr.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "foreach",
+      "reviewed_sources": [
+        "tests/mt/mttest07.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "function-result-lvalue",
+      "reviewed_sources": [
+        "tests/funcarr.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "function-symbol-values",
+      "reviewed_sources": [
+        "tests/multifnc/t0.prg",
+        "tests/multifnc/t1.prg",
+        "tests/multifnc/t2.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "functions",
+      "reviewed_sources": [
+        "tests/calling.prg",
+        "tests/passref.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "hashes",
+      "reviewed_sources": [
+        "tests/mt/mttest12.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "hexadecimal",
+      "reviewed_sources": [
+        "tests/nums.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "increment",
+      "reviewed_sources": [
+        "tests/errsys.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "input-terminal",
+      "reviewed_sources": [
+        "tests/mt/mttest04.prg",
+        "tests/mt/mttest08.prg",
+        "tests/mt/mttest09.prg",
+        "tests/mt/mttest10.prg",
+        "tests/mt/mttest11.prg",
+        "tests/mt/mttest12.prg",
+        "tests/dynwin.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "line-length",
+      "reviewed_sources": [
+        "tests/lnlenli2.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "memvars-dynamic-binding",
+      "reviewed_sources": [
+        "tests/mt/mttest06.prg",
+        "tests/mt/mttest08.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "modules-linking",
+      "reviewed_sources": [
+        "tests/multifnc/t0.prg",
+        "tests/multifnc/t1.prg",
+        "tests/multifnc/t2.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "multidimensional-array",
+      "reviewed_sources": [
+        "tests/arrindex.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "mutex-messages",
+      "reviewed_sources": [
+        "tests/mt/mttest07.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "mutexes",
+      "reviewed_sources": [
+        "tests/mt/mttest04.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "nested-index",
+      "reviewed_sources": [
+        "tests/arrindex.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "nil-local",
+      "reviewed_sources": [
+        "tests/mem.prg",
+        "tests/errsys.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "nil-return",
+      "reviewed_sources": [
+        "tests/calling.prg",
+        "tests/passref.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "numeric-formatting",
+      "reviewed_sources": [
+        "tests/nums.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "preprocessor-platform",
+      "reviewed_sources": [
+        "tests/dynwin.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "runtime-macro",
+      "reviewed_sources": [
+        "tests/multifnc/t0.prg",
+        "tests/mt/mttest08.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "set-format",
+      "reviewed_sources": [
+        "tests/dates.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "shared-aliasing",
+      "reviewed_sources": [
+        "tests/mt/mttest04.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "string-literal",
+      "reviewed_sources": [
+        "tests/arrindex.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "string-local",
+      "reviewed_sources": [
+        "tests/mem.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "thread-static",
+      "reviewed_sources": [
+        "tests/mt/mttest05.prg",
+        "tests/mt/mttest12.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "threads",
+      "reviewed_sources": [
+        "tests/mt/mttest01.prg",
+        "tests/mt/mttest02.prg",
+        "tests/mt/mttest03.prg",
+        "tests/mt/mttest04.prg",
+        "tests/mt/mttest05.prg",
+        "tests/mt/mttest06.prg",
+        "tests/mt/mttest07.prg",
+        "tests/mt/mttest08.prg",
+        "tests/mt/mttest09.prg",
+        "tests/mt/mttest10.prg",
+        "tests/mt/mttest11.prg",
+        "tests/mt/mttest12.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "unused-symbol",
+      "reviewed_sources": [
+        "tests/mem.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
+      "family": "varargs",
+      "reviewed_sources": [
+        "tests/mt/mttest02.prg",
+        "tests/mt/mttest03.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    }
+  ]
+}

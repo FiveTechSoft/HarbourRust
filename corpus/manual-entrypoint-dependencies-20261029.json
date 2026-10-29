@@ -1,0 +1,1279 @@
+{
+  "schema": 1,
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "review_date": "2026-10-29",
+  "scope": "25 manually read source records:12MT,3multifnc,10frontier/default-only. Metadata only, no reference body copied. Five overlap prior19 execution records. No new compile/link/run or execution authorization. Dependencies name requirements, not verified installed availability. No total-language coverage percentage.",
+  "build_projects": [
+    {
+      "file": "tests/multifnc/multifnc.hbp",
+      "sha256": "cd9517053fc88a3bb7d5b4b7c1caded31120bacb0dabbb53ae05428e4948fd74",
+      "members": [
+        "tests/multifnc/t0.prg",
+        "tests/multifnc/t1.prg",
+        "tests/multifnc/t2.prg"
+      ],
+      "entrypoint": "t0 Main; Main2/Main3 companions",
+      "link_requirements": [
+        "allow multiple definitions",
+        "no default RDD startup"
+      ],
+      "execution": "not-run"
+    }
+  ],
+  "files": [
+    {
+      "file": "tests/multifnc/t0.prg",
+      "sha256": "b524dcefba716e2069a1a1c184f9409512a85d830915658b2b68732a7511717f",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "tests/multifnc/multifnc.hbp",
+      "families": [
+        "modules-linking",
+        "function-symbol-values",
+        "runtime-macro",
+        "environment-clock"
+      ],
+      "dependency_requirements": [
+        "t1.prg and t2.prg",
+        "linker permits duplicate definitions",
+        "PROCFILE, symbol :exec, macro evaluation, OS/version/date/time"
+      ],
+      "effects_or_harness_risks": [
+        "dynamic code evaluation; build embeds companion C",
+        "environment-dependent output"
+      ],
+      "output_comparison": "not byte-stable without declared environment fields",
+      "next_gate": "review linker/runtime contract; never treat individual files as standalone",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "proc main",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "main2()",
+          "lines": [
+            16
+          ]
+        },
+        {
+          "symbol_or_construct": "&(cFunc",
+          "lines": [
+            19
+          ]
+        },
+        {
+          "symbol_or_construct": "DATE()",
+          "lines": [
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/multifnc/t1.prg",
+      "sha256": "4475fc638e93a674cb9676eea291f523889b4040106721e5ea225282c77eea51",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main2 companion procedure,not standalone Main",
+      "build_unit": "tests/multifnc/multifnc.hbp",
+      "families": [
+        "modules-linking",
+        "embedded-C",
+        "function-symbol-values"
+      ],
+      "dependency_requirements": [
+        "t0.prg and t2.prg",
+        "hbapi.h and HB_FUNC C extension",
+        "duplicate-definition linker flags"
+      ],
+      "effects_or_harness_risks": [
+        "build compiles embedded C; duplicate symbol selection"
+      ],
+      "output_comparison": "companion output depends on linked module selection",
+      "next_gate": "separate multi-module and C-extension contract, no build attempt",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "proc main2",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "#pragma begindump",
+          "lines": [
+            24
+          ]
+        },
+        {
+          "symbol_or_construct": "HB_FUNC( P7 )",
+          "lines": [
+            27
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/multifnc/t2.prg",
+      "sha256": "b0ca9b228f464cf4ccc178df33b22b3c0d30c278733157ca58954571224fd114",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main3 companion procedure,not standalone Main",
+      "build_unit": "tests/multifnc/multifnc.hbp",
+      "families": [
+        "modules-linking",
+        "function-symbol-values"
+      ],
+      "dependency_requirements": [
+        "t0.prg and t1.prg",
+        "duplicate-definition linker flags",
+        "PROCFILE and symbol :exec"
+      ],
+      "effects_or_harness_risks": [
+        "depends on project-wide symbol override"
+      ],
+      "output_comparison": "companion output tied to linked unit",
+      "next_gate": "review together with project, not isolated execution",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "proc main3",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "func p7",
+          "lines": [
+            18
+          ]
+        },
+        {
+          "symbol_or_construct": "@p0()",
+          "lines": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/mt/mttest01.prg",
+      "sha256": "43bb88e0929e41ee9b4d935491866c1bdcb6c59b0f893949c2332f8444ab60ef",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source,MT runtime profile",
+      "families": [
+        "threads",
+        "closures-detached-locals",
+        "file-static",
+        "floating-point"
+      ],
+      "dependency_requirements": [
+        "thread start/join",
+        "closure lifetime after thread exit"
+      ],
+      "effects_or_harness_risks": [
+        "thread creation, shared static"
+      ],
+      "output_comparison": "Version output environment-dependent; join-dependent result",
+      "next_gate": "MT runtime and closure/lifetime authority before harness",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_threadJoin",
+          "lines": [
+            12,
+            19
+          ]
+        },
+        {
+          "symbol_or_construct": "static s_var",
+          "lines": [
+            15
+          ]
+        },
+        {
+          "symbol_or_construct": "s_var := {|| i++ }",
+          "lines": [
+            28
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/mt/mttest02.prg",
+      "sha256": "b3cd29c2bc0687435cd0ec1c0209bfe88a9485d02f086d02ffccaefac46b4e56",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source,MT runtime profile",
+      "families": [
+        "threads",
+        "exceptions-always",
+        "varargs",
+        "exit-procedures"
+      ],
+      "dependency_requirements": [
+        "MT runtime",
+        "QUIT with ALWAYS",
+        "hb_aParams/AEval",
+        "sleep"
+      ],
+      "effects_or_harness_risks": [
+        "concurrent stdout, sleep, process termination"
+      ],
+      "output_comparison": "interleaving and version/thread IDs are variable",
+      "next_gate": "event/termination assertions, not byte-exact concatenated stdout",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "begin sequence",
+          "lines": [
+            12,
+            24,
+            45
+          ]
+        },
+        {
+          "symbol_or_construct": "always",
+          "lines": [
+            2,
+            13,
+            32,
+            33,
+            54,
+            55
+          ]
+        },
+        {
+          "symbol_or_construct": "quit",
+          "lines": [
+            2,
+            3,
+            30,
+            31,
+            50,
+            51
+          ]
+        },
+        {
+          "symbol_or_construct": "exit proc p",
+          "lines": [
+            62
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/mt/mttest03.prg",
+      "sha256": "5ca7b95c3dacd2fb0bd4a678cd3cd7dbb316fb7b3454b6225ca95cfc0704a99e",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source,MT runtime profile",
+      "families": [
+        "threads",
+        "exceptions-always",
+        "varargs",
+        "exit-procedures"
+      ],
+      "dependency_requirements": [
+        "MT runtime",
+        "QUIT with ALWAYS",
+        "hb_aParams/AEval",
+        "sleep"
+      ],
+      "effects_or_harness_risks": [
+        "concurrent stdout, sleep, process termination"
+      ],
+      "output_comparison": "interleaving and version/thread IDs are variable",
+      "next_gate": "event/termination assertions, not byte-exact concatenated stdout",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "begin sequence",
+          "lines": [
+            12,
+            24,
+            47
+          ]
+        },
+        {
+          "symbol_or_construct": "always",
+          "lines": [
+            2,
+            13,
+            34,
+            35,
+            52,
+            53
+          ]
+        },
+        {
+          "symbol_or_construct": "quit",
+          "lines": [
+            2,
+            3,
+            29,
+            30
+          ]
+        },
+        {
+          "symbol_or_construct": "exit proc p",
+          "lines": [
+            60
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/mt/mttest04.prg",
+      "sha256": "81d14605847bc641fa9e9d0c9d69f0c904a14ff3cd6af682771b5dd685c09130",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source,MT runtime profile",
+      "families": [
+        "threads",
+        "mutexes",
+        "shared-aliasing",
+        "arrays",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "MT runtime and mutexes",
+        "shared byref termination flag",
+        "Array/AFill/AEval",
+        "Inkey(5)"
+      ],
+      "effects_or_harness_risks": [
+        "CPU loops until timed input; unprotected shared writes"
+      ],
+      "output_comparison": "explicitly racy counter, input/timing-dependent counts",
+      "next_gate": "race-aware invariant harness; do not assert exact counters",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "s_nVar1++",
+          "lines": [
+            56
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_mutexLock",
+          "lines": [
+            57
+          ]
+        },
+        {
+          "symbol_or_construct": "inkey( 5 )",
+          "lines": [
+            39
+          ]
+        },
+        {
+          "symbol_or_construct": "@lEnd",
+          "lines": [
+            35
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/mt/mttest05.prg",
+      "sha256": "d168e6d2e8e8a754e0c826fd90f9db79445cff72f462dbb54823a67f6d5ac2a9",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source,MT runtime profile",
+      "families": [
+        "threads",
+        "thread-static",
+        "arrays",
+        "byref"
+      ],
+      "dependency_requirements": [
+        "MT runtime",
+        "thread-local storage",
+        "thread join result byref"
+      ],
+      "effects_or_harness_risks": [
+        "5 threads each1M increments"
+      ],
+      "output_comparison": "numeric sum invariant; Version varies",
+      "next_gate": "thread-local/runtime review; bounded invariant harness",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "thread static",
+          "lines": [
+            2,
+            12
+          ]
+        },
+        {
+          "symbol_or_construct": "N_COUNT",
+          "lines": [
+            9,
+            28,
+            29,
+            34
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_threadJoin",
+          "lines": [
+            25
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/mt/mttest06.prg",
+      "sha256": "46f57ff71a1ca13411c598ab1fbe818e4439e59b23a180b6e21aeb6ee8aea282",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source,MT runtime profile",
+      "families": [
+        "threads",
+        "memvars-dynamic-binding",
+        "arrays",
+        "byref"
+      ],
+      "dependency_requirements": [
+        "MT runtime",
+        "PRIVATE/MEMVAR scopes",
+        "thread join result byref"
+      ],
+      "effects_or_harness_risks": [
+        "5 threads each1M increments, dynamic scope"
+      ],
+      "output_comparison": "sum invariant; Version varies",
+      "next_gate": "dynamic binding/thread isolation contract; no scope rewrite",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "memvar m_var",
+          "lines": [
+            12
+          ]
+        },
+        {
+          "symbol_or_construct": "private m_var",
+          "lines": [
+            18,
+            34,
+            39
+          ]
+        },
+        {
+          "symbol_or_construct": "N_COUNT",
+          "lines": [
+            9,
+            29,
+            30,
+            40
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/mt/mttest07.prg",
+      "sha256": "dec36b29b98b2a0f4590c8bc3d651ea64c86d1618e5c2e63db7167bfaf7575f4",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source,MT runtime profile",
+      "families": [
+        "threads",
+        "mutex-messages",
+        "arrays",
+        "foreach",
+        "floating-point"
+      ],
+      "dependency_requirements": [
+        "MT runtime mutex notify/subscribe",
+        "NIL termination messages",
+        "Round and array iteration"
+      ],
+      "effects_or_harness_risks": [
+        "10000 queued jobs, waits may block if protocol wrong"
+      ],
+      "output_comparison": "sum tolerance/invariant; interleaving/version varies",
+      "next_gate": "bounded timeout and queue protocol assertions",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "N_JOBS",
+          "lines": [
+            11,
+            38,
+            51,
+            67
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_mutexSubscribe",
+          "lines": [
+            52,
+            81
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_mutexNotify",
+          "lines": [
+            39,
+            46,
+            86
+          ]
+        },
+        {
+          "symbol_or_construct": "for each",
+          "lines": [
+            62
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/mt/mttest08.prg",
+      "sha256": "849d6e41a3dfa003ff62dd1a636e9bbcf749c0907e23650169edaee488c8b12c",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source,MT runtime profile",
+      "families": [
+        "threads",
+        "memvars-dynamic-binding",
+        "runtime-macro",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "hbthread.ch constants",
+        "MT copy/share inheritance flags",
+        "PUBLIC/PRIVATE and Type/macro"
+      ],
+      "effects_or_harness_risks": [
+        "repeated WAIT input pauses; mutations across inherited/shared scopes"
+      ],
+      "output_comparison": "state transition assertions; Version varies",
+      "next_gate": "interactive scripted input and explicit sharing/lifetime contract",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "#include \"hbthread.ch\"",
+          "lines": [
+            9
+          ]
+        },
+        {
+          "symbol_or_construct": "wait",
+          "lines": [
+            30,
+            42,
+            54,
+            66,
+            76,
+            86,
+            96
+          ]
+        },
+        {
+          "symbol_or_construct": "HB_THREAD_INHERIT_MEMVARS",
+          "lines": [
+            61,
+            93
+          ]
+        },
+        {
+          "symbol_or_construct": "&cVarName",
+          "lines": [
+            117
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/mt/mttest09.prg",
+      "sha256": "350a27c47b136641f8626ce10d1bd190e1f86e39dfaa3d7c68ac7c07dc84430b",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source,MT runtime profile",
+      "families": [
+        "threads",
+        "RDD-workarea",
+        "closures",
+        "input-terminal",
+        "filesystem"
+      ],
+      "dependency_requirements": [
+        "MT runtime",
+        "DBF/RDD",
+        "workarea detach/request callbacks"
+      ],
+      "effects_or_harness_risks": [
+        "creates/writes/deletes _tst table; input WAIT; thread waits"
+      ],
+      "output_comparison": "thread IDs/interleaving variable; query invariant",
+      "next_gate": "isolated disposable data directory, RDD fixture and detach ownership review",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "dbCreate",
+          "lines": [
+            18
+          ]
+        },
+        {
+          "symbol_or_construct": "dbDrop",
+          "lines": [
+            40
+          ]
+        },
+        {
+          "symbol_or_construct": "WAIT",
+          "lines": [
+            29
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_dbDetach",
+          "lines": [
+            30,
+            48
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_dbRequest",
+          "lines": [
+            36,
+            46
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/mt/mttest10.prg",
+      "sha256": "37f96a2d543747562031292fb4d3de3b0ca61ef1cec8216b4a0773da54cf1eb7",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source,MT runtime profile",
+      "families": [
+        "threads",
+        "GT-windows",
+        "RDD-workarea",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "MT-enabled HVM",
+        "GT WVT onWindows / XWC default onother platforms, optional QTC",
+        "inkey.ch",
+        "existing test DBF in cwd or parent"
+      ],
+      "effects_or_harness_risks": [
+        "opens thread GT windows; Browse and keyboard waits; reads DBF"
+      ],
+      "output_comparison": "interactive GT session, not stdout-equivalence workload",
+      "next_gate": "GUI/GT and fixture plan; never infer no effect from early non-MT quit",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "#include \"inkey.ch\"",
+          "lines": [
+            9
+          ]
+        },
+        {
+          "symbol_or_construct": "HB_GT_WVT_DEFAULT",
+          "lines": [
+            12
+          ]
+        },
+        {
+          "symbol_or_construct": "THREAD_GT \"XWC\"",
+          "lines": [
+            16
+          ]
+        },
+        {
+          "symbol_or_construct": "browse()",
+          "lines": [
+            61
+          ]
+        },
+        {
+          "symbol_or_construct": "use ../test shared",
+          "lines": [
+            57
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/mt/mttest11.prg",
+      "sha256": "80baa3a5bcc795461d6a7b6a66dc27016cc934f3df859fbf589e9d4dbe525090",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source,MT runtime profile",
+      "families": [
+        "threads",
+        "GT-screen",
+        "input-terminal",
+        "environment-clock"
+      ],
+      "dependency_requirements": [
+        "GT screen/read/get runtime",
+        "MT branch",
+        "date/time and sleep"
+      ],
+      "effects_or_harness_risks": [
+        "READ/WAIT interaction; background infinite clock loop"
+      ],
+      "output_comparison": "screen placement and clock, not exact stdout",
+      "next_gate": "controlled input, captured screen/time strategy and thread termination",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "READ",
+          "lines": [
+            19,
+            23,
+            36
+          ]
+        },
+        {
+          "symbol_or_construct": "WAIT",
+          "lines": [
+            17,
+            26
+          ]
+        },
+        {
+          "symbol_or_construct": "while .T.",
+          "lines": [
+            32
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_dispOutAt",
+          "lines": [
+            34,
+            42
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/mt/mttest12.prg",
+      "sha256": "dd1de6f0bc6623ed2fed0932fcaadcc2cfbe52170f696db0a7e4d4ee0c1ea676",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source,MT runtime profile",
+      "families": [
+        "threads",
+        "thread-static",
+        "hashes",
+        "arrays",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "MT runtime",
+        "thread-local compound values",
+        "hb_valToExp serialization"
+      ],
+      "effects_or_harness_risks": [
+        "WAIT pauses within main and child; compound mutation"
+      ],
+      "output_comparison": "serialization/state assertions with scripted synchronization",
+      "next_gate": "input sequencing and thread-local compound aliasing contract",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "thread static",
+          "lines": [
+            2,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        {
+          "symbol_or_construct": "wait",
+          "lines": [
+            30
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_threadJoin",
+          "lines": [
+            20
+          ]
+        },
+        {
+          "symbol_or_construct": "t_var2[ \"X\" ]",
+          "lines": [
+            16
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/calling.prg",
+      "sha256": "2bc92508ea35cd18d06ebbeaa82afdf7c8894495fe31cec77cb8968246032de5",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with stated runtime profile",
+      "families": [
+        "functions",
+        "do-with",
+        "nil-return"
+      ],
+      "dependency_requirements": [
+        "own local functions only"
+      ],
+      "effects_or_harness_risks": [
+        "console output only"
+      ],
+      "output_comparison": "historical exact default/reference; LLVM rejects signature",
+      "next_gate": "reuse existing default allowlist; LLVM signature gap is separate",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "DO Fourth WITH",
+          "lines": [
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "FUNCTION Fourth",
+          "lines": [
+            27
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/lnlenli2.prg",
+      "sha256": "f4ac937364b71cb6cadcafc8b7c3f0f17e0eddb55a8d434d9c39499d1a231039",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with stated runtime profile",
+      "families": [
+        "line-length",
+        "array-literal",
+        "discard-return"
+      ],
+      "dependency_requirements": [
+        "large returned string array",
+        "LongLine2 own function"
+      ],
+      "effects_or_harness_risks": [
+        "empty output, allocation/discard"
+      ],
+      "output_comparison": "historical exact empty output is not lifetime proof",
+      "next_gate": "retain stress/allocation-specific assertions separately",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "//NOTEST",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "RETURN {",
+          "lines": [
+            14
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/mem.prg",
+      "sha256": "1bf2e483a27bedd1cbb93f4b5df5ed896c10b9fe9afa052247e8cf7721ed0078",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with stated runtime profile",
+      "families": [
+        "nil-local",
+        "string-local",
+        "unused-symbol"
+      ],
+      "dependency_requirements": [
+        "HB_SYMBOL_UNUSED predefined macro"
+      ],
+      "effects_or_harness_risks": [
+        "empty output; local lifecycle"
+      ],
+      "output_comparison": "historical exact empty output not proof of release/leaks",
+      "next_gate": "dedicated lifetime/resource instrumentation if required",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "LOCAL a, b",
+          "lines": [
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "HB_SYMBOL_UNUSED",
+          "lines": [
+            10,
+            11
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/nums.prg",
+      "sha256": "2efaea2b4519fa35fbacc3bb0224f5e034735ff3c67bee2fe6cbef404760bfca",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with stated runtime profile",
+      "families": [
+        "floating-point",
+        "numeric-formatting",
+        "hexadecimal"
+      ],
+      "dependency_requirements": [
+        "floating-point representation/formatting"
+      ],
+      "effects_or_harness_risks": [
+        "console output only"
+      ],
+      "output_comparison": "historical exact default/reference",
+      "next_gate": "LLVM float contract is not approved by this review",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "12000.123",
+          "lines": [
+            8
+          ]
+        },
+        {
+          "symbol_or_construct": "0xABAB",
+          "lines": [
+            9
+          ]
+        },
+        {
+          "symbol_or_construct": "LOCAL f := .12",
+          "lines": [
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/passref.prg",
+      "sha256": "f34b586d02aa17ae3226627847f9b01413ae4e61baf55d73a29bf0330d9acf04",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with stated runtime profile",
+      "families": [
+        "byref",
+        "functions",
+        "conditional-expression",
+        "nil-return"
+      ],
+      "dependency_requirements": [
+        "mutable byref integer and string arguments"
+      ],
+      "effects_or_harness_risks": [
+        "console output; alias mutation"
+      ],
+      "output_comparison": "historical exact default/reference",
+      "next_gate": "LLVM aliasing/representation needs own decision",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "testfun( @a, @b )",
+          "lines": [
+            11
+          ]
+        },
+        {
+          "symbol_or_construct": "c := \"A\"",
+          "lines": [
+            20
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/dynwin.prg",
+      "sha256": "1f17ddc29f2cf07f5c9faae435833478a8c8a0536760e5a597ce7d9425d139b2",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with stated runtime profile",
+      "families": [
+        "preprocessor-platform",
+        "dynamic-library-ABI",
+        "GUI",
+        "input-terminal",
+        "OS-settings"
+      ],
+      "dependency_requirements": [
+        "simpleio.ch,hbdyn.ch",
+        "Windows user32/shell32 and optional libcurl.dll",
+        "hb_DynCall and byref ABI"
+      ],
+      "effects_or_harness_risks": [
+        "MessageBox GUI; toggles system drag-full-window setting; input waits; loads DLLs"
+      ],
+      "output_comparison": "Linux excludes Windows body,not feature coverage",
+      "next_gate": "do not execute Windows original without OS-setting and GUI approval/recovery plan",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "__PLATFORM__WINDOWS",
+          "lines": [
+            14
+          ]
+        },
+        {
+          "symbol_or_construct": "MessageBoxA",
+          "lines": [
+            46
+          ]
+        },
+        {
+          "symbol_or_construct": "SPI_SETDRAGFULLWINDOWS",
+          "lines": [
+            57,
+            60,
+            64
+          ]
+        },
+        {
+          "symbol_or_construct": "Inkey( 0 )",
+          "lines": [
+            61,
+            65
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_libLoad",
+          "lines": [
+            48,
+            72
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/errsys.prg",
+      "sha256": "1061bef9a0d5ea39694f7d2b25928faa44d3d78a5f05cc6aee3bdb28dc56bb73",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with stated runtime profile",
+      "families": [
+        "nil-local",
+        "increment",
+        "error-system"
+      ],
+      "dependency_requirements": [
+        "Harbour default error handler; clipper.ch onlynon-Harbour"
+      ],
+      "effects_or_harness_risks": [
+        "intentional increment error; handler may be interactive"
+      ],
+      "output_comparison": "expected error condition, not normal exit0",
+      "next_gate": "controlled error harness, do not remove fault",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "LOCAL n",
+          "lines": [
+            9
+          ]
+        },
+        {
+          "symbol_or_construct": "n++",
+          "lines": [
+            13
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/arrindex.prg",
+      "sha256": "b5b8c547480d330440064602e4a48d49fd70c59079da3c42bb21871f67b26d1d",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with stated runtime profile",
+      "families": [
+        "array-literal-missing-elements",
+        "multidimensional-array",
+        "nested-index",
+        "string-literal"
+      ],
+      "dependency_requirements": [
+        "dynamic/nested array cells",
+        "Val string conversion"
+      ],
+      "effects_or_harness_risks": [
+        "console output only after mutations"
+      ],
+      "output_comparison": "candidate deterministic,not executed in this review",
+      "next_gate": "representation/alias decision before runtime; no claimed LLVM acceptance",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "a := { {, } }",
+          "lines": [
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "a[ 1, 2 ]",
+          "lines": [
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "Val( [ 2 ] )",
+          "lines": [
+            11
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/dates.prg",
+      "sha256": "d5580150a72a789f2df4e0931311488f733c102d0603408cb0b8a68ec945d010",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with stated runtime profile",
+      "families": [
+        "dates",
+        "date-arithmetic",
+        "set-format",
+        "assignment-expression"
+      ],
+      "dependency_requirements": [
+        "Date/CToD/DToS/hb_SToD",
+        "SET EPOCH/DATEFORMAT and century rules"
+      ],
+      "effects_or_harness_risks": [
+        "reads current date; mutates process date-format settings"
+      ],
+      "output_comparison": "clock/locale/format-dependent; not plain byte match",
+      "next_gate": "declare clock/locale fixture and SET/date semantics",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Date()",
+          "lines": [
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "_SET_EPOCH",
+          "lines": [
+            33
+          ]
+        },
+        {
+          "symbol_or_construct": "_SET_DATEFORMAT",
+          "lines": [
+            36,
+            42,
+            48,
+            58,
+            66
+          ]
+        },
+        {
+          "symbol_or_construct": "__SetCentury",
+          "lines": [
+            75,
+            76,
+            77,
+            78,
+            79,
+            80,
+            81,
+            82,
+            83,
+            84,
+            85
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/funcarr.prg",
+      "sha256": "c330161d6959cd1447b91977fa7aaf187325f29fe13e11a0178969a7b3def2a1",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with stated runtime profile",
+      "families": [
+        "function-result-lvalue",
+        "array-aliasing",
+        "file-static",
+        "floating-point",
+        "debug-runtime"
+      ],
+      "dependency_requirements": [
+        "shared static array returned by aFunc",
+        "full compound assignment/inc operators",
+        "debug VM stack/static introspection"
+      ],
+      "effects_or_harness_risks": [
+        "mutates shared array; exposes runtime stack/static content"
+      ],
+      "output_comparison": "VM introspection/runtime-dependent output",
+      "next_gate": "lvalue/alias/static contract plus introspection comparison plan",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "aFunc()[ 1 ]++",
+          "lines": [
+            24
+          ]
+        },
+        {
+          "symbol_or_construct": "aFunc()[ 1 ] /= 1.5",
+          "lines": [
+            38
+          ]
+        },
+        {
+          "symbol_or_construct": "STATIC s_aArray",
+          "lines": [
+            56
+          ]
+        },
+        {
+          "symbol_or_construct": "__dbgVMStkGList",
+          "lines": [
+            48
+          ]
+        }
+      ]
+    }
+  ]
+}
