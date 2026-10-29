@@ -1,0 +1,41 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "review": "Manual review2026-10-29:5 deterministic Linux console sources, no I/O beyond output. LLVM compile rejection known. Empty output in mem/lnlenli2 is not a leak/lifetime proof. errsys excluded: intentional error/interactive reference handler needs separate harness.",
+  "files": [
+    {
+      "file": "tests/calling.prg",
+      "sha256": "2bc92508ea35cd18d06ebbeaa82afdf7c8894495fe31cec77cb8968246032de5",
+      "expected_exit": 0,
+      "reference_stdout_bytes": 121,
+      "reference_stdout_sha256": "7434087d042fcc6c066a8f2086f96a47c4f59d73f0f6b9ec83b7290757afbf89"
+    },
+    {
+      "file": "tests/lnlenli2.prg",
+      "sha256": "f4ac937364b71cb6cadcafc8b7c3f0f17e0eddb55a8d434d9c39499d1a231039",
+      "expected_exit": 0,
+      "reference_stdout_bytes": 0,
+      "reference_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "tests/mem.prg",
+      "sha256": "1bf2e483a27bedd1cbb93f4b5df5ed896c10b9fe9afa052247e8cf7721ed0078",
+      "expected_exit": 0,
+      "reference_stdout_bytes": 0,
+      "reference_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "tests/nums.prg",
+      "sha256": "2efaea2b4519fa35fbacc3bb0224f5e034735ff3c67bee2fe6cbef404760bfca",
+      "expected_exit": 0,
+      "reference_stdout_bytes": 73,
+      "reference_stdout_sha256": "f87c096891e5a4308eedc713b045c117326828065700b43b5aeb36fc0ca212ae"
+    },
+    {
+      "file": "tests/passref.prg",
+      "sha256": "f34b586d02aa17ae3226627847f9b01413ae4e61baf55d73a29bf0330d9acf04",
+      "expected_exit": 0,
+      "reference_stdout_bytes": 157,
+      "reference_stdout_sha256": "2c706a175500d3e658d4ab7f91a576ce6711b34902b4942a041e3ed27a9a0370"
+    }
+  ]
+}

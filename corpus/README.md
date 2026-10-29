@@ -120,3 +120,17 @@ comparisons (Harbour bundles a runtime, HR is freestanding); source-path/layout
 changes can alter artifacts. There is no Rust translation or timing claim for
 these14 originals. Rust comparison remains the separate reviewed kernels and
 bounded-process cases until equivalent programs are defined and validated.
+
+## Five default-only reviewed originals
+
+calling,lnlenli2,mem,nums,passref also match rebuilt Harbour pcode/GTSTD
+byte-exact on Linux (stdout/stderr/exit0). LLVM still rejects them; do not
+count them as LLVM support. The opt-in gate supports --default-only and a
+separate --allowlist corpus/reviewed-default-only-originals.json. The14-case
+default path remains unchanged and was rechecked after this script extension.
+19 reviewed originals now have default/reference exact execution evidence;
+14 of those have LLVM/reference evidence. This is not19ofall268 passing both.
+lnlenli2/mem output is empty; successful execution is not proof of no leaks or
+complete lifetime semantics. errsys is intentionally excluded because its
+reference error handler needs a separate controlled-error harness. No adaptation
+or removal of error behavior is authorized by this result.
