@@ -18,3 +18,14 @@ for name in ['logic-current.out', 'logic-llvm.out']:
     actual = list(map(int, pathlib.Path('run', name).read_text().split()))
     assert actual == expected, (name, actual, expected)
 print('PASS independent logic truth/effect oracle (88 integers)')
+
+# Explicit expected observations for forward/reverse FOR, WHILE, nested
+# EXIT/LOOP, signed-max increment termination and early-return trace unlink.
+loop_expected = [1, 10, 3, 30, 4, 4, 2, 1, 1, 3, 4, 3,
+                 1, 1, 1, 3, 2, 1, 2, 3,
+                 1, 1, 1, 3, 2, 1, 2, 3,
+                 9223372036854775807, -9223372036854775808, 3, 2, 1]
+for name in ['loopcontrol-current.out', 'loopcontrol-llvm.out']:
+    actual = list(map(int, pathlib.Path('run', name).read_text().split()))
+    assert actual == loop_expected, (name, actual, loop_expected)
+print('PASS independent loop-control observations (33 integers)')

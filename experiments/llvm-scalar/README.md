@@ -11,14 +11,14 @@ ownership/collection representation is introduced.
 
 Current supported slice: I64 function signatures/locals, integer + - *,
 signed comparisons, logical .AND./.OR./.NOT. with short-circuit evaluation,
-IF, WHILE, FOR with its existing signed-overflow termination, user calls and
+IF, WHILE, EXIT/LOOP, FOR with its existing signed-overflow termination, user calls and
 recursion, lazy IIF, integer and literal-string output, ProcLine current-frame
 or literal0, and fixed I64 stack-array literals/index reads/writes/len.
 Arithmetic uses wrapping LLVM operations, without invented nsw/nuw promises.
 Native three-word trace frames preserve the tested diagnostic paths. See the
 dated follow-ups below for the evidence and historical configurations.
 
-Still rejected: dynamic values, floats, owned strings, byref ABI, EXIT/LOOP,
+Still rejected: dynamic values, floats, owned strings, byref ABI,
 most builtins, logical output, dynamic/growing/nested arrays, array parameters
 and whole-array copies. No native-Windows compiler packaging is provided.
 This is not full Harbour integer-promotion semantics or a replacement backend.
@@ -346,3 +346,28 @@ stack spills after optimization (trace-frame storage remains); pure conditions
 become setcc/cmov/bit operations. That local code-quality observation is not a
 Rust comparison or a performance result. Side-effecting operands are tested
 separately, where their required evaluation order must remain observable.
+
+## EXIT/LOOP increment, 29 October 2026
+
+EXIT branches to the innermost loop end. LOOP branches to the WHILE test or
+FOR increment as appropriate; FOR retains its checked signed-overflow
+termination, including preserving the old counter at both signed limits.
+A stack of lowering destinations handles nesting without changing runtime
+values, ownership or trace-frame layout. Function return still unlinks its
+trace frame; EXIT/LOOP do not unlink the function they remain inside.
+
+`loopcontrol.hb` checks forward/reverse FOR, WHILE, both nesting orders,
+both terminating IF arms, skipped code, zero-trip loops, signed-max/min
+increment termination and early returns. Complete output is compared with
+the current backend in Linux and under Wine, plus 33 explicit expected
+integer observations. Existing regressions t28/t42/t48/t49 define the
+innermost-loop and continue-to-increment semantics. `error-loopcontrol.hb`
+checks the exact diagnostic callstack after nested EXIT/LOOP and a completed
+early-returning function; error-loop-test.hb checks WHILE-test origin on the
+next iteration reached by LOOP. EXIT/LOOP outside a loop still fail in analysis.
+This does not add FOR EACH or admit ownership-bearing loop bodies to LLVM.
+
+Fresh result: run.sh 32 PASS lines, zero failures, with 5089 prior differential
+calls, the two independent output checks, and ten error fixtures on both targets
+(20 exact diagnostic comparisons). Normal-backend battery rebuilt/re-run:
+1086 PASS, zero FAIL. This increment has no speed, size or Rust-quality claim.

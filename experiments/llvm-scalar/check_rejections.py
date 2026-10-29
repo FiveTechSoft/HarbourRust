@@ -12,7 +12,8 @@ cases={
  'string-var': 'function main()\nlocal a := "x"\n? a\nreturn\n',
  'byref': 'function f(x)\nreturn x+1\nfunction main()\nlocal a := 1\n? f(@a)\nreturn\n',
  'builtin': 'function main()\n? Min(1,2)\nreturn\n',
- 'exit': 'function main()\nwhile .T.\nexit\nenddo\nreturn\n'
+ 'exit-outside': 'function main()\nexit\nreturn\n',
+ 'loop-outside': 'function main()\nloop\nreturn\n'
 }
 for name,source in cases.items():
  p=pathlib.Path('run/reject-'+name+'.hb');p.write_text(source)
