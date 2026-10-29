@@ -1,7 +1,7 @@
 {
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "scope": "Manual review provenance and source-family index only. Not parser-recognized syntax or supported feature counts. Dependencies are not installed-availability claims. No compilation/execution. Does not replace17family seed or268audit.",
-  "reviewed_sources": 74,
+  "reviewed_sources": 84,
   "build_projects": 1,
   "family_index": [
     {
@@ -16,7 +16,16 @@
       "family": "GT-screen",
       "reviewed_sources": [
         "tests/mt/mttest11.prg",
-        "tests/usrrdd/exarr.prg"
+        "tests/usrrdd/exarr.prg",
+        "tests/box.prg",
+        "tests/box3.prg",
+        "tests/gtcolors.prg",
+        "tests/say.prg",
+        "tests/cls.prg",
+        "tests/cursor.prg",
+        "tests/browse.prg",
+        "tests/achoice5.prg",
+        "tests/achoice6.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -24,7 +33,8 @@
     {
       "family": "GT-windows",
       "reviewed_sources": [
-        "tests/mt/mttest10.prg"
+        "tests/mt/mttest10.prg",
+        "tests/wvt_fs.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -67,7 +77,8 @@
         "tests/usrrdd/exhsx.prg",
         "tests/usrrdd/exlog.prg",
         "tests/usrrdd/exrlx.prg",
-        "tests/sortbug.prg"
+        "tests/sortbug.prg",
+        "tests/browse.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -114,7 +125,8 @@
         "tests/mt/mttest12.prg",
         "tests/usrrdd/exarr.prg",
         "tests/arreval.prg",
-        "tests/array.prg"
+        "tests/array.prg",
+        "tests/achoice5.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -131,7 +143,8 @@
     {
       "family": "audio",
       "reviewed_sources": [
-        "tests/sound.prg"
+        "tests/sound.prg",
+        "tests/box3.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -182,7 +195,8 @@
     {
       "family": "classes",
       "reviewed_sources": [
-        "tests/symbolt.prg"
+        "tests/symbolt.prg",
+        "tests/cls.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -277,7 +291,8 @@
         "tests/dates.prg",
         "tests/directry.prg",
         "tests/usrrdd/exarr.prg",
-        "tests/cdow.prg"
+        "tests/cdow.prg",
+        "tests/say.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -333,7 +348,8 @@
     {
       "family": "dynamic-dispatch",
       "reviewed_sources": [
-        "tests/symbolt.prg"
+        "tests/symbolt.prg",
+        "tests/cls.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -371,7 +387,8 @@
         "tests/mt/mttest11.prg",
         "tests/sound.prg",
         "tests/langchk.hb",
-        "tests/cdow.prg"
+        "tests/cdow.prg",
+        "tests/gtcolors.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -474,7 +491,9 @@
         "tests/funcarr.prg",
         "tests/diskspac.prg",
         "tests/round.prg",
-        "tests/arrayidx.prg"
+        "tests/arrayidx.prg",
+        "tests/say.prg",
+        "tests/achoice6.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -629,7 +648,15 @@
         "tests/usrrdd/exarr.prg",
         "tests/usrrdd/exfcm.prg",
         "tests/usrrdd/exhsx.prg",
-        "tests/for2.prg"
+        "tests/for2.prg",
+        "tests/box3.prg",
+        "tests/gtcolors.prg",
+        "tests/cls.prg",
+        "tests/cursor.prg",
+        "tests/wvt_fs.prg",
+        "tests/browse.prg",
+        "tests/achoice5.prg",
+        "tests/achoice6.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -862,7 +889,8 @@
     {
       "family": "preprocessor-platform",
       "reviewed_sources": [
-        "tests/dynwin.prg"
+        "tests/dynwin.prg",
+        "tests/wvt_fs.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -948,7 +976,9 @@
       "family": "set-format",
       "reviewed_sources": [
         "tests/dates.prg",
-        "tests/directry.prg"
+        "tests/directry.prg",
+        "tests/say.prg",
+        "tests/browse.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"

@@ -13,7 +13,8 @@
         "tests/hbdocext.hb",
         "tests/strdelim.prg",
         "tests/vec1.prg",
-        "tests/test.prg"
+        "tests/test.prg",
+        "tests/wvt_fs.prg"
       ],
       "seed_regression_paths": [
         "tests/t07_unicode_string.hb",
@@ -125,7 +126,9 @@
         "tests/funcarr.prg",
         "tests/diskspac.prg",
         "tests/round.prg",
-        "tests/arrayidx.prg"
+        "tests/arrayidx.prg",
+        "tests/say.prg",
+        "tests/achoice6.prg"
       ],
       "seed_regression_paths": [
         "tests/t750_float_arith_mixed.hb",
@@ -154,7 +157,8 @@
         "tests/array.prg",
         "tests/strdelim.prg",
         "tests/statics2.prg",
-        "tests/statics1.prg"
+        "tests/statics1.prg",
+        "tests/achoice5.prg"
       ],
       "seed_regression_paths": [
         "tests/t208_nil_literal.hb",
@@ -183,7 +187,8 @@
         "tests/t1.prg",
         "tests/statinit.prg",
         "tests/symbolt.prg",
-        "tests/sortbug.prg"
+        "tests/sortbug.prg",
+        "tests/cls.prg"
       ],
       "seed_regression_paths": [
         "tests/t150_cb_eval1.hb",
@@ -234,7 +239,9 @@
         "tests/langchk.hb",
         "tests/usrrdd/exarr.prg",
         "tests/cdow.prg",
-        "tests/test.prg"
+        "tests/test.prg",
+        "tests/say.prg",
+        "tests/browse.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -278,7 +285,8 @@
         "tests/usrrdd/exhsx.prg",
         "tests/usrrdd/exlog.prg",
         "tests/usrrdd/exrlx.prg",
-        "tests/sortbug.prg"
+        "tests/sortbug.prg",
+        "tests/browse.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -328,7 +336,17 @@
         "tests/usrrdd/exarr.prg",
         "tests/usrrdd/exfcm.prg",
         "tests/usrrdd/exhsx.prg",
-        "tests/for2.prg"
+        "tests/for2.prg",
+        "tests/box.prg",
+        "tests/box3.prg",
+        "tests/gtcolors.prg",
+        "tests/say.prg",
+        "tests/cls.prg",
+        "tests/cursor.prg",
+        "tests/wvt_fs.prg",
+        "tests/browse.prg",
+        "tests/achoice5.prg",
+        "tests/achoice6.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -352,7 +370,8 @@
         "tests/usrrdd/exlog.prg",
         "tests/cdow.prg",
         "tests/dynsym.prg",
-        "tests/procname.prg"
+        "tests/procname.prg",
+        "tests/gtcolors.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,

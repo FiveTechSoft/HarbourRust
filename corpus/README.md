@@ -280,3 +280,19 @@ string/introspection functionality was absent. Default runtime provenance is
 separate: these existing manifest rows were in the1098PASS e71b0ed battery.
 This metadata step executes no program and claims no new LLVM runtime pass.
 The17family seed and its original compiler provenance remain unchanged.
+
+### GT/input batch:84 manual records /98 reviewed-or-executed union
+
+Ten full-source GT/input/class reviews bring manual records to84 and the union
+with19existing execution cases to98 (84+19-5overlap). Execution remains19/14.
+The existing workstream taxonomy is refreshed for these memberships,not expanded
+into a claim of completed grammar. No original was compiled or run.
+
+Screen tests require spatial/cursor/color/driver assertions,not only captured
+stdout. box3 emits BEL;gtcolors changes blink;cursor changes cursor modes;
+wvt_fs changes graphical font/fullscreen/AltEnter settings. A non-graphical
+QUIT from wvt_fs would not prove graphical feature support. browse reads a DBF
+fixture and waits for input. cls is class ON ERROR with modal Alert,despite its
+short generic filename. achoice6 uses fractional coordinates and injected keys;
+its RTE comment is an investigation lead,not a measured result. These records
+specify controlled input/screen/restore requirements without authorizing effects.

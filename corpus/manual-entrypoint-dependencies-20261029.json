@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "74 full-source manual metadata reviews,including prior48 and26additional RDD/lexical/closure/module cases. Five overlap prior19execution records. No new compile/link/run or execution authority; dependency requirements are not installed availability; tags are not coverage.",
+  "scope": "84 full-source manual metadata records,including10GT/input/class boundary reviews. Five overlap prior19execution records. No new compile/link/run or execution authority. Dependencies required,not installed availability. Tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -3303,6 +3303,435 @@
           "lines": [
             20,
             21
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/box.prg",
+      "sha256": "a7e9f65a6848466453bc66a686f3c45ea9414c134c01d03c6b9ec98ea44c108f",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "GT/class/driver-specific original;not auto-runnable",
+      "families": [
+        "GT-screen"
+      ],
+      "dependency_requirements": [
+        "box.ch Unicode frame constants; DispBox"
+      ],
+      "effects_or_harness_risks": [
+        "writes screen cells including invalid-color probe"
+      ],
+      "output_comparison": "screen/driver/Unicode-dependent",
+      "next_gate": "capture screen-grid/GT state,not stdout",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "HB_B_SINGLE_UNI",
+          "lines": [
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "DispBox",
+          "lines": [
+            7,
+            8,
+            9
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/box3.prg",
+      "sha256": "f12a7edff88b90bb6983c61c646b99fe68ce4395731a26777541ab2cc156c4e1",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "GT/class/driver-specific original;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "input-terminal",
+        "audio"
+      ],
+      "dependency_requirements": [
+        "BOX commands and __Box variants; Inkey; console BEL"
+      ],
+      "effects_or_harness_risks": [
+        "clears screen,draws boxes,emitsBEL,waits after each"
+      ],
+      "output_comparison": "spatial output/input sequence",
+      "next_gate": "scripted input and grid assertions,explicit audio plan",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "@ 0, 0, 15",
+          "lines": [
+            5,
+            6
+          ]
+        },
+        {
+          "symbol_or_construct": "Chr( 7 )",
+          "lines": [
+            26
+          ]
+        },
+        {
+          "symbol_or_construct": "Inkey( 0 )",
+          "lines": [
+            27
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/gtcolors.prg",
+      "sha256": "4400142813906b40584442aa223af9534bda30a37bd3fca4044359989b5de934",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "GT/class/driver-specific original;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "input-terminal",
+        "environment-clock"
+      ],
+      "dependency_requirements": [
+        "SetBlink; hb_NToColor; GT info and date/time"
+      ],
+      "effects_or_harness_risks": [
+        "changes blink flag,draws256colorcells,waits"
+      ],
+      "output_comparison": "clock/driver/color-dependent",
+      "next_gate": "declared GT snapshot and input cleanup",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "SetBlink",
+          "lines": [
+            18
+          ]
+        },
+        {
+          "symbol_or_construct": "FOR bg := 0 TO 15",
+          "lines": [
+            19
+          ]
+        },
+        {
+          "symbol_or_construct": "Inkey( 0 )",
+          "lines": [
+            27
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/say.prg",
+      "sha256": "f4eb0b144d73cb60b8d9b026737f55d169fabe67ed70a333f7d4791502c82900",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "GT/class/driver-specific original;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "dates",
+        "set-format",
+        "floating-point"
+      ],
+      "dependency_requirements": [
+        "@SAY/PICTURE,Date,SET CENTURY/DATEFORMAT"
+      ],
+      "effects_or_harness_risks": [
+        "clears/draws screen,changes date settings"
+      ],
+      "output_comparison": "clock/dateformat/picture/coordinates",
+      "next_gate": "fixed date/GT/picture assertions before execution",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "PICTURE",
+          "lines": [
+            1,
+            10,
+            14,
+            15,
+            16,
+            18,
+            20
+          ]
+        },
+        {
+          "symbol_or_construct": "SET CENTURY ON",
+          "lines": [
+            8
+          ]
+        },
+        {
+          "symbol_or_construct": "Date()",
+          "lines": [
+            11,
+            17,
+            18
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/cls.prg",
+      "sha256": "3cfbcfbf21df2de77906bdd5b12564e3d761e4e2ff71d4764bc0766f4399f2f0",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "GT/class/driver-specific original;not auto-runnable",
+      "families": [
+        "classes",
+        "dynamic-dispatch",
+        "GT-screen",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "hbclass.ch; class ON ERROR and __GetMessage; Alert"
+      ],
+      "effects_or_harness_risks": [
+        "screen clear and modal alerts on missing send/property-set"
+      ],
+      "output_comparison": "class dispatch/alert input,not console stdout",
+      "next_gate": "class-runtime and controlled alert harness",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "ON ERROR",
+          "lines": [
+            1,
+            14,
+            25
+          ]
+        },
+        {
+          "symbol_or_construct": "o:Another := 5",
+          "lines": [
+            19
+          ]
+        },
+        {
+          "symbol_or_construct": "Alert( __GetMessage() )",
+          "lines": [
+            35
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/cursor.prg",
+      "sha256": "4f4668b440f83dbffe271334b80e2d12581af22b59ccc1d30c5e0d18e28a2c15",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "GT/class/driver-specific original;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "SetCursor modes,driver support"
+      ],
+      "effects_or_harness_risks": [
+        "changes cursor repeatedly and waits;endsnormalmode"
+      ],
+      "output_comparison": "driver-specific shape semantics",
+      "next_gate": "grid/cursor-state capture and restore",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "FOR x := 0 TO 4",
+          "lines": [
+            8
+          ]
+        },
+        {
+          "symbol_or_construct": "SetCursor( nCurs )",
+          "lines": [
+            22
+          ]
+        },
+        {
+          "symbol_or_construct": "Inkey( 0 )",
+          "lines": [
+            25
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/wvt_fs.prg",
+      "sha256": "5ddf11b7194d30a9ef590373eedff6d2ca98f1739530919efbb9ccd688785b6f",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "GT/class/driver-specific original;not auto-runnable",
+      "families": [
+        "GT-windows",
+        "input-terminal",
+        "preprocessor-platform"
+      ],
+      "dependency_requirements": [
+        "hbgtinfo.ch,inkey.ch;graphicalGT;conditionalHBSHELLselect"
+      ],
+      "effects_or_harness_risks": [
+        "changes font,fullscreen/window mode,AltEnter;waits"
+      ],
+      "output_comparison": "graphical branch/keyboard dependent;nonGUI QUIT not featuretest",
+      "next_gate": "explicit disposable graphical-session fixture/restoration",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "HB_GTI_FONTNAME",
+          "lines": [
+            15
+          ]
+        },
+        {
+          "symbol_or_construct": "HB_GTI_ISFULLSCREEN",
+          "lines": [
+            23,
+            25
+          ]
+        },
+        {
+          "symbol_or_construct": "HB_GTI_ALTENTER",
+          "lines": [
+            26
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/browse.prg",
+      "sha256": "c854c766804bd1665f500ef864b27f58f6900fcc007839f77e263a6776605415",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "GT/class/driver-specific original;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "RDD-workarea",
+        "input-terminal",
+        "set-format"
+      ],
+      "dependency_requirements": [
+        "inkey.ch;test table;Browse and color/eventmask APIs"
+      ],
+      "effects_or_harness_risks": [
+        "opens DBF,browse input,changescolor/dateformat;restorescoloronsuccess"
+      ],
+      "output_comparison": "fixture/driver/input-dependent",
+      "next_gate": "copied table and scripted browser exit/GT restoration",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "USE test",
+          "lines": [
+            18
+          ]
+        },
+        {
+          "symbol_or_construct": "Browse()",
+          "lines": [
+            1,
+            19
+          ]
+        },
+        {
+          "symbol_or_construct": "SetColor( cColor )",
+          "lines": [
+            21
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/achoice5.prg",
+      "sha256": "685e6881d2a93991e6f18ff65b1b8142387b8035b6f9e9c66483e5e34c9ffd95",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "GT/class/driver-specific original;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "input-terminal",
+        "arrays"
+      ],
+      "dependency_requirements": [
+        "inkey.ch;AChoice selectable-flag array"
+      ],
+      "effects_or_harness_risks": [
+        "clears/draws menu,interactive selection"
+      ],
+      "output_comparison": "screen/input sequence;commented glitch not observed verdict",
+      "next_gate": "bounded injected keys with visual grid assertions",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "AChoice",
+          "lines": [
+            13
+          ]
+        },
+        {
+          "symbol_or_construct": "DispBox",
+          "lines": [
+            12
+          ]
+        },
+        {
+          "symbol_or_construct": "Visual glitch",
+          "lines": [
+            7
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/achoice6.prg",
+      "sha256": "58868901398d01ed4462539e0e11f262212f23ff8745e1e24ab5438d5e95ace1",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "GT/class/driver-specific original;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "input-terminal",
+        "floating-point"
+      ],
+      "dependency_requirements": [
+        "inkey.ch;AChoice with fractional coordinates;injected keys"
+      ],
+      "effects_or_harness_risks": [
+        "injectsDownkeys,draws menu;source annotatesRTEbutnotmeasured"
+      ],
+      "output_comparison": "possiblefaultneedsfreshoracle,notnormalexitassumption",
+      "next_gate": "controlled error/input harness;do not infer source comment as result",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "y1 := 7.6",
+          "lines": [
+            12
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_keyPut",
+          "lines": [
+            15
+          ]
+        },
+        {
+          "symbol_or_construct": "AChoice",
+          "lines": [
+            19
           ]
         }
       ]
