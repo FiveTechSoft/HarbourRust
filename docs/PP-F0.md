@@ -195,3 +195,11 @@ recorded, not denied.
 
 - Still scoped OUT: rejected marker forms (<"x">, <#x>), token
   pasting. No claim of general #command/#translate compatibility.
+
+## P2 correction: identifier and wildcard markers (2026-10-29)
+
+The earlier claim that Harbour accepts only the implemented marker forms was
+too broad. Live hbpp accepts `<!x!>` and `<*x*>`; our validator rejects them.
+See experiments/pp-markers for45 own-source preprocessor-only probes, including
+nonmatching inputs and wildcard terminal/nonterminal distinction. This is a
+recorded implementation gap, not newly completed Harbour syntax or runtime.

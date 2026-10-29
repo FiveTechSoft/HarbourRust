@@ -374,7 +374,9 @@ is NOT emulated, so this is not complete `#xtranslate` support). Macro
 names and parameter substitution are case-sensitive, directive names are
 not - matching Harbour's observed behaviour. NOT supported: the marker
 forms Harbour itself rejects (`<"x">`, `<#x>`), non-call `#translate`
-forms, token pasting (`##`), the `&` macro operator, `#pragma`. This is not a complete preprocessor port; see docs/PP-F0.md for
+forms, token pasting (`##`), the `&` macro operator, `#pragma`. The valid Harbour match markers `<!x!>` and `<*x*>` are also not supported;
+our E0010 attribution for these forms is wrong. See experiments/pp-markers for
+45 own-source black-box observations. This is not a complete preprocessor port; see docs/PP-F0.md for
 the probe record and the explicit out-of-scope list.
 
 ## Iteration 11: fixed-size integer arrays
