@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "48 manually read source records:12MT,3multifnc,10frontier/default-only,23effect/dependency/startup reviews. Metadata only,no source bodies copied. Five overlap prior19execution records. No new compile/link/run or execution authorization. Dependency requirements are not installed availability. No language coverage percentage.",
+  "scope": "74 full-source manual metadata reviews,including prior48 and26additional RDD/lexical/closure/module cases. Five overlap prior19execution records. No new compile/link/run or execution authority; dependency requirements are not installed availability; tags are not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -2220,6 +2220,1103 @@
           ]
         }
       ]
+    },
+    {
+      "file": "tests/usrrdd/exarr.prg",
+      "sha256": "0f5ed37a814f8a3b7ceed70c2ee91e838e66376824e5a5b31a5320fe91207b02",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "RDD-workarea",
+        "arrays",
+        "dates",
+        "GT-screen",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "ARRAYRDD driver; dbCreate extensions; Browse"
+      ],
+      "effects_or_harness_risks": [
+        "in-memory workarea writes; CLS; repeated WAIT and Browse; no disk-free claim solely from driver name"
+      ],
+      "output_comparison": "interactive state/record invariants",
+      "next_gate": "isolate runtime/GT/input; verify ARRAYRDD behavior separately",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "REQUEST ARRAYRDD",
+          "lines": [
+            47
+          ]
+        },
+        {
+          "symbol_or_construct": "USE_DBCREATE_EXTENSIONS",
+          "lines": [
+            49,
+            66
+          ]
+        },
+        {
+          "symbol_or_construct": "WAIT",
+          "lines": [
+            69,
+            72,
+            76,
+            81,
+            90,
+            116,
+            120,
+            130,
+            135
+          ]
+        },
+        {
+          "symbol_or_construct": "Browse()",
+          "lines": [
+            133,
+            136
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/usrrdd/exfcm.prg",
+      "sha256": "5da9efce0df1afd53867738a01bd8680920bcaf682af3996bbf2ac9ec6a7dd92",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "RDD-workarea",
+        "CSV-driver",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "FCOMMA driver and test.csv fixture"
+      ],
+      "effects_or_harness_risks": [
+        "opens existing CSV; record traversal; WAIT/Browse"
+      ],
+      "output_comparison": "fixture/interactive record state",
+      "next_gate": "copied CSV fixture and scripted input; driver semantics first",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "REQUEST FCOMMA",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "USE test.csv",
+          "lines": [
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "Browse()",
+          "lines": [
+            38
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/usrrdd/exhsx.prg",
+      "sha256": "5a5495b1321277294d83bc5064b559f9d1f7c6e65fef707e7c4547b4352e5eda",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "RDD-workarea",
+        "fulltext-index",
+        "filesystem",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "HSX functions; dbinfo.ch; test input table"
+      ],
+      "effects_or_harness_risks": [
+        "creates _tst table and HSX index; APPEND FROM test; WAIT/Browse"
+      ],
+      "output_comparison": "search-result invariants depend on fixture/driver",
+      "next_gate": "disposable fixture; index/artifact checks; no bulk execution",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "HSX_CREATE",
+          "lines": [
+            21
+          ]
+        },
+        {
+          "symbol_or_construct": "APPEND FROM test",
+          "lines": [
+            22
+          ]
+        },
+        {
+          "symbol_or_construct": "hs_Verify",
+          "lines": [
+            29
+          ]
+        },
+        {
+          "symbol_or_construct": "Browse()",
+          "lines": [
+            41
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/usrrdd/exlog.prg",
+      "sha256": "27b1655b1dc2058c3aff111d8330a8470918315edeb27ddb2b77662888d183b6",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "RDD-workarea",
+        "logging",
+        "filesystem",
+        "identity-query"
+      ],
+      "dependency_requirements": [
+        "LOGRDD inheriting DBFCDX; dbinfo/hbusrrdd headers; existing test table"
+      ],
+      "effects_or_harness_risks": [
+        "modifies existing test records; appends blank record; logs changes with network/user identity"
+      ],
+      "output_comparison": "data/log contents and user tags environment-dependent",
+      "next_gate": "copied table; isolated log destination; remove private identity from published fixtures",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "REQUEST LOGRDD",
+          "lines": [
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "REQUEST DBFCDX",
+          "lines": [
+            9
+          ]
+        },
+        {
+          "symbol_or_construct": "logs\\changes.log",
+          "lines": [
+            20
+          ]
+        },
+        {
+          "symbol_or_construct": "NetName()",
+          "lines": [
+            22
+          ]
+        },
+        {
+          "symbol_or_construct": "APPEND BLANK",
+          "lines": [
+            42
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/usrrdd/exrlx.prg",
+      "sha256": "5eaed4b1bd49ddecff46f7eaa3a814197737422116f86d05901f8b03c99917dc",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "RDD-workarea",
+        "record-locking",
+        "filesystem"
+      ],
+      "dependency_requirements": [
+        "RLCDX driver"
+      ],
+      "effects_or_harness_risks": [
+        "creates _tst; appends records; repeated lock/unlock requests"
+      ],
+      "output_comparison": "lock-list state invariants",
+      "next_gate": "isolated table and lock lifecycle assertions",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "REQUEST RLCDX",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "dbCreate",
+          "lines": [
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "dbRLock( 1 )",
+          "lines": [
+            21,
+            22,
+            23
+          ]
+        },
+        {
+          "symbol_or_construct": "dbRUnlock( 1 )",
+          "lines": [
+            28,
+            36,
+            40
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/arreval.prg",
+      "sha256": "46ae515cde1b6bdcd886eadbccb610ee10e1d2128e7d231b90486486a0c67ed5",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "arrays",
+        "codeblocks",
+        "callback-arity"
+      ],
+      "dependency_requirements": [
+        "AEval array callback with value/index"
+      ],
+      "effects_or_harness_risks": [
+        "console output only"
+      ],
+      "output_comparison": "deterministic candidate,not executed",
+      "next_gate": "closure/callback/array representation contract then oracle",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "AEval( a, {| nValue, nIndex |",
+          "lines": [
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/dupvars.prg",
+      "sha256": "5fa9448a53e9e2314ac10a5ae02d578be8450d4eb3c16d3061698d0267ab58a1",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main declaration,compile-negative purpose",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "duplicate-declarations",
+        "compiler-diagnostic"
+      ],
+      "dependency_requirements": [
+        "compiler duplicate-local rejection"
+      ],
+      "effects_or_harness_risks": [
+        "no execution intended; NOTEST marker"
+      ],
+      "output_comparison": "compile diagnostic gate,not exit0 expectation",
+      "next_gate": "measure reject/oracle diagnosis without running",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "//NOTEST",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "LOCAL a, a",
+          "lines": [
+            7
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/fwdref.prg",
+      "sha256": "4b863a32824e9754b1e6fe86180dc1d351ee7a62132e5973e360423e0955301f",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main declaration,forward-capture diagnostic purpose",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "closures",
+        "forward-reference",
+        "lexical-scope"
+      ],
+      "dependency_requirements": [
+        "codeblock capture of later local"
+      ],
+      "effects_or_harness_risks": [
+        "compile-only candidate; TOFIX annotation not verdict"
+      ],
+      "output_comparison": "needs fresh oracle,source comment is not proof of present failure",
+      "next_gate": "characterize lexical binding without executing",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "TOFIX",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "LOCAL bPad",
+          "lines": [
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "LOCAL nSpan",
+          "lines": [
+            6
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/array.prg",
+      "sha256": "1249646c4392ef9755302986b2ed07513c53791243c79f3be1cdf1cb850ee050",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "arrays",
+        "cycles",
+        "nil-value",
+        "lifetime"
+      ],
+      "dependency_requirements": [
+        "dynamic self-referential array and release behavior"
+      ],
+      "effects_or_harness_risks": [
+        "creates then breaks local reference cycle; output does not prove release"
+      ],
+      "output_comparison": "stdout insufficient for lifecycle correctness",
+      "next_gate": "separate alias/cycle/lifetime contract and resource assertions",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "a[ 1 ] := a",
+          "lines": [
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "a[ 1 ] := NIL",
+          "lines": [
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/t1.prg",
+      "sha256": "250205eaa1f29140bd069a4e988955fca45f8b4a20f5027085fd8716b41757ad",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "while-control",
+        "closures",
+        "callback-effects"
+      ],
+      "dependency_requirements": [
+        "Eval codeblock printing QOut"
+      ],
+      "effects_or_harness_risks": [
+        "1000iterations and many console writes"
+      ],
+      "output_comparison": "deterministic candidate after callback semantics",
+      "next_gate": "bounded output fixture; no new execution here",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "WHILE i < 1000",
+          "lines": [
+            8
+          ]
+        },
+        {
+          "symbol_or_construct": "Eval( cb )",
+          "lines": [
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/cdow.prg",
+      "sha256": "bc81a2978acfea5ec26fd5930863f9ed02a013936629da2d0c7fe7b692d0f54b",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "dates",
+        "localization",
+        "environment-clock"
+      ],
+      "dependency_requirements": [
+        "Date,CMonth,CDoW locale rules"
+      ],
+      "effects_or_harness_risks": [
+        "reads current date and localized names"
+      ],
+      "output_comparison": "clock and locale dependent",
+      "next_gate": "declared date/locale fixture,not blind normalization",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "CMonth( Date()",
+          "lines": [
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "CDoW( Date()",
+          "lines": [
+            8,
+            9,
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/for2.prg",
+      "sha256": "3c9651e0d969a32b4a75eaca3aec110704627e182aa1340e877f366ed38c603a",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "for-control",
+        "loop-variable-assignment",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "assignable FOR counter semantics; Inkey"
+      ],
+      "effects_or_harness_risks": [
+        "two unbounded keyboard waits"
+      ],
+      "output_comparison": "interactive counter-state sequence",
+      "next_gate": "scripted input and loop-assignment semantics; not plain deterministic console",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Inkey( 0 )",
+          "lines": [
+            10,
+            14
+          ]
+        },
+        {
+          "symbol_or_construct": "i := 9",
+          "lines": [
+            12
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/strdelim.prg",
+      "sha256": "1bad4c67281939aacca0dee210eca9d1e47bbd06ad40f7a77befe2cf08e0bac8",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "lexical-strings",
+        "nested-arrays",
+        "nil-value",
+        "inline-comments"
+      ],
+      "dependency_requirements": [
+        "nested NIL array cells and indexing"
+      ],
+      "effects_or_harness_risks": [
+        "console output only"
+      ],
+      "output_comparison": "deterministic-looking quoted bytes",
+      "next_gate": "nested array representation contract before oracle execution",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "1 /*first*/",
+          "lines": [
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "[Hello]",
+          "lines": [
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/vec1.prg",
+      "sha256": "4261a61f3ef870ea3413b81f317c64b97e0308ce93373e5915579eb0daea16c9",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "lexical-strings",
+        "text-endtext",
+        "star-comments"
+      ],
+      "dependency_requirements": [
+        "TEXT/ENDTEXT command expansion and string termination"
+      ],
+      "effects_or_harness_risks": [
+        "console output only if source accepted"
+      ],
+      "output_comparison": "lexical acceptance not established by review",
+      "next_gate": "compile/lexical oracle separately; do not assume valid candidate",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "TEXT",
+          "lines": [
+            8,
+            9,
+            10
+          ]
+        },
+        {
+          "symbol_or_construct": "ENDTEXT",
+          "lines": [
+            10
+          ]
+        },
+        {
+          "symbol_or_construct": "* Comments",
+          "lines": [
+            12
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/test.prg",
+      "sha256": "e99e9fa8d9364a9aa805996e1f28bb12ceb36a3b5ee448198e3121c5dfc8dc7e",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "embedded-NUL",
+        "strings",
+        "foreach",
+        "trim-library"
+      ],
+      "dependency_requirements": [
+        "Chr/Asc and trim semantics; FOR EACH string iteration"
+      ],
+      "effects_or_harness_risks": [
+        "writes raw NUL bytes and numeric dumps"
+      ],
+      "output_comparison": "byte-exact binary output required,not text strip",
+      "next_gate": "binary-safe capture and string-iteration representation contract",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Chr( 0 )",
+          "lines": [
+            3
+          ]
+        },
+        {
+          "symbol_or_construct": "FOR EACH tmp IN s",
+          "lines": [
+            18
+          ]
+        },
+        {
+          "symbol_or_construct": "AllTrim( s )",
+          "lines": [
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/cmphello.prg",
+      "sha256": "bdb7b8daad90353977d0c051e1cf06d82ca330efe8c6389a980a6b44ade12871",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "process-shell",
+        "compiler-invocation",
+        "filesystem"
+      ],
+      "dependency_requirements": [
+        "relative Harbour binary and hello.prg; HRB generation"
+      ],
+      "effects_or_harness_risks": [
+        "spawns compiler and writes compile artifacts"
+      ],
+      "output_comparison": "tool/path dependent",
+      "next_gate": "isolated compile fixture; not ordinary console execution",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_run(",
+          "lines": [
+            15
+          ]
+        },
+        {
+          "symbol_or_construct": "hello.prg -gh",
+          "lines": [
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/dynsym.prg",
+      "sha256": "4aea779f46f46985eb1b1353c3c2cec6d65b959fa5e883e693fd339971a86a53",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "runtime-symbol-introspection",
+        "invalid-argument-boundaries"
+      ],
+      "dependency_requirements": [
+        "__dynsCount/GetName/GetIndex"
+      ],
+      "effects_or_harness_risks": [
+        "enumerates linked symbol registry"
+      ],
+      "output_comparison": "registry/order/runtime-dependent",
+      "next_gate": "declared registry and missing-index semantic assertions",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "__dynsGetName( 100000 )",
+          "lines": [
+            16
+          ]
+        },
+        {
+          "symbol_or_construct": "HB_THISDOESNTEXIST_",
+          "lines": [
+            17
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/round.prg",
+      "sha256": "2f10e38afeb6be6499362e2a55d2b79bb20575341ba64193a99f57e14f8a5f3a",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "floating-point",
+        "rounding",
+        "for-control"
+      ],
+      "dependency_requirements": [
+        "Round decimal-digit semantics and floating accumulation"
+      ],
+      "effects_or_harness_risks": [
+        "100console rows"
+      ],
+      "output_comparison": "floating metadata/formatting must be defined",
+      "next_gate": "float/rounding contract and matched numeric oracle",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Round( value, 3 )",
+          "lines": [
+            12
+          ]
+        },
+        {
+          "symbol_or_construct": "value += 0.001",
+          "lines": [
+            16
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/vars.prg",
+      "sha256": "631c56be9a003b2219c8c9d8cab6fefbe0ec7807965b630c1f3b5f9e71a637dd",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main(Param1); arrvar helper not called by Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "memvars-dynamic-binding",
+        "byref",
+        "nil-local"
+      ],
+      "dependency_requirements": [
+        "MEMVAR alias namespace; byref Sub"
+      ],
+      "effects_or_harness_risks": [
+        "assigns dynamic m->i; inactive arrvar has unresolved i array access"
+      ],
+      "output_comparison": "entrypoint reachability distinguishes inactive helper",
+      "next_gate": "dynamic-scope/alias contract; do not classify whole source only by Main output",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "MEMVAR i",
+          "lines": [
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "m->i := 1",
+          "lines": [
+            26
+          ]
+        },
+        {
+          "symbol_or_construct": "FUNCTION arrvar",
+          "lines": [
+            31
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/procname.prg",
+      "sha256": "383cb23145c16bf61f701c3a369a7d94415f9eaa89bbb9cde98a139edf9f24ae",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "call-stack-introspection",
+        "postincrement",
+        "functions"
+      ],
+      "dependency_requirements": [
+        "ProcName/ProcLine depth; hb_eol"
+      ],
+      "effects_or_harness_risks": [
+        "prints runtime call stack metadata"
+      ],
+      "output_comparison": "depth/line/origin semantics matter",
+      "next_gate": "separate stack metadata oracle including source lines and newline bytes",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "ProcName( n )",
+          "lines": [
+            31,
+            32
+          ]
+        },
+        {
+          "symbol_or_construct": "ProcLine( n++ )",
+          "lines": [
+            32
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/statics2.prg",
+      "sha256": "eb090f98bbc72d09f20e10dc652616b0afa0491d25e44190383cf5e1b52f9f5d",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Test companion,no Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "modules-linking",
+        "file-static",
+        "nil-value"
+      ],
+      "dependency_requirements": [
+        "statics1.prg companion module"
+      ],
+      "effects_or_harness_risks": [
+        "mutates file-scope static values"
+      ],
+      "output_comparison": "project-scoped expectations,not standalone program",
+      "next_gate": "review together with statics1 and static isolation contract",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Compile statics1.prg",
+          "lines": [
+            3
+          ]
+        },
+        {
+          "symbol_or_construct": "PROCEDURE Test",
+          "lines": [
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "STATIC uA, uB",
+          "lines": [
+            5,
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/arrayidx.prg",
+      "sha256": "a41ffeeb22586851ef340d28ca92de31ae038d71910c83b47a3e2f59041a5ba5",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "array-lvalue",
+        "compound-assignment",
+        "floating-point",
+        "power-modulus"
+      ],
+      "dependency_requirements": [
+        "array-item expression assignments and division/power/mod operators"
+      ],
+      "effects_or_harness_risks": [
+        "local mutations and console output"
+      ],
+      "output_comparison": "deterministic candidate after numeric rules",
+      "next_gate": "full lvalue/numeric representation contract; not accepted by review",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "aList[ 4 ] /= 5",
+          "lines": [
+            19
+          ]
+        },
+        {
+          "symbol_or_construct": "aList[ 5 ] ^= 5",
+          "lines": [
+            21
+          ]
+        },
+        {
+          "symbol_or_construct": "aList[ 6 ] %= 5",
+          "lines": [
+            23
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/statinit.prg",
+      "sha256": "5b1ef2ae0cca4d2734a14785e76ac108546193f2736c50dc33d089610854d8db",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main with static codeblock initializers",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "file-static",
+        "init-order",
+        "closures",
+        "memvars-dynamic-binding"
+      ],
+      "dependency_requirements": [
+        "static closure creation and PUBLIC binding lookup"
+      ],
+      "effects_or_harness_risks": [
+        "creates public state and evaluates static blocks"
+      ],
+      "output_comparison": "init and dynamic-name resolution assertions",
+      "next_gate": "static-init/dynamic-scope contract; preserve order",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "STATIC s_bBlock1",
+          "lines": [
+            6
+          ]
+        },
+        {
+          "symbol_or_construct": "PUBLIC p_cMyPubVar",
+          "lines": [
+            11
+          ]
+        },
+        {
+          "symbol_or_construct": "Eval( s_bBlock2 )",
+          "lines": [
+            14
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/statics1.prg",
+      "sha256": "d37b4d0614a0e9e6b6aae34f5f375d52ac82c32ec49a20152f940310236e3ffc",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;calls companion Test",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "modules-linking",
+        "file-static",
+        "nil-value"
+      ],
+      "dependency_requirements": [
+        "statics2.prg Test and per-module static isolation"
+      ],
+      "effects_or_harness_risks": [
+        "mutates module static values"
+      ],
+      "output_comparison": "deterministic project candidate,not isolated file",
+      "next_gate": "link two modules; do not merge static namespaces",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Compile statics1.prg",
+          "lines": [
+            3
+          ]
+        },
+        {
+          "symbol_or_construct": "Test()",
+          "lines": [
+            22
+          ]
+        },
+        {
+          "symbol_or_construct": "STATIC uOne, uTwo",
+          "lines": [
+            5,
+            13
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/symbolt.prg",
+      "sha256": "5778210e22ebee4d39e8ae83a7a34e0f4c742bdf22601faa655cc5d09b705d56",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "classes",
+        "symbol-values",
+        "dynamic-dispatch"
+      ],
+      "dependency_requirements": [
+        "SYMBOL class New/Exec/name/IsEqual"
+      ],
+      "effects_or_harness_risks": [
+        "invokes QOUT through symbol object"
+      ],
+      "output_comparison": "symbol equality/runtime dispatch rules",
+      "next_gate": "class/dynamic dispatch contract before oracle",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "SYMBOL():New",
+          "lines": [
+            6,
+            18
+          ]
+        },
+        {
+          "symbol_or_construct": "oSym:Exec",
+          "lines": [
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "symbol_or_construct": "oSym:IsEqual",
+          "lines": [
+            18
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/sortbug.prg",
+      "sha256": "273eafeacd0e205df4f1131623f9029f9858d5e8b3da5d254cfc82461a240551",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "profile-specific source; modules noted explicitly",
+      "families": [
+        "RDD-workarea",
+        "sorting",
+        "filesystem",
+        "codeblocks"
+      ],
+      "dependency_requirements": [
+        "default RDD and SORT command; decimal fields; dbEval"
+      ],
+      "effects_or_harness_risks": [
+        "creates testsort/tempsort tables; writes records; deletes tables"
+      ],
+      "output_comparison": "ordered numeric records; TOFIX comment not present verdict",
+      "next_gate": "disposable table fixture; exact ordered values and cleanup assertions",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "dbCreate( \"testsort\"",
+          "lines": [
+            3
+          ]
+        },
+        {
+          "symbol_or_construct": "SORT TO tempsort",
+          "lines": [
+            12
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_dbDrop",
+          "lines": [
+            20,
+            21
+          ]
+        }
+      ]
+    }
+  ],
+  "source_groupings": [
+    {
+      "members": [
+        "tests/statics1.prg",
+        "tests/statics2.prg"
+      ],
+      "basis": "explicit companion-link instruction in both source comments plus Main calls Test",
+      "kind": "source-declared grouping,not build-verified project",
+      "entrypoint": "statics1 Main;statics2 Test"
     }
   ]
 }

@@ -219,3 +219,24 @@ mean safe console example:
 The family index now has83 observed tags across48 sources. This is a navigation
 index only. It does not replace the17-family implementation-test seed or assert
 83 implemented/full grammar families. The unreviewed inventory remains pending.
+
+### Third batch:74 manual records /88 distinct reviewed-or-executed
+
+26 further full-source reviews cover the remaining5 usrrdd examples and21
+small lexical,closure,module,numeric and effect cases. The reviewed/executed
+union is88 (74+19-5overlap). Execution stays19default/14LLVM. No original was
+compiled or run during this review. Earlier counts above are batch history.
+
+All6 usrrdd sources now have requirement/effect records. In particular exlog
+modifies an existing table and logs machine/user identity; exhsx creates an
+index and appends fixture records; exrlx exercises repeated locking. This is
+not6 supported drivers or6 runnable cases. No RDD implementation source read.
+
+statics1/statics2 form a source-declared companion pair,distinct from the
+build-verified-file manifest grouping for multifnc; neither was linked here.
+dupvars is a diagnostic case,not an exit0 test. fwdref's TOFIX and sortbug's
+TOFIX are comments to investigate,not proof of current reference behavior.
+test.prg writes embedded NULs and needs binary capture. for2 waits for keyboard
+input despite its small size. Arrays with cycles,closures with later locals,
+static initialization,PUBLIC lookup and symbol objects need their own existing
+contract gates. This review does not grant them or imply acceptance.
