@@ -7,10 +7,10 @@ RUSTC=${RUSTC:-rustc}
 mkdir -p run
 "$RUSTC" -O ../../src/hbc.rs -o run/hbc
 # Linux end-to-end output and code generation.
-for case in corpus edge procline audit arraywork logic loopcontrol sequence minmax bitops empty interaction boolcalls booloutput boolminmax boolscope integeredges scopedslots barecounter discardeffects nilcompare printchoice voideffects returns-original ifelse-original statfun-original exit-original fornext-original; do
+for case in corpus edge procline audit arraywork logic loopcontrol sequence minmax bitops empty interaction boolcalls booloutput boolminmax boolscope integeredges scopedslots barecounter discardeffects nilcompare printchoice borrowedstrings longstr-original voideffects returns-original ifelse-original statfun-original exit-original fornext-original; do
  source="$case.hb"; [ "$case" != fornext-original ] || source=fornext-original.prg
  [ "$case" != exit-original ] || source=exit-original.prg
- case "$case" in returns-original|ifelse-original|statfun-original) source="$case.prg";; esac
+ case "$case" in longstr-original|returns-original|ifelse-original|statfun-original) source="$case.prg";; esac
  run/hbc "$source" "run/$case-current.s"
  as -o "run/$case-current.o" "run/$case-current.s"
  ld -o "run/$case-current" "run/$case-current.o"
@@ -64,10 +64,10 @@ echo 'PASS Linux ABI canary'
 # Optional cross-target verification. M is the MinGW bin directory.
 if [ -n "${M:-}" ]; then
  : "${MLIB:?MinGW import-library directory}"
- for case in corpus edge procline audit arraywork logic loopcontrol sequence minmax bitops empty interaction boolcalls booloutput boolminmax boolscope integeredges scopedslots barecounter discardeffects nilcompare printchoice voideffects returns-original ifelse-original statfun-original exit-original fornext-original; do
+ for case in corpus edge procline audit arraywork logic loopcontrol sequence minmax bitops empty interaction boolcalls booloutput boolminmax boolscope integeredges scopedslots barecounter discardeffects nilcompare printchoice borrowedstrings longstr-original voideffects returns-original ifelse-original statfun-original exit-original fornext-original; do
   source="$case.hb"; [ "$case" != fornext-original ] || source=fornext-original.prg
   [ "$case" != exit-original ] || source=exit-original.prg
- case "$case" in returns-original|ifelse-original|statfun-original) source="$case.prg";; esac
+ case "$case" in longstr-original|returns-original|ifelse-original|statfun-original) source="$case.prg";; esac
   run/hbc "$source" "run/${case}_w.ll" --target=windows --experimental-llvm
   python3 llvm_aot.py "run/${case}_w.ll" "run/${case}_w.o" windows
   python3 link_runtime.py "run/${case}_w.ll.runtime.s" windows
@@ -75,7 +75,15 @@ if [ -n "${M:-}" ]; then
   "$M/x86_64-w64-mingw32-ld" -o "run/$case.exe" "run/${case}_w.o" "run/${case}_rt_w.o" -e _start --subsystem console -L"$MLIB" -lkernel32
   if [ -n "${WINE:-}" ]; then
    "$WINE" "run/$case.exe" > "run/$case-wine.out"
-   cmp "run/$case-current.out" "run/$case-wine.out"
+   if [ "$case" = borrowedstrings ] || [ "$case" = longstr-original ]; then
+    run/hbc "$source" "run/${case}_current_w.s" --target=windows
+    "$M/x86_64-w64-mingw32-as" -o "run/${case}_current_w.o" "run/${case}_current_w.s"
+    "$M/x86_64-w64-mingw32-ld" -o "run/${case}_current_w.exe" "run/${case}_current_w.o" -e _start --subsystem console -L"$MLIB" -lkernel32
+    "$WINE" "run/${case}_current_w.exe" > "run/$case-current-wine.out"
+    cmp "run/$case-current-wine.out" "run/$case-wine.out"
+   else
+    cmp "run/$case-current.out" "run/$case-wine.out"
+   fi
    echo "PASS Wine exact output $case"
   fi
  done

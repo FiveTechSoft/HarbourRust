@@ -189,3 +189,10 @@ for case,want in void_expected.items():
  for backend in ['current','llvm']:
   assert pathlib.Path('run',case+'-'+backend+'.out').read_bytes()==want,case
 print('PASS NIL-only void originals and recursive/early-return effects exact bytes')
+
+raw_prefix=b'outer            2 .T.\nouterouter            3left  \nnext\x00     '
+raw_suffix=b'lazy           4         5         4 outer            5'
+for backend in ['current','llvm']:
+ assert pathlib.Path('run','borrowedstrings-'+backend+'.out').read_bytes()==raw_prefix+b'\n'+raw_suffix
+assert pathlib.Path('run','longstr-original-llvm.out').read_bytes()==pathlib.Path('../../tests/t1041_longstr_linux.out').read_bytes()
+print('PASS borrowed constants/raw OutStd exact bytes including NUL and trailing spaces')

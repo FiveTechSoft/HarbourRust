@@ -13,3 +13,10 @@ for stem,names in [('corpus',['voideffect','voidlogical']),('voideffects',['leaf
    for part in body.split('ret void')[:-1]:
     assert re.search(r'store volatile ptr %v\d+, ptr @hbc_trace_top\s*$',part),(stem,name)
 print('PASS internal void/call-void ABI shape and trace unlink at every return')
+
+if (p/'borrowedstrings-wine.out').exists():
+ prefix=b'outer            2 .T.\nouterouter            3left  \nnext\x00     '
+ suffix=b'lazy           4         5         4 outer            5'
+ assert (p/'borrowedstrings-wine.out').read_bytes()==prefix+b'\r\n'+suffix
+ assert (p/'longstr-original-wine.out').read_bytes()==pathlib.Path('../../tests/t1041_longstr_windows.out').read_bytes()
+print('PASS native platform hb_eol and unchanged longstr binary expectations')

@@ -868,3 +868,48 @@ and restored trace top on Linux and PE/Wine. An IR-shape check pins void calls
 and trace unlink at every return. Full suite: 175 PASS lines; error fixture
 checks are separate (22 fixtures x2 targets). Default battery: 1086 PASS and
 ALL GREEN, rebuilt after the production changes. No new performance claim.
+
+## Borrowed local constants and raw OutStd, 29 October 2026
+
+Authorized scope: local strings borrowed from constants, no escape/general
+memory management, and OutStd for unchanged longstr. LLVM holds a lexical
+binding to immutable constant bytes, not a string local slot or an owned value.
+Only LOCAL initialized by a pure tree of string literals, concatenation of
+such trees, and Chr(integer literal 0..127) qualifies. The Chr restriction
+matches the existing low-byte helper for ASCII/NUL and deliberately rejects
+higher bytes, negative, dynamic and non-literal arguments instead of inventing
+a Unicode conversion. Frontend types are unchanged, even when the frontend
+calls a pure concatenation StrOwn. The backend computes those pure bytes once;
+no calls, variable reads, side effects or runtime error conditions are folded.
+This removes default-backend allocations for these constants; it is not a
+claim about allocation-counter equivalence or general memory exhaustion.
+
+Borrowed bindings may only be direct print/output items. Copy, reassignment,
+return, arguments to user functions, address/byref, capture, comparisons and
+other value uses remain rejected, including dead code. Bindings restore at
+lexical block boundaries. Existing source ownership checks remain active.
+There is no string parameter/return ABI, heap helper or runtime mutation.
+
+OutStd in discarded effect context reuses print_items and rt_str: evaluate all
+items first, no leading newline, preserve all trailing spaces, and insert one
+separator between arguments. Zero items emit nothing. QOut/QQOut keep their
+existing trim behavior. hb_eol is admitted only as a direct output item and
+uses LF on Linux, CRLF on Windows. OutStd results remain unavailable as values;
+OutErr, Dyn and unsupported arrays/strings remain rejected.
+
+longstr-original.prg and simpleio.ch are unchanged from the pinned upstream.
+The source SHA256 is ccc83f05e2f8f0aa89dc2f90807586c9cbf584066a41177dd7457d9f914bbdb1,
+identical to existing t1041. Its Linux 502-byte and Windows 503-byte outputs
+match the existing binary expectations AND the respective default backend.
+Windows comparisons run the Windows default binary under Wine, not a newline-
+normalized Linux result. Historical 64as Linux Harbour oracle is reused; no
+fresh Harbour run and no live Windows Harbour oracle are claimed.
+
+borrowedstrings covers lexical bindings, pure Chr/NUL, raw trailing bytes,
+QOut/QQOut trim, lazy output, argument effects and platform-native hb_eol.
+A raw-output error fixture ensures no prefix is printed before a later item
+fails. Boundary negatives cover dynamic/high Chr, effectful trees, escaping,
+copy/reassignment/capture, return and value-position OutStd, including dead
+uses. Full suite: 191 PASS lines and 23 error fixtures x2 targets (separate
+from PASS count). Default rebuilt battery: 1086 PASS, ALL GREEN. No new speed
+or size claim. main and the frontend/default backend remain untouched.
