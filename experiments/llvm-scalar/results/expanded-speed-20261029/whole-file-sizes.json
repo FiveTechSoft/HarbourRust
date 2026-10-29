@@ -1,0 +1,227 @@
+[
+  {
+    "case": "sum",
+    "backend": "pcode",
+    "file_bytes": 1431480,
+    "stripped_file_bytes": 1278416,
+    "sections_size": [
+      "1242678",
+      "29400",
+      "9344",
+      "1281422",
+      "138d8e",
+      "/downloads/83bounded/sum-pcode"
+    ],
+    "sha256": "6f36da92cd2ee1c70a313b94ecd526e61a82a006d7c972aeafbd038ac85b6f17"
+  },
+  {
+    "case": "sum",
+    "backend": "gc3",
+    "file_bytes": 1431456,
+    "stripped_file_bytes": 1278416,
+    "sections_size": [
+      "1243014",
+      "29400",
+      "9344",
+      "1281758",
+      "138ede",
+      "/downloads/83bounded/sum-gc3"
+    ],
+    "sha256": "7a6503362426392d98a121ee379450ddd2834eea88d9fe64107e240a7fd4a28c"
+  },
+  {
+    "case": "sum",
+    "backend": "default",
+    "file_bytes": 21648,
+    "stripped_file_bytes": 18152,
+    "sections_size": [
+      "9821",
+      "88",
+      "0",
+      "9909",
+      "26b5",
+      "/downloads/83bounded/sum-default"
+    ],
+    "sha256": "9c9fdaf1747f6ffa596049d0913c67a144750305e518cdc19bf2170774bc8df0"
+  },
+  {
+    "case": "sum",
+    "backend": "llvm",
+    "file_bytes": 24744,
+    "stripped_file_bytes": 21000,
+    "sections_size": [
+      "10057",
+      "88",
+      "0",
+      "10145",
+      "27a1",
+      "/downloads/83bounded/sum-llvm"
+    ],
+    "sha256": "1112ad66da5d35c0605f2981d09c87379a1948e35d07bb3f03ca3636050ff3de"
+  },
+  {
+    "case": "sum",
+    "backend": "rust",
+    "file_bytes": 4523152,
+    "stripped_file_bytes": 322688,
+    "sections_size": [
+      "306982",
+      "12344",
+      "2274",
+      "321600",
+      "4e840",
+      "/downloads/83bounded/sum-rust"
+    ],
+    "sha256": "6facf6863a2868b89a7e6e9271b6f40b26f0cf8de4534ba80c8474b00f156c93"
+  },
+  {
+    "case": "bits",
+    "backend": "pcode",
+    "file_bytes": 1436008,
+    "stripped_file_bytes": 1282576,
+    "sections_size": [
+      "1244214",
+      "29464",
+      "9344",
+      "1283022",
+      "1393ce",
+      "/downloads/83bounded/bits-pcode"
+    ],
+    "sha256": "a205d2bcfbb11c13a5bdda1554687a9c7dcbb654724b7dd598911ee83a55aece"
+  },
+  {
+    "case": "bits",
+    "backend": "gc3",
+    "file_bytes": 1435984,
+    "stripped_file_bytes": 1282576,
+    "sections_size": [
+      "1244566",
+      "29464",
+      "9344",
+      "1283374",
+      "13952e",
+      "/downloads/83bounded/bits-gc3"
+    ],
+    "sha256": "62cd98f8878f18cb300991b4573e61fbf38f049be6a91a0c0365c5307d93b6b5"
+  },
+  {
+    "case": "bits",
+    "backend": "default",
+    "file_bytes": 21480,
+    "stripped_file_bytes": 17984,
+    "sections_size": [
+      "9566",
+      "88",
+      "0",
+      "9654",
+      "25b6",
+      "/downloads/83bounded/bits-default"
+    ],
+    "sha256": "e5000b12668904553e3078d35e1829379400634440709257dd6951ccbd71447b"
+  },
+  {
+    "case": "bits",
+    "backend": "llvm",
+    "file_bytes": 24752,
+    "stripped_file_bytes": 21000,
+    "sections_size": [
+      "9740",
+      "88",
+      "0",
+      "9828",
+      "2664",
+      "/downloads/83bounded/bits-llvm"
+    ],
+    "sha256": "3dd223b48c8a05a4251e337ef77041143a0cac360b6d567ce3dae424a824442c"
+  },
+  {
+    "case": "bits",
+    "backend": "rust",
+    "file_bytes": 4523144,
+    "stripped_file_bytes": 322672,
+    "sections_size": [
+      "306966",
+      "12344",
+      "2290",
+      "321600",
+      "4e840",
+      "/downloads/83bounded/bits-rust"
+    ],
+    "sha256": "8e2d0bffd5226130ef26d1e96dbd11fa1cbe1470c1234f9c8eb327f3ba98248b"
+  },
+  {
+    "case": "reverse",
+    "backend": "pcode",
+    "file_bytes": 1435984,
+    "stripped_file_bytes": 1282544,
+    "sections_size": [
+      "1244198",
+      "29432",
+      "9344",
+      "1282974",
+      "13939e",
+      "/downloads/83bounded/reverse-pcode"
+    ],
+    "sha256": "21effa6ceaaf091fac5839d79c407936643923c586097d619d13ce580b7d934e"
+  },
+  {
+    "case": "reverse",
+    "backend": "gc3",
+    "file_bytes": 1435960,
+    "stripped_file_bytes": 1282544,
+    "sections_size": [
+      "1244518",
+      "29432",
+      "9344",
+      "1283294",
+      "1394de",
+      "/downloads/83bounded/reverse-gc3"
+    ],
+    "sha256": "ea5998605384ee4834957d031e48bf35e8d9d89bb9e1fa61942125d779657fa9"
+  },
+  {
+    "case": "reverse",
+    "backend": "default",
+    "file_bytes": 21496,
+    "stripped_file_bytes": 18000,
+    "sections_size": [
+      "9549",
+      "88",
+      "0",
+      "9637",
+      "25a5",
+      "/downloads/83bounded/reverse-default"
+    ],
+    "sha256": "3017b6fcfaba132c23049da926add569a2469e52402318ac4861accc462e725f"
+  },
+  {
+    "case": "reverse",
+    "backend": "llvm",
+    "file_bytes": 24752,
+    "stripped_file_bytes": 21000,
+    "sections_size": [
+      "9785",
+      "88",
+      "0",
+      "9873",
+      "2691",
+      "/downloads/83bounded/reverse-llvm"
+    ],
+    "sha256": "2a1952e4408439cd9ce866d9f87438a9dc54f579d7f5681e9d141704bc174d93"
+  },
+  {
+    "case": "reverse",
+    "backend": "rust",
+    "file_bytes": 4523112,
+    "stripped_file_bytes": 322624,
+    "sections_size": [
+      "306918",
+      "12344",
+      "2338",
+      "321600",
+      "4e840",
+      "/downloads/83bounded/reverse-rust"
+    ],
+    "sha256": "7f56a92ac30dd12cc5341ff7260af6d67a249911d420171a352c6e904e368203"
+  }
+]

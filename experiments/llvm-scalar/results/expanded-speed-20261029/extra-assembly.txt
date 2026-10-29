@@ -1,0 +1,862 @@
+
+run/perfextra-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000002130e0 <_RINvNtNtCs8ZKwes1zzDd_3std3sys9backtrace28___rust_begin_short_backtraceFEuuECsdYaFCNwoEAj_14perfextra_rust>:
+  2130e0:	50                   	push   rax
+  2130e1:	ff d7                	call   rdi
+  2130e3:	58                   	pop    rax
+  2130e4:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+run/perfextra-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000213110 <_RNvCsdYaFCNwoEAj_14perfextra_rust11rust_bitmix>:
+  213110:	48 8b 0d a1 5d 04 00 	mov    rcx,QWORD PTR [rip+0x45da1]        # 258eb8 <hbc_trace_top>
+  213117:	48 8d 44 24 e8       	lea    rax,[rsp-0x18]
+  21311c:	48 89 05 95 5d 04 00 	mov    QWORD PTR [rip+0x45d95],rax        # 258eb8 <hbc_trace_top>
+  213123:	48 c7 44 24 f0 e0 4a 	mov    QWORD PTR [rsp-0x10],0x204ae0
+  21312a:	20 00 
+  21312c:	48 c7 44 24 f8 1d 00 	mov    QWORD PTR [rsp-0x8],0x1d
+  213133:	00 00 
+  213135:	48 c7 44 24 f0 e0 4a 	mov    QWORD PTR [rsp-0x10],0x204ae0
+  21313c:	20 00 
+  21313e:	48 c7 44 24 f8 1d 00 	mov    QWORD PTR [rsp-0x8],0x1d
+  213145:	00 00 
+  213147:	48 c7 44 24 f0 fd 4a 	mov    QWORD PTR [rsp-0x10],0x204afd
+  21314e:	20 00 
+  213150:	48 c7 44 24 f8 1d 00 	mov    QWORD PTR [rsp-0x8],0x1d
+  213157:	00 00 
+  213159:	48 c7 44 24 f0 1a 4b 	mov    QWORD PTR [rsp-0x10],0x204b1a
+  213160:	20 00 
+  213162:	48 c7 44 24 f8 1d 00 	mov    QWORD PTR [rsp-0x8],0x1d
+  213169:	00 00 
+  21316b:	b8 01 00 00 00       	mov    eax,0x1
+  213170:	48 85 ff             	test   rdi,rdi
+  213173:	7e 3a                	jle    2131af <_RNvCsdYaFCNwoEAj_14perfextra_rust11rust_bitmix+0x9f>
+  213175:	ba 01 00 00 00       	mov    edx,0x1
+  21317a:	48 c7 44 24 f0 37 4b 	mov    QWORD PTR [rsp-0x10],0x204b37
+  213181:	20 00 
+  213183:	48 c7 44 24 f8 1d 00 	mov    QWORD PTR [rsp-0x8],0x1d
+  21318a:	00 00 
+  21318c:	48 8d 34 40          	lea    rsi,[rax+rax*2]
+  213190:	48 09 d6             	or     rsi,rdx
+  213193:	0f b6 c0             	movzx  eax,al
+  213196:	48 31 f0             	xor    rax,rsi
+  213199:	48 ff c2             	inc    rdx
+  21319c:	40 0f 90 c6          	seto   sil
+  2131a0:	40 f6 d6             	not    sil
+  2131a3:	48 39 fa             	cmp    rdx,rdi
+  2131a6:	41 0f 9e c0          	setle  r8b
+  2131aa:	44 84 c6             	test   sil,r8b
+  2131ad:	75 cb                	jne    21317a <_RNvCsdYaFCNwoEAj_14perfextra_rust11rust_bitmix+0x6a>
+  2131af:	48 c7 44 24 f0 54 4b 	mov    QWORD PTR [rsp-0x10],0x204b54
+  2131b6:	20 00 
+  2131b8:	48 c7 44 24 f8 1d 00 	mov    QWORD PTR [rsp-0x8],0x1d
+  2131bf:	00 00 
+  2131c1:	48 89 0d f0 5c 04 00 	mov    QWORD PTR [rip+0x45cf0],rcx        # 258eb8 <hbc_trace_top>
+  2131c8:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+run/perfextra-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000002131d0 <_RNvCsdYaFCNwoEAj_14perfextra_rust12rust_reverse>:
+  2131d0:	48 8b 0d e1 5c 04 00 	mov    rcx,QWORD PTR [rip+0x45ce1]        # 258eb8 <hbc_trace_top>
+  2131d7:	48 8d 44 24 e8       	lea    rax,[rsp-0x18]
+  2131dc:	48 89 05 d5 5c 04 00 	mov    QWORD PTR [rip+0x45cd5],rax        # 258eb8 <hbc_trace_top>
+  2131e3:	48 c7 44 24 f0 90 4b 	mov    QWORD PTR [rsp-0x10],0x204b90
+  2131ea:	20 00 
+  2131ec:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  2131f3:	00 00 
+  2131f5:	48 c7 44 24 f0 90 4b 	mov    QWORD PTR [rsp-0x10],0x204b90
+  2131fc:	20 00 
+  2131fe:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  213205:	00 00 
+  213207:	48 c7 44 24 f0 af 4b 	mov    QWORD PTR [rsp-0x10],0x204baf
+  21320e:	20 00 
+  213210:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  213217:	00 00 
+  213219:	48 c7 44 24 f0 ce 4b 	mov    QWORD PTR [rsp-0x10],0x204bce
+  213220:	20 00 
+  213222:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  213229:	00 00 
+  21322b:	48 85 ff             	test   rdi,rdi
+  21322e:	7e 12                	jle    213242 <_RNvCsdYaFCNwoEAj_14perfextra_rust12rust_reverse+0x72>
+  213230:	89 fa                	mov    edx,edi
+  213232:	83 e2 03             	and    edx,0x3
+  213235:	48 83 ff 04          	cmp    rdi,0x4
+  213239:	73 24                	jae    21325f <_RNvCsdYaFCNwoEAj_14perfextra_rust12rust_reverse+0x8f>
+  21323b:	31 c0                	xor    eax,eax
+  21323d:	e9 cd 00 00 00       	jmp    21330f <_RNvCsdYaFCNwoEAj_14perfextra_rust12rust_reverse+0x13f>
+  213242:	48 89 f8             	mov    rax,rdi
+  213245:	48 c7 44 24 f0 0c 4c 	mov    QWORD PTR [rsp-0x10],0x204c0c
+  21324c:	20 00 
+  21324e:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  213255:	00 00 
+  213257:	48 89 0d 5a 5c 04 00 	mov    QWORD PTR [rip+0x45c5a],rcx        # 258eb8 <hbc_trace_top>
+  21325e:	c3                   	ret    
+  21325f:	48 be fc ff ff ff ff 	movabs rsi,0x7ffffffffffffffc
+  213266:	ff ff 7f 
+  213269:	48 21 fe             	and    rsi,rdi
+  21326c:	48 8d 04 fd 00 00 00 	lea    rax,[rdi*8+0x0]
+  213273:	00 
+  213274:	48 8d 04 80          	lea    rax,[rax+rax*4]
+  213278:	49 c7 c0 72 ff ff ff 	mov    r8,0xffffffffffffff72
+  21327f:	49 29 c0             	sub    r8,rax
+  213282:	4c 6b cf 27          	imul   r9,rdi,0x27
+  213286:	49 83 c1 f1          	add    r9,0xfffffffffffffff1
+  21328a:	45 31 d2             	xor    r10d,r10d
+  21328d:	0f 1f 00             	nop    DWORD PTR [rax]
+  213290:	48 c7 44 24 f0 ed 4b 	mov    QWORD PTR [rsp-0x10],0x204bed
+  213297:	20 00 
+  213299:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  2132a0:	00 00 
+  2132a2:	48 c7 44 24 f0 ed 4b 	mov    QWORD PTR [rsp-0x10],0x204bed
+  2132a9:	20 00 
+  2132ab:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  2132b2:	00 00 
+  2132b4:	48 c7 44 24 f0 ed 4b 	mov    QWORD PTR [rsp-0x10],0x204bed
+  2132bb:	20 00 
+  2132bd:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  2132c4:	00 00 
+  2132c6:	48 c7 44 24 f0 ed 4b 	mov    QWORD PTR [rsp-0x10],0x204bed
+  2132cd:	20 00 
+  2132cf:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  2132d6:	00 00 
+  2132d8:	4b 8d 04 d2          	lea    rax,[r10+r10*8]
+  2132dc:	48 8d 04 c0          	lea    rax,[rax+rax*8]
+  2132e0:	4d 8d 14 01          	lea    r10,[r9+rax*1]
+  2132e4:	49 01 fa             	add    r10,rdi
+  2132e7:	49 83 c2 fd          	add    r10,0xfffffffffffffffd
+  2132eb:	48 83 c7 fc          	add    rdi,0xfffffffffffffffc
+  2132ef:	49 81 c0 a0 00 00 00 	add    r8,0xa0
+  2132f6:	49 81 c1 64 ff ff ff 	add    r9,0xffffffffffffff64
+  2132fd:	48 83 c6 fc          	add    rsi,0xfffffffffffffffc
+  213301:	75 8d                	jne    213290 <_RNvCsdYaFCNwoEAj_14perfextra_rust12rust_reverse+0xc0>
+  213303:	4c 29 c0             	sub    rax,r8
+  213306:	48 85 d2             	test   rdx,rdx
+  213309:	0f 84 36 ff ff ff    	je     213245 <_RNvCsdYaFCNwoEAj_14perfextra_rust12rust_reverse+0x75>
+  21330f:	48 89 fe             	mov    rsi,rdi
+  213312:	48 f7 d6             	not    rsi
+  213315:	66 66 2e 0f 1f 84 00 	data16 cs nop WORD PTR [rax+rax*1+0x0]
+  21331c:	00 00 00 00 
+  213320:	48 c7 44 24 f0 ed 4b 	mov    QWORD PTR [rsp-0x10],0x204bed
+  213327:	20 00 
+  213329:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  213330:	00 00 
+  213332:	4c 8d 04 40          	lea    r8,[rax+rax*2]
+  213336:	49 8d 04 38          	lea    rax,[r8+rdi*1]
+  21333a:	48 ff cf             	dec    rdi
+  21333d:	48 ff c6             	inc    rsi
+  213340:	48 ff ca             	dec    rdx
+  213343:	75 db                	jne    213320 <_RNvCsdYaFCNwoEAj_14perfextra_rust12rust_reverse+0x150>
+  213345:	49 29 f0             	sub    r8,rsi
+  213348:	4c 89 c0             	mov    rax,r8
+  21334b:	48 c7 44 24 f0 0c 4c 	mov    QWORD PTR [rsp-0x10],0x204c0c
+  213352:	20 00 
+  213354:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  21335b:	00 00 
+  21335d:	48 89 0d 54 5b 04 00 	mov    QWORD PTR [rip+0x45b54],rcx        # 258eb8 <hbc_trace_top>
+  213364:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+run/perfextra-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000213370 <_RNvCsdYaFCNwoEAj_14perfextra_rust13rust_callloop>:
+  213370:	48 8b 0d 41 5b 04 00 	mov    rcx,QWORD PTR [rip+0x45b41]        # 258eb8 <hbc_trace_top>
+  213377:	48 8d 44 24 d0       	lea    rax,[rsp-0x30]
+  21337c:	48 89 05 35 5b 04 00 	mov    QWORD PTR [rip+0x45b35],rax        # 258eb8 <hbc_trace_top>
+  213383:	48 c7 44 24 d8 2b 4c 	mov    QWORD PTR [rsp-0x28],0x204c2b
+  21338a:	20 00 
+  21338c:	48 c7 44 24 e0 20 00 	mov    QWORD PTR [rsp-0x20],0x20
+  213393:	00 00 
+  213395:	48 c7 44 24 d8 2b 4c 	mov    QWORD PTR [rsp-0x28],0x204c2b
+  21339c:	20 00 
+  21339e:	48 c7 44 24 e0 20 00 	mov    QWORD PTR [rsp-0x20],0x20
+  2133a5:	00 00 
+  2133a7:	48 c7 44 24 d8 ab 4c 	mov    QWORD PTR [rsp-0x28],0x204cab
+  2133ae:	20 00 
+  2133b0:	48 c7 44 24 e0 20 00 	mov    QWORD PTR [rsp-0x20],0x20
+  2133b7:	00 00 
+  2133b9:	48 c7 44 24 d8 6b 4c 	mov    QWORD PTR [rsp-0x28],0x204c6b
+  2133c0:	20 00 
+  2133c2:	48 c7 44 24 e0 20 00 	mov    QWORD PTR [rsp-0x20],0x20
+  2133c9:	00 00 
+  2133cb:	b8 01 00 00 00       	mov    eax,0x1
+  2133d0:	48 85 ff             	test   rdi,rdi
+  2133d3:	7e 79                	jle    21344e <_RNvCsdYaFCNwoEAj_14perfextra_rust13rust_callloop+0xde>
+  2133d5:	48 8d 54 24 e8       	lea    rdx,[rsp-0x18]
+  2133da:	be 01 00 00 00       	mov    esi,0x1
+  2133df:	48 c7 44 24 d8 4b 4c 	mov    QWORD PTR [rsp-0x28],0x204c4b
+  2133e6:	20 00 
+  2133e8:	48 c7 44 24 e0 20 00 	mov    QWORD PTR [rsp-0x20],0x20
+  2133ef:	00 00 
+  2133f1:	4c 8b 05 c0 5a 04 00 	mov    r8,QWORD PTR [rip+0x45ac0]        # 258eb8 <hbc_trace_top>
+  2133f8:	48 89 15 b9 5a 04 00 	mov    QWORD PTR [rip+0x45ab9],rdx        # 258eb8 <hbc_trace_top>
+  2133ff:	48 c7 44 24 f0 71 4b 	mov    QWORD PTR [rsp-0x10],0x204b71
+  213406:	20 00 
+  213408:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  21340f:	00 00 
+  213411:	48 c7 44 24 f0 71 4b 	mov    QWORD PTR [rsp-0x10],0x204b71
+  213418:	20 00 
+  21341a:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  213421:	00 00 
+  213423:	4c 8d 0c 40          	lea    r9,[rax+rax*2]
+  213427:	49 01 f1             	add    r9,rsi
+  21342a:	48 8d 46 f9          	lea    rax,[rsi-0x7]
+  21342e:	4c 31 c8             	xor    rax,r9
+  213431:	4c 89 05 80 5a 04 00 	mov    QWORD PTR [rip+0x45a80],r8        # 258eb8 <hbc_trace_top>
+  213438:	48 ff c6             	inc    rsi
+  21343b:	41 0f 90 c0          	seto   r8b
+  21343f:	41 f6 d0             	not    r8b
+  213442:	48 39 fe             	cmp    rsi,rdi
+  213445:	41 0f 9e c1          	setle  r9b
+  213449:	45 84 c8             	test   r8b,r9b
+  21344c:	75 91                	jne    2133df <_RNvCsdYaFCNwoEAj_14perfextra_rust13rust_callloop+0x6f>
+  21344e:	48 c7 44 24 d8 cb 4c 	mov    QWORD PTR [rsp-0x28],0x204ccb
+  213455:	20 00 
+  213457:	48 c7 44 24 e0 20 00 	mov    QWORD PTR [rsp-0x20],0x20
+  21345e:	00 00 
+  213460:	48 89 0d 51 5a 04 00 	mov    QWORD PTR [rip+0x45a51],rcx        # 258eb8 <hbc_trace_top>
+  213467:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+run/perfextra-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000213470 <_RNvCsdYaFCNwoEAj_14perfextra_rust14rust_whileflow>:
+  213470:	48 8b 0d 41 5a 04 00 	mov    rcx,QWORD PTR [rip+0x45a41]        # 258eb8 <hbc_trace_top>
+  213477:	48 8d 44 24 e8       	lea    rax,[rsp-0x18]
+  21347c:	48 89 05 35 5a 04 00 	mov    QWORD PTR [rip+0x45a35],rax        # 258eb8 <hbc_trace_top>
+  213483:	48 c7 44 24 f0 0b 4d 	mov    QWORD PTR [rsp-0x10],0x204d0b
+  21348a:	20 00 
+  21348c:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  213493:	00 00 
+  213495:	48 c7 44 24 f0 0b 4d 	mov    QWORD PTR [rsp-0x10],0x204d0b
+  21349c:	20 00 
+  21349e:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  2134a5:	00 00 
+  2134a7:	48 c7 44 24 f0 2c 4d 	mov    QWORD PTR [rsp-0x10],0x204d2c
+  2134ae:	20 00 
+  2134b0:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  2134b7:	00 00 
+  2134b9:	48 c7 44 24 f0 4d 4d 	mov    QWORD PTR [rsp-0x10],0x204d4d
+  2134c0:	20 00 
+  2134c2:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  2134c9:	00 00 
+  2134cb:	48 89 fe             	mov    rsi,rdi
+  2134ce:	48 f7 de             	neg    rsi
+  2134d1:	b8 01 00 00 00       	mov    eax,0x1
+  2134d6:	31 d2                	xor    edx,edx
+  2134d8:	48 c7 44 24 f0 4d 4d 	mov    QWORD PTR [rsp-0x10],0x204d4d
+  2134df:	20 00 
+  2134e1:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  2134e8:	00 00 
+  2134ea:	48 39 fa             	cmp    rdx,rdi
+  2134ed:	0f 8d b7 00 00 00    	jge    2135aa <_RNvCsdYaFCNwoEAj_14perfextra_rust14rust_whileflow+0x13a>
+  2134f3:	48 ff c2             	inc    rdx
+  2134f6:	66 2e 0f 1f 84 00 00 	cs nop WORD PTR [rax+rax*1+0x0]
+  2134fd:	00 00 00 
+  213500:	48 c7 44 24 f0 6e 4d 	mov    QWORD PTR [rsp-0x10],0x204d6e
+  213507:	20 00 
+  213509:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  213510:	00 00 
+  213512:	48 c7 44 24 f0 8f 4d 	mov    QWORD PTR [rsp-0x10],0x204d8f
+  213519:	20 00 
+  21351b:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  213522:	00 00 
+  213524:	f6 c2 07             	test   dl,0x7
+  213527:	75 37                	jne    213560 <_RNvCsdYaFCNwoEAj_14perfextra_rust14rust_whileflow+0xf0>
+  213529:	48 c7 44 24 f0 b0 4d 	mov    QWORD PTR [rsp-0x10],0x204db0
+  213530:	20 00 
+  213532:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  213539:	00 00 
+  21353b:	48 c7 44 24 f0 4d 4d 	mov    QWORD PTR [rsp-0x10],0x204d4d
+  213542:	20 00 
+  213544:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  21354b:	00 00 
+  21354d:	4c 8d 04 16          	lea    r8,[rsi+rdx*1]
+  213551:	49 ff c0             	inc    r8
+  213554:	48 ff c2             	inc    rdx
+  213557:	49 83 f8 01          	cmp    r8,0x1
+  21355b:	75 a3                	jne    213500 <_RNvCsdYaFCNwoEAj_14perfextra_rust14rust_whileflow+0x90>
+  21355d:	eb 48                	jmp    2135a7 <_RNvCsdYaFCNwoEAj_14perfextra_rust14rust_whileflow+0x137>
+  21355f:	90                   	nop
+  213560:	48 c7 44 24 f0 d1 4d 	mov    QWORD PTR [rsp-0x10],0x204dd1
+  213567:	20 00 
+  213569:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  213570:	00 00 
+  213572:	48 8d 04 40          	lea    rax,[rax+rax*2]
+  213576:	48 c7 44 24 f0 f2 4d 	mov    QWORD PTR [rsp-0x10],0x204df2
+  21357d:	20 00 
+  21357f:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  213586:	00 00 
+  213588:	48 01 d0             	add    rax,rdx
+  21358b:	0f 85 47 ff ff ff    	jne    2134d8 <_RNvCsdYaFCNwoEAj_14perfextra_rust14rust_whileflow+0x68>
+  213591:	48 c7 44 24 f0 13 4e 	mov    QWORD PTR [rsp-0x10],0x204e13
+  213598:	20 00 
+  21359a:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  2135a1:	00 00 
+  2135a3:	31 c0                	xor    eax,eax
+  2135a5:	eb 03                	jmp    2135aa <_RNvCsdYaFCNwoEAj_14perfextra_rust14rust_whileflow+0x13a>
+  2135a7:	48 89 fa             	mov    rdx,rdi
+  2135aa:	48 01 d0             	add    rax,rdx
+  2135ad:	48 c7 44 24 f0 34 4e 	mov    QWORD PTR [rsp-0x10],0x204e34
+  2135b4:	20 00 
+  2135b6:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  2135bd:	00 00 
+  2135bf:	48 89 0d f2 58 04 00 	mov    QWORD PTR [rip+0x458f2],rcx        # 258eb8 <hbc_trace_top>
+  2135c6:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+run/perfextra-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000002135d0 <_RNvCsdYaFCNwoEAj_14perfextra_rust15rust_minmaxloop>:
+  2135d0:	48 8b 0d e1 58 04 00 	mov    rcx,QWORD PTR [rip+0x458e1]        # 258eb8 <hbc_trace_top>
+  2135d7:	48 8d 44 24 e8       	lea    rax,[rsp-0x18]
+  2135dc:	48 89 05 d5 58 04 00 	mov    QWORD PTR [rip+0x458d5],rax        # 258eb8 <hbc_trace_top>
+  2135e3:	48 c7 44 24 f0 55 4e 	mov    QWORD PTR [rsp-0x10],0x204e55
+  2135ea:	20 00 
+  2135ec:	48 c7 44 24 f8 22 00 	mov    QWORD PTR [rsp-0x8],0x22
+  2135f3:	00 00 
+  2135f5:	48 c7 44 24 f0 55 4e 	mov    QWORD PTR [rsp-0x10],0x204e55
+  2135fc:	20 00 
+  2135fe:	48 c7 44 24 f8 22 00 	mov    QWORD PTR [rsp-0x8],0x22
+  213605:	00 00 
+  213607:	48 c7 44 24 f0 77 4e 	mov    QWORD PTR [rsp-0x10],0x204e77
+  21360e:	20 00 
+  213610:	48 c7 44 24 f8 22 00 	mov    QWORD PTR [rsp-0x8],0x22
+  213617:	00 00 
+  213619:	48 c7 44 24 f0 99 4e 	mov    QWORD PTR [rsp-0x10],0x204e99
+  213620:	20 00 
+  213622:	48 c7 44 24 f8 22 00 	mov    QWORD PTR [rsp-0x8],0x22
+  213629:	00 00 
+  21362b:	48 85 ff             	test   rdi,rdi
+  21362e:	0f 8e 8b 00 00 00    	jle    2136bf <_RNvCsdYaFCNwoEAj_14perfextra_rust15rust_minmaxloop+0xef>
+  213634:	48 c7 44 24 f0 bb 4e 	mov    QWORD PTR [rsp-0x10],0x204ebb
+  21363b:	20 00 
+  21363d:	48 c7 44 24 f8 22 00 	mov    QWORD PTR [rsp-0x8],0x22
+  213644:	00 00 
+  213646:	48 8d 47 01          	lea    rax,[rdi+0x1]
+  21364a:	48 83 f8 ff          	cmp    rax,0xffffffffffffffff
+  21364e:	48 c7 c2 fe ff ff ff 	mov    rdx,0xfffffffffffffffe
+  213655:	48 0f 4d d0          	cmovge rdx,rax
+  213659:	48 81 fa 43 42 0f 00 	cmp    rdx,0xf4243
+  213660:	be 43 42 0f 00       	mov    esi,0xf4243
+  213665:	48 0f 4d d6          	cmovge rdx,rsi
+  213669:	41 b8 02 00 00 00    	mov    r8d,0x2
+  21366f:	48 b8 ff ff ff ff ff 	movabs rax,0x7fffffffffffffff
+  213676:	ff ff 7f 
+  213679:	0f 1f 80 00 00 00 00 	nop    DWORD PTR [rax+0x0]
+  213680:	49 39 f8             	cmp    r8,rdi
+  213683:	7f 32                	jg     2136b7 <_RNvCsdYaFCNwoEAj_14perfextra_rust15rust_minmaxloop+0xe7>
+  213685:	48 c7 44 24 f0 bb 4e 	mov    QWORD PTR [rsp-0x10],0x204ebb
+  21368c:	20 00 
+  21368e:	48 c7 44 24 f8 22 00 	mov    QWORD PTR [rsp-0x8],0x22
+  213695:	00 00 
+  213697:	4c 01 c2             	add    rdx,r8
+  21369a:	48 81 fa 43 42 0f 00 	cmp    rdx,0xf4243
+  2136a1:	48 0f 4d d6          	cmovge rdx,rsi
+  2136a5:	4d 8d 48 fd          	lea    r9,[r8-0x3]
+  2136a9:	49 39 d1             	cmp    r9,rdx
+  2136ac:	49 0f 4f d1          	cmovg  rdx,r9
+  2136b0:	49 ff c0             	inc    r8
+  2136b3:	71 cb                	jno    213680 <_RNvCsdYaFCNwoEAj_14perfextra_rust15rust_minmaxloop+0xb0>
+  2136b5:	eb 03                	jmp    2136ba <_RNvCsdYaFCNwoEAj_14perfextra_rust15rust_minmaxloop+0xea>
+  2136b7:	4c 89 c0             	mov    rax,r8
+  2136ba:	48 89 d7             	mov    rdi,rdx
+  2136bd:	eb 05                	jmp    2136c4 <_RNvCsdYaFCNwoEAj_14perfextra_rust15rust_minmaxloop+0xf4>
+  2136bf:	b8 01 00 00 00       	mov    eax,0x1
+  2136c4:	48 01 f8             	add    rax,rdi
+  2136c7:	48 c7 44 24 f0 dd 4e 	mov    QWORD PTR [rsp-0x10],0x204edd
+  2136ce:	20 00 
+  2136d0:	48 c7 44 24 f8 22 00 	mov    QWORD PTR [rsp-0x8],0x22
+  2136d7:	00 00 
+  2136d9:	48 89 0d d8 57 04 00 	mov    QWORD PTR [rip+0x457d8],rcx        # 258eb8 <hbc_trace_top>
+  2136e0:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+run/perfextra-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000252f80 <ll_bitmix>:
+  252f80:	48 8b 0d 31 5f 00 00 	mov    rcx,QWORD PTR [rip+0x5f31]        # 258eb8 <hbc_trace_top>
+  252f87:	48 8d 44 24 e8       	lea    rax,[rsp-0x18]
+  252f8c:	48 89 05 25 5f 00 00 	mov    QWORD PTR [rip+0x5f25],rax        # 258eb8 <hbc_trace_top>
+  252f93:	48 c7 44 24 f0 20 b1 	mov    QWORD PTR [rsp-0x10],0x20b120
+  252f9a:	20 00 
+  252f9c:	48 c7 44 24 f8 1d 00 	mov    QWORD PTR [rsp-0x8],0x1d
+  252fa3:	00 00 
+  252fa5:	48 c7 44 24 f0 40 b1 	mov    QWORD PTR [rsp-0x10],0x20b140
+  252fac:	20 00 
+  252fae:	48 c7 44 24 f8 1d 00 	mov    QWORD PTR [rsp-0x8],0x1d
+  252fb5:	00 00 
+  252fb7:	48 c7 44 24 f0 60 b1 	mov    QWORD PTR [rsp-0x10],0x20b160
+  252fbe:	20 00 
+  252fc0:	48 c7 44 24 f8 1d 00 	mov    QWORD PTR [rsp-0x8],0x1d
+  252fc7:	00 00 
+  252fc9:	48 c7 44 24 f0 80 b1 	mov    QWORD PTR [rsp-0x10],0x20b180
+  252fd0:	20 00 
+  252fd2:	48 c7 44 24 f8 1d 00 	mov    QWORD PTR [rsp-0x8],0x1d
+  252fd9:	00 00 
+  252fdb:	b8 01 00 00 00       	mov    eax,0x1
+  252fe0:	48 85 ff             	test   rdi,rdi
+  252fe3:	7e 34                	jle    253019 <ll_bitmix+0x99>
+  252fe5:	ba 01 00 00 00       	mov    edx,0x1
+  252fea:	66 0f 1f 44 00 00    	nop    WORD PTR [rax+rax*1+0x0]
+  252ff0:	48 c7 44 24 f0 a0 b1 	mov    QWORD PTR [rsp-0x10],0x20b1a0
+  252ff7:	20 00 
+  252ff9:	48 c7 44 24 f8 1d 00 	mov    QWORD PTR [rsp-0x8],0x1d
+  253000:	00 00 
+  253002:	48 8d 34 40          	lea    rsi,[rax+rax*2]
+  253006:	48 09 d6             	or     rsi,rdx
+  253009:	0f b6 c0             	movzx  eax,al
+  25300c:	48 31 f0             	xor    rax,rsi
+  25300f:	48 ff c2             	inc    rdx
+  253012:	70 05                	jo     253019 <ll_bitmix+0x99>
+  253014:	48 39 fa             	cmp    rdx,rdi
+  253017:	7e d7                	jle    252ff0 <ll_bitmix+0x70>
+  253019:	48 c7 44 24 f0 c0 b1 	mov    QWORD PTR [rsp-0x10],0x20b1c0
+  253020:	20 00 
+  253022:	48 c7 44 24 f8 1d 00 	mov    QWORD PTR [rsp-0x8],0x1d
+  253029:	00 00 
+  25302b:	48 89 0d 86 5e 00 00 	mov    QWORD PTR [rip+0x5e86],rcx        # 258eb8 <hbc_trace_top>
+  253032:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+run/perfextra-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000002531b0 <ll_callloop>:
+  2531b0:	48 8b 0d 01 5d 00 00 	mov    rcx,QWORD PTR [rip+0x5d01]        # 258eb8 <hbc_trace_top>
+  2531b7:	48 8d 54 24 d0       	lea    rdx,[rsp-0x30]
+  2531bc:	48 89 15 f5 5c 00 00 	mov    QWORD PTR [rip+0x5cf5],rdx        # 258eb8 <hbc_trace_top>
+  2531c3:	48 c7 44 24 d8 40 b3 	mov    QWORD PTR [rsp-0x28],0x20b340
+  2531ca:	20 00 
+  2531cc:	48 c7 44 24 e0 20 00 	mov    QWORD PTR [rsp-0x20],0x20
+  2531d3:	00 00 
+  2531d5:	48 c7 44 24 d8 60 b3 	mov    QWORD PTR [rsp-0x28],0x20b360
+  2531dc:	20 00 
+  2531de:	48 c7 44 24 e0 20 00 	mov    QWORD PTR [rsp-0x20],0x20
+  2531e5:	00 00 
+  2531e7:	48 c7 44 24 d8 80 b3 	mov    QWORD PTR [rsp-0x28],0x20b380
+  2531ee:	20 00 
+  2531f0:	48 c7 44 24 e0 20 00 	mov    QWORD PTR [rsp-0x20],0x20
+  2531f7:	00 00 
+  2531f9:	48 c7 44 24 d8 a0 b3 	mov    QWORD PTR [rsp-0x28],0x20b3a0
+  253200:	20 00 
+  253202:	48 c7 44 24 e0 20 00 	mov    QWORD PTR [rsp-0x20],0x20
+  253209:	00 00 
+  25320b:	b8 01 00 00 00       	mov    eax,0x1
+  253210:	48 85 ff             	test   rdi,rdi
+  253213:	7e 67                	jle    25327c <ll_callloop+0xcc>
+  253215:	48 8d 74 24 e8       	lea    rsi,[rsp-0x18]
+  25321a:	41 b8 01 00 00 00    	mov    r8d,0x1
+  253220:	48 c7 44 24 d8 c0 b3 	mov    QWORD PTR [rsp-0x28],0x20b3c0
+  253227:	20 00 
+  253229:	48 c7 44 24 e0 20 00 	mov    QWORD PTR [rsp-0x20],0x20
+  253230:	00 00 
+  253232:	48 89 35 7f 5c 00 00 	mov    QWORD PTR [rip+0x5c7f],rsi        # 258eb8 <hbc_trace_top>
+  253239:	48 c7 44 24 f0 00 b3 	mov    QWORD PTR [rsp-0x10],0x20b300
+  253240:	20 00 
+  253242:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  253249:	00 00 
+  25324b:	48 c7 44 24 f0 20 b3 	mov    QWORD PTR [rsp-0x10],0x20b320
+  253252:	20 00 
+  253254:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  25325b:	00 00 
+  25325d:	4c 8d 0c 40          	lea    r9,[rax+rax*2]
+  253261:	4d 01 c1             	add    r9,r8
+  253264:	49 8d 40 f9          	lea    rax,[r8-0x7]
+  253268:	4c 31 c8             	xor    rax,r9
+  25326b:	48 89 15 46 5c 00 00 	mov    QWORD PTR [rip+0x5c46],rdx        # 258eb8 <hbc_trace_top>
+  253272:	49 ff c0             	inc    r8
+  253275:	70 05                	jo     25327c <ll_callloop+0xcc>
+  253277:	49 39 f8             	cmp    r8,rdi
+  25327a:	7e a4                	jle    253220 <ll_callloop+0x70>
+  25327c:	48 c7 44 24 d8 e0 b3 	mov    QWORD PTR [rsp-0x28],0x20b3e0
+  253283:	20 00 
+  253285:	48 c7 44 24 e0 20 00 	mov    QWORD PTR [rsp-0x20],0x20
+  25328c:	00 00 
+  25328e:	48 89 0d 23 5c 00 00 	mov    QWORD PTR [rip+0x5c23],rcx        # 258eb8 <hbc_trace_top>
+  253295:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+run/perfextra-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000253040 <ll_minmaxloop>:
+  253040:	48 8b 0d 71 5e 00 00 	mov    rcx,QWORD PTR [rip+0x5e71]        # 258eb8 <hbc_trace_top>
+  253047:	48 8d 44 24 e8       	lea    rax,[rsp-0x18]
+  25304c:	48 89 05 65 5e 00 00 	mov    QWORD PTR [rip+0x5e65],rax        # 258eb8 <hbc_trace_top>
+  253053:	48 c7 44 24 f0 e0 b1 	mov    QWORD PTR [rsp-0x10],0x20b1e0
+  25305a:	20 00 
+  25305c:	48 c7 44 24 f8 22 00 	mov    QWORD PTR [rsp-0x8],0x22
+  253063:	00 00 
+  253065:	48 c7 44 24 f0 10 b2 	mov    QWORD PTR [rsp-0x10],0x20b210
+  25306c:	20 00 
+  25306e:	48 c7 44 24 f8 22 00 	mov    QWORD PTR [rsp-0x8],0x22
+  253075:	00 00 
+  253077:	48 c7 44 24 f0 40 b2 	mov    QWORD PTR [rsp-0x10],0x20b240
+  25307e:	20 00 
+  253080:	48 c7 44 24 f8 22 00 	mov    QWORD PTR [rsp-0x8],0x22
+  253087:	00 00 
+  253089:	48 c7 44 24 f0 70 b2 	mov    QWORD PTR [rsp-0x10],0x20b270
+  253090:	20 00 
+  253092:	48 c7 44 24 f8 22 00 	mov    QWORD PTR [rsp-0x8],0x22
+  253099:	00 00 
+  25309b:	48 85 ff             	test   rdi,rdi
+  25309e:	0f 8e 83 00 00 00    	jle    253127 <ll_minmaxloop+0xe7>
+  2530a4:	48 c7 44 24 f0 a0 b2 	mov    QWORD PTR [rsp-0x10],0x20b2a0
+  2530ab:	20 00 
+  2530ad:	48 c7 44 24 f8 22 00 	mov    QWORD PTR [rsp-0x8],0x22
+  2530b4:	00 00 
+  2530b6:	48 8d 47 01          	lea    rax,[rdi+0x1]
+  2530ba:	48 83 f8 ff          	cmp    rax,0xffffffffffffffff
+  2530be:	48 c7 c2 fe ff ff ff 	mov    rdx,0xfffffffffffffffe
+  2530c5:	48 0f 4d d0          	cmovge rdx,rax
+  2530c9:	48 81 fa 43 42 0f 00 	cmp    rdx,0xf4243
+  2530d0:	be 43 42 0f 00       	mov    esi,0xf4243
+  2530d5:	48 0f 4d d6          	cmovge rdx,rsi
+  2530d9:	41 b8 02 00 00 00    	mov    r8d,0x2
+  2530df:	48 b8 ff ff ff ff ff 	movabs rax,0x7fffffffffffffff
+  2530e6:	ff ff 7f 
+  2530e9:	0f 1f 80 00 00 00 00 	nop    DWORD PTR [rax+0x0]
+  2530f0:	49 39 f8             	cmp    r8,rdi
+  2530f3:	7f 39                	jg     25312e <ll_minmaxloop+0xee>
+  2530f5:	48 c7 44 24 f0 a0 b2 	mov    QWORD PTR [rsp-0x10],0x20b2a0
+  2530fc:	20 00 
+  2530fe:	48 c7 44 24 f8 22 00 	mov    QWORD PTR [rsp-0x8],0x22
+  253105:	00 00 
+  253107:	4c 01 c2             	add    rdx,r8
+  25310a:	48 81 fa 43 42 0f 00 	cmp    rdx,0xf4243
+  253111:	48 0f 4d d6          	cmovge rdx,rsi
+  253115:	4d 8d 48 fd          	lea    r9,[r8-0x3]
+  253119:	4c 39 ca             	cmp    rdx,r9
+  25311c:	49 0f 4e d1          	cmovle rdx,r9
+  253120:	49 ff c0             	inc    r8
+  253123:	71 cb                	jno    2530f0 <ll_minmaxloop+0xb0>
+  253125:	eb 0a                	jmp    253131 <ll_minmaxloop+0xf1>
+  253127:	b8 01 00 00 00       	mov    eax,0x1
+  25312c:	eb 06                	jmp    253134 <ll_minmaxloop+0xf4>
+  25312e:	4c 89 c0             	mov    rax,r8
+  253131:	48 89 d7             	mov    rdi,rdx
+  253134:	48 01 f8             	add    rax,rdi
+  253137:	48 c7 44 24 f0 d0 b2 	mov    QWORD PTR [rsp-0x10],0x20b2d0
+  25313e:	20 00 
+  253140:	48 c7 44 24 f8 22 00 	mov    QWORD PTR [rsp-0x8],0x22
+  253147:	00 00 
+  253149:	48 89 0d 68 5d 00 00 	mov    QWORD PTR [rip+0x5d68],rcx        # 258eb8 <hbc_trace_top>
+  253150:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+run/perfextra-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000253160 <ll_mixstep>:
+  253160:	48 8b 0d 51 5d 00 00 	mov    rcx,QWORD PTR [rip+0x5d51]        # 258eb8 <hbc_trace_top>
+  253167:	48 8d 44 24 e8       	lea    rax,[rsp-0x18]
+  25316c:	48 89 05 45 5d 00 00 	mov    QWORD PTR [rip+0x5d45],rax        # 258eb8 <hbc_trace_top>
+  253173:	48 c7 44 24 f0 00 b3 	mov    QWORD PTR [rsp-0x10],0x20b300
+  25317a:	20 00 
+  25317c:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  253183:	00 00 
+  253185:	48 c7 44 24 f0 20 b3 	mov    QWORD PTR [rsp-0x10],0x20b320
+  25318c:	20 00 
+  25318e:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  253195:	00 00 
+  253197:	48 8d 14 7f          	lea    rdx,[rdi+rdi*2]
+  25319b:	48 01 f2             	add    rdx,rsi
+  25319e:	48 8d 46 f9          	lea    rax,[rsi-0x7]
+  2531a2:	48 31 d0             	xor    rax,rdx
+  2531a5:	48 89 0d 0c 5d 00 00 	mov    QWORD PTR [rip+0x5d0c],rcx        # 258eb8 <hbc_trace_top>
+  2531ac:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+run/perfextra-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000002532a0 <ll_reverse>:
+  2532a0:	48 8b 0d 11 5c 00 00 	mov    rcx,QWORD PTR [rip+0x5c11]        # 258eb8 <hbc_trace_top>
+  2532a7:	48 8d 44 24 e8       	lea    rax,[rsp-0x18]
+  2532ac:	48 89 05 05 5c 00 00 	mov    QWORD PTR [rip+0x5c05],rax        # 258eb8 <hbc_trace_top>
+  2532b3:	48 c7 44 24 f0 00 b4 	mov    QWORD PTR [rsp-0x10],0x20b400
+  2532ba:	20 00 
+  2532bc:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  2532c3:	00 00 
+  2532c5:	48 c7 44 24 f0 20 b4 	mov    QWORD PTR [rsp-0x10],0x20b420
+  2532cc:	20 00 
+  2532ce:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  2532d5:	00 00 
+  2532d7:	48 c7 44 24 f0 40 b4 	mov    QWORD PTR [rsp-0x10],0x20b440
+  2532de:	20 00 
+  2532e0:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  2532e7:	00 00 
+  2532e9:	48 c7 44 24 f0 60 b4 	mov    QWORD PTR [rsp-0x10],0x20b460
+  2532f0:	20 00 
+  2532f2:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  2532f9:	00 00 
+  2532fb:	48 85 ff             	test   rdi,rdi
+  2532fe:	7e 12                	jle    253312 <ll_reverse+0x72>
+  253300:	89 fa                	mov    edx,edi
+  253302:	83 e2 03             	and    edx,0x3
+  253305:	48 83 ff 04          	cmp    rdi,0x4
+  253309:	73 24                	jae    25332f <ll_reverse+0x8f>
+  25330b:	31 c0                	xor    eax,eax
+  25330d:	e9 c6 00 00 00       	jmp    2533d8 <ll_reverse+0x138>
+  253312:	48 89 f8             	mov    rax,rdi
+  253315:	48 c7 44 24 f0 a0 b4 	mov    QWORD PTR [rsp-0x10],0x20b4a0
+  25331c:	20 00 
+  25331e:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  253325:	00 00 
+  253327:	48 89 0d 8a 5b 00 00 	mov    QWORD PTR [rip+0x5b8a],rcx        # 258eb8 <hbc_trace_top>
+  25332e:	c3                   	ret    
+  25332f:	48 be fc ff ff ff ff 	movabs rsi,0x7ffffffffffffffc
+  253336:	ff ff 7f 
+  253339:	48 21 fe             	and    rsi,rdi
+  25333c:	48 89 f8             	mov    rax,rdi
+  25333f:	48 c1 e0 03          	shl    rax,0x3
+  253343:	4c 8d 0c 80          	lea    r9,[rax+rax*4]
+  253347:	49 c7 c0 72 ff ff ff 	mov    r8,0xffffffffffffff72
+  25334e:	4d 29 c8             	sub    r8,r9
+  253351:	4c 8d 0c 80          	lea    r9,[rax+rax*4]
+  253355:	49 83 c1 ee          	add    r9,0xffffffffffffffee
+  253359:	45 31 d2             	xor    r10d,r10d
+  25335c:	0f 1f 40 00          	nop    DWORD PTR [rax+0x0]
+  253360:	48 c7 44 24 f0 80 b4 	mov    QWORD PTR [rsp-0x10],0x20b480
+  253367:	20 00 
+  253369:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  253370:	00 00 
+  253372:	48 c7 44 24 f0 80 b4 	mov    QWORD PTR [rsp-0x10],0x20b480
+  253379:	20 00 
+  25337b:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  253382:	00 00 
+  253384:	48 c7 44 24 f0 80 b4 	mov    QWORD PTR [rsp-0x10],0x20b480
+  25338b:	20 00 
+  25338d:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  253394:	00 00 
+  253396:	48 c7 44 24 f0 80 b4 	mov    QWORD PTR [rsp-0x10],0x20b480
+  25339d:	20 00 
+  25339f:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  2533a6:	00 00 
+  2533a8:	48 83 c7 fc          	add    rdi,0xfffffffffffffffc
+  2533ac:	4b 8d 04 d2          	lea    rax,[r10+r10*8]
+  2533b0:	48 8d 04 c0          	lea    rax,[rax+rax*8]
+  2533b4:	4d 8d 14 01          	lea    r10,[r9+rax*1]
+  2533b8:	49 81 c0 a0 00 00 00 	add    r8,0xa0
+  2533bf:	49 81 c1 60 ff ff ff 	add    r9,0xffffffffffffff60
+  2533c6:	48 83 c6 fc          	add    rsi,0xfffffffffffffffc
+  2533ca:	75 94                	jne    253360 <ll_reverse+0xc0>
+  2533cc:	4c 29 c0             	sub    rax,r8
+  2533cf:	48 85 d2             	test   rdx,rdx
+  2533d2:	0f 84 3d ff ff ff    	je     253315 <ll_reverse+0x75>
+  2533d8:	48 89 fe             	mov    rsi,rdi
+  2533db:	48 f7 d6             	not    rsi
+  2533de:	66 90                	xchg   ax,ax
+  2533e0:	48 c7 44 24 f0 80 b4 	mov    QWORD PTR [rsp-0x10],0x20b480
+  2533e7:	20 00 
+  2533e9:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  2533f0:	00 00 
+  2533f2:	4c 8d 04 40          	lea    r8,[rax+rax*2]
+  2533f6:	48 89 f8             	mov    rax,rdi
+  2533f9:	48 ff cf             	dec    rdi
+  2533fc:	4c 01 c0             	add    rax,r8
+  2533ff:	48 ff c6             	inc    rsi
+  253402:	48 ff ca             	dec    rdx
+  253405:	75 d9                	jne    2533e0 <ll_reverse+0x140>
+  253407:	49 29 f0             	sub    r8,rsi
+  25340a:	4c 89 c0             	mov    rax,r8
+  25340d:	48 c7 44 24 f0 a0 b4 	mov    QWORD PTR [rsp-0x10],0x20b4a0
+  253414:	20 00 
+  253416:	48 c7 44 24 f8 1f 00 	mov    QWORD PTR [rsp-0x8],0x1f
+  25341d:	00 00 
+  25341f:	48 89 0d 92 5a 00 00 	mov    QWORD PTR [rip+0x5a92],rcx        # 258eb8 <hbc_trace_top>
+  253426:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:
+
+
+run/perfextra-rust:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000253430 <ll_whileflow>:
+  253430:	48 8b 0d 81 5a 00 00 	mov    rcx,QWORD PTR [rip+0x5a81]        # 258eb8 <hbc_trace_top>
+  253437:	48 8d 44 24 e8       	lea    rax,[rsp-0x18]
+  25343c:	48 89 05 75 5a 00 00 	mov    QWORD PTR [rip+0x5a75],rax        # 258eb8 <hbc_trace_top>
+  253443:	48 c7 44 24 f0 c0 b4 	mov    QWORD PTR [rsp-0x10],0x20b4c0
+  25344a:	20 00 
+  25344c:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  253453:	00 00 
+  253455:	48 c7 44 24 f0 f0 b4 	mov    QWORD PTR [rsp-0x10],0x20b4f0
+  25345c:	20 00 
+  25345e:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  253465:	00 00 
+  253467:	48 c7 44 24 f0 20 b5 	mov    QWORD PTR [rsp-0x10],0x20b520
+  25346e:	20 00 
+  253470:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  253477:	00 00 
+  253479:	48 c7 44 24 f0 50 b5 	mov    QWORD PTR [rsp-0x10],0x20b550
+  253480:	20 00 
+  253482:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  253489:	00 00 
+  25348b:	48 89 fe             	mov    rsi,rdi
+  25348e:	48 f7 de             	neg    rsi
+  253491:	b8 01 00 00 00       	mov    eax,0x1
+  253496:	31 d2                	xor    edx,edx
+  253498:	48 c7 44 24 f0 80 b5 	mov    QWORD PTR [rsp-0x10],0x20b580
+  25349f:	20 00 
+  2534a1:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  2534a8:	00 00 
+  2534aa:	48 39 fa             	cmp    rdx,rdi
+  2534ad:	0f 8d b7 00 00 00    	jge    25356a <ll_whileflow+0x13a>
+  2534b3:	48 ff c2             	inc    rdx
+  2534b6:	66 2e 0f 1f 84 00 00 	cs nop WORD PTR [rax+rax*1+0x0]
+  2534bd:	00 00 00 
+  2534c0:	48 c7 44 24 f0 b0 b5 	mov    QWORD PTR [rsp-0x10],0x20b5b0
+  2534c7:	20 00 
+  2534c9:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  2534d0:	00 00 
+  2534d2:	48 c7 44 24 f0 e0 b5 	mov    QWORD PTR [rsp-0x10],0x20b5e0
+  2534d9:	20 00 
+  2534db:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  2534e2:	00 00 
+  2534e4:	f6 c2 07             	test   dl,0x7
+  2534e7:	75 37                	jne    253520 <ll_whileflow+0xf0>
+  2534e9:	48 c7 44 24 f0 10 b6 	mov    QWORD PTR [rsp-0x10],0x20b610
+  2534f0:	20 00 
+  2534f2:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  2534f9:	00 00 
+  2534fb:	48 c7 44 24 f0 80 b5 	mov    QWORD PTR [rsp-0x10],0x20b580
+  253502:	20 00 
+  253504:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  25350b:	00 00 
+  25350d:	4c 8d 04 16          	lea    r8,[rsi+rdx*1]
+  253511:	49 ff c0             	inc    r8
+  253514:	48 ff c2             	inc    rdx
+  253517:	49 83 f8 01          	cmp    r8,0x1
+  25351b:	75 a3                	jne    2534c0 <ll_whileflow+0x90>
+  25351d:	eb 48                	jmp    253567 <ll_whileflow+0x137>
+  25351f:	90                   	nop
+  253520:	48 c7 44 24 f0 40 b6 	mov    QWORD PTR [rsp-0x10],0x20b640
+  253527:	20 00 
+  253529:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  253530:	00 00 
+  253532:	48 8d 04 40          	lea    rax,[rax+rax*2]
+  253536:	48 c7 44 24 f0 70 b6 	mov    QWORD PTR [rsp-0x10],0x20b670
+  25353d:	20 00 
+  25353f:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  253546:	00 00 
+  253548:	48 01 d0             	add    rax,rdx
+  25354b:	0f 85 47 ff ff ff    	jne    253498 <ll_whileflow+0x68>
+  253551:	48 c7 44 24 f0 a0 b6 	mov    QWORD PTR [rsp-0x10],0x20b6a0
+  253558:	20 00 
+  25355a:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  253561:	00 00 
+  253563:	31 c0                	xor    eax,eax
+  253565:	eb 03                	jmp    25356a <ll_whileflow+0x13a>
+  253567:	48 89 fa             	mov    rdx,rdi
+  25356a:	48 01 d0             	add    rax,rdx
+  25356d:	48 c7 44 24 f0 d0 b6 	mov    QWORD PTR [rsp-0x10],0x20b6d0
+  253574:	20 00 
+  253576:	48 c7 44 24 f8 21 00 	mov    QWORD PTR [rsp-0x8],0x21
+  25357d:	00 00 
+  25357f:	48 89 0d 32 59 00 00 	mov    QWORD PTR [rip+0x5932],rcx        # 258eb8 <hbc_trace_top>
+  253586:	c3                   	ret    
+
+Disassembly of section .init:
+
+Disassembly of section .fini:
+
+Disassembly of section .plt:

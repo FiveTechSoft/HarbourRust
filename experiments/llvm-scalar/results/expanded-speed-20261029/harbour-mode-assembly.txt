@@ -1,0 +1,155 @@
+
+/downloads/83bounded/sum-pcode:     file format elf64-x86-64
+
+
+Disassembly of section .init:
+
+Disassembly of section .plt:
+
+Disassembly of section .plt.got:
+
+Disassembly of section .plt.sec:
+
+Disassembly of section .text:
+
+000000000000e560 <HB_FUN_MAIN>:
+    e560:	f3 0f 1e fa          	endbr64 
+    e564:	48 8b 35 a5 7a 12 00 	mov    0x127aa5(%rip),%rsi        # 136010 <symbols>
+    e56b:	48 8d 3d ce aa 0e 00 	lea    0xeaace(%rip),%rdi        # f9040 <pcode.0>
+    e572:	e9 19 17 01 00       	jmp    1fc90 <hb_vmExecute>
+
+Disassembly of section .fini:
+
+/downloads/83bounded/sum-gc3:     file format elf64-x86-64
+
+
+Disassembly of section .init:
+
+Disassembly of section .plt:
+
+Disassembly of section .plt.got:
+
+Disassembly of section .plt.sec:
+
+Disassembly of section .text:
+
+000000000000e560 <HB_FUN_MAIN>:
+    e560:	f3 0f 1e fa          	endbr64 
+    e564:	53                   	push   %rbx
+    e565:	31 f6                	xor    %esi,%esi
+    e567:	bf 02 00 00 00       	mov    $0x2,%edi
+    e56c:	48 83 ec 10          	sub    $0x10,%rsp
+    e570:	64 48 8b 04 25 28 00 	mov    %fs:0x28,%rax
+    e577:	00 00 
+    e579:	48 89 44 24 08       	mov    %rax,0x8(%rsp)
+    e57e:	31 c0                	xor    %eax,%eax
+    e580:	48 8d 5c 24 04       	lea    0x4(%rsp),%rbx
+    e585:	e8 d6 04 01 00       	call   1ea60 <hb_xvmFrame>
+    e58a:	bf 02 00 00 00       	mov    $0x2,%edi
+    e58f:	e8 dc 25 00 00       	call   10b70 <hb_xvmSetLine>
+    e594:	31 f6                	xor    %esi,%esi
+    e596:	bf 01 00 00 00       	mov    $0x1,%edi
+    e59b:	e8 d0 03 04 00       	call   4e970 <hb_xvmLocalSetInt>
+    e5a0:	bf 03 00 00 00       	mov    $0x3,%edi
+    e5a5:	e8 c6 25 00 00       	call   10b70 <hb_xvmSetLine>
+    e5aa:	be 01 00 00 00       	mov    $0x1,%esi
+    e5af:	bf 02 00 00 00       	mov    $0x2,%edi
+    e5b4:	e8 b7 03 04 00       	call   4e970 <hb_xvmLocalSetInt>
+    e5b9:	bf 04 00 00 00       	mov    $0x4,%edi
+    e5be:	e8 ad 25 00 00       	call   10b70 <hb_xvmSetLine>
+    e5c3:	bf 01 00 00 00       	mov    $0x1,%edi
+    e5c8:	e8 13 f6 00 00       	call   1dbe0 <hb_vmPushInteger>
+    e5cd:	e8 1e ff 01 00       	call   2e4f0 <hb_xvmPushUnRef>
+    e5d2:	bf 01 00 00 00       	mov    $0x1,%edi
+    e5d7:	e8 24 40 04 00       	call   52600 <hb_xvmPopLocal>
+    e5dc:	e9 f1 00 00 00       	jmp    e6d2 <HB_FUN_MAIN+0x172>
+    e5e1:	0f 1f 80 00 00 00 00 	nopl   0x0(%rax)
+    e5e8:	8b 44 24 04          	mov    0x4(%rsp),%eax
+    e5ec:	85 c0                	test   %eax,%eax
+    e5ee:	0f 85 1c 01 00 00    	jne    e710 <HB_FUN_MAIN+0x1b0>
+    e5f4:	bf 05 00 00 00       	mov    $0x5,%edi
+    e5f9:	e8 72 25 00 00       	call   10b70 <hb_xvmSetLine>
+    e5fe:	bf 02 00 00 00       	mov    $0x2,%edi
+    e603:	e8 f8 75 01 00       	call   25c00 <hb_xvmPushLocalByRef>
+    e608:	bf 01 00 00 00       	mov    $0x1,%edi
+    e60d:	e8 de a8 01 00       	call   28ef0 <hb_xvmPushLocal>
+    e612:	e8 29 4f 03 00       	call   43540 <hb_xvmPlusEqPop>
+    e617:	85 c0                	test   %eax,%eax
+    e619:	0f 85 d1 00 00 00    	jne    e6f0 <HB_FUN_MAIN+0x190>
+    e61f:	bf 06 00 00 00       	mov    $0x6,%edi
+    e624:	e8 47 25 00 00       	call   10b70 <hb_xvmSetLine>
+    e629:	bf 02 00 00 00       	mov    $0x2,%edi
+    e62e:	e8 bd a8 01 00       	call   28ef0 <hb_xvmPushLocal>
+    e633:	48 89 de             	mov    %rbx,%rsi
+    e636:	bf 43 42 0f 00       	mov    $0xf4243,%edi
+    e63b:	e8 70 13 04 00       	call   4f9b0 <hb_xvmGreaterThenIntIs>
+    e640:	85 c0                	test   %eax,%eax
+    e642:	0f 85 a8 00 00 00    	jne    e6f0 <HB_FUN_MAIN+0x190>
+    e648:	8b 4c 24 04          	mov    0x4(%rsp),%ecx
+    e64c:	85 c9                	test   %ecx,%ecx
+    e64e:	74 27                	je     e677 <HB_FUN_MAIN+0x117>
+    e650:	bf 07 00 00 00       	mov    $0x7,%edi
+    e655:	e8 16 25 00 00       	call   10b70 <hb_xvmSetLine>
+    e65a:	bf 02 00 00 00       	mov    $0x2,%edi
+    e65f:	e8 9c 75 01 00       	call   25c00 <hb_xvmPushLocalByRef>
+    e664:	bf 43 42 0f 00       	mov    $0xf4243,%edi
+    e669:	e8 72 f5 00 00       	call   1dbe0 <hb_vmPushInteger>
+    e66e:	e8 7d ac 03 00       	call   492f0 <hb_xvmMinusEqPop>
+    e673:	85 c0                	test   %eax,%eax
+    e675:	75 79                	jne    e6f0 <HB_FUN_MAIN+0x190>
+    e677:	bf 09 00 00 00       	mov    $0x9,%edi
+    e67c:	e8 ef 24 00 00       	call   10b70 <hb_xvmSetLine>
+    e681:	bf 02 00 00 00       	mov    $0x2,%edi
+    e686:	e8 65 a8 01 00       	call   28ef0 <hb_xvmPushLocal>
+    e68b:	48 89 de             	mov    %rbx,%rsi
+    e68e:	bf 43 42 0f 00       	mov    $0xf4243,%edi
+    e693:	e8 18 13 04 00       	call   4f9b0 <hb_xvmGreaterThenIntIs>
+    e698:	85 c0                	test   %eax,%eax
+    e69a:	75 54                	jne    e6f0 <HB_FUN_MAIN+0x190>
+    e69c:	8b 54 24 04          	mov    0x4(%rsp),%edx
+    e6a0:	85 d2                	test   %edx,%edx
+    e6a2:	74 16                	je     e6ba <HB_FUN_MAIN+0x15a>
+    e6a4:	bf 0a 00 00 00       	mov    $0xa,%edi
+    e6a9:	e8 c2 24 00 00       	call   10b70 <hb_xvmSetLine>
+    e6ae:	31 f6                	xor    %esi,%esi
+    e6b0:	bf 02 00 00 00       	mov    $0x2,%edi
+    e6b5:	e8 b6 02 04 00       	call   4e970 <hb_xvmLocalSetInt>
+    e6ba:	bf 04 00 00 00       	mov    $0x4,%edi
+    e6bf:	e8 ac 24 00 00       	call   10b70 <hb_xvmSetLine>
+    e6c4:	bf 01 00 00 00       	mov    $0x1,%edi
+    e6c9:	e8 42 df 03 00       	call   4c610 <hb_xvmLocalIncPush>
+    e6ce:	85 c0                	test   %eax,%eax
+    e6d0:	75 1e                	jne    e6f0 <HB_FUN_MAIN+0x190>
+    e6d2:	48 89 de             	mov    %rbx,%rsi
+    e6d5:	bf 80 84 1e 00       	mov    $0x1e8480,%edi
+    e6da:	e8 d1 12 04 00       	call   4f9b0 <hb_xvmGreaterThenIntIs>
+    e6df:	85 c0                	test   %eax,%eax
+    e6e1:	0f 84 01 ff ff ff    	je     e5e8 <HB_FUN_MAIN+0x88>
+    e6e7:	66 0f 1f 84 00 00 00 	nopw   0x0(%rax,%rax,1)
+    e6ee:	00 00 
+    e6f0:	48 8b 44 24 08       	mov    0x8(%rsp),%rax
+    e6f5:	64 48 2b 04 25 28 00 	sub    %fs:0x28,%rax
+    e6fc:	00 00 
+    e6fe:	75 4e                	jne    e74e <HB_FUN_MAIN+0x1ee>
+    e700:	48 83 c4 10          	add    $0x10,%rsp
+    e704:	5b                   	pop    %rbx
+    e705:	c3                   	ret    
+    e706:	66 2e 0f 1f 84 00 00 	cs nopw 0x0(%rax,%rax,1)
+    e70d:	00 00 00 
+    e710:	bf 0d 00 00 00       	mov    $0xd,%edi
+    e715:	e8 56 24 00 00       	call   10b70 <hb_xvmSetLine>
+    e71a:	48 8b 05 ef 78 12 00 	mov    0x1278ef(%rip),%rax        # 136010 <symbols>
+    e721:	48 8d 78 20          	lea    0x20(%rax),%rdi
+    e725:	e8 a6 fc 00 00       	call   1e3d0 <hb_xvmPushFuncSymbol>
+    e72a:	bf 02 00 00 00       	mov    $0x2,%edi
+    e72f:	e8 bc a7 01 00       	call   28ef0 <hb_xvmPushLocal>
+    e734:	bf 01 00 00 00       	mov    $0x1,%edi
+    e739:	e8 72 7e 04 00       	call   565b0 <hb_xvmDo>
+    e73e:	85 c0                	test   %eax,%eax
+    e740:	75 ae                	jne    e6f0 <HB_FUN_MAIN+0x190>
+    e742:	bf 0e 00 00 00       	mov    $0xe,%edi
+    e747:	e8 24 24 00 00       	call   10b70 <hb_xvmSetLine>
+    e74c:	eb a2                	jmp    e6f0 <HB_FUN_MAIN+0x190>
+    e74e:	e8 6d f4 ff ff       	call   dbc0 <__stack_chk_fail@plt>
+
+Disassembly of section .fini:

@@ -1,0 +1,1 @@
+fn main(){let mut x=std::hint::black_box(1i64);let mut i=1i64;while i<=2000000 {x=((x*3+i)^(i-7))&65535;i+=1;}print!("\n{:>10}",x);}

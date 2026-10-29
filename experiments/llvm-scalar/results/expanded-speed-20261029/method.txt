@@ -1,0 +1,3 @@
+Whole process: same immutable source for Harbour pcode/gc3 and HarbourRust default/LLVM; Rust equivalent bounded arithmetic. 2M iterations. Normal product configs: Harbour diagnostics, HarbourRust native traces enabled, Rust plain optimized. Not matched diagnostic overhead; not a pure kernel comparison. Values bounded under 6000001, no i64 wrap/double conversion required. Output stdout byte-exact before timing. Linux only.
+
+Whole-file sizes and hashes refer to /downloads/83bounded measured executables, not a later portable rebuild with longer diagnostic source paths. Stripped copies use GNU strip; file bytes differ across path/layout.

@@ -982,3 +982,57 @@ each backend, factorial 23, branch 53. Sum/factorial operations match apart from
 addresses and the recursive call target; branch has a different block layout.
 This is additional reason not to interpret the observed faster sum timings as
 a stable advantage over Rust. Recurrence and arrays still differ structurally.
+
+## Expanded speed controls and rebuilt Harbour oracle, 29 October 2026
+
+Five added kernels use only the already admitted I64/control-flow slice:
+bit operations, Min/Max, a helper in a loop, reverse FOR, and WHILE with
+LOOP/EXIT. The routine runner checks exact output on Linux/PE-Wine and 10130
+additional backend/Rust result comparisons, separately from the earlier
+10218 and 5089 checks. It does not take timings unless RUN_BENCHMARKS=1.
+Current full run: 194 PASS rows; 46 exact error comparisons remain separate.
+
+Three 31-sample CPU0 series, n=1M, equivalent manual Rust trace points,
+LLVM/Rust median-time ratios: bits0.866-0.867, Min/Max0.997-1.001,
+helper calls0.996-0.999, reverse1.196-1.198, WHILE0.999-1.006.
+Reverse is an open performance investigation, not a corrected regression.
+The versions/layouts of LLVM differ; fewer instructions alone do not win.
+
+A Harbour reference was freshly built locally from the pinned official source
+694428e1c12f726675b19324d62167fa77d68185, GCC -O3, no contrib. Source is only
+an oracle and is not copied into this MIT implementation. The opt-in scripts
+under bounded-comparison/ require HBMK2 explicitly, generate their own test
+sources from scratch and never install or download the reference. They are
+not run by the routine battery.
+
+The new full-process comparison uses 2M iterations and bounded integer values:
+reset accumulation, masked bit recurrence and masked reverse recurrence. No
+intermediate magnitude reaches 6M, so the old i64-wrap versus Harbour-double
+problem does not arise. All five outputs are byte-identical before timing.
+Rust starts from black_box input to prevent full constant evaluation. These
+are normal configurations (Harbour diagnostic settings, HarbourRust native
+traces, plain optimized Rust), not matched diagnostic overhead. The earlier
+trace-equivalent kernel series remains the fairer diagnosis of codegen cost.
+
+Median milliseconds from each of three independent series (7 samples after
+2 warmups per program/config/series, rotating order, CPU0, Linux):
+
+| Workload | Harbour pcode | Harbour -gc3 | HR default | HR LLVM | Rust |
+|---|---|---|---|---|---|
+| Reset sum | 200.727 / 196.652 / 193.734 | 119.961 / 120.578 / 118.908 | 12.962 / 12.986 / 13.150 | 5.884 / 5.750 / 5.755 | 4.729 / 4.538 / 4.519 |
+| Masked bits | 236.178 / 240.964 / 236.049 | 192.422 / 194.649 / 191.594 | 22.481 / 22.475 / 22.439 | 4.501 / 4.448 / 4.447 | 5.193 / 5.261 / 5.203 |
+| Masked reverse | 159.253 / 158.611 / 158.641 | 128.147 / 128.634 / 128.639 | 13.929 / 13.814 / 13.797 | 2.745 / 2.548 / 2.612 | 3.272 / 3.232 / 3.242 |
+
+These include process/taskset/startup/output time, not just the loop. Do not
+extend them to strings, objects, RDDs, all programs, or Windows. The masked
+reverse is different work from the wrapping reverse above; it does not close
+that deficit. Whole-file and stripped bytes plus GNU size summaries are in
+results/expanded-speed-20261029/whole-file-sizes.json, not function-byte claims.
+Harbour links its runtime; Rust links std/CRT; HR is freestanding. Tiny file
+size here is not a controlled runtime-equivalent codegen advantage.
+
+Raw CSV, environment, symbol sizes, assembler and validation logs are under
+results/expanded-speed-20261029/. Build paths are recorded for evidence only;
+use the portable scripts with explicit HBMK2 for reproduction. The default
+1086-row battery was last rebuilt and passed at77f972a; these additions change
+only tests/docs, not production lowering, and do not claim a new default run.

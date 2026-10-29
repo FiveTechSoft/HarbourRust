@@ -1,0 +1,20 @@
+Harbour 3.2.1dev (r2610242111)
+Copyright (c) 1999-2025, https://harbour.github.io/
+
+Syntax:  /tmp/harbour-originals-694428e1/bin/linux/gcc/harbour <file[s][.prg]|@file> [options]
+
+Options:  -a               automatic memvar declaration
+          -b               debug info
+          -build           display detailed version info
+gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0
+rustc 1.99.1 (58cf8f9c3 2026-10-13)
+binary: rustc
+commit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67
+commit-date: 2026-10-13
+host: x86_64-unknown-linux-gnu
+release: 1.99.1
+LLVM version: 23.1.1
+80ce1e926bf352d4b12d277f06d13df259f9d06322193e1912a6c0c5f1eab355  /tmp/harbour-originals-694428e1.tar.gz
+9c7eb9e120f2becf0fa65fc102249c43440047d5192330e1dcfba36aacd48462  /tmp/harbour-originals-694428e1/bin/linux/gcc/harbour
+f7d32b5d78b73f9856bc9e830b6bd4a829a499a35c4f9f2e1861d094fa2e120e  /tmp/harbour-originals-694428e1/bin/linux/gcc/hbmk2
+GCC Harbour build O3; HB_BUILD_CONTRIBS=no. Core 694428e1c12f726675b19324d62167fa77d68185. Standard diagnostic settings, GTSTD. CPU0 process measurements include taskset and process startup.

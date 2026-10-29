@@ -7,7 +7,7 @@ RUSTC=${RUSTC:-rustc}
 mkdir -p run
 "$RUSTC" -O ../../src/hbc.rs -o run/hbc
 # Linux end-to-end output and code generation.
-for case in corpus edge procline audit arraywork logic loopcontrol sequence minmax bitops empty interaction boolcalls booloutput boolminmax boolscope integeredges scopedslots barecounter discardeffects nilcompare printchoice borrowedstrings longstr-original voideffects returns-original ifelse-original statfun-original exit-original fornext-original; do
+for case in perfextra corpus edge procline audit arraywork logic loopcontrol sequence minmax bitops empty interaction boolcalls booloutput boolminmax boolscope integeredges scopedslots barecounter discardeffects nilcompare printchoice borrowedstrings longstr-original voideffects returns-original ifelse-original statfun-original exit-original fornext-original; do
  source="$case.hb"; [ "$case" != fornext-original ] || source=fornext-original.prg
  [ "$case" != exit-original ] || source=exit-original.prg
  case "$case" in longstr-original|returns-original|ifelse-original|statfun-original) source="$case.prg";; esac
@@ -68,7 +68,7 @@ echo 'PASS Linux ABI canary'
 # Optional cross-target verification. M is the MinGW bin directory.
 if [ -n "${M:-}" ]; then
  : "${MLIB:?MinGW import-library directory}"
- for case in corpus edge procline audit arraywork logic loopcontrol sequence minmax bitops empty interaction boolcalls booloutput boolminmax boolscope integeredges scopedslots barecounter discardeffects nilcompare printchoice borrowedstrings longstr-original voideffects returns-original ifelse-original statfun-original exit-original fornext-original; do
+ for case in perfextra corpus edge procline audit arraywork logic loopcontrol sequence minmax bitops empty interaction boolcalls booloutput boolminmax boolscope integeredges scopedslots barecounter discardeffects nilcompare printchoice borrowedstrings longstr-original voideffects returns-original ifelse-original statfun-original exit-original fornext-original; do
   source="$case.hb"; [ "$case" != fornext-original ] || source=fornext-original.prg
   [ "$case" != exit-original ] || source=exit-original.prg
  case "$case" in longstr-original|returns-original|ifelse-original|statfun-original) source="$case.prg";; esac
@@ -111,3 +111,13 @@ python3 check_rejections.py
 python3 check_regressions.py
 
 python3 check_linkage.py
+
+# Extended controls use the admitted scalar subset, not new representations.
+python3 prepare_perfextra.py
+as -o run/perfextra-wrappers.o run/perfextra-wrappers.s
+objcopy --redefine-sym ll_main=ll_perfextra_main run/perfextra.o run/perfextra-bench.o
+"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=run/perfextra-wrappers.o -C link-arg=run/perfextra-bench.o -C relocation-model=static run/perfextra-rust.rs -o run/perfextra-rust
+run/perfextra-rust
+if [ "${RUN_BENCHMARKS:-0}" = 1 ]; then
+ run/perfextra-rust "${BENCH_N:-1000000}" > run/perfextra.csv
+fi

@@ -1,0 +1,1 @@
+fn main(){let mut x=std::hint::black_box(1i64);let mut i=1i64;while i<=2000000 {x=x.wrapping_add(i);if x>1000003{x-=1000003;}if x>1000003{x=0;}i+=1;}print!("\n{:>10}",x);}
