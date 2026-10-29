@@ -77,3 +77,30 @@ opt-in temporary builder; unrelated debug-frontend production repair is omitted.
 Versioned audit compiler is explicitly candidate-markers as tested precommit;
 publication SHA and independent rebuilt replay are recorded in verification logs.
 This does not silently replace old corpus audits with a new compiler label.
+
+## Next blockers after the scoped increment,no further implementation
+
+The31 moved first diagnostics partition into23 restricted FROM/INHERIT marker
+failures,one restricted DESCENDING marker failure,two missing ads.ch includes,
+four lexical dotted-word diagnostics and one statement-form failure. Counts
+come from the stored audit delta,not31 new execution outcomes. Diagnostic line
+numbers are emitted compiler positions and are not automatically original-source
+line numbers after include/command expansion. Do not infer exact root cause of
+the lexical/statement cases from their first diagnostic alone.
+
+21 own-source hbpp probes now characterize the next restricted-marker gap.
+FROM/INHERIT and DESCENDING match case-insensitively in these samples,while
+abbreviations,prefix extensions,quoted/parenthesized or multiple tokens do not.
+The current implementation still rejects the definitions. This is a new marker
+form outside the approved two-marker increment. No code change or permission
+for it follows from this record,and no class/RDD support is claimed.
+
+```
+python3 experiments/pp-markers/check_restricted_gap.py --hbpp /path/to/hbpp \
+  --hpp /tmp/hpp --output-dir /tmp/restricted-gap
+```
+
+Missing ads.ch is an include/dependency lookup result under the audit's stated
+include policy,not proof that the driver is unavailable in every environment.
+Those originals are not executed. No package install,driver/linking change or
+new runtime contract is attempted as part of characterization.

@@ -1,0 +1,175 @@
+{
+  "reference": "harbour/core694428e1c12f726675b19324d62167fa77d68185",
+  "own_compiler": "e71b0ed961b59cb7c9d708eed942174bb6e386c4",
+  "scope": "21 own-source preprocessor-only next-gap probes. No implementation,compilation/linking/program execution. Not full restricted-marker grammar or permission to implement. Nonmatches leave reference source unchanged.",
+  "rows": [
+    {
+      "restriction": "FROM, INHERIT",
+      "input": "FROM",
+      "source_sha256": "9d9a108d75480bd8822c7e603e84b6cf12721714f786fbda588b98284f6d89f5",
+      "reference_rule_matched": true,
+      "reference_preprocessed": "\nOUT( FROM, alpha )\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "FROM, INHERIT",
+      "input": "INHERIT",
+      "source_sha256": "e2a9112542010e1cebd4b6438170615ce9fcefc4baf7535eed6e3ce995f2e104",
+      "reference_rule_matched": true,
+      "reference_preprocessed": "\nOUT( INHERIT, alpha )\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "FROM, INHERIT",
+      "input": "from",
+      "source_sha256": "1dec1e9c66669bc468a2eceef18acda3bb4e5582010fd482e1de25a1f8673953",
+      "reference_rule_matched": true,
+      "reference_preprocessed": "\nOUT( from, alpha )\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "FROM, INHERIT",
+      "input": "FR",
+      "source_sha256": "f37ad294fa93fe4039b974570ff2c07a517bb5ca0dd198f097edaee051d28387",
+      "reference_rule_matched": false,
+      "reference_preprocessed": "\nPROBE FR alpha\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "FROM, INHERIT",
+      "input": "FRO",
+      "source_sha256": "240924020ad91f0494ccc4827c0780e5133e92d97af328a94b98f55d6f2689e9",
+      "reference_rule_matched": false,
+      "reference_preprocessed": "\nPROBE FRO alpha\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "FROM, INHERIT",
+      "input": "FROMAGE",
+      "source_sha256": "1f9d3c28d63794b7ff06d8d20e4cb36003d1a052ebd2d3fc661ce85368241cf0",
+      "reference_rule_matched": false,
+      "reference_preprocessed": "\nPROBE FROMAGE alpha\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "FROM, INHERIT",
+      "input": "OTHER",
+      "source_sha256": "1b48a6ed94d4070212422039d91c44f712044a770825d9157c7193a5d436b2c9",
+      "reference_rule_matched": false,
+      "reference_preprocessed": "\nPROBE OTHER alpha\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "FROM, INHERIT",
+      "input": "FROM INHERIT",
+      "source_sha256": "2fcfc2bccd40cdfedc61856e5c90e382bd1cd717e0c523fe4670337947b01bc1",
+      "reference_rule_matched": false,
+      "reference_preprocessed": "\nPROBE FROM INHERIT alpha\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "FROM, INHERIT",
+      "input": "",
+      "source_sha256": "83fed56be1e3411e02e71def199d796ae3dd147965142980d7c8cd4fae116e9d",
+      "reference_rule_matched": false,
+      "reference_preprocessed": "\nPROBE  alpha\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "FROM, INHERIT",
+      "input": "INHE",
+      "source_sha256": "6a7888229a3be44cd631e3d19ccf0d5d4b73ea1efa48751506fcebcb63a054ef",
+      "reference_rule_matched": false,
+      "reference_preprocessed": "\nPROBE INHE alpha\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "FROM, INHERIT",
+      "input": "INHER",
+      "source_sha256": "1f8a9320a268fb39908d1fae08d3dd23968ea65c5c36ea7a3cb44364fde0dfa3",
+      "reference_rule_matched": false,
+      "reference_preprocessed": "\nPROBE INHER alpha\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "FROM, INHERIT",
+      "input": "\"FROM\"",
+      "source_sha256": "ef6754aa4471d66cbd8a5922cf654421bc6edb35a85cecf782ea73239652e8b9",
+      "reference_rule_matched": false,
+      "reference_preprocessed": "\nPROBE \"FROM\" alpha\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "FROM, INHERIT",
+      "input": "(FROM)",
+      "source_sha256": "2335b7a9e21e6af550e08306cb9300e3e1126af040a1843cde3c23749dd08b82",
+      "reference_rule_matched": false,
+      "reference_preprocessed": "\nPROBE (FROM) alpha\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "DESCENDING",
+      "input": "DESCENDING",
+      "source_sha256": "6b722022e47af14a882795eff87cc8a168c2fc30974c31d28ee9430c3ad4293d",
+      "reference_rule_matched": true,
+      "reference_preprocessed": "\nOUT( DESCENDING, alpha )\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "DESCENDING",
+      "input": "descending",
+      "source_sha256": "7f94e008f0353cb1ec6d9256182cb2e38e2a2e645ceed026ae32975745b73787",
+      "reference_rule_matched": true,
+      "reference_preprocessed": "\nOUT( descending, alpha )\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "DESCENDING",
+      "input": "DESC",
+      "source_sha256": "d973986aa57a7f006ad16015d9f8b7614d5908931b79b3ec349be84804bbd4fa",
+      "reference_rule_matched": false,
+      "reference_preprocessed": "\nPROBE DESC alpha\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "DESCENDING",
+      "input": "DESCENDIN",
+      "source_sha256": "c3e5dcefd120d63ec3f15c1637d0a18d18c99a350c71ec226fd1daea748ffa21",
+      "reference_rule_matched": false,
+      "reference_preprocessed": "\nPROBE DESCENDIN alpha\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "DESCENDING",
+      "input": "DESCENDINGLY",
+      "source_sha256": "b1932331a65359515d0e5c44335a5d1575ce76f2b7372ec4767d9dd1a3c83d73",
+      "reference_rule_matched": false,
+      "reference_preprocessed": "\nPROBE DESCENDINGLY alpha\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "DESCENDING",
+      "input": "OTHER",
+      "source_sha256": "282fa259827f4c7d72ed16592b90fb8fbfe96fe24dd33d333c6b2f0c736af535",
+      "reference_rule_matched": false,
+      "reference_preprocessed": "\nPROBE OTHER alpha\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "DESCENDING",
+      "input": "",
+      "source_sha256": "85b5e00696dfb722a4b337be67197fa0a9118d0b4728d17166cd406eed531a57",
+      "reference_rule_matched": false,
+      "reference_preprocessed": "\nPROBE  alpha\n",
+      "own_rejected_definition": true
+    },
+    {
+      "restriction": "DESCENDING",
+      "input": "\"DESCENDING\"",
+      "source_sha256": "bafd3e0621a15281f7029ec45f1b91d87f406af69e417780943b19d6bac9ad0e",
+      "reference_rule_matched": false,
+      "reference_preprocessed": "\nPROBE \"DESCENDING\" alpha\n",
+      "own_rejected_definition": true
+    }
+  ]
+}
