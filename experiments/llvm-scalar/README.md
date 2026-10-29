@@ -517,3 +517,17 @@ as a runtime pass. No inference is made about the full compatibility corpus,
 Windows support for those 126 sources, or native-Windows behavior. The regular
 seven-source paired-target regression subset remains in the normal run.sh.
 This is a bounded correctness audit, not a benchmark or broader language claim.
+
+## Admitted failure-source Linux audit, 29 October 2026
+
+The same harness accepts --scan-errors-linux for existing posx sources. Seven
+are admitted: t133/t142/t143 bounds and t888/t903/t904/t905 increment overflow.
+All fourteen Linux executions match their required exit1, empty stderr and
+manifest expectation under the original shell runner's trailing-newline
+normalization. In addition, complete stdout bytes must agree between the two
+backends, including final newlines and diagnostic callstack. This distinction
+is explicit because some posx manifest rows omit a final newline while the
+runtime prints one. Successful pos sources continue to require exact manifest
+bytes. No source/expected output was changed to make the audit pass.
+This is Linux-only and covers admitted failure cases, not every error or the
+full language battery. All seven pass; no new production defect was found.
