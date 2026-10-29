@@ -117,3 +117,19 @@ boolscope_expected = (b'\n.T.\n.T.\n         8\n         9 .T.'
 for name in ['boolscope-current.out','boolscope-llvm.out']:
     assert pathlib.Path('run',name).read_bytes() == boolscope_expected, name
 print('PASS independent disjoint logical-local scope byte oracle')
+
+
+def signed64(n):
+    return (n+(1<<63))%(1<<64)-(1<<63)
+edge_lines=[]
+for a,b in [(-(1<<63),-1),(-(1<<63),1),((1<<63)-1,1),((1<<63)-1,-1),
+            (-(1<<63),(1<<63)-1),(-(1<<32),1<<32),(0,0),(-1,-1)]:
+    # Computed integer fields have the existing minimum10-byte width.
+    edge_lines.append(' '.join(str(signed64(n)).rjust(10) for n in (a+b,a-b,a*b)))
+    edge_lines.append(' '.join('.T.' if c else '.F.' for c in (a<b,a<=b,a==b,a!=b,a>=b,a>b)))
+    edge_lines.append(' '.join(str(n).rjust(10) for n in (min(a,b),max(a,b),a^b)))
+integeredges_expected=('\n'+'\n'.join(edge_lines)).encode()
+for name in ['integeredges-current.out','integeredges-llvm.out']:
+    actual=pathlib.Path('run',name).read_bytes()
+    assert actual.split() == integeredges_expected.split(),(name,actual,integeredges_expected)
+print('PASS independent signed-I64 edge arithmetic/compare value oracle (8 pairs)')

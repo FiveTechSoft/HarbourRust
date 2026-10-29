@@ -689,3 +689,13 @@ harnesses with the previous method. A correctness-only run removes their
 ignored run/*.csv samples to avoid leaving stale samples mistaken for fresh
 ones. Published historical results/ files are untouched. This is a test-process
 change, not a performance improvement or language expansion.
+
+## Signed-I64 extreme-value correctness, 29 October 2026
+
+integeredges.hb checks eight signed operand pairs including min/max I64,
+-1/0/1 and +/-2^32. An independent arbitrary-precision Python oracle reduces
++/-/* modulo2^64 back to signed I64 and checks six signed comparisons,
+Min/Max and XOR. The independent oracle compares value/logical tokens, while
+complete output bytes still match current-vs-LLVM. It does not invent a new
+numeric print-width oracle. This validates the existing wrapping-I64 contract,
+not Harbour's broader numeric promotion or a benchmark. No production change.
