@@ -52,3 +52,20 @@ syntax-family/test matrix remain. P1 has11 trace-equivalent scalar controls and
 New representations, memory/aliasing models, macro evaluation and extension
 bridges require their own decisions. This roadmap records needs, not authority
 to change those contracts or merge the experimental backend into main.
+
+## Full recursive tests compile audit
+
+`tests268-9e9ff8b-compile.json` adds all268 .prg in tests recursively, with
+hashes and first diagnostic for each backend and Linux/Windows target profile.
+Linux21 default/15LLVM accepted; Windows20/14. No linking or execution is
+claimed. The only extra Linux acceptance beyond frozen175 is dynwin.prg:
+its Windows-only dynamic DLL/GUI body is excluded by preprocessing. Windows
+rejects hb_DynCall. This is NOT support for that feature. Keep the frozen175
+20/14 denominator separate; don't substitute a larger raw acceptance count.
+
+`tools/audit_harbour_tests.py` reproduces the compile-only sweep with an explicit
+compiler, source root, reference SHA and compiler SHA. It compiles into a
+private temporary directory with10s compiler timeouts and never runs originals.
+The inventory's175 baseline is retained rather than silently replacing it;
+this268-file evidence is a separate wider audit pending reconciliation into
+per-profile coverage. First diagnostics are not a complete missing-feature list.
