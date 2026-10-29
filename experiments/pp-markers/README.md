@@ -29,3 +29,10 @@ python3 experiments/pp-markers/probe.py --hbpp /path/to/hbpp \
 
 The opt-in probe deliberately checks the CURRENT rejection boundary. Update it
 only with a separately reviewed implementation and fresh behavior evidence.
+
+Build the probe frontend with `python3 experiments/pp-markers/build_hpp.py
+--output /tmp/hpp`. The standalone src/hpp.rs has a stale one-argument Pp::new
+call after the shared engine gained a Windows-profile boolean. The opt-in
+builder adapts only that call to false(Linux) in a temporary file and loads the
+unchanged src/pp.rs. Production source is untouched. A direct rustc build of
+src/hpp.rs currently fails; this is a separate debug-frontend defect.
