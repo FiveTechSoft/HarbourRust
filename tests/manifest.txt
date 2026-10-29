@@ -1082,3 +1082,15 @@ neg tests/t1083_semicolon_incomplete_neg.hb incomplete expression
 neg tests/t1085_semicolon_unbalanced_neg.hb missing )
 pos tests/t1084_semicolon_quotes_comments.hb \n         2 a;b x;/*notcomment*/\nquoted;macro\nsecond\nend\nnext
 pos tests/t1086_semicolon_eof.hb \n         1
+pos tests/t1087_pp_identifier_marker.hb \n        42
+pos tests/t1088_pp_identifier_pair.hb \n        42
+pos tests/t1089_pp_wildcard_marker.hb \n        42
+pos tests/t1090_pp_wildcard_optional.hb \n\n        42
+neg tests/t1091_pp_identifier_literal_neg.hb incomplete statement
+neg tests/t1092_pp_identifier_expr_neg.hb incomplete statement
+neg tests/t1093_pp_wildcard_follow_neg.hb incomplete statement
+neg tests/t1094_pp_marker_remove.hb statement not in the subset
+pos tests/t1095_pp_identifier_translate.hb \n        42
+neg tests/t1096_pp_marker_malformed_neg.hb bad match marker
+neg tests/t1097_pp_identifier_optional.hb incomplete statement
+pos tests/t1098_pp_identifier_result_optional.hb \n        42

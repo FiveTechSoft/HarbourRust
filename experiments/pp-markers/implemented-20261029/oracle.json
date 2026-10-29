@@ -1,0 +1,1905 @@
+{
+  "scope": "190 own-source preprocessor-only probes. No runtime program execution. Matched token streams,not whitespace-identical ppo. Nonmatches retain existing diagnostic difference. Not full marker grammar or class/driver support.",
+  "rows": [
+    {
+      "case": 0,
+      "directive": "command",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE Alpha STOP",
+      "source_sha256": "b0195ef149cab708db4e7facfed8484b5dc9e3a8c21a9e37cc158729a8486fec",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 1,
+      "directive": "command",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE A_2 STOP",
+      "source_sha256": "9e8c75031559f14e93f541104862ccedbc5162cb0240fe425bb4479603656a92",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 2,
+      "directive": "command",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE 1 STOP",
+      "source_sha256": "d9f1a2ad11b325b6a81a6db287fa2a486dcb937ef1229f9833280a376d4e0ba9",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 3,
+      "directive": "command",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE 12abc STOP",
+      "source_sha256": "3a2e35f9af21b94b3b60a882da9f54b90833ca75ecfc162642a6b872f45ffcbc",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 4,
+      "directive": "command",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a + b STOP",
+      "source_sha256": "40a1a45f0fa9d0acc3d254972cadd076feca77a52b68ce0e664015cb12f539ad",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 5,
+      "directive": "command",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE (a) STOP",
+      "source_sha256": "fa4f5b1cb9f613997ce980a45f945cf78bf2460004b30c32f63f3f1a22a4cb04",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 6,
+      "directive": "command",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE \"abc\" STOP",
+      "source_sha256": "c6425cf77ec2562a3ced385889a74d1b0c9b62fdf38974a9225202ea1f5f8f19",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 7,
+      "directive": "command",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE  STOP",
+      "source_sha256": "8f591523e5b7816832583bf6838614ead2e5f26971289e2858fb8f93a7843b22",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 8,
+      "directive": "command",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a,b STOP",
+      "source_sha256": "1ebdb8cd190f9d44ea15d6fd5f0fdedaaac2ba66df4f06d6e9fb5d7341f30ac1",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 9,
+      "directive": "command",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a:b STOP",
+      "source_sha256": "45d56314a430dba38d559d458118b2097b2921d31a3cb285d2b0736b12ce4819",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 10,
+      "directive": "command",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a.b STOP",
+      "source_sha256": "27fb6243850faa34c90416fc98ca27cccbf7db00852c0fbf707e5e32b0f2d59e",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 11,
+      "directive": "command",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE alpha beta STOP",
+      "source_sha256": "2d50df29529708a484b7294843e56e7fa0fc69f5b83bd6b9921c194cd2866863",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 12,
+      "directive": "command",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a[1] STOP",
+      "source_sha256": "333720fa2d35b8211f50e77b54e2fcdaa6df66ab7a4f3262a79954d4dc9e03b9",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 13,
+      "directive": "command",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE \u00e9 STOP",
+      "source_sha256": "d3542df6820ecaf43dc3b07327329609aab9ade5cd32373c02ca8fb9fe5d4155",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 14,
+      "directive": "command",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE _x STOP",
+      "source_sha256": "69c7fc8dcc994a1eaf3b0398694e62fe1e05ef4aa0b9098358e564577e814c89",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 15,
+      "directive": "command",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE Alpha STOP",
+      "source_sha256": "311f1614b685b981dfb103c613092ec77f459b99e5699a024e015758c56732cc",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 16,
+      "directive": "command",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE A_2 STOP",
+      "source_sha256": "353f2f757b174eb755d05a1b6df9e3d101f172a37f1846eba65bccbaccf20160",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 17,
+      "directive": "command",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE 1 STOP",
+      "source_sha256": "57d383cc06b22c86037569bd54efe702874de5fdd3369678af80cf256eed2d4b",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 18,
+      "directive": "command",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE 12abc STOP",
+      "source_sha256": "2acd02a2d70d2433ea11b2ad1a5083e4456f0c3571c150e1652e17a0ce7f2ae9",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 19,
+      "directive": "command",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a + b STOP",
+      "source_sha256": "8f506c03175dac1f957d18f1e4dcf70aa6beb0edd4e2c4cdc4b98984021a04d4",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 20,
+      "directive": "command",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE (a) STOP",
+      "source_sha256": "85a704c2def151f5f40d2c43e75cc59b7c203d297c3d175cfd32ed1519ac9926",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 21,
+      "directive": "command",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE \"abc\" STOP",
+      "source_sha256": "4604f8eeec179ad9f480a17ea517049b33f21a06050bedf3d038bb09c5445a8e",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 22,
+      "directive": "command",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE  STOP",
+      "source_sha256": "eeb1e4a234344d94d081ca1cc55c4ee4f3e30d5a8cfadf22a46c91a0a7dacf23",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 23,
+      "directive": "command",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a,b STOP",
+      "source_sha256": "e709522d2d7bc2d536a4f048d95a6d4deb1c085efe20de7a0e65a99a99748dee",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 24,
+      "directive": "command",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a:b STOP",
+      "source_sha256": "179c182c7115d24d01f893732302ec3632ece6ef3508b855ac0650b01bdf3a1a",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 25,
+      "directive": "command",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a.b STOP",
+      "source_sha256": "2155bb3161e376959575094434fa0a0d32539894feff19761d56e4d5e965248a",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 26,
+      "directive": "command",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE alpha beta STOP",
+      "source_sha256": "14aacdfef26019b54e0f914e17507e9304423a5d16e0eec626c7af9a34089e55",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 27,
+      "directive": "command",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a[1] STOP",
+      "source_sha256": "d199f9403079bb329baf1be0e66e829556167530d31605defe35ccde4c2f36fd",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 28,
+      "directive": "command",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE \u00e9 STOP",
+      "source_sha256": "3dff77e5f7fac1af7ab45c225b06e36cfe48ca434ae1b52e6d2d434b6074ce88",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 29,
+      "directive": "command",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE _x STOP",
+      "source_sha256": "5472df24819651c412159b1ecb103c5f944d12a00d2650a2f019b9da513db2bd",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 30,
+      "directive": "command",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE Alpha",
+      "source_sha256": "b483bb659ef7bea630e7c745d52e1c307089a39e7c4152cbe5fc9186e3147da5",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 31,
+      "directive": "command",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE A_2",
+      "source_sha256": "c051dd5c36752c144a58e337c989080e7f374bc78f73cbe2f5b346a887df7282",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 32,
+      "directive": "command",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE 1",
+      "source_sha256": "2efc4116ce6c65f77d98480d19853857ff77a93982a5260fd0883ac3e3a2292d",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 33,
+      "directive": "command",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE 12abc",
+      "source_sha256": "780485ec28bd901dc1a719b300c18782c357cc9de2f93452cf51b5026712c45e",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 34,
+      "directive": "command",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a + b",
+      "source_sha256": "558cd9705894136a88a69e86137ba0b3a194d550d543f037a06e0363d4300d2d",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 35,
+      "directive": "command",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE (a)",
+      "source_sha256": "86507761fcd5705b3c537fd0e444c666121555c53b0663ea01d0d75ca96a33f5",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 36,
+      "directive": "command",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE \"abc\"",
+      "source_sha256": "13480265e6caae857e3887934729f353576444d91f967333a1802b3e3a50a75c",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 37,
+      "directive": "command",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE ",
+      "source_sha256": "a709c721ac9e326c461da31129f7df7eacdcf50f66d64af08403984f18b4222a",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 38,
+      "directive": "command",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a,b",
+      "source_sha256": "174456cbb0b072f246731dd84048b6ece687f434ef477383dea25625123c0524",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 39,
+      "directive": "command",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a:b",
+      "source_sha256": "d028bb47c7bedc5de0a8ab55080508cb3456bdde90bb07ed240fa34f104cf435",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 40,
+      "directive": "command",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a.b",
+      "source_sha256": "2e63c4cb67e5fe78a4ac9fb5e343466ac99781d25b88d34a0d38c9d58e0e9100",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 41,
+      "directive": "command",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE alpha beta",
+      "source_sha256": "9119a119ab1f785f10f08ce74e10154cf7cfaac56fa52c367bb5c338afac4de0",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 42,
+      "directive": "command",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a[1]",
+      "source_sha256": "169e5eceb47586e3659f2118b41d2590055345f459b00e21674f56927d5d5837",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 43,
+      "directive": "command",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE \u00e9",
+      "source_sha256": "ba07d78713878b5b56a7179611ddc2ed6ff98d930a840768b00afa93b6aa8e73",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 44,
+      "directive": "command",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE _x",
+      "source_sha256": "ab0d1fc2a3d44fff99030af123e9a611284ed93809bcc570c989440d26729d5b",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 45,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE Alpha STOP",
+      "source_sha256": "c043cac349c6e4e7b7034ff5dec5da9200c5604814fb30abc928bee500faf1a1",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 46,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE A_2 STOP",
+      "source_sha256": "8b1400e9d30e0152ae165cc756916242a4461068b90860024499466d7deb23d0",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 47,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE 1 STOP",
+      "source_sha256": "93bb38d0a35ef12abcd0da670add96e52516bc3ca86957089b336f08e22d0bc7",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 48,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE 12abc STOP",
+      "source_sha256": "8165ab4280d9a8ae7c4e82030d6ca921c1c6f60d1014a5d498c26faf4044e589",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 49,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a + b STOP",
+      "source_sha256": "b85ab4e32b11e6239393cde204813923acdcaaf49311debcdcc2c447eae70209",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 50,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE (a) STOP",
+      "source_sha256": "a57ab0de0e3115a0752ca6910b49a85222da72515df65d48921ef85c13c82c99",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 51,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE \"abc\" STOP",
+      "source_sha256": "28411c6810d75cd547f030428a874c6d48bde6c865e63e157d2586f2530362c3",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 52,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE  STOP",
+      "source_sha256": "8cd93686c7d54e0d07afebc3c1f0f811b432fcf112ad46fbd8651dda03b961a4",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 53,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a,b STOP",
+      "source_sha256": "4690da2ab1d7600e4807375781a59510e012f8faf2de39b61ad2b44adb1e402b",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 54,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a:b STOP",
+      "source_sha256": "562abc5d49b8a1823523e02a3e66584cf33509822312bc262fee2f25c2503a0f",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 55,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a.b STOP",
+      "source_sha256": "69f8060a13eca8abcf8e84b9d8139d2c68a6513adf751d6a7cd8e470f5d5a70a",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 56,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE alpha beta STOP",
+      "source_sha256": "a4fd2b727ba89ce9c8c0e405e71781f6228c841678532ec16dcfcc2de9b38b0d",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 57,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a[1] STOP",
+      "source_sha256": "c9d0872e558b337860359fe9c61e69d48850cd76b56f87ac2bf20a807f0afa43",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 58,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE \u00e9 STOP",
+      "source_sha256": "4470caef7c122c4078b79cb015dade0a45573f29d5b69721e95db387a3f0ee65",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 59,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE _x STOP",
+      "source_sha256": "85d7291782c3fc9eace014cbc306c2ac85a194534e631dd355069ba53634be0b",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 60,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE Alpha STOP",
+      "source_sha256": "adcf568e71d654e51877621e9f9918aa1886758ee017d89a5ac39026f2bb574c",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 61,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE A_2 STOP",
+      "source_sha256": "a640f8741d08d8b72b94701642a26ab71a32aa4120e2aa02e1f59e87a0b641c9",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 62,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE 1 STOP",
+      "source_sha256": "2d79ec51e932db0f2c42b52b54677f3a1ca9544418d5b4a070dac4d3d35b5b38",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 63,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE 12abc STOP",
+      "source_sha256": "d1d051288d578b448675f3fa23bf2fee4c50d00edab2be8fd4288e6887f8bf6d",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 64,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a + b STOP",
+      "source_sha256": "d8144709cd80f10e816844fd2474a97763240959fdec62e9acd6cc8b7487dab8",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 65,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE (a) STOP",
+      "source_sha256": "dc918c830ef0149032b53b60189ab3ab0f20291d86193dfa41d727a6a5c467aa",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 66,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE \"abc\" STOP",
+      "source_sha256": "a77c00f2aee49d380b906920c4831e87af999cad341c7792aeb25f74affed826",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 67,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE  STOP",
+      "source_sha256": "5057a60d5c701d225e50669b7259b8fcf020beeb07b5771f2608b8fcc60baecf",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 68,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a,b STOP",
+      "source_sha256": "432ec49f6439fd49595ae928e1fde875764a09816f1621761c2d622e53afe19b",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 69,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a:b STOP",
+      "source_sha256": "287eef9a08e13e87798251024f732e8152c301143d7a6d65724b3ad5f01ebd7f",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 70,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a.b STOP",
+      "source_sha256": "ff8f41f39c70d1606e993b81a2f93b982c6c399801376bd0ef0fc84c572faff1",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 71,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE alpha beta STOP",
+      "source_sha256": "d490e085f2585aee35fd44b6047eb2a61fc7361f1ae81a28ad974a5f48d5c2ee",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 72,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a[1] STOP",
+      "source_sha256": "04a973d96b3749a246474cdb4669b174c5312e4fb9d8d3c16b1ccf9f15d48a4b",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 73,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE \u00e9 STOP",
+      "source_sha256": "b4c77f78910a5a03633ca29366a8c61bf66a38817494d471064b5b280d3daac4",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 74,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE _x STOP",
+      "source_sha256": "92a45563a84d71f462b67f29ada7a17f739e03f54d21069e9b152419f2603f10",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 75,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE Alpha",
+      "source_sha256": "194aa056cb283eaea92aa9a9e578cc792324a4960cc918a33116f67964c65d15",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 76,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE A_2",
+      "source_sha256": "71fe71e6d38f92e0ffe9c2ac7c8523596d90817cc5a54f5c452ed44a78ca7899",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 77,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE 1",
+      "source_sha256": "e58b29c6b6cf46bcb120a33c5e1ddd60bcc23b839f0024aefb3b2265970d2891",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 78,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE 12abc",
+      "source_sha256": "3ae07edb603be2bd38b19a632d9a001b726a32760c15f8c453152230fe7d808f",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 79,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a + b",
+      "source_sha256": "bbbd2b68ee4a2541dc297b2506058e6d49f7a490d2adac7ac90a06f53ab309ab",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 80,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE (a)",
+      "source_sha256": "1a1dd5593b42532025be61e88097b0799d669614e84cb035776e45bab6258aaf",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 81,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE \"abc\"",
+      "source_sha256": "af3c6655efbc6e0251240e4e47e3477788a23991889f8e75ca29f5d9a69ac027",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 82,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE ",
+      "source_sha256": "7db2686e2391bd9968fae7e00e3b7f75bd93f437d64513a6a01a8267bbca086a",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 83,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a,b",
+      "source_sha256": "0ca9378b0452eac7d4c8544e31babce58ec36e0c3525a091041c0f64bd5aaec2",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 84,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a:b",
+      "source_sha256": "5d9e199b22c8c8265b2cc6ddca8e2a6946241b33bb6d5206ba420c4a29bb4ede",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 85,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a.b",
+      "source_sha256": "38224a462e808c1b91216aed1069e7051951e399cd4afff0da054baecf1be272",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 86,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE alpha beta",
+      "source_sha256": "55cd5057d6851c98de91aa99aea6d64c745df5a3872cddea65f689a9ecc06371",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 87,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a[1]",
+      "source_sha256": "ecc973c8b490acefac51ffa19aaa23567d771dfa4dd3dc1750886627f550aefb",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 88,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE \u00e9",
+      "source_sha256": "7a0e684b8546c93aa148e96f0827447445052af1e3477e210d460c30a57df1e3",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 89,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE _x",
+      "source_sha256": "f93c8cdd285290ef1a26fc3239ac2dab4516c40972f16b38fe95aae22de3e537",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 90,
+      "directive": "translate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE Alpha STOP",
+      "source_sha256": "583e0d55283a9118dd341a01acb350b612f807e0cfbeb770178d4c93902c79a5",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 91,
+      "directive": "translate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE A_2 STOP",
+      "source_sha256": "9d49329d47db3c5dc5f68caaeed30a9f23e70ac3a13e2ea4cd697462678f670c",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 92,
+      "directive": "translate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE 1 STOP",
+      "source_sha256": "f81aff91d1eb2a1d1899e4d79d0118904f78a214b333dbdd782bb4be214a979a",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 93,
+      "directive": "translate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE 12abc STOP",
+      "source_sha256": "b4aed3ed34a9e1feeb093da93a6bdc7f54bc07f58e0e56b1354140d463af3bbf",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 94,
+      "directive": "translate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a + b STOP",
+      "source_sha256": "827e4dcdb21e42097e22f5df71800c53ad06fa618b69e21231993c9e66c504d4",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 95,
+      "directive": "translate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE (a) STOP",
+      "source_sha256": "a62f9cffc5a197e358f2b21276fbe86a739ad1dd293bf3728965ee7525b0858f",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 96,
+      "directive": "translate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE \"abc\" STOP",
+      "source_sha256": "ed27ce9269d8bfe24532685bb9c1099dc2d09306ee71594e25ae300c67e7869d",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 97,
+      "directive": "translate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE  STOP",
+      "source_sha256": "bffcc2369ce6c5e4bee367cf3c108adca200deff954108c4d3b5245672bb266f",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 98,
+      "directive": "translate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a,b STOP",
+      "source_sha256": "b60a5a0c0e3868656054a931be42beb86c2f386f73933586e2e1db397732d7d5",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 99,
+      "directive": "translate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a:b STOP",
+      "source_sha256": "207f2f7cf9f5a9758019a2183a92674246e15e54091fcc86f39810040195c3bd",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 100,
+      "directive": "translate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a.b STOP",
+      "source_sha256": "c321f234347e4cf73e67d937a8a8a594f8b4674f1ca1b931271b8d943b2ca15d",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 101,
+      "directive": "translate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE alpha beta STOP",
+      "source_sha256": "496dd571e9fd1542171812d724521e9ddf52cf5cad2e102d59dafd1e4a7a5906",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 102,
+      "directive": "translate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a[1] STOP",
+      "source_sha256": "19cb498f367342a99ed7e64fbcb3206aa75eef023bee8a9807580586c68de966",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 103,
+      "directive": "translate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE \u00e9 STOP",
+      "source_sha256": "c64c441677ede319626cbcea50c48694bc4ad9d00ab572a8e632dcc1c80c5609",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 104,
+      "directive": "translate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE _x STOP",
+      "source_sha256": "1025e2fb139d82e77142f237c9df375ee85dd871d478dc7513bf857b4d381bc0",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 105,
+      "directive": "translate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE Alpha STOP",
+      "source_sha256": "2b58c2f41d10ed21d66f2522c6b43236fe8f65c0e4c71a54663a88f316c76a3c",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 106,
+      "directive": "translate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE A_2 STOP",
+      "source_sha256": "d15364b16fef6fb77b51fb0b49317138a43ae2341466cd6c85bcc1e2b43b98c6",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 107,
+      "directive": "translate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE 1 STOP",
+      "source_sha256": "6713ff6ae44d99f08794c7223b4d1a9ec1d18af8cc60ef10a0be28cfde268bf6",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 108,
+      "directive": "translate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE 12abc STOP",
+      "source_sha256": "729bd1331e65f5de441cd644670d11d7713a330783fc48ff18318593c8579247",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 109,
+      "directive": "translate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a + b STOP",
+      "source_sha256": "31b8b154b3f6e2c88248d58620dce6f497ca70f1a8ea9272973da5401f312113",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 110,
+      "directive": "translate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE (a) STOP",
+      "source_sha256": "fd66f5934cd8b6a0c604f10e8bdc680caaf9c7428fc9a21f8c2031847c9482d3",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 111,
+      "directive": "translate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE \"abc\" STOP",
+      "source_sha256": "fc92064a4ad889f2dafc4bbb30359aa5ce09aa4336b3a67aca66072e7aae6c17",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 112,
+      "directive": "translate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE  STOP",
+      "source_sha256": "c06d15dfe16935abf7ee5265345abb7db8a63449742179fd4ee7b74e10bc67fb",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 113,
+      "directive": "translate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a,b STOP",
+      "source_sha256": "69f8e922625a4ca4257d7fedadbd48277e0082616c1123b87942eaae496cb805",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 114,
+      "directive": "translate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a:b STOP",
+      "source_sha256": "d24222e5baa79d917e6b5b831d4cb13733e4c63c2646c2f9e1379f8870eec8df",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 115,
+      "directive": "translate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a.b STOP",
+      "source_sha256": "f2ec5d714728bbb83172b0e69c9d12b45e935327079ad243cb5f22ba7feb27ce",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 116,
+      "directive": "translate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE alpha beta STOP",
+      "source_sha256": "9ea98852f70a8f60f3bb94c5039a1b72cf1d25c496d9e551f75f0635698f6f96",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 117,
+      "directive": "translate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a[1] STOP",
+      "source_sha256": "a904c873fe8f2bb74e1889bc48ea8b21b3b196de6cdb438e815d2fa29ab55cca",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 118,
+      "directive": "translate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE \u00e9 STOP",
+      "source_sha256": "4ccc01b41cd4ecca33b713a58a3b2d865f2067b64f7626747b9547351ca80241",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 119,
+      "directive": "translate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE _x STOP",
+      "source_sha256": "8cb5b2e2eb0c7915d7cdea0db4ab27b9713c9ae1716a2e5ab060a05b70612836",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 120,
+      "directive": "translate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE Alpha",
+      "source_sha256": "dc304e4ed5ed590093a51d84c35c3f05b188bbd4cf18ff8658dcf4c09de5c3c8",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 121,
+      "directive": "translate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE A_2",
+      "source_sha256": "2331a39ed5e3ba0f3115c0f3460f385c0ce81fce8c66c395542ad88e329a0d9d",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 122,
+      "directive": "translate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE 1",
+      "source_sha256": "02765777d220679b704db5ad64c533b6246698ee046c443b8dd7c9b4ae3cbacb",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 123,
+      "directive": "translate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE 12abc",
+      "source_sha256": "97c135e27bc5babbfc0c16412a5038538f54b7cf3bb852a055054531c2fe982a",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 124,
+      "directive": "translate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a + b",
+      "source_sha256": "7d8cf57e4c315db6e6f1f9b12b21fcf9f0e2bfde693c0f4b7e7cf114e2ac2117",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 125,
+      "directive": "translate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE (a)",
+      "source_sha256": "4d789599cc85619064206ed788c452f4cb3f38e6496201eb2e97f087712d6741",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 126,
+      "directive": "translate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE \"abc\"",
+      "source_sha256": "68cae01db77c25a6bfcefce418fd5d2fa119de0dc9c06a5d2baef659d79609cb",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 127,
+      "directive": "translate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE ",
+      "source_sha256": "27aa3f05d9232179f1f257e7c65363ca34f78b8496378d364fe44b67e64b6411",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 128,
+      "directive": "translate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a,b",
+      "source_sha256": "82cb45f35fcc60be66e59984bbdaa3efab7dafe9a4d75ab74f47c75f5b42c783",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 129,
+      "directive": "translate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a:b",
+      "source_sha256": "38ab48839377e59879b4b6dd465854073638421ce97175f31d884f9f61f23abc",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 130,
+      "directive": "translate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a.b",
+      "source_sha256": "c62bfc8078873431a19acb489d31e95993dc772682c11d2218a4459a089b0e99",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 131,
+      "directive": "translate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE alpha beta",
+      "source_sha256": "e7d23856f337644918b48c61b3ea8d0b31366886d50102879c61ba18c0033537",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 132,
+      "directive": "translate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a[1]",
+      "source_sha256": "a68e703fb0b27fac03129a40889426b5af8e365d84520c510dc68f230f9f3503",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 133,
+      "directive": "translate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE \u00e9",
+      "source_sha256": "03a48dd0e8d13eed195519e59836a06b3961891e12f70767c5059ebb2560b5b4",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 134,
+      "directive": "translate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE _x",
+      "source_sha256": "e8e716089836afa8adbb97126eb3d8a572d31334e78e54cd1041cfdaa51f66af",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 135,
+      "directive": "xtranslate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE Alpha STOP",
+      "source_sha256": "514b9a03facb08dd18af90af962d054b651e1291fa7b3490726738ce020cb671",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 136,
+      "directive": "xtranslate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE A_2 STOP",
+      "source_sha256": "387429271b008d31b6785d14a01ae847e17ad62f8b8e75af2cf49058187805ef",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 137,
+      "directive": "xtranslate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE 1 STOP",
+      "source_sha256": "ba23709ad425432430df9b4245c5136775575271b2ddaa4d5b7af980ca96ed99",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 138,
+      "directive": "xtranslate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE 12abc STOP",
+      "source_sha256": "140b7ee9857669e9f5ca013870ce2f9cdecb2b6c0de3b3c15aebf1f99b1e2d25",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 139,
+      "directive": "xtranslate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a + b STOP",
+      "source_sha256": "d02e27dc706ebe24bdc0c21bf20fc52e50225a659d73892dd6eda73cbb797291",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 140,
+      "directive": "xtranslate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE (a) STOP",
+      "source_sha256": "e400f06c989dfb70debe6406a140c413b997a2f7c458f29d1c5825788691051d",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 141,
+      "directive": "xtranslate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE \"abc\" STOP",
+      "source_sha256": "61d2a4a60aededc2b4f375bb884b7f4f47feef5099f223298bcbd325a5b15fa5",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 142,
+      "directive": "xtranslate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE  STOP",
+      "source_sha256": "4ff342d3fd29fef3f626d8919ff3a499a8e9780f08eaf3ead6177f8e3d83b65f",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 143,
+      "directive": "xtranslate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a,b STOP",
+      "source_sha256": "01855f9ff9711f170b07edd84a4ba7af964d19a4ba854cedbd4f7ff8ce821ba3",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 144,
+      "directive": "xtranslate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a:b STOP",
+      "source_sha256": "564eaf9d38504c79318d915f0fdbe3003426a43d9582d4e5409566e8b3a0f90d",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 145,
+      "directive": "xtranslate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a.b STOP",
+      "source_sha256": "c9f40ecc6a1ae0d326bb217e0936288e4e99ecedf9fd7aae3107002a689ad46a",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 146,
+      "directive": "xtranslate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE alpha beta STOP",
+      "source_sha256": "1897c0ec3daf98d5c7e57e33d7f3cbf1cac068847a4745a5c54d5f324f4802a2",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 147,
+      "directive": "xtranslate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE a[1] STOP",
+      "source_sha256": "7332f599b989944870142b27601520efa9b89b06f7396c6d1632bbadcbabcaa9",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 148,
+      "directive": "xtranslate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE \u00e9 STOP",
+      "source_sha256": "fd22e7d0364682b090970f70f3ddcc732d5cf7a31ccc81e5eae5a15b5993c8da",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 149,
+      "directive": "xtranslate",
+      "pattern": "PROBE <!x!> STOP",
+      "input": "PROBE _x STOP",
+      "source_sha256": "570d33dcb3b8842c8deacd2c4e5d6d70e22e4e95c47405d0705110eec829cba2",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 150,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE Alpha STOP",
+      "source_sha256": "eba75ea0b7e4d0e7c770cbbc9475ddcad7772c42ba11091b4676cf289f58efce",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 151,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE A_2 STOP",
+      "source_sha256": "aebe1235878d596b44390cc20fbe7e8285fece21873dd04ab5042bcfed8b3975",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 152,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE 1 STOP",
+      "source_sha256": "771070db1f4e1819d35684ff47b159423b05c97c5b81684446f87105a11b0252",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 153,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE 12abc STOP",
+      "source_sha256": "7f24cf8858654ed7cd093f14c5d08f000b5ac122ccf5b6723275083c3bd52841",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 154,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a + b STOP",
+      "source_sha256": "f63a1ddb4a0fcf046f770c7d0549be5fcf21dc317761e6915ac2f1a5f44917a1",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 155,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE (a) STOP",
+      "source_sha256": "d5a14a68a6911ca1cc1b4eb362681a579952f92ed12fdaff046c4a34f9667d39",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 156,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE \"abc\" STOP",
+      "source_sha256": "b5da55b52fb0a45fd0a04c9e452ddabe958811d30283bef08f18473887901b60",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 157,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE  STOP",
+      "source_sha256": "0b0c8dbee935584dbab83d4d57be9ec2893401ba5ab3d68a468e80751d5c12a9",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 158,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a,b STOP",
+      "source_sha256": "b3c5180051048e9d7a1d34f2763460800bf9a881ae60491d5f5e6d75302b8fd2",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 159,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a:b STOP",
+      "source_sha256": "7dbb776c5179bdfc8f65212c9217ef47bd6d5854e6fce746025a3ec5ff1a4eb2",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 160,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a.b STOP",
+      "source_sha256": "3af9a7ef0ddcaae9bc97f5f9feab627e6bc9ff4645d8ab74e32ed0ed3b104f1e",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 161,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE alpha beta STOP",
+      "source_sha256": "678dbaa01d01d830a28f1e8c17ddfadc8d981e80bf4cf30a47a5e8b46189729c",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 162,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE a[1] STOP",
+      "source_sha256": "9b2437dde32b8617e81c3fb8c57688a1f5772597d2fd0e118a0b309b00d8fc4f",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 163,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE \u00e9 STOP",
+      "source_sha256": "133c95815b3fb542d16f4fd77848ea7b225b445a0fa3b15494b1551ea878b29a",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 164,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*> STOP",
+      "input": "PROBE _x STOP",
+      "source_sha256": "7004ec1fab50d4d2f6a56769f47ccef96c422c3fb93b49b669f8f4f376c5ce9e",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 165,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE Alpha",
+      "source_sha256": "5a3a847c9bc18c82a180560b4cb98b02cb3ff01481d9649a1fe6d50cc58c80d1",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 166,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE A_2",
+      "source_sha256": "c1da56b67c5e1d747b407de3b37771a1a371ec842a610c891b2c83dc864a17f9",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 167,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE 1",
+      "source_sha256": "9d14bf266178cdc8fcc6ea10a8459e481eef0c6579dbbe739f394109efb3afa4",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 168,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE 12abc",
+      "source_sha256": "99a46c4d415e25b90d9018cac84895c4a580bdb82c5001b06dec6150198c5465",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 169,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a + b",
+      "source_sha256": "4393fea00c56b33bfeb25ef6ab0b2843e480ec6589ff3d12131934327e1fdcab",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 170,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE (a)",
+      "source_sha256": "619413ccd73a6e658e9e470467eb36a622b7d4bf805d7e555a3351f067a545a1",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 171,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE \"abc\"",
+      "source_sha256": "62cc59b1fb3586e3247fa83f6fe7967bd65c45883dd6e61bf7edd0705ae6e584",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 172,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE ",
+      "source_sha256": "684052726fe37b0a4f1934d8cdb688aee3853752f2b0a2e1d3e2660b4d631e22",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 173,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a,b",
+      "source_sha256": "c71fafae548e2ba552ef0baf04033351210ca4068e30c2e39a555f47d984412c",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 174,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a:b",
+      "source_sha256": "7f7580d4f6b0cc5f8dd2d3bedcaabac989b6a64eba4f3d1fda2e7fd3cb03a017",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 175,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a.b",
+      "source_sha256": "d8497e7d729bb68b7bf9dc3b6d0d6534f2e1c598f20541ced409580d124f25dd",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 176,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE alpha beta",
+      "source_sha256": "85d844fb6e6834df14b4c127b3473e94abed69932b088f1af5a4aee81833017f",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 177,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE a[1]",
+      "source_sha256": "b2187955bb754112add783d6411dfa24e9a2fe35051b5756b76e8a33fd2b2ce0",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 178,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE \u00e9",
+      "source_sha256": "1a54b6fe5f3e2ed623b15e9c33f431e093d2c980aa73aa862618d7baed9cacff",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 179,
+      "directive": "xtranslate",
+      "pattern": "PROBE <*x*>",
+      "input": "PROBE _x",
+      "source_sha256": "5382c0135f17074afdf8a23cd53963f05999a56cf991b479d46bc56a50801ae7",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 180,
+      "directive": "xcommand",
+      "pattern": "PROBE [<!x!>]",
+      "input": "PROBE",
+      "source_sha256": "5310b92ce449fd25c029f4ce23cbfc91e2ecdefe03f323d2f87610042d906dc1",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 181,
+      "directive": "xcommand",
+      "pattern": "PROBE [<!x!>]",
+      "input": "PROBE alpha beta",
+      "source_sha256": "e2ea5c85687d27316d484da9d5a4d5d0f604b17ffb10b384dd9953c18d092e3f",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 182,
+      "directive": "xcommand",
+      "pattern": "PROBE [<!x!>] STOP",
+      "input": "PROBE alpha STOP",
+      "source_sha256": "36c5af1be950abe6d1e9f0236a2137105ad65da727ab404fef1e62488f56ae8d",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 183,
+      "directive": "xcommand",
+      "pattern": "PROBE [<!x!>] <!y!>",
+      "input": "PROBE alpha beta",
+      "source_sha256": "48667e5f9d99efe82fa025e0f378f5cd7cf9e16fcdf4f9e00e546369e271f7d4",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    },
+    {
+      "case": 184,
+      "directive": "xcommand",
+      "pattern": "PROBE [WORD <!x!>]",
+      "input": "PROBE WORD alpha WORD beta",
+      "source_sha256": "5aa38d9ddb701447d3cfe62aa71d12820b8614c8fe64b6f8622060280d51203d",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 185,
+      "directive": "xcommand",
+      "pattern": "PROBE [<*x*>]",
+      "input": "PROBE",
+      "source_sha256": "8cbf17ec9201abbfc81c228bb392f878b7cc3862c020321a169a01079dfdf76f",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 186,
+      "directive": "xcommand",
+      "pattern": "PROBE [<*x*>]",
+      "input": "PROBE a + b",
+      "source_sha256": "4a7fe07322f1c8dad2e817305628b3ecaa2584ff52f4820ce18bb0da2807dd83",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 187,
+      "directive": "xcommand",
+      "pattern": "PROBE <*x*> [STOP]",
+      "input": "PROBE alpha STOP",
+      "source_sha256": "1e8f49b185f302c9c41095b4fa7a1810288308cb0325f3d60110c53c7d3941ec",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 188,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> <!y!>",
+      "input": "PROBE alpha beta",
+      "source_sha256": "f47d4e9e548acb4bfcbdd268a8ae9f1028bbedad6dfd71424e319f97fbbbeda9",
+      "reference_rule_matched": true,
+      "own_preprocess_exit": 0,
+      "comparison": "matched token stream including quoted bytes"
+    },
+    {
+      "case": 189,
+      "directive": "xcommand",
+      "pattern": "PROBE <!x!> <!y!>",
+      "input": "PROBE alpha 1",
+      "source_sha256": "88118dd85ee03f09e14d698155523a27f5d6bfa93cd6a11c3c0aba447b466189",
+      "reference_rule_matched": false,
+      "own_preprocess_exit": 1,
+      "comparison": "nonmatch;own stricter incomplete-command diagnostic,reference leaves source unchanged"
+    }
+  ]
+}

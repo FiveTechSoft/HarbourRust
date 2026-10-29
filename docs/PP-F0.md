@@ -203,3 +203,20 @@ too broad. Live hbpp accepts `<!x!>` and `<*x*>`; our validator rejects them.
 See experiments/pp-markers for45 own-source preprocessor-only probes, including
 nonmatching inputs and wildcard terminal/nonterminal distinction. This is a
 recorded implementation gap, not newly completed Harbour syntax or runtime.
+
+## Authorized marker increment (2026-10-29)
+
+The scoped <!x!> and <*x*> implementation follows190 own-source hbpp probes.
+Identifier matching is ASCII identifier only. Terminal wildcard captures the
+whole nonempty remainder without requiring a valid expression; a later required
+literal therefore does not match. Optional groups containing identifier markers
+repeat greedily and collect captures. Existing result-marker insertion and
+rule removal use the unwrapped identifier name. No class/runtime/driver support
+follows from accepting a marker in an included header. In268 originals the first
+blocking diagnostic moves in31sources,with no extra compilation acceptance.
+
+Nonmatches still differ diagnostically: Harbour preprocessor leaves the source
+untranslated,our engine reports incomplete command when the first word matches.
+This prior behavior is retained,not a claim of identical .ppo or diagnostics.
+Full command grammar,other marker forms,translation priority and other previous
+limits remain. See experiments/pp-markers/README.md for tests and provenance.

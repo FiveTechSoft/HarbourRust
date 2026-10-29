@@ -1,0 +1,529 @@
+[
+  {
+    "file": "tests/cgi.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clasinh.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/classch.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/cls.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsccast.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsicast.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsnv.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsscast.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsscope.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/declare.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/destruct.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/foreach2.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/html.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/inhprob.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/inifile.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/inifiles.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/macro.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/money.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/op.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/overload.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/persist.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/rddtest/adscl52.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 32: bad match marker <*x*> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 61: cannot find include ads.ch"
+      ]
+    }
+  },
+  {
+    "file": "tests/rddtest/adscl53.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 32: bad match marker <*x*> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 61: cannot find include ads.ch"
+      ]
+    }
+  },
+  {
+    "file": "tests/rddtest/cdxcl52.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 32: bad match marker <*x*> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+      ]
+    }
+  },
+  {
+    "file": "tests/rddtest/cdxcl53.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 32: bad match marker <*x*> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+      ]
+    }
+  },
+  {
+    "file": "tests/rddtest/ntxcl52.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 32: bad match marker <*x*> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+      ]
+    }
+  },
+  {
+    "file": "tests/rddtest/ntxcl53.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 32: bad match marker <*x*> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+      ]
+    }
+  },
+  {
+    "file": "tests/rddtest/rddmktst.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 27: bad match marker <*x*> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 27: bad match marker <desc: DESCENDING> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/rddtest/rddtst.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 32: bad match marker <*x*> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 19: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)"
+      ]
+    }
+  },
+  {
+    "file": "tests/speedstr.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/stripem.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 128: bad match marker <!ClassName!> in #command/#translate (Harbour: E0010)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  }
+]

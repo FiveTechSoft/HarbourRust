@@ -463,35 +463,30 @@ fn cmd_tokens(text: &str) -> Vec<String> {
 // <(x)> parenthesized-expression captures, and [ ... ] optional groups
 // including nesting (probe b18).
 
-// Harbour accepts only these match-marker forms: <x>, <(x)> and <x,...>
-// (identifier = [A-Za-z_][A-Za-z0-9_]*). It rejects <"x">, <#x> and <{x}>
-// with E0010 (probe b41 and Harbour's own behaviour); we reject them at
-// define time too.
+// Own black-box marker probes: plain/list/paren plus ASCII identifier <!x!>
+// and rest-of-line <*x*>. This is not the full Harbour marker grammar.
+fn marker_name(inner: &str) -> &str {
+    if inner.len()>=2 && ((inner.starts_with('(') && inner.ends_with(')'))
+        || (inner.starts_with('!') && inner.ends_with('!'))
+        || (inner.starts_with('*') && inner.ends_with('*'))) {
+        &inner[1..inner.len()-1]
+    } else { inner.strip_suffix(",...").unwrap_or(inner) }
+}
+fn marker_ident(s: &str) -> bool {
+    let b=s.as_bytes();
+    !b.is_empty() && (b[0].is_ascii_alphabetic() || b[0]==b'_')
+        && b[1..].iter().all(|c|c.is_ascii_alphanumeric() || *c==b'_')
+}
 fn validate_markers(pattern: &[String], line: usize) -> Result<(), String> {
-    let ok_ident = |s: &str| {
-        let b = s.as_bytes();
-        !b.is_empty()
-            && ((b[0] as char).is_ascii_alphabetic() || b[0] == b'_')
-            && b[1..].iter().all(|&c| (c as char).is_ascii_alphanumeric() || c == b'_')
-    };
     for t in pattern {
-        if t.starts_with('<') && t.ends_with('>') && t.len() > 2 {
-            let inner = &t[1..t.len() - 1];
-            let name = if inner.starts_with('(') && inner.ends_with(')') {
-                &inner[1..inner.len() - 1]
-            } else if let Some(p) = inner.strip_suffix(",...") {
-                p
-            } else {
-                inner
-            };
-            if !ok_ident(name) {
-                return Err(format!("line {}: bad match marker {} in #command/#translate (Harbour: E0010)", line, t));
+        if t.starts_with('<') && t.ends_with('>') && t.len()>2 {
+            if !marker_ident(marker_name(&t[1..t.len()-1])) {
+                return Err(format!("line {}: bad match marker {} in #command/#translate (Harbour: E0010)",line,t));
             }
         }
     }
     Ok(())
 }
-
 
 // Harbour keyword abbreviation (probes b45/b45b/b45c/b45d/b45e): a source
 // word matches a pattern literal when it is EQUAL (case-insensitive) or a
@@ -513,13 +508,7 @@ fn validate_result_markers(pattern: &[String], result: &str, line: usize) -> Res
     for t in pattern {
         if t.starts_with('<') && t.ends_with('>') && t.len() > 2 {
             let inner = &t[1..t.len() - 1];
-            let base = if inner.starts_with('(') && inner.ends_with(')') {
-                &inner[1..inner.len() - 1]
-            } else if let Some(p) = inner.strip_suffix(",...") {
-                p
-            } else {
-                inner
-            };
+            let base = marker_name(inner);
             names.push(base.to_lowercase());
         }
     }
@@ -592,9 +581,35 @@ fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
                 }
                 if depth != 0 { return None; } // unbalanced pattern
                 let inner = &pat[pi + 1..j - 1];
+                // A lone optional identifier marker repeats over adjacent
+                // identifiers (own oracle probes), collecting in one capture.
+                if inner.len()==1 && inner[0].starts_with("<!") && inner[0].ends_with("!>") {
+                    let start=si;
+                    while si<src.len() && marker_ident(&src[si]) {si+=1;}
+                    caps.push(src[start..si].join(" "));pi=j;continue;
+                }
                 let mut gcaps: Vec<String> = Vec::new();
                 match match_seq(inner, &src[si..], &mut gcaps) {
-                    Some(consumed) => { si += consumed; caps.extend(gcaps); }
+                    Some(consumed) => {
+                        si += consumed;
+                        // Optional groups containing the new identifier marker
+                        // repeat greedily, appending each marker capture in order.
+                        if consumed>0 && inner.iter().any(|t|t.starts_with("<!")&&t.ends_with("!>")) {
+                            loop {
+                                let mut more=Vec::new();
+                                match match_seq(inner,&src[si..],&mut more) {
+                                    Some(n) if n>0 && more.len()==gcaps.len()=>{
+                                        for (dst,value) in gcaps.iter_mut().zip(more) {
+                                            if !value.is_empty(){if !dst.is_empty(){dst.push(' ');}dst.push_str(&value);}
+                                        }
+                                        si+=n;
+                                    }
+                                    _=>break,
+                                }
+                            }
+                        }
+                        caps.extend(gcaps);
+                    }
                     None => {
                         // optional group absent: its markers capture as empty
                         fn markers(pat: &[String], caps: &mut Vec<String>) {
@@ -607,6 +622,14 @@ fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
                     }
                 }
                 pi = j;
+            } else if p.starts_with("<!") && p.ends_with("!>") {
+                if si>=src.len() || !marker_ident(&src[si]) {return None;}
+                caps.push(src[si].clone());si+=1;pi+=1;
+            } else if p.starts_with("<*") && p.ends_with("*>") {
+                // Wildcard consumes ALL remaining tokens, not up to a later
+                // literal. A following required literal therefore cannot match.
+                if si>=src.len(){return None;}
+                caps.push(src[si..].join(" "));si=src.len();pi+=1;
             } else if p.starts_with("<(") && p.ends_with(")>") {
                 // <(x)> match marker: source must be a parenthesized
                 // expression (probes b14/b16); capture the inner tokens
@@ -784,7 +807,7 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
                         let name = &t[1..t.len() - 1];
                         let is_paren = name.starts_with('(') && name.ends_with(')');
                         let inner = if is_paren { &name[1..name.len() - 1] } else { name };
-                        let base = inner.strip_suffix(",...").unwrap_or(inner);
+                        let base = marker_name(inner);
                         if !caps[pi].is_empty() {
                             bound.insert(format!("<{}>", base.to_lowercase()));
                             bound.insert(format!("<({})>", base.to_lowercase()));
@@ -805,7 +828,7 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
                     // <(x)> re-parenthesized (probes b15-b17)
                     let is_paren = name.starts_with('(') && name.ends_with(')');
                     let inner = if is_paren { &name[1..name.len() - 1] } else { name };
-                    let base = inner.strip_suffix(",...").unwrap_or(inner);
+                    let base = marker_name(inner);
                     for (needle, insertion) in [
                         (format!("<{}>", base.to_lowercase()), caps[pi].clone()),
                         (format!("<({})>", base.to_lowercase()), format!("( {} )", caps[pi])),
