@@ -268,3 +268,15 @@ The check rejects duplicate/missing tag or seed assignments. It calls no
 compiler and executes no reference program. The original seed's compiler SHA,
 source hashes and compile acceptance/rejection remain the supporting evidence;
 this metadata operation does not refresh them or create a new test pass.
+
+## Supplementary links,not missing capability inference
+
+`syntax-supplementary-regressions-e71b0ed.json` links7 manually read existing
+regressions to two previously seed-unlinked workstreams.28fresh compile checks
+record both backends/targets. SET decimal/dateformat/century/printer and ancestor
+ProcLine are rejection boundaries. Trim and current ProcName tests are default
+accepted,LLVM rejected. This is evidence a missing seed link did not mean all
+string/introspection functionality was absent. Default runtime provenance is
+separate: these existing manifest rows were in the1098PASS e71b0ed battery.
+This metadata step executes no program and claims no new LLVM runtime pass.
+The17family seed and its original compiler provenance remain unchanged.

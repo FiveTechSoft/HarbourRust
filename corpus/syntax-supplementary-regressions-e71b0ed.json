@@ -1,0 +1,352 @@
+{
+  "compiler": "e71b0ed961b59cb7c9d708eed942174bb6e386c4",
+  "scope": "Seven manually read existing regressions,28fresh compile checks. Supplementary evidence links,not expansion/completion of17seedfamilies. Fresh compile status separated from prior default runtime evidence. No reference original executed.",
+  "cases": [
+    {
+      "file": "tests/t747_set_decimals.hb",
+      "sha256": "9ad3da7ffe414f5457e09bfd34707914e481ec07772607f60c97a8dcaf6f675a",
+      "workstream": "strings-dates-settings",
+      "meaning": "rejection-boundary,not SET implementation",
+      "manifest_kind": "neg",
+      "witnesses": [
+        {
+          "symbol_or_construct": "set decimals to 4",
+          "lines": [
+            2
+          ]
+        }
+      ],
+      "compile_profiles": {
+        "linux-default": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)"
+          ]
+        },
+        "linux-llvm": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)"
+          ]
+        },
+        "windows-default": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)"
+          ]
+        },
+        "windows-llvm": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)"
+          ]
+        }
+      },
+      "runtime_evidence": "default full battery e71b0ed local+remote1098PASS includes this manifest row. This metadata step does not run it; LLVM compile acceptance is not a new LLVM runtime pass."
+    },
+    {
+      "file": "tests/t813_set_callstmt_neg.hb",
+      "sha256": "279eecf8374a05abf07e22413db2490b0e257337b79509d7d4be3931ed6cccd5",
+      "workstream": "strings-dates-settings",
+      "meaning": "rejection-boundary,not Date/SET implementation",
+      "manifest_kind": "neg",
+      "witnesses": [
+        {
+          "symbol_or_construct": "_SET_DATEFORMAT",
+          "lines": [
+            2
+          ]
+        }
+      ],
+      "compile_profiles": {
+        "linux-default": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: unknown function `set` (must be defined before use)"
+          ]
+        },
+        "linux-llvm": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: unknown function `set` (must be defined before use)"
+          ]
+        },
+        "windows-default": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: unknown function `set` (must be defined before use)"
+          ]
+        },
+        "windows-llvm": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: unknown function `set` (must be defined before use)"
+          ]
+        }
+      },
+      "runtime_evidence": "default full battery e71b0ed local+remote1098PASS includes this manifest row. This metadata step does not run it; LLVM compile acceptance is not a new LLVM runtime pass."
+    },
+    {
+      "file": "tests/t814_set_century_neg.hb",
+      "sha256": "0310eaf88dfdff5e2de90ab6c4c0f85a7a023af52ae3053e7f406844f2d8dd50",
+      "workstream": "strings-dates-settings",
+      "meaning": "rejection-boundary,not century/date implementation",
+      "manifest_kind": "neg",
+      "witnesses": [
+        {
+          "symbol_or_construct": "SET CENTURY",
+          "lines": [
+            2
+          ]
+        }
+      ],
+      "compile_profiles": {
+        "linux-default": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)"
+          ]
+        },
+        "linux-llvm": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)"
+          ]
+        },
+        "windows-default": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)"
+          ]
+        },
+        "windows-llvm": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)"
+          ]
+        }
+      },
+      "runtime_evidence": "default full battery e71b0ed local+remote1098PASS includes this manifest row. This metadata step does not run it; LLVM compile acceptance is not a new LLVM runtime pass."
+    },
+    {
+      "file": "tests/t815_set_printer_neg.hb",
+      "sha256": "3a2e9e71474fe9bcd444829c51a772f486a9ff463e5a25eb6268dcd4a7bea9b4",
+      "workstream": "strings-dates-settings",
+      "meaning": "rejection-boundary,not output routing implementation",
+      "manifest_kind": "neg",
+      "witnesses": [
+        {
+          "symbol_or_construct": "SET PRINTER",
+          "lines": [
+            2
+          ]
+        }
+      ],
+      "compile_profiles": {
+        "linux-default": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)"
+          ]
+        },
+        "linux-llvm": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)"
+          ]
+        },
+        "windows-default": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)"
+          ]
+        },
+        "windows-llvm": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)"
+          ]
+        }
+      },
+      "runtime_evidence": "default full battery e71b0ed local+remote1098PASS includes this manifest row. This metadata step does not run it; LLVM compile acceptance is not a new LLVM runtime pass."
+    },
+    {
+      "file": "tests/t854_trim_forms.hb",
+      "sha256": "3b06465fe18a213086634e35993ce0d37875897ab50ffd1f614ad34b154c0c27",
+      "workstream": "strings-dates-settings",
+      "meaning": "selected trim bytes/numeric type/format boundaries,not all strings",
+      "manifest_kind": "pos",
+      "witnesses": [
+        {
+          "symbol_or_construct": "LTrim",
+          "lines": [
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "symbol_or_construct": "RTrim",
+          "lines": [
+            2,
+            3,
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "AllTrim",
+          "lines": [
+            2,
+            3,
+            6,
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "Chr(0)",
+          "lines": [
+            6
+          ]
+        }
+      ],
+      "compile_profiles": {
+        "linux-default": {
+          "accepted": true,
+          "exit": 0,
+          "diagnostic": []
+        },
+        "linux-llvm": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: LLVM scalar: expression unsupported: Str(\"[\")"
+          ]
+        },
+        "windows-default": {
+          "accepted": true,
+          "exit": 0,
+          "diagnostic": []
+        },
+        "windows-llvm": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: LLVM scalar: expression unsupported: Str(\"[\")"
+          ]
+        }
+      },
+      "runtime_evidence": "default full battery e71b0ed local+remote1098PASS includes this manifest row. This metadata step does not run it; LLVM compile acceptance is not a new LLVM runtime pass."
+    },
+    {
+      "file": "tests/t1019_procline_ancestor_neg.hb",
+      "sha256": "484204ae2983a3feaa1339d6fad6c5ec0163324f411a1f843dfa60a53838655f",
+      "workstream": "environment-introspection",
+      "meaning": "negative current-frame boundary,not ancestor-stack support",
+      "manifest_kind": "neg",
+      "witnesses": [
+        {
+          "symbol_or_construct": "ProcLine(1)",
+          "lines": [
+            2
+          ]
+        }
+      ],
+      "compile_profiles": {
+        "linux-default": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: `ProcLine` supports only no argument or literal zero (current frame); ancestor/dynamic levels are not in this increment"
+          ]
+        },
+        "linux-llvm": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: `ProcLine` supports only no argument or literal zero (current frame); ancestor/dynamic levels are not in this increment"
+          ]
+        },
+        "windows-default": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: `ProcLine` supports only no argument or literal zero (current frame); ancestor/dynamic levels are not in this increment"
+          ]
+        },
+        "windows-llvm": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: line 2: `ProcLine` supports only no argument or literal zero (current frame); ancestor/dynamic levels are not in this increment"
+          ]
+        }
+      },
+      "runtime_evidence": "default full battery e71b0ed local+remote1098PASS includes this manifest row. This metadata step does not run it; LLVM compile acceptance is not a new LLVM runtime pass."
+    },
+    {
+      "file": "tests/t1051_procname_current.hb",
+      "sha256": "9fae60bdda08c3c54d56745ee8b49ea2c139cd0befbd00a715aa94874e536506",
+      "workstream": "environment-introspection",
+      "meaning": "current frame name with static call/block,not complete stack introspection",
+      "manifest_kind": "pos",
+      "witnesses": [
+        {
+          "symbol_or_construct": "ProcName(0)",
+          "lines": [
+            3,
+            8
+          ]
+        },
+        {
+          "symbol_or_construct": "static function MixCase",
+          "lines": [
+            7
+          ]
+        }
+      ],
+      "compile_profiles": {
+        "linux-default": {
+          "accepted": true,
+          "exit": 0,
+          "diagnostic": []
+        },
+        "linux-llvm": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Call(\"outstd\", [Call(\"procname\", [])]), Int(\"1\")])"
+          ]
+        },
+        "windows-default": {
+          "accepted": true,
+          "exit": 0,
+          "diagnostic": []
+        },
+        "windows-llvm": {
+          "accepted": false,
+          "exit": 1,
+          "diagnostic": [
+            "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Call(\"outstd\", [Call(\"procname\", [])]), Int(\"1\")])"
+          ]
+        }
+      },
+      "runtime_evidence": "default full battery e71b0ed local+remote1098PASS includes this manifest row. This metadata step does not run it; LLVM compile acceptance is not a new LLVM runtime pass."
+    }
+  ]
+}
