@@ -371,3 +371,25 @@ Fresh result: run.sh 32 PASS lines, zero failures, with 5089 prior differential
 calls, the two independent output checks, and ten error fixtures on both targets
 (20 exact diagnostic comparisons). Normal-backend battery rebuilt/re-run:
 1086 PASS, zero FAIL. This increment has no speed, size or Rust-quality claim.
+
+## Fail-closed unreachable-tail audit, 29 October 2026
+
+Audit after EXIT/LOOP found an experimental boundary defect: lowering stopped
+at the terminator, so unsupported syntax in a later, unreachable statement
+could be accepted without the promised experimental-slice diagnostic. No
+wrong execution was observed, but acceptance contradicted the slice contract.
+This also affected RETURN inside a nested block before the EXIT/LOOP change.
+
+The emitter now checks each terminated tail using a discarded copy of the
+same lowering state, including locals and enclosing loop targets. It emits
+no dead IR into the actual module. This reuses the exact support checks rather
+than maintaining a second, potentially divergent syntax whitelist. Regressions
+reject dead strings after EXIT, RETURN and a two-terminated-arm IF; division
+after LOOP; and an unsupported builtin behind consecutive terminators.
+Supported unreachable statements in loopcontrol.hb still compile and remain
+unexecuted. Default code generation and all frontend semantics are unchanged.
+
+Fresh audit result: run.sh 37 PASS lines, 5089 function comparisons and 20
+exact diagnostic comparisons pass; rebuilt normal battery 1086 PASS, zero
+failures. The five new rejection fixtures run on both emission targets.
+No performance or size claim is added by this validation-only correction.

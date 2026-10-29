@@ -1,5 +1,6 @@
 // Experimental scalar-only LLVM IR lowering. Shares the existing checked AST.
 use super::*;
+#[derive(Clone)]
 struct Ir { out: String, n: usize, label: usize, vars: std::collections::BTreeMap<String,String>, arrays: std::collections::BTreeMap<String,String>, asz: std::collections::BTreeMap<String,usize>, globals: Vec<String>, allocas: Vec<String>, sig_names: std::collections::BTreeSet<String>, bools: std::collections::BTreeSet<String>, traced: bool, frame: String, fname: String, current_line: usize, loops: Vec<(String,String)> }
 impl Ir {
  fn tmp(&mut self)->String { self.n+=1; format!("%v{}",self.n) }
@@ -63,7 +64,13 @@ impl Ir {
  }
  fn isbool(&self,e:&Expr)->bool {match e {Expr::Log(_)|Expr::Cmp(..)|Expr::LNot(_)|Expr::LAnd(..)|Expr::LOr(..)=>true,Expr::Var(n)=>self.bools.contains(n),Expr::Call(n,a) if is_builtin(n,"iif") && a.len()==3=>self.isbool(&a[1]),_=>false}}
  fn cond(&mut self,e:&Expr)->Result<String,String>{let v=self.expr(e)?;let c=self.tmp();self.line(format!("{} = icmp ne i64 {}, 0",c,v));Ok(c)}
- fn stmts(&mut self,ss:&[Stmt])->Result<bool,String>{for s in ss {self.trace_at(stmt_line(s));match s {
+ fn check_dead(&self,ss:&[Stmt])->Result<(),String>{
+  // Reuse the exact lowering checks with the same locals and enclosing
+  // loop destinations, but discard all generated unreachable IR.
+  if !ss.is_empty(){let mut probe=self.clone();probe.stmts(ss)?;}
+  Ok(())
+ }
+ fn stmts(&mut self,ss:&[Stmt])->Result<bool,String>{for (si,s) in ss.iter().enumerate(){self.trace_at(stmt_line(s));match s {
   Stmt::Local(_,n,Expr::ArrLit(items))|Stmt::Assign(_,n,Expr::ArrLit(items)) if self.arrays.contains_key(n)=>{
    let k=self.asz[n];
    if items.len()!=k {return Err(format!("LLVM scalar: array `{}` literal size {} does not match its declaration {}",n,items.len(),k))}
@@ -75,9 +82,9 @@ impl Ir {
    }
   },
   Stmt::Local(_,n,e)|Stmt::Assign(_,n,e)=>{if self.arrays.contains_key(n){return Err(format!("LLVM scalar: whole-array assignment `{}` unsupported",n))}if self.isbool(e){self.bools.insert(n.clone());}let v=self.expr(e)?;let p=self.ptr(n)?;self.line(format!("store i64 {}, ptr {}",v,p));},
-  Stmt::Ret(_,e)=>{let v=if let Some(e)=e{self.expr(e)?}else{"0".into()};self.unlink();self.line(format!("ret i64 {}",v));return Ok(true)},
+  Stmt::Ret(_,e)=>{let v=if let Some(e)=e{self.expr(e)?}else{"0".into()};self.unlink();self.line(format!("ret i64 {}",v));self.check_dead(&ss[si+1..])?;return Ok(true)},
   Stmt::Print(_,es,inline)=>{let mut vals=Vec::new();for (ei,e) in es.iter().enumerate() {if self.isbool(e){return Err("LLVM scalar: logical output not implemented".into())}match e {Expr::Str(s)=>{let k=self.globals.len();let text=if ei+1==es.len(){s.trim_end_matches(' ')}else{s.as_str()};let bytes=text.as_bytes();self.globals.push(format!("@str{} = private constant [{} x i8] c\"{}\"",k,bytes.len(),bytes.iter().map(|b|format!("\\{:02X}",b)).collect::<String>()));vals.push((format!("@str{}",k),Some(bytes.len()),false));},_=>{let v=self.expr(e)?;vals.push((v,None,(fold_int(e).is_some() || matches!(e,Expr::Call(n,_) if is_builtin(n,"procline")))));}}}if !inline{self.line("call void @rt_nl()".into());}for(i,(v,len,lit))in vals.iter().enumerate(){if i>0{self.line("call void @rt_sep()".into());}if let Some(n)=len{self.line(format!("call void @rt_str(ptr {}, i64 {})",v,n));}else{self.line(format!("call void @rt_{}(i64 {})",if *lit{"int"}else{"computed"},v));}}},
-  Stmt::If(_,c,a,b)=>{let c=self.cond(c)?;let t=self.lab();let f=self.lab();let end=self.lab();self.line(format!("br i1 {}, label %{}, label %{}",c,t,f));self.block(&t);let ta=self.stmts(a)?;if !ta{self.line(format!("br label %{}",end));}self.block(&f);let tb=self.stmts(b)?;if !tb{self.line(format!("br label %{}",end));}if ta&&tb{return Ok(true)}self.block(&end);},
+  Stmt::If(_,c,a,b)=>{let c=self.cond(c)?;let t=self.lab();let f=self.lab();let end=self.lab();self.line(format!("br i1 {}, label %{}, label %{}",c,t,f));self.block(&t);let ta=self.stmts(a)?;if !ta{self.line(format!("br label %{}",end));}self.block(&f);let tb=self.stmts(b)?;if !tb{self.line(format!("br label %{}",end));}if ta&&tb{self.check_dead(&ss[si+1..])?;return Ok(true)}self.block(&end);},
   Stmt::While(_,c,b)=>{let h=self.lab();let body=self.lab();let end=self.lab();self.line(format!("br label %{}",h));self.block(&h);self.trace_at(stmt_line(s));let c=self.cond(c)?;self.line(format!("br i1 {}, label %{}, label %{}",c,body,end));self.block(&body);self.loops.push((h.clone(),end.clone()));let done=self.stmts(b)?;self.loops.pop();if !done{self.line(format!("br label %{}",h));}self.block(&end);},
   Stmt::For(_,n,a,b,step,ss)=>{let a=self.expr(a)?;let p=self.ptr(n)?;self.line(format!("store i64 {}, ptr {}",a,p));let b=self.expr(b)?;let h=self.lab();let body=self.lab();let inc=self.lab();let store=self.lab();let end=self.lab();self.line(format!("br label %{}",h));self.block(&h);let v=self.tmp();self.line(format!("{} = load i64, ptr {}",v,p));let c=self.tmp();self.line(format!("{} = icmp {} i64 {}, {}",c,if *step>0{"sle"}else{"sge"},v,b));self.line(format!("br i1 {}, label %{}, label %{}",c,body,end));self.block(&body);self.loops.push((inc.clone(),end.clone()));let done=self.stmts(ss)?;self.loops.pop();if !done{self.line(format!("br label %{}",inc));}self.block(&inc);let v=self.tmp();self.line(format!("{} = load i64, ptr {}",v,p));let pair=self.tmp();self.line(format!("{} = call {{i64,i1}} @llvm.sadd.with.overflow.i64(i64 {}, i64 {})",pair,v,step));let next=self.tmp();let ov=self.tmp();self.line(format!("{} = extractvalue {{i64,i1}} {}, 0",next,pair));self.line(format!("{} = extractvalue {{i64,i1}} {}, 1",ov,pair));self.line(format!("br i1 {}, label %{}, label %{}",ov,end,store));self.block(&store);self.line(format!("store i64 {}, ptr {}",next,p));self.line(format!("br label %{}",h));self.block(&end);},
   Stmt::ArrSet(_,n,ie,e)=>{
@@ -92,7 +99,7 @@ impl Ir {
    self.line(format!("br label %{}",if matches!(s,Stmt::Exit(_)){end}else{cont}));
    // This block is terminated, not a function return: surrounding IF/loop
    // lowering still emits any reachable merge or exit block.
-   return Ok(true)
+   self.check_dead(&ss[si+1..])?;return Ok(true)
   },
   Stmt::CallStmt(_,e)=>{self.expr(e)?;},
   _=>return Err(format!("LLVM scalar: statement unsupported: {:?}",s))

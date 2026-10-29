@@ -12,6 +12,11 @@ cases={
  'string-var': 'function main()\nlocal a := "x"\n? a\nreturn\n',
  'byref': 'function f(x)\nreturn x+1\nfunction main()\nlocal a := 1\n? f(@a)\nreturn\n',
  'builtin': 'function main()\n? Min(1,2)\nreturn\n',
+ 'dead-string-return': 'function main()\nif .T.\nreturn\nlocal s := "unsupported"\n? s\nendif\nreturn\n',
+ 'dead-builtin-chain': 'function main()\nwhile .T.\nexit\nloop\n? Min(1,2)\nenddo\nreturn\n',
+ 'dead-string-exit': 'function main()\nwhile .T.\nexit\nlocal s := "unsupported"\n? s\nenddo\nreturn\n',
+ 'dead-division-loop': 'function main()\nlocal x := 4\nwhile .T.\nloop\n? x / 2\nenddo\nreturn\n',
+ 'dead-string-if': 'function main()\nwhile .T.\nif .T.\nexit\nelse\nloop\nendif\nlocal s := "unsupported"\n? s\nenddo\nreturn\n',
  'exit-outside': 'function main()\nexit\nreturn\n',
  'loop-outside': 'function main()\nloop\nreturn\n'
 }
