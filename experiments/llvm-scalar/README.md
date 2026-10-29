@@ -1063,3 +1063,9 @@ untraced1.0005-1.0015. Host/layout variability remains; do not attribute the
 previous ~20% observation to duplicated constants or claim a durable speed fix.
 The reproducible inverse control and before/after guard are opt-in tools, not
 timing gates in the routine battery. Shared src/pp.rs is untouched.
+
+The routine suite now includes12 compile-only trace interning canaries (6 sources,
+both Linux/Windows). A frozen source hash and byte/length update-sequence hash
+protect against silently dropping repeated updates; unique constant references,
+lengths and all volatile pointer-store counts are checked separately. This adds
+no timing work and does not turn compile-only checks into runtime coverage.

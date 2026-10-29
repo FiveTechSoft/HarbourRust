@@ -111,6 +111,7 @@ python3 check_rejections.py
 python3 check_regressions.py
 
 python3 check_linkage.py
+python3 check_trace_interning.py
 
 # Extended controls use the admitted scalar subset, not new representations.
 python3 prepare_perfextra.py

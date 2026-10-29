@@ -1,0 +1,53 @@
+{
+  "scope": "Frozen diagnostic byte/update sequences from before-after exact guard22f3105. Both target profiles. Not a program string identity ABI or performance proof.",
+  "cases": [
+    {
+      "file": "perfextra.hb",
+      "source_sha256": "481bac43ecbea75ab6cce1e3d135a725b68d406d5418c3ab3958435163dd67e5",
+      "text_updates": 41,
+      "unique_texts": 33,
+      "update_sequence_sha256": "7836b54c29028a394b3b2986ddcc4b896f4e955b7881bdf289db598434b8e24e",
+      "volatile_pointer_stores": 55
+    },
+    {
+      "file": "corpus.hb",
+      "source_sha256": "0bc379852c12c44571d547953f6a9180bdb677795ac2de1b3c9761f5d71c2e4b",
+      "text_updates": 37,
+      "unique_texts": 29,
+      "update_sequence_sha256": "40646f8297f7cc5505c1657e8a1344d47b0ba12fe9013a0e5e0eca6165c95180",
+      "volatile_pointer_stores": 55
+    },
+    {
+      "file": "arraywork.hb",
+      "source_sha256": "56a9ced22d204f1185e30fdfb53e49f49b735c26b6c39e763bbfc47da8f4bb81",
+      "text_updates": 30,
+      "unique_texts": 27,
+      "update_sequence_sha256": "14f6779e0a375353d3439099975cc676c66e168eb7eb2fdb93974dcabd88bac9",
+      "volatile_pointer_stores": 36
+    },
+    {
+      "file": "error-after-call.hb",
+      "source_sha256": "84be2b6f3b96e6c082dd51c48a98291f29a420b3611abfdd01cad04578c744ec",
+      "text_updates": 8,
+      "unique_texts": 6,
+      "update_sequence_sha256": "63c9529aabf59ac4212e0a497ffbb320924f97395dcad0745e0f5f0fae02c1a1",
+      "volatile_pointer_stores": 12
+    },
+    {
+      "file": "error-bitops.hb",
+      "source_sha256": "aedf7ac3be76cdf46e7eadbf0916de214c9edae5b44c7c49a129c1d4d7133a7b",
+      "text_updates": 8,
+      "unique_texts": 6,
+      "update_sequence_sha256": "0de485b79d6d0b2d42083b0d2c1c176ba699cc76728a1bdb79a847bf21a3e959",
+      "volatile_pointer_stores": 12
+    },
+    {
+      "file": "error-boolcalls.hb",
+      "source_sha256": "edb1a374d6d9a35bd6ba2b541e3d21bfb4fba11b39162e30230091725feee7a0",
+      "text_updates": 8,
+      "unique_texts": 5,
+      "update_sequence_sha256": "c8d33f34b0e7aea3781ba742695721479e28531ff2710893f7365c0504094ca8",
+      "volatile_pointer_stores": 14
+    }
+  ]
+}
