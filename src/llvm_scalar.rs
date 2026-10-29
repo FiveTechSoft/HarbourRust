@@ -139,13 +139,36 @@ impl Ir {
   // Block-local names may be reused with another type in disjoint arms.
   // Outer variables retain their frontend-checked type; local classifications
   // must not leak into the sibling arm or enclosing block.
-  let bools=self.bools.clone();
+  let bindings=(self.vars.clone(),self.arrays.clone(),self.asz.clone(),self.bools.clone());
   let result=self.stmts_inner(ss);
-  self.bools=bools;
+  (self.vars,self.arrays,self.asz,self.bools)=bindings;
   result
  }
  fn stmts_inner(&mut self,ss:&[Stmt])->Result<bool,String>{for (si,s) in ss.iter().enumerate(){self.trace_at(stmt_line(s));match s {
-  Stmt::Local(_,n,Expr::ArrLit(items))|Stmt::Assign(_,n,Expr::ArrLit(items)) if self.arrays.contains_key(n)=>{
+  Stmt::Local(_,n,e)=>{
+   // Physical slots are unique per declaration and live in the entry block;
+   // only initialization executes here (including inside repeated loops).
+   let p=self.tmp();
+   if let Expr::ArrLit(items)=e {
+    if items.iter().any(|e|matches!(e,Expr::Log(_)|Expr::ArrLit(_)|Expr::DArrNew)){
+     return Err("LLVM scalar: tagged logical/mixed or nested array literals unsupported".into())
+    }
+    let k=items.len();self.allocas.push(format!("  {} = alloca [{} x i64]\n",p,k));
+    // Initializers cannot refer to their own undeclared binding (frontend).
+    for (i,item) in items.iter().enumerate(){
+     let v=self.expr(item)?;let q=self.tmp();
+     self.line(format!("{} = getelementptr [{} x i64], ptr {}, i64 0, i64 {}",q,k,p,i));
+     self.line(format!("store i64 {}, ptr {}",v,q));
+    }
+    self.arrays.insert(n.clone(),p);self.asz.insert(n.clone(),k);
+   } else {
+    let logical=self.isbool(e);let v=self.expr(e)?;
+    self.allocas.push(format!("  {} = alloca i64\n",p));
+    self.line(format!("store i64 {}, ptr {}",v,p));self.vars.insert(n.clone(),p);
+    if logical{self.bools.insert(n.clone());}
+   }
+  },
+  Stmt::Assign(_,n,Expr::ArrLit(items)) if self.arrays.contains_key(n)=>{
    // A literal containing logicals is Ty::DArr in the checked frontend,
    // with tagged cells, not a stack I64 array. Do not erase its tags.
    if items.iter().any(|e|matches!(e,Expr::Log(_))){
@@ -160,12 +183,12 @@ impl Ir {
     self.line(format!("store i64 {}, ptr {}",v,p));
    }
   },
-  Stmt::Local(_,n,e)|Stmt::Assign(_,n,e)=>{if self.arrays.contains_key(n){return Err(format!("LLVM scalar: whole-array assignment `{}` unsupported",n))}if self.isbool(e){self.bools.insert(n.clone());}let v=self.expr(e)?;let p=self.ptr(n)?;self.line(format!("store i64 {}, ptr {}",v,p));},
+  Stmt::Assign(_,n,e)=>{if self.arrays.contains_key(n){return Err(format!("LLVM scalar: whole-array assignment `{}` unsupported",n))}if self.isbool(e){self.bools.insert(n.clone());}let v=self.expr(e)?;let p=self.ptr(n)?;self.line(format!("store i64 {}, ptr {}",v,p));},
   Stmt::Ret(_,e)=>{let v=if let Some(e)=e{self.expr(e)?}else{"0".into()};self.unlink();self.line(format!("ret i64 {}",v));self.check_dead(&ss[si+1..])?;return Ok(true)},
   Stmt::Print(_,es,inline)=>{self.print_items(es,*inline)?;},
   Stmt::If(_,c,a,b)=>{let c=self.cond(c)?;let t=self.lab();let f=self.lab();let end=self.lab();self.line(format!("br i1 {}, label %{}, label %{}",c,t,f));self.block(&t);let ta=self.stmts(a)?;if !ta{self.line(format!("br label %{}",end));}self.block(&f);let tb=self.stmts(b)?;if !tb{self.line(format!("br label %{}",end));}if ta&&tb{self.check_dead(&ss[si+1..])?;return Ok(true)}self.block(&end);},
   Stmt::While(_,c,b)=>{let h=self.lab();let body=self.lab();let end=self.lab();self.line(format!("br label %{}",h));self.block(&h);self.trace_at(stmt_line(s));let c=self.cond(c)?;self.line(format!("br i1 {}, label %{}, label %{}",c,body,end));self.block(&body);self.loops.push((h.clone(),end.clone()));let done=self.stmts(b)?;self.loops.pop();if !done{self.line(format!("br label %{}",h));}self.block(&end);},
-  Stmt::For(_,n,a,b,step,ss)=>{let a=self.expr(a)?;let p=self.ptr(n)?;self.line(format!("store i64 {}, ptr {}",a,p));let b=self.expr(b)?;let h=self.lab();let body=self.lab();let inc=self.lab();let store=self.lab();let end=self.lab();self.line(format!("br label %{}",h));self.block(&h);let v=self.tmp();self.line(format!("{} = load i64, ptr {}",v,p));let c=self.tmp();self.line(format!("{} = icmp {} i64 {}, {}",c,if *step>0{"sle"}else{"sge"},v,b));self.line(format!("br i1 {}, label %{}, label %{}",c,body,end));self.block(&body);self.loops.push((inc.clone(),end.clone()));let done=self.stmts(ss)?;self.loops.pop();if !done{self.line(format!("br label %{}",inc));}self.block(&inc);let v=self.tmp();self.line(format!("{} = load i64, ptr {}",v,p));let pair=self.tmp();self.line(format!("{} = call {{i64,i1}} @llvm.sadd.with.overflow.i64(i64 {}, i64 {})",pair,v,step));let next=self.tmp();let ov=self.tmp();self.line(format!("{} = extractvalue {{i64,i1}} {}, 0",next,pair));self.line(format!("{} = extractvalue {{i64,i1}} {}, 1",ov,pair));self.line(format!("br i1 {}, label %{}, label %{}",ov,end,store));self.block(&store);self.line(format!("store i64 {}, ptr {}",next,p));self.line(format!("br label %{}",h));self.block(&end);},
+  Stmt::For(_,n,a,b,step,ss)=>{let outer_vars=self.vars.clone();let a=self.expr(a)?;let p=if let Some(p)=self.vars.get(n){p.clone()}else{let p=self.tmp();self.allocas.push(format!("  {} = alloca i64\n",p));self.vars.insert(n.clone(),p.clone());p};self.line(format!("store i64 {}, ptr {}",a,p));let b=self.expr(b)?;let h=self.lab();let body=self.lab();let inc=self.lab();let store=self.lab();let end=self.lab();self.line(format!("br label %{}",h));self.block(&h);let v=self.tmp();self.line(format!("{} = load i64, ptr {}",v,p));let c=self.tmp();self.line(format!("{} = icmp {} i64 {}, {}",c,if *step>0{"sle"}else{"sge"},v,b));self.line(format!("br i1 {}, label %{}, label %{}",c,body,end));self.block(&body);self.loops.push((inc.clone(),end.clone()));let done=self.stmts(ss)?;self.loops.pop();if !done{self.line(format!("br label %{}",inc));}self.block(&inc);let v=self.tmp();self.line(format!("{} = load i64, ptr {}",v,p));let pair=self.tmp();self.line(format!("{} = call {{i64,i1}} @llvm.sadd.with.overflow.i64(i64 {}, i64 {})",pair,v,step));let next=self.tmp();let ov=self.tmp();self.line(format!("{} = extractvalue {{i64,i1}} {}, 0",next,pair));self.line(format!("{} = extractvalue {{i64,i1}} {}, 1",ov,pair));self.line(format!("br i1 {}, label %{}, label %{}",ov,end,store));self.block(&store);self.line(format!("store i64 {}, ptr {}",next,p));self.line(format!("br label %{}",h));self.block(&end);self.vars=outer_vars;},
   Stmt::ArrSet(_,n,ie,e)=>{
    if !self.arrays.contains_key(n){return Err(format!("LLVM scalar: array write `{}` outside fixed I64 arrays unsupported",n))}
    let v=self.expr(e)?;
@@ -184,10 +207,9 @@ impl Ir {
   _=>return Err(format!("LLVM scalar: statement unsupported: {:?}",s))
  }}Ok(false)}
 }
-fn locals(ss:&[Stmt],out:&mut std::collections::BTreeSet<String>,arrays:&mut std::collections::BTreeMap<String,usize>){for s in ss{match s{Stmt::Local(_,n,e)=>{match e {Expr::ArrLit(items) if !items.iter().any(|x|matches!(x,Expr::ArrLit(_)|Expr::DArrNew))=>{arrays.insert(n.clone(),items.len());},_=>{out.insert(n.clone());}}},Stmt::If(_,_,a,b)=>{locals(a,out,arrays);locals(b,out,arrays)},Stmt::For(_,n,_,_,_,b)=>{out.insert(n.clone());locals(b,out,arrays)},Stmt::While(_,_,b)=>locals(b,out,arrays),_=>{}}}}
 pub fn emit(funcs:&[Func],sigs:&[Sig],_target:Target,traced:bool)->Result<String,String>{
  for s in sigs{if !s.params.iter().all(|t|matches!(t,Ty::I64|Ty::Bool)) || !matches!(s.ret,None|Some(Ty::I64)|Some(Ty::Bool)){return Err("LLVM scalar: only I64/logical scalar signatures supported".into())}}
  let mut ir=Ir{out:String::new(),n:0,label:0,vars:Default::default(),arrays:Default::default(),asz:Default::default(),globals:Vec::new(),allocas:Vec::new(),sig_names:funcs.iter().map(|f|f.name.clone()).collect(),bool_returns:sigs.iter().filter(|s|matches!(s.ret,Some(Ty::Bool))).map(|s|s.name.clone()).collect(),bools:Default::default(),traced,frame:String::new(),fname:String::new(),current_line:0,loops:Vec::new()};
- for f in funcs{ir.vars.clear();ir.arrays.clear();ir.asz.clear();ir.bools.clear();ir.allocas.clear();ir.fname=f.name.clone();let begin=ir.out.len();ir.out.push_str(&format!("define i64 @ll_{}({}) {{\nentry:\n",f.name,f.params.iter().enumerate().map(|(i,_)|format!("i64 %arg{}",i)).collect::<Vec<_>>().join(", ")));if traced {ir.frame=ir.tmp();ir.line(format!("{} = alloca [3 x i64]",ir.frame));let old=ir.tmp();ir.line(format!("{} = load ptr, ptr @hbc_trace_top",old));ir.line(format!("store ptr {}, ptr {}",old,ir.frame));let text=ir.tmp();let len=ir.tmp();ir.line(format!("{} = getelementptr [3 x i64], ptr {}, i64 0, i64 1",text,ir.frame));ir.line(format!("{} = getelementptr [3 x i64], ptr {}, i64 0, i64 2",len,ir.frame));ir.line(format!("store ptr null, ptr {}",text));ir.line(format!("store i64 0, ptr {}",len));ir.line(format!("store volatile ptr {}, ptr @hbc_trace_top",ir.frame));}ir.trace_at(f.stmts.first().map(stmt_line).unwrap_or(0));let mut ns=std::collections::BTreeSet::new();let mut am=std::collections::BTreeMap::new();locals(&f.stmts,&mut ns,&mut am);for (n,k) in am {let p=ir.tmp();ir.line(format!("{} = alloca [{} x i64]",p,k));ir.arrays.insert(n.clone(),p);ir.asz.insert(n,k);}ns.extend(f.params.iter().cloned());for n in ns{let p=ir.tmp();ir.line(format!("{} = alloca i64",p));ir.vars.insert(n,p);}for(i,p)in f.params.iter().enumerate(){if matches!(sigs.iter().find(|s|s.name==f.name).unwrap().params[i],Ty::Bool){ir.bools.insert(p.clone());}let ptr=ir.ptr(p)?;ir.line(format!("store i64 %arg{}, ptr {}",i,ptr));}if !ir.stmts(&f.stmts)?{ir.unlink();ir.line("ret i64 0".into());}let idx=begin+ir.out[begin..].find("entry:\n").unwrap()+7;ir.out.insert_str(idx,&ir.allocas.concat());ir.out.push_str("}\n");}
+ for f in funcs{ir.vars.clear();ir.arrays.clear();ir.asz.clear();ir.bools.clear();ir.allocas.clear();ir.fname=f.name.clone();let begin=ir.out.len();ir.out.push_str(&format!("define i64 @ll_{}({}) {{\nentry:\n",f.name,f.params.iter().enumerate().map(|(i,_)|format!("i64 %arg{}",i)).collect::<Vec<_>>().join(", ")));if traced {ir.frame=ir.tmp();ir.line(format!("{} = alloca [3 x i64]",ir.frame));let old=ir.tmp();ir.line(format!("{} = load ptr, ptr @hbc_trace_top",old));ir.line(format!("store ptr {}, ptr {}",old,ir.frame));let text=ir.tmp();let len=ir.tmp();ir.line(format!("{} = getelementptr [3 x i64], ptr {}, i64 0, i64 1",text,ir.frame));ir.line(format!("{} = getelementptr [3 x i64], ptr {}, i64 0, i64 2",len,ir.frame));ir.line(format!("store ptr null, ptr {}",text));ir.line(format!("store i64 0, ptr {}",len));ir.line(format!("store volatile ptr {}, ptr @hbc_trace_top",ir.frame));}ir.trace_at(f.stmts.first().map(stmt_line).unwrap_or(0));for n in &f.params{let p=ir.tmp();ir.line(format!("{} = alloca i64",p));ir.vars.insert(n.clone(),p);}for(i,p)in f.params.iter().enumerate(){if matches!(sigs.iter().find(|s|s.name==f.name).unwrap().params[i],Ty::Bool){ir.bools.insert(p.clone());}let ptr=ir.ptr(p)?;ir.line(format!("store i64 %arg{}, ptr {}",i,ptr));}if !ir.stmts(&f.stmts)?{ir.unlink();ir.line("ret i64 0".into());}let idx=begin+ir.out[begin..].find("entry:\n").unwrap()+7;ir.out.insert_str(idx,&ir.allocas.concat());ir.out.push_str("}\n");}
  Ok(format!("{}\n{}\n@hbc_trace_top = external global ptr\ndeclare void @rt_inc_error() noreturn\ndeclare void @rt_bound_error() noreturn\ndeclare void @rt_nl()\ndeclare void @rt_sep()\ndeclare void @rt_str(ptr, i64)\ndeclare void @rt_int(i64)\ndeclare void @rt_computed(i64)\ndeclare {{i64,i1}} @llvm.sadd.with.overflow.i64(i64,i64)\n",ir.globals.join("\n"),ir.out))
 }

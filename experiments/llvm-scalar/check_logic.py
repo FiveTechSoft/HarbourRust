@@ -133,3 +133,17 @@ for name in ['integeredges-current.out','integeredges-llvm.out']:
     actual=pathlib.Path('run',name).read_bytes()
     assert actual.split() == integeredges_expected.split(),(name,actual,integeredges_expected)
 print('PASS independent signed-I64 edge arithmetic/compare value oracle (8 pairs)')
+
+scope_lines=[]
+for n in (0,1):
+    if n==0:
+        scope_lines += ['         1','         2','         2          1          2','         8']
+    else:
+        scope_lines += ['         3','         4','         5','         3          3          5','.T.']
+    scope_lines += ['         2          2','         4          4','         4          1          2',
+                    '         1','         2','         3          3','         3          6',
+                    str(10 if n==0 else 11).rjust(10),str(17 if n==0 else 18).rjust(10),'        13','        16']
+scopedslots_expected=('\n'+'\n'.join(scope_lines)+'\n         0          0').encode()
+for name in ['scopedslots-current.out','scopedslots-llvm.out']:
+    assert pathlib.Path('run',name).read_bytes()==scopedslots_expected,name
+print('PASS independent scoped declaration/array byte oracle')

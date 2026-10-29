@@ -13,8 +13,7 @@ cases={
  'array-logical': 'function main()\nlocal a := {.T.,.F.}\n? a[1]\nreturn\n',
  'array-mixed-logical': 'function main()\nlocal a := {1,.T.}\n? a[2]\nreturn\n',
  'array-dead-logical': 'function main()\nwhile .T.\nexit\nlocal a := {.T.,.F.}\nenddo\nreturn\n',
- 'disjoint-array-sizes': 'function main()\nlocal n := 0\nif n == 0\nlocal a := {1,2}\n? a[1]\nelse\nlocal a := {3,4,5}\n? a[1]\nendif\nreturn\n',
- 'disjoint-array-scalar': 'function main()\nlocal n := 0\nif n == 0\nlocal a := {1,2}\n? a[1]\nelse\nlocal a := 7\n? a\nendif\nreturn\n',
+ 'dead-scoped-string': 'function main()\nwhile .T.\nexit\nif .T.\nlocal a := {1,2}\nelse\nlocal a := "unsupported"\nendif\nenddo\nreturn\n',
  'array-dynamic': 'function main()\nlocal a := Array(2)\nreturn\n',
  'array-param': 'function f(a)\nreturn a[1]\nfunction main()\nlocal a := {1,2}\n? f(a)\nreturn\n',
  'array-nested': 'function main()\nlocal a := {{1,2},{3,4}}\n? a[1][1]\nreturn\n',
@@ -40,7 +39,7 @@ for name,source in cases.items():
   assert r.returncode==1,(name,target,r.stdout,r.stderr)
   assert b'error:' in r.stderr
   if name in ('array-logical','array-mixed-logical','array-dead-logical'):
-   assert b'tagged logical/mixed array literals unsupported' in r.stderr, (name,r.stderr)
+   assert b'tagged logical/mixed' in r.stderr, (name,r.stderr)
  print('PASS fail-closed',name)
 r=subprocess.run(['run/hbc','corpus.hb','run/reject.ll','--experimental-llvm','--instrument'],capture_output=True)
 assert r.returncode==1 and b'--instrument is not supported' in r.stderr

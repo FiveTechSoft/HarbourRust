@@ -699,3 +699,38 @@ Min/Max and XOR. The independent oracle compares value/logical tokens, while
 complete output bytes still match current-vs-LLVM. It does not invent a new
 numeric print-width oracle. This validates the existing wrapping-I64 contract,
 not Harbour's broader numeric promotion or a benchmark. No production change.
+
+## Declaration slots and lexical bindings, 29 October 2026
+
+The previous name-keyed whole-function prescan rejected valid disjoint locals
+with different fixed-array lengths or scalar/array types. The emitter now
+allocates a unique physical slot per LOCAL declaration while saving/restoring
+name bindings at block boundaries, matching the checked/default lexical scope.
+Allocas accumulate in function entry, not inside repeated bodies; initializer
+effects remain at the declaration's original position. Parameters retain their
+existing slots. FOR reuses a visible I64 counter or binds an implicit counter
+only for the loop, preserving START/store/END order and overflow termination.
+
+Representation remains i64/0-or-1 scalar slots and [k x i64] fixed arrays.
+There is no storage union, aliasing/copy rule, tagged array, ownership or ABI
+change. The frontend/default are untouched. Block restoration also runs on
+terminated/error lowering results; dead-tail probes still discard their IR
+and allocations. Existing array reassignment writes remain sequential rather
+than acquiring invented temporary-copy semantics.
+
+scopedslots.hb covers both disjoint-array lengths, scalar/array names in both
+orders, Bool/scalar names, repeated declarations, nested WHILE/IF, reused and
+implicit FOR counters, initializer call order and dependent reassignment.
+Independent bytes and current/LLVM output match on Linux and PE/Wine.
+error-scopedslots.hb checks exact origin/callstack for a scoped-array bounds
+failure. Unsupported scoped strings behind EXIT still reject. The old two
+rejection fixtures now correspond to explicitly admitted valid programs and
+are replaced by success coverage. Entry-only alloca placement was inspected
+in generated scopedslots/boolscope/loopcontrol IR.
+
+Fresh local full suite:104PASS lines,5089 prior function comparisons and
+seventeen error fixtures on two targets (34 exact diagnostics). Existing
+Linux audits134pos/7posx pass, and rebuilt default battery1086PASS,zeroFAIL.
+These are bounded correctness results, not a benchmark or full compatibility
+claim. Native Windows is not tested. The former disjoint-array limit above is
+historical and superseded by this increment, not silently removed.
