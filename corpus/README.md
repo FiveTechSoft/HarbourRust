@@ -69,3 +69,24 @@ private temporary directory with10s compiler timeouts and never runs originals.
 The inventory's175 baseline is retained rather than silently replacing it;
 this268-file evidence is a separate wider audit pending reconciliation into
 per-profile coverage. First diagnostics are not a complete missing-feature list.
+
+## Reviewed originals: exact Linux execution gate
+
+`reviewed-console-originals.json` is a hash-pinned, manually reviewed allowlist
+of14 deterministic console sources. They use no files, network, GUI or input.
+`tools/check_reviewed_originals.py` is opt-in, needs an explicit core/compiler/
+hbmk2/output directory, and fails before running if any source hash changed.
+It never discovers new execution candidates automatically. Reference output
+is compared without normalization to default and LLVM stdout/stderr/exit.
+
+Fresh Linux evidence at89f3ead: all14 exact against rebuilt Harbour pcode/GTSTD:
+comments,define,docase,exit,fornext,hello,ifelse,ifinline,longstr,procline,
+recursiv,returns,statfun,while. Not14new language features or a claim that all
+268 originals pass. dynwin excluded: Linux preprocesses out its feature body.
+No Windows reference execution or performance claim is made by this gate.
+Existing PE/Wine expected-output tests remain separate evidence.
+
+Run with HARBOUR_LLVM_LIB/LD_LIBRARY_PATH as in the LLVM suite, after building
+the desired compiler. The caller supplies its SHA; results record that SHA.
+No reference source body is added here. Output files remain in the selected
+local directory; only hashes/byte counts/result status enter versioned evidence.
