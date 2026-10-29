@@ -90,3 +90,20 @@ Run with HARBOUR_LLVM_LIB/LD_LIBRARY_PATH as in the LLVM suite, after building
 the desired compiler. The caller supplies its SHA; results record that SHA.
 No reference source body is added here. Output files remain in the selected
 local directory; only hashes/byte counts/result status enter versioned evidence.
+
+## Syntax family seed matrix
+
+`syntax-family-seed-b105ae0.json` maps17 named families to37 existing project
+regression cases with fresh148 compile checks (default/LLVM x Linux/Windows).
+It is a SEED, not the entire Harbour grammar or a coverage percentage. The
+pending_families list explicitly keeps dates, exceptions, dynamic binding,
+macro evaluation, full classes, I/O/RDD and library/platform work open.
+Manifest kind records the intended existing regression category, not a new
+runtime execution. A rejected negative test can be a correct boundary; it
+never counts as implementing the rejected Harbour feature. The class entries
+are parser/rejection gates, not class-runtime support. Dynamic-array/static-arg
+names refer to existing data-shape tests, not file-scope STATIC storage.
+
+Run `python3 tools/check_syntax_family_seed.py --compiler /path/to/hbc` to
+recheck source hashes, diagnostics and acceptance. This check does not run
+any test program. Original source coverage remains in the175/268 audits.

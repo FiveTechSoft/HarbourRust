@@ -1,0 +1,1286 @@
+{
+  "compiler": "b105ae08f16e7c6cad14fe1c2772306a489e513d",
+  "scope": "Seed family matrix from existing project regression cases, not the complete Harbour grammar. Compile-only refresh across default/LLVM and Linux/Windows. Manifest-kind is historical intended battery status, not a fresh runtime pass.",
+  "pending_families": [
+    "preprocessor marker variants and complete command syntax",
+    "full lvalue/operator grammar",
+    "dates and date-time metadata",
+    "PUBLIC/PRIVATE dynamic binding and lifetime",
+    "BEGIN SEQUENCE/RECOVER/ALWAYS exception control",
+    "runtime macro & / dynamic calls",
+    "class runtime and inheritance",
+    "standard library signatures and all SET commands",
+    "file/GT/terminal effects",
+    "RDD/DBF/indexing, extension ABI",
+    "modules, startup/shutdown, external linking",
+    "platform/contrib dependencies"
+  ],
+  "families": [
+    {
+      "id": "lexical-comments",
+      "label": "Comments and lexical strings",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t695_strlit.hb",
+          "sha256": "f52a8c370c0cb918d4730cc5812133c170e83538906e3516c27b04a6278f65f4",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: statement outside effect-use proof"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: statement outside effect-use proof"
+              ]
+            }
+          }
+        },
+        {
+          "file": "tests/t07_unicode_string.hb",
+          "sha256": "2398ecb37b70332d3ca5303e8ecd85e05f9cf451d450b4ca8699b347b0da3296",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "preprocessor",
+      "label": "Defines, conditional directives and commands",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t76_pp_define.hb",
+          "sha256": "495505f569e1792d1f4c57e028fe97fe8c2a3070ab6c5c16ced3ccf1c3737ba5",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            }
+          }
+        },
+        {
+          "file": "tests/t77_pp_ifdef.hb",
+          "sha256": "66fcd1edad88b580390f809e43161fdfdee4d8b0176d1124cdb5ad0ecd641e8f",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            }
+          }
+        },
+        {
+          "file": "tests/t105_pp_cmd_optresult.hb",
+          "sha256": "60bbb404d1aeb76041135c7e3bb7379158b769688949cae990cfbe1d719f118e",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            }
+          }
+        },
+        {
+          "file": "tests/t779_pragma_warninglevel.hb",
+          "sha256": "9b4c1b508a7f9b3d207b6fba7fc391cdf308713b8cc5aab02dd3d1f430e5284f",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "function-scope",
+      "label": "Function syntax, STATIC function and local scope",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t678_static_func_proc_note.hb",
+          "sha256": "dd84f637498f21b36745ec15fad865e549ded8a638f4ff86fd2ee20f997e65dc",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            }
+          }
+        },
+        {
+          "file": "tests/t679_func_alias.hb",
+          "sha256": "5b3fa3ce84911b5490232096e1ee893d93eee0e601e03f8223e1a69b980c491a",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "file-storage",
+      "label": "File STATIC and MEMVAR storage limits",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t682_static_var_neg.hb",
+          "sha256": "b4fee9c1cfd7ead8599c7e076b9ccc017b04e57e71fdb8caf64d11aadd613e45",
+          "manifest_kind": "neg",
+          "profiles": {
+            "linux-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 2: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works"
+              ]
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 2: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works"
+              ]
+            },
+            "windows-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 2: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works"
+              ]
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 2: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works"
+              ]
+            }
+          }
+        },
+        {
+          "file": "tests/t685_memvar_ref_neg.hb",
+          "sha256": "c97e0dd8a98e0a4609281658383e167b7c5e3abb1de4d20615dab08fe0e49413",
+          "manifest_kind": "neg",
+          "profiles": {
+            "linux-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: assignment to undeclared variable `m_y` (declare it with `local` first)"
+              ]
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: assignment to undeclared variable `m_y` (declare it with `local` first)"
+              ]
+            },
+            "windows-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: assignment to undeclared variable `m_y` (declare it with `local` first)"
+              ]
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: assignment to undeclared variable `m_y` (declare it with `local` first)"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "module-lifecycle",
+      "label": "REQUEST and INIT lifecycle limits",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t686_request_undef_neg.hb",
+          "sha256": "e91f82b82fa3e5a0664a19921938275651aee3c982a9634e54f0f7ce15692c09",
+          "manifest_kind": "neg",
+          "profiles": {
+            "linux-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: REQUEST `extmod` cannot be honored: the subset has no module linking; only functions defined in this file may be requested"
+              ]
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: REQUEST `extmod` cannot be honored: the subset has no module linking; only functions defined in this file may be requested"
+              ]
+            },
+            "windows-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: REQUEST `extmod` cannot be honored: the subset has no module linking; only functions defined in this file may be requested"
+              ]
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: REQUEST `extmod` cannot be honored: the subset has no module linking; only functions defined in this file may be requested"
+              ]
+            }
+          }
+        },
+        {
+          "file": "tests/t681_init_proc_neg.hb",
+          "sha256": "d2be2e294dcc3142a75740af77311dc2a9d174a0dfb75e8b2074e955c19aa862",
+          "manifest_kind": "neg",
+          "profiles": {
+            "linux-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 3: INIT/EXIT PROCEDURE is not in this increment (startup/teardown ordering needs its own design)"
+              ]
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 3: INIT/EXIT PROCEDURE is not in this increment (startup/teardown ordering needs its own design)"
+              ]
+            },
+            "windows-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 3: INIT/EXIT PROCEDURE is not in this increment (startup/teardown ordering needs its own design)"
+              ]
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 3: INIT/EXIT PROCEDURE is not in this increment (startup/teardown ordering needs its own design)"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "flow",
+      "label": "ELSEIF, lazy IIF and FOR counter scope",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t791_elseif.hb",
+          "sha256": "ec62c25c38316299476ca7be50240fbf3a59a726889cda9eb2b6aa070e2cd04e",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            }
+          }
+        },
+        {
+          "file": "tests/t782_iif_lazy.hb",
+          "sha256": "1c342d34d1a4202ad353529cdb01f395042ba00e9d465ddb40fe8ed8cee64671",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: only I64/logical scalar signatures supported"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: only I64/logical scalar signatures supported"
+              ]
+            }
+          }
+        },
+        {
+          "file": "tests/t792_barelocal_for.hb",
+          "sha256": "185bf186b9eb25b31f7cf2fd4dd0b21daeaf8ee07b711f7dc57c0cd3506a00e7",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "sequence",
+      "label": "Expression sequencing",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t948_sequence_nested.hb",
+          "sha256": "cafdcd3163bc9f5c4834e865e80031438f7be1d555415d19301e0832e8f5b862",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: expression unsupported: BlockLit(1, [\"n\"], [Seq([Int(\"1\"), Call(\"eval\", [BlockLit(0, [\"m\"], [Bin('+', Var(\"m\"), Int(\"1\"))]), Var(\"n\")])])])"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: expression unsupported: BlockLit(1, [\"n\"], [Seq([Int(\"1\"), Call(\"eval\", [BlockLit(0, [\"m\"], [Bin('+', Var(\"m\"), Int(\"1\"))]), Var(\"n\")])])])"
+              ]
+            }
+          }
+        },
+        {
+          "file": "tests/t1040_seq_dyn_limit_neg.hb",
+          "sha256": "8b9e50858ea62b9856dc0688bab3641c1e3752f75fe8be003a65594095624cf7",
+          "manifest_kind": "neg",
+          "profiles": {
+            "linux-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 3: parenthesized comma expressions support numeric/logical results only in this increment; owned, Dyn, array and block results remain a named limit"
+              ]
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 3: parenthesized comma expressions support numeric/logical results only in this increment; owned, Dyn, array and block results remain a named limit"
+              ]
+            },
+            "windows-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 3: parenthesized comma expressions support numeric/logical results only in this increment; owned, Dyn, array and block results remain a named limit"
+              ]
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 3: parenthesized comma expressions support numeric/logical results only in this increment; owned, Dyn, array and block results remain a named limit"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "integers",
+      "label": "Integer width and remainder",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t787_int_width_computed.hb",
+          "sha256": "1a7023e207cd3ffa262a8aceb3d1335a54b6a7e34cd16c82838edaea1f8b9560",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            }
+          }
+        },
+        {
+          "file": "tests/t797_mod_runtime.hb",
+          "sha256": "b19bb4dfdfb625d10c630836385b8585395ac66bd545d3fb4c9c7efe60fdf774",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: expression unsupported: Bin('%', Var(\"i\"), Var(\"j\"))"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: expression unsupported: Bin('%', Var(\"i\"), Var(\"j\"))"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "f64",
+      "label": "F64 arithmetic and calls",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t750_float_arith_mixed.hb",
+          "sha256": "82d12c824a8791ab9660c32ae6a1ae5db075f36953623b31a22afbe136accc69",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: expression unsupported: Float(\"1.5\", 1)"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: expression unsupported: Float(\"1.5\", 1)"
+              ]
+            }
+          }
+        },
+        {
+          "file": "tests/t758_f64_param_basic.hb",
+          "sha256": "4dc7c01b197aaddd10ce731d06d6e2288c2dceacdb4080302c8315cddbd91846",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: only I64/logical scalar signatures supported"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: only I64/logical scalar signatures supported"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "nil",
+      "label": "NIL values and ordering rejection",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t208_nil_literal.hb",
+          "sha256": "e79448183a9886e49b3b77463657a11813ef6b07b1b8af7feb503fc0a3206369",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: statement outside effect-use proof"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: statement outside effect-use proof"
+              ]
+            }
+          }
+        },
+        {
+          "file": "tests/t212_nil_neg_order.hb",
+          "sha256": "779b60aaea0cf66370f38527a3c0c6c6993f1b70912ef73c130a1114478a8070",
+          "manifest_kind": "neg",
+          "profiles": {
+            "linux-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: NIL only compares with `=` or `#` in this PoC (Harbour raises a type error on ordering NIL)"
+              ]
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: NIL only compares with `=` or `#` in this PoC (Harbour raises a type error on ordering NIL)"
+              ]
+            },
+            "windows-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: NIL only compares with `=` or `#` in this PoC (Harbour raises a type error on ordering NIL)"
+              ]
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: NIL only compares with `=` or `#` in this PoC (Harbour raises a type error on ordering NIL)"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "arrays",
+      "label": "Fixed and dynamic array ownership",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t424_static_arg_read.hb",
+          "sha256": "77555dc06d0e52b949e330072d0bee7a227e8c3026ba79f9d513e9156bf48ee8",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: only I64/logical scalar signatures supported"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: only I64/logical scalar signatures supported"
+              ]
+            }
+          }
+        },
+        {
+          "file": "tests/t325_darrs_grow_print.hb",
+          "sha256": "c3d83edfdc9c388f2927d26034c4707eed6dc268c7adbbd390d24492da99b92e",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: statement outside effect-use proof"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: statement outside effect-use proof"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "foreach",
+      "label": "Collection iteration and guarded rejection",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t358_foreach_strord_num.hb",
+          "sha256": "89d22ac201553dc35b85e069e4e1dad298eaac06d7ea7c989f213db682ed5c0b",
+          "manifest_kind": "posx",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: statement outside effect-use proof"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: statement outside effect-use proof"
+              ]
+            }
+          }
+        },
+        {
+          "file": "tests/t978_foreach_static_empty_neg.hb",
+          "sha256": "9d7e6f8981e043e45cfb3cbf8122cef81cc3bfaa8fe73aa697929e12d4f3d498",
+          "manifest_kind": "neg",
+          "profiles": {
+            "linux-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: `for each` over fixed-size stack arrays is not in this increment; use a dynamic array collection (the native iterator requires tagged cells)"
+              ]
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: `for each` over fixed-size stack arrays is not in this increment; use a dynamic array collection (the native iterator requires tagged cells)"
+              ]
+            },
+            "windows-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: `for each` over fixed-size stack arrays is not in this increment; use a dynamic array collection (the native iterator requires tagged cells)"
+              ]
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: `for each` over fixed-size stack arrays is not in this increment; use a dynamic array collection (the native iterator requires tagged cells)"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "hashes",
+      "label": "Hash literals and mutation",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t231_hash_lit_read.hb",
+          "sha256": "43777550225afa84335a49d7fe945ec93b92693401b3e148c72f7959cf8cf534",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: expression unsupported: HashLit([(Str(\"a\"), Int(\"1\")), (Str(\"b\"), Int(\"2\"))])"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: expression unsupported: HashLit([(Str(\"a\"), Int(\"1\")), (Str(\"b\"), Int(\"2\"))])"
+              ]
+            }
+          }
+        },
+        {
+          "file": "tests/t243_hash_grow.hb",
+          "sha256": "d66d7690ddb6f12d85e9c3e9f88bdcdb5e004a6cfe4ce41ffeca9113811896c7",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: expression unsupported: HashLit([(Str(\"a\"), Int(\"1\")), (Str(\"b\"), Int(\"2\")), (Str(\"c\"), Int(\"3\")), (Str(\"d\"), Int(\"4\")), (Str(\"e\"), Int(\"5\")), (Str(\"f\"), Int(\"6\"))])"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: expression unsupported: HashLit([(Str(\"a\"), Int(\"1\")), (Str(\"b\"), Int(\"2\")), (Str(\"c\"), Int(\"3\")), (Str(\"d\"), Int(\"4\")), (Str(\"e\"), Int(\"5\")), (Str(\"f\"), Int(\"6\"))])"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "blocks",
+      "label": "Codeblock evaluation and capture boundary",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t150_cb_eval1.hb",
+          "sha256": "b855b51009763c8e12018a896852fd2e5c6b2236520781ce5384201a8b490f64",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: expression unsupported: BlockLit(0, [\"x\"], [Bin('+', Var(\"x\"), Int(\"1\"))])"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: expression unsupported: BlockLit(0, [\"x\"], [Bin('+', Var(\"x\"), Int(\"1\"))])"
+              ]
+            }
+          }
+        },
+        {
+          "file": "tests/t157_cb_neg_capture.hb",
+          "sha256": "f947fba480d26908b88babfdcabd9af814372e5082f0d7c56b6bde28bd57044f",
+          "manifest_kind": "neg",
+          "profiles": {
+            "linux-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: codeblock captures are not in this increment (`n` is not a codeblock parameter)"
+              ]
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: codeblock captures are not in this increment (`n` is not a codeblock parameter)"
+              ]
+            },
+            "windows-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: codeblock captures are not in this increment (`n` is not a codeblock parameter)"
+              ]
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 4: codeblock captures are not in this increment (`n` is not a codeblock parameter)"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "classes",
+      "label": "Class syntax parser gate, not runtime support",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t290_neg_class_gate.hb",
+          "sha256": "4d136c56076d622b32015e4497e1969bc0a416b9cc3b863d720bd5c5cba8d6b0",
+          "manifest_kind": "neg",
+          "profiles": {
+            "linux-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: classes are not in this increment yet (the parser landed; the runtime representation is pending the user's decision)"
+              ]
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: classes are not in this increment yet (the parser landed; the runtime representation is pending the user's decision)"
+              ]
+            },
+            "windows-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: classes are not in this increment yet (the parser landed; the runtime representation is pending the user's decision)"
+              ]
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: classes are not in this increment yet (the parser landed; the runtime representation is pending the user's decision)"
+              ]
+            }
+          }
+        },
+        {
+          "file": "tests/t291_neg_class_multi.hb",
+          "sha256": "2e21465d2d7da71b5115569cba7b505283cc82ca2b180c211050e620f6d6f42f",
+          "manifest_kind": "neg",
+          "profiles": {
+            "linux-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 1: multiple inheritance is not in this increment (oracle cl21: Harbour accepts it)"
+              ]
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 1: multiple inheritance is not in this increment (oracle cl21: Harbour accepts it)"
+              ]
+            },
+            "windows-default": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 1: multiple inheritance is not in this increment (oracle cl21: Harbour accepts it)"
+              ]
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: line 1: multiple inheritance is not in this increment (oracle cl21: Harbour accepts it)"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "calls",
+      "label": "Forward F64 and string byref boundary",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t774_f64_forward_ref.hb",
+          "sha256": "8974ad8819dfe2abce7b026992592a60fcaadfe4fe5875509ceae5f323bc826f",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: only I64/logical scalar signatures supported"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: only I64/logical scalar signatures supported"
+              ]
+            }
+          }
+        },
+        {
+          "file": "tests/t778_byref_str_param.hb",
+          "sha256": "f34b586d02aa17ae3226627847f9b01413ae4e61baf55d73a29bf0330d9acf04",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: only I64/logical scalar signatures supported"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: only I64/logical scalar signatures supported"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "diagnostics",
+      "label": "Native ProcLine/ProcName",
+      "status": "sampled-evidence-not-full-family-coverage",
+      "cases": [
+        {
+          "file": "tests/t1016_procline_calls_block.hb",
+          "sha256": "90e8073f288500febe307640c6a153c5860979fe04011d05917779719f4fca4d",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: expression unsupported: Call(\"eval\", [BlockLit(0, [], [Call(\"procline\", [])])])"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: expression unsupported: Call(\"eval\", [BlockLit(0, [], [Call(\"procline\", [])])])"
+              ]
+            }
+          }
+        },
+        {
+          "file": "tests/t1055_procname_byref.hb",
+          "sha256": "78fd3cf0d084ee259cd523038efd9ec89b4b97c545c2967d444114477aa61c92",
+          "manifest_kind": "pos",
+          "profiles": {
+            "linux-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "linux-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: only I64/logical scalar signatures supported"
+              ]
+            },
+            "windows-default": {
+              "accepted": true,
+              "exit": 0,
+              "diagnostic": []
+            },
+            "windows-llvm": {
+              "accepted": false,
+              "exit": 1,
+              "diagnostic": [
+                "error: LLVM scalar: only I64/logical scalar signatures supported"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
