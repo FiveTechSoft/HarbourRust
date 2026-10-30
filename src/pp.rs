@@ -647,7 +647,58 @@ fn validate_result_markers(pattern: &[String], result: &str, line: usize, exact_
     Ok(())
 }
 
-fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool) -> Option<Vec<String>> {
+// Each capture keeps matcher tokens plus their identity in the source token
+// array. The owning render call maps these to byte spans in original text.
+#[derive(Clone)]
+struct Capture { text: String, parts: Vec<(usize, usize)> }
+impl Capture {
+    fn empty() -> Self { Self { text: String::new(), parts: Vec::new() } }
+    fn from_tokens(tokens: &[String]) -> Self {
+        Self { text: tokens.join(" "), parts: tokens.iter().map(|t| (t.as_ptr() as usize, t.len())).collect() }
+    }
+    fn is_empty(&self) -> bool { self.text.is_empty() }
+}
+impl std::fmt::Display for Capture {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result { self.text.fmt(f) }
+}
+fn source_spans(text: &str, tokens: &[String]) -> Result<HashMap<usize, (usize, usize)>, String> {
+    let mut at = 0; let mut spans = HashMap::new();
+    for token in tokens {
+        let start = at + text[at..].find(token.as_str()).ok_or("capture source span unavailable")?;
+        let end = start + token.len(); spans.insert(token.as_ptr() as usize, (start, end)); at = end;
+    }
+    Ok(spans)
+}
+fn stringify_capture(capture: &Capture, source: &str, spans: &HashMap<usize, (usize, usize)>) -> Result<String, String> {
+    if capture.parts.is_empty() { return Ok("\"\"".to_string()); }
+    let mut text = String::new(); let mut previous = None;
+    for &(id, _) in &capture.parts {
+        let &(start, end) = spans.get(&id).ok_or("capture source span unavailable")?;
+        if let Some(prev) = previous {
+            // Repeated disjoint captures need their own stringify contract.
+            if prev > start || !source[prev..start].chars().all(char::is_whitespace) {
+                return Err("stringify of repeated/disjoint captures is outside this increment".to_string());
+            }
+            text.push_str(&source[prev..start]);
+        }
+        let token = &source[start..end];
+        if (token.starts_with('"') || token.starts_with('\'')) && start > 0
+            && source.as_bytes()[start-1].eq_ignore_ascii_case(&b'e') {
+            return Err("stringify of escape literals is outside this increment".to_string());
+        }
+        if token.starts_with('\'') && token.ends_with('\'') {
+            let inner = &token[1..token.len()-1];
+            if inner.contains('"') { return Err("stringify requiring bracket/escape literal is outside this increment".to_string()); }
+            text.push('"'); text.push_str(inner); text.push('"');
+        } else { text.push_str(token); }
+        previous = Some(end);
+    }
+    if !text.contains('"') { Ok(format!("\"{}\"", text)) }
+    else if !text.contains('\'') { Ok(format!("'{}'", text)) }
+    else { Err("stringify requiring bracket/escape literal is outside this increment".to_string()) }
+}
+
+fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool) -> Option<Vec<Capture>> {
     // First literal token at or after pat[i], looking through markers and
     // group brackets; used as the terminator for captures.
     fn next_lit(pat: &[String], i: usize) -> Option<&str> {
@@ -678,7 +729,7 @@ fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool) -> Option<V
     }
     // Match a pattern slice (with balanced groups) against src, returning
     // tokens consumed. Captures are pushed in pattern order.
-    fn match_seq(pat: &[String], src: &[String], caps: &mut Vec<String>, restricted_exact: bool) -> Option<usize> {
+    fn match_seq(pat: &[String], src: &[String], caps: &mut Vec<Capture>, restricted_exact: bool) -> Option<usize> {
         let mut si = 0usize;
         let mut pi = 0usize;
         while pi < pat.len() {
@@ -698,9 +749,9 @@ fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool) -> Option<V
                 if inner.len()==1 && inner[0].starts_with("<!") && inner[0].ends_with("!>") {
                     let start=si;
                     while si<src.len() && marker_ident(&src[si]) {si+=1;}
-                    caps.push(src[start..si].join(" "));pi=j;continue;
+                    caps.push(Capture::from_tokens(&src[start..si]));pi=j;continue;
                 }
-                let mut gcaps: Vec<String> = Vec::new();
+                let mut gcaps: Vec<Capture> = Vec::new();
                 match match_seq(inner, &src[si..], &mut gcaps, restricted_exact) {
                     Some(consumed) => {
                         si += consumed;
@@ -712,7 +763,7 @@ fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool) -> Option<V
                                 match match_seq(inner,&src[si..],&mut more, restricted_exact) {
                                     Some(n) if n>0 && more.len()==gcaps.len()=>{
                                         for (dst,value) in gcaps.iter_mut().zip(more) {
-                                            if !value.is_empty(){if !dst.is_empty(){dst.push(' ');}dst.push_str(&value);}
+                                            if !value.is_empty(){if !dst.is_empty(){dst.text.push(' ');}dst.text.push_str(&value.text);dst.parts.extend(value.parts);}
                                         }
                                         si+=n;
                                     }
@@ -724,10 +775,10 @@ fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool) -> Option<V
                     }
                     None => {
                         // optional group absent: its markers capture as empty
-                        fn markers(pat: &[String], caps: &mut Vec<String>) {
+                        fn markers(pat: &[String], caps: &mut Vec<Capture>) {
                             for t in pat {
                                 if t == "[" || t == "]" { continue; }
-                                if t.starts_with('<') && t.ends_with('>') { caps.push(String::new()); }
+                                if t.starts_with('<') && t.ends_with('>') { caps.push(Capture::empty()); }
                             }
                         }
                         markers(inner, caps);
@@ -739,16 +790,16 @@ fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool) -> Option<V
                 let choice = choices.iter().find(|tokens| !tokens.is_empty()
                     && si + tokens.len() <= src.len()
                     && tokens.iter().zip(&src[si..]).all(|(lit, word)| if restricted_exact { word.eq_ignore_ascii_case(lit) } else { lit_match(word, lit) }))?;
-                caps.push(src[si..si+choice.len()].join(" "));
+                caps.push(Capture::from_tokens(&src[si..si+choice.len()]));
                 si += choice.len(); pi += 1;
             } else if p.starts_with("<!") && p.ends_with("!>") {
                 if si>=src.len() || !marker_ident(&src[si]) {return None;}
-                caps.push(src[si].clone());si+=1;pi+=1;
+                caps.push(Capture::from_tokens(&src[si..si+1]));si+=1;pi+=1;
             } else if p.starts_with("<*") && p.ends_with("*>") {
                 // Wildcard consumes ALL remaining tokens, not up to a later
                 // literal. A following required literal therefore cannot match.
                 if si>=src.len(){return None;}
-                caps.push(src[si..].join(" "));si=src.len();pi+=1;
+                caps.push(Capture::from_tokens(&src[si..]));si=src.len();pi+=1;
             } else if p.starts_with("<(") && p.ends_with(")>") {
                 // <(x)> match marker: source must be a parenthesized
                 // expression (probes b14/b16); capture the inner tokens
@@ -760,7 +811,7 @@ fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool) -> Option<V
                     k += 1;
                 }
                 if k >= src.len() { return None; } // unbalanced
-                caps.push(src[si + 1..k].join(" "));
+                caps.push(Capture::from_tokens(&src[si+1..k]));
                 if caps.last().map(|c| c.is_empty()).unwrap_or(true) { return None; }
                 si = k + 1;
                 pi += 1;
@@ -769,7 +820,7 @@ fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool) -> Option<V
                 // ahead in the pattern (group brackets included)
                 let lit = next_lit(pat, pi + 1);
                 let end = capture_to(src, si, lit)?;
-                caps.push(src[si..end].join(" "));
+                caps.push(Capture::from_tokens(&src[si..end]));
                 if caps.last().map(|c| c.is_empty()).unwrap_or(true) { return None; } // empty capture: no match
                 si = end;
                 pi += 1;
@@ -781,7 +832,7 @@ fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool) -> Option<V
         }
         Some(si)
     }
-    let mut caps: Vec<String> = Vec::new();
+    let mut caps: Vec<Capture> = Vec::new();
     let consumed = match_seq(pat, src, &mut caps, restricted_exact)?;
     if consumed != src.len() { return None; } // trailing tokens: no match
     Some(caps)
@@ -894,7 +945,7 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
     // regardless of definition order (probes b31/b31b); ties keep the
     // LATEST definition (b47/b47b/b47c).
     let mut best: Option<(usize, usize)> = None; // (literal count, index)
-    let mut best_caps: Vec<String> = Vec::new();
+    let mut best_caps: Vec<Capture> = Vec::new();
     for (ci, c) in cmds.iter().enumerate() {
         let first = match c.pattern.first() { Some(f) => f, None => continue };
         if first.starts_with('<') { continue; }
@@ -912,14 +963,14 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
     if let Some((_, ci)) = best {
         let c = &cmds[ci];
         let caps = best_caps;
-        return render_command(c, &caps, line_no).map(Some);
+        return render_command(c, &caps, line, &src, line_no).map(Some);
     }
     // A shared first keyword is not a rule match. Harbour leaves the
     // original statement for the parser when no complete pattern matches.
     Ok(None)
 }
 
-fn render_command(c: &Cmd, caps: &[String], line_no: usize) -> Result<String, String> {
+fn render_command(c: &Cmd, caps: &[Capture], source: &str, tokens: &[String], line_no: usize) -> Result<String, String> {
         {
             // Resolve result-side [ ... ] groups BEFORE substituting: a
             // marker is bound exactly when its capture is non-empty (an
@@ -943,7 +994,7 @@ fn render_command(c: &Cmd, caps: &[String], line_no: usize) -> Result<String, St
                     }
                 }
             }
-            let (staged, saved) = staged_result(&c.result, &caps.join(" ")).map_err(|e| format!("line {}: {}", line_no, e))?;
+            let (staged, mut saved) = staged_result(&c.result, &caps.iter().map(|c| c.text.as_str()).collect::<Vec<_>>().join(" ")).map_err(|e| format!("line {}: {}", line_no, e))?;
             let mut out = resolve_result_brackets(&staged, &bound);
             let mut pi = 0usize;
             for t in &c.pattern {
@@ -957,8 +1008,37 @@ fn render_command(c: &Cmd, caps: &[String], line_no: usize) -> Result<String, St
                     let is_paren = name.starts_with('(') && name.ends_with(')');
                     let inner = if is_paren { &name[1..name.len() - 1] } else { name };
                     let base = marker_name(inner);
+                    // Stringify must run before plain substitution and retain
+                    // source bytes,not the matcher's whitespace-normalized view.
+                    let stringify = format!("#<{}>", base.to_lowercase());
+                    if out.to_lowercase().contains(&stringify) {
+                        let mut group = 0; let mut grouped_literal = false;
+                        for token in &c.pattern {
+                            if token == "[" { group += 1; }
+                            else if token == "]" { group -= 1; }
+                            else if group > 0 && !(token.starts_with('<') && token.ends_with('>')) { grouped_literal = true; }
+                        }
+                        if grouped_literal { return Err(format!("line {}: stringify with literal-bearing optional groups is outside this increment", line_no)); }
+                        if inner.contains(",...") || inner.starts_with('!') || inner.starts_with('*') || inner.starts_with('(') || inner.contains(':') {
+                            return Err(format!("line {}: stringify of non-plain capture is outside this increment", line_no));
+                        }
+                        let spans = source_spans(source, tokens).map_err(|e| format!("line {}: {}", line_no, e))?;
+                        let value = stringify_capture(&caps[pi], source, &spans).map_err(|e| format!("line {}: {}", line_no, e))?;
+                        // A resulting literal is data;later marker substitutions
+                        // must not inspect marker-like text inside it.
+                        let token = (0xe000..=0xf8ff).filter_map(char::from_u32).find(|ch|
+                            !out.contains(*ch) && !source.contains(*ch) && !saved.iter().any(|(used, _)|used==ch))
+                            .ok_or_else(|| format!("line {}: too many staged tokens", line_no))?;
+                        saved.push((token, value));
+                        let value = token.to_string();
+                        let mut rebuilt = String::new(); let low = out.to_lowercase(); let mut at = 0;
+                        while let Some(k) = low[at..].find(&stringify) {
+                            rebuilt.push_str(&out[at..at+k]); rebuilt.push_str(&value); at += k + stringify.len();
+                        }
+                        rebuilt.push_str(&out[at..]); out = rebuilt;
+                    }
                     for (needle, insertion) in [
-                        (format!("<{}>", base.to_lowercase()), caps[pi].clone()),
+                        (format!("<{}>", base.to_lowercase()), caps[pi].text.clone()),
                         (format!("<({})>", base.to_lowercase()), format!("( {} )", caps[pi])),
                         // Logical result is capture presence, not evaluation.
                         // Emit one atomic dotted literal,without changing the
@@ -990,8 +1070,8 @@ fn render_command(c: &Cmd, caps: &[String], line_no: usize) -> Result<String, St
 
 // Backtracking is bounded to call-form rules and balanced captured expressions.
 // Optional groups must leave the following ')' available to the outer pattern.
-fn call_match(pattern: &[String], source: &[String]) -> Option<Vec<String>> {
-    fn seq(p: &[String], src: &[String], budget: &mut usize) -> Option<Vec<String>> {
+fn call_match(pattern: &[String], source: &[String]) -> Option<Vec<Capture>> {
+    fn seq(p: &[String], src: &[String], budget: &mut usize) -> Option<Vec<Capture>> {
         if *budget == 0 { return None; } *budget -= 1;
         if p.is_empty() { return if src.is_empty() { Some(Vec::new()) } else { None }; }
         if p[0] == "[" {
@@ -1005,7 +1085,7 @@ fn call_match(pattern: &[String], source: &[String]) -> Option<Vec<String>> {
                     if let Some(tail) = seq(&p[end..], &src[n..], budget) { caps.extend(tail); return Some(caps); }
                 }
             }
-            let mut caps: Vec<String> = p[1..end-1].iter().filter(|t| t.starts_with('<') && t.ends_with('>')).map(|_| String::new()).collect();
+            let mut caps: Vec<Capture> = p[1..end-1].iter().filter(|t| t.starts_with('<') && t.ends_with('>')).map(|_| Capture::empty()).collect();
             caps.extend(seq(&p[end..], src, budget)?); return Some(caps);
         }
         if p[0].starts_with('<') && p[0].ends_with('>') {
@@ -1024,7 +1104,7 @@ fn call_match(pattern: &[String], source: &[String]) -> Option<Vec<String>> {
                         || (marker.contains(':') && !restricted_alternatives(&marker[1..marker.len()-1]).map(|choices| choices.iter().any(|c| c.len()==n && c.iter().zip(src).all(|(a,b)|a.eq_ignore_ascii_case(b)))).unwrap_or(false))
                         || marker.starts_with("<*") || marker.starts_with("<(") { continue; }
                     if let Some(mut tail) = seq(&p[1..], &src[n..], budget) {
-                        tail.insert(0, src[..n].join(" ")); return Some(tail);
+                        tail.insert(0, Capture::from_tokens(&src[..n])); return Some(tail);
                     }
                 }
             }
@@ -1076,14 +1156,14 @@ fn expand_call_rules(text: &str, pp: &Pp, line: usize, depth: usize) -> Result<S
                             let valid = markers.iter().zip(caps.iter()).all(|(marker, cap)| {
                                 if marker.contains(",...") { return true; }
                                 let mut nesting = 0;
-                                for t in cmd_tokens(cap) {
+                                for t in cmd_tokens(&cap.text) {
                                     if t == "(" || t == "[" || t == "{" { nesting += 1; }
                                     if t == ")" || t == "]" || t == "}" { nesting -= 1; }
                                     if t == "," && nesting == 0 { return false; }
                                 }
                                 true
                             });
-                            if valid { replacement = Some(render_command(rule, &caps, line)?); break; }
+                            if valid { replacement = Some(render_command(rule, &caps, call, &tokens, line)?); break; }
                         }
                     }
                     if let Some(value) = replacement {

@@ -1,0 +1,665 @@
+{
+  "scope": "50supported plain stringify checks and60outside-scope rejections. Not general stringify compatibility.",
+  "rows": [
+    {
+      "case": "base0",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base1",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base2",
+      "own_exit": 0,
+      "own_output": "OUT( \"a + 1\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base3",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base4",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha(1, 2)\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base5",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base6",
+      "own_exit": 0,
+      "own_output": "OUT( \".T.\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base7",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base8",
+      "own_exit": 0,
+      "own_output": "OUT( '\"hello\"' )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base9",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base10",
+      "own_exit": 0,
+      "own_output": "OUT( '\"hello\"' )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base11",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base12",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\" + \"b\"' )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base13",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base14",
+      "own_exit": 0,
+      "own_output": "OUT( \"a:=1\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base15",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base16",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha[1]\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base17",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base18",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base19",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base20",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base21",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base22",
+      "own_exit": 0,
+      "own_output": "OUT( \"a + 1\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base23",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base24",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha(1, 2)\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base25",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base26",
+      "own_exit": 0,
+      "own_output": "OUT( \".T.\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base27",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base28",
+      "own_exit": 0,
+      "own_output": "OUT( '\"hello\"' )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base29",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base30",
+      "own_exit": 0,
+      "own_output": "OUT( '\"hello\"' )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base31",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base32",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\" + \"b\"' )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base33",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base34",
+      "own_exit": 0,
+      "own_output": "OUT( \"a:=1\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base35",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base36",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha[1]\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base37",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base38",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base39",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base40",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base41",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base42",
+      "own_exit": 0,
+      "own_output": "OUT( \"a + 1\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base43",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base44",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha(1, 2)\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base45",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base46",
+      "own_exit": 0,
+      "own_output": "OUT( \".T.\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base47",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base48",
+      "own_exit": 0,
+      "own_output": "OUT( '\"hello\"' )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base49",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base50",
+      "own_exit": 0,
+      "own_output": "OUT( '\"hello\"' )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base51",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base52",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\" + \"b\"' )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base53",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base54",
+      "own_exit": 0,
+      "own_output": "OUT( \"a:=1\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base55",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base56",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha[1]\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base57",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base58",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base59",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base60",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base61",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base62",
+      "own_exit": 0,
+      "own_output": "OUT( \"a + 1\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base63",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base64",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha(1, 2)\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base65",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base66",
+      "own_exit": 0,
+      "own_output": "OUT( \".T.\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base67",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base68",
+      "own_exit": 0,
+      "own_output": "OUT( '\"hello\"' )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base69",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base70",
+      "own_exit": 0,
+      "own_output": "OUT( '\"hello\"' )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base71",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base72",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\" + \"b\"' )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base73",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base74",
+      "own_exit": 0,
+      "own_output": "OUT( \"a:=1\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base75",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base76",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha[1]\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base77",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "base78",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "base79",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra0",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra1",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra2",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra3",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra4",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra5",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra6",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra7",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra8",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra9",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\\b\"' )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "extra10",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra11",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\\b\"' )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "extra12",
+      "own_exit": 0,
+      "own_output": "OUT( \"\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "extra13",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra14",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "extra15",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "extra16",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra17",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "extra18",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra19",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra20",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra21",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "extra22",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra23",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "extra24",
+      "own_exit": 0,
+      "own_output": "OUT( \"a\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "extra25",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra26",
+      "own_exit": 0,
+      "own_output": "OUT( \"a\" )\n",
+      "comparison": "plain stringify exact quoted contents"
+    },
+    {
+      "case": "extra27",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra28",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    },
+    {
+      "case": "extra29",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "outside scoped plain stringify;explicit rejection"
+    }
+  ]
+}

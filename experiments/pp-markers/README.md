@@ -492,3 +492,29 @@ Separately,25original first '..' diagnostics were inspected after atom fixes:
 one contains ../test in an RDD USE path. They are not broken logical atoms.
 Do not expand the lexer to hide pending varargs ABI or RDD contracts. This
 section adds observations only;production remainsfbaef4e,no new execution.
+
+## Plain #capture stringify, scoped exact implementation
+
+Captures retain matcher text and source-token identities;rendering recovers
+original byte spans from the owning token buffer,which remains alive during
+render. #<x> for a plain capture preserves interior spaces and adjacency.
+Single-quoted literals normalize to double-quoted text before enclosing the
+result. Existing single/double string delimiters are used only when they can
+represent the result exactly. Empty capture produces "";an absent optional
+result group still disappears. Marker-looking text inside a stringified
+literal is protected from later substitutions.
+
+This is NOT general stringify. List/repeated/nonplain captures,literal-bearing
+optional groups,escape literals and results needing bracket/escape delimiters
+are explicitly rejected. The separate <"x"> form is still unsupported. Those
+paths did not previously yield valid supported stringify programs. No lexer,
+runtime,ABI,memory or ownership contract is added. The capture metadata stays
+internal to preprocessing;ordinary emitted capture behavior is unchanged.
+
+50supported plain checks pass with exact quoted contents against fresh hbpp;
+60additional cases assert explicit outside-slice rejections,not compatibility
+passes. Eight own runtime programs are byte-exact with Harbour;14reviewed
+originals are exact again.1180default/392LLVM battery checks pass,including
+Windows/Wine. Prior marker/call/nonmatch checks pass with their documented
+divergences separate. Seven first diagnostics change,but268x4acceptance stays
+21/15Linux20/14Windows,no new complete original. No size/speed result follows.

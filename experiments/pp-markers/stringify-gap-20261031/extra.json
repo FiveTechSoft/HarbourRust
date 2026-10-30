@@ -1,0 +1,302 @@
+[
+  {
+    "case": 0,
+    "pattern": "PROBE <x>",
+    "input": "PROBE \"a'b\"",
+    "result": "OUT( #<x> )",
+    "source": "#xcommand PROBE <x> => OUT( #<x> )\nPROBE \"a'b\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( [\"a'b\"] )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 1,
+    "pattern": "PROBE <x>",
+    "input": "PROBE \"a'b\"",
+    "result": "OUT( <\"x\"> )",
+    "source": "#xcommand PROBE <x> => OUT( <\"x\"> )\nPROBE \"a'b\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( [\"a'b\"] )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 2,
+    "pattern": "PROBE <x>",
+    "input": "PROBE \"a'b\"",
+    "result": "OUT( [#<x>] )",
+    "source": "#xcommand PROBE <x> => OUT( [#<x>] )\nPROBE \"a'b\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( [\"a'b\"] )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 3,
+    "pattern": "PROBE <x>",
+    "input": "PROBE 'a\"b'",
+    "result": "OUT( #<x> )",
+    "source": "#xcommand PROBE <x> => OUT( #<x> )\nPROBE 'a\"b'\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( ['a\"b'] )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 4,
+    "pattern": "PROBE <x>",
+    "input": "PROBE 'a\"b'",
+    "result": "OUT( <\"x\"> )",
+    "source": "#xcommand PROBE <x> => OUT( <\"x\"> )\nPROBE 'a\"b'\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( ['a\"b'] )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 5,
+    "pattern": "PROBE <x>",
+    "input": "PROBE 'a\"b'",
+    "result": "OUT( [#<x>] )",
+    "source": "#xcommand PROBE <x> => OUT( [#<x>] )\nPROBE 'a\"b'\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( ['a\"b'] )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 6,
+    "pattern": "PROBE <x>",
+    "input": "PROBE e\"a\\nb\"",
+    "result": "OUT( #<x> )",
+    "source": "#xcommand PROBE <x> => OUT( #<x> )\nPROBE e\"a\\nb\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( e\"[a\\nb]\" )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 7,
+    "pattern": "PROBE <x>",
+    "input": "PROBE e\"a\\nb\"",
+    "result": "OUT( <\"x\"> )",
+    "source": "#xcommand PROBE <x> => OUT( <\"x\"> )\nPROBE e\"a\\nb\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( e\"[a\\nb]\" )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 8,
+    "pattern": "PROBE <x>",
+    "input": "PROBE e\"a\\nb\"",
+    "result": "OUT( [#<x>] )",
+    "source": "#xcommand PROBE <x> => OUT( [#<x>] )\nPROBE e\"a\\nb\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( e\"[a\\nb]\" )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 9,
+    "pattern": "PROBE <x>",
+    "input": "PROBE \"a\\b\"",
+    "result": "OUT( #<x> )",
+    "source": "#xcommand PROBE <x> => OUT( #<x> )\nPROBE \"a\\b\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( '\"a\\b\"' )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 10,
+    "pattern": "PROBE <x>",
+    "input": "PROBE \"a\\b\"",
+    "result": "OUT( <\"x\"> )",
+    "source": "#xcommand PROBE <x> => OUT( <\"x\"> )\nPROBE \"a\\b\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( '\"a\\b\"' )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 11,
+    "pattern": "PROBE <x>",
+    "input": "PROBE \"a\\b\"",
+    "result": "OUT( [#<x>] )",
+    "source": "#xcommand PROBE <x> => OUT( [#<x>] )\nPROBE \"a\\b\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( '\"a\\b\"' )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 12,
+    "pattern": "PROBE [<x>]",
+    "input": "PROBE",
+    "result": "OUT( #<x> )",
+    "source": "#xcommand PROBE [<x>] => OUT( #<x> )\nPROBE\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( \"\" )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 13,
+    "pattern": "PROBE [<x>]",
+    "input": "PROBE",
+    "result": "OUT( <\"x\"> )",
+    "source": "#xcommand PROBE [<x>] => OUT( <\"x\"> )\nPROBE\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 14,
+    "pattern": "PROBE [<x>]",
+    "input": "PROBE",
+    "result": "OUT( [#<x>] )",
+    "source": "#xcommand PROBE [<x>] => OUT( [#<x>] )\nPROBE\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 15,
+    "pattern": "PROBE [<x>]",
+    "input": "PROBE alpha",
+    "result": "OUT( #<x> )",
+    "source": "#xcommand PROBE [<x>] => OUT( #<x> )\nPROBE alpha\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( \"alpha\" )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 16,
+    "pattern": "PROBE [<x>]",
+    "input": "PROBE alpha",
+    "result": "OUT( <\"x\"> )",
+    "source": "#xcommand PROBE [<x>] => OUT( <\"x\"> )\nPROBE alpha\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( \"alpha\" )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 17,
+    "pattern": "PROBE [<x>]",
+    "input": "PROBE alpha",
+    "result": "OUT( [#<x>] )",
+    "source": "#xcommand PROBE [<x>] => OUT( [#<x>] )\nPROBE alpha\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( \"alpha\" )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 18,
+    "pattern": "PROBE <x,...>",
+    "input": "PROBE alpha, beta",
+    "result": "OUT( #<x> )",
+    "source": "#xcommand PROBE <x,...> => OUT( #<x> )\nPROBE alpha, beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( \"alpha, beta\" )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 19,
+    "pattern": "PROBE <x,...>",
+    "input": "PROBE alpha, beta",
+    "result": "OUT( <\"x\"> )",
+    "source": "#xcommand PROBE <x,...> => OUT( <\"x\"> )\nPROBE alpha, beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( \"alpha\", \"beta\" )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 20,
+    "pattern": "PROBE <x,...>",
+    "input": "PROBE alpha, beta",
+    "result": "OUT( [#<x>] )",
+    "source": "#xcommand PROBE <x,...> => OUT( [#<x>] )\nPROBE alpha, beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( \"alpha, beta\" )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 21,
+    "pattern": "PROBE <x> STOP <y>",
+    "input": "PROBE a  +   b STOP c",
+    "result": "OUT( #<x> )",
+    "source": "#xcommand PROBE <x> STOP <y> => OUT( #<x> )\nPROBE a  +   b STOP c\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( \"a  +   b\" )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 22,
+    "pattern": "PROBE <x> STOP <y>",
+    "input": "PROBE a  +   b STOP c",
+    "result": "OUT( <\"x\"> )",
+    "source": "#xcommand PROBE <x> STOP <y> => OUT( <\"x\"> )\nPROBE a  +   b STOP c\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( \"a  +   b\" )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 23,
+    "pattern": "PROBE <x> STOP <y>",
+    "input": "PROBE a  +   b STOP c",
+    "result": "OUT( [#<x>] )",
+    "source": "#xcommand PROBE <x> STOP <y> => OUT( [#<x>] )\nPROBE a  +   b STOP c\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( \"a  +   b\" )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 24,
+    "pattern": "PROBE <x> STOP <y>",
+    "input": "PROBE a STOP a",
+    "result": "OUT( #<x> )",
+    "source": "#xcommand PROBE <x> STOP <y> => OUT( #<x> )\nPROBE a STOP a\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( \"a\" )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 25,
+    "pattern": "PROBE <x> STOP <y>",
+    "input": "PROBE a STOP a",
+    "result": "OUT( <\"x\"> )",
+    "source": "#xcommand PROBE <x> STOP <y> => OUT( <\"x\"> )\nPROBE a STOP a\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( \"a\" )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 26,
+    "pattern": "PROBE <x> STOP <y>",
+    "input": "PROBE a STOP a",
+    "result": "OUT( [#<x>] )",
+    "source": "#xcommand PROBE <x> STOP <y> => OUT( [#<x>] )\nPROBE a STOP a\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( \"a\" )\n",
+    "reference_error": ""
+  },
+  {
+    "case": 27,
+    "pattern": "PROBE [WORD <x>]",
+    "input": "PROBE WORD alpha WORD beta",
+    "result": "OUT( #<x> )",
+    "source": "#xcommand PROBE [WORD <x>] => OUT( #<x> )\nPROBE WORD alpha WORD beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE WORD alpha WORD beta\n",
+    "reference_error": ""
+  },
+  {
+    "case": 28,
+    "pattern": "PROBE [WORD <x>]",
+    "input": "PROBE WORD alpha WORD beta",
+    "result": "OUT( <\"x\"> )",
+    "source": "#xcommand PROBE [WORD <x>] => OUT( <\"x\"> )\nPROBE WORD alpha WORD beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE WORD alpha WORD beta\n",
+    "reference_error": ""
+  },
+  {
+    "case": 29,
+    "pattern": "PROBE [WORD <x>]",
+    "input": "PROBE WORD alpha WORD beta",
+    "result": "OUT( [#<x>] )",
+    "source": "#xcommand PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE WORD alpha WORD beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT( \"alpha\" \"beta\" )\n",
+    "reference_error": ""
+  }
+]

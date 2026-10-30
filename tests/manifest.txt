@@ -1164,3 +1164,15 @@ pos tests/t1165_pp_atoms_call.hb \n.T.\n.T.
 pos tests/t1166_pp_atoms_quoted.hb \n. T . : = + +
 neg tests/t1167_pp_atoms_spaced_assign_neg.hb expected
 neg tests/t1168_pp_atoms_spaced_logical_neg.hb unterminated dotted word
+pos tests/t1169_pp_stringify_spaces.hb \na  +   b\nalpha(1, 2)
+pos tests/t1170_pp_stringify_quotes.hb \n"hello"\n"hello"
+pos tests/t1171_pp_stringify_absent.hb \nA  Z\nA alpha Z
+pos tests/t1172_pp_stringify_optional.hb \n\nalpha
+pos tests/t1173_pp_stringify_repeat_text.hb \na a
+pos tests/t1174_pp_stringify_call.hb \nalpha(1, 2)
+pos tests/t1175_pp_stringify_dotted.hb \n.T. .AND. .F.\na:=1
+pos tests/t1176_pp_stringify_literal_marker.hb \n"<y>"          7
+neg tests/t1177_pp_stringify_mixed_quotes_neg.hb stringify requiring bracket/escape literal
+neg tests/t1178_pp_stringify_escape_neg.hb stringify of escape literals
+neg tests/t1179_pp_stringify_list_neg.hb stringify of non-plain capture
+neg tests/t1180_pp_stringify_other_form_neg.hb unknown result marker

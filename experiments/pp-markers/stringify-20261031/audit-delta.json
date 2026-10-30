@@ -1,0 +1,471 @@
+[
+  {
+    "file": "tests/rddtest/cdxcl52.prg",
+    "before": {
+      "file": "tests/rddtest/cdxcl52.prg",
+      "sha256": "3c109e79cafd415b17ad7206f0883bf05298c0d4d67f62efc6712a63039b496a",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rddtest/cdxcl52.prg",
+      "sha256": "3c109e79cafd415b17ad7206f0883bf05298c0d4d67f62efc6712a63039b496a",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/rddtest/cdxcl53.prg",
+    "before": {
+      "file": "tests/rddtest/cdxcl53.prg",
+      "sha256": "ccbd108afa3bd29837265c2c10aa3fcf248805bb7f20e7b26e831c41982ec81d",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rddtest/cdxcl53.prg",
+      "sha256": "ccbd108afa3bd29837265c2c10aa3fcf248805bb7f20e7b26e831c41982ec81d",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/rddtest/ntxcl52.prg",
+    "before": {
+      "file": "tests/rddtest/ntxcl52.prg",
+      "sha256": "6dc1db2b584edddbfb257e6a79e0de93d643f5a77ff4dd2f022801d4d3c24c22",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rddtest/ntxcl52.prg",
+      "sha256": "6dc1db2b584edddbfb257e6a79e0de93d643f5a77ff4dd2f022801d4d3c24c22",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/rddtest/ntxcl53.prg",
+    "before": {
+      "file": "tests/rddtest/ntxcl53.prg",
+      "sha256": "38d8aaab15ecddd3f146db9bd7ff653d1bbf268dc8047a1367bf4c57ff8a68a0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rddtest/ntxcl53.prg",
+      "sha256": "38d8aaab15ecddd3f146db9bd7ff653d1bbf268dc8047a1367bf4c57ff8a68a0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/rddtest/rddmktst.prg",
+    "before": {
+      "file": "tests/rddtest/rddmktst.prg",
+      "sha256": "0a83a8ce2eb0a5b06e2eb7f83a50f37f9d4b2156f5a7e1ce16458b06aa7e6372",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 247: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 247: character not allowed `#` (U+0023)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 247: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 247: character not allowed `#` (U+0023)"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rddtest/rddmktst.prg",
+      "sha256": "0a83a8ce2eb0a5b06e2eb7f83a50f37f9d4b2156f5a7e1ce16458b06aa7e6372",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 310: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 310: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 310: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 310: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/rto_get.prg",
+    "before": {
+      "file": "tests/rto_get.prg",
+      "sha256": "9105bb336f4c3d31776c76bbc47bd441d88802d171ec9bbb66713e1d952e6805",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 370: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 370: character not allowed `#` (U+0023)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 370: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 370: character not allowed `#` (U+0023)"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rto_get.prg",
+      "sha256": "9105bb336f4c3d31776c76bbc47bd441d88802d171ec9bbb66713e1d952e6805",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 301: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 301: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 301: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 301: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/rto_tb.prg",
+    "before": {
+      "file": "tests/rto_tb.prg",
+      "sha256": "d1b0a7d500421e2f52a3fdbb2df9657679132a506a08e0fe31fa0eb3d8dd3478",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 250: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 250: character not allowed `#` (U+0023)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 250: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 250: character not allowed `#` (U+0023)"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rto_tb.prg",
+      "sha256": "d1b0a7d500421e2f52a3fdbb2df9657679132a506a08e0fe31fa0eb3d8dd3478",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 194: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 194: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 194: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 194: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works"
+        ]
+      }
+    }
+  }
+]
