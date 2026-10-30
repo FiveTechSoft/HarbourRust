@@ -590,3 +590,22 @@ stringifies each comma-separated element separately;that is not the plain
 capture contract. Result literal data must not be reparsed as a marker.
 Escaped/bracket literals and literal-bearing optional groups remain outside
 the previous scoped implementation. No production change in this evidence.
+
+## Scoped normal stringify implementation
+
+<"x"> now uses existing exact source spans/quoting for present plain captures.
+Absent optional capture emits zero bytes,unlike #<x>'s empty string literal.
+Marker identity remains exact;stringified literal data is staged opaque.
+Literal-bearing optional match groups,list/nonplain/repeated captures and
+bracket/escape literal requirements stay outside the supported slice.
+
+104of184oracle observations verify exact quoted contents or invalid marker
+identity;80remain outside-slice observations,not passes. The previous110case
+suite is now50#plain+45new normal matches+15outside-slice rejections. Test1180
+formerly rejected normal stringify wholesale;it now tests exact-case mismatch,
+while1190positively tests the newly supported form. Five own runtime programs
+are byte-exact against fresh Harbour.1196default/424LLVM checks pass locally.
+Fourteen originals are freshly exact;268x4acceptance stays21/15Linux20/14Windows.
+Two first diagnostics advance without a new full original acceptance. Ordinary
+capture and quoted#capture controls match baseline;normal marker-looking text
+inside a result literal remains literal data. No lexer/runtime/ABI change.

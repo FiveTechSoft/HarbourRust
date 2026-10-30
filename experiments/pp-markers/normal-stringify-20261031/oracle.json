@@ -1,0 +1,1477 @@
+{
+  "scope": "plain normal stringify only;outside observations not passes",
+  "rows": [
+    {
+      "group": "results",
+      "case": 0,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 1,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 2,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 3,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 4,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 5,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha)\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 6,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 7,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 8,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 9,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 10,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 11,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha)\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 12,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 13,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 14,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 15,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 16,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 17,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha)\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 18,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 19,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 20,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 21,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 22,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 23,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha)\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 24,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 25,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 26,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 27,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 28,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 29,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 30,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 31,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 32,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 33,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 34,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 35,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 36,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 37,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 38,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 39,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 40,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 41,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha)\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 42,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 43,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 44,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 45,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 46,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 47,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha)\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 48,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 49,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 50,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 51,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 52,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 53,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha)\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 54,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 55,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 56,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 57,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 58,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 59,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha)\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 60,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 61,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 62,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 63,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 64,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 65,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 66,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 67,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 68,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 69,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 70,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 71,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 72,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 73,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 74,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 75,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 76,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 77,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha)\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 78,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 79,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 80,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 81,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 82,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 83,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha)\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 84,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 85,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 86,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 87,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 88,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 89,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha)\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 90,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 91,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 92,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 93,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 94,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 95,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha)\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 96,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 97,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 98,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 99,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 100,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 101,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 102,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 103,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 104,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 105,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 106,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 107,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 108,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 109,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 110,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 111,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 112,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 113,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha)\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 114,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 115,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 116,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 117,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 118,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 119,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha)\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 120,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 121,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 122,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 123,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 124,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 125,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha)\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 126,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 127,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 128,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"a  +   b\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 129,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 130,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 131,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha)\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 132,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 133,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 134,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 135,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 136,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 137,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 138,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 139,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 140,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 141,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 142,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 143,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of non-plain capture is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 0,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    {
+      "group": "extra",
+      "case": 1,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 1: unknown result marker <\"X\"> (Harbour: E0008)\n"
+    },
+    {
+      "group": "extra",
+      "case": 2,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(AZ)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 3,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(A\"\"Z)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 4,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT('\"<y>\"',7)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 5,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT(\"<\"x\">\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 6,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\"alpha\",alpha)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 7,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of escape literals is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 8,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify requiring bracket/escape literal is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 9,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 10,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    {
+      "group": "extra",
+      "case": 11,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 1: unknown result marker <\"X\"> (Harbour: E0008)\n"
+    },
+    {
+      "group": "extra",
+      "case": 12,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(AZ)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 13,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(A\"\"Z)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 14,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT('\"<y>\"',7)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 15,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT(\"<\"x\">\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 16,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\"alpha\",alpha)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 17,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of escape literals is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 18,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify requiring bracket/escape literal is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 19,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 20,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    {
+      "group": "extra",
+      "case": 21,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 1: unknown result marker <\"X\"> (Harbour: E0008)\n"
+    },
+    {
+      "group": "extra",
+      "case": 22,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(AZ)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 23,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(A\"\"Z)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 24,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT('\"<y>\"',7)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 25,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT(\"<\"x\">\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 26,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\"alpha\",alpha)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 27,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of escape literals is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 28,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify requiring bracket/escape literal is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 29,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 30,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    {
+      "group": "extra",
+      "case": 31,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 1: unknown result marker <\"X\"> (Harbour: E0008)\n"
+    },
+    {
+      "group": "extra",
+      "case": 32,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(AZ)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 33,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(A\"\"Z)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 34,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT('\"<y>\"',7)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 35,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT(\"<\"x\">\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 36,
+      "kind": "scoped normal exact quoted contents or invalid marker identity",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\"alpha\",alpha)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 37,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of escape literals is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 38,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify requiring bracket/escape literal is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 39,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    }
+  ]
+}

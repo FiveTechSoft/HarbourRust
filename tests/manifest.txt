@@ -1185,3 +1185,10 @@ pos tests/t1186_pp_fixed_translate_temporal.hb \n         7\n         8\n       
 pos tests/t1187_pp_fixed_translate_command.hb \n         7
 pos tests/t1188_pp_fixed_xtranslate.hb \n         7          8
 neg tests/t1189_pp_fixed_translate_recursive_neg.hb fixed translation expansion too deep
+pos tests/t1190_pp_normal_stringify.hb \na  +   b\n"hello"
+pos tests/t1191_pp_normal_stringify_absent.hb \nA Z\nA alpha Z
+pos tests/t1192_pp_normal_stringify_mix.hb \n42 42         42
+pos tests/t1193_pp_normal_stringify_marker.hb \n"<y>"          7
+pos tests/t1194_pp_normal_stringify_call.hb \nalpha(1, 2)
+neg tests/t1195_pp_normal_stringify_quotes_neg.hb stringify requiring bracket/escape literal
+neg tests/t1196_pp_normal_stringify_list_neg.hb stringify of non-plain capture

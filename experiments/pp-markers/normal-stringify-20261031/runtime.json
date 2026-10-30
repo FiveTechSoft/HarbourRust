@@ -1,0 +1,27 @@
+[
+  {
+    "file": "t1190_pp_normal_stringify.hb",
+    "exact": true,
+    "stdout_hex": "0a6120202b202020620a2268656c6c6f22"
+  },
+  {
+    "file": "t1191_pp_normal_stringify_absent.hb",
+    "exact": true,
+    "stdout_hex": "0a41205a0a4120616c706861205a"
+  },
+  {
+    "file": "t1192_pp_normal_stringify_mix.hb",
+    "exact": true,
+    "stdout_hex": "0a34322034322020202020202020203432"
+  },
+  {
+    "file": "t1193_pp_normal_stringify_marker.hb",
+    "exact": true,
+    "stdout_hex": "0a223c793e222020202020202020202037"
+  },
+  {
+    "file": "t1194_pp_normal_stringify_call.hb",
+    "exact": true,
+    "stdout_hex": "0a616c70686128312c203229"
+  }
+]

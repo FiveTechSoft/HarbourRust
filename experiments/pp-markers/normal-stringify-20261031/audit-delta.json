@@ -1,0 +1,36 @@
+[
+  {
+    "file": "tests/hbpp/_pp_test.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 38: unknown result marker <\"form\"> (Harbour: E0008)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 82: macro clas takes 1 argument(s), got 3"
+      ]
+    }
+  },
+  {
+    "file": "tests/pp.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 10: unknown result marker <\"z\"> (Harbour: E0008)"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 36: stringify of non-plain capture is outside this increment"
+      ]
+    }
+  }
+]

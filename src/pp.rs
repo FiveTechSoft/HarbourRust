@@ -632,7 +632,8 @@ fn validate_result_markers(pattern: &[String], result: &str, line: usize, exact_
                 };
                 let logical = inner.len() >= 2 && inner.starts_with('.') && inner.ends_with('.');
                 let null_result = inner.len() >= 2 && inner.starts_with('-') && inner.ends_with('-');
-                let valid = if logical || null_result {
+                let normal_stringify = inner.len() >= 2 && inner.starts_with('"') && inner.ends_with('"');
+                let valid = if logical || null_result || normal_stringify {
                     exact_names.contains(&inner[1..inner.len()-1].to_string())
                 } else if exact_plain { exact_names.contains(&base.to_string()) }
                 else { names.contains(&base.to_lowercase()) };
@@ -1045,6 +1046,7 @@ fn render_command(c: &Cmd, caps: &[Capture], source: &str, tokens: &[String], li
                             bound.insert(format!("<({})>", base.to_lowercase()));
                             bound.insert(format!("<.{}.>", base.to_lowercase()));
                             bound.insert(format!("<-{}->", base.to_lowercase()));
+                            bound.insert(format!("<\"{}\">", base.to_lowercase()));
                         }
                         pi += 1;
                     }
@@ -1066,7 +1068,7 @@ fn render_command(c: &Cmd, caps: &[Capture], source: &str, tokens: &[String], li
                     let base = marker_name(inner);
                     // Stringify must run before plain substitution and retain
                     // source bytes,not the matcher's whitespace-normalized view.
-                    let stringify = format!("#<{}>", base.to_lowercase());
+                    for (stringify, normal) in [(format!("#<{}>", base.to_lowercase()), false), (format!("<\"{}\">", base), true)] {
                     let stringify_at = stringify_positions(&out, &stringify);
                     if !stringify_at.is_empty() {
                         let mut group = 0; let mut grouped_literal = false;
@@ -1080,7 +1082,7 @@ fn render_command(c: &Cmd, caps: &[Capture], source: &str, tokens: &[String], li
                             return Err(format!("line {}: stringify of non-plain capture is outside this increment", line_no));
                         }
                         let spans = source_spans(source, tokens).map_err(|e| format!("line {}: {}", line_no, e))?;
-                        let value = stringify_capture(&caps[pi], source, &spans).map_err(|e| format!("line {}: {}", line_no, e))?;
+                        let value = if normal && caps[pi].is_empty() { String::new() } else { stringify_capture(&caps[pi], source, &spans).map_err(|e| format!("line {}: {}", line_no, e))? };
                         // A resulting literal is data;later marker substitutions
                         // must not inspect marker-like text inside it.
                         let token = (0xe000..=0xf8ff).filter_map(char::from_u32).find(|ch|
@@ -1093,6 +1095,7 @@ fn render_command(c: &Cmd, caps: &[Capture], source: &str, tokens: &[String], li
                             rebuilt.push_str(&out[at..k]); rebuilt.push_str(&value); at = k + stringify.len();
                         }
                         rebuilt.push_str(&out[at..]); out = rebuilt;
+                    }
                     }
                     for (needle, insertion) in [
                         (format!("<{}>", base.to_lowercase()), caps[pi].text.clone()),

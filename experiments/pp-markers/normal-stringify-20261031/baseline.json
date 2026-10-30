@@ -1,0 +1,44 @@
+[
+  {
+    "case": "ordinary",
+    "source": "#xcommand SHOW <x> => ? <x>\nprocedure main()\nSHOW 42\nreturn\n",
+    "baseline": {
+      "exit": 0,
+      "output": "procedure main()\n? 42\nreturn\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "procedure main()\n? 42\nreturn\n",
+      "error": ""
+    }
+  },
+  {
+    "case": "quoted",
+    "source": "#xcommand SHOW <x> => ? \"#<x>\"\nprocedure main()\nSHOW 42\nreturn\n",
+    "baseline": {
+      "exit": 0,
+      "output": "procedure main()\n? \"#42\"\nreturn\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "procedure main()\n? \"#42\"\nreturn\n",
+      "error": ""
+    }
+  },
+  {
+    "case": "normalquoted",
+    "source": "#xcommand SHOW <x> => ? '<\"x\">'\nprocedure main()\nSHOW 42\nreturn\n",
+    "baseline": {
+      "exit": 1,
+      "output": "",
+      "error": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "procedure main()\n? '<\"x\">'\nreturn\n",
+      "error": ""
+    }
+  }
+]
