@@ -28,7 +28,8 @@
         "tests/dbi.prg",
         "tests/gtwin.prg",
         "tests/gtxfnt.prg",
-        "tests/utf8at.prg"
+        "tests/utf8at.prg",
+        "tests/parexpr.prg"
       ],
       "seed_regression_paths": [
         "tests/t07_unicode_string.hb",
@@ -121,7 +122,9 @@
         "tests/exit.prg",
         "tests/ifelse.prg",
         "tests/fornext.prg",
-        "tests/while.prg"
+        "tests/while.prg",
+        "tests/foreach.prg",
+        "tests/foreach2.prg"
       ],
       "seed_regression_paths": [
         "tests/t358_foreach_strord_num.hb",
@@ -187,7 +190,11 @@
         "tests/docase.prg",
         "tests/ifelse.prg",
         "tests/ifinline.prg",
-        "tests/while.prg"
+        "tests/while.prg",
+        "tests/ains.prg",
+        "tests/foreach.prg",
+        "tests/foreach2.prg",
+        "tests/parexpr.prg"
       ],
       "seed_regression_paths": [
         "tests/t1040_seq_dyn_limit_neg.hb",
@@ -219,7 +226,8 @@
         "tests/dyn.prg",
         "tests/dbf.prg",
         "tests/objarr.prg",
-        "tests/dynobj.prg"
+        "tests/dynobj.prg",
+        "tests/foreach2.prg"
       ],
       "seed_regression_paths": [
         "tests/t750_float_arith_mixed.hb",
@@ -274,7 +282,12 @@
         "tests/regex.prg",
         "tests/regex2.prg",
         "tests/utf8at.prg",
-        "tests/ifinline.prg"
+        "tests/ifinline.prg",
+        "tests/ains.prg",
+        "tests/asort.prg",
+        "tests/vmasort.prg",
+        "tests/foreach.prg",
+        "tests/parexpr.prg"
       ],
       "seed_regression_paths": [
         "tests/t208_nil_literal.hb",
@@ -343,7 +356,10 @@
         "tests/objarr.prg",
         "tests/dynobj.prg",
         "tests/speedstr.prg",
-        "tests/begin.prg"
+        "tests/begin.prg",
+        "tests/asort.prg",
+        "tests/vmasort.prg",
+        "tests/foreach2.prg"
       ],
       "seed_regression_paths": [
         "tests/t150_cb_eval1.hb",
@@ -429,7 +445,10 @@
         "tests/regex.prg",
         "tests/regex2.prg",
         "tests/speedstr.prg",
-        "tests/utf8at.prg"
+        "tests/utf8at.prg",
+        "tests/asort.prg",
+        "tests/vmasort.prg",
+        "tests/foreach.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -487,7 +506,9 @@
         "tests/dbi.prg",
         "tests/dbf.prg",
         "tests/delim.prg",
-        "tests/sdf.prg"
+        "tests/sdf.prg",
+        "tests/asort.prg",
+        "tests/vmasort.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -611,7 +632,8 @@
         "tests/scroll.prg",
         "tests/regex.prg",
         "tests/regex2.prg",
-        "tests/speedstr.prg"
+        "tests/speedstr.prg",
+        "tests/foreach.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -659,7 +681,9 @@
         "tests/use.prg",
         "tests/objarr.prg",
         "tests/datetime.prg",
-        "tests/speedstr.prg"
+        "tests/speedstr.prg",
+        "tests/asort.prg",
+        "tests/vmasort.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,

@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "179 distinct full-source manual metadata reviews; overlap and union computed by ledger. Latest ten distinguish bounded console/control candidates from nested break/unwind, recursive lazy iif, omitted branches and loop update semantics. No compile/run or new authority. Requirements not availability; tags not coverage.",
+  "scope": "185 distinct full-source manual metadata reviews; ledger computes union/overlap. Latest six distinguish dynamic insert/delete/resize, heterogeneous sort, allocation stress, mutable/multi-base and overloaded enumeration,comma expressions. No compile/run or new authority. Requirements not availability; tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -8276,6 +8276,319 @@
           "symbol_or_construct": "? x",
           "lines": [
             8
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/ains.prg",
+      "sha256": "eb6264dc181c5ed9db843dd7602e43a08d085a282639750eee2dce6689987df4",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source dynamic-container/expression profile",
+      "families": [
+        "arrays",
+        "nested-arrays",
+        "array-aliasing",
+        "nil-value",
+        "functions"
+      ],
+      "dependency_requirements": [
+        "AClone/AIns/ADel/ASize/AFill; mixed dynamic cells and recursive aDump; ValType and type tests"
+      ],
+      "effects_or_harness_risks": [
+        "Mutates/resizes nested arrays, inserts NIL padding and changes cell types; console only"
+      ],
+      "output_comparison": "Deterministic candidate but needs length/type/tail/alias invariants beyond rendered dump",
+      "next_gate": "Dynamic container/lifetime contract before runtime; explicit insert/delete versus resize semantics",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "ADel( aSecond, 3 )",
+          "lines": [
+            34,
+            39
+          ]
+        },
+        {
+          "symbol_or_construct": "ASize( aSecond, Len( aSecond ) - 1 )",
+          "lines": [
+            40
+          ]
+        },
+        {
+          "symbol_or_construct": "AFill( aMore, \"X\", 3, 2 )",
+          "lines": [
+            54
+          ]
+        },
+        {
+          "symbol_or_construct": "aDump( aShow[ n ] )",
+          "lines": [
+            80
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/asort.prg",
+      "sha256": "fae776d775143e22bcce1dde2694e8ea306d734ca3c7b21bec0f896be331273b",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source dynamic-container/expression profile",
+      "families": [
+        "arrays",
+        "sorting",
+        "closures",
+        "dates",
+        "environment-clock",
+        "classes"
+      ],
+      "dependency_requirements": [
+        "Mixed NIL/array/block/object/date/scalar array; AClone; default and custom comparator sorting"
+      ],
+      "effects_or_harness_risks": [
+        "Allocates/clones/sorts arrays and prints reduced type placeholders; reads current date"
+      ],
+      "output_comparison": "Clock,collation and heterogeneous ordering dependent; dump collapses distinct arrays,blocks,objects",
+      "next_gate": "Element identity/permutation/order oracle,declared clock/collation,comparator invocation semantics; output equality alone insufficient",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "LOCAL c :=",
+          "lines": [
+            11
+          ]
+        },
+        {
+          "symbol_or_construct": "ASort( AClone( c ) )",
+          "lines": [
+            22
+          ]
+        },
+        {
+          "symbol_or_construct": "xToStr( x ) < xToStr( y )",
+          "lines": [
+            23
+          ]
+        },
+        {
+          "symbol_or_construct": "RETURN \"{.}\"",
+          "lines": [
+            56
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/vmasort.prg",
+      "sha256": "c424b47654d1ff4ae007b94a57f2a9e6127380724b10af85a997468e5f348343",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source dynamic-container/expression profile",
+      "families": [
+        "arrays",
+        "sorting",
+        "closures",
+        "dates",
+        "environment-clock",
+        "set-format"
+      ],
+      "dependency_requirements": [
+        "Argument-controlled nPass;200*nPass iterations create eight heterogeneous elements each,including Array(n)",
+        "Default ASort,AClone,ErrorNew,Date; dump serializes placeholders"
+      ],
+      "effects_or_harness_risks": [
+        "Allocates many nested arrays with quadratic aggregate element capacity; prints large output;changes date format"
+      ],
+      "output_comparison": "Resource cost,input,clock,collation and placeholder collapse prevent simple benchmark/equivalence claim",
+      "next_gate": "Bounded input/resource plan plus identity/order oracle; not a scalar speed test despite name",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "LOCAL nMult := 200",
+          "lines": [
+            33
+          ]
+        },
+        {
+          "symbol_or_construct": "LOCAL nMax  := nPass * nMult",
+          "lines": [
+            35
+          ]
+        },
+        {
+          "symbol_or_construct": "AAdd( aData, Array( n ) )",
+          "lines": [
+            44
+          ]
+        },
+        {
+          "symbol_or_construct": "AAdd( aData, {|| n } )",
+          "lines": [
+            43
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/foreach.prg",
+      "sha256": "b1e07e8de9ffc86abdf3d61a621b27fd0a25323287ae891e80a3f2b3ce649106",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source dynamic-container/expression profile",
+      "families": [
+        "foreach",
+        "array-aliasing",
+        "byref",
+        "exceptions-always",
+        "strings",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "Enumerator metadata,mutable array/string element binding,multi-base ascending/descending iteration",
+        "Nested byref enumeration and sequence recovery reusing enumeration variable"
+      ],
+      "effects_or_harness_risks": [
+        "Mutates array/string elements,restores prior enum variable,unwinds BREAK; repeated key waits"
+      ],
+      "output_comparison": "Binding,index/base/value,restoration and unwind states are oracles; not fixed-array iteration",
+      "next_gate": "Explicit enumerator reference/lifetime and string mutation contract; scripted input; multi-base length/cleanup tests",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "testBYREF( @enum )",
+          "lines": [
+            52
+          ]
+        },
+        {
+          "symbol_or_construct": "FOR EACH enum, bb, cc IN A, AA, c DESCEND",
+          "lines": [
+            120
+          ]
+        },
+        {
+          "symbol_or_construct": "RECOVER USING enum",
+          "lines": [
+            140
+          ]
+        },
+        {
+          "symbol_or_construct": "enum:__enumBase()",
+          "lines": [
+            29,
+            49,
+            56,
+            74,
+            100
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/foreach2.prg",
+      "sha256": "f25d79223ff72af7b348338b2570aed47c5968e54a5dd8b80a8c7e7929abd4e1",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source dynamic-container/expression profile",
+      "families": [
+        "foreach",
+        "classes",
+        "byref",
+        "floating-point",
+        "dynamic-dispatch"
+      ],
+      "dependency_requirements": [
+        "hbclass.ch; overloaded __enumStart/Skip/Stop; (@enum) reference messages",
+        "Base replacement,custom values/negative indexes; fractional values"
+      ],
+      "effects_or_harness_risks": [
+        "Mutates object/enumerator state in lifecycle callbacks; console only"
+      ],
+      "output_comparison": "Start/skip/stop calls and index/value transitions require protocol oracle; empty stop body does not prove cleanup correctness",
+      "next_gate": "Separate custom-enumerator/class/lifetime contract; direction/failure/early-stop fixtures; no inferred support",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "(@enum):__enumBase",
+          "lines": [
+            53
+          ]
+        },
+        {
+          "symbol_or_construct": "(@enum):__enumIndex",
+          "lines": [
+            82,
+            98
+          ]
+        },
+        {
+          "symbol_or_construct": "METHOD __enumSkip",
+          "lines": [
+            70,
+            85
+          ]
+        },
+        {
+          "symbol_or_construct": "METHOD PROCEDURE __enumStop",
+          "lines": [
+            103
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/parexpr.prg",
+      "sha256": "132cb3b09bc3d8d7d1456049a3ad604c8fd9d5a1cf1440ae145ecd8b5e883ae1",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source dynamic-container/expression profile",
+      "families": [
+        "assignment-expression",
+        "conditional-expression",
+        "discard-return",
+        "pragmas",
+        "nil-value"
+      ],
+      "dependency_requirements": [
+        "Comma expression sequencing/last value; nested assignments; IF statement/expression ambiguity; warning pragma"
+      ],
+      "effects_or_harness_risks": [
+        "Console only; side effects in discarded expressions and condition evaluation"
+      ],
+      "output_comparison": "Deterministic candidate; commented invalid IF is not an executed rejection test",
+      "next_gate": "Parser/sequence/order/arity fixtures; separate explicit negative source; no inference from commented syntax",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "#pragma -es0",
+          "lines": [
+            9
+          ]
+        },
+        {
+          "symbol_or_construct": "x := ( 1, 2, 3 )",
+          "lines": [
+            26
+          ]
+        },
+        {
+          "symbol_or_construct": "IF ( Something( 1, 2, 3 ), .T. )",
+          "lines": [
+            59
+          ]
+        },
+        {
+          "symbol_or_construct": "// IF( .T., .F., .T. )",
+          "lines": [
+            79
           ]
         }
       ]

@@ -485,3 +485,21 @@ visibility,wrong-direction empty FOR and postincrement on the failing WHILE
 condition. The latter's final update is not printed and needs its own state
 fixture. docase exercises one selected case,not every arm. These are gates for
 correctness/coverage,not new compiler features or performance measurements.
+
+### Dynamic container/iteration profiles:185 manual /190 reviewed-or-executed
+
+Six additional full-source reviews give185 manual records and190 in the union
+(185+19-14). Historical executions remain19/14;no compile/run. ains distinguishes
+insertion/deletion from resize,NIL tails,mixed cells and recursive dumps. asort
+and vmasort serialize arrays/blocks/objects as identical type placeholders:
+matching output would not prove identity,permutation or ordering. vmasort's
+Array(n) in each iteration grows aggregate nested capacity quadratically with
+its argument;it needs resource bounds,not a casual benchmark run.
+
+foreach mutates enumerated array/string elements,passes the enumerator byref,
+iterates multiple bases and unwinds BREAK into the enumerator variable. foreach2
+overloads start/skip/stop and mutates reference metadata,including negative
+indexes. Neither is the fixed-I64-array iterator slice. parexpr needs comma
+sequence/last-value and IF expression/statement parsing assertions;its commented
+invalid IF is not a rejection result. These records grant no new container,
+string,enumerator,lifetime or class-runtime contract.

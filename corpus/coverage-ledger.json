@@ -4,8 +4,8 @@
   "counts": {
     "inventory_files": 1203,
     "original_test_sources_compile_audited": 268,
-    "manual_entrypoint_dependency_reviews": 179,
-    "manually_reviewed_or_executed_sources": 184,
+    "manual_entrypoint_dependency_reviews": 185,
+    "manually_reviewed_or_executed_sources": 190,
     "frozen175_default_accepted": 20,
     "frozen175_llvm_accepted": 14,
     "execution_exact_by_profile": {
@@ -11178,8 +11178,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source dynamic-container/expression profile",
+        "families": [
+          "arrays",
+          "nested-arrays",
+          "array-aliasing",
+          "nil-value",
+          "functions"
+        ],
+        "next_gate": "Dynamic container/lifetime contract before runtime; explicit insert/delete versus resize semantics",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -11727,8 +11742,24 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source dynamic-container/expression profile",
+        "families": [
+          "arrays",
+          "sorting",
+          "closures",
+          "dates",
+          "environment-clock",
+          "classes"
+        ],
+        "next_gate": "Element identity/permutation/order oracle,declared clock/collation,comparator invocation semantics; output equality alone insufficient",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -15067,8 +15098,24 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source dynamic-container/expression profile",
+        "families": [
+          "foreach",
+          "array-aliasing",
+          "byref",
+          "exceptions-always",
+          "strings",
+          "input-terminal"
+        ],
+        "next_gate": "Explicit enumerator reference/lifetime and string mutation contract; scripted input; multi-base length/cleanup tests",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -15100,8 +15147,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source dynamic-container/expression profile",
+        "families": [
+          "foreach",
+          "classes",
+          "byref",
+          "floating-point",
+          "dynamic-dispatch"
+        ],
+        "next_gate": "Separate custom-enumerator/class/lifetime contract; direction/failure/early-stop fixtures; no inferred support",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -19109,8 +19171,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source dynamic-container/expression profile",
+        "families": [
+          "assignment-expression",
+          "conditional-expression",
+          "discard-return",
+          "pragmas",
+          "nil-value"
+        ],
+        "next_gate": "Parser/sequence/order/arity fixtures; separate explicit negative source; no inference from commented syntax",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -22452,8 +22529,24 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source dynamic-container/expression profile",
+        "families": [
+          "arrays",
+          "sorting",
+          "closures",
+          "dates",
+          "environment-clock",
+          "set-format"
+        ],
+        "next_gate": "Bounded input/resource plan plus identity/order oracle; not a scalar speed test despite name",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
