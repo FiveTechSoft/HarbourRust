@@ -394,3 +394,24 @@ ordinary linked companion. dyn requires architecture-specific DLL exports and
 explicit type/calling-convention/encoding checks. Grouping metadata records
 these relationships without building,deployment,network/device access or new
 runtime authority. Original bodies are not copied into this repository.
+
+### Alias/RDD artifact profiles:149 manual /163 reviewed-or-executed
+
+Ten additional full-source reviews give149 distinct manual records and163 in
+the union (149+19-5). Historical executions remain19/14;no new compile or run.
+alias is NOTEST with uninitialized values and unspecified workareas,so its
+aliased-expression/pcode focus does not make it safe to execute. aliasrt writes
+AGE into the existing test fixture. aliaslck and use create missing files but
+later delete their named tables even if they already existed:only disposable
+fixtures qualify for any future harness. Lock and error-state assertions are
+separate from stdout matching.
+
+cdx explicitly selects DBFCDX;ntx index filenames alone do not prove which RDD
+was selected. dbf starts with DBFCDX but recreates its table using the default
+driver and later inspects DBT files;the two phases must not be conflated. ZAP,
+PACK,memo storage,filtering and input pauses need explicit artifact/state gates.
+dbi writes a separate report and calls dbInfo setter forms,not only queries.
+delim/sdf both remove test8.txt and attempt import from a deliberately missing
+file;they need controlled error handling as well as export-byte comparisons.
+The old SDF implementation comment is not evidence of current support. None of
+these records authorizes RDD/runtime changes or access to existing user data.

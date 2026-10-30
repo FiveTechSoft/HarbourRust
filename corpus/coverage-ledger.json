@@ -4,8 +4,8 @@
   "counts": {
     "inventory_files": 1203,
     "original_test_sources_compile_audited": 268,
-    "manual_entrypoint_dependency_reviews": 139,
-    "manually_reviewed_or_executed_sources": 153,
+    "manual_entrypoint_dependency_reviews": 149,
+    "manually_reviewed_or_executed_sources": 163,
     "frozen175_default_accepted": 20,
     "frozen175_llvm_accepted": 14,
     "execution_exact_by_profile": {
@@ -11211,8 +11211,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+        "families": [
+          "RDD-workarea",
+          "memvars-dynamic-binding",
+          "compound-assignment",
+          "nil-local",
+          "compiler-diagnostic"
+        ],
+        "next_gate": "Own source compiler fixtures for alias scope and lvalues; no original execution",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -11244,8 +11259,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+        "families": [
+          "RDD-workarea",
+          "record-locking",
+          "filesystem",
+          "input-terminal",
+          "foreach"
+        ],
+        "next_gate": "Disposable fixture only, never existing _tst; scripted pauses, lock invariants and interrupted-run cleanup",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -11277,8 +11307,21 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+        "families": [
+          "RDD-workarea",
+          "filesystem",
+          "input-terminal"
+        ],
+        "next_gate": "Copy test data into isolated folder; assert persisted fields and selection transitions separately",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -12233,8 +12276,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+        "families": [
+          "RDD-workarea",
+          "filesystem",
+          "input-terminal",
+          "memo-drivers",
+          "closures"
+        ],
+        "next_gate": "Disposable source copy and output namespace; compare records, memo bytes and index ordering with cleanup",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -13528,8 +13586,24 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+        "families": [
+          "RDD-workarea",
+          "filesystem",
+          "memo-drivers",
+          "floating-point",
+          "input-terminal",
+          "closures"
+        ],
+        "next_gate": "Disposable database tree; distinguish initial DBFCDX and default-driver phase; exact artifact/record assertions, not assumed default RDD",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -13608,8 +13682,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+        "families": [
+          "RDD-workarea",
+          "filesystem",
+          "preprocessor-platform",
+          "dates"
+        ],
+        "next_gate": "Isolated DBF/output; declared ID semantics and state snapshot; file and stdout are separate results",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -13810,8 +13898,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+        "families": [
+          "RDD-workarea",
+          "filesystem",
+          "CSV-driver",
+          "record-traversal",
+          "error-system"
+        ],
+        "next_gate": "Disposable fixtures/paths; scope and artifact assertions plus controlled error; do not touch existing test8",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -18235,8 +18338,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+        "families": [
+          "RDD-workarea",
+          "filesystem",
+          "input-terminal",
+          "record-traversal"
+        ],
+        "next_gate": "Disposable DBF and index namespace; forward/reverse boundary and order assertions",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -20055,8 +20172,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+        "families": [
+          "RDD-workarea",
+          "filesystem",
+          "record-traversal",
+          "error-system"
+        ],
+        "next_gate": "Disposable fixture/path namespace; per-driver bytes and missing-file error oracle separately",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -21367,8 +21498,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+        "families": [
+          "RDD-workarea",
+          "filesystem",
+          "exceptions-always",
+          "error-system",
+          "environment-query"
+        ],
+        "next_gate": "Disposable paths only; structured subcode/operation/state assertions; restore error handler on all paths",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {

@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "139 distinct full-source manual metadata reviews;5 overlap prior19 execution. Nine additional sources plus richer existing hrbext record distinguish listeners, self-spawning pipes, CGI libraries/applications, HRB and DLL profiles. No compile/link/run or authority. Requirements not verified availability; tags not coverage.",
+  "scope": "149 distinct full-source manual metadata reviews;5 overlap prior19 execution. Latest ten distinguish aliased lvalues, DBF/memo/index/lock/export and intentional error profiles. No new compilation or execution. Requirements not verified availability; tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -6306,6 +6306,521 @@
           "symbol_or_construct": "HB_DYN_ENC_RAW",
           "lines": [
             40
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/alias.prg",
+      "sha256": "b3db629b5ba8276fb32281c24e4b6fbff9fbb3c6a73a149392266c06c794796c",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "memvars-dynamic-binding",
+        "compound-assignment",
+        "nil-local",
+        "compiler-diagnostic"
+      ],
+      "dependency_requirements": [
+        "NOTEST compiler/aliased-expression inspection fixture; symbolic/numeric/dynamic aliases; FIELD/MEMVAR resolution"
+      ],
+      "effects_or_harness_risks": [
+        "Uninitialized locals/memvars and unspecified workareas; increments and aliased writes are not a safe runnable program"
+      ],
+      "output_comparison": "Compile/IR resolution assertions, not normal exit or stdout oracle",
+      "next_gate": "Own source compiler fixtures for alias scope and lvalues; no original execution",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "//NOTEST",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "FIELD aliasedField IN aaa",
+          "lines": [
+            14
+          ]
+        },
+        {
+          "symbol_or_construct": "? ( localVar, 2 )->",
+          "lines": [
+            53
+          ]
+        },
+        {
+          "symbol_or_construct": "MEMVA->fieldVar",
+          "lines": [
+            131
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/aliaslck.prg",
+      "sha256": "5aa3f40f1bf739465226632d5f67f69aee027fd05dd9a2a134285e5e7142ea61",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "record-locking",
+        "filesystem",
+        "input-terminal",
+        "foreach"
+      ],
+      "dependency_requirements": [
+        "Existing or newly created _tst table; exclusive/shared aliased workareas; record lock list"
+      ],
+      "effects_or_harness_risks": [
+        "Creates/appends if absent; opens same path twice, locks/unlocks; WAIT pauses; finally drops _tst even if it preexisted"
+      ],
+      "output_comparison": "Lock-state, backend and input dependent; current external locks cannot be assumed",
+      "next_gate": "Disposable fixture only, never existing _tst; scripted pauses, lock invariants and interrupted-run cleanup",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "if ! hb_dbExists",
+          "lines": [
+            12
+          ]
+        },
+        {
+          "symbol_or_construct": "use _tst exclusive alias tst2",
+          "lines": [
+            25
+          ]
+        },
+        {
+          "symbol_or_construct": "dbRUnlock(3)",
+          "lines": [
+            78
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_dbDrop( cFile )",
+          "lines": [
+            96
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/aliasrt.prg",
+      "sha256": "daf09275354c200fcca655a1dbc66ad7f5656aad306a2295c2c5598156ded13d",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "filesystem",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "Existing test table with AGE/FIRST; numeric/string aliases and workarea selection"
+      ],
+      "effects_or_harness_risks": [
+        "Overwrites AGE in existing test through multiple alias forms; waits twice; leaves modification"
+      ],
+      "output_comparison": "Fixture/workarea/RDD dependent; commented RTE cases are not executed failures",
+      "next_gate": "Copy test data into isolated folder; assert persisted fields and selection transitions separately",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "REPLACE Age WITH 1",
+          "lines": [
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "TEST->Age := 5",
+          "lines": [
+            17
+          ]
+        },
+        {
+          "symbol_or_construct": "? ( \"B\" )->FIRST",
+          "lines": [
+            30
+          ]
+        },
+        {
+          "symbol_or_construct": "dbSelectArea( \"K\" )",
+          "lines": [
+            91
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/cdx.prg",
+      "sha256": "0169250b19600764e68421b8fd02151105461f2749485628f99c85637d99d584",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "filesystem",
+        "input-terminal",
+        "memo-drivers",
+        "closures"
+      ],
+      "dependency_requirements": [
+        "DBFCDX explicitly selected; existing test table; testcdx memo and index artifacts"
+      ],
+      "effects_or_harness_risks": [
+        "Creates/writes testcdx, filters source, creates CDX and drops outputs; pauses before and during traversal"
+      ],
+      "output_comparison": "RDD table contents/memo format and input dependent",
+      "next_gate": "Disposable source copy and output namespace; compare records, memo bytes and index ordering with cleanup",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "dbUseArea( .T., \"DBFCDX\"",
+          "lines": [
+            16
+          ]
+        },
+        {
+          "symbol_or_construct": "dbCreate( \"testcdx\"",
+          "lines": [
+            17
+          ]
+        },
+        {
+          "symbol_or_construct": "TESTCDX->MEMO",
+          "lines": [
+            29,
+            40
+          ]
+        },
+        {
+          "symbol_or_construct": "ordCreate(",
+          "lines": [
+            49
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/ntx.prg",
+      "sha256": "3a3d71e438956f2dd12f6b0beebd53ebf59a344a65db729c8d14aba5ec4afe3f",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "filesystem",
+        "input-terminal",
+        "record-traversal"
+      ],
+      "dependency_requirements": [
+        "Existing test table FIRST/LAST; three index expressions; default RDD must be declared"
+      ],
+      "effects_or_harness_risks": [
+        "Builds test1/test2/test3 indexes; forward/backward scans; pauses; deletes named NTX files"
+      ],
+      "output_comparison": "Collation, driver and fixture determine ordering; names alone do not establish selected backend",
+      "next_gate": "Disposable DBF and index namespace; forward/reverse boundary and order assertions",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "INDEX ON Left( Last, 8 )",
+          "lines": [
+            11,
+            12
+          ]
+        },
+        {
+          "symbol_or_construct": "SET ORDER TO 3",
+          "lines": [
+            54
+          ]
+        },
+        {
+          "symbol_or_construct": "DO WHILE ! Bof()",
+          "lines": [
+            29,
+            48,
+            67
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_dbDrop( \"test1.ntx\" )",
+          "lines": [
+            74
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/use.prg",
+      "sha256": "239aefefb501bf06e9eeb76ec9d4a17b3daf1124fc2a8a2de767e9347265f07d",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "filesystem",
+        "exceptions-always",
+        "error-system",
+        "environment-query"
+      ],
+      "dependency_requirements": [
+        "DBF/default driver; valid/invalid RDD/file/alias matrix; ErrorBlock/SEQUENCE/RECOVER"
+      ],
+      "effects_or_harness_risks": [
+        "Creates missing _tst/_tst2 but drops both at end even if existing; opens duplicate/exclusive areas and captures errors"
+      ],
+      "output_comparison": "Errors include driver/OS descriptions and IDs; version strings vary",
+      "next_gate": "Disposable paths only; structured subcode/operation/state assertions; restore error handler on all paths",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "IF ! hb_dbExists( \"_tst.dbf\" )",
+          "lines": [
+            10
+          ]
+        },
+        {
+          "symbol_or_construct": "mkTest( .T., \"NORDD\"",
+          "lines": [
+            21
+          ]
+        },
+        {
+          "symbol_or_construct": "ErrorBlock( {| oErr | Break( oErr ) } )",
+          "lines": [
+            47
+          ]
+        },
+        {
+          "symbol_or_construct": "RECOVER USING oErr",
+          "lines": [
+            52
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_dbDrop( \"_tst2.dbf\" )",
+          "lines": [
+            41
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/dbi.prg",
+      "sha256": "735c9623a4dddf8cada23b2080cee6ba59f4fd5e6cc3815e9046a3687a5ddc19",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "filesystem",
+        "preprocessor-platform",
+        "dates"
+      ],
+      "dependency_requirements": [
+        "Existing test table; numeric dbInfo IDs including setter forms; typed value serialization"
+      ],
+      "effects_or_harness_risks": [
+        "Queries and changes dbInfo options; writes dbi_hb.txt or dbi_cl.txt; examines record/field metadata"
+      ],
+      "output_comparison": "Driver-specific numeric information values and locale formatting; not just stdout",
+      "next_gate": "Isolated DBF/output; declared ID semantics and state snapshot; file and stdout are separate results",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "dbInfo(  101, 1 )",
+          "lines": [
+            17
+          ]
+        },
+        {
+          "symbol_or_construct": "dbInfo(  102, 2 )",
+          "lines": [
+            21
+          ]
+        },
+        {
+          "symbol_or_construct": "MemoWrit( \"dbi_hb.txt\"",
+          "lines": [
+            26
+          ]
+        },
+        {
+          "symbol_or_construct": "? dbRecordInfo( 5 )",
+          "lines": [
+            35
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/dbf.prg",
+      "sha256": "372b54f876d155e9dcb9f551103199c0677af2411c9c1213aded69ca65c95466",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "filesystem",
+        "memo-drivers",
+        "floating-point",
+        "input-terminal",
+        "closures"
+      ],
+      "dependency_requirements": [
+        "DBFCDX initial create then default-driver recreate; memo DBF/FPT/DBT files; existing test table fields"
+      ],
+      "effects_or_harness_risks": [
+        "Creates/overwrites testdbf, appends memo records, ZAP/PACK/deletes, changes SET DELETED and filters, pauses and drops outputs"
+      ],
+      "output_comparison": "Driver/record/memo file sizes, rounding and fixture-dependent output",
+      "next_gate": "Disposable database tree; distinguish initial DBFCDX and default-driver phase; exact artifact/record assertions, not assumed default RDD",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "REQUEST DBFCDX",
+          "lines": [
+            16
+          ]
+        },
+        {
+          "symbol_or_construct": "dbCreate( \"testdbf\", aStruct, ,",
+          "lines": [
+            78
+          ]
+        },
+        {
+          "symbol_or_construct": "MYALIAS->( __dbZap() )",
+          "lines": [
+            64
+          ]
+        },
+        {
+          "symbol_or_construct": "MYALIAS->( __dbPack() )",
+          "lines": [
+            151
+          ]
+        },
+        {
+          "symbol_or_construct": "Directory( \"testdbf.dbt\" )",
+          "lines": [
+            149,
+            155
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/delim.prg",
+      "sha256": "9cbc288ce4e249a1316a251abad34bc7f5fd8f6b18fc3bc25bad10e68ac9cb82",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "filesystem",
+        "CSV-driver",
+        "record-traversal",
+        "error-system"
+      ],
+      "dependency_requirements": [
+        "NOTEST; existing test table; DELIMITED driver and COPY/APPEND filters/scope"
+      ],
+      "effects_or_harness_risks": [
+        "Writes multiple exports, explicitly deletes test8.txt and attempts APPEND from missing file"
+      ],
+      "output_comparison": "Output artifacts and expected missing-input error need separate gates; no normal-success assumption",
+      "next_gate": "Disposable fixtures/paths; scope and artifact assertions plus controlled error; do not touch existing test8",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "COPY RECORD 3",
+          "lines": [
+            18,
+            19
+          ]
+        },
+        {
+          "symbol_or_construct": "COPY WHILE ncount++",
+          "lines": [
+            27
+          ]
+        },
+        {
+          "symbol_or_construct": "DELETE FILE test8.txt",
+          "lines": [
+            45
+          ]
+        },
+        {
+          "symbol_or_construct": "APPEND FROM test8 DELIMITED",
+          "lines": [
+            46
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/sdf.prg",
+      "sha256": "7b3df5379278a9d27bf4deeeb19f382518ffa21fb1506a3d402d5a659290d2ad",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with declared RDD/fixture profile; not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "filesystem",
+        "record-traversal",
+        "error-system"
+      ],
+      "dependency_requirements": [
+        "NOTEST; existing test table; SDF fixed-width export/import and scope selectors"
+      ],
+      "effects_or_harness_risks": [
+        "Writes multiple SDF files, deletes test8.txt and intentionally appends missing input"
+      ],
+      "output_comparison": "Source historical implementation comment is not current support evidence; fixed-width artifacts differ from DELIMITED",
+      "next_gate": "Disposable fixture/path namespace; per-driver bytes and missing-file error oracle separately",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "COPY RECORD 3",
+          "lines": [
+            19,
+            20
+          ]
+        },
+        {
+          "symbol_or_construct": "COPY WHILE ncount++",
+          "lines": [
+            28
+          ]
+        },
+        {
+          "symbol_or_construct": "DELETE FILE test8.txt",
+          "lines": [
+            46
+          ]
+        },
+        {
+          "symbol_or_construct": "APPEND FROM test8 SDF",
+          "lines": [
+            47
           ]
         }
       ]
