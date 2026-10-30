@@ -470,3 +470,25 @@ Compile-only268x4 acceptance remains21/15Linux20/14Windows. Six first
 diagnostics move,but none is a newly complete original. General lexical
 reconstruction,stringify,generated directives outside command/xcommand,
 class runtime and main date work are not changed. No size/speed claim.
+
+## Stringify: next pp gap, characterization only
+
+Seven of eight original first diagnostics containing literal#come from
+stringify result forms;one is the separate unsupported # comparison operator.
+80own-source observations compare #<x> and <"x"> under four directives. Both
+produce strings and preserve inner spaces/adjacency exactly:alpha(1, 2) is
+not alpha ( 1 , 2 ),and doubled input spaces remain doubled in the string.
+Captured quoted literals are normalized before enclosing the text;single and
+double hello literals both stringify to text containing double quotes.
+
+The current token-vector capture plus join has already discarded those source
+spans. Quoting that joined value would silently generate wrong output. A next
+pp-only increment needs a captured lexical view plus original/normalized text
+for stringify,with quote behavior and optional/absent capture tests. No
+runtime/class/memory or # comparison grammar is implied by this gap.
+
+Separately,25original first '..' diagnostics were inspected after atom fixes:
+24emitted error lines contain ellipsis used by varargs/forwarding;the remaining
+one contains ../test in an RDD USE path. They are not broken logical atoms.
+Do not expand the lexer to hide pending varargs ABI or RDD contracts. This
+section adds observations only;production remainsfbaef4e,no new execution.
