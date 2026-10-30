@@ -552,3 +552,19 @@ math changes error modes/blocks and invokes domain/overflow cases;the callback
 mutates its information array to return5.0. It needs numerical,error/callback
 and restoration assertions,not printed expectation text. None of these records
 allows large storage use,profiling or GC/float/runtime implementation changes.
+
+### Capability/widget profiles:202 manual /206 reviewed-or-executed
+
+Five more full-source reviews give202 manual records and206 in the union
+(202+19-15). Historical executions remain19/14;no compile/run. hsx creates a
+fulltext index and optionally uses record-map filtering based on driver registry;
+it needs a disposable data/index namespace and capability-specific checks. rdd
+opens the same DBF through several drivers,including SDF/DELIM;listing or opening
+a driver is not proof those formats correctly interpret DBF contents.
+
+brwpos uses a synthetic100-record counter and TBrowse callbacks,no actual DBF.
+sbar reads directory names into AChoice/ScrollBar and needs empty-list,bounds,
+selection and pixel checks with restored blink/colors. menuto recursively opens
+menus through F8 and uses local versus MEMVAR targets;key/event/mouse settings
+need restoration. These distinctions prevent widget labels from being promoted
+to RDD coverage or source-only review from being called visual verification.

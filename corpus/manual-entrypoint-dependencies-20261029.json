@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "197 distinct full-source manual metadata reviews; ledger computes union/overlap. Latest four distinguish multi-GB storage stress,cyclic idle GC,profiler UI and exceptional-math callbacks. No compile/run or new authority. Requirements not availability; tags not coverage.",
+  "scope": "202 distinct full-source manual metadata reviews; ledger computes union/overlap. Latest five distinguish fulltext/filter capability,driver matrices,synthetic browse positions,directory scrollbar and nested menu binding. No compile/run or new authority. Requirements not availability; tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -9260,6 +9260,285 @@
           "symbol_or_construct": "aInfo[ HB_MATHERRORBLOCK_HANDLED ] := .T.",
           "lines": [
             91
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/hsx.prg",
+      "sha256": "e4204444d62d324c6aadb4bc617a0bd821f2131778037b8b690d993c17699436",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source capability/widget profile;not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "fulltext-index",
+        "filesystem",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "dbinfo.ch; HiPer-SEEK functions;existing test table;optional registered RMDBFCDX capability",
+        "Index FIRST+LAST+STREET+CITY and conditional record-map filters"
+      ],
+      "effects_or_harness_risks": [
+        "Creates index named test,changes default RDD conditionally,reads shared DBF,WAIT and optional Browse;hs_Close does not explicitly delete artifact"
+      ],
+      "output_comparison": "Data,driver registry/filter capability and input dependent; optional branch absence not feature coverage",
+      "next_gate": "Disposable fixture/index namespace and capability-specific assertions; no automatic index of existing data",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "AScan( rddList( 1 ), \"RMDBFCDX\" )",
+          "lines": [
+            17
+          ]
+        },
+        {
+          "symbol_or_construct": "hs_Index( \"test\"",
+          "lines": [
+            22
+          ]
+        },
+        {
+          "symbol_or_construct": "IF dbInfo( DBI_RM_SUPPORTED )",
+          "lines": [
+            35
+          ]
+        },
+        {
+          "symbol_or_construct": "hs_Filter( hs, \"SHERMAN\" )",
+          "lines": [
+            38
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/rdd.prg",
+      "sha256": "e966fa02019a304fb524662d332d3398dfdd2f0589ede592164651e0ac4eab6a",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source capability/widget profile;not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "filesystem",
+        "record-traversal",
+        "set-runtime"
+      ],
+      "dependency_requirements": [
+        "DBFCDX request/default;opens same file via default,SDF,DELIM,DBFNTX,DBF drivers",
+        "Registry enumeration and BOF/EOF/Found/workarea state"
+      ],
+      "effects_or_harness_risks": [
+        "Creates/deletes testdbf,changes exclusive/default settings,opens five workareas"
+      ],
+      "output_comparison": "Registered driver order and cross-format behavior not portable stdout constants",
+      "next_gate": "Disposable fixture and explicit registry/driver matrix;structured workarea/error/state checks;no inference SDF/DELIM validly parse DBF",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "SET EXCLUSIVE OFF",
+          "lines": [
+            18
+          ]
+        },
+        {
+          "symbol_or_construct": "rddSetDefault( \"DBFCDX\" )",
+          "lines": [
+            23
+          ]
+        },
+        {
+          "symbol_or_construct": "dbUseArea( , \"SDF\"",
+          "lines": [
+            28
+          ]
+        },
+        {
+          "symbol_or_construct": "dbUseArea( , \"DELIM\"",
+          "lines": [
+            30
+          ]
+        },
+        {
+          "symbol_or_construct": "dbUseArea( , \"DBFNTX\"",
+          "lines": [
+            33
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/brwpos.prg",
+      "sha256": "aef2c4cded395b5a99c1ce99757c694db6dea8774d37c15980a19db8f609c2b1",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source capability/widget profile;not auto-runnable",
+      "families": [
+        "classes",
+        "closures",
+        "file-static",
+        "GT-screen",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "TBrowse/TBColumn with callback-driven synthetic100-record counter;inkey.ch",
+        "rowPos,skip/top/bottom callbacks and optional fix-position compensation"
+      ],
+      "effects_or_harness_risks": [
+        "Interactive navigation updates static counter/row position;does not open a database despite RecNo labels"
+      ],
+      "output_comparison": "Screen,keys,callback bounds and rowPos invariant;not RDD feature evidence",
+      "next_gate": "Synthetic bounded key sequence and per-step row/current-record oracle with pixels; no DBF fixture needed",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "STATIC s_nLastRec := 100",
+          "lines": [
+            6
+          ]
+        },
+        {
+          "symbol_or_construct": "oBrw:SkipBlock",
+          "lines": [
+            28,
+            36
+          ]
+        },
+        {
+          "symbol_or_construct": "oBrw:rowPos := nRowIni",
+          "lines": [
+            39
+          ]
+        },
+        {
+          "symbol_or_construct": "nKey == K_F2",
+          "lines": [
+            45
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/sbar.prg",
+      "sha256": "675373164bccfdb1fc58c2d792fe498163df7b3078c6178f031d9a667628d9e7",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source capability/widget profile;not auto-runnable",
+      "families": [
+        "classes",
+        "filesystem",
+        "closures",
+        "GT-screen",
+        "input-terminal",
+        "localization"
+      ],
+      "dependency_requirements": [
+        "Directory snapshot,AChoice callback and ScrollBar;UTF8 box glyph conversion",
+        "Current-directory filenames and empty/nonempty list cases"
+      ],
+      "effects_or_harness_risks": [
+        "Reads directory,changes blink/colors and screen,interactive selection;no file writes visible"
+      ],
+      "output_comparison": "Directory order/geometry/encoding and key sequence affect selected item and scrollbar",
+      "next_gate": "Disposable directory fixture including empty list;assert clamping and callback selection plus screen;restore blink/colors",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "tmpFileList := Directory()",
+          "lines": [
+            45
+          ]
+        },
+        {
+          "symbol_or_construct": "SetBlink( .F. )",
+          "lines": [
+            35
+          ]
+        },
+        {
+          "symbol_or_construct": "filesScroll:total := Len( aFileList )",
+          "lines": [
+            53
+          ]
+        },
+        {
+          "symbol_or_construct": "newPos := filesScroll:total",
+          "lines": [
+            81,
+            108
+          ]
+        },
+        {
+          "symbol_or_construct": "AC_ABORT",
+          "lines": [
+            99
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/menuto.prg",
+      "sha256": "394bd60c0798a9b768311e12fecad0f49a5041e0bd4a5e7a8be6db4e0c0e962d",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source capability/widget profile;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "input-terminal",
+        "memvars-dynamic-binding",
+        "closures",
+        "set-runtime"
+      ],
+      "dependency_requirements": [
+        "MENU TO local/MEMVAR targets;PROMPT/messages;F8 callback recursively opens menu",
+        "Conditional eventmask/mouse cursor settings;key registry"
+      ],
+      "effects_or_harness_risks": [
+        "Changes input settings/F8 mapping,opens nested menus and waits;mapping remains set on normal return"
+      ],
+      "output_comparison": "Binding/saved menu state and callback/input ordering,not plain stdout",
+      "next_gate": "Script bounded nested menu navigation;assert local/MEMVAR isolation and restoration of key/event/mouse state",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "SET KEY K_F8 TO RECURSE()",
+          "lines": [
+            18,
+            36,
+            73
+          ]
+        },
+        {
+          "symbol_or_construct": "MENU TO m_testvar",
+          "lines": [
+            48
+          ]
+        },
+        {
+          "symbol_or_construct": "PROCEDURE RECURSE()",
+          "lines": [
+            54
+          ]
+        },
+        {
+          "symbol_or_construct": "SET KEY K_F8 TO",
+          "lines": [
+            18,
+            36,
+            58,
+            73
+          ]
+        },
+        {
+          "symbol_or_construct": "MSetCursor( .T. )",
+          "lines": [
+            15
           ]
         }
       ]
