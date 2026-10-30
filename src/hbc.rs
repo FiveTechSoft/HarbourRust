@@ -6778,7 +6778,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 Ty::F64 => unreachable!("floats load through cg_f64_load (xmm0/rdi), never the rax/rdx channel"),
                 Ty::I64 | Ty::Block(_) | Ty::Bool | Ty::Date => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
                 Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash => {
-                    // ptr at -(off), len at -(off-8) — same layout as the store
+                    // ptr at -(off), len at -(off-8) â€” same layout as the store
                     out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
                     out.push_str(&format!("    mov -{}(%rbp), %rdx\n", v.off - 8));
                 }
@@ -12895,7 +12895,7 @@ hbc_date_encode:
     add %r8d, %eax
     imul $1461, %eax
     shr $2, %eax
-    mov %eax, (%rsp)
+    mov %rax, (%rsp)
     # term2 = (m - 2 - iFactor*12) * 367 / 12
     mov %r11d, %eax
     imul $12, %eax
@@ -12907,7 +12907,7 @@ hbc_date_encode:
     xor %edx, %edx
     mov $12, %edi
     div %rdi
-    mov %eax, 8(%rsp)
+    mov %rax, 8(%rsp)
     # C3 = (iFactor + 4900 + y) / 100 * 3 / 4
     mov %r11d, %eax
     add %r8d, %eax
@@ -12917,7 +12917,7 @@ hbc_date_encode:
     div %rdi
     imul $3, %eax
     shr $2, %eax
-    mov %eax, 16(%rsp)
+    mov %rax, 16(%rsp)
     # the Fliegel transform, then + d - 32075
     mov (%rsp), %rax
     add 8(%rsp), %rax
@@ -14920,7 +14920,7 @@ hbc_date_encode:
     add %r8d, %eax
     imul $1461, %eax
     shr $2, %eax
-    mov %eax, (%rsp)
+    mov %rax, (%rsp)
     # term2 = (m - 2 - iFactor*12) * 367 / 12
     mov %r11d, %eax
     imul $12, %eax
@@ -14932,7 +14932,7 @@ hbc_date_encode:
     xor %edx, %edx
     mov $12, %edi
     div %rdi
-    mov %eax, 8(%rsp)
+    mov %rax, 8(%rsp)
     # C3 = (iFactor + 4900 + y) / 100 * 3 / 4
     mov %r11d, %eax
     add %r8d, %eax
@@ -14942,7 +14942,7 @@ hbc_date_encode:
     div %rdi
     imul $3, %eax
     shr $2, %eax
-    mov %eax, 16(%rsp)
+    mov %rax, 16(%rsp)
     # the Fliegel transform, then + d - 32075
     mov (%rsp), %rax
     add 8(%rsp), %rax

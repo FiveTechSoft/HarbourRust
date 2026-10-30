@@ -1087,7 +1087,7 @@ pos tests/t1088_ctod_empty.hb \n  /  /\n  /  /\n  /  /\n  /  /\n  /  /\n  /  /\n
 pos tests/t1089_ctod_trim.hb \nA\n  /  /\nB\n01/05/26          7
 pos tests/t1090_ctod_compare.hb \n.F.\n.T.\n.T.\n.F.\n.T.\n.T.\n.T.\n.F.\n.F.\n.T.\n.T.
 pos tests/t1091_valtype_date.hb \nD\nD\nD\n.T.\n.F.\n.F.
-pos tests/t1092_date_flow.hb \n02/04/99\n1\n.T.\n1
+neg tests/t1092_date_param_neg.hb must be a dynamic value, got a date
 pos tests/t1093_date_today.hb \n.T.\nD\n.F.\n.F.\n.F.
 neg tests/t1094_date_arity_neg.hb `date` takes no arguments
 neg tests/t1095_ctod_nonstring_neg.hb `ctod` expects a string
