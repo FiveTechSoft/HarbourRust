@@ -970,6 +970,21 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
     Ok(None)
 }
 
+// Stringify syntax inside an existing result literal is ordinary literal data.
+// Preserve its prior plain-marker substitution behavior rather than reparse it.
+fn stringify_positions(text: &str, needle: &str) -> Vec<usize> {
+    let b = text.as_bytes(); let n = needle.as_bytes();
+    let mut quote = None; let mut positions = Vec::new(); let mut i = 0;
+    while i < b.len() {
+        if let Some(q) = quote { if b[i] == q { quote = None; } i += 1; continue; }
+        if b[i] == b'"' || b[i] == b'\'' { quote = Some(b[i]); i += 1; continue; }
+        if b[i..].len() >= n.len() && b[i..i+n.len()].eq_ignore_ascii_case(n) {
+            positions.push(i); i += n.len();
+        } else { i += 1; }
+    }
+    positions
+}
+
 fn render_command(c: &Cmd, caps: &[Capture], source: &str, tokens: &[String], line_no: usize) -> Result<String, String> {
         {
             // Resolve result-side [ ... ] groups BEFORE substituting: a
@@ -1011,7 +1026,8 @@ fn render_command(c: &Cmd, caps: &[Capture], source: &str, tokens: &[String], li
                     // Stringify must run before plain substitution and retain
                     // source bytes,not the matcher's whitespace-normalized view.
                     let stringify = format!("#<{}>", base.to_lowercase());
-                    if out.to_lowercase().contains(&stringify) {
+                    let stringify_at = stringify_positions(&out, &stringify);
+                    if !stringify_at.is_empty() {
                         let mut group = 0; let mut grouped_literal = false;
                         for token in &c.pattern {
                             if token == "[" { group += 1; }
@@ -1031,9 +1047,9 @@ fn render_command(c: &Cmd, caps: &[Capture], source: &str, tokens: &[String], li
                             .ok_or_else(|| format!("line {}: too many staged tokens", line_no))?;
                         saved.push((token, value));
                         let value = token.to_string();
-                        let mut rebuilt = String::new(); let low = out.to_lowercase(); let mut at = 0;
-                        while let Some(k) = low[at..].find(&stringify) {
-                            rebuilt.push_str(&out[at..at+k]); rebuilt.push_str(&value); at += k + stringify.len();
+                        let mut rebuilt = String::new(); let mut at = 0;
+                        for k in stringify_at {
+                            rebuilt.push_str(&out[at..k]); rebuilt.push_str(&value); at = k + stringify.len();
                         }
                         rebuilt.push_str(&out[at..]); out = rebuilt;
                     }

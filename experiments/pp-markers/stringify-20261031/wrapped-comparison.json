@@ -1,0 +1,1322 @@
+[
+  {
+    "case": 0,
+    "source": "#command PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE alpha\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 1,
+    "source": "#command PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE alpha\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 2,
+    "source": "#command PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE a + 1\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 3,
+    "source": "#command PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE a + 1\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 4,
+    "source": "#command PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE alpha(1, 2)\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 5,
+    "source": "#command PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE alpha(1, 2)\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 6,
+    "source": "#command PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE .T.\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 7,
+    "source": "#command PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE .T.\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 8,
+    "source": "#command PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE \"hello\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 9,
+    "source": "#command PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE \"hello\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 10,
+    "source": "#command PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE 'hello'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 11,
+    "source": "#command PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE 'hello'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 12,
+    "source": "#command PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE \"a\" + 'b'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 13,
+    "source": "#command PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE \"a\" + 'b'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 14,
+    "source": "#command PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE a:=1\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 15,
+    "source": "#command PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE a:=1\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 16,
+    "source": "#command PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE alpha[1]\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 17,
+    "source": "#command PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE alpha[1]\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 18,
+    "source": "#command PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE a  +   b\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 19,
+    "source": "#command PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE a  +   b\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 20,
+    "source": "#xcommand PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE alpha\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 21,
+    "source": "#xcommand PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE alpha\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 22,
+    "source": "#xcommand PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE a + 1\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 23,
+    "source": "#xcommand PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE a + 1\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 24,
+    "source": "#xcommand PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE alpha(1, 2)\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 25,
+    "source": "#xcommand PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE alpha(1, 2)\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 26,
+    "source": "#xcommand PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE .T.\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 27,
+    "source": "#xcommand PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE .T.\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 28,
+    "source": "#xcommand PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE \"hello\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 29,
+    "source": "#xcommand PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE \"hello\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 30,
+    "source": "#xcommand PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE 'hello'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 31,
+    "source": "#xcommand PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE 'hello'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 32,
+    "source": "#xcommand PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE \"a\" + 'b'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 33,
+    "source": "#xcommand PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE \"a\" + 'b'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 34,
+    "source": "#xcommand PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE a:=1\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 35,
+    "source": "#xcommand PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE a:=1\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 36,
+    "source": "#xcommand PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE alpha[1]\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 37,
+    "source": "#xcommand PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE alpha[1]\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 38,
+    "source": "#xcommand PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE a  +   b\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 39,
+    "source": "#xcommand PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE a  +   b\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 40,
+    "source": "#translate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE alpha\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 41,
+    "source": "#translate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE alpha\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 42,
+    "source": "#translate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE a + 1\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 43,
+    "source": "#translate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE a + 1\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 44,
+    "source": "#translate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE alpha(1, 2)\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 45,
+    "source": "#translate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE alpha(1, 2)\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 46,
+    "source": "#translate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE .T.\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 47,
+    "source": "#translate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE .T.\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 48,
+    "source": "#translate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE \"hello\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 49,
+    "source": "#translate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE \"hello\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 50,
+    "source": "#translate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE 'hello'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 51,
+    "source": "#translate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE 'hello'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 52,
+    "source": "#translate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE \"a\" + 'b'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 53,
+    "source": "#translate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE \"a\" + 'b'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 54,
+    "source": "#translate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE a:=1\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 55,
+    "source": "#translate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE a:=1\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 56,
+    "source": "#translate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE alpha[1]\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 57,
+    "source": "#translate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE alpha[1]\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 58,
+    "source": "#translate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE a  +   b\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 59,
+    "source": "#translate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE a  +   b\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 60,
+    "source": "#xtranslate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE alpha\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 61,
+    "source": "#xtranslate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE alpha\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 62,
+    "source": "#xtranslate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE a + 1\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 63,
+    "source": "#xtranslate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE a + 1\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 64,
+    "source": "#xtranslate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE alpha(1, 2)\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 65,
+    "source": "#xtranslate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE alpha(1, 2)\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 66,
+    "source": "#xtranslate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE .T.\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 67,
+    "source": "#xtranslate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE .T.\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 68,
+    "source": "#xtranslate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE \"hello\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 69,
+    "source": "#xtranslate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE \"hello\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 70,
+    "source": "#xtranslate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE 'hello'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 71,
+    "source": "#xtranslate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE 'hello'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 72,
+    "source": "#xtranslate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE \"a\" + 'b'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 73,
+    "source": "#xtranslate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE \"a\" + 'b'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 74,
+    "source": "#xtranslate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE a:=1\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 75,
+    "source": "#xtranslate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE a:=1\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 76,
+    "source": "#xtranslate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE alpha[1]\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 77,
+    "source": "#xtranslate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE alpha[1]\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 78,
+    "source": "#xtranslate PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE a  +   b\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 79,
+    "source": "#xtranslate PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE a  +   b\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 80,
+    "source": "#xcommand PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE \"a'b\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 3: stringify requiring bracket/escape literal is outside this increment\n"
+    }
+  },
+  {
+    "case": 81,
+    "source": "#xcommand PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE \"a'b\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 82,
+    "source": "#xcommand PROBE <x> => QOut( [#<x>] )\nPROCEDURE Main()\nPROBE \"a'b\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 3: stringify requiring bracket/escape literal is outside this increment\n"
+    }
+  },
+  {
+    "case": 83,
+    "source": "#xcommand PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE 'a\"b'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 3: stringify requiring bracket/escape literal is outside this increment\n"
+    }
+  },
+  {
+    "case": 84,
+    "source": "#xcommand PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE 'a\"b'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 85,
+    "source": "#xcommand PROBE <x> => QOut( [#<x>] )\nPROCEDURE Main()\nPROBE 'a\"b'\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 3: stringify requiring bracket/escape literal is outside this increment\n"
+    }
+  },
+  {
+    "case": 86,
+    "source": "#xcommand PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE e\"a\\nb\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 3: stringify of escape literals is outside this increment\n"
+    }
+  },
+  {
+    "case": 87,
+    "source": "#xcommand PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE e\"a\\nb\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 88,
+    "source": "#xcommand PROBE <x> => QOut( [#<x>] )\nPROCEDURE Main()\nPROBE e\"a\\nb\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 3: stringify of escape literals is outside this increment\n"
+    }
+  },
+  {
+    "case": 89,
+    "source": "#xcommand PROBE <x> => QOut( #<x> )\nPROCEDURE Main()\nPROBE \"a\\b\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 90,
+    "source": "#xcommand PROBE <x> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE \"a\\b\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 91,
+    "source": "#xcommand PROBE <x> => QOut( [#<x>] )\nPROCEDURE Main()\nPROBE \"a\\b\"\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 92,
+    "source": "#xcommand PROBE [<x>] => QOut( #<x> )\nPROCEDURE Main()\nPROBE\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 93,
+    "source": "#xcommand PROBE [<x>] => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 94,
+    "source": "#xcommand PROBE [<x>] => QOut( [#<x>] )\nPROCEDURE Main()\nPROBE\nRETURN\n",
+    "baseline": {
+      "exit": 0,
+      "diagnostic": ""
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 95,
+    "source": "#xcommand PROBE [<x>] => QOut( #<x> )\nPROCEDURE Main()\nPROBE alpha\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 96,
+    "source": "#xcommand PROBE [<x>] => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE alpha\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 97,
+    "source": "#xcommand PROBE [<x>] => QOut( [#<x>] )\nPROCEDURE Main()\nPROBE alpha\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 98,
+    "source": "#xcommand PROBE <x,...> => QOut( #<x> )\nPROCEDURE Main()\nPROBE alpha, beta\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 3: stringify of non-plain capture is outside this increment\n"
+    }
+  },
+  {
+    "case": 99,
+    "source": "#xcommand PROBE <x,...> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE alpha, beta\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 100,
+    "source": "#xcommand PROBE <x,...> => QOut( [#<x>] )\nPROCEDURE Main()\nPROBE alpha, beta\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 3: stringify of non-plain capture is outside this increment\n"
+    }
+  },
+  {
+    "case": 101,
+    "source": "#xcommand PROBE <x> STOP <y> => QOut( #<x> )\nPROCEDURE Main()\nPROBE a  +   b STOP c\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 102,
+    "source": "#xcommand PROBE <x> STOP <y> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE a  +   b STOP c\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 103,
+    "source": "#xcommand PROBE <x> STOP <y> => QOut( [#<x>] )\nPROCEDURE Main()\nPROBE a  +   b STOP c\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 104,
+    "source": "#xcommand PROBE <x> STOP <y> => QOut( #<x> )\nPROCEDURE Main()\nPROBE a STOP a\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 105,
+    "source": "#xcommand PROBE <x> STOP <y> => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE a STOP a\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 106,
+    "source": "#xcommand PROBE <x> STOP <y> => QOut( [#<x>] )\nPROCEDURE Main()\nPROBE a STOP a\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": 107,
+    "source": "#xcommand PROBE [WORD <x>] => QOut( #<x> )\nPROCEDURE Main()\nPROBE WORD alpha WORD beta\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 3: stringify with literal-bearing optional groups is outside this increment\n"
+    }
+  },
+  {
+    "case": 108,
+    "source": "#xcommand PROBE [WORD <x>] => QOut( <\"x\"> )\nPROCEDURE Main()\nPROBE WORD alpha WORD beta\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 1: unknown result marker <\"x\"> (Harbour: E0008)\n"
+    }
+  },
+  {
+    "case": 109,
+    "source": "#xcommand PROBE [WORD <x>] => QOut( [#<x>] )\nPROCEDURE Main()\nPROBE WORD alpha WORD beta\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 3: stringify with literal-bearing optional groups is outside this increment\n"
+    }
+  }
+]

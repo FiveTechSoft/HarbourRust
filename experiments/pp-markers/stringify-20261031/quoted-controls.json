@@ -1,0 +1,20 @@
+[
+  {
+    "case": 0,
+    "baseline_output": "PROCEDURE Main()\n? \"#42\"\nRETURN\n",
+    "current_output": "PROCEDURE Main()\n? \"#42\"\nRETURN\n",
+    "identical": true
+  },
+  {
+    "case": 1,
+    "baseline_output": "PROCEDURE Main()\n? \"A#42Z\"\nRETURN\n",
+    "current_output": "PROCEDURE Main()\n? \"A#42Z\"\nRETURN\n",
+    "identical": true
+  },
+  {
+    "case": 2,
+    "baseline_output": "PROCEDURE Main()\n? '#42'\nRETURN\n",
+    "current_output": "PROCEDURE Main()\n? '#42'\nRETURN\n",
+    "identical": true
+  }
+]

@@ -1176,3 +1176,4 @@ neg tests/t1177_pp_stringify_mixed_quotes_neg.hb stringify requiring bracket/esc
 neg tests/t1178_pp_stringify_escape_neg.hb stringify of escape literals
 neg tests/t1179_pp_stringify_list_neg.hb stringify of non-plain capture
 neg tests/t1180_pp_stringify_other_form_neg.hb unknown result marker
+pos tests/t1181_pp_stringify_quoted_result.hb \n#42\nA#42Z\n#42\n42

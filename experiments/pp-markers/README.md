@@ -518,3 +518,17 @@ originals are exact again.1180default/392LLVM battery checks pass,including
 Windows/Wine. Prior marker/call/nonmatch checks pass with their documented
 divergences separate. Seven first diagnostics change,but268x4acceptance stays
 21/15Linux20/14Windows,no new complete original. No size/speed result follows.
+
+Follow-up regression review against compiled fbaef4e:110 characterization
+programs wrapped as real QOut console programs give one baseline acceptance
+and50current acceptances,with no lost acceptance.60ordinary-marker controls
+have identical preprocessor exit/output/diagnostics. Literal-bearing optional
+ordinary capture compiles in both;present stringify previously failed on #;
+optional stringify removed before rendering still compiles in both.
+A separate result-literal probe DID reveal a regression in the first increment:
+"#<x>" was reparsed as stringify. The follow-up recognizes stringify only
+outside result literals and preserves previous ordinary substitution inside
+those literals. Three quoted controls now exactly match fbaef4e. A new mixed
+quoted/unquoted result regression covers both paths.1181default/394LLVM fresh
+local checks pass. This correction preserves historical literal behavior;it
+does not claim Harbour compatibility of marker-looking text in result literals.

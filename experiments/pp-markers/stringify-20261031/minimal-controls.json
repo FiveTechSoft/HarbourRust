@@ -1,0 +1,50 @@
+[
+  {
+    "case": "ordinary_literal_optional",
+    "source": "#command TEST [WITH <x>] => ? <x>\nPROCEDURE Main()\nTEST WITH 42\nRETURN\n",
+    "baseline": {
+      "exit": 0,
+      "diagnostic": ""
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": "stringify_literal_optional",
+    "source": "#command TEST [WITH <x>] => ? #<x>\nPROCEDURE Main()\nTEST WITH 42\nRETURN\n",
+    "baseline": {
+      "exit": 1,
+      "diagnostic": "error: line 2: character not allowed `#` (U+0023)\n"
+    },
+    "current": {
+      "exit": 1,
+      "diagnostic": "error: line 3: stringify with literal-bearing optional groups is outside this increment\n"
+    }
+  },
+  {
+    "case": "stringify_optional_absent",
+    "source": "#command TEST [WITH <x>] => ? [#<x>]\nPROCEDURE Main()\nTEST\nRETURN\n",
+    "baseline": {
+      "exit": 0,
+      "diagnostic": ""
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  },
+  {
+    "case": "ordinary_optional_absent",
+    "source": "#command TEST [WITH <x>] => ? [<x>]\nPROCEDURE Main()\nTEST\nRETURN\n",
+    "baseline": {
+      "exit": 0,
+      "diagnostic": ""
+    },
+    "current": {
+      "exit": 0,
+      "diagnostic": ""
+    }
+  }
+]
