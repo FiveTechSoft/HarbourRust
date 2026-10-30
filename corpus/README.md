@@ -468,3 +468,20 @@ utf8at mixes raw ISO/CP850/UTF8 output and byte/character search offsets,includi
 omitted bounds. Captures must preserve bytes and distinguish encoding/offset
 semantics rather than perform a lossy text comparison. No new string,encoding,
 regex,timestamp or representation contract is granted by these records.
+
+### Control/termination reconciliation:179 manual /184 reviewed-or-executed
+
+Ten additional full-source manual records give179 distinct reviews and184 in
+the union. Nine overlap prior executions,so total overlap is now14:179+19-14.
+Historical executions remain19default/14LLVM;none was rerun. The manual reviews
+add entrypoint/dependency/semantic gates to those existing records,not nine new
+passes. begin is the new unexecuted exception profile:it carries a detached
+closure through nested BREAK/recovery and ends with an uncaught BREAK from Main,
+so normal exit0 is the wrong oracle.
+
+Other distinctions include recursive lazy iif base cases,expression IF with
+side effects and omitted false arguments,procedure early returns,static symbol
+visibility,wrong-direction empty FOR and postincrement on the failing WHILE
+condition. The latter's final update is not printed and needs its own state
+fixture. docase exercises one selected case,not every arm. These are gates for
+correctness/coverage,not new compiler features or performance measurements.

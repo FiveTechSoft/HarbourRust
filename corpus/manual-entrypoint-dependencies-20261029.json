@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "169 distinct full-source manual metadata reviews;5 overlap prior19 execution. Latest six distinguish date-format/timestamp cases, regex libraries/input, storage-class string timing and raw codepage/UTF8 offsets. No compile/run or new implementation authority. Requirements not availability; tags not coverage.",
+  "scope": "179 distinct full-source manual metadata reviews; overlap and union computed by ledger. Latest ten distinguish bounded console/control candidates from nested break/unwind, recursive lazy iif, omitted branches and loop update semantics. No compile/run or new authority. Requirements not availability; tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -7850,6 +7850,432 @@
           "symbol_or_construct": "hb_At( uu, u, , 33 )",
           "lines": [
             44
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/begin.prg",
+      "sha256": "6fca41b70d8dfe6b69351603db9f799bdf39f80874551a1dd52020c713eb5ea8",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source; declared control/exception profile",
+      "families": [
+        "exceptions-always",
+        "memvars-dynamic-binding",
+        "closures-detached-locals",
+        "file-static"
+      ],
+      "dependency_requirements": [
+        "SEQUENCE/RECOVER with local,memvar,static targets; nested rethrow; closure carried in BREAK"
+      ],
+      "effects_or_harness_risks": [
+        "Unwinds dynamic PRIVATE scopes,stores detached closure; final uncaught Break exits Main abnormally"
+      ],
+      "output_comparison": "Recovery trace and final break termination need separate oracle; not normal-success console candidate",
+      "next_gate": "Explicit exception/unwind/closure lifetime contract; bounded controlled handler; no suppression of intentional break",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "RECOVER USING s_oStatic",
+          "lines": [
+            107
+          ]
+        },
+        {
+          "symbol_or_construct": "Break( \"BREAK from recovery code\" )",
+          "lines": [
+            91
+          ]
+        },
+        {
+          "symbol_or_construct": "Break( \"exit from MAIN\" )",
+          "lines": [
+            73
+          ]
+        },
+        {
+          "symbol_or_construct": "Break( {| x | oLocal + x + cValue } )",
+          "lines": [
+            126
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/exit.prg",
+      "sha256": "a14961def1156ec029d6c93bfbda7ce05b9ee5900f842e42843046bff1a9163d",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source; declared control/exception profile",
+      "families": [
+        "while-control",
+        "for-control",
+        "conditional-expression"
+      ],
+      "dependency_requirements": [
+        "Integer loops; EXIT retains loop variable; iif success label"
+      ],
+      "effects_or_harness_risks": [
+        "Console only,bounded loops"
+      ],
+      "output_comparison": "Deterministic candidate; printed passed is source logic,not new observed pass",
+      "next_gate": "Existing compile audit then separately authorized exact-output and final-variable oracle",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "DO WHILE x < 10",
+          "lines": [
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "EXIT",
+          "lines": [
+            1,
+            10,
+            14,
+            18,
+            22
+          ]
+        },
+        {
+          "symbol_or_construct": "FOR x := 1 TO 10",
+          "lines": [
+            16
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/returns.prg",
+      "sha256": "52d62274849940932670b12d7929f63e88e87432437a5b5a2f7f181eb6319758",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source; declared control/exception profile",
+      "families": [
+        "functions",
+        "nil-return",
+        "conditional-expression"
+      ],
+      "dependency_requirements": [
+        "Procedure parameters,DO CASE and early RETURN"
+      ],
+      "effects_or_harness_risks": [
+        "Console only,two calls with distinct branch values"
+      ],
+      "output_comparison": "Deterministic candidate; unreachable-tail assertion needed",
+      "next_gate": "Separate procedure signature/early return contract and exact trace; not existing acceptance inferred",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Two( 1 )",
+          "lines": [
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "Two( 2 )",
+          "lines": [
+            11
+          ]
+        },
+        {
+          "symbol_or_construct": "CASE n == 1",
+          "lines": [
+            20
+          ]
+        },
+        {
+          "symbol_or_construct": "This message should not",
+          "lines": [
+            29
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/recursiv.prg",
+      "sha256": "48239c4d3d37cc414d4a6fca7ee7ba3c302b7bc210247792a8e83db9de0f8e5f",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source; declared control/exception profile",
+      "families": [
+        "functions",
+        "conditional-expression"
+      ],
+      "dependency_requirements": [
+        "Recursive function with iif base case; integer factorial10 and explicit product"
+      ],
+      "effects_or_harness_risks": [
+        "Console only,bounded when iif is lazy; recursive branch must not be eagerly evaluated"
+      ],
+      "output_comparison": "Candidate fixed integer result; requires conditional evaluation semantics before run",
+      "next_gate": "Typed recursive signature/base-case/lazy-branch oracle; no general recursion or stack claim",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "? f( 10 )",
+          "lines": [
+            8
+          ]
+        },
+        {
+          "symbol_or_construct": "RETURN iif( a < 2, 1, a * f( a - 1 ) )",
+          "lines": [
+            16
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/statfun.prg",
+      "sha256": "febada350286c04c874b1b3777aa3d1a4523645cdd06d71f5ec207c7a9129d71",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source; declared control/exception profile",
+      "families": [
+        "functions",
+        "nil-return",
+        "file-static"
+      ],
+      "dependency_requirements": [
+        "STATIC FUNCTION visibility; no arguments and discarded NIL return"
+      ],
+      "effects_or_harness_risks": [
+        "Console only,fixed local call graph"
+      ],
+      "output_comparison": "Deterministic candidate,not run in this review",
+      "next_gate": "Reuse compile provenance then separately authorized static-symbol and exact call-trace oracle",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "STATIC FUNCTION SecondOne()",
+          "lines": [
+            13
+          ]
+        },
+        {
+          "symbol_or_construct": "RETURN NIL",
+          "lines": [
+            17
+          ]
+        },
+        {
+          "symbol_or_construct": "SecondOne()",
+          "lines": [
+            7,
+            13
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/docase.prg",
+      "sha256": "fcb9869eb4407d2bc312d97277809380c2dc8414eb237afef1036dcc12c74d88",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source; declared control/exception profile",
+      "families": [
+        "conditional-expression",
+        "functions"
+      ],
+      "dependency_requirements": [
+        "DO CASE first-match selection and OTHERWISE; fixed local integer"
+      ],
+      "effects_or_harness_risks": [
+        "Console only,one selected case"
+      ],
+      "output_comparison": "Deterministic candidate; original exercises one match not every case",
+      "next_gate": "Own boundary fixtures for all cases/no-match,then original exact trace; one source not complete branch coverage",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "LOCAL n := 2",
+          "lines": [
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "CASE n == 2",
+          "lines": [
+            14
+          ]
+        },
+        {
+          "symbol_or_construct": "OTHERWISE",
+          "lines": [
+            22,
+            24
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/ifelse.prg",
+      "sha256": "3514e2804a8090bfe025af3e036294fdd8afafdf8554ededb3bcb888b1f03836",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source; declared control/exception profile",
+      "families": [
+        "conditional-expression",
+        "for-control",
+        "functions"
+      ],
+      "dependency_requirements": [
+        "IF/ELSEIF/ELSE; parameter flow from1..5"
+      ],
+      "effects_or_harness_risks": [
+        "Console only,bounded loop and calls"
+      ],
+      "output_comparison": "Deterministic candidate reaches each declared branch; unsupported signature remains separate",
+      "next_gate": "Compile/signature check then separately authorized branch order and exact-output oracle",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "FOR i := 1 TO 5",
+          "lines": [
+            8
+          ]
+        },
+        {
+          "symbol_or_construct": "ELSEIF x == 4",
+          "lines": [
+            25
+          ]
+        },
+        {
+          "symbol_or_construct": "x is not 1",
+          "lines": [
+            29
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/ifinline.prg",
+      "sha256": "cef71077a08117c32e49ec468be7f38a5ca5817aa2a6175136ba4ed5cf3afa08",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source; declared control/exception profile",
+      "families": [
+        "conditional-expression",
+        "discard-return",
+        "nil-value"
+      ],
+      "dependency_requirements": [
+        "Expression if/iif with side-effect QOut branches and omitted false argument; NIL comparison"
+      ],
+      "effects_or_harness_risks": [
+        "Console only; branch evaluation observable in output"
+      ],
+      "output_comparison": "Deterministic candidate; omitted branch and lazy evaluation must be distinguished from statement IF",
+      "next_gate": "Explicit parser/arity/lazy evaluation fixtures before execution; no added NIL contract",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "if( n == 1, QOut( 1 ), QOut( 2 ) )",
+          "lines": [
+            8,
+            16
+          ]
+        },
+        {
+          "symbol_or_construct": "iif( n != NIL, QOut( \"not NIL\" ), )",
+          "lines": [
+            10,
+            18
+          ]
+        },
+        {
+          "symbol_or_construct": "n := 2",
+          "lines": [
+            14
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/fornext.prg",
+      "sha256": "7df8bbea5c9daacfe9d8a439ab2d4ebce3417ce4b15628276819b451cc6aa585",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source; declared control/exception profile",
+      "families": [
+        "for-control",
+        "nil-local"
+      ],
+      "dependency_requirements": [
+        "Implicitly initialized loop local; positive step4,negative step,default and wrong-direction empty loop"
+      ],
+      "effects_or_harness_risks": [
+        "Console only,bounded loops"
+      ],
+      "output_comparison": "Deterministic candidate; bounds/direction and post-loop values need separate assertions",
+      "next_gate": "FOR initial assignment/step/direction oracle; no claim zero-step or dynamic-bound coverage",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "STEP 4",
+          "lines": [
+            14
+          ]
+        },
+        {
+          "symbol_or_construct": "STEP -1",
+          "lines": [
+            20,
+            32
+          ]
+        },
+        {
+          "symbol_or_construct": "No production",
+          "lines": [
+            30
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/while.prg",
+      "sha256": "81542a0a84c8ce27b7205a6c475ed811847b0dd913eac4a19e0f3dc62c40bf57",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source; declared control/exception profile",
+      "families": [
+        "while-control",
+        "postincrement"
+      ],
+      "dependency_requirements": [
+        "Postincrement in loop condition;1000-body outputs with terminating condition update"
+      ],
+      "effects_or_harness_risks": [
+        "Console only,bounded but many output lines"
+      ],
+      "output_comparison": "Deterministic candidate; source does not print final variable after failed condition",
+      "next_gate": "Trace plus own final-state fixture for false-condition increment; no speed claim from output-heavy loop",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "DO WHILE x++ < 1000",
+          "lines": [
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "? x",
+          "lines": [
+            8
           ]
         }
       ]

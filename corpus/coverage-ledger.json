@@ -4,8 +4,8 @@
   "counts": {
     "inventory_files": 1203,
     "original_test_sources_compile_audited": 268,
-    "manual_entrypoint_dependency_reviews": 169,
-    "manually_reviewed_or_executed_sources": 183,
+    "manual_entrypoint_dependency_reviews": 179,
+    "manually_reviewed_or_executed_sources": 184,
     "frozen175_default_accepted": 20,
     "frozen175_llvm_accepted": 14,
     "execution_exact_by_profile": {
@@ -11853,8 +11853,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source; declared control/exception profile",
+        "families": [
+          "exceptions-always",
+          "memvars-dynamic-binding",
+          "closures-detached-locals",
+          "file-static"
+        ],
+        "next_gate": "Explicit exception/unwind/closure lifetime contract; bounded controlled handler; no suppression of intentional break",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -14271,6 +14285,17 @@
         "entrypoint": "reviewed-linux-console",
         "dependencies": "reviewed-console-only",
         "limits": "other targets not reviewed; no automatic bulk execution"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source; declared control/exception profile",
+        "families": [
+          "conditional-expression",
+          "functions"
+        ],
+        "next_gate": "Own boundary fixtures for all cases/no-match,then original exact trace; one source not complete branch coverage",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -14607,6 +14632,18 @@
         "entrypoint": "reviewed-linux-console",
         "dependencies": "reviewed-console-only",
         "limits": "other targets not reviewed; no automatic bulk execution"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source; declared control/exception profile",
+        "families": [
+          "while-control",
+          "for-control",
+          "conditional-expression"
+        ],
+        "next_gate": "Existing compile audit then separately authorized exact-output and final-variable oracle",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -15121,6 +15158,17 @@
         "entrypoint": "reviewed-linux-console",
         "dependencies": "reviewed-console-only",
         "limits": "other targets not reviewed; no automatic bulk execution"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source; declared control/exception profile",
+        "families": [
+          "for-control",
+          "nil-local"
+        ],
+        "next_gate": "FOR initial assignment/step/direction oracle; no claim zero-step or dynamic-bound coverage",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -16209,6 +16257,18 @@
         "entrypoint": "reviewed-linux-console",
         "dependencies": "reviewed-console-only",
         "limits": "other targets not reviewed; no automatic bulk execution"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source; declared control/exception profile",
+        "families": [
+          "conditional-expression",
+          "for-control",
+          "functions"
+        ],
+        "next_gate": "Compile/signature check then separately authorized branch order and exact-output oracle",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -16265,6 +16325,18 @@
         "entrypoint": "reviewed-linux-console",
         "dependencies": "reviewed-console-only",
         "limits": "other targets not reviewed; no automatic bulk execution"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source; declared control/exception profile",
+        "families": [
+          "conditional-expression",
+          "discard-return",
+          "nil-value"
+        ],
+        "next_gate": "Explicit parser/arity/lazy evaluation fixtures before execution; no added NIL contract",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -19944,6 +20016,17 @@
         "entrypoint": "reviewed-linux-console",
         "dependencies": "reviewed-console-only",
         "limits": "other targets not reviewed; no automatic bulk execution"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source; declared control/exception profile",
+        "families": [
+          "functions",
+          "conditional-expression"
+        ],
+        "next_gate": "Typed recursive signature/base-case/lazy-branch oracle; no general recursion or stack claim",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -20097,6 +20180,18 @@
         "entrypoint": "reviewed-linux-console",
         "dependencies": "reviewed-console-only",
         "limits": "other targets not reviewed; no automatic bulk execution"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source; declared control/exception profile",
+        "families": [
+          "functions",
+          "nil-return",
+          "conditional-expression"
+        ],
+        "next_gate": "Separate procedure signature/early return contract and exact trace; not existing acceptance inferred",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -21063,6 +21158,18 @@
         "entrypoint": "reviewed-linux-console",
         "dependencies": "reviewed-console-only",
         "limits": "other targets not reviewed; no automatic bulk execution"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source; declared control/exception profile",
+        "families": [
+          "functions",
+          "nil-return",
+          "file-static"
+        ],
+        "next_gate": "Reuse compile provenance then separately authorized static-symbol and exact call-trace oracle",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -22469,6 +22576,17 @@
         "entrypoint": "reviewed-linux-console",
         "dependencies": "reviewed-console-only",
         "limits": "other targets not reviewed; no automatic bulk execution"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source; declared control/exception profile",
+        "families": [
+          "while-control",
+          "postincrement"
+        ],
+        "next_gate": "Trace plus own final-state fixture for false-condition increment; no speed claim from output-heavy loop",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
