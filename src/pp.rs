@@ -872,7 +872,6 @@ fn remove_rule(cmds: &mut Vec<Cmd>, pattern: &[String], result: &str) -> bool {
 fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<String>, String> {
     let src = cmd_tokens(line);
     if src.is_empty() { return Ok(None); }
-    let mut starts = false;
     // Harbour picks the MOST SPECIFIC matching rule (most literal words),
     // regardless of definition order (probes b31/b31b); ties keep the
     // LATEST definition (b47/b47b/b47c).
@@ -882,7 +881,6 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
         let first = match c.pattern.first() { Some(f) => f, None => continue };
         if first.starts_with('<') { continue; }
         if !lit_match(&src[0], first) { continue; }
-        starts = true;
         if let Some(caps) = cmd_match(&c.pattern, &src, c.restricted_exact) {
             let lits = c.pattern.iter().filter(|t| !(t.starts_with('<') && t.ends_with('>')) && t.as_str() != "[" && t.as_str() != "]").count();
             // probes b47/b47b/b47c: equal literal counts keep the LATEST
@@ -962,9 +960,8 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
             return Ok(Some(unstage_result(&out, &saved)));
         }
     }
-    if starts {
-        return Err(format!("line {}: incomplete statement for the command used here (Harbour: E0020)", line_no));
-    }
+    // A shared first keyword is not a rule match. Harbour leaves the
+    // original statement for the parser when no complete pattern matches.
     Ok(None)
 }
 

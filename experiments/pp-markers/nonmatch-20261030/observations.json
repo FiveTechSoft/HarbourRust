@@ -1,0 +1,325 @@
+{
+  "scope": "32own-source preprocessing nonmatch observations,not implementation or runtime.",
+  "rows": [
+    {
+      "case": 0,
+      "directive": "command",
+      "source": "#command PROCEDURE <name> CLASS <!class!> => OUT( <name>, <class> )\nPROCEDURE Main()\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROCEDURE Main()\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 1,
+      "directive": "command",
+      "source": "#command PROCEDURE <name> CLASS <!class!> => OUT( <name>, <class> )\nPROCEDURE Work() CLASS Alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( Work(), Alpha )\n",
+      "own_exit": 0,
+      "own_output": "OUT( Work ( ), Alpha )\n",
+      "own_error": ""
+    },
+    {
+      "case": 2,
+      "directive": "command",
+      "source": "#command PROCEDURE <name> CLASS <!class!> => OUT( <name>, <class> )\nPROCEDURE Work() CLASS\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROCEDURE Work() CLASS\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 3,
+      "directive": "command",
+      "source": "#command PROCEDURE <name> CLASS <!class!> => OUT( <name>, <class> )\nPROCEDURE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROCEDURE\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 4,
+      "directive": "command",
+      "source": "#command CHOOSE <mode: FROM, INHERIT> => OUT( <mode> )\nCHOOSE FROM\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( FROM )\n",
+      "own_exit": 0,
+      "own_output": "OUT( FROM )\n",
+      "own_error": ""
+    },
+    {
+      "case": 5,
+      "directive": "command",
+      "source": "#command CHOOSE <mode: FROM, INHERIT> => OUT( <mode> )\nCHOOSE OTHER\n",
+      "reference_exit": 0,
+      "reference_output": "\nCHOOSE OTHER\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 6,
+      "directive": "command",
+      "source": "#command CHOOSE <mode: FROM, INHERIT> => OUT( <mode> )\nCHOOSE\n",
+      "reference_exit": 0,
+      "reference_output": "\nCHOOSE\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 7,
+      "directive": "command",
+      "source": "#command CHOOSE <mode: FROM, INHERIT> => OUT( <mode> )\nCHOOSE FROM extra\n",
+      "reference_exit": 0,
+      "reference_output": "\nCHOOSE FROM extra\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 8,
+      "directive": "xcommand",
+      "source": "#xcommand PROCEDURE <name> CLASS <!class!> => OUT( <name>, <class> )\nPROCEDURE Main()\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROCEDURE Main()\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 9,
+      "directive": "xcommand",
+      "source": "#xcommand PROCEDURE <name> CLASS <!class!> => OUT( <name>, <class> )\nPROCEDURE Work() CLASS Alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( Work(), Alpha )\n",
+      "own_exit": 0,
+      "own_output": "OUT( Work ( ), Alpha )\n",
+      "own_error": ""
+    },
+    {
+      "case": 10,
+      "directive": "xcommand",
+      "source": "#xcommand PROCEDURE <name> CLASS <!class!> => OUT( <name>, <class> )\nPROCEDURE Work() CLASS\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROCEDURE Work() CLASS\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 11,
+      "directive": "xcommand",
+      "source": "#xcommand PROCEDURE <name> CLASS <!class!> => OUT( <name>, <class> )\nPROCEDURE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROCEDURE\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 12,
+      "directive": "xcommand",
+      "source": "#xcommand CHOOSE <mode: FROM, INHERIT> => OUT( <mode> )\nCHOOSE FROM\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( FROM )\n",
+      "own_exit": 0,
+      "own_output": "OUT( FROM )\n",
+      "own_error": ""
+    },
+    {
+      "case": 13,
+      "directive": "xcommand",
+      "source": "#xcommand CHOOSE <mode: FROM, INHERIT> => OUT( <mode> )\nCHOOSE OTHER\n",
+      "reference_exit": 0,
+      "reference_output": "\nCHOOSE OTHER\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 14,
+      "directive": "xcommand",
+      "source": "#xcommand CHOOSE <mode: FROM, INHERIT> => OUT( <mode> )\nCHOOSE\n",
+      "reference_exit": 0,
+      "reference_output": "\nCHOOSE\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 15,
+      "directive": "xcommand",
+      "source": "#xcommand CHOOSE <mode: FROM, INHERIT> => OUT( <mode> )\nCHOOSE FROM extra\n",
+      "reference_exit": 0,
+      "reference_output": "\nCHOOSE FROM extra\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 16,
+      "directive": "translate",
+      "source": "#translate PROCEDURE <name> CLASS <!class!> => OUT( <name>, <class> )\nPROCEDURE Main()\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROCEDURE Main()\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 17,
+      "directive": "translate",
+      "source": "#translate PROCEDURE <name> CLASS <!class!> => OUT( <name>, <class> )\nPROCEDURE Work() CLASS Alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( Work(), Alpha )\n",
+      "own_exit": 0,
+      "own_output": "OUT( Work ( ), Alpha )\n",
+      "own_error": ""
+    },
+    {
+      "case": 18,
+      "directive": "translate",
+      "source": "#translate PROCEDURE <name> CLASS <!class!> => OUT( <name>, <class> )\nPROCEDURE Work() CLASS\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROCEDURE Work() CLASS\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 19,
+      "directive": "translate",
+      "source": "#translate PROCEDURE <name> CLASS <!class!> => OUT( <name>, <class> )\nPROCEDURE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROCEDURE\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 20,
+      "directive": "translate",
+      "source": "#translate CHOOSE <mode: FROM, INHERIT> => OUT( <mode> )\nCHOOSE FROM\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( FROM )\n",
+      "own_exit": 0,
+      "own_output": "OUT( FROM )\n",
+      "own_error": ""
+    },
+    {
+      "case": 21,
+      "directive": "translate",
+      "source": "#translate CHOOSE <mode: FROM, INHERIT> => OUT( <mode> )\nCHOOSE OTHER\n",
+      "reference_exit": 0,
+      "reference_output": "\nCHOOSE OTHER\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 22,
+      "directive": "translate",
+      "source": "#translate CHOOSE <mode: FROM, INHERIT> => OUT( <mode> )\nCHOOSE\n",
+      "reference_exit": 0,
+      "reference_output": "\nCHOOSE\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 23,
+      "directive": "translate",
+      "source": "#translate CHOOSE <mode: FROM, INHERIT> => OUT( <mode> )\nCHOOSE FROM extra\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( FROM ) extra\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 24,
+      "directive": "xtranslate",
+      "source": "#xtranslate PROCEDURE <name> CLASS <!class!> => OUT( <name>, <class> )\nPROCEDURE Main()\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROCEDURE Main()\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 25,
+      "directive": "xtranslate",
+      "source": "#xtranslate PROCEDURE <name> CLASS <!class!> => OUT( <name>, <class> )\nPROCEDURE Work() CLASS Alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( Work(), Alpha )\n",
+      "own_exit": 0,
+      "own_output": "OUT( Work ( ), Alpha )\n",
+      "own_error": ""
+    },
+    {
+      "case": 26,
+      "directive": "xtranslate",
+      "source": "#xtranslate PROCEDURE <name> CLASS <!class!> => OUT( <name>, <class> )\nPROCEDURE Work() CLASS\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROCEDURE Work() CLASS\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 27,
+      "directive": "xtranslate",
+      "source": "#xtranslate PROCEDURE <name> CLASS <!class!> => OUT( <name>, <class> )\nPROCEDURE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROCEDURE\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 28,
+      "directive": "xtranslate",
+      "source": "#xtranslate CHOOSE <mode: FROM, INHERIT> => OUT( <mode> )\nCHOOSE FROM\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( FROM )\n",
+      "own_exit": 0,
+      "own_output": "OUT( FROM )\n",
+      "own_error": ""
+    },
+    {
+      "case": 29,
+      "directive": "xtranslate",
+      "source": "#xtranslate CHOOSE <mode: FROM, INHERIT> => OUT( <mode> )\nCHOOSE OTHER\n",
+      "reference_exit": 0,
+      "reference_output": "\nCHOOSE OTHER\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 30,
+      "directive": "xtranslate",
+      "source": "#xtranslate CHOOSE <mode: FROM, INHERIT> => OUT( <mode> )\nCHOOSE\n",
+      "reference_exit": 0,
+      "reference_output": "\nCHOOSE\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    },
+    {
+      "case": 31,
+      "directive": "xtranslate",
+      "source": "#xtranslate CHOOSE <mode: FROM, INHERIT> => OUT( <mode> )\nCHOOSE FROM extra\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( FROM ) extra\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: incomplete statement for the command used here (Harbour: E0020)\n"
+    }
+  ]
+}

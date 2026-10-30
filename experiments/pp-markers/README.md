@@ -369,3 +369,28 @@ No fresh size or speed comparison is claimed. Main date work is untouched.
 python3 experiments/pp-markers/check_generated_directive_implemented.py \
   --hbpp /path/to/hbpp --hpp /tmp/current-hpp --output-dir /tmp/generated
 ```
+
+## No complete rule match: preserve the original statement
+
+A rule for PROCEDURE method CLASS name must not reject an ordinary PROCEDURE
+Main() merely because it shares a first keyword. Fresh own hbpp observations
+confirm that nonmatching commands preserve source for the language parser.
+The old E0020-at-first-keyword fallback is removed,without keyword exceptions.
+Thirteen existing negative fixtures remain negative on both backends/targets;
+they now assert the parser's real unsupported-statement rejection,not an
+invented Harbour preprocessor error. No invalid fixture became accepted.
+
+Three new end-to-end positives exercise overlapping procedure,assignment and
+call keywords and match fresh Harbour bytes.1147default/328LLVM battery checks
+pass. The32-observation nonmatch oracle is30matching token checks plus2known
+translate-prefix differences,NOT32passes;prefix translation is not changed.
+Prior148generated-command,80null,172restricted and190identifier/wildcard
+boundaries pass,now preserving reference nonmatches. Logical replay still has
+88checks plus2preexisting optional-matcher divergences.
+
+Compile-only268x4 acceptance remains21/15Linux20/14Windows.25first diagnostics
+advance:21to call-form translation arity limits,2to dynamic macro evaluation,
+one to dotted-token reemission and one to #cinline. No newly complete original,
+class runtime,main merge,size or speed result follows. Fourteen reviewed
+original console outputs are freshly exact again. These diagnostic stages and
+old frozen evidence are intentionally not relabeled as current passes.

@@ -1,0 +1,165 @@
+{
+  "scope": "30matched checks plus2preexisting translate-prefix divergences,not32passes.",
+  "rows": [
+    {
+      "case": 0,
+      "comparison": "reference token stream matched",
+      "own_output": "PROCEDURE Main()\n"
+    },
+    {
+      "case": 1,
+      "comparison": "reference token stream matched",
+      "own_output": "OUT( Work ( ), Alpha )\n"
+    },
+    {
+      "case": 2,
+      "comparison": "reference token stream matched",
+      "own_output": "PROCEDURE Work() CLASS\n"
+    },
+    {
+      "case": 3,
+      "comparison": "reference token stream matched",
+      "own_output": "PROCEDURE\n"
+    },
+    {
+      "case": 4,
+      "comparison": "reference token stream matched",
+      "own_output": "OUT( FROM )\n"
+    },
+    {
+      "case": 5,
+      "comparison": "reference token stream matched",
+      "own_output": "CHOOSE OTHER\n"
+    },
+    {
+      "case": 6,
+      "comparison": "reference token stream matched",
+      "own_output": "CHOOSE\n"
+    },
+    {
+      "case": 7,
+      "comparison": "reference token stream matched",
+      "own_output": "CHOOSE FROM extra\n"
+    },
+    {
+      "case": 8,
+      "comparison": "reference token stream matched",
+      "own_output": "PROCEDURE Main()\n"
+    },
+    {
+      "case": 9,
+      "comparison": "reference token stream matched",
+      "own_output": "OUT( Work ( ), Alpha )\n"
+    },
+    {
+      "case": 10,
+      "comparison": "reference token stream matched",
+      "own_output": "PROCEDURE Work() CLASS\n"
+    },
+    {
+      "case": 11,
+      "comparison": "reference token stream matched",
+      "own_output": "PROCEDURE\n"
+    },
+    {
+      "case": 12,
+      "comparison": "reference token stream matched",
+      "own_output": "OUT( FROM )\n"
+    },
+    {
+      "case": 13,
+      "comparison": "reference token stream matched",
+      "own_output": "CHOOSE OTHER\n"
+    },
+    {
+      "case": 14,
+      "comparison": "reference token stream matched",
+      "own_output": "CHOOSE\n"
+    },
+    {
+      "case": 15,
+      "comparison": "reference token stream matched",
+      "own_output": "CHOOSE FROM extra\n"
+    },
+    {
+      "case": 16,
+      "comparison": "reference token stream matched",
+      "own_output": "PROCEDURE Main()\n"
+    },
+    {
+      "case": 17,
+      "comparison": "reference token stream matched",
+      "own_output": "OUT( Work ( ), Alpha )\n"
+    },
+    {
+      "case": 18,
+      "comparison": "reference token stream matched",
+      "own_output": "PROCEDURE Work() CLASS\n"
+    },
+    {
+      "case": 19,
+      "comparison": "reference token stream matched",
+      "own_output": "PROCEDURE\n"
+    },
+    {
+      "case": 20,
+      "comparison": "reference token stream matched",
+      "own_output": "OUT( FROM )\n"
+    },
+    {
+      "case": 21,
+      "comparison": "reference token stream matched",
+      "own_output": "CHOOSE OTHER\n"
+    },
+    {
+      "case": 22,
+      "comparison": "reference token stream matched",
+      "own_output": "CHOOSE\n"
+    },
+    {
+      "case": 23,
+      "comparison": "preexisting translate-prefix divergence,not fixed/not pass",
+      "own_output": "CHOOSE FROM extra\n"
+    },
+    {
+      "case": 24,
+      "comparison": "reference token stream matched",
+      "own_output": "PROCEDURE Main()\n"
+    },
+    {
+      "case": 25,
+      "comparison": "reference token stream matched",
+      "own_output": "OUT( Work ( ), Alpha )\n"
+    },
+    {
+      "case": 26,
+      "comparison": "reference token stream matched",
+      "own_output": "PROCEDURE Work() CLASS\n"
+    },
+    {
+      "case": 27,
+      "comparison": "reference token stream matched",
+      "own_output": "PROCEDURE\n"
+    },
+    {
+      "case": 28,
+      "comparison": "reference token stream matched",
+      "own_output": "OUT( FROM )\n"
+    },
+    {
+      "case": 29,
+      "comparison": "reference token stream matched",
+      "own_output": "CHOOSE OTHER\n"
+    },
+    {
+      "case": 30,
+      "comparison": "reference token stream matched",
+      "own_output": "CHOOSE\n"
+    },
+    {
+      "case": 31,
+      "comparison": "preexisting translate-prefix divergence,not fixed/not pass",
+      "own_output": "CHOOSE FROM extra\n"
+    }
+  ]
+}

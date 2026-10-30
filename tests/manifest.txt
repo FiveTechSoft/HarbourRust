@@ -87,13 +87,13 @@ pos tests/t83_pp_case_ifdef.hb \n         2
 pos tests/t84_pp_command.hb \n         6\n         7
 pos tests/t85_pp_command2.hb \n        15\n         6
 pos tests/t86_pp_translate.hb \n        42\n         6
-neg tests/t87_pp_command_bad.hb incomplete statement
+neg tests/t87_pp_command_bad.hb statement not in the subset
 neg tests/t88_pp_case_param.hb undefined variable `x`
 pos tests/t89_pp_cmd_optional.hb \n         1\n         2
 pos tests/t90_pp_cmd_list.hb \n         6
 pos tests/t91_pp_cmd_parenexpr.hb \n         3
 pos tests/t92_pp_cmd_parenres.hb \n         6
-neg tests/t93_pp_cmd_parenreq.hb incomplete statement
+neg tests/t93_pp_cmd_parenreq.hb statement not in the subset
 pos tests/t94_pp_cmd_nested_opt.hb \n         1\n         2\n         4
 pos tests/t95_pp_translate_stmt.hb \n        42
 pos tests/t96_pp_translate_multi.hb \n         7
@@ -1086,13 +1086,13 @@ pos tests/t1087_pp_identifier_marker.hb \n        42
 pos tests/t1088_pp_identifier_pair.hb \n        42
 pos tests/t1089_pp_wildcard_marker.hb \n        42
 pos tests/t1090_pp_wildcard_optional.hb \n\n        42
-neg tests/t1091_pp_identifier_literal_neg.hb incomplete statement
-neg tests/t1092_pp_identifier_expr_neg.hb incomplete statement
-neg tests/t1093_pp_wildcard_follow_neg.hb incomplete statement
+neg tests/t1091_pp_identifier_literal_neg.hb statement not in the subset
+neg tests/t1092_pp_identifier_expr_neg.hb statement not in the subset
+neg tests/t1093_pp_wildcard_follow_neg.hb statement not in the subset
 neg tests/t1094_pp_marker_remove.hb statement not in the subset
 pos tests/t1095_pp_identifier_translate.hb \n        42
 neg tests/t1096_pp_marker_malformed_neg.hb bad match marker
-neg tests/t1097_pp_identifier_optional.hb incomplete statement
+neg tests/t1097_pp_identifier_optional.hb statement not in the subset
 pos tests/t1098_pp_identifier_result_optional.hb \n        42
 pos tests/t1099_pp_restricted_choice.hb \n        42
 pos tests/t1100_pp_restricted_case.hb \n        42
@@ -1100,10 +1100,10 @@ pos tests/t1101_pp_restricted_phrase.hb \n        42
 pos tests/t1102_pp_restricted_abbrev.hb \n        42
 pos tests/t1103_pp_restricted_optional.hb \n        42\n        42
 pos tests/t1104_pp_restricted_translate.hb \n        42
-neg tests/t1105_pp_restricted_exact_neg.hb incomplete statement
-neg tests/t1106_pp_restricted_unknown_neg.hb incomplete statement
-neg tests/t1107_pp_restricted_prefix_neg.hb incomplete statement
-neg tests/t1108_pp_restricted_quote_neg.hb incomplete statement
+neg tests/t1105_pp_restricted_exact_neg.hb statement not in the subset
+neg tests/t1106_pp_restricted_unknown_neg.hb statement not in the subset
+neg tests/t1107_pp_restricted_prefix_neg.hb statement not in the subset
+neg tests/t1108_pp_restricted_quote_neg.hb statement not in the subset
 neg tests/t1109_pp_restricted_empty_neg.hb bad match marker
 neg tests/t1110_pp_restricted_macro_neg.hb bad match marker
 pos tests/t1111_pp_logical_presence.hb \n.F.\n.T.
@@ -1115,7 +1115,7 @@ pos tests/t1116_pp_logical_required.hb \n.T.
 neg tests/t1117_pp_logical_unknown_neg.hb unknown result marker
 neg tests/t1118_pp_logical_case_neg.hb unknown result marker
 neg tests/t1119_pp_logical_malformed_neg.hb unknown result marker
-neg tests/t1120_pp_logical_nonmatch_neg.hb incomplete statement
+neg tests/t1120_pp_logical_nonmatch_neg.hb statement not in the subset
 pos tests/t1121_pp_null_erase.hb \nyes\nyes
 pos tests/t1122_pp_null_group.hb \n\nyes
 pos tests/t1123_pp_null_payload.hb \nyes\nyes\nyes
@@ -1125,7 +1125,7 @@ pos tests/t1126_pp_null_name.hb \n\n        42
 neg tests/t1127_pp_null_unknown_neg.hb unknown result marker
 neg tests/t1128_pp_null_case_neg.hb unknown result marker
 neg tests/t1129_pp_null_malformed_neg.hb unknown result marker
-neg tests/t1130_pp_null_nonmatch_neg.hb incomplete statement
+neg tests/t1130_pp_null_nonmatch_neg.hb statement not in the subset
 pos tests/t1131_pp_generated_factory.hb \nok\nok
 pos tests/t1132_pp_generated_collision.hb \nok
 pos tests/t1133_pp_generated_optional.hb \n\nyes
@@ -1136,7 +1136,10 @@ pos tests/t1137_pp_generated_multi.hb \n         1\n         2
 pos tests/t1138_pp_generated_local_scope.hb \n        42
 neg tests/t1139_pp_generated_unknown_neg.hb unknown result marker
 neg tests/t1140_pp_generated_case_neg.hb unknown result marker
-neg tests/t1141_pp_generated_exact_neg.hb incomplete statement
+neg tests/t1141_pp_generated_exact_neg.hb statement not in the subset
 neg tests/t1142_pp_generated_recursive_neg.hb command expansion too deep
 neg tests/t1143_pp_generated_unsupported_neg.hb generated directive outside
 neg tests/t1144_pp_generated_unescaped_neg.hb unknown result marker
+pos tests/t1145_pp_nonmatch_procedure.hb \n         7
+pos tests/t1146_pp_nonmatch_assignment.hb \n         7
+pos tests/t1147_pp_nonmatch_call.hb \n         7

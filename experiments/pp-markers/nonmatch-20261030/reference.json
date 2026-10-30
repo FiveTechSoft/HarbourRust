@@ -1,0 +1,17 @@
+[
+  {
+    "file": "tests/t1145_pp_nonmatch_procedure.hb",
+    "stdout_hex": "0a20202020202020202037",
+    "exact": true
+  },
+  {
+    "file": "tests/t1146_pp_nonmatch_assignment.hb",
+    "stdout_hex": "0a20202020202020202037",
+    "exact": true
+  },
+  {
+    "file": "tests/t1147_pp_nonmatch_call.hb",
+    "stdout_hex": "0a20202020202020202037",
+    "exact": true
+  }
+]
