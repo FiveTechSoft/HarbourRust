@@ -1,4 +1,4 @@
-# HarbourRust - proof of concept
+﻿# HarbourRust - proof of concept
 
 **What this is:** a small proof of the idea - Harbour syntax, Rust rules,
 native executables. It is not a full compiler and does not claim to be one.
@@ -1510,6 +1510,33 @@ compiles and runs byte-identical to Harbour. Forward references
 Battery: 623/623 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
 
+## Iteration 64bc: the date type, part 1
+
+The type system gains a DATE: Date() and CToD("MM/DD/YYYY"-shaped
+strings) produce a statically-typed Ty::Date scalar whose 8-byte
+payload is the Harbour julian long; the empty date is the 0 payload.
+CToD is hb_dateUnformatRaw over the default MM/DD/YY format (digit
+runs separated by one-or-more non-digit characters, the third
+separator stops the parse, each field keeps its one run's digits) and
+the epoch rule from hb_setUpdateEpoch at the default SET EPOCH 1900:
+a year value below 100 maps +1900 (leading zeros irrelevant - "49" is
+1949, "0999" is 999, measured through Year()). Any invalid form
+(month>12, day beyond the month limit with the Gregorian leap rule, a
+five-digit year, garbage) encodes the EMPTY date, which prints
+`  /  /  ` exactly (eight bytes, six when a QOut line-end right-trim
+removes the trailing spaces - measured). Real dates print mm/dd/yy.
+Date() returns today (UTC-clock path on Linux, GetLocalTime on
+Windows; a local-TZ loader is a registered limit). Comparisons run
+through the julian payloads; mixed compare/arith raises Harbour's
+BASE/1071 condition (headless hang) - a named compile-time rejection;
+date arithmetic itself is measured and PARKED for the next date
+increment. Date-in-hash, a Dyn payload tag and param pinning for
+dates are also outside this increment.
+
+The battery grows to 1100 manifest cases plus five harness checks,
+ALL GREEN on Linux x86-64 and Wine 10.20; the frozen 175 sweep stays
+at 20 COMPILES (see sondas/sweep175-64bc.csv, hk483/hk484
+byte-matching compiled Harbour).
 
 Iteration 60 adds hb_HClear(h) and hb_HFill(h, value) (core
 hb_HClear / hb_HFill; oracles hk191-hk193): hb_HClear empties the
