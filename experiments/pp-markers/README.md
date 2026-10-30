@@ -609,3 +609,13 @@ Fourteen originals are freshly exact;268x4acceptance stays21/15Linux20/14Windows
 Two first diagnostics advance without a new full original acceptance. Ordinary
 capture and quoted#capture controls match baseline;normal marker-looking text
 inside a result literal remains literal data. No lexer/runtime/ABI change.
+
+## List stringify characterization
+
+144own-source observations in list-stringify-gap-20261031,not implementation.
+#<x> on a list capture quotes the whole captured source,including commas and
+interior whitespace. <"x"> quotes top-level elements separately,preserving
+separator whitespace. Empty elements contribute no invented empty literal.
+Commas inside strings,calls,parentheses or array constructors do not split
+an element. Bracket-string and escape-literal semantics remain separate from
+the present simple quoted-literal implementation. No new matcher/runtime code.
