@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "90 full-source manual metadata reviews,including6class/inheritance/lvalue/persistence cases. Five overlap prior19execution records. No new compile/link/run or authority. Dependencies are requirements,not installed availability. Tags not coverage.",
+  "scope": "100 full-source manual metadata reviews,including10numeric/library/clock cases. Five overlap prior19execution records. No new compile/link/run or authority. Dependencies requirements,not availability. Tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -4008,6 +4008,418 @@
           "symbol_or_construct": "METHOD More()    VIRTUAL",
           "lines": [
             31
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/fib.prg",
+      "sha256": "93732a58377061fcb844f00b11f61c39a41f084477effcc8c46164107e04ae81",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;parameters noted in source",
+      "build_unit": "numeric/library/clock profile;not auto-runnable",
+      "families": [
+        "functions",
+        "while-control",
+        "for-control",
+        "nil-local"
+      ],
+      "dependency_requirements": [
+        "recursive and iterative Fibonacci; NIL-initialized local assigned on paths"
+      ],
+      "effects_or_harness_risks": [
+        "40numeric outputs for inputs1..20"
+      ],
+      "output_comparison": "bounded deterministic candidate;not freshly executed",
+      "next_gate": "numeric/signature/local-flow proof then exact oracle;not substitute own kernel",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "FOR n := 1 TO 20",
+          "lines": [
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "FibR( n - 2 )",
+          "lines": [
+            19
+          ]
+        },
+        {
+          "symbol_or_construct": "DO WHILE i < n",
+          "lines": [
+            34
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/speed.prg",
+      "sha256": "30981588d7ab4834048880dc44d5357adf56c44bdab38aaeb33d0ea96aeb9b1e",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;parameters noted in source",
+      "build_unit": "numeric/library/clock profile;not auto-runnable",
+      "families": [
+        "closures",
+        "arrays",
+        "environment-clock"
+      ],
+      "dependency_requirements": [
+        "array cells holding closures capturing Counter; Eval; Second clock"
+      ],
+      "effects_or_harness_risks": [
+        "1Mcallback loop and clock reads"
+      ],
+      "output_comparison": "not comparable to scalar loop,clock resolution affects result",
+      "next_gate": "define closure semantics and validated iteration workload before timing",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Program := {, }",
+          "lines": [
+            3
+          ]
+        },
+        {
+          "symbol_or_construct": "Counter++",
+          "lines": [
+            6
+          ]
+        },
+        {
+          "symbol_or_construct": "Second()",
+          "lines": [
+            7,
+            18
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/and_or.prg",
+      "sha256": "085ba30dfd4ab2497e66ee65398e31f88b6221903c35501c55cf9d44fd4b23ac",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;parameters noted in source",
+      "build_unit": "numeric/library/clock profile;not auto-runnable",
+      "families": [
+        "functions",
+        "error-system"
+      ],
+      "dependency_requirements": [
+        "short-circuit logical runtime types and NIL return"
+      ],
+      "effects_or_harness_risks": [
+        "first tests suppress side effect;last intentional logical type error"
+      ],
+      "output_comparison": "mixed successful prefix and controlled fault",
+      "next_gate": "error harness plus side-effect absence;not allnormalexit",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": ".F. .AND. DispAndReturnNIL()",
+          "lines": [
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "AndOr( 1, .T. )",
+          "lines": [
+            20
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/multiarg.prg",
+      "sha256": "6b370115396072c1ec50894822274bf8103b425d606245b572796bf5f1e51bf7",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;parameters noted in source",
+      "build_unit": "numeric/library/clock profile;not auto-runnable",
+      "families": [
+        "functions",
+        "varargs",
+        "nil-value"
+      ],
+      "dependency_requirements": [
+        "hb_PValue parameter introspection; missing positional args"
+      ],
+      "effects_or_harness_risks": [
+        "console outputs heterogeneous argument values"
+      ],
+      "output_comparison": "type/arity/introspection semantics required",
+      "next_gate": "explicit omitted-argument oracle,not uniform I64 signature",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_PValue( nArg )",
+          "lines": [
+            31
+          ]
+        },
+        {
+          "symbol_or_construct": "x9, x10",
+          "lines": [
+            18
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/longstr2.prg",
+      "sha256": "e6988e6f3320bfc5ac75b66f7c8e51c4d2868f03a284dfe439976687f5f0504a",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;parameters noted in source",
+      "build_unit": "numeric/library/clock profile;not auto-runnable",
+      "families": [
+        "strings",
+        "filesystem"
+      ],
+      "dependency_requirements": [
+        "owned concatenation doubling;OutErr/OutStd/QOut;hb_eol"
+      ],
+      "effects_or_harness_risks": [
+        "large raw stdout plus separate stderr;NOTESTredirect recommendation"
+      ],
+      "output_comparison": "binary/stream lengths and allocation behavior,not terminal display",
+      "next_gate": "bounded file captures for both streams;no arbitrary source workingdir",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "//NOTEST",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "OutErr(",
+          "lines": [
+            18
+          ]
+        },
+        {
+          "symbol_or_construct": "very_long += very_long",
+          "lines": [
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/sha1.prg",
+      "sha256": "5e33d8c65a9266ad548b7d4bc619b9d9f375764a950b780bb16597f31a9646c8",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;parameters noted in source",
+      "build_unit": "numeric/library/clock profile;not auto-runnable",
+      "families": [
+        "strings",
+        "embedded-NUL"
+      ],
+      "dependency_requirements": [
+        "SHA1/HMAC library;hex/raw-output option"
+      ],
+      "effects_or_harness_risks": [
+        "console may contain raw binary digest"
+      ],
+      "output_comparison": "exact binary outputs,not UTF8text or strips",
+      "next_gate": "binary-safe digest vectors;runtime library own implementation scope",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_SHA1( \"hello\", .T. )",
+          "lines": [
+            10
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_HMAC_SHA1",
+          "lines": [
+            12,
+            13,
+            14
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/base64.prg",
+      "sha256": "255d1bee3b28b4f1fc2679117d5c5e536e76b42ea6769abec195649ca0616a38",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;parameters noted in source",
+      "build_unit": "numeric/library/clock profile;not auto-runnable",
+      "families": [
+        "hashes",
+        "foreach",
+        "strings",
+        "dynamic-dispatch"
+      ],
+      "dependency_requirements": [
+        "simpleio.ch;base64 library;hash enumeration key metadata;format library"
+      ],
+      "effects_or_harness_risks": [
+        "console test-vector checks"
+      ],
+      "output_comparison": "deterministic candidate but enumeration/hash contract required",
+      "next_gate": "separate library vectors and enum-key protocol before runningoriginal",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hTestVectors := {",
+          "lines": [
+            9
+          ]
+        },
+        {
+          "symbol_or_construct": "cVector:__enumKey",
+          "lines": [
+            20,
+            23,
+            25,
+            29,
+            31
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_base64Decode",
+          "lines": [
+            28,
+            30,
+            33
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/dates3.prg",
+      "sha256": "f1b18d3117e12df21381d93c9a011216858bc3848e175a19225ea86930b48784",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;parameters noted in source",
+      "build_unit": "numeric/library/clock profile;not auto-runnable",
+      "families": [
+        "dates",
+        "set-format",
+        "environment-clock"
+      ],
+      "dependency_requirements": [
+        "date format SET,SToD,DoW,date arithmetic,empty date"
+      ],
+      "effects_or_harness_risks": [
+        "changes dateformat;laterreads Date()"
+      ],
+      "output_comparison": "fixed-date prefix plus clock-dependent suffix",
+      "next_gate": "declareclock/dateformat/empty-date semantics without editingoriginal",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Date()",
+          "lines": [
+            34
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_SToD()",
+          "lines": [
+            39
+          ]
+        },
+        {
+          "symbol_or_construct": "LastMonday",
+          "lines": [
+            12,
+            25,
+            45
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/seconds.prg",
+      "sha256": "ad501934a1ed2758f527bd3ee7a797c7f463e87511735818c30a819b769416cb",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;parameters noted in source",
+      "build_unit": "numeric/library/clock profile;not auto-runnable",
+      "families": [
+        "environment-clock",
+        "input-terminal",
+        "GT-screen"
+      ],
+      "dependency_requirements": [
+        "Seconds,CLS,argument parsing"
+      ],
+      "effects_or_harness_risks": [
+        "withoutargument waits keyboard eachiteration;withargclockloop"
+      ],
+      "output_comparison": "parameterized interactive/noninteractive profiles",
+      "next_gate": "profile-specific input and elapsed-clock assertions",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Inkey( 0 )",
+          "lines": [
+            18
+          ]
+        },
+        {
+          "symbol_or_construct": "Main( cParam )",
+          "lines": [
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "limit := Val( cParam )",
+          "lines": [
+            12
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/ticktime.prg",
+      "sha256": "50533024489041ffb9ffe013a4115e3d6b746141e046b3e53f772656d4ee9f6a",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;parameters noted in source",
+      "build_unit": "numeric/library/clock profile;not auto-runnable",
+      "families": [
+        "environment-clock",
+        "while-control",
+        "floating-point"
+      ],
+      "dependency_requirements": [
+        "hb_MilliSeconds clock;numericformat/division"
+      ],
+      "effects_or_harness_risks": [
+        "busy loop about10seconds,hostCPUload"
+      ],
+      "output_comparison": "host clockgranularity/load observation,not compiler speedbenchmark",
+      "next_gate": "bounded timing diagnostics and rollover/clockrules;not performanceparity",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "< 10000",
+          "lines": [
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "nLoop ++",
+          "lines": [
+            14
+          ]
+        },
+        {
+          "symbol_or_construct": "Loops per tick",
+          "lines": [
+            21
           ]
         }
       ]

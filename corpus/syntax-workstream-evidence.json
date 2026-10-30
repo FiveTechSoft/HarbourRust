@@ -14,7 +14,8 @@
         "tests/strdelim.prg",
         "tests/vec1.prg",
         "tests/test.prg",
-        "tests/wvt_fs.prg"
+        "tests/wvt_fs.prg",
+        "tests/sha1.prg"
       ],
       "seed_regression_paths": [
         "tests/t07_unicode_string.hb",
@@ -47,7 +48,8 @@
         "tests/statinit.prg",
         "tests/statics1.prg",
         "tests/classes.prg",
-        "tests/objasign.prg"
+        "tests/objasign.prg",
+        "tests/fib.prg"
       ],
       "seed_regression_paths": [
         "tests/t678_static_func_proc_note.hb",
@@ -72,7 +74,11 @@
         "tests/t1.prg",
         "tests/for2.prg",
         "tests/test.prg",
-        "tests/round.prg"
+        "tests/round.prg",
+        "tests/fib.prg",
+        "tests/and_or.prg",
+        "tests/base64.prg",
+        "tests/ticktime.prg"
       ],
       "seed_regression_paths": [
         "tests/t358_foreach_strord_num.hb",
@@ -107,7 +113,10 @@
         "tests/vars.prg",
         "tests/procname.prg",
         "tests/arrayidx.prg",
-        "tests/objasign.prg"
+        "tests/objasign.prg",
+        "tests/fib.prg",
+        "tests/and_or.prg",
+        "tests/multiarg.prg"
       ],
       "seed_regression_paths": [
         "tests/t1040_seq_dyn_limit_neg.hb",
@@ -132,7 +141,8 @@
         "tests/arrayidx.prg",
         "tests/say.prg",
         "tests/achoice6.prg",
-        "tests/objasign.prg"
+        "tests/objasign.prg",
+        "tests/ticktime.prg"
       ],
       "seed_regression_paths": [
         "tests/t750_float_arith_mixed.hb",
@@ -162,7 +172,10 @@
         "tests/strdelim.prg",
         "tests/statics2.prg",
         "tests/statics1.prg",
-        "tests/achoice5.prg"
+        "tests/achoice5.prg",
+        "tests/speed.prg",
+        "tests/multiarg.prg",
+        "tests/base64.prg"
       ],
       "seed_regression_paths": [
         "tests/t208_nil_literal.hb",
@@ -198,7 +211,9 @@
         "tests/inhprob.prg",
         "tests/classes.prg",
         "tests/objasign.prg",
-        "tests/persist.prg"
+        "tests/persist.prg",
+        "tests/speed.prg",
+        "tests/base64.prg"
       ],
       "seed_regression_paths": [
         "tests/t150_cb_eval1.hb",
@@ -252,7 +267,11 @@
         "tests/test.prg",
         "tests/say.prg",
         "tests/browse.prg",
-        "tests/persist.prg"
+        "tests/persist.prg",
+        "tests/longstr2.prg",
+        "tests/sha1.prg",
+        "tests/base64.prg",
+        "tests/dates3.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -326,7 +345,8 @@
         "tests/usrrdd/exrlx.prg",
         "tests/cmphello.prg",
         "tests/sortbug.prg",
-        "tests/persist.prg"
+        "tests/persist.prg",
+        "tests/longstr2.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -359,7 +379,8 @@
         "tests/browse.prg",
         "tests/achoice5.prg",
         "tests/achoice6.prg",
-        "tests/clasinh.prg"
+        "tests/clasinh.prg",
+        "tests/seconds.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -385,7 +406,11 @@
         "tests/dynsym.prg",
         "tests/procname.prg",
         "tests/gtcolors.prg",
-        "tests/objasign.prg"
+        "tests/objasign.prg",
+        "tests/speed.prg",
+        "tests/dates3.prg",
+        "tests/seconds.prg",
+        "tests/ticktime.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,

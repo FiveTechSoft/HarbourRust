@@ -4,8 +4,8 @@
   "counts": {
     "inventory_files": 1203,
     "original_test_sources_compile_audited": 268,
-    "manual_entrypoint_dependency_reviews": 90,
-    "manually_reviewed_or_executed_sources": 104,
+    "manual_entrypoint_dependency_reviews": 100,
+    "manually_reviewed_or_executed_sources": 114,
     "frozen175_default_accepted": 20,
     "frozen175_llvm_accepted": 14,
     "execution_exact_by_profile": {
@@ -11329,8 +11329,20 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;parameters noted in source",
+        "build_unit": "numeric/library/clock profile;not auto-runnable",
+        "families": [
+          "functions",
+          "error-system"
+        ],
+        "next_gate": "error harness plus side-effect absence;not allnormalexit",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -11681,8 +11693,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;parameters noted in source",
+        "build_unit": "numeric/library/clock profile;not auto-runnable",
+        "families": [
+          "hashes",
+          "foreach",
+          "strings",
+          "dynamic-dispatch"
+        ],
+        "next_gate": "separate library vectors and enum-key protocol before runningoriginal",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -13187,8 +13213,21 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;parameters noted in source",
+        "build_unit": "numeric/library/clock profile;not auto-runnable",
+        "families": [
+          "dates",
+          "set-format",
+          "environment-clock"
+        ],
+        "next_gate": "declareclock/dateformat/empty-date semantics without editingoriginal",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -14205,8 +14244,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;parameters noted in source",
+        "build_unit": "numeric/library/clock profile;not auto-runnable",
+        "families": [
+          "functions",
+          "while-control",
+          "for-control",
+          "nil-local"
+        ],
+        "next_gate": "numeric/signature/local-flow proof then exact oracle;not substitute own kernel",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -16551,8 +16604,20 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;parameters noted in source",
+        "build_unit": "numeric/library/clock profile;not auto-runnable",
+        "families": [
+          "strings",
+          "filesystem"
+        ],
+        "next_gate": "bounded file captures for both streams;no arbitrary source workingdir",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -17521,8 +17586,21 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;parameters noted in source",
+        "build_unit": "numeric/library/clock profile;not auto-runnable",
+        "families": [
+          "functions",
+          "varargs",
+          "nil-value"
+        ],
+        "next_gate": "explicit omitted-argument oracle,not uniform I64 signature",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -19506,8 +19584,21 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;parameters noted in source",
+        "build_unit": "numeric/library/clock profile;not auto-runnable",
+        "families": [
+          "environment-clock",
+          "input-terminal",
+          "GT-screen"
+        ],
+        "next_gate": "profile-specific input and elapsed-clock assertions",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -19716,8 +19807,20 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;parameters noted in source",
+        "build_unit": "numeric/library/clock profile;not auto-runnable",
+        "families": [
+          "strings",
+          "embedded-NUL"
+        ],
+        "next_gate": "binary-safe digest vectors;runtime library own implementation scope",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -19874,8 +19977,21 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;parameters noted in source",
+        "build_unit": "numeric/library/clock profile;not auto-runnable",
+        "families": [
+          "closures",
+          "arrays",
+          "environment-clock"
+        ],
+        "next_gate": "define closure semantics and validated iteration workload before timing",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -20590,8 +20706,21 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;parameters noted in source",
+        "build_unit": "numeric/library/clock profile;not auto-runnable",
+        "families": [
+          "environment-clock",
+          "while-control",
+          "floating-point"
+        ],
+        "next_gate": "bounded timing diagnostics and rollover/clockrules;not performanceparity",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {

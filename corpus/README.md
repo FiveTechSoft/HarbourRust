@@ -308,3 +308,17 @@ without requiring hbclass.ch,so header-marker acceptance is not a class-runtime
 test. objasign changes object-slot types and prints VM stack/static metadata.
 inhprob needs three-level self/super dispatch evidence. No class program was
 compiled or run;no class runtime,storage or ABI contract was changed.
+
+### Numeric/library/clock batch:100 manual /114 reviewed-or-executed
+
+Ten more full-source reviews bring manual records to100 and the distinct union
+to114 (100+19-5overlap);executions remain19default/14LLVM. No new original was
+compiled or run. fib is a bounded deterministic candidate but its untyped/NIL
+locals and signatures still need gates. speed is a closure-array/Eval loop,
+not the scalar inverse kernel. and_or deliberately faults after successful
+short-circuit checks. multiarg inspects missing/heterogeneous arguments.
+longstr2 needs separate large stdout/stderr captures;sha1 can print raw digest
+bytes;base64 uses hash enum-key metadata as well as library algorithms.
+seconds has input-dependent profiles;ticktime is a10second busy-clock probe,
+not a compiler speed benchmark;dates3 mixes fixed dates with current-clock data.
+Library/numeric review does not create runtime/representation authority.
