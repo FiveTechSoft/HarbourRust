@@ -18,7 +18,9 @@
         "tests/sha1.prg",
         "tests/version.prg",
         "tests/linecont.prg",
-        "tests/pragma.prg"
+        "tests/pragma.prg",
+        "tests/dbgcls.prg",
+        "tests/dev.prg"
       ],
       "seed_regression_paths": [
         "tests/t07_unicode_string.hb",
@@ -56,7 +58,10 @@
         "tests/byref.prg",
         "tests/codebl2.prg",
         "tests/linecont.prg",
-        "tests/for.prg"
+        "tests/for.prg",
+        "tests/inline.prg",
+        "tests/omacro.prg",
+        "tests/get.prg"
       ],
       "seed_regression_paths": [
         "tests/t678_static_func_proc_note.hb",
@@ -129,7 +134,8 @@
         "tests/linecont.prg",
         "tests/for.prg",
         "tests/array16.prg",
-        "tests/arrays.prg"
+        "tests/arrays.prg",
+        "tests/omacro.prg"
       ],
       "seed_regression_paths": [
         "tests/t1040_seq_dyn_limit_neg.hb",
@@ -194,7 +200,9 @@
         "tests/codebl2.prg",
         "tests/for.prg",
         "tests/array16.prg",
-        "tests/arrays.prg"
+        "tests/arrays.prg",
+        "tests/checkbox.prg",
+        "tests/read.prg"
       ],
       "seed_regression_paths": [
         "tests/t208_nil_literal.hb",
@@ -235,7 +243,16 @@
         "tests/base64.prg",
         "tests/codebl2.prg",
         "tests/base2.prg",
-        "tests/for.prg"
+        "tests/for.prg",
+        "tests/dbgcls.prg",
+        "tests/idle.prg",
+        "tests/ddate.prg",
+        "tests/checkbox.prg",
+        "tests/read.prg",
+        "tests/inline.prg",
+        "tests/omacro.prg",
+        "tests/get.prg",
+        "tests/getblock.prg"
       ],
       "seed_regression_paths": [
         "tests/t150_cb_eval1.hb",
@@ -264,7 +281,8 @@
         "tests/hbpp/compare.hb",
         "tests/statics2.prg",
         "tests/statinit.prg",
-        "tests/statics1.prg"
+        "tests/statics1.prg",
+        "tests/libname.prg"
       ],
       "seed_regression_paths": [
         "tests/t681_init_proc_neg.hb",
@@ -293,7 +311,13 @@
         "tests/longstr2.prg",
         "tests/sha1.prg",
         "tests/base64.prg",
-        "tests/dates3.prg"
+        "tests/dates3.prg",
+        "tests/libname.prg",
+        "tests/idle.prg",
+        "tests/ddate.prg",
+        "tests/langapi.prg",
+        "tests/output.prg",
+        "tests/dev.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -338,7 +362,8 @@
         "tests/usrrdd/exlog.prg",
         "tests/usrrdd/exrlx.prg",
         "tests/sortbug.prg",
-        "tests/browse.prg"
+        "tests/browse.prg",
+        "tests/getblock.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -369,7 +394,11 @@
         "tests/sortbug.prg",
         "tests/persist.prg",
         "tests/longstr2.prg",
-        "tests/pragma.prg"
+        "tests/pragma.prg",
+        "tests/flink.prg",
+        "tests/output.prg",
+        "tests/dev.prg",
+        "tests/getblock.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -405,7 +434,15 @@
         "tests/clasinh.prg",
         "tests/seconds.prg",
         "tests/altd.prg",
-        "tests/base2.prg"
+        "tests/base2.prg",
+        "tests/dbgcls.prg",
+        "tests/idle.prg",
+        "tests/checkbox.prg",
+        "tests/read.prg",
+        "tests/output.prg",
+        "tests/dev.prg",
+        "tests/get.prg",
+        "tests/getblock.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -437,7 +474,13 @@
         "tests/seconds.prg",
         "tests/ticktime.prg",
         "tests/altd.prg",
-        "tests/version.prg"
+        "tests/version.prg",
+        "tests/dbgcls.prg",
+        "tests/libname.prg",
+        "tests/idle.prg",
+        "tests/ddate.prg",
+        "tests/langapi.prg",
+        "tests/flink.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,

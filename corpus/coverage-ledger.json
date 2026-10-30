@@ -4,8 +4,8 @@
   "counts": {
     "inventory_files": 1203,
     "original_test_sources_compile_audited": 268,
-    "manual_entrypoint_dependency_reviews": 110,
-    "manually_reviewed_or_executed_sources": 124,
+    "manual_entrypoint_dependency_reviews": 124,
+    "manually_reviewed_or_executed_sources": 138,
     "frozen175_default_accepted": 20,
     "frozen175_llvm_accepted": 14,
     "execution_exact_by_profile": {
@@ -12285,8 +12285,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "specific runtime/effect profile;not auto-runnable",
+        "families": [
+          "GT-screen",
+          "input-terminal",
+          "classes",
+          "arrays"
+        ],
+        "next_gate": "scriptedwidgetfixtureandvisualstatechecks",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -13487,8 +13501,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "specific runtime/effect profile;not auto-runnable",
+        "families": [
+          "classes",
+          "debug-runtime",
+          "input-terminal",
+          "pragmas"
+        ],
+        "next_gate": "isolateddebugsession and accessor-resolutionoracle",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -13553,8 +13581,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "specific runtime/effect profile;not auto-runnable",
+        "families": [
+          "dates",
+          "runtime-macro",
+          "environment-clock",
+          "set-format"
+        ],
+        "next_gate": "date/macrocontractanddeclaredclockfixture",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -13774,8 +13816,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "specific runtime/effect profile;not auto-runnable",
+        "families": [
+          "GT-screen",
+          "filesystem",
+          "set-runtime",
+          "preprocessor-platform"
+        ],
+        "next_gate": "isolatedvirtualprinterfile;byteandcursorassertions",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -14500,8 +14556,20 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "specific runtime/effect profile;not auto-runnable",
+        "families": [
+          "filesystem",
+          "environment-query"
+        ],
+        "next_gate": "disposablefolder;linkidentity/cleanup assertions;no privilege escalation",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -14876,8 +14944,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "specific runtime/effect profile;not auto-runnable",
+        "families": [
+          "GT-screen",
+          "input-terminal",
+          "runtime-macro",
+          "memvars-dynamic-binding"
+        ],
+        "next_gate": "scriptedinputplusbindingoracle;commentedClipperlimitnotpresentverdict",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -14909,8 +14991,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "specific runtime/effect profile;not auto-runnable",
+        "families": [
+          "GT-screen",
+          "input-terminal",
+          "runtime-macro",
+          "RDD-workarea",
+          "filesystem"
+        ],
+        "next_gate": "disposabletables;scriptedinput;binding/workarea assertions",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -15650,8 +15747,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "specific runtime/effect profile;not auto-runnable",
+        "families": [
+          "closures",
+          "input-terminal",
+          "GT-screen",
+          "set-runtime",
+          "environment-clock"
+        ],
+        "next_gate": "idle lifecycle/eventassertions,not fixedstdout",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -16050,8 +16162,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "specific runtime/effect profile;not auto-runnable",
+        "families": [
+          "classes",
+          "closures",
+          "file-static",
+          "dynamic-dispatch"
+        ],
+        "next_gate": "classinlineclosure/selfcontractbeforeexecution",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -16284,8 +16410,21 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "specific runtime/effect profile;not auto-runnable",
+        "families": [
+          "localization",
+          "dates",
+          "environment-clock"
+        ],
+        "next_gate": "fixed language/date registryfixture and restore",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -16454,8 +16593,21 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "specific runtime/effect profile;not auto-runnable",
+        "families": [
+          "strings",
+          "environment-query",
+          "dynamic-library-ABI"
+        ],
+        "next_gate": "name transformation oracle;do not inferDLLloadtest",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -18124,8 +18276,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "specific runtime/effect profile;not auto-runnable",
+        "families": [
+          "classes",
+          "runtime-macro",
+          "memvars-dynamic-binding",
+          "compound-assignment"
+        ],
+        "next_gate": "dynamicobject/macro/lvaluecontractnot textualsubstitution",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -18312,8 +18478,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "specific runtime/effect profile;not auto-runnable",
+        "families": [
+          "GT-screen",
+          "filesystem",
+          "set-runtime",
+          "dates"
+        ],
+        "next_gate": "isolatedfilesandvirtualprinterrouting;no physicalprint",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -19163,8 +19343,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "specific runtime/effect profile;not auto-runnable",
+        "families": [
+          "GT-screen",
+          "input-terminal",
+          "classes",
+          "arrays"
+        ],
+        "next_gate": "controlledkeyscript,callback/GTstate andcleanup",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {

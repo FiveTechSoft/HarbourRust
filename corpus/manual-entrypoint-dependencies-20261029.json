@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "110 full-source manual metadata reviews;5overlap prior19execution records. Includes ten debugger/lexical/alias/array/pragma cases. No new compile/link/run or authority. Dependencies required,not availability. Tags not grammarcoverage.",
+  "scope": "124 full-source manual metadata reviews;5overlap prior19execution. Fourteen extra GET/macro/routing/locale/filesystem cases. No new compile/link/run or authority. Dependencies requirements,not verifiedavailability. Tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -4861,6 +4861,615 @@
           "symbol_or_construct": "//NOTEST",
           "lines": [
             1
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/dbgcls.prg",
+      "sha256": "40cb46701426c49d2b2abad55bf33302b00e3c8aa41a0a862a80f40670fb4d44",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "specific runtime/effect profile;not auto-runnable",
+      "families": [
+        "classes",
+        "debug-runtime",
+        "input-terminal",
+        "pragmas"
+      ],
+      "dependency_requirements": [
+        "debugpragma,hbclass.ch,ACCESS/ASSIGN,AltD"
+      ],
+      "effects_or_harness_risks": [
+        "invokesdebugger;classaccess/assignmentdispatch"
+      ],
+      "output_comparison": "debugger/runtime-dependent",
+      "next_gate": "isolateddebugsession and accessor-resolutionoracle",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "#pragma -b+",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "AltD()",
+          "lines": [
+            9
+          ]
+        },
+        {
+          "symbol_or_construct": "ACCESS Test",
+          "lines": [
+            17
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/libname.prg",
+      "sha256": "999c188bd15984c98a8050c838259aa44d0b2fdac4b346c963f8b64994c6e41f",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "specific runtime/effect profile;not auto-runnable",
+      "families": [
+        "strings",
+        "environment-query",
+        "dynamic-library-ABI"
+      ],
+      "dependency_requirements": [
+        "hb_libName path/name normalization;simpleio.ch"
+      ],
+      "effects_or_harness_risks": [
+        "constructslibrarynames;source contains no loadcall"
+      ],
+      "output_comparison": "platformnaming/pathseparator-dependent",
+      "next_gate": "name transformation oracle;do not inferDLLloadtest",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_libName( NIL )",
+          "lines": [
+            11
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_ps()",
+          "lines": [
+            17,
+            19,
+            20,
+            21
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/idle.prg",
+      "sha256": "2a970fa958e9735eabfb5101d719e76273085454ceba91f415c6cc28382a66e7",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "specific runtime/effect profile;not auto-runnable",
+      "families": [
+        "closures",
+        "input-terminal",
+        "GT-screen",
+        "set-runtime",
+        "environment-clock"
+      ],
+      "dependency_requirements": [
+        "idlecallbackregistry;SET_IDLEREPEAT;Inkey"
+      ],
+      "effects_or_harness_risks": [
+        "registerscallbacks,waits,changesrepeatsetting,clearscreen"
+      ],
+      "output_comparison": "timing/inputcallbackcountvariable",
+      "next_gate": "idle lifecycle/eventassertions,not fixedstdout",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_idleAdd",
+          "lines": [
+            12,
+            17
+          ]
+        },
+        {
+          "symbol_or_construct": "_SET_IDLEREPEAT",
+          "lines": [
+            5,
+            15
+          ]
+        },
+        {
+          "symbol_or_construct": "Inkey( 0 )",
+          "lines": [
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/ddate.prg",
+      "sha256": "d4bd5c1ffffda2ad4edb0cba9acd8ce978d96a0bf481d249ac9b45e1a0cf367a",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "specific runtime/effect profile;not auto-runnable",
+      "families": [
+        "dates",
+        "runtime-macro",
+        "environment-clock",
+        "set-format"
+      ],
+      "dependency_requirements": [
+        "0ddateliterals,datearithmetic,SETformat,runtime&"
+      ],
+      "effects_or_harness_risks": [
+        "changesformat;readsclockthroughmacro"
+      ],
+      "output_comparison": "fixedprefixandclock-dependenttail",
+      "next_gate": "date/macrocontractanddeclaredclockfixture",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "0d20040229",
+          "lines": [
+            14,
+            17,
+            20,
+            21,
+            26
+          ]
+        },
+        {
+          "symbol_or_construct": "? \"Number of days",
+          "lines": [
+            30
+          ]
+        },
+        {
+          "symbol_or_construct": "&a",
+          "lines": [
+            27,
+            30
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/langapi.prg",
+      "sha256": "69e18b21a26c83cf85a46db92f46ecdf7150e628ddf3a284e72f60f2e5802d99",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "specific runtime/effect profile;not auto-runnable",
+      "families": [
+        "localization",
+        "dates",
+        "environment-clock"
+      ],
+      "dependency_requirements": [
+        "requestedHU/KOlanguage modules;language registry"
+      ],
+      "effects_or_harness_risks": [
+        "changesactive language including invalid-nameattempt"
+      ],
+      "output_comparison": "registry/clock/codepage-dependent",
+      "next_gate": "fixed language/date registryfixture and restore",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "REQUEST HB_LANG_HU",
+          "lines": [
+            4
+          ]
+        },
+        {
+          "symbol_or_construct": "REQUEST HB_LANG_KO",
+          "lines": [
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_langSelect( \"NOTHERE\" )",
+          "lines": [
+            30
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/flink.prg",
+      "sha256": "c05fc38a41adf191c08d54d6d061c3d9503a065443d61cb8009e6a9418aa8f66",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "specific runtime/effect profile;not auto-runnable",
+      "families": [
+        "filesystem",
+        "environment-query"
+      ],
+      "dependency_requirements": [
+        "hardlink/symlink/readlink,FError,pathrights"
+      ],
+      "effects_or_harness_risks": [
+        "writes2files,createslinksanddirectory,leavesartifacts"
+      ],
+      "output_comparison": "filesystemcapability/rights-specific errors",
+      "next_gate": "disposablefolder;linkidentity/cleanup assertions;no privilege escalation",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_FLinkSym",
+          "lines": [
+            30,
+            33,
+            41
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_DirCreate",
+          "lines": [
+            39
+          ]
+        },
+        {
+          "symbol_or_construct": "_hb_hlnk.tmp",
+          "lines": [
+            22
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/checkbox.prg",
+      "sha256": "7ba8d263701d83af3d78a811b9428957b6ad7c2672e7f155b7a063752fd281e1",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "specific runtime/effect profile;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "input-terminal",
+        "classes",
+        "arrays"
+      ],
+      "dependency_requirements": [
+        "RadioButto/RadioGroup/Checkbox/GET/READ"
+      ],
+      "effects_or_harness_risks": [
+        "colorscreenandinteractive uservalues"
+      ],
+      "output_comparison": "spatial/widget/inputdependent",
+      "next_gate": "scriptedwidgetfixtureandvisualstatechecks",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "RADIOGROUP",
+          "lines": [
+            18
+          ]
+        },
+        {
+          "symbol_or_construct": "CHECKBOX",
+          "lines": [
+            21,
+            23
+          ]
+        },
+        {
+          "symbol_or_construct": "READ MSG",
+          "lines": [
+            25
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/read.prg",
+      "sha256": "9e8e683f190ad788958cd9d0cf0daa943a6143dd19de2b51fbabf557e073b5cd",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "specific runtime/effect profile;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "input-terminal",
+        "classes",
+        "arrays"
+      ],
+      "dependency_requirements": [
+        "inkey.ch,GET/READ,SETKEY,Alert"
+      ],
+      "effects_or_harness_risks": [
+        "bindsF2callback,editslocals/array/GETproperty,modalAlert"
+      ],
+      "output_comparison": "input-and-widgetstate-dependent",
+      "next_gate": "controlledkeyscript,callback/GTstate andcleanup",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "SET KEY K_F2",
+          "lines": [
+            17
+          ]
+        },
+        {
+          "symbol_or_construct": "GET GetList[ 1 ]:Picture",
+          "lines": [
+            22
+          ]
+        },
+        {
+          "symbol_or_construct": "Alert( ReadVar() )",
+          "lines": [
+            41
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/output.prg",
+      "sha256": "606c4d3b8fdc7422a3960d0d7989bd3134e3511d81486a07e7c88440b4282b6e",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "specific runtime/effect profile;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "filesystem",
+        "set-runtime",
+        "dates"
+      ],
+      "dependency_requirements": [
+        "alternate/extra/printer/device/marginrouting;date"
+      ],
+      "effects_or_harness_risks": [
+        "appendsalternatefile,writesextrafile/printertarget,screenpositioning,EJECT"
+      ],
+      "output_comparison": "multipleoutputs/routesandclock,not stdoutalone",
+      "next_gate": "isolatedfilesandvirtualprinterrouting;no physicalprint",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "SET ALTERNATE TO output_a ADDITIVE",
+          "lines": [
+            12
+          ]
+        },
+        {
+          "symbol_or_construct": "SET PRINTER TO output_p",
+          "lines": [
+            14
+          ]
+        },
+        {
+          "symbol_or_construct": "EJECT",
+          "lines": [
+            29
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/dev.prg",
+      "sha256": "a6341d626b70885dea56b314e9c2ef236dfeff02e1d7da735c1c3d608702bce9",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "specific runtime/effect profile;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "filesystem",
+        "set-runtime",
+        "preprocessor-platform"
+      ],
+      "dependency_requirements": [
+        "printerrouting,DevPos/DevOut,PRow/PCol"
+      ],
+      "effects_or_harness_risks": [
+        "writesprinterfileincludingfarrow500;conditionalname"
+      ],
+      "output_comparison": "bytecountcommentnot measured;coordinate/route-specific",
+      "next_gate": "isolatedvirtualprinterfile;byteandcursorassertions",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "SET PRINTER TO dev_hb",
+          "lines": [
+            11
+          ]
+        },
+        {
+          "symbol_or_construct": "DevPos( 500, 20 )",
+          "lines": [
+            36
+          ]
+        },
+        {
+          "symbol_or_construct": "263,444",
+          "lines": [
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/inline.prg",
+      "sha256": "031566c3afeb359e9ddea8f1b23f4f9f6e3ca4391532977840b1698c906603eb",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "specific runtime/effect profile;not auto-runnable",
+      "families": [
+        "classes",
+        "closures",
+        "file-static",
+        "dynamic-dispatch"
+      ],
+      "dependency_requirements": [
+        "HBClass AddInline codeblock,QSelf,staticregistration"
+      ],
+      "effects_or_harness_risks": [
+        "objectfields/registrationandconsoleoutput"
+      ],
+      "output_comparison": "runtimeclosure-methodbinding",
+      "next_gate": "classinlineclosure/selfcontractbeforeexecution",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "s_oClass:AddInline",
+          "lines": [
+            30
+          ]
+        },
+        {
+          "symbol_or_construct": "QSelf()",
+          "lines": [
+            39
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/omacro.prg",
+      "sha256": "93518f3dcf3c5e908de4421e7afdc3f581162c52ad0b9fda3b9e19f9703755da",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "specific runtime/effect profile;not auto-runnable",
+      "families": [
+        "classes",
+        "runtime-macro",
+        "memvars-dynamic-binding",
+        "compound-assignment"
+      ],
+      "dependency_requirements": [
+        "ErrorNew,WITHOBJECT,dynamicsetter/gettermessageconstruction"
+      ],
+      "effects_or_harness_risks": [
+        "mutateserrorobjectthroughmacroinc/assign"
+      ],
+      "output_comparison": "underscoregetter/setterandordersemantics",
+      "next_gate": "dynamicobject/macro/lvaluecontractnot textualsubstitution",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "WITH OBJECT obj",
+          "lines": [
+            23
+          ]
+        },
+        {
+          "symbol_or_construct": ":&m_send2++",
+          "lines": [
+            36
+          ]
+        },
+        {
+          "symbol_or_construct": "obj:&( \"_\"",
+          "lines": [
+            46
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/get.prg",
+      "sha256": "c70585bfc2801c7e28299c0a8292295256e9c7a44ab4f2ecd17b3b743ab32346",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "specific runtime/effect profile;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "input-terminal",
+        "runtime-macro",
+        "memvars-dynamic-binding"
+      ],
+      "dependency_requirements": [
+        "GET/READ,macroearly/latebinding,objectPicture"
+      ],
+      "effects_or_harness_risks": [
+        "editslocals/memvars;changesmacro/index beforeREAD"
+      ],
+      "output_comparison": "bindingtimeandinputdependent",
+      "next_gate": "scriptedinputplusbindingoracle;commentedClipperlimitnotpresentverdict",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "GET &m_cMacro[ 1 ]",
+          "lines": [
+            13
+          ]
+        },
+        {
+          "symbol_or_construct": "m_cMacro := \"m_cLate\"",
+          "lines": [
+            21,
+            30
+          ]
+        },
+        {
+          "symbol_or_construct": "READ",
+          "lines": [
+            22,
+            31
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/getblock.prg",
+      "sha256": "51f4fe2b20ecc697937ee5dd91f62005dc777f24bffcdb4136d7e40909660a26",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "specific runtime/effect profile;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "input-terminal",
+        "runtime-macro",
+        "RDD-workarea",
+        "filesystem"
+      ],
+      "dependency_requirements": [
+        "GETsetgetclosures,aliasedmacros,PRIVATEvalues,RDD"
+      ],
+      "effects_or_harness_risks": [
+        "creates/appends2tables,changesworkarea,waitsandREAD"
+      ],
+      "output_comparison": "aliascapturetiming/inputandtableeffects",
+      "next_gate": "disposabletables;scriptedinput;binding/workarea assertions",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "dbCreate( \"_tst1\"",
+          "lines": [
+            16
+          ]
+        },
+        {
+          "symbol_or_construct": "dbCreate( \"_tst2\"",
+          "lines": [
+            22
+          ]
+        },
+        {
+          "symbol_or_construct": "GET &als->&fld",
+          "lines": [
+            44
+          ]
+        },
+        {
+          "symbol_or_construct": "idx := \"2\"",
+          "lines": [
+            52
           ]
         }
       ]

@@ -336,3 +336,17 @@ its bound/step callbacks and needs order/count assertions;its step0 is only TODO
 byref/codebl2 require nested alias and early/late dynamic binding semantics.
 array16/arrays are distinct mixed dynamic-array programs,not fixed I64 arrays
 or one duplicated success record. Their hashes and different sizes are retained.
+
+### Routing/GET/macro batch:124 manual /138 reviewed-or-executed
+
+Fourteen additional full-source records bring manual review to124 and the
+union to138;execution stays19/14. No new original compiled/run. output/dev route
+to alternate/extra/printer files and screen;they require isolated virtual output,
+not a real printer. flink creates hard/symbolic links and artifacts;rights are
+platform constraints,not a reason to elevate privileges. libname only constructs
+names,not loads DLLs. GET cases mix widgets,macro binding,mutable indices and
+RDD aliases;getblock creates two tables before READ. omacro builds dynamic
+object setters/getters. idle registers callbacks and waits;langapi changes
+language registry selection;ddate mixes literal dates with clock macro data.
+Comments describing expected file size or old platform bugs are not new oracle
+results. Metadata distinguishes these gates without extending runtime authority.
