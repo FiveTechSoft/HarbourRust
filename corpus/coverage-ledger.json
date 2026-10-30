@@ -4,8 +4,8 @@
   "counts": {
     "inventory_files": 1203,
     "original_test_sources_compile_audited": 268,
-    "manual_entrypoint_dependency_reviews": 185,
-    "manually_reviewed_or_executed_sources": 190,
+    "manual_entrypoint_dependency_reviews": 189,
+    "manually_reviewed_or_executed_sources": 194,
     "frozen175_default_accepted": 20,
     "frozen175_llvm_accepted": 14,
     "execution_exact_by_profile": {
@@ -13014,8 +13014,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source closure/persistence/allocation profile",
+        "families": [
+          "closures-detached-locals",
+          "byref",
+          "array-aliasing",
+          "file-static",
+          "lifetime"
+        ],
+        "next_gate": "Source-grounded Harbour reference plus environment identity/lifetime assertions; no closure ownership contract granted",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -13094,8 +13109,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source closure/persistence/allocation profile",
+        "families": [
+          "closures-detached-locals",
+          "closures",
+          "varargs",
+          "array-aliasing",
+          "discard-return"
+        ],
+        "next_gate": "Explicit block arity/binding/result/lifetime contract; separate own negative fixture for dormant bug",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -17595,8 +17625,24 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source closure/persistence/allocation profile",
+        "families": [
+          "memvars-dynamic-binding",
+          "filesystem",
+          "embedded-NUL",
+          "dates",
+          "floating-point",
+          "preprocessor-platform"
+        ],
+        "next_gate": "Disposable filenames,byte-preserving file/stdout oracle,scope restoration and truncated-name collisions; no live memvars/files",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -17628,8 +17674,24 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source closure/persistence/allocation profile",
+        "families": [
+          "runtime-memory-query",
+          "arrays",
+          "lifetime",
+          "environment-clock",
+          "input-terminal",
+          "preprocessor-platform"
+        ],
+        "next_gate": "Bounded resource/lifetime instrumentation and explicit equivalent workload before benchmark; no speed or leak conclusion from run completion",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {

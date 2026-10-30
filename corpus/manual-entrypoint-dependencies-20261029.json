@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "185 distinct full-source manual metadata reviews; ledger computes union/overlap. Latest six distinguish dynamic insert/delete/resize, heterogeneous sort, allocation stress, mutable/multi-base and overloaded enumeration,comma expressions. No compile/run or new authority. Requirements not availability; tags not coverage.",
+  "scope": "189 distinct full-source manual metadata reviews; ledger computes union/overlap. Latest four distinguish escaping shared/byref closures, Eval arity, MEM persistence and allocation stress. No compile/run or representation/ownership authority. Requirements not availability; tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -8589,6 +8589,250 @@
           "symbol_or_construct": "// IF( .T., .F., .T. )",
           "lines": [
             79
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/codebl.prg",
+      "sha256": "03b4e25eed362a18c922722cc7a62d98fa3970e9a00127030a1a67896c76c6ba",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source closure/persistence/allocation profile",
+      "families": [
+        "closures-detached-locals",
+        "byref",
+        "array-aliasing",
+        "file-static",
+        "lifetime"
+      ],
+      "dependency_requirements": [
+        "Shared mutable closure environments,detached byref locals/parameters,static block replacement",
+        "Array100 holding independent block pairs; old closure retained after static replacement"
+      ],
+      "effects_or_harness_risks": [
+        "Mutates shared captures,clears selected array entries,retains prior environment; console output"
+      ],
+      "output_comparison": "Commented Clipper/xHarbour expectations differ from Harbour; exact trace alone not release/alias proof",
+      "next_gate": "Source-grounded Harbour reference plus environment identity/lifetime assertions; no closure ownership contract granted",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "RETURN { {|| nFoo }, {| n | nFoo := n } }",
+          "lines": [
+            44
+          ]
+        },
+        {
+          "symbol_or_construct": "cb := s_cbStatic",
+          "lines": [
+            30
+          ]
+        },
+        {
+          "symbol_or_construct": "GetBlock( @lEnd )",
+          "lines": [
+            124,
+            135,
+            146,
+            153
+          ]
+        },
+        {
+          "symbol_or_construct": "Eval( bBlock, @lSomeVar )",
+          "lines": [
+            173
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/codebloc.prg",
+      "sha256": "46b7a923ec6ddf7a0ca166863643168ea9f9f3275e1bf9656a5f8326c8600091",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source closure/persistence/allocation profile",
+      "families": [
+        "closures-detached-locals",
+        "closures",
+        "varargs",
+        "array-aliasing",
+        "discard-return"
+      ],
+      "dependency_requirements": [
+        "Eval missing/extra arguments,nested returned blocks,lexical capture,detached parameters",
+        "Comma expression block result; element postincrement; RetBlock result immediately evaluated"
+      ],
+      "effects_or_harness_risks": [
+        "Mutates captured array,creates escaped blocks and writes output; BugToFix defined but not called"
+      ],
+      "output_comparison": "Missing/extra argument and capture binding need oracle; inactive BugToFix is not active failure",
+      "next_gate": "Explicit block arity/binding/result/lifetime contract; separate own negative fixture for dormant bug",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Eval( x, 1, 2 )",
+          "lines": [
+            61
+          ]
+        },
+        {
+          "symbol_or_construct": "de := DetachLocal( x1, x2 )",
+          "lines": [
+            72,
+            79
+          ]
+        },
+        {
+          "symbol_or_construct": "a := {|| ar[ 1 ]++ }",
+          "lines": [
+            52
+          ]
+        },
+        {
+          "symbol_or_construct": "//   BugToFix()",
+          "lines": [
+            65
+          ]
+        },
+        {
+          "symbol_or_construct": "RETURN {| x | x * x }",
+          "lines": [
+            127
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/memfile.prg",
+      "sha256": "82c078bdc9a35f9b6b88aeb8296d508ea12129edecf469a4b4a12d923f1a0375",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source closure/persistence/allocation profile",
+      "families": [
+        "memvars-dynamic-binding",
+        "filesystem",
+        "embedded-NUL",
+        "dates",
+        "floating-point",
+        "preprocessor-platform"
+      ],
+      "dependency_requirements": [
+        "SAVE/RESTORE MEM files,ALL LIKE filters,ADDITIVE versus replacement,__MRestore and scope queries",
+        "Legacy10-character restored identifiers; raw NUL string; current date"
+      ],
+      "effects_or_harness_risks": [
+        "Creates/overwrites3.mem paths,CLEAR MEMORY,restores scopes,then deletes artifacts"
+      ],
+      "output_comparison": "Serialized file/type/identifier behavior and clock-dependent output; stdout includes NUL",
+      "next_gate": "Disposable filenames,byte-preserving file/stdout oracle,scope restoration and truncated-name collisions; no live memvars/files",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "SAVE TO memfile ALL",
+          "lines": [
+            30
+          ]
+        },
+        {
+          "symbol_or_construct": "CLEAR MEMORY",
+          "lines": [
+            33
+          ]
+        },
+        {
+          "symbol_or_construct": "RESTORE FROM memfile ADDITIVE",
+          "lines": [
+            39
+          ]
+        },
+        {
+          "symbol_or_construct": "__MRestore( \"memfile\"",
+          "lines": [
+            65
+          ]
+        },
+        {
+          "symbol_or_construct": "FErase( \"memfile.mem\" )",
+          "lines": [
+            71
+          ]
+        },
+        {
+          "symbol_or_construct": "Chr( 0 )",
+          "lines": [
+            21
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/memmgr.prg",
+      "sha256": "30b2efe1400038006cac087f8ba4796d9f9007ff5b1a7015ab43235dfdc4c5d3",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source closure/persistence/allocation profile",
+      "families": [
+        "runtime-memory-query",
+        "arrays",
+        "lifetime",
+        "environment-clock",
+        "input-terminal",
+        "preprocessor-platform"
+      ],
+      "dependency_requirements": [
+        "100000 allocation iterations;50000-byte strings,100-slot rotating array,100000 nested arrays",
+        "Memory statistics/build mode branches; CPU/wall clock; WAIT"
+      ],
+      "effects_or_harness_risks": [
+        "High allocation churn/retention and resource demand; waits; prints environment/timing/statistics"
+      ],
+      "output_comparison": "Timings/statistics/runtime mode differ; no final allocation correctness checksum or Rust counterpart here",
+      "next_gate": "Bounded resource/lifetime instrumentation and explicit equivalent workload before benchmark; no speed or leak conclusion from run completion",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "#define N_LOOPS   100000",
+          "lines": [
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "Space( 50000 )",
+          "lines": [
+            32,
+            46
+          ]
+        },
+        {
+          "symbol_or_construct": "a := Array( 100 )",
+          "lines": [
+            44
+          ]
+        },
+        {
+          "symbol_or_construct": "AAdd( a, {} )",
+          "lines": [
+            66
+          ]
+        },
+        {
+          "symbol_or_construct": "Memory( HB_MEM_USEDMAX )",
+          "lines": [
+            19,
+            85,
+            89
+          ]
+        },
+        {
+          "symbol_or_construct": "WAIT",
+          "lines": [
+            60,
+            75
           ]
         }
       ]

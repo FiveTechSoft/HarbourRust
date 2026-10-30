@@ -503,3 +503,20 @@ indexes. Neither is the fixed-I64-array iterator slice. parexpr needs comma
 sequence/last-value and IF expression/statement parsing assertions;its commented
 invalid IF is not a rejection result. These records grant no new container,
 string,enumerator,lifetime or class-runtime contract.
+
+### Closure/persistence/allocation profiles:189 manual /194 reviewed-or-executed
+
+Four additional full-source reviews give189 manual records and194 in the union
+(189+19-14). Historical executions remain19/14;no compile/run. codebl retains
+shared mutable/byref environments and an old closure after static replacement;
+its comments distinguish Harbour from Clipper/xHarbour behavior and are not a
+substitute for a current oracle. codebloc exercises missing/extra Eval arguments,
+nested/detached blocks and array mutation;its BugToFix routine is not called.
+
+memfile creates/overwrites/deletes three MEM paths and clears/restores dynamic
+variables,including10-character names,NUL strings and dates. It needs disposable
+paths,raw captures and scope/file assertions. memmgr performs100000 allocation
+iterations with large strings/arrays and waits. Runtime statistics,elapsed time
+and successful completion do not prove leak freedom,correct ownership or Rust
+speed parity. No closure/dynamic-value/persistence/allocator contract was changed
+or granted;these are future harness requirements,not new passing examples.
