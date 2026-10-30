@@ -6,7 +6,7 @@ neg tests/t03_injection_macro.hb trailing tokens after expression
 neg tests/t04_unicode_ident.hb U+00F1
 neg tests/t05_keyword_boundary.hb statement not in the subset
 neg tests/t06_undefined_var.hb undefined variable
-pos tests/t07_unicode_string.hb \nolá, año 🦀
+pos tests/t07_unicode_string.hb \nolÃ¡, aÃ±o ðŸ¦€
 neg tests/t08_type_error.hb arithmetic requires integers
 neg tests/t09_duplicate_local.hb duplicate local
 pos tests/t10_int_copy.hb \n         5\n         5\n        -5
@@ -120,7 +120,7 @@ neg tests/t116_pp_abbrev_neg.hb statement not in the subset
 neg tests/t117_pp_bad_result_marker.hb unknown result marker
 pos tests/t118_pp_tie_latest.hb \n       201\n       402
 pos tests/t119_qout_fields.hb \n\n         1\n 12345678901\n        -7
-pos tests/t120_qout_list_mixed.hb \nhola          7 x\náéí🦀         42
+pos tests/t120_qout_list_mixed.hb \nhola          7 x\nÃ¡Ã©Ã­ðŸ¦€         42
 pos tests/t121_qout_eval_order.hb \nf          1\nf          2\n         2          4
 neg tests/t122_qout_trailing_comma.hb missing expression
 neg tests/t123_qout_move_two_uses.hb use of moved value
@@ -1082,3 +1082,19 @@ neg tests/t1083_semicolon_incomplete_neg.hb incomplete expression
 neg tests/t1085_semicolon_unbalanced_neg.hb missing )
 pos tests/t1084_semicolon_quotes_comments.hb \n         2 a;b x;/*notcomment*/\nquoted;macro\nsecond\nend\nnext
 pos tests/t1086_semicolon_eof.hb \n         1
+pos tests/t1087_ctod_parse.hb \n02/04/99\n01/05/25\n12/31/65\n01/05/99\n01/05/99\n05/02/24\n01/05/99\n01/05/99\n01/05/17\n01/05/00\n12/31/99\n01/05/99\n01/05/99\n01/05/99\n05/02/99\n01/05/00
+pos tests/t1088_ctod_empty.hb \n  /  /\n  /  /\n  /  /\n  /  /\n  /  /\n  /  /\n  /  /\n  /  /\n  /  /   X\nD
+pos tests/t1089_ctod_trim.hb \nA\n  /  /\nB\n01/05/26          7
+pos tests/t1090_ctod_compare.hb \n.F.\n.T.\n.T.\n.F.\n.T.\n.T.\n.T.\n.F.\n.F.\n.T.\n.T.
+pos tests/t1091_valtype_date.hb \nD\nD\nD\n.T.\n.F.\n.F.
+pos tests/t1092_date_flow.hb \n02/04/99\n1\n.T.\n1
+pos tests/t1093_date_today.hb \n.T.\nD\n.F.\n.F.\n.F.
+neg tests/t1094_date_arity_neg.hb `date` takes no arguments
+neg tests/t1095_ctod_nonstring_neg.hb `ctod` expects a string
+neg tests/t1096_date_arith_neg.hb date arithmetic
+neg tests/t1097_date_mixedcmp_neg.hb dates compare only with other dates
+neg tests/t1098_date_assign_neg.hb type mismatch in assignment
+neg tests/t1099_date_array_neg.hb array elements must be integers or logicals
+neg tests/t1100_date_hash_neg.hb hash values are tagged scalars
+neg tests/t1101_date_retmix_neg.hb return type mismatch
+neg tests/t1102_date_byref_neg.hb cannot infer the type of parameter

@@ -32,7 +32,7 @@ use std::process;
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { F64, I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefStrOwn }
+enum Ty { F64, I64, Str, Bool, Date, Arr(usize), Block(usize), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefStrOwn }
 
 // Dyn is the tagged-union value for any route that can carry NIL (probes
 // n1/n2/n3): a 16-byte {tag, payload} pair, tag 0 = i64 payload, tag 1 =
@@ -3672,6 +3672,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 match &args[0] {
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
                     Expr::Call(id, _) if is_output_call(id) => {}
+                    Expr::Call(id, _) if is_builtin(id, "date") || is_builtin(id, "ctod") => {}
                     Expr::Index(v, _) => {
                         // DArr4 first level: child-array casilla -
                         // "A" (hk114, byte-measured via hk117 markers).
@@ -3746,7 +3747,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         }
                     }
                     e => match type_expr(e, env, sigs, n)? {
-                        Ty::I64 | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::Arr(_) | Ty::Dyn | Ty::Bool => {}
+                        Ty::I64 | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::Arr(_) | Ty::Dyn | Ty::Bool | Ty::Date => {}
                         _ => return Err(format!("line {}: `ValType` is not measured for this type in this PoC", n)),
                     },
                 }
@@ -4127,6 +4128,31 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::Dyn); // NIL, using the existing tagged return pair.
             }
+            if is_builtin(id, "date") {
+                // Date() - hb_Date() (oracles hk483): today's LOCAL date,
+                // a static Ty::Date scalar whose 8-byte payload is the
+                // Harbour julian long (the empty date is the 0 payload).
+                if !args.is_empty() { return Err(format!("line {}: `date` takes no arguments", n)); }
+                return Ok(Ty::Date);
+            }
+            if is_builtin(id, "ctod") {
+                // CToD("MM/DD/YYYY"-shaped strings) - hb_dateUnformatRaw
+                // with the default "MM/DD/YY" format (oracles hk483-hk486):
+                // three digit runs separated by ONE OR MORE non-digits (a
+                // leading run is not a separator; parsing STOPS after the
+                // third separator), each field keeps whichever digits its
+                // one run carried; a year value below 100 maps through
+                // hb_setUpdateEpoch with the default SET EPOCH 1900
+                // (+1900 - leading zeros are irrelevant, hbdate.c:1130),
+                // else stays literal. An invalid m/d/y (0, m>12, day>
+                // month limit, year>9999) encodes the 0 (EMPTY) date,
+                // which prints `  /  /  `.
+                if args.len() != 1 { return Err(format!("line {}: `ctod` takes one argument", n)); }
+                if !matches!(type_expr(&args[0], env, sigs, n)?, Ty::Str | Ty::StrOwn) {
+                    return Err(format!("line {}: `ctod` expects a string (Harbour raises an EG_ARG on a non-string)", n));
+                }
+                return Ok(Ty::Date);
+            }
             if is_builtin(id, "asc") {
                 if args.len() != 1 { return Err(format!("line {}: `asc` takes one argument", n)); }
                 if !matches!(type_expr(&args[0], env, sigs, n)?, Ty::Str | Ty::StrOwn) {
@@ -4365,6 +4391,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         Expr::Bin(op, a, b) => {
             let ta = type_expr(a, env, sigs, n)?;
             let tb = type_expr(b, env, sigs, n)?;
+            // Date arithmetic (oracles d1: date +/- integer yields a
+            // date, date - date an integer 10-wide runtime field) is
+            // measured but NOT in this increment's surface - named
+            // rejection until the date-arithmetic increment lands.
+            if ta == Ty::Date || tb == Ty::Date {
+                return Err(format!("line {}: date arithmetic (date +/- integer, date - date) is measured (Harbour runs it) but not in this increment - the next date increment opens it", n));
+            }
             // String `+` concatenation (oracle hk215): both operands
             // strings, result a fresh owned buffer copying both - Harbour
             // value semantics, variables keep their own copies.
@@ -4502,6 +4535,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // compare would answer .T. where Harbour answers .F.
                 if matches!(ta, Ty::I64 | Ty::F64) && matches!(tb, Ty::I64 | Ty::F64) { return Ok(Ty::Bool); } // numeric `==` compares values like `=` (hk124; floats hk296)
                 if ta == Ty::Bool && tb == Ty::Bool { return Ok(Ty::Bool); } // hk202: t == t is .T.
+                // Dates (hk483): `==` two dates = the value compare of
+                // the julian payloads (same rule as `=`; "01/05/1999" vs
+                // "01/05/99" compare .T.).
+                if ta == Ty::Date && tb == Ty::Date { return Ok(Ty::Bool); }
                 // NIL handled above (hk128/hk129): identity and equality
                 // coincide where NIL is one side; same codegen as `=`.
                 // Strings: `==` is the EXACT comparison (hk124: "a"=="a"
@@ -4540,6 +4577,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // iterations is .F.) while our slot holds a per-literal
                 // STATIC pointer, which would answer .T. where Harbour
                 // says .F. A truthful rejection beats fake compatibility.
+                if ta == Ty::Date || tb == Ty::Date {
+                    return Err(format!("line {}: dates compare only with other dates in this increment (mixed date comparisons raise Harbour's BASE/1071 argument error; compile-time rejected here)", n));
+                }
                 return Err(format!("line {}: `==` is measured only between two integers, between two strings, between two one-level dynamic array variables and against NIL in this increment (hk124/hk126/hk128/hk129); static arrays, codeblocks (identity is per evaluation - hk131/hk136/hk137 - and our slot is per literal) and non-NIL Dyn payloads keep their named rejections (object identity oracles cl7/cl19 stay class-gated)", n));
             }
             if matches!(op, CmpOp::Eq | CmpOp::Ne) {
@@ -4585,6 +4625,17 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             if let Ty::Block(_) = tb {
                 return Err(format!("line {}: codeblocks do not compare in this increment", n));
+            }
+            if ta == Ty::Date || tb == Ty::Date {
+                // Date comparisons (oracles hk483-hk486): two dates
+                // compare chronologically by their julian payloads; a
+                // mixed date/number/`logical/nil` comparison is Harbour's
+                // BASE/1071 argument error (the mt.rtg dialog hangs
+                // headless) - a compile-time named rejection here.
+                if ta == tb {
+                    return Ok(Ty::Bool);
+                }
+                return Err(format!("line {}: dates compare only with other dates in this increment (mixed date comparisons raise Harbour's BASE/1071 argument error; compile-time rejected here)", n));
             }
             if ta == Ty::I64 && tb == Ty::I64 {
                 return Ok(Ty::Bool);
@@ -4889,6 +4940,7 @@ fn ty_name(t: Ty) -> &'static str {
         Ty::RefStrOwn => "a by-reference string",
         Ty::Str => "a string",
         Ty::Bool => "a boolean",
+        Ty::Date => "a date",
         Ty::DArr3 => "an array of arrays of arrays",
         Ty::DArr4 => "an array of arrays of arrays of arrays",
         Ty::DArrS => "an array of strings",
@@ -6469,6 +6521,8 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id, "procline") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return; }
             if is_bitindex(id) { apply_moves(&args[0],env,sigs,false); return; }
             if is_bitop(id) { for a in args { apply_moves(a, env, sigs, false); } return; }
+            if is_builtin(id, "date") { return; } // Date() takes no arguments
+            if is_builtin(id, "ctod") { apply_moves(&args[0], env, sigs, false); return; } // borrows the string
             if is_builtin(id, "min") || is_builtin(id, "max") {
                 for a in args { apply_moves(a, env, sigs, false); } return;
             }
@@ -6659,7 +6713,7 @@ fn fold_int(e: &Expr) -> Option<i64> {
     }
 }
 fn size_of(t: Ty) -> usize {
-    match t { Ty::F64 => 16, Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefStrOwn => 8 }
+    match t { Ty::F64 => 16, Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 => 16, Ty::Bool | Ty::Date => 8, Ty::RefI64 | Ty::RefStrOwn => 8 }
 }
 
 #[derive(Clone)]
@@ -6722,7 +6776,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 Ty::RefI64 => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n", v.off)),
                 Ty::RefStrOwn => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n    mov 8(%r11), %rdx\n", v.off)),
                 Ty::F64 => unreachable!("floats load through cg_f64_load (xmm0/rdi), never the rax/rdx channel"),
-                Ty::I64 | Ty::Block(_) | Ty::Bool => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
+                Ty::I64 | Ty::Block(_) | Ty::Bool | Ty::Date => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
                 Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash => {
                     // ptr at -(off), len at -(off-8) — same layout as the store
                     out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
@@ -6843,11 +6897,16 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     cg_expr(&args[0], env, sigs, strs, out, target);
                     vt_letter(strs, out, "U");
                 }
+                Expr::Call(id, _) if is_builtin(id, "date") || is_builtin(id, "ctod") => {
+                    cg_expr(&args[0], env, sigs, strs, out, target);
+                    vt_letter(strs, out, "D");
+                }
                 Expr::Var(v) => {
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                     match var.ty {
                         Ty::I64 => vt_letter(strs, out, "N"),
                         Ty::Bool => vt_letter(strs, out, "L"), // hk197
+                        Ty::Date => vt_letter(strs, out, "D"), // hk483
                         Ty::Str | Ty::StrOwn => vt_letter(strs, out, "C"),
                         Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::Arr(_) => vt_letter(strs, out, "A"),
                         Ty::Dyn => {
@@ -7035,6 +7094,19 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             out.push_str("    sub $16, %rsp\n    movsd %xmm0, (%rsp)\n");
             cg_expr(&args[1], env, sigs, strs, out, target);
             out.push_str("    mov %rax, %rdi\n    movsd (%rsp), %xmm0\n    add $16, %rsp\n    call hbc_round\n");
+        }
+        Expr::Call(id, _) if is_builtin(id, "date") => {
+            // Date() (hk483): the runtime helper reads today's date and
+            // returns the Harbour julian long in %rax. A static Ty::Date
+            // scalar: no allocation, no ownership.
+            out.push_str("    call hbc_today\n");
+        }
+        Expr::Call(id, args) if is_builtin(id, "ctod") => {
+            // CToD (hk483-hk486): the string operand borrows (rax=ptr,
+            // rdx=len by the value convention); hbc_ctod parses and
+            // encodes the julian payload (0 = the empty date).
+            cg_value(&args[0], env, sigs, strs, out, target);
+            out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_ctod\n");
         }
         Expr::Call(id, args) if is_builtin(id, "len") => {
             // len(s) for a string (hk217): the value pair's len half.
@@ -7542,6 +7614,11 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 Ty::Dyn => { out.push_str("    mov $1, %eax\n"); } // literal NIL only
                 Ty::Block(_) => { cg_expr(e, env, sigs, strs, out, target); out.push_str("    xor %eax, %eax\n"); }
                 Ty::I64 | Ty::Bool => {
+                    cg_expr(e, env, sigs, strs, out, target);
+                    out.push_str("    test %rax, %rax\n    sete %al\n    movzbq %al, %rax\n");
+                }
+                Ty::Date => {
+                    // Empty(date) (hk485): the 0 (empty) payload is empty.
                     cg_expr(e, env, sigs, strs, out, target);
                     out.push_str("    test %rax, %rax\n    sete %al\n    movzbq %al, %rax\n");
                 }
@@ -8303,6 +8380,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hclone") { return Ty::Hash; }
             if is_bitindex(id) { return if is_builtin(id,"hb_bittest") {Ty::Bool} else {Ty::I64}; }
             if is_bitop(id) { return Ty::I64; }
+            if is_builtin(id, "date") || is_builtin(id, "ctod") { return Ty::Date; }
             if is_builtin(id, "min") || is_builtin(id, "max") { return expr_ty(&args[0], env, sigs); }
             if is_builtin(id, "empty") { return Ty::Bool; }
             if is_output_call(id) { return Ty::Dyn; }
@@ -9137,6 +9215,19 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             let fi = { strs.push(".F.".to_string()); strs.len() - 1 };
                             out.push_str(&format!("    test %rax, %rax\n    jz 95f\n    lea .Lstr{}(%rip), %rax\n    jmp 96f\n95:\n    lea .Lstr{}(%rip), %rax\n96:\n    mov $3, %edx\n    call hbc_print_str\n", ti, fi));
                         }
+                        Ty::Date => {
+                            // mm/dd/yy render over the julian payload
+                            // (hk483); the empty date renders `  /  /  `
+                            // (8 bytes) and an EMPTY last item keeps the
+                            // QOut line-end trim measured by d7 (only
+                            // its two trailing spaces are removable).
+                            if is_last && !raw {
+                                out.push_str("    mov $1, %edx\n");
+                            } else {
+                                out.push_str("    xor %edx, %edx\n");
+                            }
+                            out.push_str("    call hbc_print_date\n");
+                        }
                         Ty::Arr(_) => unreachable!("whole-array printing rejected in analysis"),
                         Ty::Block(_) => unreachable!("codeblock printing rejected in analysis"),
                         Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 => unreachable!("whole-array printing rejected in analysis"),
@@ -9264,7 +9355,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             }
                         }
                         match t {
-                            Ty::I64 | Ty::Block(_) | Ty::Bool => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
+                            Ty::I64 | Ty::Block(_) | Ty::Bool | Ty::Date => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
                             Ty::Str => {
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
@@ -9876,6 +9967,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
                             }
                             Ty::I64 | Ty::Block(_) | Ty::Bool => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
+                            Ty::Date => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
                             Ty::Dyn if lty == Ty::I64 => {
                                 // i64 slot receiving a Dyn: the tag is
                                 // checked at runtime (NIL -> clean error).
@@ -12748,6 +12840,295 @@ hbc_print_str:
     syscall
     ret
 
+# ================= date helpers (oracles hk483-hk486) =================
+# hbc_date_encode: %rdi = year, %rsi = month, %rdx = day -> %rax = the
+# Harbour julian long (hb_dateEncode, hbdate.c) or 0 for an invalid
+# date. Validation: 0<=year<=9999, 1<=month<=12, 1<=day<=month limit
+# with the Gregorian February rule (hbdate.c:69). Leaf: no calls; only
+# caller-saved registers, so every helper keeps r12-r15 intact.
+hbc_date_encode:
+    mov %edi, %r8d               # y
+    mov %esi, %r9d               # m
+    mov %edx, %r10d              # d
+    cmp $10000, %r8d
+    jae .Lde_bad
+    test %r9d, %r9d
+    jz .Lde_bad
+    cmp $12, %r9d
+    ja .Lde_bad
+    test %r10d, %r10d
+    jz .Lde_bad
+    lea .Ldaylim(%rip), %r11
+    mov %r9d, %eax
+    dec %eax
+    movzbl (%r11,%rax), %r11d    # the month limit
+    cmp %r11d, %r10d
+    jbe .Lde_calc
+    cmp $2, %r9d
+    jne .Lde_bad
+    cmp $29, %r10d
+    jne .Lde_bad
+    test $3, %r8b
+    jnz .Lde_bad                 # (y & 3) != 0 -> not leap
+    mov %r8d, %eax
+    xor %edx, %edx
+    mov $100, %edi
+    div %rdi                     # %rdx = y % 100
+    test %edx, %edx
+    jnz .Lde_calc                # y%100 != 0 -> leap accepted
+    mov %r8d, %eax
+    xor %edx, %edx
+    mov $400, %edi
+    div %rdi                     # %rdx = y % 400
+    test %edx, %edx
+    jnz .Lde_bad
+.Lde_calc:
+    xor %r11d, %r11d             # iFactor = 0 (iFactor = m<3 ? -1 : 0)
+    cmp $3, %r9d
+    jge 9f
+    mov $-1, %r11d
+9:
+    sub $32, %rsp
+    # term1 = (iFactor + 4800 + y) * 1461 / 4
+    mov %r11d, %eax
+    add $4800, %eax
+    add %r8d, %eax
+    imul $1461, %eax
+    shr $2, %eax
+    mov %eax, (%rsp)
+    # term2 = (m - 2 - iFactor*12) * 367 / 12
+    mov %r11d, %eax
+    imul $12, %eax
+    mov %r9d, %edx
+    sub $2, %edx
+    sub %eax, %edx
+    imul $367, %edx
+    mov %edx, %eax
+    xor %edx, %edx
+    mov $12, %edi
+    div %rdi
+    mov %eax, 8(%rsp)
+    # C3 = (iFactor + 4900 + y) / 100 * 3 / 4
+    mov %r11d, %eax
+    add %r8d, %eax
+    add $4900, %eax
+    xor %edx, %edx
+    mov $100, %edi
+    div %rdi
+    imul $3, %eax
+    shr $2, %eax
+    mov %eax, 16(%rsp)
+    # the Fliegel transform, then + d - 32075
+    mov (%rsp), %rax
+    add 8(%rsp), %rax
+    mov 16(%rsp), %rdx
+    sub %rdx, %rax
+    mov %r10d, %edx
+    add %rdx, %rax
+    sub $32075, %rax
+    add $32, %rsp
+    ret
+.Lde_bad:
+    xor %eax, %eax
+    ret
+
+# hbc_today: no arguments -> %rax = today's date payload. The Linux
+# clock is UTC (clock_gettime); a local-TZ loader is a registered
+# limit of this increment (Harbour reads localtime() itself).
+hbc_today:
+    sub $16, %rsp
+    xor %edi, %edi
+    lea (%rsp), %rsi
+    mov $228, %eax
+    syscall
+    mov (%rsp), %rax
+    add $16, %rsp
+    xor %edx, %edx
+    mov $86400, %rcx
+    div %rcx
+    add $2440588, %rax           # HB_SYS_DATE_BASE (1970-01-01)
+    ret
+
+# hbc_ctod: %rdi = str ptr, %rsi = len -> %rax = the payload. Ports
+# hb_dateUnformatRaw (dates.c:243) with the default "MM/DD/YY"
+# format: digit runs accumulate into the CURRENT field, the first
+# non-digit of a run switches to the next field, the loop STOPS after
+# the third switch; a year value below 100 maps +1900 through
+# hb_setUpdateEpoch (set.c:403 at the default SET EPOCH 1900).
+hbc_ctod:
+    xor %r8d, %r8d               # m
+    xor %r9d, %r9d               # d
+    xor %r10d, %r10d             # y
+    xor %r11d, %r11d             # the current field (0=m, 1=d, 2=y)
+    xor %ecx, %ecx               # switches seen
+    mov $1, %edx                 # the leading-run flag (not a separator)
+.Ldt_loop:
+    test %rsi, %rsi
+    jz .Ldt_epoch
+    movzbl (%rdi), %eax
+    lea -48(%rax), %eax
+    cmp $9, %eax
+    ja .Ldt_non
+    xor %edx, %edx               # a digit ends the inert-run state
+    test %r11d, %r11d
+    jnz .Ldt_d1
+    imul $10, %r8d
+    add %eax, %r8d
+    jmp .Ldt_adv
+.Ldt_d1:
+    cmp $1, %r11d
+    jnz .Ldt_d2
+    imul $10, %r9d
+    add %eax, %r9d
+    jmp .Ldt_adv
+.Ldt_d2:
+    imul $10, %r10d
+    add %eax, %r10d
+    jmp .Ldt_adv
+.Ldt_non:
+    test %edx, %edx
+    jnz .Ldt_adv
+    inc %rcx
+    mov $1, %edx
+    cmp $3, %ecx
+    jge .Ldt_epoch               # the third switch stops the parse
+    inc %r11d
+.Ldt_adv:
+    inc %rdi
+    dec %rsi
+    jmp .Ldt_loop
+.Ldt_epoch:
+    cmp $100, %r10d
+    jae 7f
+    add $1900, %r10d
+7:
+    mov %r10d, %edi
+    mov %r8d, %esi
+    mov %r9d, %edx
+    jmp hbc_date_encode
+
+# hbc_print_date: %rax = payload, %rdx = trim flag (only an EMPTY
+# date can trail spaces at the QOut line end, probe d7). Renders
+# mm/dd/yy over the payload (hk483); the empty date renders
+# `  /  /  ` (8 bytes, 6 when trimmed). hb_dateDecode (hbdate.c)
+# inverts the payload; every intermediate stays positive. r12-r15
+# stay intact: the decode state lives in this 56-byte frame.
+hbc_print_date:
+    mov %rdx, %r11
+    test %rax, %rax
+    jz .Ldt_empty
+    sub $56, %rsp                # 0-7 buffer; 8 W; 16 X; 24 V; 32 U
+    mov %rax, %r8
+    add $68569, %r8
+    mov %r8, %rax
+    shl $2, %rax
+    xor %edx, %edx
+    mov $146097, %r9
+    div %r9
+    mov %rax, 8(%rsp)            # W
+    mov 8(%rsp), %rax
+    imul $146097, %rax
+    add $3, %rax
+    shr $2, %rax
+    sub %rax, %r8
+    mov %r8, %rax
+    add $1, %rax
+    imul $4000, %rax
+    xor %edx, %edx
+    mov $1461001, %r9
+    div %r9
+    mov %rax, 16(%rsp)           # X
+    mov 16(%rsp), %rax
+    imul $1461, %rax
+    shr $2, %rax
+    sub %rax, %r8
+    add $31, %r8                 # J3
+    mov %r8, %rax
+    imul $80, %rax
+    xor %edx, %edx
+    mov $2447, %r9
+    div %r9
+    mov %rax, 24(%rsp)           # V
+    mov 24(%rsp), %rax
+    xor %edx, %edx
+    mov $11, %r9
+    div %r9
+    mov %rax, 32(%rsp)           # U
+    # y = X + U + (W-49)*100
+    mov 8(%rsp), %rax
+    imul $100, %rax
+    sub $4900, %rax
+    add 32(%rsp), %rax
+    add 16(%rsp), %rax
+    mov %rax, %r9
+    # m = V + 2 - U*12
+    mov 32(%rsp), %rax
+    imul $12, %rax
+    mov 24(%rsp), %r10
+    add $2, %r10
+    sub %rax, %r10
+    # d = J3 - 2447*V/80
+    mov 24(%rsp), %rax
+    imul $2447, %rax
+    xor %edx, %edx
+    mov $80, %rcx
+    div %rcx
+    sub %rax, %r8
+    mov %r10d, %eax
+    xor %edx, %edx
+    mov $10, %rcx
+    div %rcx
+    add $48, %eax
+    mov %al, 0(%rsp)
+    add $48, %dl
+    mov %dl, 1(%rsp)
+    mov $47, %eax
+    mov %al, 2(%rsp)
+    mov %r8d, %eax
+    xor %edx, %edx
+    mov $10, %rcx
+    div %rcx
+    add $48, %eax
+    mov %al, 3(%rsp)
+    add $48, %dl
+    mov %dl, 4(%rsp)
+    mov $47, %eax
+    mov %al, 5(%rsp)
+    mov %r9d, %eax
+    xor %edx, %edx
+    mov $100, %rcx
+    div %rcx
+    mov %edx, %eax
+    xor %edx, %edx
+    mov $10, %rcx
+    div %rcx
+    add $48, %eax
+    mov %al, 6(%rsp)
+    add $48, %dl
+    mov %dl, 7(%rsp)
+    mov %rsp, %rax
+    mov $8, %edx
+    call hbc_print_str
+    add $56, %rsp
+    ret
+.Ldt_empty:
+    sub $56, %rsp
+    lea .Ldempty(%rip), %rax
+    mov (%rax), %rcx
+    mov %rcx, (%rsp)
+    mov %rsp, %rax
+    mov $8, %edx
+    test %r11, %r11
+    jz 5f
+    mov $6, %edx
+5:
+    call hbc_print_str
+    add $56, %rsp
+    ret
+
+
+
+
 # hbc_print_nl / hbc_print_sep: the `?` leading newline / item separator.
 hbc_print_nl:
     lea .Lnl(%rip), %rax
@@ -14047,6 +14428,10 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     }
     out.push_str(".Lnl:\n    .byte 10\n");
     out.push_str(".Lpad20:\n    .byte 32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32\n");
+    // Empty-date rendering "  /  /  " (8 bytes; hk483) and the month
+    // day-limit table the date encode validates against (hbdate.c).
+    out.push_str(".Ldempty:\n    .byte 32,32,47,32,32,47,32,32\n");
+    out.push_str(".Ldaylim:\n    .byte 31,28,31,30,31,30,31,31,30,31,30,31\n");
     // "NIL" (3 bytes; the NIL print form, probe n1)
     out.push_str(".Lnilmsg:\n    .byte 78,73,76\n");
     out.push_str(".Ltmsg:\n    .byte 46,84,46\n");
@@ -14482,6 +14867,280 @@ hbc_print_f64:
 // no callee-saved register needs preserving. Return values of kernel32
 // calls are not checked (no I/O error handling in this PoC).
 const WIN_HELPERS: &str = r#"
+# ================= date helpers (oracles hk483-hk486) =================
+# Same text as the Linux blob below; only hbc_today differs (it reads
+# the LOCAL date through kernel32 GetLocalTime: iYear word at +0,
+# wMonth at +2, wDay at +6 of SYSTEMTIME).
+hbc_date_encode:
+    mov %edi, %r8d               # y
+    mov %esi, %r9d               # m
+    mov %edx, %r10d              # d
+    cmp $10000, %r8d
+    jae .Lde_bad
+    test %r9d, %r9d
+    jz .Lde_bad
+    cmp $12, %r9d
+    ja .Lde_bad
+    test %r10d, %r10d
+    jz .Lde_bad
+    lea .Ldaylim(%rip), %r11
+    mov %r9d, %eax
+    dec %eax
+    movzbl (%r11,%rax), %r11d    # the month limit
+    cmp %r11d, %r10d
+    jbe .Lde_calc
+    cmp $2, %r9d
+    jne .Lde_bad
+    cmp $29, %r10d
+    jne .Lde_bad
+    test $3, %r8b
+    jnz .Lde_bad                 # (y & 3) != 0 -> not leap
+    mov %r8d, %eax
+    xor %edx, %edx
+    mov $100, %edi
+    div %rdi                     # %rdx = y % 100
+    test %edx, %edx
+    jnz .Lde_calc
+    mov %r8d, %eax
+    xor %edx, %edx
+    mov $400, %edi
+    div %rdi                     # %rdx = y % 400
+    test %edx, %edx
+    jnz .Lde_bad
+.Lde_calc:
+    xor %r11d, %r11d             # iFactor = (m < 3 ? -1 : 0), hbdate.c
+    cmp $3, %r9d
+    jge 9f
+    mov $-1, %r11d
+9:
+    sub $32, %rsp
+    # term1 = (iFactor + 4800 + y) * 1461 / 4
+    mov %r11d, %eax
+    add $4800, %eax
+    add %r8d, %eax
+    imul $1461, %eax
+    shr $2, %eax
+    mov %eax, (%rsp)
+    # term2 = (m - 2 - iFactor*12) * 367 / 12
+    mov %r11d, %eax
+    imul $12, %eax
+    mov %r9d, %edx
+    sub $2, %edx
+    sub %eax, %edx
+    imul $367, %edx
+    mov %edx, %eax
+    xor %edx, %edx
+    mov $12, %edi
+    div %rdi
+    mov %eax, 8(%rsp)
+    # C3 = (iFactor + 4900 + y) / 100 * 3 / 4
+    mov %r11d, %eax
+    add %r8d, %eax
+    add $4900, %eax
+    xor %edx, %edx
+    mov $100, %edi
+    div %rdi
+    imul $3, %eax
+    shr $2, %eax
+    mov %eax, 16(%rsp)
+    # the Fliegel transform, then + d - 32075
+    mov (%rsp), %rax
+    add 8(%rsp), %rax
+    mov 16(%rsp), %rdx
+    sub %rdx, %rax
+    mov %r10d, %edx
+    add %rdx, %rax
+    sub $32075, %rax
+    add $32, %rsp
+    ret
+.Lde_bad:
+    xor %eax, %eax
+    ret
+
+# hbc_today: kernel32 fills a 16-byte SYSTEMTIME; the words read
+# year (0), month (2) and day (6) and the encode turns them into the
+# payload. rdi/rsi/rdx after the copy are free to hbc_date_encode.
+hbc_today:
+    push %rbp
+    mov %rsp, %rbp
+    sub $64, %rsp
+    lea -24(%rbp), %rcx
+    call GetLocalTime
+    movzwl -24(%rbp), %edi
+    movzwl -22(%rbp), %esi
+    movzwl -18(%rbp), %edx
+    call hbc_date_encode
+    leave
+    ret
+
+# hbc_ctod: identical parser to the Linux helper.
+hbc_ctod:
+    xor %r8d, %r8d               # m
+    xor %r9d, %r9d               # d
+    xor %r10d, %r10d             # y
+    xor %r11d, %r11d             # the current field (0=m, 1=d, 2=y)
+    xor %ecx, %ecx               # switches seen
+    mov $1, %edx                 # the leading-run flag (not a separator)
+.Ldt_loop:
+    test %rsi, %rsi
+    jz .Ldt_epoch
+    movzbl (%rdi), %eax
+    lea -48(%rax), %eax
+    cmp $9, %eax
+    ja .Ldt_non
+    xor %edx, %edx               # a digit ends the inert-run state
+    test %r11d, %r11d
+    jnz .Ldt_d1
+    imul $10, %r8d
+    add %eax, %r8d
+    jmp .Ldt_adv
+.Ldt_d1:
+    cmp $1, %r11d
+    jnz .Ldt_d2
+    imul $10, %r9d
+    add %eax, %r9d
+    jmp .Ldt_adv
+.Ldt_d2:
+    imul $10, %r10d
+    add %eax, %r10d
+    jmp .Ldt_adv
+.Ldt_non:
+    test %edx, %edx
+    jnz .Ldt_adv
+    inc %rcx
+    mov $1, %edx
+    cmp $3, %ecx
+    jge .Ldt_epoch               # the third switch stops the parse
+    inc %r11d
+.Ldt_adv:
+    inc %rdi
+    dec %rsi
+    jmp .Ldt_loop
+.Ldt_epoch:
+    cmp $100, %r10d
+    jae 7f
+    add $1900, %r10d
+7:
+    mov %r10d, %edi
+    mov %r8d, %esi
+    mov %r9d, %edx
+    jmp hbc_date_encode
+
+# hbc_print_date: identical renderer to the Linux helper (it calls
+# the local hbc_print_str, whose WriteFile machinery follows here).
+hbc_print_date:
+    mov %rdx, %r11
+    test %rax, %rax
+    jz .Ldt_empty
+    sub $56, %rsp                # 0-7 buffer; 8 W; 16 X; 24 V; 32 U
+    mov %rax, %r8
+    add $68569, %r8
+    mov %r8, %rax
+    shl $2, %rax
+    xor %edx, %edx
+    mov $146097, %r9
+    div %r9
+    mov %rax, 8(%rsp)            # W
+    mov 8(%rsp), %rax
+    imul $146097, %rax
+    add $3, %rax
+    shr $2, %rax
+    sub %rax, %r8
+    mov %r8, %rax
+    add $1, %rax
+    imul $4000, %rax
+    xor %edx, %edx
+    mov $1461001, %r9
+    div %r9
+    mov %rax, 16(%rsp)           # X
+    mov 16(%rsp), %rax
+    imul $1461, %rax
+    shr $2, %rax
+    sub %rax, %r8
+    add $31, %r8                 # J3
+    mov %r8, %rax
+    imul $80, %rax
+    xor %edx, %edx
+    mov $2447, %r9
+    div %r9
+    mov %rax, 24(%rsp)           # V
+    mov 24(%rsp), %rax
+    xor %edx, %edx
+    mov $11, %r9
+    div %r9
+    mov %rax, 32(%rsp)           # U
+    # y = X + U + (W-49)*100
+    mov 8(%rsp), %rax
+    imul $100, %rax
+    sub $4900, %rax
+    add 32(%rsp), %rax
+    add 16(%rsp), %rax
+    mov %rax, %r9
+    # m = V + 2 - U*12
+    mov 32(%rsp), %rax
+    imul $12, %rax
+    mov 24(%rsp), %r10
+    add $2, %r10
+    sub %rax, %r10
+    # d = J3 - 2447*V/80
+    mov 24(%rsp), %rax
+    imul $2447, %rax
+    xor %edx, %edx
+    mov $80, %rcx
+    div %rcx
+    sub %rax, %r8
+    mov %r10d, %eax
+    xor %edx, %edx
+    mov $10, %rcx
+    div %rcx
+    add $48, %eax
+    mov %al, 0(%rsp)
+    add $48, %dl
+    mov %dl, 1(%rsp)
+    mov $47, %eax
+    mov %al, 2(%rsp)
+    mov %r8d, %eax
+    xor %edx, %edx
+    mov $10, %rcx
+    div %rcx
+    add $48, %eax
+    mov %al, 3(%rsp)
+    add $48, %dl
+    mov %dl, 4(%rsp)
+    mov $47, %eax
+    mov %al, 5(%rsp)
+    mov %r9d, %eax
+    xor %edx, %edx
+    mov $100, %rcx
+    div %rcx
+    mov %edx, %eax
+    xor %edx, %edx
+    mov $10, %rcx
+    div %rcx
+    add $48, %eax
+    mov %al, 6(%rsp)
+    add $48, %dl
+    mov %dl, 7(%rsp)
+    mov %rsp, %rax
+    mov $8, %edx
+    call hbc_print_str
+    add $56, %rsp
+    ret
+.Ldt_empty:
+    sub $56, %rsp
+    lea .Ldempty(%rip), %rax
+    mov (%rax), %rcx
+    mov %rcx, (%rsp)
+    mov %rsp, %rax
+    mov $8, %edx
+    test %r11, %r11
+    jz 5f
+    mov $6, %edx
+5:
+    call hbc_print_str
+    add $56, %rsp
+    ret
+
 # hbc_print_str: %rax = ptr, %rdx = len. Prints the bytes + newline.
 hbc_print_str:
     push %rbp
