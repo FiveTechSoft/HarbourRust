@@ -1,0 +1,122 @@
+[
+  {
+    "case": "case_lower",
+    "source": "#xtranslate F(<x>) => OUT(<x>)\nf(7)\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(7)\n",
+    "reference_error": "",
+    "own_exit": 0,
+    "own_output": "f(7)\n",
+    "own_error": ""
+  },
+  {
+    "case": "case_mixed",
+    "source": "#xtranslate F(<x>) => OUT(<x>)\nF(7) + f(8)\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(7) + OUT(8)\n",
+    "reference_error": "",
+    "own_exit": 0,
+    "own_output": "OUT(7) + f(8)\n",
+    "own_error": ""
+  },
+  {
+    "case": "delete_overload",
+    "source": "#xtranslate F(<a>,<b>) => TWO(<a>,<b>)\n#xtranslate F(<a>) => ONE(<a>)\n#xuntranslate F(<a>) => ONE(<a>)\nF(1)\nF(1,2)\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n\nF(1)\nTWO(1,2)\n",
+    "reference_error": "",
+    "own_exit": 1,
+    "own_output": "",
+    "own_error": "error: line 3: unknown directive #xuntranslate in this PoC\n"
+  },
+  {
+    "case": "delete_existing",
+    "source": "#xtranslate F(<a>,<b>) => TWO(<a>,<b>)\n#xtranslate F(<a>) => ONE(<a>)\n#untranslate F(<a>) => ONE(<a>)\nF(1)\nF(1,2)\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n\nONE(1)\nTWO(1,2)\n",
+    "reference_error": "",
+    "own_exit": 0,
+    "own_output": "F(1)\nF(1,2)\n",
+    "own_error": ""
+  },
+  {
+    "case": "duplicate",
+    "source": "#xtranslate F(<a>) => ONE(<a>)\n#xtranslate F(<a>) => ONE(<a>)\n#untranslate F(<a>) => ONE(<a>)\nF(1)\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n\nONE(1)\n",
+    "reference_error": "",
+    "own_exit": 0,
+    "own_output": "ONE(1)\n",
+    "own_error": ""
+  },
+  {
+    "case": "unknown_result",
+    "source": "#xtranslate F(<x>) => OUT(<missing>)\n",
+    "reference_exit": 1,
+    "reference_output": "",
+    "reference_error": "(1) Error: Unknown result marker in #translate/#command\n",
+    "own_exit": 0,
+    "own_output": "",
+    "own_error": ""
+  },
+  {
+    "case": "result_case",
+    "source": "#xtranslate F(<x>) => OUT(<X>)\nF(7)\n",
+    "reference_exit": 1,
+    "reference_output": "\nF(7)\n",
+    "reference_error": "(1) Error: Unknown result marker in #translate/#command\n",
+    "own_exit": 0,
+    "own_output": "OUT(<X>)\n",
+    "own_error": ""
+  },
+  {
+    "case": "recursive",
+    "source": "#xtranslate F(<x>) => F(<x>)\nF(7)\n",
+    "reference_exit": 1,
+    "reference_output": "\nF(7)\n",
+    "reference_error": "(2) Error: Circularity detected in #translate 'F'\n",
+    "own_exit": 1,
+    "own_output": "",
+    "own_error": "error: line 2: macro expansion too deep (recursive define?)\n"
+  },
+  {
+    "case": "prefix",
+    "source": "#xtranslate F(<x>) => OUT(<x>)\nFOO(7)\n",
+    "reference_exit": 0,
+    "reference_output": "\nFOO(7)\n",
+    "reference_error": "",
+    "own_exit": 0,
+    "own_output": "FOO(7)\n",
+    "own_error": ""
+  },
+  {
+    "case": "quoted",
+    "source": "#xtranslate F(<x>) => OUT(<x>)\n? \"F(7)\", F(\"x,y\")\n",
+    "reference_exit": 0,
+    "reference_output": "\n? \"F(7)\", OUT(\"x,y\")\n",
+    "reference_error": "",
+    "own_exit": 0,
+    "own_output": "? \"F(7)\", OUT(\"x,y\")\n",
+    "own_error": ""
+  },
+  {
+    "case": "body_name",
+    "source": "#xtranslate F(<x>) => x + <x>\nF(7)\n",
+    "reference_exit": 0,
+    "reference_output": "\nx + 7\n",
+    "reference_error": "",
+    "own_exit": 0,
+    "own_output": "x + 7\n",
+    "own_error": ""
+  },
+  {
+    "case": "chain",
+    "source": "#xtranslate F(<x>) => G(<x>)\n#xtranslate G(<x>) => OUT(<x>)\nF(7)\n",
+    "reference_exit": 0,
+    "reference_output": "\n\nOUT(7)\n",
+    "reference_error": "",
+    "own_exit": 0,
+    "own_output": "OUT(7)\n",
+    "own_error": ""
+  }
+]

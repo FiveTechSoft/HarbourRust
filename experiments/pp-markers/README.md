@@ -394,3 +394,29 @@ one to dotted-token reemission and one to #cinline. No newly complete original,
 class runtime,main merge,size or speed result follows. Fourteen reviewed
 original console outputs are freshly exact again. These diagnostic stages and
 old frozen evidence are intentionally not relabeled as current passes.
+
+## Call-form translation: next gap, characterization only
+
+21first diagnostics now reach optional/overloaded call-form translation.
+The current implementation treats this as a single function-like define,
+which loses overloads and mistakes nested/optional markers for fixed params.
+96own-source observations isolate optional nested argument lists,overload
+order,different arities and use inside statements/expressions. All reference
+preprocessing succeeds,but own results include arity errors and unexpanded
+marker text. An ordinary generic pattern defined after a call-specific one
+can win;do not assume command-style most-specific precedence here.
+
+12additional observations cover case-insensitive call names,quoted text,
+unknown/miscased results,recursion,exact name boundaries,chaining and removal.
+`#xuntranslate` removes an X rule while ordinary #untranslate did not remove
+that X rule in the measured cases. The current spelling/mechanics differ.
+An unknown result is rejected by Harbour at definition,not emitted as text.
+These12rows are observations,not successful implementation tests.
+
+A next scoped increment should separate translation rules from #define,
+retain overload order,match balanced call tokens with optional/list captures,
+substitute only result markers,and preserve unmatched source. Removal and
+recursion need explicit regression tests. This is preprocessor work,not new
+runtime/class/memory semantics. No production change is part of this section;
+latest production is08736b7. General expression translation/prefix behavior
+and generated directives beyond command/xcommand remain separately bounded.
