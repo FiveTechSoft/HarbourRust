@@ -293,3 +293,41 @@ completely. Main is unchanged. No new size or speed claim is made.
 python3 experiments/pp-markers/check_null_result_implemented.py \
   --hpp /tmp/current-hpp --output-dir /tmp/null-result
 ```
+
+## Generated directive / escaped marker characterization only
+
+The next23original first diagnostics refer to `<type: FUNCTION, PROCEDURE>`
+at hbclass.ch267,but this is not another ordinary result-marker form. There
+it is escaped inside a result that generates a new #xcommand definition.
+Own probes isolate this without copying a reference implementation.
+
+144preprocessor observations cover outer/inner command and xcommand,escaped
+match/result markers,unescaped controls,unknown/miscased generated result
+names,outer/inner name collision,optional escaped brackets and abbreviation.
+Escapes defer interpretation by one definition stage;the outer captured tag
+is substituted while the escaped inner name survives,even with the same name.
+Ordinary generated command accepts FUNC for FUNCTION;generated xcommand does
+not. Unknown/miscased generated results fail when the factory is invoked,
+not when the unused factory is defined. Unescaped nested labels fail earlier.
+Our current pp rejects these144cases early,including valid definitions.
+
+Four extra timing observations distinguish registration from escape handling.
+An unused factory with an unknown escaped inner result is accepted by hbpp.
+A rule only becomes available after the factory invocation. A marker-free
+factory already passes our validation but leaks the generated #xcommand as
+output and leaves INNER unchanged;Harbour registers it and emits OUT( yes ).
+An unused marker-free factory leaves INNER unchanged in both preprocessors.
+Thus merely skipping validation for escaped markers would not fix this gap.
+
+A next implementation needs deliberately scoped escaped-token staging and
+registration/validation of generated directives in source order,including
+name collision,optional brackets,ordinary/X behavior and recursion limits.
+This can be a shared-preprocessor increment without class/runtime contracts,
+but is broader than one new marker form and needs its own scope approval.
+No implementation,new program execution,original acceptance,size or speed
+measurement is part of this characterization. Production remains732eb4b.
+
+```
+python3 experiments/pp-markers/check_generated_directive_gap.py \
+  --hbpp /path/to/hbpp --hpp /tmp/hpp --output-dir /tmp/generated-gap
+```
