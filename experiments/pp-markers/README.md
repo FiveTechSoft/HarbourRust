@@ -166,3 +166,35 @@ python3 experiments/pp-markers/build_hpp.py --output /tmp/hpp
 python3 experiments/pp-markers/check_restricted_implemented.py \
   --hbpp /path/to/hbpp --hpp /tmp/hpp --output-dir /tmp/restricted-oracle
 ```
+
+## Next logical-result marker characterization,no implementation
+
+90 own-source preprocessor-only observations characterize `<.m.>`,the next
+first blocker in23 class-header originals after3002cb9. Current shared pp still
+rejects these results as unknown markers. No production source is changed.
+
+- It tests capture presence,not the truth of the captured expression. Capturing
+  `.F.`,0 or an empty string literal produces `.T.`;an absent optional produces
+  `.F.`. Required nonempty captures produce `.T.` in these samples.
+- Result optional brackets remain separate:an absent capture in `[<.m.>]`
+  removes the group,whereas an unbracketed `<.m.>` emits `.F.`.
+- Unknown names reject at rule definition. In these pinned probes,changing
+  result name m to M also rejects:do not assume the existing case-insensitive
+  result validation is an adequate specification for the new form.
+- A failed pattern does not acquire a Boolean result. For example the ordinary
+  command optional identifier sample with two identifiers remains untranslated.
+  Directive/matching behavior is separate from result-marker presence.
+
+A next implementation would need scoped result-name validation,typed marker
+recognition for binding and optional groups,and atomic dotted logical output
+that stays lexically valid. General reemission/stringify changes are not part
+of this characterization or authorized by the restricted-list increment.
+Token probes alone would be insufficient:own end-to-end scalar cases must
+exercise absent/present,false/zero payloads and result optional groups in both
+backends/targets. Existing invalid-name/boundary behavior needs explicit checks.
+This is not class-runtime support and no original source was executed.
+
+```
+python3 experiments/pp-markers/check_logical_result_gap.py \
+  --hbpp /path/to/hbpp --hpp /tmp/hpp --output-dir /tmp/logical-result-gap
+```
