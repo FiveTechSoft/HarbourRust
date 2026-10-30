@@ -4,8 +4,8 @@
   "counts": {
     "inventory_files": 1203,
     "original_test_sources_compile_audited": 268,
-    "manual_entrypoint_dependency_reviews": 189,
-    "manually_reviewed_or_executed_sources": 194,
+    "manual_entrypoint_dependency_reviews": 193,
+    "manually_reviewed_or_executed_sources": 197,
     "frozen175_default_accepted": 20,
     "frozen175_llvm_accepted": 14,
     "execution_exact_by_profile": {
@@ -13962,8 +13962,24 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "INIT Main plus nMyFun and MyClass methods",
+        "build_unit": "single source directive/runtime-pp profile;not auto-runnable",
+        "families": [
+          "preprocessor",
+          "runtime-macro",
+          "memvars-dynamic-binding",
+          "classes",
+          "init-procedure",
+          "nil-value"
+        ],
+        "next_gate": "Do not assume ordinary Main entrypoint or enforce TODO as current rule; declaration/type/macro/class contracts separate",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -14020,6 +14036,18 @@
         "entrypoint": "reviewed-linux-console",
         "dependencies": "reviewed-console-only",
         "limits": "other targets not reviewed; no automatic bulk execution"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source directive/runtime-pp profile;not auto-runnable",
+        "families": [
+          "preprocessor",
+          "preprocessor-platform",
+          "compiler-diagnostic"
+        ],
+        "next_gate": "Declare compiler-define profiles and warnings separately; no environment mutation",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -19473,8 +19501,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main; explicitly preprocess/compile only",
+        "build_unit": "single source directive/runtime-pp profile;not auto-runnable",
+        "families": [
+          "preprocessor",
+          "runtime-macro",
+          "compiler-diagnostic",
+          "RDD-workarea"
+        ],
+        "next_gate": "Own probe characterization only; pending restricted-marker approval does not cover stringify/reemission implementation",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -19506,8 +19548,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source directive/runtime-pp profile;not auto-runnable",
+        "families": [
+          "preprocessor",
+          "GT-screen",
+          "input-terminal",
+          "arrays"
+        ],
+        "next_gate": "Separate runtime pp API contract and controlled input; do not execute generated script or infer shared pp mutation permission",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {

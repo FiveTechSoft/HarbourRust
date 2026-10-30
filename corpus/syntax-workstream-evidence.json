@@ -31,7 +31,11 @@
         "tests/utf8at.prg",
         "tests/parexpr.prg",
         "tests/memfile.prg",
-        "tests/memmgr.prg"
+        "tests/memmgr.prg",
+        "tests/define.prg",
+        "tests/declare.prg",
+        "tests/pp.prg",
+        "tests/ppapi.prg"
       ],
       "seed_regression_paths": [
         "tests/t07_unicode_string.hb",
@@ -82,7 +86,8 @@
         "tests/statfun.prg",
         "tests/fornext.prg",
         "tests/codebl.prg",
-        "tests/memfile.prg"
+        "tests/memfile.prg",
+        "tests/declare.prg"
       ],
       "seed_regression_paths": [
         "tests/t678_static_func_proc_note.hb",
@@ -297,7 +302,9 @@
         "tests/parexpr.prg",
         "tests/codebl.prg",
         "tests/codebloc.prg",
-        "tests/memmgr.prg"
+        "tests/memmgr.prg",
+        "tests/declare.prg",
+        "tests/ppapi.prg"
       ],
       "seed_regression_paths": [
         "tests/t208_nil_literal.hb",
@@ -371,7 +378,9 @@
         "tests/vmasort.prg",
         "tests/foreach2.prg",
         "tests/codebl.prg",
-        "tests/codebloc.prg"
+        "tests/codebloc.prg",
+        "tests/declare.prg",
+        "tests/pp.prg"
       ],
       "seed_regression_paths": [
         "tests/t150_cb_eval1.hb",
@@ -404,7 +413,8 @@
         "tests/guestbk.prg",
         "tests/hrb.prg",
         "tests/hrbext.prg",
-        "tests/dyn.prg"
+        "tests/dyn.prg",
+        "tests/declare.prg"
       ],
       "seed_regression_paths": [
         "tests/t681_init_proc_neg.hb",
@@ -521,7 +531,8 @@
         "tests/delim.prg",
         "tests/sdf.prg",
         "tests/asort.prg",
-        "tests/vmasort.prg"
+        "tests/vmasort.prg",
+        "tests/pp.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -648,7 +659,8 @@
         "tests/regex2.prg",
         "tests/speedstr.prg",
         "tests/foreach.prg",
-        "tests/memmgr.prg"
+        "tests/memmgr.prg",
+        "tests/ppapi.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -714,7 +726,9 @@
         "tests/dynsym.prg",
         "tests/linecont.prg",
         "tests/pragma.prg",
-        "tests/alias.prg"
+        "tests/alias.prg",
+        "tests/define.prg",
+        "tests/pp.prg"
       ],
       "seed_regression_paths": [
         "tests/t1016_procline_calls_block.hb",

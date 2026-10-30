@@ -520,3 +520,17 @@ iterations with large strings/arrays and waits. Runtime statistics,elapsed time
 and successful completion do not prove leak freedom,correct ownership or Rust
 speed parity. No closure/dynamic-value/persistence/allocator contract was changed
 or granted;these are future harness requirements,not new passing examples.
+
+### Directive/runtime-pp profiles:193 manual /198 reviewed-or-executed
+
+Four additional full-source reviews give193 manual records and198 in the union
+(193+19-14). Historical executions remain19/14;no compile/run or pp change.
+define requires separate external TEST-defined/undefined build profiles,not an
+environment edit. declare starts through INIT and combines typed declarations,
+macro-created dynamic names and class fields;its TODO about a string field
+receiving a number is not a measured runtime rule. pp explicitly requests only
+preprocessing/compilation and includes dynamic USE and unresolved list helpers;
+it must not become an automatic runtime case. Its stringify gaps are distinct
+from the restricted marker awaiting permission. ppapi preprocesses database-like
+script strings but never executes them:that is runtime-pp evidence to design,
+not database feature coverage. No source instructions/comments change authority.

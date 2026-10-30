@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "189 distinct full-source manual metadata reviews; ledger computes union/overlap. Latest four distinguish escaping shared/byref closures, Eval arity, MEM persistence and allocation stress. No compile/run or representation/ownership authority. Requirements not availability; tags not coverage.",
+  "scope": "193 distinct full-source manual metadata reviews; ledger computes union/overlap. Latest four distinguish external defines, INIT typed/macro declarations, compile-only stringify probes and runtime-pp script strings. No compile/run or pp change authority. Requirements not availability; tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -8833,6 +8833,205 @@
           "lines": [
             60,
             75
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/define.prg",
+      "sha256": "5f474e3a31544a0c390dda8f0bf461e6e59bfa9593b36310bbf078c31ca23869",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source directive/runtime-pp profile;not auto-runnable",
+      "families": [
+        "preprocessor",
+        "preprocessor-platform",
+        "compiler-diagnostic"
+      ],
+      "dependency_requirements": [
+        "External TEST define and #warning; nested FIRST/SECOND/THIRD conditionals"
+      ],
+      "effects_or_harness_risks": [
+        "Console only; compile warning depends on build flags"
+      ],
+      "output_comparison": "At least TEST defined/undefined profiles; printed request to set flags is sample output,not instruction",
+      "next_gate": "Declare compiler-define profiles and warnings separately; no environment mutation",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "#ifndef TEST",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "#warning",
+          "lines": [
+            2
+          ]
+        },
+        {
+          "symbol_or_construct": "#ifdef TEST",
+          "lines": [
+            13
+          ]
+        },
+        {
+          "symbol_or_construct": "#ifdef THIRD",
+          "lines": [
+            26
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/declare.prg",
+      "sha256": "9666020c3377730c2eefc37815ec6c402fe19e0fc6912eeff23aeb05d9bbaca0",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "INIT Main plus nMyFun and MyClass methods",
+      "build_unit": "single source directive/runtime-pp profile;not auto-runnable",
+      "families": [
+        "preprocessor",
+        "runtime-macro",
+        "memvars-dynamic-binding",
+        "classes",
+        "init-procedure",
+        "nil-value"
+      ],
+      "dependency_requirements": [
+        "hbclass.ch and AS NEW translation; typed function declarations,optional parameters,macro declarations",
+        "INIT entrypoint; declared string slot receives number; dynamic names and arrays"
+      ],
+      "effects_or_harness_risks": [
+        "Initializes dynamic memvars/class during startup; console output; TODO runtime-error comment not measured"
+      ],
+      "output_comparison": "Declared typing versus runtime enforcement and macro-name expansion need explicit oracle",
+      "next_gate": "Do not assume ordinary Main entrypoint or enforce TODO as current rule; declaration/type/macro/class contracts separate",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "INIT PROCEDURE Main()",
+          "lines": [
+            28
+          ]
+        },
+        {
+          "symbol_or_construct": "DECLARE MyFun(",
+          "lines": [
+            16
+          ]
+        },
+        {
+          "symbol_or_construct": "DECLARE &Var3.&Var3",
+          "lines": [
+            42
+          ]
+        },
+        {
+          "symbol_or_construct": "::While := 2",
+          "lines": [
+            66
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/pp.prg",
+      "sha256": "1cd0dcd3efc0d36d9d0488074cae9ad051525ced0456a0654e23e59021292863",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main; explicitly preprocess/compile only",
+      "build_unit": "single source directive/runtime-pp profile;not auto-runnable",
+      "families": [
+        "preprocessor",
+        "runtime-macro",
+        "compiler-diagnostic",
+        "RDD-workarea"
+      ],
+      "dependency_requirements": [
+        "Regular,normal,smart,dumb stringify result markers and lists; quoting/macro lexical adjacency",
+        "Uninitialized dynamic values and USE command; list expansion refers to unresolved s()"
+      ],
+      "effects_or_harness_risks": [
+        "Not runnable as ordinary application; executing would access dynamic database/memvars"
+      ],
+      "output_comparison": "Compare preprocessed lexical/text results and explicit compile diagnostics,not stdout",
+      "next_gate": "Own probe characterization only; pending restricted-marker approval does not cover stringify/reemission implementation",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "// Preproces  and compile only",
+          "lines": [
+            2
+          ]
+        },
+        {
+          "symbol_or_construct": "#command _DUMB_(<z>)",
+          "lines": [
+            12
+          ]
+        },
+        {
+          "symbol_or_construct": "#command _NORMAL_L",
+          "lines": [
+            15
+          ]
+        },
+        {
+          "symbol_or_construct": "USE &b ALIAS &a.1",
+          "lines": [
+            19
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/ppapi.prg",
+      "sha256": "7d6b6902c42fa2e44fac5e8dc39efe56388f154be1641de87703441d787228a6",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source directive/runtime-pp profile;not auto-runnable",
+      "families": [
+        "preprocessor",
+        "GT-screen",
+        "input-terminal",
+        "arrays"
+      ],
+      "dependency_requirements": [
+        "Runtime __pp_Init/AddRule/Process and standard rules module; preprocesses script strings"
+      ],
+      "effects_or_harness_risks": [
+        "Mutates in-process rule state; screen clears/WAIT; database-looking script remains strings and is not executed"
+      ],
+      "output_comparison": "Runtime preprocessing output and stateful rule application,not DBF execution support",
+      "next_gate": "Separate runtime pp API contract and controlled input; do not execute generated script or infer shared pp mutation permission",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "REQUEST __pp_StdRules",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "IF __pp_AddRule",
+          "lines": [
+            38
+          ]
+        },
+        {
+          "symbol_or_construct": "aScript := {",
+          "lines": [
+            53
+          ]
+        },
+        {
+          "symbol_or_construct": "__pp_Process( l_pp, aScript[ i ] )",
+          "lines": [
+            69
           ]
         }
       ]
