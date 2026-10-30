@@ -15,7 +15,10 @@
         "tests/vec1.prg",
         "tests/test.prg",
         "tests/wvt_fs.prg",
-        "tests/sha1.prg"
+        "tests/sha1.prg",
+        "tests/version.prg",
+        "tests/linecont.prg",
+        "tests/pragma.prg"
       ],
       "seed_regression_paths": [
         "tests/t07_unicode_string.hb",
@@ -49,7 +52,11 @@
         "tests/statics1.prg",
         "tests/classes.prg",
         "tests/objasign.prg",
-        "tests/fib.prg"
+        "tests/fib.prg",
+        "tests/byref.prg",
+        "tests/codebl2.prg",
+        "tests/linecont.prg",
+        "tests/for.prg"
       ],
       "seed_regression_paths": [
         "tests/t678_static_func_proc_note.hb",
@@ -78,7 +85,8 @@
         "tests/fib.prg",
         "tests/and_or.prg",
         "tests/base64.prg",
-        "tests/ticktime.prg"
+        "tests/ticktime.prg",
+        "tests/for.prg"
       ],
       "seed_regression_paths": [
         "tests/t358_foreach_strord_num.hb",
@@ -116,7 +124,12 @@
         "tests/objasign.prg",
         "tests/fib.prg",
         "tests/and_or.prg",
-        "tests/multiarg.prg"
+        "tests/multiarg.prg",
+        "tests/byref.prg",
+        "tests/linecont.prg",
+        "tests/for.prg",
+        "tests/array16.prg",
+        "tests/arrays.prg"
       ],
       "seed_regression_paths": [
         "tests/t1040_seq_dyn_limit_neg.hb",
@@ -142,7 +155,8 @@
         "tests/say.prg",
         "tests/achoice6.prg",
         "tests/objasign.prg",
-        "tests/ticktime.prg"
+        "tests/ticktime.prg",
+        "tests/base2.prg"
       ],
       "seed_regression_paths": [
         "tests/t750_float_arith_mixed.hb",
@@ -175,7 +189,12 @@
         "tests/achoice5.prg",
         "tests/speed.prg",
         "tests/multiarg.prg",
-        "tests/base64.prg"
+        "tests/base64.prg",
+        "tests/byref.prg",
+        "tests/codebl2.prg",
+        "tests/for.prg",
+        "tests/array16.prg",
+        "tests/arrays.prg"
       ],
       "seed_regression_paths": [
         "tests/t208_nil_literal.hb",
@@ -213,7 +232,10 @@
         "tests/objasign.prg",
         "tests/persist.prg",
         "tests/speed.prg",
-        "tests/base64.prg"
+        "tests/base64.prg",
+        "tests/codebl2.prg",
+        "tests/base2.prg",
+        "tests/for.prg"
       ],
       "seed_regression_paths": [
         "tests/t150_cb_eval1.hb",
@@ -346,7 +368,8 @@
         "tests/cmphello.prg",
         "tests/sortbug.prg",
         "tests/persist.prg",
-        "tests/longstr2.prg"
+        "tests/longstr2.prg",
+        "tests/pragma.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -380,7 +403,9 @@
         "tests/achoice5.prg",
         "tests/achoice6.prg",
         "tests/clasinh.prg",
-        "tests/seconds.prg"
+        "tests/seconds.prg",
+        "tests/altd.prg",
+        "tests/base2.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -410,7 +435,9 @@
         "tests/speed.prg",
         "tests/dates3.prg",
         "tests/seconds.prg",
-        "tests/ticktime.prg"
+        "tests/ticktime.prg",
+        "tests/altd.prg",
+        "tests/version.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -422,7 +449,9 @@
       "phase": "P7",
       "manual_source_paths": [
         "tests/dupvars.prg",
-        "tests/dynsym.prg"
+        "tests/dynsym.prg",
+        "tests/linecont.prg",
+        "tests/pragma.prg"
       ],
       "seed_regression_paths": [
         "tests/t1016_procline_calls_block.hb",

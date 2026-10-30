@@ -1,7 +1,7 @@
 {
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "scope": "Manual review provenance and source-family index only. Not parser-recognized syntax or supported feature counts. Dependencies are not installed-availability claims. No compilation/execution. Does not replace17family seed or268audit.",
-  "reviewed_sources": 100,
+  "reviewed_sources": 110,
   "build_projects": 1,
   "family_index": [
     {
@@ -27,7 +27,8 @@
         "tests/achoice5.prg",
         "tests/achoice6.prg",
         "tests/clasinh.prg",
-        "tests/seconds.prg"
+        "tests/seconds.prg",
+        "tests/altd.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -112,7 +113,10 @@
     {
       "family": "array-lvalue",
       "reviewed_sources": [
-        "tests/arrayidx.prg"
+        "tests/arrayidx.prg",
+        "tests/linecont.prg",
+        "tests/array16.prg",
+        "tests/arrays.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -129,7 +133,12 @@
         "tests/arreval.prg",
         "tests/array.prg",
         "tests/achoice5.prg",
-        "tests/speed.prg"
+        "tests/speed.prg",
+        "tests/byref.prg",
+        "tests/codebl2.prg",
+        "tests/for.prg",
+        "tests/array16.prg",
+        "tests/arrays.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -158,7 +167,8 @@
         "tests/mt/mttest05.prg",
         "tests/mt/mttest06.prg",
         "tests/passref.prg",
-        "tests/vars.prg"
+        "tests/vars.prg",
+        "tests/byref.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -190,7 +200,8 @@
     {
       "family": "callback-effects",
       "reviewed_sources": [
-        "tests/t1.prg"
+        "tests/t1.prg",
+        "tests/for.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -217,7 +228,9 @@
         "tests/fwdref.prg",
         "tests/t1.prg",
         "tests/statinit.prg",
-        "tests/speed.prg"
+        "tests/speed.prg",
+        "tests/codebl2.prg",
+        "tests/for.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -242,7 +255,9 @@
     {
       "family": "compiler-diagnostic",
       "reviewed_sources": [
-        "tests/dupvars.prg"
+        "tests/dupvars.prg",
+        "tests/linecont.prg",
+        "tests/pragma.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -250,7 +265,8 @@
     {
       "family": "compiler-invocation",
       "reviewed_sources": [
-        "tests/cmphello.prg"
+        "tests/cmphello.prg",
+        "tests/pragma.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -314,7 +330,8 @@
       "family": "debug-runtime",
       "reviewed_sources": [
         "tests/funcarr.prg",
-        "tests/objasign.prg"
+        "tests/objasign.prg",
+        "tests/altd.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -424,7 +441,8 @@
         "tests/os.prg",
         "tests/curdirt.prg",
         "tests/osshell.prg",
-        "tests/diskspac.prg"
+        "tests/diskspac.prg",
+        "tests/version.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -482,7 +500,9 @@
         "tests/statinit.prg",
         "tests/statics1.prg",
         "tests/classes.prg",
-        "tests/objasign.prg"
+        "tests/objasign.prg",
+        "tests/byref.prg",
+        "tests/for.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -535,7 +555,8 @@
       "reviewed_sources": [
         "tests/for2.prg",
         "tests/round.prg",
-        "tests/fib.prg"
+        "tests/fib.prg",
+        "tests/for.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -635,7 +656,10 @@
     {
       "family": "increment",
       "reviewed_sources": [
-        "tests/errsys.prg"
+        "tests/errsys.prg",
+        "tests/byref.prg",
+        "tests/array16.prg",
+        "tests/arrays.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -696,7 +720,9 @@
         "tests/achoice5.prg",
         "tests/achoice6.prg",
         "tests/clasinh.prg",
-        "tests/seconds.prg"
+        "tests/seconds.prg",
+        "tests/altd.prg",
+        "tests/base2.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -729,7 +755,9 @@
     {
       "family": "lifetime",
       "reviewed_sources": [
-        "tests/array.prg"
+        "tests/array.prg",
+        "tests/array16.prg",
+        "tests/arrays.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -781,7 +809,8 @@
         "tests/mt/mttest06.prg",
         "tests/mt/mttest08.prg",
         "tests/vars.prg",
-        "tests/statinit.prg"
+        "tests/statinit.prg",
+        "tests/codebl2.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -834,7 +863,9 @@
     {
       "family": "nested-arrays",
       "reviewed_sources": [
-        "tests/strdelim.prg"
+        "tests/strdelim.prg",
+        "tests/array16.prg",
+        "tests/arrays.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -861,7 +892,8 @@
         "tests/mem.prg",
         "tests/errsys.prg",
         "tests/vars.prg",
-        "tests/fib.prg"
+        "tests/fib.prg",
+        "tests/linecont.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -890,7 +922,8 @@
     {
       "family": "numeric-formatting",
       "reviewed_sources": [
-        "tests/nums.prg"
+        "tests/nums.prg",
+        "tests/base2.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -915,7 +948,8 @@
       "family": "pragmas",
       "reviewed_sources": [
         "tests/stripdoc.hb",
-        "tests/hbdocext.hb"
+        "tests/hbdocext.hb",
+        "tests/pragma.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -923,7 +957,8 @@
     {
       "family": "preprocessor",
       "reviewed_sources": [
-        "tests/hbpp/compare.hb"
+        "tests/hbpp/compare.hb",
+        "tests/linecont.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -932,7 +967,8 @@
       "family": "preprocessor-platform",
       "reviewed_sources": [
         "tests/dynwin.prg",
-        "tests/wvt_fs.prg"
+        "tests/wvt_fs.prg",
+        "tests/version.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -984,7 +1020,9 @@
       "family": "runtime-macro",
       "reviewed_sources": [
         "tests/multifnc/t0.prg",
-        "tests/mt/mttest08.prg"
+        "tests/mt/mttest08.prg",
+        "tests/codebl2.prg",
+        "tests/base2.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"

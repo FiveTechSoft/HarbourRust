@@ -4,8 +4,8 @@
   "counts": {
     "inventory_files": 1203,
     "original_test_sources_compile_audited": 268,
-    "manual_entrypoint_dependency_reviews": 100,
-    "manually_reviewed_or_executed_sources": 114,
+    "manual_entrypoint_dependency_reviews": 110,
+    "manually_reviewed_or_executed_sources": 124,
     "frozen175_default_accepted": 20,
     "frozen175_llvm_accepted": 14,
     "execution_exact_by_profile": {
@@ -11296,8 +11296,21 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+        "build_unit": "source-specific profile;not auto-runnable",
+        "families": [
+          "debug-runtime",
+          "GT-screen",
+          "input-terminal"
+        ],
+        "next_gate": "explicit isolated debugger/input session,not normal console",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -11421,8 +11434,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+        "build_unit": "source-specific profile;not auto-runnable",
+        "families": [
+          "arrays",
+          "nested-arrays",
+          "array-lvalue",
+          "increment",
+          "lifetime"
+        ],
+        "next_gate": "tagged cells/alias/ownership contract;not fixedscalararrays",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -11501,8 +11529,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+        "build_unit": "source-specific profile;not auto-runnable",
+        "families": [
+          "arrays",
+          "nested-arrays",
+          "array-lvalue",
+          "increment",
+          "lifetime"
+        ],
+        "next_gate": "separate original hash/fixture;do not deduplicate behavior by name",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -11660,8 +11703,21 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+        "build_unit": "source-specific profile;not auto-runnable",
+        "families": [
+          "runtime-macro",
+          "input-terminal",
+          "numeric-formatting"
+        ],
+        "next_gate": "separate lexical characterization and dynamic/input gates",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -12009,8 +12065,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+        "build_unit": "source-specific profile;not auto-runnable",
+        "families": [
+          "byref",
+          "file-static",
+          "arrays",
+          "increment"
+        ],
+        "next_gate": "nested reference/copy/static lifetime contract then oracle",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -12789,8 +12859,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+        "build_unit": "source-specific profile;not auto-runnable",
+        "families": [
+          "closures",
+          "memvars-dynamic-binding",
+          "runtime-macro",
+          "arrays"
+        ],
+        "next_gate": "dynamic evaluator/capture authority,not translate & away",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -14482,8 +14566,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+        "build_unit": "source-specific profile;not auto-runnable",
+        "families": [
+          "for-control",
+          "closures",
+          "arrays",
+          "file-static",
+          "callback-effects"
+        ],
+        "next_gate": "validate callback order,not just final integers;step0 onlyTODO",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -16388,8 +16487,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+        "build_unit": "source-specific profile;not auto-runnable",
+        "families": [
+          "preprocessor",
+          "nil-local",
+          "array-lvalue",
+          "compiler-diagnostic"
+        ],
+        "next_gate": "phase-specific compile/link diagnostics,do not execute to test lexical syntax",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -18539,8 +18652,21 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+        "build_unit": "source-specific profile;not auto-runnable",
+        "families": [
+          "pragmas",
+          "compiler-diagnostic",
+          "compiler-invocation"
+        ],
+        "next_gate": "black-box compile-only directive matrix with exact option scope",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -21289,8 +21415,20 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+        "build_unit": "source-specific profile;not auto-runnable",
+        "families": [
+          "environment-query",
+          "preprocessor-platform"
+        ],
+        "next_gate": "compare declared identity fields,not match Harbour branding",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {

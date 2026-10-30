@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "100 full-source manual metadata reviews,including10numeric/library/clock cases. Five overlap prior19execution records. No new compile/link/run or authority. Dependencies requirements,not availability. Tags not coverage.",
+  "scope": "110 full-source manual metadata reviews;5overlap prior19execution records. Includes ten debugger/lexical/alias/array/pragma cases. No new compile/link/run or authority. Dependencies required,not availability. Tags not grammarcoverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -4420,6 +4420,447 @@
           "symbol_or_construct": "Loops per tick",
           "lines": [
             21
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/altd.prg",
+      "sha256": "42be1ca00253b4c2caf8b2bc02c6847c0ad5a33869cbfc7e26d35042be6a2029",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+      "build_unit": "source-specific profile;not auto-runnable",
+      "families": [
+        "debug-runtime",
+        "GT-screen",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "debug build option;AltD runtime;Alert colors"
+      ],
+      "effects_or_harness_risks": [
+        "enables/invokes interactive debugger and modal dialogs"
+      ],
+      "output_comparison": "debugger/driver/key-dependent",
+      "next_gate": "explicit isolated debugger/input session,not normal console",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "AltD( 1 )",
+          "lines": [
+            8
+          ]
+        },
+        {
+          "symbol_or_construct": "AltD()",
+          "lines": [
+            1,
+            12
+          ]
+        },
+        {
+          "symbol_or_construct": "Alert( \"finished\"",
+          "lines": [
+            16
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/version.prg",
+      "sha256": "7153fca71ec28416b60154c4afbe05fe0c601f030b8cbbdde8ff5876a91cd898",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+      "build_unit": "source-specific profile;not auto-runnable",
+      "families": [
+        "environment-query",
+        "preprocessor-platform"
+      ],
+      "dependency_requirements": [
+        "Version,hb_Compiler,OS;conditionalClipperheader"
+      ],
+      "effects_or_harness_risks": [
+        "reads compiler/OS identity"
+      ],
+      "output_comparison": "toolchain/platform-dependent strings",
+      "next_gate": "compare declared identity fields,not match Harbour branding",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Version()",
+          "lines": [
+            1,
+            11
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_Compiler()",
+          "lines": [
+            12
+          ]
+        },
+        {
+          "symbol_or_construct": "OS()",
+          "lines": [
+            13
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/byref.prg",
+      "sha256": "d339ac9d6ceee3abc535a896b387053a7875987a5525fbac1c8cbc75f59bda8e",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+      "build_unit": "source-specific profile;not auto-runnable",
+      "families": [
+        "byref",
+        "file-static",
+        "arrays",
+        "increment"
+      ],
+      "dependency_requirements": [
+        "nested byref chains;static scalar,array mutation"
+      ],
+      "effects_or_harness_risks": [
+        "local/static mutations and console output"
+      ],
+      "output_comparison": "alias/value-capture distinction matters",
+      "next_gate": "nested reference/copy/static lifetime contract then oracle",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Ref2( @x )",
+          "lines": [
+            25
+          ]
+        },
+        {
+          "symbol_or_construct": "Ref4( @s_a )",
+          "lines": [
+            46
+          ]
+        },
+        {
+          "symbol_or_construct": "s_a := { x, x }",
+          "lines": [
+            45
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/codebl2.prg",
+      "sha256": "7154a2227674912000df7c0d9eafeefe429bb8a04a20fdaf92d9379c6a97900f",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+      "build_unit": "source-specific profile;not auto-runnable",
+      "families": [
+        "closures",
+        "memvars-dynamic-binding",
+        "runtime-macro",
+        "arrays"
+      ],
+      "dependency_requirements": [
+        "MEMVAR/PRIVATE;macro evaluation;early/late block binding"
+      ],
+      "effects_or_harness_risks": [
+        "mutates dynamic variables;prints eval results"
+      ],
+      "output_comparison": "capture timing and macro resolution semantics",
+      "next_gate": "dynamic evaluator/capture authority,not translate & away",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "PRIVATE m_Var1",
+          "lines": [
+            6
+          ]
+        },
+        {
+          "symbol_or_construct": "{|| &m_Macro }",
+          "lines": [
+            14
+          ]
+        },
+        {
+          "symbol_or_construct": "{|| &( m_Macro ) }",
+          "lines": [
+            37
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/base2.prg",
+      "sha256": "4f8f66bd71161e9d6eca43fdfa89da042407faf1ae36400c9f138182d9d129ee",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+      "build_unit": "source-specific profile;not auto-runnable",
+      "families": [
+        "runtime-macro",
+        "input-terminal",
+        "numeric-formatting"
+      ],
+      "dependency_requirements": [
+        "binary literals;macro-evaluated numeric string;division"
+      ],
+      "effects_or_harness_risks": [
+        "prints arithmetic and waits"
+      ],
+      "output_comparison": "whole original includes runtime & and WAIT,not pure numeric literal test",
+      "next_gate": "separate lexical characterization and dynamic/input gates",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "? &( c )",
+          "lines": [
+            9
+          ]
+        },
+        {
+          "symbol_or_construct": "? 0b1010",
+          "lines": [
+            42
+          ]
+        },
+        {
+          "symbol_or_construct": "WAIT",
+          "lines": [
+            56
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/linecont.prg",
+      "sha256": "4263d55c3c7237f988671d09cff69f97d6549ec215a7a3b159c9e1fc074aa76f",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+      "build_unit": "source-specific profile;not auto-runnable",
+      "families": [
+        "preprocessor",
+        "nil-local",
+        "array-lvalue",
+        "compiler-diagnostic"
+      ],
+      "dependency_requirements": [
+        "semicolon continuation/statements;unresolved TEST3..TEST13;missing args;NIL operands"
+      ],
+      "effects_or_harness_risks": [
+        "NOTEST;potential faults/unresolved links,not safe lexical runtime"
+      ],
+      "output_comparison": "compiler/preprocessor fixture,not assumed runnable program",
+      "next_gate": "phase-specific compile/link diagnostics,do not execute to test lexical syntax",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "//NOTEST",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "TEST13()",
+          "lines": [
+            60,
+            61
+          ]
+        },
+        {
+          "symbol_or_construct": "WHILE n<5",
+          "lines": [
+            88
+          ]
+        },
+        {
+          "symbol_or_construct": "TEST10( a,",
+          "lines": [
+            26,
+            28
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/for.prg",
+      "sha256": "4121ef9c9234adb725772c48674d72b2e6a04ce402a751a42d6bf79291ce6aff",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+      "build_unit": "source-specific profile;not auto-runnable",
+      "families": [
+        "for-control",
+        "closures",
+        "arrays",
+        "file-static",
+        "callback-effects"
+      ],
+      "dependency_requirements": [
+        "nested arrays;static From/To/Step;Eval callbacks with prints"
+      ],
+      "effects_or_harness_risks": [
+        "callback effects and loop outputs for8cases"
+      ],
+      "output_comparison": "evaluation count/order plus counter transitions",
+      "next_gate": "validate callback order,not just final integers;step0 onlyTODO",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "TODO: add test for \"step 0\"",
+          "lines": [
+            6
+          ]
+        },
+        {
+          "symbol_or_construct": "STEP Eval",
+          "lines": [
+            40
+          ]
+        },
+        {
+          "symbol_or_construct": "? \"Step\"",
+          "lines": [
+            62
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/array16.prg",
+      "sha256": "ac9b6823ec62b7bb51545c2331ba8fe35ad52d937fc9fa1f82ac8be8723ab2c1",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+      "build_unit": "source-specific profile;not auto-runnable",
+      "families": [
+        "arrays",
+        "nested-arrays",
+        "array-lvalue",
+        "increment",
+        "lifetime"
+      ],
+      "dependency_requirements": [
+        "dynamic mixed arrays;AAdd/ASize/ATail;4-level indexes"
+      ],
+      "effects_or_harness_risks": [
+        "local allocations/mutations and outputs;8832cells"
+      ],
+      "output_comparison": "pre/postincrement and resize/nesting semantics",
+      "next_gate": "tagged cells/alias/ownership contract;not fixedscalararrays",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Array( 8832 )",
+          "lines": [
+            6
+          ]
+        },
+        {
+          "symbol_or_construct": "a[ 3, 2, 3, 1 ]",
+          "lines": [
+            25
+          ]
+        },
+        {
+          "symbol_or_construct": "ASize( b, 200 )",
+          "lines": [
+            36
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/arrays.prg",
+      "sha256": "ba50f00df709d80e455bf8a5b6b807e789485d835b6b458e4cb23784187a7139",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+      "build_unit": "source-specific profile;not auto-runnable",
+      "families": [
+        "arrays",
+        "nested-arrays",
+        "array-lvalue",
+        "increment",
+        "lifetime"
+      ],
+      "dependency_requirements": [
+        "dynamic mixed arrays;AAdd/ASize/ATail;4-levelindexes"
+      ],
+      "effects_or_harness_risks": [
+        "local allocations/mutations and outputs;10000cells"
+      ],
+      "output_comparison": "similar array16 but distinct sizes/indexes",
+      "next_gate": "separate original hash/fixture;do not deduplicate behavior by name",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Array( 10000 )",
+          "lines": [
+            6
+          ]
+        },
+        {
+          "symbol_or_construct": "b[ 8000 ]",
+          "lines": [
+            30,
+            32
+          ]
+        },
+        {
+          "symbol_or_construct": "ASize( b, 2000 )",
+          "lines": [
+            34
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/pragma.prg",
+      "sha256": "544ae06f493a89dfddcad7c601f33088f2c4d3bf5d9c3a54e494e79abd198776",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main;compile/interactive profiles explicitly constrained",
+      "build_unit": "source-specific profile;not auto-runnable",
+      "families": [
+        "pragmas",
+        "compiler-diagnostic",
+        "compiler-invocation"
+      ],
+      "dependency_requirements": [
+        "pragma parse/options and error-severity settings"
+      ],
+      "effects_or_harness_risks": [
+        "compile configuration changes;intentional invalid pragma value;NOTEST"
+      ],
+      "output_comparison": "compiler-diagnostic suite,not generic success/failure from comments",
+      "next_gate": "black-box compile-only directive matrix with exact option scope",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "#pragma Shortcut( ON",
+          "lines": [
+            20,
+            24,
+            28
+          ]
+        },
+        {
+          "symbol_or_construct": "#pragma WarningLevel=8",
+          "lines": [
+            52
+          ]
+        },
+        {
+          "symbol_or_construct": "//NOTEST",
+          "lines": [
+            1
           ]
         }
       ]

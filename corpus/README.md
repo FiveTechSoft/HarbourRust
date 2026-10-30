@@ -322,3 +322,17 @@ bytes;base64 uses hash enum-key metadata as well as library algorithms.
 seconds has input-dependent profiles;ticktime is a10second busy-clock probe,
 not a compiler speed benchmark;dates3 mixes fixed dates with current-clock data.
 Library/numeric review does not create runtime/representation authority.
+
+### Structural/alias batch:110 manual /124 reviewed-or-executed
+
+Ten further full-source reviews give110manual records and124distinct sources
+in the reviewed/executed union;execution stays19/14. No new original compiled
+or run. linecont is NOTEST with unresolved helper calls and NIL operations,
+so lexical tests must not assume it is a safe runnable application. pragma
+intentionally exercises compiler options/invalid values. altd needs a debugger
+session;version should compare identity fields,not pretend Harbour branding.
+base2 includes runtime macro and WAIT despite numeric-literal focus. for prints
+its bound/step callbacks and needs order/count assertions;its step0 is only TODO.
+byref/codebl2 require nested alias and early/late dynamic binding semantics.
+array16/arrays are distinct mixed dynamic-array programs,not fixed I64 arrays
+or one duplicated success record. Their hashes and different sizes are retained.
