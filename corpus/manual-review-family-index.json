@@ -1,7 +1,7 @@
 {
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "scope": "Manual review provenance and source-family index only. Not parser-recognized syntax or supported feature counts. Dependencies are not installed-availability claims. No compilation/execution. Does not replace17family seed or268audit.",
-  "reviewed_sources": 156,
+  "reviewed_sources": 163,
   "build_projects": 1,
   "family_index": [
     {
@@ -40,7 +40,12 @@
         "tests/files.prg",
         "tests/set.prg",
         "tests/setkeys.prg",
-        "tests/server.prg"
+        "tests/server.prg",
+        "tests/color.prg",
+        "tests/box2.prg",
+        "tests/gtstd.prg",
+        "tests/setmode.prg",
+        "tests/scroll.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -49,7 +54,9 @@
       "family": "GT-windows",
       "reviewed_sources": [
         "tests/mt/mttest10.prg",
-        "tests/wvt_fs.prg"
+        "tests/wvt_fs.prg",
+        "tests/gtwin.prg",
+        "tests/gtxfnt.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -174,7 +181,8 @@
         "tests/cgi.prg",
         "tests/guestbk.prg",
         "tests/inifile.prg",
-        "tests/clasname.prg"
+        "tests/clasname.prg",
+        "tests/setmode.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -192,7 +200,8 @@
       "family": "audio",
       "reviewed_sources": [
         "tests/sound.prg",
-        "tests/box3.prg"
+        "tests/box3.prg",
+        "tests/gtstd.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -893,7 +902,13 @@
         "tests/cdx.prg",
         "tests/ntx.prg",
         "tests/dbf.prg",
-        "tests/dynobj.prg"
+        "tests/dynobj.prg",
+        "tests/box2.prg",
+        "tests/gtstd.prg",
+        "tests/gtwin.prg",
+        "tests/gtxfnt.prg",
+        "tests/setmode.prg",
+        "tests/scroll.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -929,7 +944,8 @@
         "tests/array.prg",
         "tests/array16.prg",
         "tests/arrays.prg",
-        "tests/destruct.prg"
+        "tests/destruct.prg",
+        "tests/gtwin.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -1159,7 +1175,9 @@
         "tests/set.prg",
         "tests/pipes.prg",
         "tests/dyn.prg",
-        "tests/dbi.prg"
+        "tests/dbi.prg",
+        "tests/gtwin.prg",
+        "tests/gtxfnt.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -1171,7 +1189,8 @@
         "tests/hbpp/compare.hb",
         "tests/cmphello.prg",
         "tests/pipes.prg",
-        "tests/hrb.prg"
+        "tests/hrb.prg",
+        "tests/gtxfnt.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -1287,7 +1306,8 @@
         "tests/output.prg",
         "tests/dev.prg",
         "tests/set.prg",
-        "tests/pipes.prg"
+        "tests/pipes.prg",
+        "tests/color.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"

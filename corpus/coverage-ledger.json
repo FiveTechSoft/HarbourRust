@@ -4,8 +4,8 @@
   "counts": {
     "inventory_files": 1203,
     "original_test_sources_compile_audited": 268,
-    "manual_entrypoint_dependency_reviews": 156,
-    "manually_reviewed_or_executed_sources": 170,
+    "manual_entrypoint_dependency_reviews": 163,
+    "manually_reviewed_or_executed_sources": 177,
     "frozen175_default_accepted": 20,
     "frozen175_llvm_accepted": 14,
     "execution_exact_by_profile": {
@@ -11963,8 +11963,20 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source GT-specific profile;not auto-runnable",
+        "families": [
+          "GT-screen",
+          "input-terminal"
+        ],
+        "next_gate": "Fixed virtual screen dimensions, explicit clipping/corner glyph oracle and screen capture; no physical session",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -13070,8 +13082,20 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source GT-specific profile;not auto-runnable",
+        "families": [
+          "GT-screen",
+          "set-runtime"
+        ],
+        "next_gate": "Declare initial palette/driver, assert normalization and selected cell attributes, restore state",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -15470,8 +15494,21 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source GT-specific profile;not auto-runnable",
+        "families": [
+          "GT-screen",
+          "input-terminal",
+          "audio"
+        ],
+        "next_gate": "Scripted keys plus screen/cursor oracle; virtual/muted audio plan; do not count commented Scroll as execution",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -15503,8 +15540,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source GT-specific profile;not auto-runnable",
+        "families": [
+          "GT-windows",
+          "input-terminal",
+          "lifetime",
+          "preprocessor-platform"
+        ],
+        "next_gate": "Isolated graphical session,window selection/destruction and per-window pixel oracle; not pointer-byte equality",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -15536,8 +15587,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source GT-specific profile;not auto-runnable",
+        "families": [
+          "GT-windows",
+          "process-shell",
+          "input-terminal",
+          "preprocessor-platform"
+        ],
+        "next_gate": "Separate approved graphical/external process harness with prior font snapshot/restoration; no auto-launch",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -20244,8 +20309,20 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source GT-specific profile;not auto-runnable",
+        "families": [
+          "GT-screen",
+          "input-terminal"
+        ],
+        "next_gate": "Fixed virtual screen,per-step cell/pixel assertions,buffer-size/restore and cursor checks",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -20559,8 +20636,21 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source GT-specific profile;not auto-runnable",
+        "families": [
+          "GT-screen",
+          "input-terminal",
+          "arrays"
+        ],
+        "next_gate": "Disposable virtual GT session,scripted menu,capability plus pixel/cursor oracle and restoration",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {

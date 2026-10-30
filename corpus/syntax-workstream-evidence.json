@@ -25,7 +25,9 @@
         "tests/set.prg",
         "tests/pipes.prg",
         "tests/dyn.prg",
-        "tests/dbi.prg"
+        "tests/dbi.prg",
+        "tests/gtwin.prg",
+        "tests/gtxfnt.prg"
       ],
       "seed_regression_paths": [
         "tests/t07_unicode_string.hb",
@@ -244,7 +246,9 @@
         "tests/inifile.prg",
         "tests/clasname.prg",
         "tests/destruct.prg",
-        "tests/objarr.prg"
+        "tests/objarr.prg",
+        "tests/gtwin.prg",
+        "tests/setmode.prg"
       ],
       "seed_regression_paths": [
         "tests/t208_nil_literal.hb",
@@ -390,7 +394,8 @@
         "tests/dyn.prg",
         "tests/dbi.prg",
         "tests/clasname.prg",
-        "tests/overload.prg"
+        "tests/overload.prg",
+        "tests/color.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -504,7 +509,8 @@
         "tests/dbi.prg",
         "tests/dbf.prg",
         "tests/delim.prg",
-        "tests/sdf.prg"
+        "tests/sdf.prg",
+        "tests/gtxfnt.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -561,7 +567,14 @@
         "tests/cdx.prg",
         "tests/ntx.prg",
         "tests/dbf.prg",
-        "tests/dynobj.prg"
+        "tests/dynobj.prg",
+        "tests/color.prg",
+        "tests/box2.prg",
+        "tests/gtstd.prg",
+        "tests/gtwin.prg",
+        "tests/gtxfnt.prg",
+        "tests/setmode.prg",
+        "tests/scroll.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,

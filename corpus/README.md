@@ -435,3 +435,18 @@ error handling. None of these reviews grants object representation,ownership,
 GC or dynamic dispatch contracts,and console equality alone would not establish
 lifetime correctness. Expected safety/error statements in comments are source
 claims,not newly measured results.
+
+### Screen/window lifecycle profiles:163 manual /177 reviewed-or-executed
+
+Seven more full-source reviews give163 distinct manual records and177 in the
+union (163+19-5). Historical executions remain19/14;no new compile/run or GUI
+session. color needs normalized string and rendered attribute assertions;box2
+uses negative/beyond-screen coordinates requiring clipping/glyph checks.
+gtstd includes21 Tone calls and repeated waits,not only stdout or scrolling.
+gtwin creates two graphical GTs and destroys them via reference release;its
+second handle label prints pGT1 again,so the diagnostic is not window2 evidence.
+gtxfnt launches xfontsel and changes font state,requiring a separate external
+process/graphical plan. setmode changes dimensions without explicit original-mode
+restoration. scroll copies a saved rectangle elsewhere and performs two-axis
+moves/clear;cell/color/cursor checks are necessary. Metadata is not graphical
+verification or permission to modify an existing desktop session.

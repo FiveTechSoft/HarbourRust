@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "156 distinct full-source manual metadata reviews;5 overlap prior19 execution. Latest seven distinguish fundamental messages, low-level class registry, defaults, operator overload, aliased members, dynamic shape and destructor/GC profiles. No new compile/run or authority. Requirements not availability; tags not coverage.",
+  "scope": "163 distinct full-source manual metadata reviews;5 overlap prior19 execution. Latest seven distinguish clipping/palette/cursor/audio, multiple GT windows, external font selector, video modes and save/restore scroll profiles. No compile/run or graphical execution. Requirements not availability; tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -7203,6 +7203,346 @@
           "symbol_or_construct": "WAIT \"Pause:\"",
           "lines": [
             157
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/color.prg",
+      "sha256": "44567d0b0c40157538c5b1ea8d2cd016be8c367ef7411a5ad1e301b004e32335",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source GT-specific profile;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "set-runtime"
+      ],
+      "dependency_requirements": [
+        "color.ch; SetColor/Set numeric color setting and ColorSelect enhanced/standard modes"
+      ],
+      "effects_or_harness_risks": [
+        "Changes active color pairs and selection while writing text"
+      ],
+      "output_comparison": "Initial color is environment dependent; returned normalized strings and rendered attributes are separate oracles",
+      "next_gate": "Declare initial palette/driver, assert normalization and selected cell attributes, restore state",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "SetColor( cColor )",
+          "lines": [
+            21
+          ]
+        },
+        {
+          "symbol_or_construct": "ColorSelect( CLR_ENHANCED )",
+          "lines": [
+            30,
+            34,
+            37
+          ]
+        },
+        {
+          "symbol_or_construct": "SetColor( \"1/7,9/15\" )",
+          "lines": [
+            23
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/box2.prg",
+      "sha256": "c63761bc2f1ef14933af546f4f5e1147d1756b7289bcf2bed98d89763a3103ed",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source GT-specific profile;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "box.ch; Unicode single/double box glyphs; negative and beyond-screen coordinates"
+      ],
+      "effects_or_harness_risks": [
+        "Draws clipped filled/empty boxes and lines; waits up to5 seconds"
+      ],
+      "output_comparison": "Driver dimensions,glyph mapping and clipping affect screen; stdout not sufficient",
+      "next_gate": "Fixed virtual screen dimensions, explicit clipping/corner glyph oracle and screen capture; no physical session",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "DispBox( -10, -10, 10, 10",
+          "lines": [
+            15
+          ]
+        },
+        {
+          "symbol_or_construct": "DispBox( max_row + 1",
+          "lines": [
+            30
+          ]
+        },
+        {
+          "symbol_or_construct": "HB_B_DOUBLE_UNI",
+          "lines": [
+            35,
+            41
+          ]
+        },
+        {
+          "symbol_or_construct": "Inkey( 5 )",
+          "lines": [
+            44
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/gtstd.prg",
+      "sha256": "f2a9e5aac10ace5b4db8c6d9e2806b556c6fe29d0d8e064ecd71669f4a144b23",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source GT-specific profile;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "input-terminal",
+        "audio"
+      ],
+      "dependency_requirements": [
+        "Row/Col output semantics; CLS; Tone; long lines/end-of-screen behavior"
+      ],
+      "effects_or_harness_risks": [
+        "Repeated indefinite key waits,21 Tone calls,screen scrolling; commented Scroll call is inactive"
+      ],
+      "output_comparison": "Input,driver geometry,audio and cursor state dependent",
+      "next_gate": "Scripted keys plus screen/cursor oracle; virtual/muted audio plan; do not count commented Scroll as execution",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Tone( n, 1 )",
+          "lines": [
+            41,
+            44
+          ]
+        },
+        {
+          "symbol_or_construct": "FOR n := 100 TO 120",
+          "lines": [
+            41,
+            43
+          ]
+        },
+        {
+          "symbol_or_construct": "FOR n := 1 TO 25",
+          "lines": [
+            51
+          ]
+        },
+        {
+          "symbol_or_construct": "// Scroll(",
+          "lines": [
+            29
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/gtwin.prg",
+      "sha256": "9706101fb82a0b52ef891def715c58986d266c406f31a898a98e3e3932d129ea",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source GT-specific profile;not auto-runnable",
+      "families": [
+        "GT-windows",
+        "input-terminal",
+        "lifetime",
+        "preprocessor-platform"
+      ],
+      "dependency_requirements": [
+        "WVT Windows or XWC non-Windows GT instances; shell-select branch; reference-owned GT handles"
+      ],
+      "effects_or_harness_risks": [
+        "Creates two windows,changes selected GT and colors,sets handles NIL to destroy,WAIT pauses"
+      ],
+      "output_comparison": "Driver/handle identity and spatial output dependent; source prints pGT1 twice despite second label",
+      "next_gate": "Isolated graphical session,window selection/destruction and per-window pixel oracle; not pointer-byte equality",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "pGT1 := hb_gtCreate",
+          "lines": [
+            39
+          ]
+        },
+        {
+          "symbol_or_construct": "pGT2 := hb_gtCreate",
+          "lines": [
+            41
+          ]
+        },
+        {
+          "symbol_or_construct": "? \"2 =>\", pGT1",
+          "lines": [
+            42
+          ]
+        },
+        {
+          "symbol_or_construct": "pGT1 := NIL",
+          "lines": [
+            59
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_gtSelect( pGT )",
+          "lines": [
+            54
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/gtxfnt.prg",
+      "sha256": "3ce460ee0996fc2578530538d91f8e0fb5213b552e463f5165ac06949b4a8183",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source GT-specific profile;not auto-runnable",
+      "families": [
+        "GT-windows",
+        "process-shell",
+        "input-terminal",
+        "preprocessor-platform"
+      ],
+      "dependency_requirements": [
+        "hbgtinfo.ch; XWC font selector; external xfontsel executable; process stdout"
+      ],
+      "effects_or_harness_risks": [
+        "Launches xfontsel -print,changes GT font attributes/font,modal Alert and WAIT"
+      ],
+      "output_comparison": "Available fonts,graphical driver,external selector and user input dependent",
+      "next_gate": "Separate approved graphical/external process harness with prior font snapshot/restoration; no auto-launch",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_gtInfo( HB_GTI_FONTATTRIBUTE",
+          "lines": [
+            37
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_gtInfo( HB_GTI_FONTSEL, xFontSel() )",
+          "lines": [
+            41
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_processRun( \"xfontsel -print\"",
+          "lines": [
+            54
+          ]
+        },
+        {
+          "symbol_or_construct": "Alert(",
+          "lines": [
+            42
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/setmode.prg",
+      "sha256": "f0c5d121e0d73cbce872baaaead415be7f41bbab6c0ecae95335188155de82ab",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source GT-specific profile;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "input-terminal",
+        "arrays"
+      ],
+      "dependency_requirements": [
+        "MENU TO/PROMPT; ten row/column modes; SetMode capability and box drawing"
+      ],
+      "effects_or_harness_risks": [
+        "Changes video dimensions in input-driven loop,draws beyond smaller screen widths,waits"
+      ],
+      "output_comparison": "Mode availability and geometry vary; no explicit original-mode restoration in source",
+      "next_gate": "Disposable virtual GT session,scripted menu,capability plus pixel/cursor oracle and restoration",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "{ 60, 80",
+          "lines": [
+            23
+          ]
+        },
+        {
+          "symbol_or_construct": "MENU TO nMode",
+          "lines": [
+            37
+          ]
+        },
+        {
+          "symbol_or_construct": "IF SetMode(",
+          "lines": [
+            41
+          ]
+        },
+        {
+          "symbol_or_construct": "Replicate( \"0123456789\", 20 )",
+          "lines": [
+            65
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/scroll.prg",
+      "sha256": "871da5f2128fef51e0a41d2522d88f9f33477025f58e1a891cacaab0d0bbd746",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source GT-specific profile;not auto-runnable",
+      "families": [
+        "GT-screen",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "box.ch; DispBegin/End; SaveScreen/RestScreen binary buffer; 2D Scroll"
+      ],
+      "effects_or_harness_risks": [
+        "Changes colors,positions and screen contents; copies captured rectangle elsewhere; repeated WAIT"
+      ],
+      "output_comparison": "Screen cells,color and fill/clipping rules are result,not linear stdout",
+      "next_gate": "Fixed virtual screen,per-step cell/pixel assertions,buffer-size/restore and cursor checks",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "SaveScreen( 0, 0, 13, 31 )",
+          "lines": [
+            43
+          ]
+        },
+        {
+          "symbol_or_construct": "RestScreen( 10, 40, 23, 71, cT )",
+          "lines": [
+            44
+          ]
+        },
+        {
+          "symbol_or_construct": "Scroll( 1, 1, 11, 30, -2, -5 )",
+          "lines": [
+            47
+          ]
+        },
+        {
+          "symbol_or_construct": "Scroll( 1, 1, 11, 30, 0, 0 )",
+          "lines": [
+            56
           ]
         }
       ]
