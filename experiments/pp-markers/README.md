@@ -237,3 +237,29 @@ python3 experiments/pp-markers/check_logical_result_implemented.py \
   --hpp /tmp/current-hpp --before /tmp/pre-logical-hpp \
   --output-dir /tmp/logical-result
 ```
+
+## Next null-result marker characterization,no implementation
+
+80own-source preprocessor observations characterize `<-m->`,now the first
+unsupported result in23class-header originals. The informal conditional-result
+label needs precision:this marker emits no payload at all. Without result
+brackets,`<-m-> yes` leaves yes whether m matched or not. Inside brackets,
+`[<-m-> yes]` retains yes only when m was captured;the group disappears when
+absent. Thus binding/optional group membership is the conditional mechanism,
+not emitting a Boolean or directly conditionalizing subsequent unbracketed text.
+Captured .F.,0 and empty string literals still count as present. Unknown or
+miscased marker names reject at definition in the pinned probes. Plain/logical
+result markers can coexist with the zero-byte marker.
+
+Current shared pp rejects these definitions unchanged. A next implementation
+would need exact-name validation,zero-byte substitution,and inclusion in the
+binding set for existing result brackets. Own end-to-end tests should separately
+assert unbracketed erasure,present/absent groups,false-valued payload and invalid
+names in both backends/targets. No general bracket rewrite,stringify,dotted
+reemission,class or ownership contract follows. No original or own runtime
+program is executed by this characterization,and no implementation is included.
+
+```
+python3 experiments/pp-markers/check_null_result_gap.py \
+  --hbpp /path/to/hbpp --hpp /tmp/hpp --output-dir /tmp/null-result-gap
+```
