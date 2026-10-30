@@ -263,3 +263,33 @@ program is executed by this characterization,and no implementation is included.
 python3 experiments/pp-markers/check_null_result_gap.py \
   --hbpp /path/to/hbpp --hpp /tmp/hpp --output-dir /tmp/null-result-gap
 ```
+
+## Scoped null-result implementation (experimental)
+
+The shared preprocessor now validates `<-m->` against the exact capture name,
+marks nonempty captures as bound for existing result brackets,and substitutes
+zero bytes for the marker. It does not conditionalize unbracketed text and does
+not evaluate captured values. No general bracket,stringify,lexical reemission,
+class,Dyn or ownership implementation is added.
+
+Fresh pinned hbpp observations reproduce all80frozen own-source cases;the new
+`check_null_result_implemented.py` replays their result token streams or
+validation rejections. This is token behavior,not arbitrary byte reemission.
+Six own positive programs are separately byte-exact against freshly compiled
+Harbour;ten new battery rows cover unbracketed erasure,optional groups,false
+payload,plain/logical coexistence,translation and invalid names. Both target
+profiles are checked in LLVM;shared rejection checks exercise both backends.
+
+Local candidate batteries:1130PASS default,294PASS LLVM. Prior172restricted
+list and190marker probes pass. Logical-result replay retains88result/validation
+passes and2documented preexisting matcher divergences,not90passes.
+Fourteen already-reviewed Linux console originals are freshly exact again.
+Compile-only268x4 acceptance remains21/15Linux20/14Windows,no lost/new accepts.
+23originals advance first diagnostic from `<-lck->` to the result form
+`<type: FUNCTION, PROCEDURE>` at hbclass.ch line267. They do not compile
+completely. Main is unchanged. No new size or speed claim is made.
+
+```
+python3 experiments/pp-markers/check_null_result_implemented.py \
+  --hpp /tmp/current-hpp --output-dir /tmp/null-result
+```

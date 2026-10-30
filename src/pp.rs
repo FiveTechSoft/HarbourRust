@@ -548,7 +548,8 @@ fn validate_result_markers(pattern: &[String], result: &str, line: usize) -> Res
                     &inner
                 };
                 let logical = inner.len() >= 2 && inner.starts_with('.') && inner.ends_with('.');
-                let valid = if logical {
+                let null_result = inner.len() >= 2 && inner.starts_with('-') && inner.ends_with('-');
+                let valid = if logical || null_result {
                     exact_names.contains(&inner[1..inner.len()-1].to_string())
                 } else { names.contains(&base.to_lowercase()) };
                 if !valid {
@@ -847,6 +848,7 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
                             bound.insert(format!("<{}>", base.to_lowercase()));
                             bound.insert(format!("<({})>", base.to_lowercase()));
                             bound.insert(format!("<.{}.>", base.to_lowercase()));
+                            bound.insert(format!("<-{}->", base.to_lowercase()));
                         }
                         pi += 1;
                     }
@@ -873,6 +875,9 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
                         // existing general capture-token reemission path.
                         (format!("<.{}.>", base.to_lowercase()),
                          if caps[pi].is_empty() { ".F.".to_string() } else { ".T.".to_string() }),
+                        // Null result contributes binding to optional groups,
+                        // but contributes no bytes whether bound or absent.
+                        (format!("<-{}->", base.to_lowercase()), String::new()),
                     ] {
                         let low = out.to_lowercase();
                         let mut rebuilt = String::new();

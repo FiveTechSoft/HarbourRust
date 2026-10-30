@@ -1116,3 +1116,13 @@ neg tests/t1117_pp_logical_unknown_neg.hb unknown result marker
 neg tests/t1118_pp_logical_case_neg.hb unknown result marker
 neg tests/t1119_pp_logical_malformed_neg.hb unknown result marker
 neg tests/t1120_pp_logical_nonmatch_neg.hb incomplete statement
+pos tests/t1121_pp_null_erase.hb \nyes\nyes
+pos tests/t1122_pp_null_group.hb \n\nyes
+pos tests/t1123_pp_null_payload.hb \nyes\nyes\nyes
+pos tests/t1124_pp_null_mixed.hb \n.F.\n.T.
+pos tests/t1125_pp_null_translate.hb \n\nyes
+pos tests/t1126_pp_null_name.hb \n\n        42
+neg tests/t1127_pp_null_unknown_neg.hb unknown result marker
+neg tests/t1128_pp_null_case_neg.hb unknown result marker
+neg tests/t1129_pp_null_malformed_neg.hb unknown result marker
+neg tests/t1130_pp_null_nonmatch_neg.hb incomplete statement
