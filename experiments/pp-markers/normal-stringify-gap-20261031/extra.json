@@ -1,0 +1,282 @@
+[
+  {
+    "case": 0,
+    "source": "#command PROBE <X> => OUT(<\"x\">)\nPROBE alpha\n",
+    "reference_exit": 1,
+    "reference_output": "\nPROBE alpha\n",
+    "reference_error": ""
+  },
+  {
+    "case": 1,
+    "source": "#command PROBE <x> => OUT(<\"X\">)\nPROBE alpha\n",
+    "reference_exit": 1,
+    "reference_output": "\nPROBE alpha\n",
+    "reference_error": ""
+  },
+  {
+    "case": 2,
+    "source": "#command PROBE [<x>] => OUT(A<\"x\">Z)\nPROBE\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(AZ)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 3,
+    "source": "#command PROBE [<x>] => OUT(A#<x>Z)\nPROBE\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(A\"\"Z)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 4,
+    "source": "#command PROBE <x> STOP <y> => OUT(<\"x\">,<y>)\nPROBE \"<y>\" STOP 7\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT('\"<y>\"',7)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 5,
+    "source": "#command PROBE <x> => OUT(\"<\"x\">\")\nPROBE alpha\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"<\"x\">\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 6,
+    "source": "#command PROBE <x> => OUT(<\"x\">,#<x>,<x>)\nPROBE alpha\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"alpha\",\"alpha\",alpha)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 7,
+    "source": "#command PROBE <x> => OUT(<\"x\">)\nPROBE e\"a\\nb\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(e\"[a\\nb]\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 8,
+    "source": "#command PROBE <x> => OUT(<\"x\">)\nPROBE \"a'b\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT([\"a'b\"])\n",
+    "reference_error": ""
+  },
+  {
+    "case": 9,
+    "source": "#command PROBE [WITH <x>] => OUT(<\"x\">)\nPROBE WITH alpha\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"alpha\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 10,
+    "source": "#xcommand PROBE <X> => OUT(<\"x\">)\nPROBE alpha\n",
+    "reference_exit": 1,
+    "reference_output": "\nPROBE alpha\n",
+    "reference_error": ""
+  },
+  {
+    "case": 11,
+    "source": "#xcommand PROBE <x> => OUT(<\"X\">)\nPROBE alpha\n",
+    "reference_exit": 1,
+    "reference_output": "\nPROBE alpha\n",
+    "reference_error": ""
+  },
+  {
+    "case": 12,
+    "source": "#xcommand PROBE [<x>] => OUT(A<\"x\">Z)\nPROBE\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(AZ)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 13,
+    "source": "#xcommand PROBE [<x>] => OUT(A#<x>Z)\nPROBE\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(A\"\"Z)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 14,
+    "source": "#xcommand PROBE <x> STOP <y> => OUT(<\"x\">,<y>)\nPROBE \"<y>\" STOP 7\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT('\"<y>\"',7)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 15,
+    "source": "#xcommand PROBE <x> => OUT(\"<\"x\">\")\nPROBE alpha\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"<\"x\">\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 16,
+    "source": "#xcommand PROBE <x> => OUT(<\"x\">,#<x>,<x>)\nPROBE alpha\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"alpha\",\"alpha\",alpha)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 17,
+    "source": "#xcommand PROBE <x> => OUT(<\"x\">)\nPROBE e\"a\\nb\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(e\"[a\\nb]\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 18,
+    "source": "#xcommand PROBE <x> => OUT(<\"x\">)\nPROBE \"a'b\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT([\"a'b\"])\n",
+    "reference_error": ""
+  },
+  {
+    "case": 19,
+    "source": "#xcommand PROBE [WITH <x>] => OUT(<\"x\">)\nPROBE WITH alpha\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"alpha\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 20,
+    "source": "#translate PROBE <X> => OUT(<\"x\">)\nPROBE alpha\n",
+    "reference_exit": 1,
+    "reference_output": "\nPROBE alpha\n",
+    "reference_error": ""
+  },
+  {
+    "case": 21,
+    "source": "#translate PROBE <x> => OUT(<\"X\">)\nPROBE alpha\n",
+    "reference_exit": 1,
+    "reference_output": "\nPROBE alpha\n",
+    "reference_error": ""
+  },
+  {
+    "case": 22,
+    "source": "#translate PROBE [<x>] => OUT(A<\"x\">Z)\nPROBE\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(AZ)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 23,
+    "source": "#translate PROBE [<x>] => OUT(A#<x>Z)\nPROBE\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(A\"\"Z)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 24,
+    "source": "#translate PROBE <x> STOP <y> => OUT(<\"x\">,<y>)\nPROBE \"<y>\" STOP 7\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT('\"<y>\"',7)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 25,
+    "source": "#translate PROBE <x> => OUT(\"<\"x\">\")\nPROBE alpha\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"<\"x\">\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 26,
+    "source": "#translate PROBE <x> => OUT(<\"x\">,#<x>,<x>)\nPROBE alpha\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"alpha\",\"alpha\",alpha)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 27,
+    "source": "#translate PROBE <x> => OUT(<\"x\">)\nPROBE e\"a\\nb\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(e\"[a\\nb]\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 28,
+    "source": "#translate PROBE <x> => OUT(<\"x\">)\nPROBE \"a'b\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT([\"a'b\"])\n",
+    "reference_error": ""
+  },
+  {
+    "case": 29,
+    "source": "#translate PROBE [WITH <x>] => OUT(<\"x\">)\nPROBE WITH alpha\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"alpha\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 30,
+    "source": "#xtranslate PROBE <X> => OUT(<\"x\">)\nPROBE alpha\n",
+    "reference_exit": 1,
+    "reference_output": "\nPROBE alpha\n",
+    "reference_error": ""
+  },
+  {
+    "case": 31,
+    "source": "#xtranslate PROBE <x> => OUT(<\"X\">)\nPROBE alpha\n",
+    "reference_exit": 1,
+    "reference_output": "\nPROBE alpha\n",
+    "reference_error": ""
+  },
+  {
+    "case": 32,
+    "source": "#xtranslate PROBE [<x>] => OUT(A<\"x\">Z)\nPROBE\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(AZ)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 33,
+    "source": "#xtranslate PROBE [<x>] => OUT(A#<x>Z)\nPROBE\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(A\"\"Z)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 34,
+    "source": "#xtranslate PROBE <x> STOP <y> => OUT(<\"x\">,<y>)\nPROBE \"<y>\" STOP 7\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT('\"<y>\"',7)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 35,
+    "source": "#xtranslate PROBE <x> => OUT(\"<\"x\">\")\nPROBE alpha\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"<\"x\">\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 36,
+    "source": "#xtranslate PROBE <x> => OUT(<\"x\">,#<x>,<x>)\nPROBE alpha\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"alpha\",\"alpha\",alpha)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 37,
+    "source": "#xtranslate PROBE <x> => OUT(<\"x\">)\nPROBE e\"a\\nb\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(e\"[a\\nb]\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 38,
+    "source": "#xtranslate PROBE <x> => OUT(<\"x\">)\nPROBE \"a'b\"\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT([\"a'b\"])\n",
+    "reference_error": ""
+  },
+  {
+    "case": 39,
+    "source": "#xtranslate PROBE [WITH <x>] => OUT(<\"x\">)\nPROBE WITH alpha\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"alpha\")\n",
+    "reference_error": ""
+  }
+]

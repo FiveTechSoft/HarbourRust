@@ -579,3 +579,14 @@ programs have byte-exact output against freshly rebuilt Harbour.1189default
 and410LLVM checks pass fresh locally;14reviewed originals remain freshly
 byte-exact.268x4compile audit acceptance is21/15Linux20/14Windows. These
 counts do not imply general preprocessing completion or new original accepts.
+
+## Normal stringify next-gap characterization
+
+184own-source observations in normal-stringify-gap-20261031,not implementation
+or compatibility passes. For a present plain capture,<"x"> has the same
+source-preserving quoting measured for #<x>. For an absent optional capture it
+emits zero bytes instead of "". Marker names are case-sensitive. A list capture
+stringifies each comma-separated element separately;that is not the plain
+capture contract. Result literal data must not be reparsed as a marker.
+Escaped/bracket literals and literal-bearing optional groups remain outside
+the previous scoped implementation. No production change in this evidence.
