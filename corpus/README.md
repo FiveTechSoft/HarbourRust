@@ -568,3 +568,19 @@ selection and pixel checks with restored blink/colors. menuto recursively opens
 menus through F8 and uses local versus MEMVAR targets;key/event/mouse settings
 need restoration. These distinctions prevent widget labels from being promoted
 to RDD coverage or source-only review from being called visual verification.
+
+### Language/format/operator profiles:206 manual /209 reviewed-or-executed
+
+Four more full-source reviews give206 manual records and209 in the union.
+longstr overlaps prior execution,so overlap is now16:206+19-16=209. Historical
+executions remain19/14;no compile/run. langmsg prints translated error tables
+without triggering those errors,so it is lookup evidence,not fault coverage.
+longstr's text mentions an old256-character limit;that payload is not a current
+compiler restriction or policy. Its explicit CR/LF and final backslash need
+byte-preserving captures.
+
+str says its first phase uses FIXED off but does not set that initial value;
+future comparison must declare FIXED/DECIMALS and formatting boundaries before
+comparing both phases. op invokes a modal overloaded plus and replaces the
+object local with NIL:empty stdout would miss both dispatch and UI behavior.
+No numerical,localization,object/lifetime or operator contract was changed.

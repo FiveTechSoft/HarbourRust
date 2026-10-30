@@ -4,8 +4,8 @@
   "counts": {
     "inventory_files": 1203,
     "original_test_sources_compile_audited": 268,
-    "manual_entrypoint_dependency_reviews": 202,
-    "manually_reviewed_or_executed_sources": 206,
+    "manual_entrypoint_dependency_reviews": 206,
+    "manually_reviewed_or_executed_sources": 209,
     "frozen175_default_accepted": 20,
     "frozen175_llvm_accepted": 14,
     "execution_exact_by_profile": {
@@ -17123,8 +17123,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main(cLng)",
+        "build_unit": "single source language/format/operator profile",
+        "families": [
+          "localization",
+          "dates",
+          "environment-clock",
+          "arrays",
+          "input-terminal"
+        ],
+        "next_gate": "Declared language modules/encoding/clock and scripted keys; compare lookup tables separately from error execution",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -17493,6 +17508,17 @@
         "entrypoint": "reviewed-linux-console",
         "dependencies": "reviewed-console-only",
         "limits": "other targets not reviewed; no automatic bulk execution"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source language/format/operator profile",
+        "families": [
+          "strings",
+          "line-length"
+        ],
+        "next_gate": "Check literal/concatenation bytes and length against source/reference; no inferred length limit or new execution",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -19134,8 +19160,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main; TCar constructor and SUM operator",
+        "build_unit": "single source language/format/operator profile",
+        "families": [
+          "classes",
+          "dynamic-dispatch",
+          "nil-value",
+          "GT-screen",
+          "input-terminal"
+        ],
+        "next_gate": "Class/operator/result lifetime contract and controlled modal UI/pixel oracle;old operator availability comment not current coverage",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -21704,8 +21745,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main; test helper",
+        "build_unit": "single source language/format/operator profile",
+        "families": [
+          "floating-point",
+          "numeric-formatting",
+          "set-format",
+          "set-runtime",
+          "input-terminal"
+        ],
+        "next_gate": "Declare initial FIXED/DECIMALS,typed numeric/format boundary oracle and restoration;no scalar integer parity claim",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {

@@ -35,7 +35,8 @@
         "tests/define.prg",
         "tests/declare.prg",
         "tests/pp.prg",
-        "tests/ppapi.prg"
+        "tests/ppapi.prg",
+        "tests/longstr.prg"
       ],
       "seed_regression_paths": [
         "tests/t07_unicode_string.hb",
@@ -243,7 +244,8 @@
         "tests/dynobj.prg",
         "tests/foreach2.prg",
         "tests/memfile.prg",
-        "tests/math.prg"
+        "tests/math.prg",
+        "tests/str.prg"
       ],
       "seed_regression_paths": [
         "tests/t750_float_arith_mixed.hb",
@@ -310,7 +312,9 @@
         "tests/declare.prg",
         "tests/ppapi.prg",
         "tests/onidle.prg",
-        "tests/math.prg"
+        "tests/math.prg",
+        "tests/langmsg.prg",
+        "tests/op.prg"
       ],
       "seed_regression_paths": [
         "tests/t208_nil_literal.hb",
@@ -392,7 +396,8 @@
         "tests/math.prg",
         "tests/brwpos.prg",
         "tests/sbar.prg",
-        "tests/menuto.prg"
+        "tests/menuto.prg",
+        "tests/op.prg"
       ],
       "seed_regression_paths": [
         "tests/t150_cb_eval1.hb",
@@ -486,7 +491,10 @@
         "tests/memfile.prg",
         "tests/rdd.prg",
         "tests/sbar.prg",
-        "tests/menuto.prg"
+        "tests/menuto.prg",
+        "tests/langmsg.prg",
+        "tests/longstr.prg",
+        "tests/str.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -690,7 +698,10 @@
         "tests/hsx.prg",
         "tests/brwpos.prg",
         "tests/sbar.prg",
-        "tests/menuto.prg"
+        "tests/menuto.prg",
+        "tests/langmsg.prg",
+        "tests/str.prg",
+        "tests/op.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -743,7 +754,8 @@
         "tests/vmasort.prg",
         "tests/memmgr.prg",
         "tests/onidle.prg",
-        "tests/profiler.prg"
+        "tests/profiler.prg",
+        "tests/langmsg.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,

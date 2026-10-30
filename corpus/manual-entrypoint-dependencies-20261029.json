@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "202 distinct full-source manual metadata reviews; ledger computes union/overlap. Latest five distinguish fulltext/filter capability,driver matrices,synthetic browse positions,directory scrollbar and nested menu binding. No compile/run or new authority. Requirements not availability; tags not coverage.",
+  "scope": "206 distinct full-source manual metadata reviews; ledger computes union/overlap. Latest four distinguish language message lookup versus faults,long literal bytes,numeric format initial state and modal overloaded operator NIL result. No compile/run or new authority. Requirements not availability; tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -9539,6 +9539,203 @@
           "symbol_or_construct": "MSetCursor( .T. )",
           "lines": [
             15
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/langmsg.prg",
+      "sha256": "93196bcdbb0c429408261688cbdea75ea367eb2e7e9048def5fca51f9ad2053b",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main(cLng)",
+      "build_unit": "single source language/format/operator profile",
+      "families": [
+        "localization",
+        "dates",
+        "environment-clock",
+        "arrays",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "hblang.ch; language registry and optional selected language; day/month and error message tables"
+      ],
+      "effects_or_harness_risks": [
+        "Changes language,reads clock,prints comparison tables and pauses five times;does not invoke listed runtime errors"
+      ],
+      "output_comparison": "Registry/encoding and selected language determine messages; listing errors is not fault-path coverage",
+      "next_gate": "Declared language modules/encoding/clock and scripted keys; compare lookup tables separately from error execution",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_langSelect( \"en\" )",
+          "lines": [
+            12
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_langSelect( Upper( cLng ) )",
+          "lines": [
+            22
+          ]
+        },
+        {
+          "symbol_or_construct": "LOCAL i, n, aDays[ 7 ], dt := Date()",
+          "lines": [
+            81
+          ]
+        },
+        {
+          "symbol_or_construct": "STATIC FUNCTION GET_IERR()",
+          "lines": [
+            161
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/longstr.prg",
+      "sha256": "ccc83f05e2f8f0aa89dc2f90807586c9cbf584066a41177dd7457d9f914bbdb1",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source language/format/operator profile",
+      "families": [
+        "strings",
+        "line-length"
+      ],
+      "dependency_requirements": [
+        "simpleio.ch; one long literal plus explicit CR/LF and backslash bytes"
+      ],
+      "effects_or_harness_risks": [
+        "Console only,fixed string payload"
+      ],
+      "output_comparison": "Candidate fixed byte capture; literal itself mentions an old256-character limit but is test payload,not current policy",
+      "next_gate": "Check literal/concatenation bytes and length against source/reference; no inferred length limit or new execution",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "LOCAL c :=",
+          "lines": [
+            9
+          ]
+        },
+        {
+          "symbol_or_construct": "Chr( 13 ) + Chr( 10 )",
+          "lines": [
+            9
+          ]
+        },
+        {
+          "symbol_or_construct": "? c",
+          "lines": [
+            11
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/str.prg",
+      "sha256": "370d00a7d1640e2f67499cbf362ec47c709e650e10add42b86c2e7f2e8a5367d",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main; test helper",
+      "build_unit": "single source language/format/operator profile",
+      "families": [
+        "floating-point",
+        "numeric-formatting",
+        "set-format",
+        "set-runtime",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "Str formatting and arithmetic,power/modulus,negative/zero width/precision arguments;SET FIXED"
+      ],
+      "effects_or_harness_risks": [
+        "Reads initial numeric formatting,waits,sets FIXED true and runs again;no explicit restore"
+      ],
+      "output_comparison": "Output labels assume default FIXED off but source does not force initial off; numeric/libm/rounding/platform affect bytes",
+      "next_gate": "Declare initial FIXED/DECIMALS,typed numeric/format boundary oracle and restoration;no scalar integer parity claim",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Set( _SET_FIXED, .T. )",
+          "lines": [
+            9
+          ]
+        },
+        {
+          "symbol_or_construct": "Str( b, 5, 10 )",
+          "lines": [
+            95
+          ]
+        },
+        {
+          "symbol_or_construct": "Str( b, 20, -10 )",
+          "lines": [
+            99
+          ]
+        },
+        {
+          "symbol_or_construct": "Str( b, -12, 7 )",
+          "lines": [
+            103
+          ]
+        },
+        {
+          "symbol_or_construct": "Str( b, 0 )",
+          "lines": [
+            107
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/op.prg",
+      "sha256": "2c66dcb218480bbe5c09c171f1225274845d6dc8bf71abc03af368e4f9dd19b4",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main; TCar constructor and SUM operator",
+      "build_unit": "single source language/format/operator profile",
+      "families": [
+        "classes",
+        "dynamic-dispatch",
+        "nil-value",
+        "GT-screen",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "hbclass.ch; METHOD SUM OPERATOR+; NIL right argument; modal Alert"
+      ],
+      "effects_or_harness_risks": [
+        "Invokes overloaded plus on object then assigns NIL result back to object local;opens modal UI"
+      ],
+      "output_comparison": "Observable dispatch/Alert and result-type transition; empty stdout is not full correctness",
+      "next_gate": "Class/operator/result lifetime contract and controlled modal UI/pixel oracle;old operator availability comment not current coverage",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "oCar := oCar + oPetrol",
+          "lines": [
+            61
+          ]
+        },
+        {
+          "symbol_or_construct": "METHOD SUM( oObject ) OPERATOR",
+          "lines": [
+            77
+          ]
+        },
+        {
+          "symbol_or_construct": "Alert( \"+ has a special meaning",
+          "lines": [
+            103
+          ]
+        },
+        {
+          "symbol_or_construct": "RETURN NIL",
+          "lines": [
+            106
           ]
         }
       ]
