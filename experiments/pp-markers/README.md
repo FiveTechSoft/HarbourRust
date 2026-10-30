@@ -551,3 +551,31 @@ preexist the source-span/stringify increment. Examples:
 Do not remove stringify guards merely because a single optional match works.
 Result-group repetition and expression boundaries need separate verified pp
 work. No production change in this characterization.
+
+## Fixed non-call translations, scoped implementation
+
+Rules retain translation identity alongside source-order commands. Pure fixed
+translation families now replace token sequences at any unquoted position,
+latest matching translation first,before commands. Unmatched source bytes,
+including tail adjacency and spaces,are preserved. Commands still require a
+whole statement. Expansion is bounded to16passes,10000replacements and1MiB
+intermediate output. Removal distinguishes translation/command and X identity;
+the previously accepted UXTRANSLATE alias is retained,not newly claimed as
+Harbour syntax. XUNTRANSLATE is the measured X removal form.
+
+If a family also has captured/optional or call-form translations,ALL its rules
+stay on the historical route.32non-call mixed probes,16call mixed probes and
+4temporal mixed probes verify that fallback preserves baseline behavior,even
+where Harbour differs. If #define would change the original statement,the
+whole statement stays on its historical route. The check uses the pure expand
+function on an immutable definition map;it does not consume state. Three macro
+probes preserve prior output;one additional probe is a pure translation chain,
+not a macro fallback. No general phase reordering is introduced.
+
+The replay classifies250observations into62supported fixed token matches,
+36mixed-family baseline checks and152outside-slice observations.16call mixed
+controls and3macro controls are additional baseline checks. Seven own console
+programs have byte-exact output against freshly rebuilt Harbour.1189default
+and410LLVM checks pass fresh locally;14reviewed originals remain freshly
+byte-exact.268x4compile audit acceptance is21/15Linux20/14Windows. These
+counts do not imply general preprocessing completion or new original accepts.

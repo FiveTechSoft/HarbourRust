@@ -1,0 +1,226 @@
+[
+  {
+    "case": 0,
+    "source": "#translate FOO => 7\n#translate FOO(<x>) => (<x>+1)\n? FOO(1)\n",
+    "baseline": {
+      "exit": 0,
+      "output": "? (1+1)\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "? (1+1)\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 1,
+    "source": "#translate FOO => 7\n#translate FOO(<x>) => (<x>+1)\nFOO(1)\n",
+    "baseline": {
+      "exit": 0,
+      "output": "(1+1)\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "(1+1)\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 2,
+    "source": "#translate FOO => 7\n#translate FOO(<x>) => (<x>+1)\n? FOO\n",
+    "baseline": {
+      "exit": 0,
+      "output": "? FOO\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "? FOO\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 3,
+    "source": "#translate FOO => 7\n#translate FOO(<x>) => (<x>+1)\nFOO\n",
+    "baseline": {
+      "exit": 0,
+      "output": "7\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "7\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 4,
+    "source": "#translate FOO(<x>) => (<x>+1)\n#translate FOO => 7\n? FOO(1)\n",
+    "baseline": {
+      "exit": 0,
+      "output": "? (1+1)\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "? (1+1)\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 5,
+    "source": "#translate FOO(<x>) => (<x>+1)\n#translate FOO => 7\nFOO(1)\n",
+    "baseline": {
+      "exit": 0,
+      "output": "(1+1)\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "(1+1)\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 6,
+    "source": "#translate FOO(<x>) => (<x>+1)\n#translate FOO => 7\n? FOO\n",
+    "baseline": {
+      "exit": 0,
+      "output": "? FOO\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "? FOO\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 7,
+    "source": "#translate FOO(<x>) => (<x>+1)\n#translate FOO => 7\nFOO\n",
+    "baseline": {
+      "exit": 0,
+      "output": "7\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "7\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 8,
+    "source": "#xtranslate FOO => 7\n#xtranslate FOO(<x>) => (<x>+1)\n? FOO(1)\n",
+    "baseline": {
+      "exit": 0,
+      "output": "? (1+1)\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "? (1+1)\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 9,
+    "source": "#xtranslate FOO => 7\n#xtranslate FOO(<x>) => (<x>+1)\nFOO(1)\n",
+    "baseline": {
+      "exit": 0,
+      "output": "(1+1)\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "(1+1)\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 10,
+    "source": "#xtranslate FOO => 7\n#xtranslate FOO(<x>) => (<x>+1)\n? FOO\n",
+    "baseline": {
+      "exit": 0,
+      "output": "? FOO\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "? FOO\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 11,
+    "source": "#xtranslate FOO => 7\n#xtranslate FOO(<x>) => (<x>+1)\nFOO\n",
+    "baseline": {
+      "exit": 0,
+      "output": "7\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "7\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 12,
+    "source": "#xtranslate FOO(<x>) => (<x>+1)\n#xtranslate FOO => 7\n? FOO(1)\n",
+    "baseline": {
+      "exit": 0,
+      "output": "? (1+1)\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "? (1+1)\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 13,
+    "source": "#xtranslate FOO(<x>) => (<x>+1)\n#xtranslate FOO => 7\nFOO(1)\n",
+    "baseline": {
+      "exit": 0,
+      "output": "(1+1)\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "(1+1)\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 14,
+    "source": "#xtranslate FOO(<x>) => (<x>+1)\n#xtranslate FOO => 7\n? FOO\n",
+    "baseline": {
+      "exit": 0,
+      "output": "? FOO\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "? FOO\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 15,
+    "source": "#xtranslate FOO(<x>) => (<x>+1)\n#xtranslate FOO => 7\nFOO\n",
+    "baseline": {
+      "exit": 0,
+      "output": "7\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "7\n",
+      "error": ""
+    }
+  }
+]

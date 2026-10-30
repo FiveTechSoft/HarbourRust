@@ -1,0 +1,34 @@
+[
+  {
+    "source": "#define WORD TOKEN\n#translate TOKEN FOO => 7\n? WORD FOO\n",
+    "reference_output": "\n\n? 7\n",
+    "own_output": "? TOKEN FOO\n",
+    "baseline_output": "? TOKEN FOO\n",
+    "candidate_output": "? TOKEN FOO\n",
+    "baseline_identical": true
+  },
+  {
+    "source": "#translate TOKEN FOO => 7\n#define WORD TOKEN\n? WORD FOO\n",
+    "reference_output": "\n\n? 7\n",
+    "own_output": "? TOKEN FOO\n",
+    "baseline_output": "? TOKEN FOO\n",
+    "candidate_output": "? TOKEN FOO\n",
+    "baseline_identical": true
+  },
+  {
+    "source": "#translate WORD FOO => 7\n#define WORD TOKEN\n? WORD FOO\n",
+    "reference_output": "\n\n? TOKEN FOO\n",
+    "own_output": "? 7\n",
+    "baseline_output": "? TOKEN FOO\n",
+    "candidate_output": "? TOKEN FOO\n",
+    "baseline_identical": true
+  },
+  {
+    "source": "#translate TOKEN FOO => 7\n#translate WORD => TOKEN\n? WORD FOO\n",
+    "reference_output": "\n\n? 7\n",
+    "own_output": "? 7\n",
+    "baseline_output": "? WORD FOO\n",
+    "candidate_output": "? 7\n",
+    "baseline_identical": false
+  }
+]

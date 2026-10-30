@@ -1177,3 +1177,11 @@ neg tests/t1178_pp_stringify_escape_neg.hb stringify of escape literals
 neg tests/t1179_pp_stringify_list_neg.hb stringify of non-plain capture
 neg tests/t1180_pp_stringify_other_form_neg.hb unknown result marker
 pos tests/t1181_pp_stringify_quoted_result.hb \n#42\nA#42Z\n#42\n42
+pos tests/t1182_pp_fixed_translate_inline.hb \n         8\nVALUE TOKEN          7
+pos tests/t1183_pp_fixed_translate_order.hb \n         7
+pos tests/t1184_pp_fixed_translate_specific.hb \n         4
+pos tests/t1185_pp_fixed_translate_remove.hb \n         7
+pos tests/t1186_pp_fixed_translate_temporal.hb \n         7\n         8\n         7
+pos tests/t1187_pp_fixed_translate_command.hb \n         7
+pos tests/t1188_pp_fixed_xtranslate.hb \n         7          8
+neg tests/t1189_pp_fixed_translate_recursive_neg.hb fixed translation expansion too deep

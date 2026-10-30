@@ -1,0 +1,66 @@
+[
+  {
+    "case": 0,
+    "source": "#translate FOO BAR => 7\nFOO BAR\n#translate FOO <x> => OUT(<x>)\nFOO BAR\n#untranslate FOO <x> => OUT(<x>)\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n7\n\nOUT(BAR)\n\n7\n",
+    "baseline": {
+      "exit": 0,
+      "output": "7\n7\n7\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "7\n7\n7\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 1,
+    "source": "#translate FOO BAR => 7\nFOO BAR\n#translate FOO <x:BAR> => OUT(<x>)\nFOO BAR\n#untranslate FOO <x:BAR> => OUT(<x>)\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n7\n\nOUT(BAR)\n\n7\n",
+    "baseline": {
+      "exit": 0,
+      "output": "7\n7\n7\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "7\n7\n7\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 2,
+    "source": "#xtranslate FOO BAR => 7\nFOO BAR\n#xtranslate FOO <x> => OUT(<x>)\nFOO BAR\n#xuntranslate FOO <x> => OUT(<x>)\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n7\n\nOUT(BAR)\n\n7\n",
+    "baseline": {
+      "exit": 0,
+      "output": "7\n7\n7\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "7\n7\n7\n",
+      "error": ""
+    }
+  },
+  {
+    "case": 3,
+    "source": "#xtranslate FOO BAR => 7\nFOO BAR\n#xtranslate FOO <x:BAR> => OUT(<x>)\nFOO BAR\n#xuntranslate FOO <x:BAR> => OUT(<x>)\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n7\n\nOUT(BAR)\n\n7\n",
+    "baseline": {
+      "exit": 0,
+      "output": "7\n7\n7\n",
+      "error": ""
+    },
+    "candidate": {
+      "exit": 0,
+      "output": "7\n7\n7\n",
+      "error": ""
+    }
+  }
+]

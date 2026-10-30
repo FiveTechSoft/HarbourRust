@@ -1,0 +1,2005 @@
+{
+  "scope": "observations classified;only fixed supported token matches are compatibility checks",
+  "rows": [
+    {
+      "group": "results",
+      "case": 0,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 1,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 2,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 3,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 4,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM, rest\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 5,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "? CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 6,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "x := CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 7,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 8,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE OTHER extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 9,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE   FROM   +  1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 10,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 11,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 12,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 13,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 14,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM, rest\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 15,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "? CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 16,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "x := CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 17,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 18,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE OTHER extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 19,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE   FROM   +  1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 20,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 21,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 22,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 23,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 24,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM, rest\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 25,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "? CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 26,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "x := CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 27,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 28,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE OTHER extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 29,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE   FROM   +  1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 30,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 31,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 32,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 33,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 34,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM, rest\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 35,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "? CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 36,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "x := CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 37,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 38,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE OTHER extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 39,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE   FROM   +  1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 40,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 41,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 42,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 43,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 44,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM, rest\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 45,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "? CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 46,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "x := CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 47,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 48,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE OTHER extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 49,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE   FROM   +  1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 50,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 51,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 52,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 53,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 54,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM, rest\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 55,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "? CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 56,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "x := CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 57,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 58,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE OTHER extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 59,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE   FROM   +  1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 60,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 61,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 62,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 63,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 64,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM, rest\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 65,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "? CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 66,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "x := CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 67,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 68,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE OTHER extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 69,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE   FROM   +  1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 70,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 71,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 72,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 73,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 74,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM, rest\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 75,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "? CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 76,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "x := CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 77,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 78,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE OTHER extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 79,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE   FROM   +  1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 80,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 81,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "MARK extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 82,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "MARK + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 83,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "MARK(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 84,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "MARK, rest\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 85,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "? MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 86,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "x := MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 87,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "MARK MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 88,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "CHOOSE OTHER extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 89,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "MARK   +  1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 90,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 91,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 92,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 93,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 94,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM, rest\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 95,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "? CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 96,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "x := CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 97,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 98,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE OTHER extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 99,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE   FROM   +  1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 100,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 101,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 102,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 103,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 104,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM, rest\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 105,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "? CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 106,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "x := CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 107,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 108,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE OTHER extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 109,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE   FROM   +  1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 110,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 111,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 112,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 113,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 114,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM, rest\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 115,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "? CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 116,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "x := CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 117,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 118,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE OTHER extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 119,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE   FROM   +  1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 120,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 121,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "MARK extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 122,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "MARK + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 123,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "MARK(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 124,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "MARK, rest\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 125,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "? MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 126,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "x := MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 127,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "MARK MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 128,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "CHOOSE OTHER extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 129,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "MARK   +  1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 130,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 131,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 132,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 133,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 134,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM, rest\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 135,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "? CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 136,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "x := CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 137,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 138,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE OTHER extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 139,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE   FROM   +  1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 140,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 141,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 142,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 143,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 144,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM, rest\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 145,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "? CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 146,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "x := CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 147,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 148,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE OTHER extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 149,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE   FROM   +  1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 150,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "MARK\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 151,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 152,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 153,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 154,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM, rest\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 155,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "? CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 156,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "x := CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 157,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE FROM CHOOSE FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 158,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE OTHER extra\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 159,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "CHOOSE   FROM   +  1\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 0,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "2\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 1,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "1 BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 2,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "2 BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 3,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "1 BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 4,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "1 BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 5,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "\"FOO BAR\" + 7\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 6,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "'FOO BAR' + 7\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 7,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 8,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "FOO BARFOO\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 9,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "FOOBAR BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 10,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 11,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "7\n7\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 12,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 3: fixed translation expansion too deep (recursive translate?)\n"
+    },
+    {
+      "group": "extra",
+      "case": 13,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 14,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "  7\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 15,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "FOO BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 16,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: unknown directive #unxtranslate in this PoC\n"
+    },
+    {
+      "group": "extra",
+      "case": 17,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 18,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 19,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "2\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 20,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "1 BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 21,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "2 BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 22,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "1 BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 23,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "1 BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 24,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "\"FOO BAR\" + 7\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 25,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "'FOO BAR' + 7\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 26,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7(1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 27,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "FOO BARFOO\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 28,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "FOOBAR BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 29,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 30,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "7\n7\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 31,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 3: fixed translation expansion too deep (recursive translate?)\n"
+    },
+    {
+      "group": "extra",
+      "case": 32,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 33,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "  7\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 34,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 35,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: unknown directive #unxtranslate in this PoC\n"
+    },
+    {
+      "group": "extra",
+      "case": 36,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 37,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "abbr",
+      "case": 0,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "abbr",
+      "case": 1,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "abbr",
+      "case": 2,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "CHOOSE FRO\n",
+      "own_error": ""
+    },
+    {
+      "group": "abbr",
+      "case": 3,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "abbr",
+      "case": 4,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "abbr",
+      "case": 5,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "FOO BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "abbr",
+      "case": 6,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "FOO BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "abbr",
+      "case": 7,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "abbr",
+      "case": 8,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "abbr",
+      "case": 9,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "CHOO FROM\n",
+      "own_error": ""
+    },
+    {
+      "group": "abbr",
+      "case": 10,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "CHOOSE FRO\n",
+      "own_error": ""
+    },
+    {
+      "group": "abbr",
+      "case": 11,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "choo from\n",
+      "own_error": ""
+    },
+    {
+      "group": "abbr",
+      "case": 12,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "abbr",
+      "case": 13,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "abbr",
+      "case": 14,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "FOO BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "abbr",
+      "case": 15,
+      "kind": "fixed supported token match",
+      "own_exit": 0,
+      "own_output": "FOO BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 0,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 1,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "OUT(BAR + 1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 2,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "? FOO BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 3,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "OUT(BAR BAZ)\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 4,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 5,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "OUT(BAR + 1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 6,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "? FOO BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 7,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "OUT(BAR BAZ)\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 8,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 9,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "FOO BAR + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 10,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "? FOO BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 11,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "FOO BAR BAZ\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 12,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 13,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "FOO BAR + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 14,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "? FOO BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 15,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "FOO BAR BAZ\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 16,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 17,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "OUT(BAR + 1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 18,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "? FOO BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 19,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "OUT(BAR BAZ)\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 20,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 21,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "OUT(BAR + 1)\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 22,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "? FOO BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 23,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "OUT(BAR BAZ)\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 24,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 25,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "FOO BAR + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 26,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "? FOO BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 27,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "FOO BAR BAZ\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 28,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 29,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "FOO BAR + 1\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 30,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "? FOO BAR\n",
+      "own_error": ""
+    },
+    {
+      "group": "mixed",
+      "case": 31,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "FOO BAR BAZ\n",
+      "own_error": ""
+    },
+    {
+      "group": "temporal",
+      "case": 0,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "7\n7\n7\n",
+      "own_error": ""
+    },
+    {
+      "group": "temporal",
+      "case": 1,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "7\n7\n7\n",
+      "own_error": ""
+    },
+    {
+      "group": "temporal",
+      "case": 2,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "7\n7\n7\n",
+      "own_error": ""
+    },
+    {
+      "group": "temporal",
+      "case": 3,
+      "kind": "mixed family baseline preserved;not Harbour compatibility",
+      "own_exit": 0,
+      "own_output": "7\n7\n7\n",
+      "own_error": ""
+    }
+  ]
+}

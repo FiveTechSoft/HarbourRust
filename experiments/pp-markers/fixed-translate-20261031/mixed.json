@@ -1,0 +1,194 @@
+[
+  {
+    "case": 0,
+    "source": "#translate FOO BAR => 7\n#translate FOO <x> => OUT(<x>)\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\nOUT(BAR)\n"
+  },
+  {
+    "case": 1,
+    "source": "#translate FOO BAR => 7\n#translate FOO <x> => OUT(<x>)\nFOO BAR + 1\n",
+    "reference_exit": 0,
+    "reference_output": "\n\nOUT(BAR + 1)\n"
+  },
+  {
+    "case": 2,
+    "source": "#translate FOO BAR => 7\n#translate FOO <x> => OUT(<x>)\n? FOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n? OUT(BAR)\n"
+  },
+  {
+    "case": 3,
+    "source": "#translate FOO BAR => 7\n#translate FOO <x> => OUT(<x>)\nFOO BAR BAZ\n",
+    "reference_exit": 0,
+    "reference_output": "\n\nOUT(BAR) BAZ\n"
+  },
+  {
+    "case": 4,
+    "source": "#translate FOO <x> => OUT(<x>)\n#translate FOO BAR => 7\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7\n"
+  },
+  {
+    "case": 5,
+    "source": "#translate FOO <x> => OUT(<x>)\n#translate FOO BAR => 7\nFOO BAR + 1\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7 + 1\n"
+  },
+  {
+    "case": 6,
+    "source": "#translate FOO <x> => OUT(<x>)\n#translate FOO BAR => 7\n? FOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n? 7\n"
+  },
+  {
+    "case": 7,
+    "source": "#translate FOO <x> => OUT(<x>)\n#translate FOO BAR => 7\nFOO BAR BAZ\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7 BAZ\n"
+  },
+  {
+    "case": 8,
+    "source": "#translate FOO BAR => 7\n#translate FOO <x:BAR> => 8\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n8\n"
+  },
+  {
+    "case": 9,
+    "source": "#translate FOO BAR => 7\n#translate FOO <x:BAR> => 8\nFOO BAR + 1\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n8 + 1\n"
+  },
+  {
+    "case": 10,
+    "source": "#translate FOO BAR => 7\n#translate FOO <x:BAR> => 8\n? FOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n? 8\n"
+  },
+  {
+    "case": 11,
+    "source": "#translate FOO BAR => 7\n#translate FOO <x:BAR> => 8\nFOO BAR BAZ\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n8 BAZ\n"
+  },
+  {
+    "case": 12,
+    "source": "#translate FOO <x:BAR> => 8\n#translate FOO BAR => 7\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7\n"
+  },
+  {
+    "case": 13,
+    "source": "#translate FOO <x:BAR> => 8\n#translate FOO BAR => 7\nFOO BAR + 1\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7 + 1\n"
+  },
+  {
+    "case": 14,
+    "source": "#translate FOO <x:BAR> => 8\n#translate FOO BAR => 7\n? FOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n? 7\n"
+  },
+  {
+    "case": 15,
+    "source": "#translate FOO <x:BAR> => 8\n#translate FOO BAR => 7\nFOO BAR BAZ\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7 BAZ\n"
+  },
+  {
+    "case": 16,
+    "source": "#xtranslate FOO BAR => 7\n#xtranslate FOO <x> => OUT(<x>)\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\nOUT(BAR)\n"
+  },
+  {
+    "case": 17,
+    "source": "#xtranslate FOO BAR => 7\n#xtranslate FOO <x> => OUT(<x>)\nFOO BAR + 1\n",
+    "reference_exit": 0,
+    "reference_output": "\n\nOUT(BAR + 1)\n"
+  },
+  {
+    "case": 18,
+    "source": "#xtranslate FOO BAR => 7\n#xtranslate FOO <x> => OUT(<x>)\n? FOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n? OUT(BAR)\n"
+  },
+  {
+    "case": 19,
+    "source": "#xtranslate FOO BAR => 7\n#xtranslate FOO <x> => OUT(<x>)\nFOO BAR BAZ\n",
+    "reference_exit": 0,
+    "reference_output": "\n\nOUT(BAR) BAZ\n"
+  },
+  {
+    "case": 20,
+    "source": "#xtranslate FOO <x> => OUT(<x>)\n#xtranslate FOO BAR => 7\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7\n"
+  },
+  {
+    "case": 21,
+    "source": "#xtranslate FOO <x> => OUT(<x>)\n#xtranslate FOO BAR => 7\nFOO BAR + 1\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7 + 1\n"
+  },
+  {
+    "case": 22,
+    "source": "#xtranslate FOO <x> => OUT(<x>)\n#xtranslate FOO BAR => 7\n? FOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n? 7\n"
+  },
+  {
+    "case": 23,
+    "source": "#xtranslate FOO <x> => OUT(<x>)\n#xtranslate FOO BAR => 7\nFOO BAR BAZ\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7 BAZ\n"
+  },
+  {
+    "case": 24,
+    "source": "#xtranslate FOO BAR => 7\n#xtranslate FOO <x:BAR> => 8\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n8\n"
+  },
+  {
+    "case": 25,
+    "source": "#xtranslate FOO BAR => 7\n#xtranslate FOO <x:BAR> => 8\nFOO BAR + 1\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n8 + 1\n"
+  },
+  {
+    "case": 26,
+    "source": "#xtranslate FOO BAR => 7\n#xtranslate FOO <x:BAR> => 8\n? FOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n? 8\n"
+  },
+  {
+    "case": 27,
+    "source": "#xtranslate FOO BAR => 7\n#xtranslate FOO <x:BAR> => 8\nFOO BAR BAZ\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n8 BAZ\n"
+  },
+  {
+    "case": 28,
+    "source": "#xtranslate FOO <x:BAR> => 8\n#xtranslate FOO BAR => 7\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7\n"
+  },
+  {
+    "case": 29,
+    "source": "#xtranslate FOO <x:BAR> => 8\n#xtranslate FOO BAR => 7\nFOO BAR + 1\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7 + 1\n"
+  },
+  {
+    "case": 30,
+    "source": "#xtranslate FOO <x:BAR> => 8\n#xtranslate FOO BAR => 7\n? FOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n? 7\n"
+  },
+  {
+    "case": 31,
+    "source": "#xtranslate FOO <x:BAR> => 8\n#xtranslate FOO BAR => 7\nFOO BAR BAZ\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7 BAZ\n"
+  }
+]

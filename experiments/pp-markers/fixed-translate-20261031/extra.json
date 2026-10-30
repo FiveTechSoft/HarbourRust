@@ -1,0 +1,268 @@
+[
+  {
+    "case": 0,
+    "source": "#translate FOO => 1\n#translate FOO BAR => 2\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n2\n",
+    "reference_error": ""
+  },
+  {
+    "case": 1,
+    "source": "#translate FOO BAR => 2\n#translate FOO => 1\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n1 BAR\n",
+    "reference_error": ""
+  },
+  {
+    "case": 2,
+    "source": "#translate FOO => 1\n#translate FOO => 2\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n2 BAR\n",
+    "reference_error": ""
+  },
+  {
+    "case": 3,
+    "source": "#translate FOO => 1\n#command FOO BAR => 3\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n1 BAR\n",
+    "reference_error": ""
+  },
+  {
+    "case": 4,
+    "source": "#command FOO BAR => 3\n#translate FOO => 1\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n1 BAR\n",
+    "reference_error": ""
+  },
+  {
+    "case": 5,
+    "source": "#translate FOO BAR => 7\n\"FOO BAR\" + FOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\"FOO BAR\" + 7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 6,
+    "source": "#translate FOO BAR => 7\n'FOO BAR' + FOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\"FOO BAR\" + 7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 7,
+    "source": "#translate FOO BAR => 7\nFOO BAR(1)\n",
+    "reference_exit": 0,
+    "reference_output": "\n7(1)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 8,
+    "source": "#translate FOO BAR => 7\nFOO BARFOO\n",
+    "reference_exit": 0,
+    "reference_output": "\nFOO BARFOO\n",
+    "reference_error": ""
+  },
+  {
+    "case": 9,
+    "source": "#translate FOO BAR => 7\nFOOBAR BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\nFOOBAR BAR\n",
+    "reference_error": ""
+  },
+  {
+    "case": 10,
+    "source": "#translate FOO BAR => 7\nFOO BAR // FOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 11,
+    "source": "#translate FOO BAR => 7\nFOO BAR ; FOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n7 ; 7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 12,
+    "source": "#translate FOO => BAR\n#translate BAR => FOO\nFOO\n",
+    "reference_exit": 1,
+    "reference_output": "\n\nBAR\n",
+    "reference_error": ""
+  },
+  {
+    "case": 13,
+    "source": "#translate FOO => BAR\n#translate BAR => 7\nFOO\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 14,
+    "source": "#translate FOO =>\nFOO FOO 7\n",
+    "reference_exit": 0,
+    "reference_output": "\n 7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 15,
+    "source": "#translate FOO BAR => 7\n#untranslate FOO BAR => 7\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\nFOO BAR\n",
+    "reference_error": ""
+  },
+  {
+    "case": 16,
+    "source": "#translate FOO BAR => 7\n#unxtranslate FOO BAR => 7\nFOO BAR\n",
+    "reference_exit": 1,
+    "reference_output": "\n\n7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 17,
+    "source": "#translate FOO BAR => 7\n#uncommand FOO BAR => 7\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 18,
+    "source": "#translate FOO BAR => 7\n#uxcommand FOO BAR => 7\nFOO BAR\n",
+    "reference_exit": 1,
+    "reference_output": "\n\n7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 19,
+    "source": "#xtranslate FOO => 1\n#xtranslate FOO BAR => 2\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n2\n",
+    "reference_error": ""
+  },
+  {
+    "case": 20,
+    "source": "#xtranslate FOO BAR => 2\n#xtranslate FOO => 1\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n1 BAR\n",
+    "reference_error": ""
+  },
+  {
+    "case": 21,
+    "source": "#xtranslate FOO => 1\n#xtranslate FOO => 2\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n2 BAR\n",
+    "reference_error": ""
+  },
+  {
+    "case": 22,
+    "source": "#xtranslate FOO => 1\n#command FOO BAR => 3\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n1 BAR\n",
+    "reference_error": ""
+  },
+  {
+    "case": 23,
+    "source": "#command FOO BAR => 3\n#xtranslate FOO => 1\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n1 BAR\n",
+    "reference_error": ""
+  },
+  {
+    "case": 24,
+    "source": "#xtranslate FOO BAR => 7\n\"FOO BAR\" + FOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\"FOO BAR\" + 7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 25,
+    "source": "#xtranslate FOO BAR => 7\n'FOO BAR' + FOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\"FOO BAR\" + 7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 26,
+    "source": "#xtranslate FOO BAR => 7\nFOO BAR(1)\n",
+    "reference_exit": 0,
+    "reference_output": "\n7(1)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 27,
+    "source": "#xtranslate FOO BAR => 7\nFOO BARFOO\n",
+    "reference_exit": 0,
+    "reference_output": "\nFOO BARFOO\n",
+    "reference_error": ""
+  },
+  {
+    "case": 28,
+    "source": "#xtranslate FOO BAR => 7\nFOOBAR BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\nFOOBAR BAR\n",
+    "reference_error": ""
+  },
+  {
+    "case": 29,
+    "source": "#xtranslate FOO BAR => 7\nFOO BAR // FOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 30,
+    "source": "#xtranslate FOO BAR => 7\nFOO BAR ; FOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n7 ; 7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 31,
+    "source": "#xtranslate FOO => BAR\n#xtranslate BAR => FOO\nFOO\n",
+    "reference_exit": 1,
+    "reference_output": "\n\nBAR\n",
+    "reference_error": ""
+  },
+  {
+    "case": 32,
+    "source": "#xtranslate FOO => BAR\n#xtranslate BAR => 7\nFOO\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 33,
+    "source": "#xtranslate FOO =>\nFOO FOO 7\n",
+    "reference_exit": 0,
+    "reference_output": "\n 7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 34,
+    "source": "#xtranslate FOO BAR => 7\n#untranslate FOO BAR => 7\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 35,
+    "source": "#xtranslate FOO BAR => 7\n#unxtranslate FOO BAR => 7\nFOO BAR\n",
+    "reference_exit": 1,
+    "reference_output": "\n\n7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 36,
+    "source": "#xtranslate FOO BAR => 7\n#uncommand FOO BAR => 7\nFOO BAR\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n7\n",
+    "reference_error": ""
+  },
+  {
+    "case": 37,
+    "source": "#xtranslate FOO BAR => 7\n#uxcommand FOO BAR => 7\nFOO BAR\n",
+    "reference_exit": 1,
+    "reference_output": "\n\n7\n",
+    "reference_error": ""
+  }
+]

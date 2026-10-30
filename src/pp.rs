@@ -43,6 +43,7 @@ pub struct Pp {
 pub struct Cmd {
     pattern: Vec<String>, // tokens; "<name>" marks a capture
     result: String,
+    translation: bool, // non-call translate retains identity/order alongside commands
     restricted_exact: bool, // X directives disallow abbreviation in new lists
 }
 
@@ -600,7 +601,7 @@ fn register_command(text: &str, pp: &mut Pp, line: usize) -> Result<bool, String
     validate_markers(&pattern, line)?;
     let result = arg[arrow+2..].trim().to_string();
     validate_result_markers(&pattern, &result, line, true)?;
-    pp.cmds.push(Cmd { pattern, result, restricted_exact: dir.starts_with('X') });
+    pp.cmds.push(Cmd { pattern, result, translation: false, restricted_exact: dir.starts_with('X') });
     Ok(true)
 }
 
@@ -921,9 +922,9 @@ fn resolve_result_brackets(text: &str, bound: &std::collections::HashSet<String>
 // different result removes nothing); one directive removes ONE instance of
 // a duplicated rule (b37f); removing a never-defined rule is silent
 // (b37e). Returns true when a rule was removed.
-fn remove_rule(cmds: &mut Vec<Cmd>, pattern: &[String], result: &str) -> bool {
+fn remove_rule_kind(cmds: &mut Vec<Cmd>, pattern: &[String], result: &str, translation: bool, exact: Option<bool>) -> bool {
     if let Some(pos) = cmds.iter().rposition(|c| {
-        c.pattern.len() == pattern.len()
+        c.translation == translation && exact.map(|e|c.restricted_exact == e).unwrap_or(true) && c.pattern.len() == pattern.len()
             && c.pattern.iter().zip(pattern.iter()).all(|(a, b)| {
                 let am = a.starts_with('<') && a.ends_with('>');
                 let bm = b.starts_with('<') && b.ends_with('>');
@@ -938,7 +939,46 @@ fn remove_rule(cmds: &mut Vec<Cmd>, pattern: &[String], result: &str) -> bool {
     }
 }
 
-fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<String>, String> {
+fn fixed_translation(c: &Cmd) -> bool {
+    c.translation && c.pattern.iter().all(|p| p != "[" && p != "]" && !(p.starts_with('<') && p.ends_with('>')))
+}
+// A mixed family stays entirely on its historical path. Captured translation
+// priority/expression boundaries are intentionally not redefined by this slice.
+fn active_fixed_translation(c: &Cmd, rules: &[Cmd], calls: &[Cmd]) -> bool {
+    fixed_translation(c) && !rules.iter().filter(|other| other.translation && !fixed_translation(other)).chain(calls.iter()).any(|other| c.pattern.first().zip(other.pattern.first()).map(|(a,b)|lit_match(a,b)||lit_match(b,a)).unwrap_or(false))
+}
+fn expand_fixed_translations(text: &str, rules: &[Cmd], calls: &[Cmd], line: usize) -> Result<String, String> {
+    if !rules.iter().any(|c|active_fixed_translation(c,rules,calls)) { return Ok(text.to_string()); }
+    let mut current = text.to_string(); let mut replacements = 0usize;
+    for _ in 0..16 {
+        if current.len() > 1_048_576 { return Err(format!("line {}: fixed translation output limit exceeded",line)); }
+        let tokens = cmd_tokens(&current);
+        let spans = source_spans(&current, &tokens).map_err(|e|format!("line {}: {}",line,e))?;
+        let mut out = String::new(); let mut at = 0; let mut i = 0; let mut changed = false;
+        while i < tokens.len() {
+            let token = &tokens[i];
+            if token.starts_with('"') || token.starts_with('\'') { i += 1; continue; }
+            let found = rules.iter().rev().find(|c| active_fixed_translation(c,rules,calls)
+                && i+c.pattern.len()<=tokens.len()
+                && c.pattern.iter().zip(&tokens[i..]).all(|(p,t)|
+                    if c.restricted_exact {t.eq_ignore_ascii_case(p)} else {lit_match(t,p)}));
+            if let Some(rule) = found {
+                replacements += 1;
+                if replacements > 10000 { return Err(format!("line {}: fixed translation replacement limit exceeded",line)); }
+                let (start,_) = spans[&(tokens[i].as_ptr() as usize)];
+                let (_,end) = spans[&(tokens[i+rule.pattern.len()-1].as_ptr() as usize)];
+                out.push_str(&current[at..start]);
+                out.push_str(&render_command(rule,&[],&current,&tokens,line)?);
+                at=end; i+=rule.pattern.len(); changed=true;
+            } else { i+=1; }
+        }
+        if !changed { return Ok(current); }
+        out.push_str(&current[at..]); current=out;
+    }
+    Err(format!("line {}: fixed translation expansion too deep (recursive translate?)",line))
+}
+
+fn apply_commands(line: &str, cmds: &[Cmd], calls: &[Cmd], fixed_enabled: bool, line_no: usize) -> Result<Option<String>, String> {
     let src = cmd_tokens(line);
     if src.is_empty() { return Ok(None); }
     // Harbour picks the MOST SPECIFIC matching rule (most literal words),
@@ -947,6 +987,7 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
     let mut best: Option<(usize, usize)> = None; // (literal count, index)
     let mut best_caps: Vec<Capture> = Vec::new();
     for (ci, c) in cmds.iter().enumerate() {
+        if fixed_enabled && active_fixed_translation(c,cmds,calls) { continue; }
         let first = match c.pattern.first() { Some(f) => f, None => continue };
         if first.starts_with('<') { continue; }
         if !lit_match(&src[0], first) { continue; }
@@ -1369,10 +1410,12 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     // Match each source statement separately. Expansion can
                     // itself emit separators; split again only after expansion.
                     let mut cur = statement.trim().to_string();
+                    let fixed_enabled = expand(&cur,&pp.defs,line).map(|expanded|expanded == cur).unwrap_or(false);
                     let mut depth = 0usize;
                     loop {
                         if cur.trim_start().starts_with('#') { break; }
-                        match apply_commands(&cur, &pp.cmds, line)? {
+                        if fixed_enabled { cur = expand_fixed_translations(&cur,&pp.cmds,&pp.call_rules,line)?; }
+                        match apply_commands(&cur, &pp.cmds, &pp.call_rules, fixed_enabled, line)? {
                             Some(x) => {
                                 depth += 1;
                                 if depth > 16 { return Err(format!("line {}: command expansion too deep (recursive command?)", line)); }
@@ -1447,7 +1490,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     validate_markers(&pattern, line)?;
                     let result = arg[arrow + 2..].trim().to_string();
                     validate_result_markers(&pattern, &result, line, false)?;
-                    pp.cmds.push(Cmd { pattern, result, restricted_exact: dir.starts_with('X') });
+                    pp.cmds.push(Cmd { pattern, result, translation: false, restricted_exact: dir.starts_with('X') });
                 }
             }
             "TRANSLATE" | "XTRANSLATE" => {
@@ -1462,7 +1505,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                             let pattern = cmd_tokens(pat);
                             validate_markers(&pattern, line)?;
                             validate_result_markers(&pattern, &result, line, true)?;
-                            pp.call_rules.push(Cmd { pattern, result, restricted_exact: dir.starts_with('X') });
+                            pp.call_rules.push(Cmd { pattern, result, translation: false, restricted_exact: dir.starts_with('X') });
                         }
                         // Non-call form: statement-start rule, same machinery
                         // as #command (probes b19-b21: Harbour applies it at
@@ -1477,7 +1520,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                             }
                             validate_markers(&pattern, line)?;
                             validate_result_markers(&pattern, &result, line, false)?;
-                            pp.cmds.push(Cmd { pattern, result, restricted_exact: dir.starts_with('X') });
+                            pp.cmds.push(Cmd { pattern, result, translation: true, restricted_exact: dir.starts_with('X') });
                         }
                     }
                 }
@@ -1487,7 +1530,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     let arrow = arg.find("=>").ok_or_else(|| format!("line {}: #{} needs `pattern => result`", line, dir.to_lowercase()))?;
                     let pattern = cmd_tokens(arg[..arrow].trim());
                     let result = arg[arrow + 2..].trim().to_string();
-                    remove_rule(&mut pp.cmds, &pattern, &result);
+                    remove_rule_kind(&mut pp.cmds, &pattern, &result, false, None);
                 }
             }
             "UNTRANSLATE" | "UXTRANSLATE" | "XUNTRANSLATE" => {
@@ -1508,7 +1551,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                         }
                         _ => {
                             let pattern = cmd_tokens(pat);
-                            remove_rule(&mut pp.cmds, &pattern, &result);
+                            remove_rule_kind(&mut pp.cmds, &pattern, &result, true, if dir == "UXTRANSLATE" { None } else { Some(dir != "UNTRANSLATE") });
                         }
                     }
                 }
