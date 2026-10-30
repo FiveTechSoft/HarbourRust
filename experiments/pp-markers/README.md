@@ -447,3 +447,26 @@ unterminated dotted token. No new complete original,main merge,class runtime,
 Dyn or ownership contract,size or speed claim follows. General prefix
 translation,full Harbour expression grammar and lexical reemission remain
 open;this is a measured slice,not all #translate syntax.
+
+## Existing lexical atoms survive capture/reemission
+
+cmd_tokens now keeps existing lexer dotted logical atoms and compound
+operators intact,without fusing whitespace-separated punctuation. This fixes
+`.T.` becoming `. T .`,and `:=`,`++`,`==`,`<=` and related existing operators
+being split. It adds no lexer grammar or operator semantics. Alias `->` is
+not recognized by this compiler lexer and stays outside this change. Strings
+remain raw. Harbour may normalize .NOT. to !;the oracle permits this semantic
+normalization instead of pretending textual identity.
+
+52compound-atom preprocessing checks pass;four alias observations remain
+outside scope,not56passes. Seven own programs are byte-exact with fresh
+Harbour. Two negatives ensure spaced punctuation is not silently fused.
+Default battery1168PASS;LLVM368PASS. Six positive atom programs run under
+both backends/targets. The seventh,power**,is default-only because the existing
+LLVM scalar slice rejects its folded FloatV;this limitation is unchanged and
+is not hidden as an LLVM pass. Fourteen reviewed originals are exact again.
+
+Compile-only268x4 acceptance remains21/15Linux20/14Windows. Six first
+diagnostics move,but none is a newly complete original. General lexical
+reconstruction,stringify,generated directives outside command/xcommand,
+class runtime and main date work are not changed. No size/speed claim.

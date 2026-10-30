@@ -1155,3 +1155,12 @@ neg tests/t1156_pp_call_unknown_neg.hb unknown result marker
 neg tests/t1157_pp_call_case_neg.hb unknown result marker
 neg tests/t1158_pp_call_recursive_neg.hb translation expansion too deep
 neg tests/t1159_pp_call_removed_neg.hb unknown function
+pos tests/t1160_pp_atoms_logical.hb \n.T.\n.T.\n.F.\n.T.
+pos tests/t1161_pp_atoms_compare.hb \n.T.\n.T.\n.T.\n.T.\n.T.
+pos tests/t1162_pp_atoms_assign.hb \n        42
+pos tests/t1163_pp_atoms_increment.hb \n        42\n        41
+pos tests/t1164_pp_atoms_power.hb \n         8.00
+pos tests/t1165_pp_atoms_call.hb \n.T.\n.T.
+pos tests/t1166_pp_atoms_quoted.hb \n. T . : = + +
+neg tests/t1167_pp_atoms_spaced_assign_neg.hb expected
+neg tests/t1168_pp_atoms_spaced_logical_neg.hb unterminated dotted word

@@ -422,6 +422,23 @@ fn cmd_tokens(text: &str) -> Vec<String> {
     while i < b.len() {
         let c = b[i] as char;
         if c.is_whitespace() { i += 1; continue; }
+        // Preserve only compound atoms already recognized by the source
+        // lexer. Whitespace-separated punctuation must never be fused.
+        if c == '.' {
+            if let Some(end) = text[i+1..].find('.') {
+                let end = i + 1 + end;
+                let word = &text[i+1..end];
+                if ["T","F","AND","OR","NOT"].iter().any(|w| word.eq_ignore_ascii_case(w)) {
+                    out.push(text[i..=end].to_string()); i = end + 1; continue;
+                }
+            }
+        }
+        if i + 1 < b.len() {
+            let pair = &b[i..i+2];
+            if [b":=",b"::",b"++",b"--",b"**",b"==",b"=>",b"!=",b"<=",b">=",b"<>",b"??"].iter().any(|p| pair == *p) {
+                out.push(text[i..i+2].to_string()); i += 2; continue;
+            }
+        }
         if c == '<' {
             let mut j = i;
             while j < b.len() && b[j] != b'>' { j += 1; }

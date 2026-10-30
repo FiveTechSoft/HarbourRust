@@ -1,0 +1,404 @@
+[
+  {
+    "file": "tests/dyn.prg",
+    "before": {
+      "file": "tests/dyn.prg",
+      "sha256": "4ed4b8891d1a390d0beb3351cc7630b74b7d8f6dea6627c8a74a7152ec0a47cd",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 125: expected a member name after `:`, got Some(Eq)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 125: expected a member name after `:`, got Some(Eq)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 125: expected a member name after `:`, got Some(Eq)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 125: expected a member name after `:`, got Some(Eq)"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/dyn.prg",
+      "sha256": "4ed4b8891d1a390d0beb3351cc7630b74b7d8f6dea6627c8a74a7152ec0a47cd",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 125: expected `,` or `)` in call arguments, got Some(Assign)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 125: expected `,` or `)` in call arguments, got Some(Assign)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 125: expected `,` or `)` in call arguments, got Some(Assign)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 125: expected `,` or `)` in call arguments, got Some(Assign)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/rddtest/cdxcl52.prg",
+    "before": {
+      "file": "tests/rddtest/cdxcl52.prg",
+      "sha256": "3c109e79cafd415b17ad7206f0883bf05298c0d4d67f62efc6712a63039b496a",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rddtest/cdxcl52.prg",
+      "sha256": "3c109e79cafd415b17ad7206f0883bf05298c0d4d67f62efc6712a63039b496a",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/rddtest/cdxcl53.prg",
+    "before": {
+      "file": "tests/rddtest/cdxcl53.prg",
+      "sha256": "ccbd108afa3bd29837265c2c10aa3fcf248805bb7f20e7b26e831c41982ec81d",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rddtest/cdxcl53.prg",
+      "sha256": "ccbd108afa3bd29837265c2c10aa3fcf248805bb7f20e7b26e831c41982ec81d",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/rddtest/ntxcl52.prg",
+    "before": {
+      "file": "tests/rddtest/ntxcl52.prg",
+      "sha256": "6dc1db2b584edddbfb257e6a79e0de93d643f5a77ff4dd2f022801d4d3c24c22",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rddtest/ntxcl52.prg",
+      "sha256": "6dc1db2b584edddbfb257e6a79e0de93d643f5a77ff4dd2f022801d4d3c24c22",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/rddtest/ntxcl53.prg",
+    "before": {
+      "file": "tests/rddtest/ntxcl53.prg",
+      "sha256": "38d8aaab15ecddd3f146db9bd7ff653d1bbf268dc8047a1367bf4c57ff8a68a0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 237: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rddtest/ntxcl53.prg",
+      "sha256": "38d8aaab15ecddd3f146db9bd7ff653d1bbf268dc8047a1367bf4c57ff8a68a0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 238: character not allowed `#` (U+0023)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/stripem.prg",
+    "before": {
+      "file": "tests/stripem.prg",
+      "sha256": "ba52b8c5eaac822f347e54f4008dfbc0a53825d17107e52aa4b64d3aeedcbe97",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 455: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 455: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 455: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 455: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/stripem.prg",
+      "sha256": "ba52b8c5eaac822f347e54f4008dfbc0a53825d17107e52aa4b64d3aeedcbe97",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 459: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 459: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 459: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 459: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  }
+]

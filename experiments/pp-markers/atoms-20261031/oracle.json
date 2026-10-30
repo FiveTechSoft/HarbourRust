@@ -1,0 +1,341 @@
+{
+  "scope": "52compound-token checks plus4unsupported alias observations,not56passes. Runtime checks are separate.",
+  "rows": [
+    {
+      "case": 0,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .T. )\n",
+      "reference_output": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 1,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .F. )\n",
+      "reference_output": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 2,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .NOT. .F. )\n",
+      "reference_output": "\nOUT( ! .F. )\n"
+    },
+    {
+      "case": 3,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .T. .AND. .F. )\n",
+      "reference_output": "\nOUT( .T. .AND. .F. )\n"
+    },
+    {
+      "case": 4,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .F. .OR. .T. )\n",
+      "reference_output": "\nOUT( .F. .OR. .T. )\n"
+    },
+    {
+      "case": 5,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( 1 <= 2 )\n",
+      "reference_output": "\nOUT( 1 <= 2 )\n"
+    },
+    {
+      "case": 6,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( 1 <> 2 )\n",
+      "reference_output": "\nOUT( 1 <> 2 )\n"
+    },
+    {
+      "case": 7,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( 1 == 1 )\n",
+      "reference_output": "\nOUT( 1 == 1 )\n"
+    },
+    {
+      "case": 8,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( a := 1 )\n",
+      "reference_output": "\nOUT( a:=1 )\n"
+    },
+    {
+      "case": 9,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( a ++ )\n",
+      "reference_output": "\nOUT( a++ )\n"
+    },
+    {
+      "case": 10,
+      "comparison": "existing unsupported alias token path,not pass",
+      "own_output": "OUT( a - > b )\n",
+      "reference_output": "\nOUT( a->b )\n"
+    },
+    {
+      "case": 11,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( alpha ( ) )\n",
+      "reference_output": "\nOUT( alpha() )\n"
+    },
+    {
+      "case": 12,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( \".T. := #\" )\n",
+      "reference_output": "\nOUT( \".T. := #\" )\n"
+    },
+    {
+      "case": 13,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( a + 1 )\n",
+      "reference_output": "\nOUT( a + 1 )\n"
+    },
+    {
+      "case": 14,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .T. )\n",
+      "reference_output": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 15,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .F. )\n",
+      "reference_output": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 16,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .NOT. .F. )\n",
+      "reference_output": "\nOUT( ! .F. )\n"
+    },
+    {
+      "case": 17,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .T. .AND. .F. )\n",
+      "reference_output": "\nOUT( .T. .AND. .F. )\n"
+    },
+    {
+      "case": 18,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .F. .OR. .T. )\n",
+      "reference_output": "\nOUT( .F. .OR. .T. )\n"
+    },
+    {
+      "case": 19,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( 1 <= 2 )\n",
+      "reference_output": "\nOUT( 1 <= 2 )\n"
+    },
+    {
+      "case": 20,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( 1 <> 2 )\n",
+      "reference_output": "\nOUT( 1 <> 2 )\n"
+    },
+    {
+      "case": 21,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( 1 == 1 )\n",
+      "reference_output": "\nOUT( 1 == 1 )\n"
+    },
+    {
+      "case": 22,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( a := 1 )\n",
+      "reference_output": "\nOUT( a:=1 )\n"
+    },
+    {
+      "case": 23,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( a ++ )\n",
+      "reference_output": "\nOUT( a++ )\n"
+    },
+    {
+      "case": 24,
+      "comparison": "existing unsupported alias token path,not pass",
+      "own_output": "OUT( a - > b )\n",
+      "reference_output": "\nOUT( a->b )\n"
+    },
+    {
+      "case": 25,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( alpha ( ) )\n",
+      "reference_output": "\nOUT( alpha() )\n"
+    },
+    {
+      "case": 26,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( \".T. := #\" )\n",
+      "reference_output": "\nOUT( \".T. := #\" )\n"
+    },
+    {
+      "case": 27,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( a + 1 )\n",
+      "reference_output": "\nOUT( a + 1 )\n"
+    },
+    {
+      "case": 28,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .T. )\n",
+      "reference_output": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 29,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .F. )\n",
+      "reference_output": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 30,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .NOT. .F. )\n",
+      "reference_output": "\nOUT( ! .F. )\n"
+    },
+    {
+      "case": 31,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .T. .AND. .F. )\n",
+      "reference_output": "\nOUT( .T. .AND. .F. )\n"
+    },
+    {
+      "case": 32,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .F. .OR. .T. )\n",
+      "reference_output": "\nOUT( .F. .OR. .T. )\n"
+    },
+    {
+      "case": 33,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( 1 <= 2 )\n",
+      "reference_output": "\nOUT( 1 <= 2 )\n"
+    },
+    {
+      "case": 34,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( 1 <> 2 )\n",
+      "reference_output": "\nOUT( 1 <> 2 )\n"
+    },
+    {
+      "case": 35,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( 1 == 1 )\n",
+      "reference_output": "\nOUT( 1 == 1 )\n"
+    },
+    {
+      "case": 36,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( a := 1 )\n",
+      "reference_output": "\nOUT( a:=1 )\n"
+    },
+    {
+      "case": 37,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( a ++ )\n",
+      "reference_output": "\nOUT( a++ )\n"
+    },
+    {
+      "case": 38,
+      "comparison": "existing unsupported alias token path,not pass",
+      "own_output": "OUT( a - > b )\n",
+      "reference_output": "\nOUT( a->b )\n"
+    },
+    {
+      "case": 39,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( alpha ( ) )\n",
+      "reference_output": "\nOUT( alpha() )\n"
+    },
+    {
+      "case": 40,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( \".T. := #\" )\n",
+      "reference_output": "\nOUT( \".T. := #\" )\n"
+    },
+    {
+      "case": 41,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( a + 1 )\n",
+      "reference_output": "\nOUT( a + 1 )\n"
+    },
+    {
+      "case": 42,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .T. )\n",
+      "reference_output": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 43,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .F. )\n",
+      "reference_output": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 44,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .NOT. .F. )\n",
+      "reference_output": "\nOUT( ! .F. )\n"
+    },
+    {
+      "case": 45,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .T. .AND. .F. )\n",
+      "reference_output": "\nOUT( .T. .AND. .F. )\n"
+    },
+    {
+      "case": 46,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( .F. .OR. .T. )\n",
+      "reference_output": "\nOUT( .F. .OR. .T. )\n"
+    },
+    {
+      "case": 47,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( 1 <= 2 )\n",
+      "reference_output": "\nOUT( 1 <= 2 )\n"
+    },
+    {
+      "case": 48,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( 1 <> 2 )\n",
+      "reference_output": "\nOUT( 1 <> 2 )\n"
+    },
+    {
+      "case": 49,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( 1 == 1 )\n",
+      "reference_output": "\nOUT( 1 == 1 )\n"
+    },
+    {
+      "case": 50,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( a := 1 )\n",
+      "reference_output": "\nOUT( a:=1 )\n"
+    },
+    {
+      "case": 51,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( a ++ )\n",
+      "reference_output": "\nOUT( a++ )\n"
+    },
+    {
+      "case": 52,
+      "comparison": "existing unsupported alias token path,not pass",
+      "own_output": "OUT( a - > b )\n",
+      "reference_output": "\nOUT( a->b )\n"
+    },
+    {
+      "case": 53,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( alpha ( ) )\n",
+      "reference_output": "\nOUT( alpha() )\n"
+    },
+    {
+      "case": 54,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( \".T. := #\" )\n",
+      "reference_output": "\nOUT( \".T. := #\" )\n"
+    },
+    {
+      "case": 55,
+      "comparison": "compound atoms preserved;NOT normalization allowed",
+      "own_output": "OUT( a + 1 )\n",
+      "reference_output": "\nOUT( a + 1 )\n"
+    }
+  ]
+}
