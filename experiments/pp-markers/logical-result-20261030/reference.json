@@ -1,0 +1,47 @@
+{
+  "scope": "Six own-source safe console reference programs,not Harbour originals. Linux Harbour/default exact bytes;LLVM/Linux/Windows comparisons in regression runner.",
+  "rows": [
+    {
+      "file": "tests/t1111_pp_logical_presence.hb",
+      "source_sha256": "cff5f211ac4c45863d00ccb7c5c1fea17177fd34090ad59aa30c85961580afe6",
+      "reference_exit": 0,
+      "stdout_hex": "0a2e462e0a2e542e",
+      "default_exact": true
+    },
+    {
+      "file": "tests/t1112_pp_logical_false_payload.hb",
+      "source_sha256": "c2317242fb12c95b29f0c0ac4ed9a0c3c073902faf99374e4c1568f1ea9560a3",
+      "reference_exit": 0,
+      "stdout_hex": "0a2e542e0a2e542e0a2e542e",
+      "default_exact": true
+    },
+    {
+      "file": "tests/t1113_pp_logical_group.hb",
+      "source_sha256": "ca981b7b25a7a4107c44968a014ac692fa9535bdf5aba1542b97000987d1e59e",
+      "reference_exit": 0,
+      "stdout_hex": "0a0a2e542e",
+      "default_exact": true
+    },
+    {
+      "file": "tests/t1114_pp_logical_mixed.hb",
+      "source_sha256": "e6214ca73b382e0f96b851f2717819ba0a86482f59b2973c683de80e23701c77",
+      "reference_exit": 0,
+      "stdout_hex": "0a2e462e20202020202020202034320a2e542e2020202020202020203432",
+      "default_exact": true
+    },
+    {
+      "file": "tests/t1115_pp_logical_translate.hb",
+      "source_sha256": "f16d0adf9049c14735f41f808db4f421ecc66354a15ddbbf9d2d193aba3951cc",
+      "reference_exit": 0,
+      "stdout_hex": "0a2e462e0a2e542e",
+      "default_exact": true
+    },
+    {
+      "file": "tests/t1116_pp_logical_required.hb",
+      "source_sha256": "23ec0e0c0bfe52b9ac9cc6ceb27b633da9bfa4f0d7fb8c2926af6800b1aceab7",
+      "reference_exit": 0,
+      "stdout_hex": "0a2e542e",
+      "default_exact": true
+    }
+  ]
+}

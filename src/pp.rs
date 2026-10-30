@@ -527,11 +527,13 @@ fn lit_match(src: &str, lit: &str) -> bool {
 // in the pattern is an error at define time.
 fn validate_result_markers(pattern: &[String], result: &str, line: usize) -> Result<(), String> {
     let mut names: Vec<String> = Vec::new();
+    let mut exact_names: Vec<String> = Vec::new();
     for t in pattern {
         if t.starts_with('<') && t.ends_with('>') && t.len() > 2 {
             let inner = &t[1..t.len() - 1];
             let base = marker_name(inner);
             names.push(base.to_lowercase());
+            exact_names.push(base.to_string());
         }
     }
     let rc: Vec<char> = result.chars().collect();
@@ -545,7 +547,11 @@ fn validate_result_markers(pattern: &[String], result: &str, line: usize) -> Res
                 } else {
                     &inner
                 };
-                if !names.contains(&base.to_lowercase()) {
+                let logical = inner.len() >= 2 && inner.starts_with('.') && inner.ends_with('.');
+                let valid = if logical {
+                    exact_names.contains(&inner[1..inner.len()-1].to_string())
+                } else { names.contains(&base.to_lowercase()) };
+                if !valid {
                     return Err(format!("line {}: unknown result marker <{}> (Harbour: E0008)", line, inner));
                 }
                 k += rel + 1;
@@ -711,7 +717,7 @@ fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool) -> Option<V
 // - if it contains NO bound marker (only unbound markers and/or literal
 //   text), the whole bracket is dropped (b36b/b36d, std.ch's `[, <clr>]`
 //   with the optional clause absent -> nothing, not even the comma).
-// `bound` holds the lowercase result needles (`<x>`, `<(x)>`) of markers
+// `bound` holds lowercase result needles (`<x>`, `<(x)>`, `<.x.>`) of markers
 // whose capture is non-empty.
 fn resolve_result_brackets(text: &str, bound: &std::collections::HashSet<String>) -> String {
     fn markers_of(s: &str) -> Vec<String> {
@@ -840,6 +846,7 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
                         if !caps[pi].is_empty() {
                             bound.insert(format!("<{}>", base.to_lowercase()));
                             bound.insert(format!("<({})>", base.to_lowercase()));
+                            bound.insert(format!("<.{}.>", base.to_lowercase()));
                         }
                         pi += 1;
                     }
@@ -861,6 +868,11 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
                     for (needle, insertion) in [
                         (format!("<{}>", base.to_lowercase()), caps[pi].clone()),
                         (format!("<({})>", base.to_lowercase()), format!("( {} )", caps[pi])),
+                        // Logical result is capture presence, not evaluation.
+                        // Emit one atomic dotted literal,without changing the
+                        // existing general capture-token reemission path.
+                        (format!("<.{}.>", base.to_lowercase()),
+                         if caps[pi].is_empty() { ".F.".to_string() } else { ".T.".to_string() }),
                     ] {
                         let low = out.to_lowercase();
                         let mut rebuilt = String::new();

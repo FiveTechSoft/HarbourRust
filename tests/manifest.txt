@@ -1106,3 +1106,13 @@ neg tests/t1107_pp_restricted_prefix_neg.hb incomplete statement
 neg tests/t1108_pp_restricted_quote_neg.hb incomplete statement
 neg tests/t1109_pp_restricted_empty_neg.hb bad match marker
 neg tests/t1110_pp_restricted_macro_neg.hb bad match marker
+pos tests/t1111_pp_logical_presence.hb \n.F.\n.T.
+pos tests/t1112_pp_logical_false_payload.hb \n.T.\n.T.\n.T.
+pos tests/t1113_pp_logical_group.hb \n\n.T.
+pos tests/t1114_pp_logical_mixed.hb \n.F.         42\n.T.         42
+pos tests/t1115_pp_logical_translate.hb \n.F.\n.T.
+pos tests/t1116_pp_logical_required.hb \n.T.
+neg tests/t1117_pp_logical_unknown_neg.hb unknown result marker
+neg tests/t1118_pp_logical_case_neg.hb unknown result marker
+neg tests/t1119_pp_logical_malformed_neg.hb unknown result marker
+neg tests/t1120_pp_logical_nonmatch_neg.hb incomplete statement

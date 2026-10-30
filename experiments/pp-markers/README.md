@@ -198,3 +198,42 @@ This is not class-runtime support and no original source was executed.
 python3 experiments/pp-markers/check_logical_result_gap.py \
   --hbpp /path/to/hbpp --hpp /tmp/hpp --output-dir /tmp/logical-result-gap
 ```
+
+## Logical result increment:2026-10-30
+
+Own MIT shared-pp code now recognizes `<.m.>` as capture presence. Absent
+optional capture emits atomic `.F.`;any nonempty capture emits `.T.`,including
+captured `.F.`,0 and `""`. This does not evaluate the payload. Result optional
+brackets use binding separately:an absent `[<.m.>]` drops the group. Logical
+result names are checked against exact pattern spelling in this increment;
+unknown/miscased/malformed names remain definition errors. Existing ordinary
+result-name behavior is not globally rewritten.
+
+The90 characterization rows replay as88matched logical-result/validation
+checks and2explicit preexisting matcher divergences,not90passes. In the two
+ordinary optional-identifier samples,Harbour leaves two identifiers unmatched
+but our preexisting matcher consumes them. The plain-result version also
+reproduces before the logical increment. This matching issue is not repaired
+or hidden.172restricted-list and190previous probes still pass unchanged.
+
+Six own-source positive programs and four negatives are added to both target
+profiles/backends. The six positives also freshly byte-match Harbour on Linux.
+Default candidate battery1120PASS ALLGREEN;LLVM274PASS (previous254 plus12
+positive target cases and8shared rejection cases).10218/10130Rust controls and
+46exact error traces remain separate. Fourteen already-reviewed originals are
+freshly exact again;no new original is added. Two reference programs and eight
+expected rejects reconfirm untouched general dotted-reemission/stringify gaps.
+
+Compile-only268x4 acceptance remains21/15Linux20/14Windows,with no lost/new
+accepts.24originals move first diagnostic:23now stop at unsupported conditional
+result `<-lck->`;one moves from lexical# to an incomplete-command diagnostic.
+No class/runtime support follows. Production beyond this logical-result form,
+including conditional results,stringify,general lexical reemission,Dyn and
+ownership,is unchanged. Candidate audit labels and frozen historical ledgers
+remain separate;independent rebuilt publication checks have their own logs.
+
+```
+python3 experiments/pp-markers/check_logical_result_implemented.py \
+  --hpp /tmp/current-hpp --before /tmp/pre-logical-hpp \
+  --output-dir /tmp/logical-result
+```

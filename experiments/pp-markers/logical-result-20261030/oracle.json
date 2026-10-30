@@ -1,0 +1,635 @@
+{
+  "scope": "Replay90own logical-result characterization rows.88matched result/validation checks;2explicit preexisting matcher divergences are not passes. No arbitrary lexical reemission claim.",
+  "rows": [
+    {
+      "case": 0,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 1,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 2,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 3,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 4,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 5,
+      "comparison": "preexisting optional-identifier matcher divergence;not a matching pass",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nPROBE alpha beta\n"
+    },
+    {
+      "case": 6,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 7,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 8,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 9,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 10,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 11,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 12,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 13,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 14,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 15,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 16,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 17,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 18,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 19,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT(  )\n",
+      "reference_preprocessed": "\nOUT( )\n"
+    },
+    {
+      "case": 20,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 21,
+      "comparison": "definition rejection matches reference",
+      "own_exit": 1,
+      "own_preprocessed": "",
+      "reference_preprocessed": "\nPROBE meta\n"
+    },
+    {
+      "case": 22,
+      "comparison": "definition rejection matches reference",
+      "own_exit": 1,
+      "own_preprocessed": "",
+      "reference_preprocessed": "\nPROBE alpha\n"
+    },
+    {
+      "case": 23,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 24,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 25,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 26,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 27,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 28,
+      "comparison": "preexisting optional-identifier matcher divergence;not a matching pass",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nPROBE alpha beta\n"
+    },
+    {
+      "case": 29,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 30,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 31,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 32,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 33,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 34,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 35,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 36,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 37,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 38,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 39,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 40,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 41,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 42,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT(  )\n",
+      "reference_preprocessed": "\nOUT( )\n"
+    },
+    {
+      "case": 43,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 44,
+      "comparison": "definition rejection matches reference",
+      "own_exit": 1,
+      "own_preprocessed": "",
+      "reference_preprocessed": "\nPROBE meta\n"
+    },
+    {
+      "case": 45,
+      "comparison": "definition rejection matches reference",
+      "own_exit": 1,
+      "own_preprocessed": "",
+      "reference_preprocessed": "\nPROBE alpha\n"
+    },
+    {
+      "case": 46,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 47,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 48,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 49,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 50,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 51,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 52,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 53,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 54,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 55,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 56,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 57,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 58,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 59,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 60,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 61,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 62,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 63,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 64,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT(  )\n",
+      "reference_preprocessed": "\nOUT( )\n"
+    },
+    {
+      "case": 65,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 66,
+      "comparison": "definition rejection matches reference",
+      "own_exit": 1,
+      "own_preprocessed": "",
+      "reference_preprocessed": "\nPROBE meta\n"
+    },
+    {
+      "case": 67,
+      "comparison": "definition rejection matches reference",
+      "own_exit": 1,
+      "own_preprocessed": "",
+      "reference_preprocessed": "\nPROBE alpha\n"
+    },
+    {
+      "case": 68,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 69,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 70,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 71,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 72,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 73,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 74,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 75,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 76,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 77,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 78,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 79,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 80,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 81,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 82,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 83,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 84,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .F. )\n",
+      "reference_preprocessed": "\nOUT( .F. )\n"
+    },
+    {
+      "case": 85,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 86,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT(  )\n",
+      "reference_preprocessed": "\nOUT( )\n"
+    },
+    {
+      "case": 87,
+      "comparison": "matched logical result token stream",
+      "own_exit": 0,
+      "own_preprocessed": "OUT( .T. )\n",
+      "reference_preprocessed": "\nOUT( .T. )\n"
+    },
+    {
+      "case": 88,
+      "comparison": "definition rejection matches reference",
+      "own_exit": 1,
+      "own_preprocessed": "",
+      "reference_preprocessed": "\nPROBE meta\n"
+    },
+    {
+      "case": 89,
+      "comparison": "definition rejection matches reference",
+      "own_exit": 1,
+      "own_preprocessed": "",
+      "reference_preprocessed": "\nPROBE alpha\n"
+    }
+  ]
+}
