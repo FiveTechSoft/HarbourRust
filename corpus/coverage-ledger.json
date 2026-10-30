@@ -4,8 +4,8 @@
   "counts": {
     "inventory_files": 1203,
     "original_test_sources_compile_audited": 268,
-    "manual_entrypoint_dependency_reviews": 124,
-    "manually_reviewed_or_executed_sources": 138,
+    "manual_entrypoint_dependency_reviews": 130,
+    "manually_reviewed_or_executed_sources": 144,
     "frozen175_default_accepted": 20,
     "frozen175_llvm_accepted": 14,
     "execution_exact_by_profile": {
@@ -11131,8 +11131,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with isolated directory fixture",
+        "families": [
+          "filesystem",
+          "arrays",
+          "closures",
+          "set-format"
+        ],
+        "next_gate": "Use a disposable directory tree, declared enumeration rules and per-array assertions; invalid-argument call is a separate behavior oracle",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -12986,8 +13000,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main(cPortName)",
+        "build_unit": "single source with optional device argument; not a console-only test",
+        "families": [
+          "serial-device",
+          "input-terminal",
+          "byref-buffer",
+          "environment-clock"
+        ],
+        "next_gate": "No real device access by default; separately approved virtual serial endpoint and protocol fixture with cleanup/timeouts",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -13075,8 +13103,24 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main(cParam)",
+        "build_unit": "single source with usage-only and serial-device branches",
+        "families": [
+          "serial-device",
+          "input-terminal",
+          "byref-buffer",
+          "bitwise",
+          "while-control",
+          "environment-clock"
+        ],
+        "next_gate": "Virtual serial fixture and approval before device effects; test fragmented packets and buffer boundaries independently of usage-only branch",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -14523,8 +14567,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with compile-time RDD profile",
+        "families": [
+          "filesystem",
+          "RDD-workarea",
+          "preprocessor-platform",
+          "GT-screen",
+          "arrays"
+        ],
+        "next_gate": "Disposable directory, bounded resources, cleanup after interruption and explicit profile; DBFCDX define is not proof of driver selection",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -19983,8 +20042,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with DBFNTX request and platform SET constants",
+        "families": [
+          "set-runtime",
+          "GT-screen",
+          "preprocessor-platform",
+          "environment-query"
+        ],
+        "next_gate": "Snapshot settings under declared runtime profile and check actual numeric-ID mapping; restore separator; no blanket settings mutation",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -20061,8 +20134,24 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with interactive key/get runtime",
+        "families": [
+          "input-terminal",
+          "GT-screen",
+          "closures",
+          "byref",
+          "dates",
+          "set-format"
+        ],
+        "next_gate": "Controlled input and event/state oracle with key registry restoration; account for nested F8 loop; never run unattended",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {

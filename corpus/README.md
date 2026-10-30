@@ -350,3 +350,22 @@ object setters/getters. idle registers callbacks and waits;langapi changes
 language registry selection;ddate mixes literal dates with clock macro data.
 Comments describing expected file size or old platform bugs are not new oracle
 results. Metadata distinguishes these gates without extending runtime authority.
+
+### Directory/SET/key/serial profiles:130 manual /144 reviewed-or-executed
+
+Six further full-source reviews give130 manual records and144 distinct sources
+in the union;execution stays19/14. No original was compiled or run. adir needs a
+controlled directory tree and separate assertions for unequal output arrays and
+invalid arguments. files creates1000 tables, opens them simultaneously, then
+drops them;interruptions can leave artifacts. Its DBFCDX define alone does not
+select or verify that driver. set mostly queries settings but changes directory
+separator;printed labels beside numeric IDs are not mapping evidence. setkeys
+needs scripted nested input and restoration of the key registry.
+
+com sends modem commands to a serial device;commouse also toggles DTR/RTS and
+flushes/reads device data. Neither is safe to classify as ordinary console IO.
+Use separately authorized virtual serial endpoints, not real hardware. A usage
+return or failed open proves neither protocol nor device support. commouse has
+an undeclared nI and a packet branch that checks four bytes before reading a
+fifth;these are source-review findings,not measured failures or permission to
+rewrite the original. Fragmentation/buffer behavior requires a separate oracle.

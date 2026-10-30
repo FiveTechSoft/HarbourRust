@@ -1,7 +1,7 @@
 {
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "scope": "Manual review provenance and source-family index only. Not parser-recognized syntax or supported feature counts. Dependencies are not installed-availability claims. No compilation/execution. Does not replace17family seed or268audit.",
-  "reviewed_sources": 124,
+  "reviewed_sources": 130,
   "build_projects": 1,
   "family_index": [
     {
@@ -35,7 +35,10 @@
         "tests/output.prg",
         "tests/dev.prg",
         "tests/get.prg",
-        "tests/getblock.prg"
+        "tests/getblock.prg",
+        "tests/files.prg",
+        "tests/set.prg",
+        "tests/setkeys.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -89,7 +92,8 @@
         "tests/usrrdd/exrlx.prg",
         "tests/sortbug.prg",
         "tests/browse.prg",
-        "tests/getblock.prg"
+        "tests/getblock.prg",
+        "tests/files.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -148,7 +152,9 @@
         "tests/array16.prg",
         "tests/arrays.prg",
         "tests/checkbox.prg",
-        "tests/read.prg"
+        "tests/read.prg",
+        "tests/adir.prg",
+        "tests/files.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -172,13 +178,22 @@
       "next_gate": "see individual review records; representation/effect authority remains separate"
     },
     {
+      "family": "bitwise",
+      "reviewed_sources": [
+        "tests/commouse.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
       "family": "byref",
       "reviewed_sources": [
         "tests/mt/mttest05.prg",
         "tests/mt/mttest06.prg",
         "tests/passref.prg",
         "tests/vars.prg",
-        "tests/byref.prg"
+        "tests/byref.prg",
+        "tests/setkeys.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -186,7 +201,9 @@
     {
       "family": "byref-buffer",
       "reviewed_sources": [
-        "tests/fileio.prg"
+        "tests/fileio.prg",
+        "tests/com.prg",
+        "tests/commouse.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -247,7 +264,9 @@
         "tests/codebl2.prg",
         "tests/for.prg",
         "tests/idle.prg",
-        "tests/inline.prg"
+        "tests/inline.prg",
+        "tests/adir.prg",
+        "tests/setkeys.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -342,7 +361,8 @@
         "tests/dates3.prg",
         "tests/ddate.prg",
         "tests/langapi.prg",
-        "tests/output.prg"
+        "tests/output.prg",
+        "tests/setkeys.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -457,7 +477,9 @@
         "tests/ticktime.prg",
         "tests/idle.prg",
         "tests/ddate.prg",
-        "tests/langapi.prg"
+        "tests/langapi.prg",
+        "tests/com.prg",
+        "tests/commouse.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -471,7 +493,8 @@
         "tests/diskspac.prg",
         "tests/version.prg",
         "tests/libname.prg",
-        "tests/flink.prg"
+        "tests/flink.prg",
+        "tests/set.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -561,7 +584,9 @@
         "tests/flink.prg",
         "tests/output.prg",
         "tests/dev.prg",
-        "tests/getblock.prg"
+        "tests/getblock.prg",
+        "tests/adir.prg",
+        "tests/files.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -762,7 +787,10 @@
         "tests/checkbox.prg",
         "tests/read.prg",
         "tests/get.prg",
-        "tests/getblock.prg"
+        "tests/getblock.prg",
+        "tests/setkeys.prg",
+        "tests/com.prg",
+        "tests/commouse.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -1013,7 +1041,9 @@
         "tests/dynwin.prg",
         "tests/wvt_fs.prg",
         "tests/version.prg",
-        "tests/dev.prg"
+        "tests/dev.prg",
+        "tests/files.prg",
+        "tests/set.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -1102,6 +1132,15 @@
       "next_gate": "see individual review records; representation/effect authority remains separate"
     },
     {
+      "family": "serial-device",
+      "reviewed_sources": [
+        "tests/com.prg",
+        "tests/commouse.prg"
+      ],
+      "implementation_status": "not-inferred-from-source-review",
+      "next_gate": "see individual review records; representation/effect authority remains separate"
+    },
+    {
       "family": "set-format",
       "reviewed_sources": [
         "tests/dates.prg",
@@ -1109,7 +1148,9 @@
         "tests/say.prg",
         "tests/browse.prg",
         "tests/dates3.prg",
-        "tests/ddate.prg"
+        "tests/ddate.prg",
+        "tests/adir.prg",
+        "tests/setkeys.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -1120,7 +1161,8 @@
         "tests/set_num.prg",
         "tests/idle.prg",
         "tests/output.prg",
-        "tests/dev.prg"
+        "tests/dev.prg",
+        "tests/set.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -1269,7 +1311,8 @@
       "reviewed_sources": [
         "tests/t1.prg",
         "tests/fib.prg",
-        "tests/ticktime.prg"
+        "tests/ticktime.prg",
+        "tests/commouse.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"

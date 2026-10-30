@@ -2,7 +2,7 @@
   "schema": 1,
   "purpose": "Planning taxonomy for evidence routing,not a complete Harbour grammar or implemented-family count. Each observed manual tag has one primary workstream; sources can span workstreams. Seed compile evidence is linked,not promoted to runtime or complete coverage.",
   "scope_reference": "694428e1c12f726675b19324d62167fa77d68185",
-  "current_manual_review_sources": 124,
+  "current_manual_review_sources": 130,
   "current_seed_families": 17,
   "contracts_note": "Phase/next-gate text does not authorize changes. In particular shared preprocessor permission and new representation/ownership/Dyn effects remain separate.",
   "workstreams": [
@@ -111,7 +111,8 @@
         "rounding",
         "numeric-formatting",
         "hexadecimal",
-        "power-modulus"
+        "power-modulus",
+        "bitwise"
       ],
       "seed_family_ids": [
         "integers",
@@ -261,7 +262,8 @@
         "documentation-extraction",
         "process-shell",
         "compiler-invocation",
-        "network-sockets"
+        "network-sockets",
+        "serial-device"
       ],
       "seed_family_ids": [],
       "next_evidence_gate": "Fixture isolation,artifact checks,subprocess/socket destinations and cleanup are prerequisite gates.",

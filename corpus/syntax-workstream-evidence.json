@@ -20,7 +20,9 @@
         "tests/linecont.prg",
         "tests/pragma.prg",
         "tests/dbgcls.prg",
-        "tests/dev.prg"
+        "tests/dev.prg",
+        "tests/files.prg",
+        "tests/set.prg"
       ],
       "seed_regression_paths": [
         "tests/t07_unicode_string.hb",
@@ -91,7 +93,8 @@
         "tests/and_or.prg",
         "tests/base64.prg",
         "tests/ticktime.prg",
-        "tests/for.prg"
+        "tests/for.prg",
+        "tests/commouse.prg"
       ],
       "seed_regression_paths": [
         "tests/t358_foreach_strord_num.hb",
@@ -135,7 +138,10 @@
         "tests/for.prg",
         "tests/array16.prg",
         "tests/arrays.prg",
-        "tests/omacro.prg"
+        "tests/omacro.prg",
+        "tests/setkeys.prg",
+        "tests/com.prg",
+        "tests/commouse.prg"
       ],
       "seed_regression_paths": [
         "tests/t1040_seq_dyn_limit_neg.hb",
@@ -162,7 +168,8 @@
         "tests/achoice6.prg",
         "tests/objasign.prg",
         "tests/ticktime.prg",
-        "tests/base2.prg"
+        "tests/base2.prg",
+        "tests/commouse.prg"
       ],
       "seed_regression_paths": [
         "tests/t750_float_arith_mixed.hb",
@@ -202,7 +209,9 @@
         "tests/array16.prg",
         "tests/arrays.prg",
         "tests/checkbox.prg",
-        "tests/read.prg"
+        "tests/read.prg",
+        "tests/adir.prg",
+        "tests/files.prg"
       ],
       "seed_regression_paths": [
         "tests/t208_nil_literal.hb",
@@ -252,7 +261,9 @@
         "tests/inline.prg",
         "tests/omacro.prg",
         "tests/get.prg",
-        "tests/getblock.prg"
+        "tests/getblock.prg",
+        "tests/adir.prg",
+        "tests/setkeys.prg"
       ],
       "seed_regression_paths": [
         "tests/t150_cb_eval1.hb",
@@ -317,7 +328,10 @@
         "tests/ddate.prg",
         "tests/langapi.prg",
         "tests/output.prg",
-        "tests/dev.prg"
+        "tests/dev.prg",
+        "tests/adir.prg",
+        "tests/set.prg",
+        "tests/setkeys.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -363,7 +377,8 @@
         "tests/usrrdd/exrlx.prg",
         "tests/sortbug.prg",
         "tests/browse.prg",
-        "tests/getblock.prg"
+        "tests/getblock.prg",
+        "tests/files.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -398,7 +413,11 @@
         "tests/flink.prg",
         "tests/output.prg",
         "tests/dev.prg",
-        "tests/getblock.prg"
+        "tests/getblock.prg",
+        "tests/adir.prg",
+        "tests/files.prg",
+        "tests/com.prg",
+        "tests/commouse.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -442,7 +461,12 @@
         "tests/output.prg",
         "tests/dev.prg",
         "tests/get.prg",
-        "tests/getblock.prg"
+        "tests/getblock.prg",
+        "tests/files.prg",
+        "tests/set.prg",
+        "tests/setkeys.prg",
+        "tests/com.prg",
+        "tests/commouse.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -480,7 +504,10 @@
         "tests/idle.prg",
         "tests/ddate.prg",
         "tests/langapi.prg",
-        "tests/flink.prg"
+        "tests/flink.prg",
+        "tests/set.prg",
+        "tests/com.prg",
+        "tests/commouse.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,

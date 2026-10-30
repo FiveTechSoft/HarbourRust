@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "124 full-source manual metadata reviews;5overlap prior19execution. Fourteen extra GET/macro/routing/locale/filesystem cases. No new compile/link/run or authority. Dependencies requirements,not verifiedavailability. Tags not coverage.",
+  "scope": "130 full-source manual metadata reviews;5 overlap prior19 executions. Latest six distinguish directory/SET/key/RDD stress and serial-device profiles. No new compilation, execution or authority. Dependencies are requirements, not verified availability. Tags are not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -5470,6 +5470,333 @@
           "symbol_or_construct": "idx := \"2\"",
           "lines": [
             52
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/adir.prg",
+      "sha256": "891710506f6e39b76eb043efc0dc0f04115e3950b769e2571781a721b5decace",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with isolated directory fixture",
+      "families": [
+        "filesystem",
+        "arrays",
+        "closures",
+        "set-format"
+      ],
+      "dependency_requirements": [
+        "ADir optional output arrays, including unequal lengths and invalid argument types",
+        "Path separator, file mask, directory enumeration and date formatting"
+      ],
+      "effects_or_harness_risks": [
+        "Enumerates current and parent directory; changes date format; no explicit file writes"
+      ],
+      "output_comparison": "Directory entries, ordering, timestamps and attributes depend on fixture/platform",
+      "next_gate": "Use a disposable directory tree, declared enumeration rules and per-array assertions; invalid-argument call is a separate behavior oracle",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "ADir( cSpec, , , , , {} )",
+          "lines": [
+            26,
+            28
+          ]
+        },
+        {
+          "symbol_or_construct": "Array( iif",
+          "lines": [
+            34
+          ]
+        },
+        {
+          "symbol_or_construct": "ADir( cSpec, 10",
+          "lines": [
+            49
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/files.prg",
+      "sha256": "0ad31202b1c6af09cd8403e174dc6204d89fb8eb6dbe2bb2f7eb77b6b1eee165",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with compile-time RDD profile",
+      "families": [
+        "filesystem",
+        "RDD-workarea",
+        "preprocessor-platform",
+        "GT-screen",
+        "arrays"
+      ],
+      "dependency_requirements": [
+        "NFILES=1000; DBFCDX define; optional WITH_ADS branch requires ads.ch and ADS runtime",
+        "Workarea and file-handle capacity; dynamic table names"
+      ],
+      "effects_or_harness_risks": [
+        "Creates up to 1000 tables, opens all simultaneously, then drops them; interruption can leave artifacts; optional ADS indexing"
+      ],
+      "output_comparison": "Resource-capacity and RDD dependent; screen progress is not a byte-stable functional oracle",
+      "next_gate": "Disposable directory, bounded resources, cleanup after interruption and explicit profile; DBFCDX define is not proof of driver selection",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "#define NFILES   1000",
+          "lines": [
+            6
+          ]
+        },
+        {
+          "symbol_or_construct": "#define WITH_DBFCDX",
+          "lines": [
+            10
+          ]
+        },
+        {
+          "symbol_or_construct": "#ifdef WITH_ADS",
+          "lines": [
+            13,
+            26,
+            46,
+            60
+          ]
+        },
+        {
+          "symbol_or_construct": "USE ( \"file\"",
+          "lines": [
+            44,
+            58
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_dbDrop",
+          "lines": [
+            73
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/set.prg",
+      "sha256": "774266b1b55a921d8a90eddf484f6ca82e24226edda1fbec68059c5b6648e1dd",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with DBFNTX request and platform SET constants",
+      "families": [
+        "set-runtime",
+        "GT-screen",
+        "preprocessor-platform",
+        "environment-query"
+      ],
+      "dependency_requirements": [
+        "DBFNTX request; runtime Set numeric IDs; conditional extended SET constants"
+      ],
+      "effects_or_harness_risks": [
+        "Reads runtime settings, touches terminal, changes directory separator to slash"
+      ],
+      "output_comparison": "Most fields are environment/runtime dependent; constant names printed beside numeric IDs do not prove mapping correctness",
+      "next_gate": "Snapshot settings under declared runtime profile and check actual numeric-ID mapping; restore separator; no blanket settings mutation",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "REQUEST DBFNTX",
+          "lines": [
+            3
+          ]
+        },
+        {
+          "symbol_or_construct": "Set( _SET_DIRSEPARATOR, \"/\" )",
+          "lines": [
+            75
+          ]
+        },
+        {
+          "symbol_or_construct": "Set( n )",
+          "lines": [
+            86
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/setkeys.prg",
+      "sha256": "4aa5e4e0f38447d689f1ab1fe2b20038b3f3ae2ef2ce224168fb0154c8135e85",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with interactive key/get runtime",
+      "families": [
+        "input-terminal",
+        "GT-screen",
+        "closures",
+        "byref",
+        "dates",
+        "set-format"
+      ],
+      "dependency_requirements": [
+        "inkey.ch; GetActive/GetList/READ; key action and predicate closures",
+        "hb_SetKeySave/Get/Array/Check; byref predicate output; ProcName/ProcLine/ReadVar"
+      ],
+      "effects_or_harness_risks": [
+        "Changes key registry and date format; modal alerts, nested indefinite input loop and READ"
+      ],
+      "output_comparison": "Key sequence, current GET, active predicates and clock dependent",
+      "next_gate": "Controlled input and event/state oracle with key registry restoration; account for nested F8 loop; never run unattended",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_SetKeySave( NIL )",
+          "lines": [
+            74
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_SetKeyGet( K_F8, @bF8Active )",
+          "lines": [
+            90
+          ]
+        },
+        {
+          "symbol_or_construct": "DO WHILE ( n := Inkey( 0 ) )",
+          "lines": [
+            94
+          ]
+        },
+        {
+          "symbol_or_construct": "READ",
+          "lines": [
+            79,
+            95
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/com.prg",
+      "sha256": "27f928cb237f45138cc8a1dbcba07ab4e1bec0ec8b30ca3139b44c2942d18fa5",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main(cPortName)",
+      "build_unit": "single source with optional device argument; not a console-only test",
+      "families": [
+        "serial-device",
+        "input-terminal",
+        "byref-buffer",
+        "environment-clock"
+      ],
+      "dependency_requirements": [
+        "hbcom.ch and serial runtime; default port 1 or supplied device",
+        "9600:N:8:1; send/receive timeouts; hb_BLen"
+      ],
+      "effects_or_harness_risks": [
+        "Opens/configures serial device; sends modem command bytes; waits for key and receives external data; closes on normal path"
+      ],
+      "output_comparison": "Hardware, device state, timeouts and input dependent; open failure is not serial feature coverage",
+      "next_gate": "No real device access by default; separately approved virtual serial endpoint and protocol fixture with cleanup/timeouts",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_comOpen( nPort )",
+          "lines": [
+            13
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_comInit( nPort, 9600",
+          "lines": [
+            18
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_comSend",
+          "lines": [
+            22
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_comRecv",
+          "lines": [
+            34
+          ]
+        },
+        {
+          "symbol_or_construct": "WAIT",
+          "lines": [
+            31
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/commouse.prg",
+      "sha256": "2a320f72ab6375b761804071a8baece992fef7ae6ffd2224bb63d7221d4d4c2b",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main(cParam)",
+      "build_unit": "single source with usage-only and serial-device branches",
+      "families": [
+        "serial-device",
+        "input-terminal",
+        "byref-buffer",
+        "bitwise",
+        "while-control",
+        "environment-clock"
+      ],
+      "dependency_requirements": [
+        "hbcom.ch; serial device name or numeric port; 1200:N:8:1",
+        "DTR/RTS modem control, binary packet parsing, idle sleeps; nI undeclared in source"
+      ],
+      "effects_or_harness_risks": [
+        "Device branch opens/configures port, toggles control lines, flushes and reads; loops until keyboard input"
+      ],
+      "output_comparison": "Usage-only return without argument does not test device branch; bytes and timing are external; packet boundary behavior needs oracle",
+      "next_gate": "Virtual serial fixture and approval before device effects; test fragmented packets and buffer boundaries independently of usage-only branch",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "IF cParam == NIL",
+          "lines": [
+            7
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_comMCR",
+          "lines": [
+            32,
+            35
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_comFlush",
+          "lines": [
+            34
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_BLen( cBuffer ) >= 4",
+          "lines": [
+            90
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_BSubStr( cBuffer, 5 )",
+          "lines": [
+            109,
+            124
+          ]
+        },
+        {
+          "symbol_or_construct": "nI :=",
+          "lines": [
+            94,
+            99,
+            104,
+            109
           ]
         }
       ]
