@@ -6,7 +6,7 @@ neg tests/t03_injection_macro.hb trailing tokens after expression
 neg tests/t04_unicode_ident.hb U+00F1
 neg tests/t05_keyword_boundary.hb statement not in the subset
 neg tests/t06_undefined_var.hb undefined variable
-pos tests/t07_unicode_string.hb \nolÃ¡, aÃ±o ðŸ¦€
+pos tests/t07_unicode_string.hb \nolá, año 🦀
 neg tests/t08_type_error.hb arithmetic requires integers
 neg tests/t09_duplicate_local.hb duplicate local
 pos tests/t10_int_copy.hb \n         5\n         5\n        -5
@@ -120,7 +120,7 @@ neg tests/t116_pp_abbrev_neg.hb statement not in the subset
 neg tests/t117_pp_bad_result_marker.hb unknown result marker
 pos tests/t118_pp_tie_latest.hb \n       201\n       402
 pos tests/t119_qout_fields.hb \n\n         1\n 12345678901\n        -7
-pos tests/t120_qout_list_mixed.hb \nhola          7 x\nÃ¡Ã©Ã­ðŸ¦€         42
+pos tests/t120_qout_list_mixed.hb \nhola          7 x\náéí🦀         42
 pos tests/t121_qout_eval_order.hb \nf          1\nf          2\n         2          4
 neg tests/t122_qout_trailing_comma.hb missing expression
 neg tests/t123_qout_move_two_uses.hb use of moved value
