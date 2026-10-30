@@ -32,6 +32,7 @@ struct Def {
 pub struct Pp {
     pub defs: HashMap<String, Def>, // key: exact name (macro names are case-sensitive)
     pub cmds: Vec<Cmd>,             // #command / #xcommand / #translate rules, in order
+    call_rules: Vec<Cmd>, // call-form translations, distinct from #define
     pub incdirs: Vec<String>,
     pub end_lines: Vec<usize>, // emitted statement -> final source line (ProcLine)
     pub origins: Vec<(String, usize)>, // emitted line -> original path/line (diagnostics)
@@ -76,7 +77,7 @@ impl Pp {
             params: vec!["symbol".to_string()], funclike: true,
             body: "( ( symbol ) )".to_string(), dup: 1,
         });
-        Pp { defs, cmds: Vec::new(), incdirs, origins: Vec::new(), end_lines: Vec::new() }
+        Pp { defs, cmds: Vec::new(), call_rules: Vec::new(), incdirs, origins: Vec::new(), end_lines: Vec::new() }
     }
 }
 
@@ -894,6 +895,14 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
     if let Some((_, ci)) = best {
         let c = &cmds[ci];
         let caps = best_caps;
+        return render_command(c, &caps, line_no).map(Some);
+    }
+    // A shared first keyword is not a rule match. Harbour leaves the
+    // original statement for the parser when no complete pattern matches.
+    Ok(None)
+}
+
+fn render_command(c: &Cmd, caps: &[String], line_no: usize) -> Result<String, String> {
         {
             // Resolve result-side [ ... ] groups BEFORE substituting: a
             // marker is bound exactly when its capture is non-empty (an
@@ -957,12 +966,125 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
                     pi += 1;
                 }
             }
-            return Ok(Some(unstage_result(&out, &saved)));
+            return Ok(unstage_result(&out, &saved));
         }
+
+}
+
+// Backtracking is bounded to call-form rules and balanced captured expressions.
+// Optional groups must leave the following ')' available to the outer pattern.
+fn call_match(pattern: &[String], source: &[String]) -> Option<Vec<String>> {
+    fn seq(p: &[String], src: &[String], budget: &mut usize) -> Option<Vec<String>> {
+        if *budget == 0 { return None; } *budget -= 1;
+        if p.is_empty() { return if src.is_empty() { Some(Vec::new()) } else { None }; }
+        if p[0] == "[" {
+            let mut d = 1; let mut end = 1;
+            while end < p.len() && d > 0 {
+                if p[end] == "[" { d += 1; } if p[end] == "]" { d -= 1; } end += 1;
+            }
+            if d != 0 { return None; }
+            for n in (0..=src.len()).rev() {
+                if let Some(mut caps) = seq(&p[1..end-1], &src[..n], budget) {
+                    if let Some(tail) = seq(&p[end..], &src[n..], budget) { caps.extend(tail); return Some(caps); }
+                }
+            }
+            let mut caps: Vec<String> = p[1..end-1].iter().filter(|t| t.starts_with('<') && t.ends_with('>')).map(|_| String::new()).collect();
+            caps.extend(seq(&p[end..], src, budget)?); return Some(caps);
+        }
+        if p[0].starts_with('<') && p[0].ends_with('>') {
+            for n in (1..=src.len()).rev() {
+                let mut d = 0i32; let mut valid = true;
+                for t in &src[..n] {
+                    if t == "(" || t == "[" || t == "{" { d += 1; }
+                    if t == ")" || t == "]" || t == "}" { d -= 1; }
+                    if d < 0 || (t == "," && d == 0 && !p[0].contains(",...")) { valid = false; break; }
+                }
+                if valid && d == 0 {
+                    // Marker restrictions keep their established semantics;
+                    // only plain/list captures use the expression boundary above.
+                    let marker = &p[0];
+                    if (marker.starts_with("<!") && (n != 1 || !marker_ident(&src[0])))
+                        || (marker.contains(':') && !restricted_alternatives(&marker[1..marker.len()-1]).map(|choices| choices.iter().any(|c| c.len()==n && c.iter().zip(src).all(|(a,b)|a.eq_ignore_ascii_case(b)))).unwrap_or(false))
+                        || marker.starts_with("<*") || marker.starts_with("<(") { continue; }
+                    if let Some(mut tail) = seq(&p[1..], &src[n..], budget) {
+                        tail.insert(0, src[..n].join(" ")); return Some(tail);
+                    }
+                }
+            }
+            return None;
+        }
+        if src.first().map(|t| t.eq_ignore_ascii_case(&p[0])).unwrap_or(false) { seq(&p[1..], &src[1..], budget) } else { None }
     }
-    // A shared first keyword is not a rule match. Harbour leaves the
-    // original statement for the parser when no complete pattern matches.
-    Ok(None)
+    seq(pattern, source, &mut 10000)
+}
+
+// Scoped balanced call-form translations. Preserve the surrounding source
+// bytes; only a complete matched call is replaced. Latest matching rule wins.
+fn expand_call_rules(text: &str, pp: &Pp, line: usize, depth: usize) -> Result<String, String> {
+    if depth > 16 { return Err(format!("line {}: translation expansion too deep (recursive translate?)", line)); }
+    let b = text.as_bytes();
+    let mut out = String::new();
+    let mut i = 0;
+    while i < b.len() {
+        if b[i] == b'"' || b[i] == b'\'' {
+            let q = b[i]; let start = i; i += 1;
+            while i < b.len() && b[i] != q { i += 1; }
+            if i < b.len() { i += 1; }
+            out.push_str(&text[start..i]); continue;
+        }
+        if b[i].is_ascii_alphabetic() || b[i] == b'_' {
+            let start = i; i += 1;
+            while i < b.len() && (b[i].is_ascii_alphanumeric() || b[i] == b'_') { i += 1; }
+            let name = &text[start..i];
+            let mut k = i; while k < b.len() && b[k].is_ascii_whitespace() { k += 1; }
+            if k < b.len() && b[k] == b'(' {
+                let mut level = 1; let mut q = None; let mut end = k + 1;
+                while end < b.len() && level > 0 {
+                    let c = b[end];
+                    if q == Some(c) { q = None; }
+                    else if q.is_none() {
+                        if c == b'"' || c == b'\'' { q = Some(c); }
+                        else if c == b'(' { level += 1; }
+                        else if c == b')' { level -= 1; }
+                    }
+                    end += 1;
+                }
+                if level == 0 {
+                    let call = &text[start..end]; let tokens = cmd_tokens(call);
+                    let mut replacement = None;
+                    for rule in pp.call_rules.iter().rev() {
+                        if !rule.pattern.first().map(|p| p.eq_ignore_ascii_case(name)).unwrap_or(false) { continue; }
+                        if let Some(caps) = call_match(&rule.pattern, &tokens) {
+                            let markers: Vec<&String> = rule.pattern.iter().filter(|p| p.starts_with('<') && p.ends_with('>')).collect();
+                            let valid = markers.iter().zip(caps.iter()).all(|(marker, cap)| {
+                                if marker.contains(",...") { return true; }
+                                let mut nesting = 0;
+                                for t in cmd_tokens(cap) {
+                                    if t == "(" || t == "[" || t == "{" { nesting += 1; }
+                                    if t == ")" || t == "]" || t == "}" { nesting -= 1; }
+                                    if t == "," && nesting == 0 { return false; }
+                                }
+                                true
+                            });
+                            if valid { replacement = Some(render_command(rule, &caps, line)?); break; }
+                        }
+                    }
+                    if let Some(value) = replacement {
+                        let value = expand(&value, &pp.defs, line)?;
+                        out.push_str(&expand_call_rules(&value, pp, line, depth + 1)?);
+                    } else {
+                        out.push_str(&text[start..k+1]);
+                        out.push_str(&expand_call_rules(&text[k+1..end-1], pp, line, depth+1)?);
+                        out.push(')');
+                    }
+                    i = end; continue;
+                }
+            }
+            out.push_str(name); continue;
+        }
+        let c = text[i..].chars().next().unwrap(); out.push(c); i += c.len_utf8();
+    }
+    Ok(out)
 }
 
 // `#define NAME body` or `#define NAME(p1, p2) body`; the '(' must touch the
@@ -1176,6 +1298,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                         continue;
                     }
                     let expanded = expand(&cur, &pp.defs, line)?;
+                    let expanded = expand_call_rules(&expanded, pp, line, 0)?;
                     for part in split_statements(&expanded) {
                         for _ in 0..part.split('\n').count() {
                             pp.origins.push((path.to_string(), line));
@@ -1222,13 +1345,11 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     match parse_define(pat, line) {
                         // Call form NAME( <p>, ... ) => body: exactly a
                         // function-like define (inline use in expressions).
-                        Ok((name, params, _, _)) if !(params.is_empty() && !pat.contains('(')) => {
-                            // Identical translate rules stack (probe b37f);
-                            // a differing one replaces, like #define.
-                            match pp.defs.get_mut(&name) {
-                                Some(d) if d.params == params && d.body.trim() == result.trim() => { d.dup += 1; }
-                                _ => { pp.defs.insert(name, Def { params, funclike: true, body: result, dup: 1 }); }
-                            }
+                        Ok((_, params, _, _)) if !(params.is_empty() && !pat.contains('(')) => {
+                            let pattern = cmd_tokens(pat);
+                            validate_markers(&pattern, line)?;
+                            validate_result_markers(&pattern, &result, line, true)?;
+                            pp.call_rules.push(Cmd { pattern, result, restricted_exact: dir.starts_with('X') });
                         }
                         // Non-call form: statement-start rule, same machinery
                         // as #command (probes b19-b21: Harbour applies it at
@@ -1256,7 +1377,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     remove_rule(&mut pp.cmds, &pattern, &result);
                 }
             }
-            "UNTRANSLATE" | "UXTRANSLATE" => {
+            "UNTRANSLATE" | "UXTRANSLATE" | "XUNTRANSLATE" => {
                 if emitting {
                     let arrow = arg.find("=>").ok_or_else(|| format!("line {}: #untranslate needs `pattern => result`", line))?;
                     let pat = arg[..arrow].trim();
@@ -1264,12 +1385,12 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     match parse_define(pat, line) {
                         // Call form: the rule lives in the define table;
                         // name, parameter names and body must all match.
-                        Ok((name, params, _, _)) if !(params.is_empty() && !pat.contains('(')) => {
-                            // Pop ONE instance of a stacked rule (b37f).
-                            let pop = pp.defs.get(&name).map(|d| d.params == params && d.body.trim() == result).unwrap_or(false);
-                            if pop {
-                                if let Some(d) = pp.defs.get_mut(&name) { d.dup = d.dup.saturating_sub(1); }
-                                if pp.defs.get(&name).map(|d| d.dup == 0).unwrap_or(false) { pp.defs.remove(&name); }
+                        Ok((_, params, _, _)) if !(params.is_empty() && !pat.contains('(')) => {
+                            let pattern = cmd_tokens(pat);
+                            let exact = dir != "UNTRANSLATE";
+                            if let Some(i) = pp.call_rules.iter().rposition(|c| c.restricted_exact == exact
+                                && c.pattern == pattern && c.result == result) {
+                                pp.call_rules.remove(i);
                             }
                         }
                         _ => {

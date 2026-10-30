@@ -420,3 +420,30 @@ recursion need explicit regression tests. This is preprocessor work,not new
 runtime/class/memory semantics. No production change is part of this section;
 latest production is08736b7. General expression translation/prefix behavior
 and generated directives beyond command/xcommand remain separately bounded.
+
+## Call-form translation implementation, scoped
+
+Call-form translations now have their own ordered rule table,not a single
+#define entry. Latest matching overload wins;unmatched calls remain source.
+Balanced expression/list captures and optional nested argument groups match
+with a bounded search (10000states per rule). Names are case-insensitive;
+result marker spelling is checked at definition. Replacement skips quoted
+calls and preserves the surrounding source bytes. Translation recursion has
+its own16-stage bound. #xuntranslate removes one matching X rule;ordinary
+#untranslate removes ordinary rules only. This does not change #define's
+case-sensitive identity or broaden generated-directive execution.
+
+108own preprocessing boundaries pass against fresh pinned hbpp. Eight new
+positive programs separately match Harbour bytes;four negative fixtures
+exercise bad result names,recursion and rule removal.1159default/352LLVM
+battery checks pass,including Windows/Wine. Earlier marker/nonmatch checks
+pass with their documented2logical and2translate-prefix divergences kept
+separate from passes. Fourteen reviewed originals are exact again.
+
+Compile-only268x4 acceptance remains21/15Linux20/14Windows.25first diagnostics
+move relative to08736b7:18to general dotted-token emission,3to literal#,
+2to unsupported statements,one to a command-recursion limit and one to an
+unterminated dotted token. No new complete original,main merge,class runtime,
+Dyn or ownership contract,size or speed claim follows. General prefix
+translation,full Harbour expression grammar and lexical reemission remain
+open;this is a measured slice,not all #translate syntax.

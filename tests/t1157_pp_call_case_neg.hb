@@ -1,0 +1,1 @@
+#xtranslate F(<a>) => <A>

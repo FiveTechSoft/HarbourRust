@@ -1,0 +1,653 @@
+{
+  "scope": "108own-source call-form checks,including invalid-result and recursion boundaries;not runtime or arbitrary translation coverage.",
+  "rows": [
+    {
+      "case": 0,
+      "own_exit": 0,
+      "own_output": "F(alpha)\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 1,
+      "own_exit": 0,
+      "own_output": "? F(alpha)\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 2,
+      "own_exit": 0,
+      "own_output": "x := F(alpha) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 3,
+      "own_exit": 0,
+      "own_output": "OUT( alpha  )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 4,
+      "own_exit": 0,
+      "own_output": "? OUT( alpha  )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 5,
+      "own_exit": 0,
+      "own_output": "x := OUT( alpha  ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 6,
+      "own_exit": 0,
+      "own_output": "OUT( alpha , 1 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 7,
+      "own_exit": 0,
+      "own_output": "? OUT( alpha , 1 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 8,
+      "own_exit": 0,
+      "own_output": "x := OUT( alpha , 1 ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 9,
+      "own_exit": 0,
+      "own_output": "OUT( alpha , 1 , 2 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 10,
+      "own_exit": 0,
+      "own_output": "? OUT( alpha , 1 , 2 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 11,
+      "own_exit": 0,
+      "own_output": "x := OUT( alpha , 1 , 2 ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 12,
+      "own_exit": 0,
+      "own_output": "OUT( alpha , beta ( 1 , 2 ) , 3 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 13,
+      "own_exit": 0,
+      "own_output": "? OUT( alpha , beta ( 1 , 2 ) , 3 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 14,
+      "own_exit": 0,
+      "own_output": "x := OUT( alpha , beta ( 1 , 2 ) , 3 ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 15,
+      "own_exit": 0,
+      "own_output": "F(1,2)\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 16,
+      "own_exit": 0,
+      "own_output": "? F(1,2)\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 17,
+      "own_exit": 0,
+      "own_output": "x := F(1,2) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 18,
+      "own_exit": 0,
+      "own_output": "F()\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 19,
+      "own_exit": 0,
+      "own_output": "? F()\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 20,
+      "own_exit": 0,
+      "own_output": "x := F() + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 21,
+      "own_exit": 0,
+      "own_output": "F(alpha + 1)\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 22,
+      "own_exit": 0,
+      "own_output": "? F(alpha + 1)\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 23,
+      "own_exit": 0,
+      "own_output": "x := F(alpha + 1) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 24,
+      "own_exit": 0,
+      "own_output": "ATOM( alpha )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 25,
+      "own_exit": 0,
+      "own_output": "? ATOM( alpha )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 26,
+      "own_exit": 0,
+      "own_output": "x := ATOM( alpha ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 27,
+      "own_exit": 0,
+      "own_output": "CALL( alpha  )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 28,
+      "own_exit": 0,
+      "own_output": "? CALL( alpha  )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 29,
+      "own_exit": 0,
+      "own_output": "x := CALL( alpha  ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 30,
+      "own_exit": 0,
+      "own_output": "CALL( alpha , 1 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 31,
+      "own_exit": 0,
+      "own_output": "? CALL( alpha , 1 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 32,
+      "own_exit": 0,
+      "own_output": "x := CALL( alpha , 1 ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 33,
+      "own_exit": 0,
+      "own_output": "CALL( alpha , 1 , 2 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 34,
+      "own_exit": 0,
+      "own_output": "? CALL( alpha , 1 , 2 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 35,
+      "own_exit": 0,
+      "own_output": "x := CALL( alpha , 1 , 2 ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 36,
+      "own_exit": 0,
+      "own_output": "CALL( alpha , beta ( 1 , 2 ) , 3 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 37,
+      "own_exit": 0,
+      "own_output": "? CALL( alpha , beta ( 1 , 2 ) , 3 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 38,
+      "own_exit": 0,
+      "own_output": "x := CALL( alpha , beta ( 1 , 2 ) , 3 ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 39,
+      "own_exit": 0,
+      "own_output": "F(1,2)\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 40,
+      "own_exit": 0,
+      "own_output": "? F(1,2)\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 41,
+      "own_exit": 0,
+      "own_output": "x := F(1,2) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 42,
+      "own_exit": 0,
+      "own_output": "F()\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 43,
+      "own_exit": 0,
+      "own_output": "? F()\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 44,
+      "own_exit": 0,
+      "own_output": "x := F() + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 45,
+      "own_exit": 0,
+      "own_output": "ATOM( alpha + 1 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 46,
+      "own_exit": 0,
+      "own_output": "? ATOM( alpha + 1 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 47,
+      "own_exit": 0,
+      "own_output": "x := ATOM( alpha + 1 ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 48,
+      "own_exit": 0,
+      "own_output": "ATOM( alpha )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 49,
+      "own_exit": 0,
+      "own_output": "? ATOM( alpha )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 50,
+      "own_exit": 0,
+      "own_output": "x := ATOM( alpha ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 51,
+      "own_exit": 0,
+      "own_output": "ATOM( alpha ( ) )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 52,
+      "own_exit": 0,
+      "own_output": "? ATOM( alpha ( ) )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 53,
+      "own_exit": 0,
+      "own_output": "x := ATOM( alpha ( ) ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 54,
+      "own_exit": 0,
+      "own_output": "ATOM( alpha ( 1 ) )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 55,
+      "own_exit": 0,
+      "own_output": "? ATOM( alpha ( 1 ) )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 56,
+      "own_exit": 0,
+      "own_output": "x := ATOM( alpha ( 1 ) ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 57,
+      "own_exit": 0,
+      "own_output": "ATOM( alpha ( 1 , 2 ) )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 58,
+      "own_exit": 0,
+      "own_output": "? ATOM( alpha ( 1 , 2 ) )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 59,
+      "own_exit": 0,
+      "own_output": "x := ATOM( alpha ( 1 , 2 ) ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 60,
+      "own_exit": 0,
+      "own_output": "ATOM( alpha ( beta ( 1 , 2 ) , 3 ) )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 61,
+      "own_exit": 0,
+      "own_output": "? ATOM( alpha ( beta ( 1 , 2 ) , 3 ) )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 62,
+      "own_exit": 0,
+      "own_output": "x := ATOM( alpha ( beta ( 1 , 2 ) , 3 ) ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 63,
+      "own_exit": 0,
+      "own_output": "F(1,2)\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 64,
+      "own_exit": 0,
+      "own_output": "? F(1,2)\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 65,
+      "own_exit": 0,
+      "own_output": "x := F(1,2) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 66,
+      "own_exit": 0,
+      "own_output": "F()\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 67,
+      "own_exit": 0,
+      "own_output": "? F()\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 68,
+      "own_exit": 0,
+      "own_output": "x := F() + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 69,
+      "own_exit": 0,
+      "own_output": "ATOM( alpha + 1 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 70,
+      "own_exit": 0,
+      "own_output": "? ATOM( alpha + 1 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 71,
+      "own_exit": 0,
+      "own_output": "x := ATOM( alpha + 1 ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 72,
+      "own_exit": 0,
+      "own_output": "ONE( alpha )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 73,
+      "own_exit": 0,
+      "own_output": "? ONE( alpha )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 74,
+      "own_exit": 0,
+      "own_output": "x := ONE( alpha ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 75,
+      "own_exit": 0,
+      "own_output": "ONE( alpha ( ) )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 76,
+      "own_exit": 0,
+      "own_output": "? ONE( alpha ( ) )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 77,
+      "own_exit": 0,
+      "own_output": "x := ONE( alpha ( ) ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 78,
+      "own_exit": 0,
+      "own_output": "ONE( alpha ( 1 ) )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 79,
+      "own_exit": 0,
+      "own_output": "? ONE( alpha ( 1 ) )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 80,
+      "own_exit": 0,
+      "own_output": "x := ONE( alpha ( 1 ) ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 81,
+      "own_exit": 0,
+      "own_output": "ONE( alpha ( 1 , 2 ) )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 82,
+      "own_exit": 0,
+      "own_output": "? ONE( alpha ( 1 , 2 ) )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 83,
+      "own_exit": 0,
+      "own_output": "x := ONE( alpha ( 1 , 2 ) ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 84,
+      "own_exit": 0,
+      "own_output": "ONE( alpha ( beta ( 1 , 2 ) , 3 ) )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 85,
+      "own_exit": 0,
+      "own_output": "? ONE( alpha ( beta ( 1 , 2 ) , 3 ) )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 86,
+      "own_exit": 0,
+      "own_output": "x := ONE( alpha ( beta ( 1 , 2 ) , 3 ) ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 87,
+      "own_exit": 0,
+      "own_output": "TWO( 1, 2 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 88,
+      "own_exit": 0,
+      "own_output": "? TWO( 1, 2 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 89,
+      "own_exit": 0,
+      "own_output": "x := TWO( 1, 2 ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 90,
+      "own_exit": 0,
+      "own_output": "F()\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 91,
+      "own_exit": 0,
+      "own_output": "? F()\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 92,
+      "own_exit": 0,
+      "own_output": "x := F() + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 93,
+      "own_exit": 0,
+      "own_output": "ONE( alpha + 1 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 94,
+      "own_exit": 0,
+      "own_output": "? ONE( alpha + 1 )\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": 95,
+      "own_exit": 0,
+      "own_output": "x := ONE( alpha + 1 ) + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": "case_lower",
+      "own_exit": 0,
+      "own_output": "OUT(7)\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": "case_mixed",
+      "own_exit": 0,
+      "own_output": "OUT(7) + OUT(8)\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": "delete_overload",
+      "own_exit": 0,
+      "own_output": "F(1)\nTWO(1,2)\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": "delete_existing",
+      "own_exit": 0,
+      "own_output": "ONE(1)\nTWO(1,2)\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": "duplicate",
+      "own_exit": 0,
+      "own_output": "ONE(1)\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": "unknown_result",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "definition/recursion rejection"
+    },
+    {
+      "case": "result_case",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "definition/recursion rejection"
+    },
+    {
+      "case": "recursive",
+      "own_exit": 1,
+      "own_output": "",
+      "comparison": "definition/recursion rejection"
+    },
+    {
+      "case": "prefix",
+      "own_exit": 0,
+      "own_output": "FOO(7)\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": "quoted",
+      "own_exit": 0,
+      "own_output": "? \"F(7)\", OUT(\"x,y\")\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": "body_name",
+      "own_exit": 0,
+      "own_output": "x + 7\n",
+      "comparison": "matched token stream"
+    },
+    {
+      "case": "chain",
+      "own_exit": 0,
+      "own_output": "OUT(7)\n",
+      "comparison": "matched token stream"
+    }
+  ]
+}

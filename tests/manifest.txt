@@ -1143,3 +1143,15 @@ neg tests/t1144_pp_generated_unescaped_neg.hb unknown result marker
 pos tests/t1145_pp_nonmatch_procedure.hb \n         7
 pos tests/t1146_pp_nonmatch_assignment.hb \n         7
 pos tests/t1147_pp_nonmatch_call.hb \n         7
+pos tests/t1148_pp_call_optional.hb \n        42
+pos tests/t1149_pp_call_overload.hb \n        42         42
+pos tests/t1150_pp_call_order.hb \n         2
+pos tests/t1151_pp_call_case.hb \n        42         42
+pos tests/t1152_pp_call_remove.hb \n        42
+pos tests/t1153_pp_call_quoted.hb \nF(7)         42
+pos tests/t1154_pp_call_chain.hb \n        42
+pos tests/t1155_pp_call_nested.hb \n        42
+neg tests/t1156_pp_call_unknown_neg.hb unknown result marker
+neg tests/t1157_pp_call_case_neg.hb unknown result marker
+neg tests/t1158_pp_call_recursive_neg.hb translation expansion too deep
+neg tests/t1159_pp_call_removed_neg.hb unknown function

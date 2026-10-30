@@ -1,0 +1,1677 @@
+[
+  {
+    "file": "tests/cgi.prg",
+    "before": {
+      "file": "tests/cgi.prg",
+      "sha256": "dd0f973c72e14e96865ecca921af6e4fa86b676877ffb1403a9e5e39c4220ec1",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 123: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 123: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 123: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 123: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/cgi.prg",
+      "sha256": "dd0f973c72e14e96865ecca921af6e4fa86b676877ffb1403a9e5e39c4220ec1",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 506: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 506: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 506: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 506: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/clasinh.prg",
+    "before": {
+      "file": "tests/clasinh.prg",
+      "sha256": "2692fde017dc9ef2422e7114b2299474570020ecf63e8a991930bde5179ea9c6",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 17: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 17: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 17: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 17: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/clasinh.prg",
+      "sha256": "2692fde017dc9ef2422e7114b2299474570020ecf63e8a991930bde5179ea9c6",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 332: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 332: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 332: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 332: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/classch.prg",
+    "before": {
+      "file": "tests/classch.prg",
+      "sha256": "e26e134ee7547069ec676fd44ee9825615d70c675ec0adba85d18f441fdce6b1",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 19: macro __HB_CLS_PAR takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 19: macro __HB_CLS_PAR takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 19: macro __HB_CLS_PAR takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 19: macro __HB_CLS_PAR takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/classch.prg",
+      "sha256": "e26e134ee7547069ec676fd44ee9825615d70c675ec0adba85d18f441fdce6b1",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 330: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 330: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 330: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 330: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/cls.prg",
+    "before": {
+      "file": "tests/cls.prg",
+      "sha256": "3cfbcfbf21df2de77906bdd5b12564e3d761e4e2ff71d4764bc0766f4399f2f0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 25: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 25: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 25: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 25: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/cls.prg",
+      "sha256": "3cfbcfbf21df2de77906bdd5b12564e3d761e4e2ff71d4764bc0766f4399f2f0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 339: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 339: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 339: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 339: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/clsccast.prg",
+    "before": {
+      "file": "tests/clsccast.prg",
+      "sha256": "2af7d754dbfe40a5aaf24e9cff6ac4fdc608a347774869ed121a146e81a1d6c7",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 302: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 302: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 302: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 302: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/clsccast.prg",
+      "sha256": "2af7d754dbfe40a5aaf24e9cff6ac4fdc608a347774869ed121a146e81a1d6c7",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 632: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 632: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 632: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 632: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/clsicast.prg",
+    "before": {
+      "file": "tests/clsicast.prg",
+      "sha256": "a5a3ba4260600c531b4338bf6180e084bca121835f990e512d704f05bfb555e2",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 141: macro __HB_CLS_PAR takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 141: macro __HB_CLS_PAR takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 141: macro __HB_CLS_PAR takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 141: macro __HB_CLS_PAR takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/clsicast.prg",
+      "sha256": "a5a3ba4260600c531b4338bf6180e084bca121835f990e512d704f05bfb555e2",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/clsnv.prg",
+    "before": {
+      "file": "tests/clsnv.prg",
+      "sha256": "863291f832d78259a55fe2f8372c56321f7b6a3c32ca2bd805c364c8fa8ed6c2",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 30: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 30: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 30: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 30: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/clsnv.prg",
+      "sha256": "863291f832d78259a55fe2f8372c56321f7b6a3c32ca2bd805c364c8fa8ed6c2",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 356: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 356: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 356: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 356: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/clsscast.prg",
+    "before": {
+      "file": "tests/clsscast.prg",
+      "sha256": "8b384fe38a511faa6bc93908eba6f3849811970669bff00d37535db80de0c689",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 335: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 335: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 335: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 335: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/clsscast.prg",
+      "sha256": "8b384fe38a511faa6bc93908eba6f3849811970669bff00d37535db80de0c689",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 666: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 666: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 666: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 666: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/clsscope.prg",
+    "before": {
+      "file": "tests/clsscope.prg",
+      "sha256": "cf0a255f142ac3bf5c16ad861aa56f178b6a261f8de03c625416bcab8ba58cbf",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 306: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 306: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 306: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 306: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/clsscope.prg",
+      "sha256": "cf0a255f142ac3bf5c16ad861aa56f178b6a261f8de03c625416bcab8ba58cbf",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 488: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 488: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 488: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 488: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/declare.prg",
+    "before": {
+      "file": "tests/declare.prg",
+      "sha256": "9666020c3377730c2eefc37815ec6c402fe19e0fc6912eeff23aeb05d9bbaca0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 23: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 23: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 23: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 23: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/declare.prg",
+      "sha256": "9666020c3377730c2eefc37815ec6c402fe19e0fc6912eeff23aeb05d9bbaca0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 337: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 337: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 337: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 337: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/destruct.prg",
+    "before": {
+      "file": "tests/destruct.prg",
+      "sha256": "0cbd3f91c66b115dc25e1e14db7a01782d40b61e50662f592a59f08b364809c0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 91: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 91: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 91: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 91: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/destruct.prg",
+      "sha256": "0cbd3f91c66b115dc25e1e14db7a01782d40b61e50662f592a59f08b364809c0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 94: command expansion too deep (recursive command?)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 94: command expansion too deep (recursive command?)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 94: command expansion too deep (recursive command?)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 94: command expansion too deep (recursive command?)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/foreach2.prg",
+    "before": {
+      "file": "tests/foreach2.prg",
+      "sha256": "f25d79223ff72af7b348338b2570aed47c5968e54a5dd8b80a8c7e7929abd4e1",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 45: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 45: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 45: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 45: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/foreach2.prg",
+      "sha256": "f25d79223ff72af7b348338b2570aed47c5968e54a5dd8b80a8c7e7929abd4e1",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 358: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 358: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 358: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 358: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/gfx.prg",
+    "before": {
+      "file": "tests/gfx.prg",
+      "sha256": "05288ea72c9f034337b71f004e45763620e0bd07b00b9e9e2677e96444f6901f",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 41: macro hb_gfxMakeColor takes 4 argument(s), got 3"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 41: macro hb_gfxMakeColor takes 4 argument(s), got 3"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 41: macro hb_gfxMakeColor takes 4 argument(s), got 3"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 41: macro hb_gfxMakeColor takes 4 argument(s), got 3"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/gfx.prg",
+      "sha256": "05288ea72c9f034337b71f004e45763620e0bd07b00b9e9e2677e96444f6901f",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 227: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 227: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 227: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 227: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/gfx2.prg",
+    "before": {
+      "file": "tests/gfx2.prg",
+      "sha256": "9c64dfe1e7e781fff1b6709b6c0a291f05d29b5600a13579d41a6c57cbcccf68",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 37: macro hb_gfxMakeColor takes 4 argument(s), got 3"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 37: macro hb_gfxMakeColor takes 4 argument(s), got 3"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 37: macro hb_gfxMakeColor takes 4 argument(s), got 3"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 37: macro hb_gfxMakeColor takes 4 argument(s), got 3"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/gfx2.prg",
+      "sha256": "9c64dfe1e7e781fff1b6709b6c0a291f05d29b5600a13579d41a6c57cbcccf68",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 228: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 228: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 228: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 228: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/html.prg",
+    "before": {
+      "file": "tests/html.prg",
+      "sha256": "a0df9acf65d7642dc2797caaec7cf158817769a2a172add757370f84689d4b79",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 44: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 44: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 44: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 44: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/html.prg",
+      "sha256": "a0df9acf65d7642dc2797caaec7cf158817769a2a172add757370f84689d4b79",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/inhprob.prg",
+    "before": {
+      "file": "tests/inhprob.prg",
+      "sha256": "892d09516432c8e8c21ae130985571d3dfa4f1346c579c28dcf13d74d5bac640",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 13: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 13: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 13: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 13: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/inhprob.prg",
+      "sha256": "892d09516432c8e8c21ae130985571d3dfa4f1346c579c28dcf13d74d5bac640",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 329: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 329: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 329: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 329: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/inifile.prg",
+    "before": {
+      "file": "tests/inifile.prg",
+      "sha256": "b16e9d4d8ad0e85d5edf50465c62b00e092bf3fbdd1b0383e52408164ddf46f0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 53: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 53: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 53: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 53: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/inifile.prg",
+      "sha256": "b16e9d4d8ad0e85d5edf50465c62b00e092bf3fbdd1b0383e52408164ddf46f0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 458: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 458: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 458: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 458: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/inifiles.prg",
+    "before": {
+      "file": "tests/inifiles.prg",
+      "sha256": "53f69a4e01dabebb118fe1903947e4347dde88cc47af6684e30518bd3c79d900",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 82: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 82: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 82: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 82: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/inifiles.prg",
+      "sha256": "53f69a4e01dabebb118fe1903947e4347dde88cc47af6684e30518bd3c79d900",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 487: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 487: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 487: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 487: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/money.prg",
+    "before": {
+      "file": "tests/money.prg",
+      "sha256": "84dde9ea38403e2f3b5637eb19514b9b08fb10cbcf1d966a1e44039405b9793e",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 41: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 41: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 41: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 41: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/money.prg",
+      "sha256": "84dde9ea38403e2f3b5637eb19514b9b08fb10cbcf1d966a1e44039405b9793e",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 439: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 439: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 439: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 439: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/op.prg",
+    "before": {
+      "file": "tests/op.prg",
+      "sha256": "2c66dcb218480bbe5c09c171f1225274845d6dc8bf71abc03af368e4f9dd19b4",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 75: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 75: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 75: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 75: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/op.prg",
+      "sha256": "2c66dcb218480bbe5c09c171f1225274845d6dc8bf71abc03af368e4f9dd19b4",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 391: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 391: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 391: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 391: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/overload.prg",
+    "before": {
+      "file": "tests/overload.prg",
+      "sha256": "25c77b47a72f63b19f406479066aa6ca0a78f223ea08501942b0868cbf84b2a6",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 43: macro __HB_CLS_PARAMS takes 1 argument(s), got 2"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 43: macro __HB_CLS_PARAMS takes 1 argument(s), got 2"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 43: macro __HB_CLS_PARAMS takes 1 argument(s), got 2"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 43: macro __HB_CLS_PARAMS takes 1 argument(s), got 2"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/overload.prg",
+      "sha256": "25c77b47a72f63b19f406479066aa6ca0a78f223ea08501942b0868cbf84b2a6",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 336: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 336: character not allowed `#` (U+0023)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 336: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 336: character not allowed `#` (U+0023)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/persist.prg",
+    "before": {
+      "file": "tests/persist.prg",
+      "sha256": "a9595803493de7a1ef9b58f3b0b57c049c0cb6c57df2d5ab69008bd1cdb5ab85",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 23: macro __HB_CLS_PAR takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 23: macro __HB_CLS_PAR takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 23: macro __HB_CLS_PAR takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 23: macro __HB_CLS_PAR takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/persist.prg",
+      "sha256": "a9595803493de7a1ef9b58f3b0b57c049c0cb6c57df2d5ab69008bd1cdb5ab85",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 334: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 334: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 334: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 334: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/rto_get.prg",
+    "before": {
+      "file": "tests/rto_get.prg",
+      "sha256": "9105bb336f4c3d31776c76bbc47bd441d88802d171ec9bbb66713e1d952e6805",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 664: macro TEST_LINE takes 1 argument(s), got 2"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 664: macro TEST_LINE takes 1 argument(s), got 2"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 664: macro TEST_LINE takes 1 argument(s), got 2"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 664: macro TEST_LINE takes 1 argument(s), got 2"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rto_get.prg",
+      "sha256": "9105bb336f4c3d31776c76bbc47bd441d88802d171ec9bbb66713e1d952e6805",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 370: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 370: character not allowed `#` (U+0023)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 370: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 370: character not allowed `#` (U+0023)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/rto_tb.prg",
+    "before": {
+      "file": "tests/rto_tb.prg",
+      "sha256": "d1b0a7d500421e2f52a3fdbb2df9657679132a506a08e0fe31fa0eb3d8dd3478",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 132: macro TEST_L_TBC takes 1 argument(s), got 2"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 132: macro TEST_L_TBC takes 1 argument(s), got 2"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 132: macro TEST_L_TBC takes 1 argument(s), got 2"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 132: macro TEST_L_TBC takes 1 argument(s), got 2"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rto_tb.prg",
+      "sha256": "d1b0a7d500421e2f52a3fdbb2df9657679132a506a08e0fe31fa0eb3d8dd3478",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 250: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 250: character not allowed `#` (U+0023)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 250: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 250: character not allowed `#` (U+0023)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/stripem.prg",
+    "before": {
+      "file": "tests/stripem.prg",
+      "sha256": "ba52b8c5eaac822f347e54f4008dfbc0a53825d17107e52aa4b64d3aeedcbe97",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 59: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 59: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 59: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 59: macro __HB_CLS_ASFUNC takes 2 argument(s), got 1"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/stripem.prg",
+      "sha256": "ba52b8c5eaac822f347e54f4008dfbc0a53825d17107e52aa4b64d3aeedcbe97",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 455: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 455: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 455: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 455: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      }
+    }
+  }
+]
