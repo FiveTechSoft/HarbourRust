@@ -450,3 +450,21 @@ process/graphical plan. setmode changes dimensions without explicit original-mod
 restoration. scroll copies a saved rectangle elsewhere and performs two-axis
 moves/clear;cell/color/cursor checks are necessary. Metadata is not graphical
 verification or permission to modify an existing desktop session.
+
+### Text/date/library profiles:169 manual /183 reviewed-or-executed
+
+Six additional full-source reviews give169 manual records and183 in the union
+(169+19-5). Historical executions remain19/14;no new compile or run. dates2 uses
+a fixed date but mutates unusual formats/century state;datetime mixes current
+clock with fixed,partial,NIL,zero and invalid timestamp components. These need
+separate formatting/type/invalid-value and clock gates. regex/regex2 require
+capture/position/split and invalid-pattern oracles plus screen/input checks;
+a regex matching date-shaped text does not validate calendar dates.
+
+speedstr times200000 concatenations across six storage classes including macro
+and object slots,then waits. It has no equivalent Rust result here and prints
+no final payload checksum;it is not evidence about scalar speed or correctness.
+utf8at mixes raw ISO/CP850/UTF8 output and byte/character search offsets,including
+omitted bounds. Captures must preserve bytes and distinguish encoding/offset
+semantics rather than perform a lossy text comparison. No new string,encoding,
+regex,timestamp or representation contract is granted by these records.

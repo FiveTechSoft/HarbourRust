@@ -4,8 +4,8 @@
   "counts": {
     "inventory_files": 1203,
     "original_test_sources_compile_audited": 268,
-    "manual_entrypoint_dependency_reviews": 163,
-    "manually_reviewed_or_executed_sources": 177,
+    "manual_entrypoint_dependency_reviews": 169,
+    "manually_reviewed_or_executed_sources": 183,
     "frozen175_default_accepted": 20,
     "frozen175_llvm_accepted": 14,
     "execution_exact_by_profile": {
@@ -13449,8 +13449,20 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with library/format/encoding-specific profile",
+        "families": [
+          "dates",
+          "set-format"
+        ],
+        "next_gate": "Declared initial SET state, per-transition formatting oracle and restoration",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -13528,8 +13540,21 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with library/format/encoding-specific profile",
+        "families": [
+          "dates",
+          "environment-clock",
+          "nil-value"
+        ],
+        "next_gate": "Split fixed-component/type/invalid-value oracle from clock fixture; no model of invalid dates inferred",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -19950,8 +19975,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with library/format/encoding-specific profile",
+        "families": [
+          "strings",
+          "arrays",
+          "foreach",
+          "GT-screen",
+          "input-terminal"
+        ],
+        "next_gate": "Own library/runtime regex contract and typed capture/boundary oracle; screen/input separate",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -19983,8 +20023,24 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with library/format/encoding-specific profile",
+        "families": [
+          "strings",
+          "arrays",
+          "foreach",
+          "GT-screen",
+          "input-terminal",
+          "set-runtime"
+        ],
+        "next_gate": "Bounded scripted patterns/escape,invalid-input and no-match oracle; restore confirm/key state",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -20898,8 +20954,26 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with library/format/encoding-specific profile",
+        "families": [
+          "strings",
+          "runtime-macro",
+          "memvars-dynamic-binding",
+          "file-static",
+          "classes",
+          "environment-clock",
+          "input-terminal",
+          "compound-assignment"
+        ],
+        "next_gate": "Separate binary-string/bounds/alias/lifetime contract and workload validation before benchmarking; not scalar speed evidence",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -22021,8 +22095,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source with library/format/encoding-specific profile",
+        "families": [
+          "strings",
+          "localization",
+          "preprocessor",
+          "nil-value"
+        ],
+        "next_gate": "Byte-preserving capture,declared codepage registry and per-function offset/boundary oracle; no lossy decoded comparison",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {

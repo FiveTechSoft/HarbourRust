@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "163 distinct full-source manual metadata reviews;5 overlap prior19 execution. Latest seven distinguish clipping/palette/cursor/audio, multiple GT windows, external font selector, video modes and save/restore scroll profiles. No compile/run or graphical execution. Requirements not availability; tags not coverage.",
+  "scope": "169 distinct full-source manual metadata reviews;5 overlap prior19 execution. Latest six distinguish date-format/timestamp cases, regex libraries/input, storage-class string timing and raw codepage/UTF8 offsets. No compile/run or new implementation authority. Requirements not availability; tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -7543,6 +7543,313 @@
           "symbol_or_construct": "Scroll( 1, 1, 11, 30, 0, 0 )",
           "lines": [
             56
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/dates2.prg",
+      "sha256": "1cd5d90a5a828c969fa0eb959e620bcf912c406539c38cc050048a99cb5caf32",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with library/format/encoding-specific profile",
+      "families": [
+        "dates",
+        "set-format"
+      ],
+      "dependency_requirements": [
+        "Fixed hb_SToD date; unusual repeated date format fields and __SetCentury transitions"
+      ],
+      "effects_or_harness_risks": [
+        "Mutates date format and century setting repeatedly; console output"
+      ],
+      "output_comparison": "Initial date format varies; later fixed date output depends on formatting semantics",
+      "next_gate": "Declared initial SET state, per-transition formatting oracle and restoration",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_SToD( \"19990430\" )",
+          "lines": [
+            3
+          ]
+        },
+        {
+          "symbol_or_construct": "\"yyy/mm/ddd\"",
+          "lines": [
+            6
+          ]
+        },
+        {
+          "symbol_or_construct": "\"mmmmm/dd\"",
+          "lines": [
+            30
+          ]
+        },
+        {
+          "symbol_or_construct": "__SetCentury( \"off\" )",
+          "lines": [
+            10,
+            16,
+            22,
+            28,
+            34
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/datetime.prg",
+      "sha256": "c9afd31bf994f336d5bf49810723eb2f369141cf28195020fdbf3662e7820476",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with library/format/encoding-specific profile",
+      "families": [
+        "dates",
+        "environment-clock",
+        "nil-value"
+      ],
+      "dependency_requirements": [
+        "simpleio.ch; timestamp construction/type/date extraction; missing,NIL,zero and invalid components; milliseconds"
+      ],
+      "effects_or_harness_risks": [
+        "Queries current time repeatedly and prints fixed/partial/invalid constructions"
+      ],
+      "output_comparison": "Current-clock calls and current date/time format differ from fixed constructor cases",
+      "next_gate": "Split fixed-component/type/invalid-value oracle from clock fixture; no model of invalid dates inferred",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_DateTime( 1974, 31, 5, NIL",
+          "lines": [
+            26
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_DateTime( NIL, NIL, NIL, 10, 36, 5, 176 )",
+          "lines": [
+            36,
+            37
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_DateTime( 0, 0, 0, 10, 36, 5, 176 )",
+          "lines": [
+            39,
+            40
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/regex.prg",
+      "sha256": "5361da1b5a164e473062865ede82566cf1bc1df727cc055998e32148620e7346",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with library/format/encoding-specific profile",
+      "families": [
+        "strings",
+        "arrays",
+        "foreach",
+        "GT-screen",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "Compiled and string regex paths; match groups,split and AtX nested position arrays"
+      ],
+      "effects_or_harness_risks": [
+        "Draws captures/positions to screen; waits indefinitely; regex pattern is textual date match not calendar validation"
+      ],
+      "output_comparison": "Engine/capture/position semantics and screen geometry matter; no new regex support result",
+      "next_gate": "Own library/runtime regex contract and typed capture/boundary oracle; screen/input separate",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_regexComp(",
+          "lines": [
+            25
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_regexSplit(",
+          "lines": [
+            55,
+            70
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_regexAtX(",
+          "lines": [
+            85
+          ]
+        },
+        {
+          "symbol_or_construct": "Inkey( 0 )",
+          "lines": [
+            100
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/regex2.prg",
+      "sha256": "d47b9027ccb5a86826f2c5b636ae065bd1e0c2f5e708c1c82acc401e53260b79",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with library/format/encoding-specific profile",
+      "families": [
+        "strings",
+        "arrays",
+        "foreach",
+        "GT-screen",
+        "input-terminal",
+        "set-runtime"
+      ],
+      "dependency_requirements": [
+        "inkey.ch; GET/READ; regex compilation failure and no-match handling"
+      ],
+      "effects_or_harness_risks": [
+        "Changes SET CONFIRM; input-driven regex loop and screen clears"
+      ],
+      "output_comparison": "User patterns,input and engine-dependent; invalid regex is a distinct branch",
+      "next_gate": "Bounded scripted patterns/escape,invalid-input and no-match oracle; restore confirm/key state",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "SET CONFIRM ON",
+          "lines": [
+            17
+          ]
+        },
+        {
+          "symbol_or_construct": "DO WHILE LastKey() != K_ESC",
+          "lines": [
+            28
+          ]
+        },
+        {
+          "symbol_or_construct": "IF Empty( pCompiled )",
+          "lines": [
+            38
+          ]
+        },
+        {
+          "symbol_or_construct": "IF aMatch != NIL",
+          "lines": [
+            44
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/speedstr.prg",
+      "sha256": "6a02d478d646112d6bf6387c85c3fab3950e0b0c854d2538300f9394402e6bb3",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with library/format/encoding-specific profile",
+      "families": [
+        "strings",
+        "runtime-macro",
+        "memvars-dynamic-binding",
+        "file-static",
+        "classes",
+        "environment-clock",
+        "input-terminal",
+        "compound-assignment"
+      ],
+      "dependency_requirements": [
+        "200000 iterations per local/static/array/private/macro/object concatenation profile",
+        "secondsCPU translation differs by platform; hb_BChar of loop index; WAIT"
+      ],
+      "effects_or_harness_risks": [
+        "Allocates/grows dynamic strings,mutates multiple storage classes,prints CPU duration then waits"
+      ],
+      "output_comparison": "Timings are not byte-stable and no Rust-equivalent comparison exists here; source prints no final payload checksum",
+      "next_gate": "Separate binary-string/bounds/alias/lifetime contract and workload validation before benchmarking; not scalar speed evidence",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "#define N_LOOP 200000",
+          "lines": [
+            8
+          ]
+        },
+        {
+          "symbol_or_construct": "s2[ 1 ] += hb_BChar( i )",
+          "lines": [
+            45
+          ]
+        },
+        {
+          "symbol_or_construct": "&s += hb_BChar( i )",
+          "lines": [
+            58
+          ]
+        },
+        {
+          "symbol_or_construct": "o:v += hb_BChar( i )",
+          "lines": [
+            65
+          ]
+        },
+        {
+          "symbol_or_construct": "WAIT",
+          "lines": [
+            69
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/utf8at.prg",
+      "sha256": "23c62196c873c5781c489ec62c76ae20cff315dca3f590d79528c4cbf2408708",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source with library/format/encoding-specific profile",
+      "families": [
+        "strings",
+        "localization",
+        "preprocessor",
+        "nil-value"
+      ],
+      "dependency_requirements": [
+        "Requested FR850/FRISO codepages; translation from UTF8; byte and UTF8-aware forward/reverse search",
+        "Start/end optional arguments including explicit omitted argument and bound33"
+      ],
+      "effects_or_harness_risks": [
+        "Prints mixed raw encodings and positions; no input or files"
+      ],
+      "output_comparison": "Raw CP850/ISO bytes are not UTF8 text; byte offsets versus character offsets need distinct expected values",
+      "next_gate": "Byte-preserving capture,declared codepage registry and per-function offset/boundary oracle; no lossy decoded comparison",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "REQUEST HB_CODEPAGE_FR850",
+          "lines": [
+            6
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_Translate( u, \"UTF8\", \"FRISO\" )",
+          "lines": [
+            15
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_utf8At( ii, i )",
+          "lines": [
+            32
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_At( uu, u, , 33 )",
+          "lines": [
+            44
           ]
         }
       ]
