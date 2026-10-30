@@ -4,8 +4,8 @@
   "counts": {
     "inventory_files": 1203,
     "original_test_sources_compile_audited": 268,
-    "manual_entrypoint_dependency_reviews": 193,
-    "manually_reviewed_or_executed_sources": 197,
+    "manual_entrypoint_dependency_reviews": 197,
+    "manually_reviewed_or_executed_sources": 201,
     "frozen175_default_accepted": 20,
     "frozen175_llvm_accepted": 14,
     "execution_exact_by_profile": {
@@ -17127,8 +17127,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source resource/instrumentation profile;not auto-runnable",
+        "families": [
+          "RDD-workarea",
+          "filesystem",
+          "sorting",
+          "input-terminal"
+        ],
+        "next_gate": "Exclude from routine corpus runs; separate disposable storage budget and bounded large-file plan;no spending or real files",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -17559,8 +17573,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source resource/instrumentation profile;not auto-runnable",
+        "families": [
+          "floating-point",
+          "error-system",
+          "closures",
+          "arrays",
+          "GT-screen"
+        ],
+        "next_gate": "Float/error-mode and callback alias contract before implementation; typed numerical tolerances plus error/state trace and restoration",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -19011,8 +19040,25 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source resource/instrumentation profile;not auto-runnable",
+        "families": [
+          "closures",
+          "cycles",
+          "lifetime",
+          "runtime-memory-query",
+          "environment-clock",
+          "GT-screen",
+          "input-terminal"
+        ],
+        "next_gate": "Explicit GC/callback ownership contract; bounded event oracle and cleanup,not timed memory-stat equivalence",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -19743,8 +19789,24 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source resource/instrumentation profile;not auto-runnable",
+        "families": [
+          "classes",
+          "runtime-symbol-introspection",
+          "environment-clock",
+          "GT-screen",
+          "input-terminal",
+          "closures"
+        ],
+        "next_gate": "Separate profiler API/class/UI contract and state restoration; assert intended call events,not cross-runtime tick equality",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {

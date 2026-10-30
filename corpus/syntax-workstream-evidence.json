@@ -133,7 +133,8 @@
         "tests/fornext.prg",
         "tests/while.prg",
         "tests/foreach.prg",
-        "tests/foreach2.prg"
+        "tests/foreach2.prg",
+        "tests/math.prg"
       ],
       "seed_regression_paths": [
         "tests/t358_foreach_strord_num.hb",
@@ -239,7 +240,8 @@
         "tests/objarr.prg",
         "tests/dynobj.prg",
         "tests/foreach2.prg",
-        "tests/memfile.prg"
+        "tests/memfile.prg",
+        "tests/math.prg"
       ],
       "seed_regression_paths": [
         "tests/t750_float_arith_mixed.hb",
@@ -304,7 +306,9 @@
         "tests/codebloc.prg",
         "tests/memmgr.prg",
         "tests/declare.prg",
-        "tests/ppapi.prg"
+        "tests/ppapi.prg",
+        "tests/onidle.prg",
+        "tests/math.prg"
       ],
       "seed_regression_paths": [
         "tests/t208_nil_literal.hb",
@@ -380,7 +384,10 @@
         "tests/codebl.prg",
         "tests/codebloc.prg",
         "tests/declare.prg",
-        "tests/pp.prg"
+        "tests/pp.prg",
+        "tests/onidle.prg",
+        "tests/profiler.prg",
+        "tests/math.prg"
       ],
       "seed_regression_paths": [
         "tests/t150_cb_eval1.hb",
@@ -532,7 +539,8 @@
         "tests/sdf.prg",
         "tests/asort.prg",
         "tests/vmasort.prg",
-        "tests/pp.prg"
+        "tests/pp.prg",
+        "tests/largefil.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -590,7 +598,8 @@
         "tests/delim.prg",
         "tests/sdf.prg",
         "tests/gtxfnt.prg",
-        "tests/memfile.prg"
+        "tests/memfile.prg",
+        "tests/largefil.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -660,7 +669,11 @@
         "tests/speedstr.prg",
         "tests/foreach.prg",
         "tests/memmgr.prg",
-        "tests/ppapi.prg"
+        "tests/ppapi.prg",
+        "tests/largefil.prg",
+        "tests/onidle.prg",
+        "tests/profiler.prg",
+        "tests/math.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -711,7 +724,9 @@
         "tests/speedstr.prg",
         "tests/asort.prg",
         "tests/vmasort.prg",
-        "tests/memmgr.prg"
+        "tests/memmgr.prg",
+        "tests/onidle.prg",
+        "tests/profiler.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,

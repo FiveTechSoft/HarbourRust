@@ -535,3 +535,20 @@ it must not become an automatic runtime case. Its stringify gaps are distinct
 from the restricted marker awaiting permission. ppapi preprocesses database-like
 script strings but never executes them:that is runtime-pp evidence to design,
 not database feature coverage. No source instructions/comments change authority.
+
+### Resource/instrumentation profiles:197 manual /201 reviewed-or-executed
+
+Four additional full-source reviews give197 manual records and201 in the union
+(197+19-15). Historical executions remain19/14;no compile/run. largefil creates
+five million records with four256-character fields plus an index:multi-GB disk
+and500000 seeks require a separate resource budget and cannot enter routine
+corpus execution. onidle repeatedly creates cyclic arrays/closures in callbacks,
+waits30seconds and compares memory observations around GC;handle/timing/memory
+values are not cross-runtime correctness oracles.
+
+profiler enables instrumentation and interactive report browsing without an
+explicit disable call;its ticks are not an uninstrumented speed comparison.
+math changes error modes/blocks and invokes domain/overflow cases;the callback
+mutates its information array to return5.0. It needs numerical,error/callback
+and restoration assertions,not printed expectation text. None of these records
+allows large storage use,profiling or GC/float/runtime implementation changes.

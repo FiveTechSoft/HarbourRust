@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "193 distinct full-source manual metadata reviews; ledger computes union/overlap. Latest four distinguish external defines, INIT typed/macro declarations, compile-only stringify probes and runtime-pp script strings. No compile/run or pp change authority. Requirements not availability; tags not coverage.",
+  "scope": "197 distinct full-source manual metadata reviews; ledger computes union/overlap. Latest four distinguish multi-GB storage stress,cyclic idle GC,profiler UI and exceptional-math callbacks. No compile/run or new authority. Requirements not availability; tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -9032,6 +9032,234 @@
           "symbol_or_construct": "__pp_Process( l_pp, aScript[ i ] )",
           "lines": [
             69
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/largefil.prg",
+      "sha256": "6965dfc8a607773a38ee2ae1a9d8f7ff01df51b5e5881939618c5d7b427776fb",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source resource/instrumentation profile;not auto-runnable",
+      "families": [
+        "RDD-workarea",
+        "filesystem",
+        "sorting",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "DBFCDX explicitly selected;5000000 records with four256-character fields;index and500000 seeks"
+      ],
+      "effects_or_harness_risks": [
+        "Creates multi-GB DBF plus index,does long write/seek loops,waits,then deletes testdbf artifacts"
+      ],
+      "output_comparison": "Large-file/record/index semantics and storage/resource limits; failure to allocate not language support verdict",
+      "next_gate": "Exclude from routine corpus runs; separate disposable storage budget and bounded large-file plan;no spending or real files",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "local nTotalRecs := 5000000",
+          "lines": [
+            13
+          ]
+        },
+        {
+          "symbol_or_construct": "RddSetDefault( \"DBFCDX\" )",
+          "lines": [
+            16
+          ]
+        },
+        {
+          "symbol_or_construct": "OrdCreate(",
+          "lines": [
+            20
+          ]
+        },
+        {
+          "symbol_or_construct": "nTotalRecs / 10",
+          "lines": [
+            31
+          ]
+        },
+        {
+          "symbol_or_construct": "fErase( cFileName + \".dbf\" )",
+          "lines": [
+            41
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/onidle.prg",
+      "sha256": "d0635183835540ad9fb3a27112bf4091470f2f504012df329eca8a544fb80e27",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source resource/instrumentation profile;not auto-runnable",
+      "families": [
+        "closures",
+        "cycles",
+        "lifetime",
+        "runtime-memory-query",
+        "environment-clock",
+        "GT-screen",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "hbmemory.ch; idle callback handles,captured mutable state,explicit GC; mutually referencing arrays and self-capturing closure"
+      ],
+      "effects_or_harness_risks": [
+        "Creates cycles repeatedly,updates screen/time/memory during Inkey30,deletes callbacks,forces GC"
+      ],
+      "output_comparison": "Memory/handle values,timing and event cadence variable; stdout equality not lifetime correctness",
+      "next_gate": "Explicit GC/callback ownership contract; bounded event oracle and cleanup,not timed memory-stat equivalence",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "a[ 1 ] := a",
+          "lines": [
+            60
+          ]
+        },
+        {
+          "symbol_or_construct": "b[ 3 ] := c",
+          "lines": [
+            65
+          ]
+        },
+        {
+          "symbol_or_construct": "cb := {| x | x := cb }",
+          "lines": [
+            70
+          ]
+        },
+        {
+          "symbol_or_construct": "Inkey( 30 )",
+          "lines": [
+            28
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_idleDel( nH4 )",
+          "lines": [
+            43
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/profiler.prg",
+      "sha256": "4c3e85d7f08fe0c60c1c77557e81d1f78252fdd0ba77221d6feaa239a3619339",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source resource/instrumentation profile;not auto-runnable",
+      "families": [
+        "classes",
+        "runtime-symbol-introspection",
+        "environment-clock",
+        "GT-screen",
+        "input-terminal",
+        "closures"
+      ],
+      "dependency_requirements": [
+        "HBProfile/report classes; __SetProfiler enable;500 empty calls;2second Inkey;MemoEdit/TBrowse input"
+      ],
+      "effects_or_harness_risks": [
+        "Enables profiling,collects/sorts reports and enters interactive browser; no explicit profiler-disable call in source"
+      ],
+      "output_comparison": "Calls/ticks/name ordering and UI reflect instrumentation/runtime; not uninstrumented benchmark",
+      "next_gate": "Separate profiler API/class/UI contract and state restoration; assert intended call events,not cross-runtime tick equality",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "__SetProfiler( .T. )",
+          "lines": [
+            11
+          ]
+        },
+        {
+          "symbol_or_construct": "FOR n := 1 TO 500",
+          "lines": [
+            18
+          ]
+        },
+        {
+          "symbol_or_construct": "oProfile:gather()",
+          "lines": [
+            23
+          ]
+        },
+        {
+          "symbol_or_construct": "HBProfileReportToTBrowse",
+          "lines": [
+            39
+          ]
+        },
+        {
+          "symbol_or_construct": "SWITCH Inkey( 0 )",
+          "lines": [
+            75
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/math.prg",
+      "sha256": "d859e11b7090b4c4da709523f43946b36f30dd18b8f72f1e93c39a3651f052c5",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source resource/instrumentation profile;not auto-runnable",
+      "families": [
+        "floating-point",
+        "error-system",
+        "closures",
+        "arrays",
+        "GT-screen"
+      ],
+      "dependency_requirements": [
+        "hbmath.ch; Exp/Log/Sqrt domain/overflow/underflow; error modes and callback info array"
+      ],
+      "effects_or_harness_risks": [
+        "Changes math error mode/block,invokes exceptional arguments; callback writes handled flag and return5.0;restores prior modes normally"
+      ],
+      "output_comparison": "libm/errors/formatting and callback side effects require explicit contract; printed expected text not oracle",
+      "next_gate": "Float/error-mode and callback alias contract before implementation; typed numerical tolerances plus error/state trace and restoration",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Log( -10 )",
+          "lines": [
+            32,
+            44,
+            59
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_matherMode( HB_MATH_ERRMODE_USERDEFAULT )",
+          "lines": [
+            37
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_matherBlock( {|",
+          "lines": [
+            51
+          ]
+        },
+        {
+          "symbol_or_construct": "aInfo[ HB_MATHERRORBLOCK_RETVAL ] := 5.0",
+          "lines": [
+            90
+          ]
+        },
+        {
+          "symbol_or_construct": "aInfo[ HB_MATHERRORBLOCK_HANDLED ] := .T.",
+          "lines": [
+            91
           ]
         }
       ]
