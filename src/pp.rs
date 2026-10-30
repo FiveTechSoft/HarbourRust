@@ -42,6 +42,7 @@ pub struct Pp {
 pub struct Cmd {
     pattern: Vec<String>, // tokens; "<name>" marks a capture
     result: String,
+    restricted_exact: bool, // X directives disallow abbreviation in new lists
 }
 
 impl Pp {
@@ -464,23 +465,44 @@ fn cmd_tokens(text: &str) -> Vec<String> {
 // including nesting (probe b18).
 
 // Own black-box marker probes: plain/list/paren plus ASCII identifier <!x!>
-// and rest-of-line <*x*>. This is not the full Harbour marker grammar.
+// and rest-of-line <*x*>, plus restricted literal alternatives <x: A, B>.
+// This is not the full Harbour marker grammar.
 fn marker_name(inner: &str) -> &str {
     if inner.len()>=2 && ((inner.starts_with('(') && inner.ends_with(')'))
         || (inner.starts_with('!') && inner.ends_with('!'))
         || (inner.starts_with('*') && inner.ends_with('*'))) {
         &inner[1..inner.len()-1]
-    } else { inner.strip_suffix(",...").unwrap_or(inner) }
+    } else if let Some((name, _)) = inner.split_once(':') { name.trim() }
+    else { inner.strip_suffix(",...").unwrap_or(inner) }
 }
 fn marker_ident(s: &str) -> bool {
     let b=s.as_bytes();
     !b.is_empty() && (b[0].is_ascii_alphabetic() || b[0]==b'_')
         && b[1..].iter().all(|c|c.is_ascii_alphanumeric() || *c==b'_')
 }
+// Restricted literal alternatives are case-insensitive token sequences. X directives
+// require exact words; ordinary directives permit four-character abbreviations.
+// Empty alternatives and macro ampersand restrictions stay fail-closed.
+fn restricted_alternatives(inner: &str) -> Option<Vec<Vec<String>>> {
+    let (_, choices) = inner.split_once(':')?;
+    Some(choices.split(',').map(|s| cmd_tokens(s.trim())).collect())
+}
+fn repeated_single_marker(t: &str) -> bool {
+    (t.starts_with("<!") && t.ends_with("!>"))
+        || (t.starts_with('<') && t.ends_with('>') && t.contains(':'))
+}
 fn validate_markers(pattern: &[String], line: usize) -> Result<(), String> {
     for t in pattern {
         if t.starts_with('<') && t.ends_with('>') && t.len()>2 {
-            if !marker_ident(marker_name(&t[1..t.len()-1])) {
+            let inner = &t[1..t.len()-1];
+            // Macro restrictions (&) and malformed/empty alternatives are
+            // outside this literal-list increment and stay fail-closed.
+            let valid_choices = restricted_alternatives(inner).map(|choices|
+                !choices.is_empty() && choices.iter().all(|seq| !seq.is_empty()
+                    && seq.iter().all(|t| marker_ident(t)
+                        || t.bytes().all(|b| b.is_ascii_digit()) || t == "(" || t == ")"))
+            ).unwrap_or(true);
+            if !marker_ident(marker_name(inner)) || !valid_choices {
                 return Err(format!("line {}: bad match marker {} in #command/#translate (Harbour: E0010)",line,t));
             }
         }
@@ -535,7 +557,7 @@ fn validate_result_markers(pattern: &[String], result: &str, line: usize) -> Res
     Ok(())
 }
 
-fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
+fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool) -> Option<Vec<String>> {
     // First literal token at or after pat[i], looking through markers and
     // group brackets; used as the terminator for captures.
     fn next_lit(pat: &[String], i: usize) -> Option<&str> {
@@ -566,7 +588,7 @@ fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
     }
     // Match a pattern slice (with balanced groups) against src, returning
     // tokens consumed. Captures are pushed in pattern order.
-    fn match_seq(pat: &[String], src: &[String], caps: &mut Vec<String>) -> Option<usize> {
+    fn match_seq(pat: &[String], src: &[String], caps: &mut Vec<String>, restricted_exact: bool) -> Option<usize> {
         let mut si = 0usize;
         let mut pi = 0usize;
         while pi < pat.len() {
@@ -589,15 +611,15 @@ fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
                     caps.push(src[start..si].join(" "));pi=j;continue;
                 }
                 let mut gcaps: Vec<String> = Vec::new();
-                match match_seq(inner, &src[si..], &mut gcaps) {
+                match match_seq(inner, &src[si..], &mut gcaps, restricted_exact) {
                     Some(consumed) => {
                         si += consumed;
-                        // Optional groups containing the new identifier marker
+                        // Optional groups containing identifier/restricted markers
                         // repeat greedily, appending each marker capture in order.
-                        if consumed>0 && inner.iter().any(|t|t.starts_with("<!")&&t.ends_with("!>")) {
+                        if consumed>0 && inner.iter().any(|t|repeated_single_marker(t)) {
                             loop {
                                 let mut more=Vec::new();
-                                match match_seq(inner,&src[si..],&mut more) {
+                                match match_seq(inner,&src[si..],&mut more, restricted_exact) {
                                     Some(n) if n>0 && more.len()==gcaps.len()=>{
                                         for (dst,value) in gcaps.iter_mut().zip(more) {
                                             if !value.is_empty(){if !dst.is_empty(){dst.push(' ');}dst.push_str(&value);}
@@ -622,6 +644,13 @@ fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
                     }
                 }
                 pi = j;
+            } else if p.starts_with('<') && p.ends_with('>') && p.contains(':') {
+                let choices = restricted_alternatives(&p[1..p.len()-1])?;
+                let choice = choices.iter().find(|tokens| !tokens.is_empty()
+                    && si + tokens.len() <= src.len()
+                    && tokens.iter().zip(&src[si..]).all(|(lit, word)| if restricted_exact { word.eq_ignore_ascii_case(lit) } else { lit_match(word, lit) }))?;
+                caps.push(src[si..si+choice.len()].join(" "));
+                si += choice.len(); pi += 1;
             } else if p.starts_with("<!") && p.ends_with("!>") {
                 if si>=src.len() || !marker_ident(&src[si]) {return None;}
                 caps.push(src[si].clone());si+=1;pi+=1;
@@ -663,7 +692,7 @@ fn cmd_match(pat: &[String], src: &[String]) -> Option<Vec<String>> {
         Some(si)
     }
     let mut caps: Vec<String> = Vec::new();
-    let consumed = match_seq(pat, src, &mut caps)?;
+    let consumed = match_seq(pat, src, &mut caps, restricted_exact)?;
     if consumed != src.len() { return None; } // trailing tokens: no match
     Some(caps)
 }
@@ -782,7 +811,7 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
         if first.starts_with('<') { continue; }
         if !lit_match(&src[0], first) { continue; }
         starts = true;
-        if let Some(caps) = cmd_match(&c.pattern, &src) {
+        if let Some(caps) = cmd_match(&c.pattern, &src, c.restricted_exact) {
             let lits = c.pattern.iter().filter(|t| !(t.starts_with('<') && t.ends_with('>')) && t.as_str() != "[" && t.as_str() != "]").count();
             // probes b47/b47b/b47c: equal literal counts keep the LATEST
             // definition (>= replaces the current winner with a later tie).
@@ -1072,7 +1101,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     validate_markers(&pattern, line)?;
                     let result = arg[arrow + 2..].trim().to_string();
                     validate_result_markers(&pattern, &result, line)?;
-                    pp.cmds.push(Cmd { pattern, result });
+                    pp.cmds.push(Cmd { pattern, result, restricted_exact: dir.starts_with('X') });
                 }
             }
             "TRANSLATE" | "XTRANSLATE" => {
@@ -1104,7 +1133,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                             }
                             validate_markers(&pattern, line)?;
                             validate_result_markers(&pattern, &result, line)?;
-                            pp.cmds.push(Cmd { pattern, result });
+                            pp.cmds.push(Cmd { pattern, result, restricted_exact: dir.starts_with('X') });
                         }
                     }
                 }

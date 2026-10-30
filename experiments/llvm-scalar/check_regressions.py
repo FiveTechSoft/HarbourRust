@@ -10,7 +10,7 @@ work = pathlib.Path('experiments/llvm-scalar/run')
 base = pathlib.Path('experiments/llvm-scalar')
 hbc = str(work / 'hbc')
 env = os.environ
-selected = ['t1087_pp_identifier_marker.hb','t1088_pp_identifier_pair.hb','t1089_pp_wildcard_marker.hb','t1090_pp_wildcard_optional.hb','t1095_pp_identifier_translate.hb','t1098_pp_identifier_result_optional.hb','t28_exit_loop.hb', 't42_for_exit_loop.hb', 't48_nested_exit.hb',
+selected = ['t1099_pp_restricted_choice.hb', 't1100_pp_restricted_case.hb', 't1101_pp_restricted_phrase.hb', 't1102_pp_restricted_abbrev.hb', 't1103_pp_restricted_optional.hb', 't1104_pp_restricted_translate.hb'] + ['t1087_pp_identifier_marker.hb','t1088_pp_identifier_pair.hb','t1089_pp_wildcard_marker.hb','t1090_pp_wildcard_optional.hb','t1095_pp_identifier_translate.hb','t1098_pp_identifier_result_optional.hb','t28_exit_loop.hb', 't42_for_exit_loop.hb', 't48_nested_exit.hb',
             't49_nested_loop.hb', 't129_arr_loop.hb',
             't980_inline_if_qout.hb','t982_original_ifinline.hb','t792_barelocal_for.hb','t601_shortcircuit.hb','t602_log_fn.hb','t606_dotted_forms.hb','t722_qq_logical.hb', 't907_original_while.hb', 't997_original_recursiv.hb']
 manifest = {}

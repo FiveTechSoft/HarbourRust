@@ -1,0 +1,969 @@
+{
+  "before": "e71b0ed",
+  "after": "candidate-restricted",
+  "scope": "Compile-only268originalsx4;no newly accepted or lost accepted source;diagnostic position not original line map.",
+  "changed_profile_rows": 96,
+  "changed_distinct_sources": 24,
+  "changes": [
+    {
+      "file": "tests/cgi.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/cgi.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/cgi.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/cgi.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clasinh.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clasinh.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clasinh.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clasinh.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/classch.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/classch.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/classch.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/classch.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/cls.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/cls.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/cls.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/cls.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsccast.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsccast.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsccast.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsccast.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsicast.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsicast.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsicast.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsicast.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsnv.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsnv.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsnv.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsnv.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsscast.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsscast.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsscast.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsscast.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsscope.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsscope.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsscope.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/clsscope.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/declare.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/declare.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/declare.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/declare.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/destruct.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/destruct.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/destruct.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/destruct.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/foreach2.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/foreach2.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/foreach2.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/foreach2.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/html.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/html.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/html.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/html.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/inhprob.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/inhprob.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/inhprob.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/inhprob.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/inifile.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/inifile.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/inifile.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/inifile.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/inifiles.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/inifiles.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/inifiles.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/inifiles.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/macro.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/macro.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/macro.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/macro.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/money.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/money.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/money.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/money.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/op.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/op.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/op.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/op.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/overload.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/overload.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/overload.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/overload.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/persist.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/persist.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/persist.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/persist.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/rddtest/rddmktst.prg",
+      "profile": "current",
+      "before": [
+        "error: line 27: bad match marker <desc: DESCENDING> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 247: character not allowed `#` (U+0023)"
+      ]
+    },
+    {
+      "file": "tests/rddtest/rddmktst.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 27: bad match marker <desc: DESCENDING> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 247: character not allowed `#` (U+0023)"
+      ]
+    },
+    {
+      "file": "tests/rddtest/rddmktst.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 27: bad match marker <desc: DESCENDING> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 247: character not allowed `#` (U+0023)"
+      ]
+    },
+    {
+      "file": "tests/rddtest/rddmktst.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 27: bad match marker <desc: DESCENDING> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 247: character not allowed `#` (U+0023)"
+      ]
+    },
+    {
+      "file": "tests/speedstr.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/speedstr.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/speedstr.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/speedstr.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/stripem.prg",
+      "profile": "current",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/stripem.prg",
+      "profile": "llvm",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/stripem.prg",
+      "profile": "current_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    },
+    {
+      "file": "tests/stripem.prg",
+      "profile": "llvm_windows",
+      "before": [
+        "error: line 233: bad match marker <frm: FROM, INHERIT> in #command/#translate (Harbour: E0010)"
+      ],
+      "after": [
+        "error: line 233: unknown result marker <.metaClass.> (Harbour: E0008)"
+      ]
+    }
+  ]
+}

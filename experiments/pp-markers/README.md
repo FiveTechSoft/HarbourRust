@@ -78,7 +78,7 @@ Versioned audit compiler is explicitly candidate-markers as tested precommit;
 publication SHA and independent rebuilt replay are recorded in verification logs.
 This does not silently replace old corpus audits with a new compiler label.
 
-## Next blockers after the scoped increment,no further implementation
+## Historical next blockers after the two-marker increment
 
 The31 moved first diagnostics partition into23 restricted FROM/INHERIT marker
 failures,one restricted DESCENDING marker failure,two missing ads.ch includes,
@@ -122,3 +122,47 @@ therefore not proof the language lexer itself is the root cause. A minimized
 own-source re-emission failure is now separately preserved. Multiple earlier
 command capture/result issues can coexist; accepting a header marker cannot
 be promoted to full header/language/runtime support.
+
+## Restricted literal lists:2026-10-30 increment
+
+This increment adds own MIT matching code for literal alternatives such as
+`<mode: FROM, INHERIT>` to the shared preprocessor,on the experimental branch.
+Names bind through ordinary result markers;source spelling/case is preserved.
+Single/multi-word,numeric and empty-parenthesis literal choices are supported.
+Ordinary command/translate rules allow keyword abbreviations of at least four
+characters;X directives require exact restricted words. This new distinction
+is scoped to restricted choices,not an unrelated rewrite of existing literals.
+Optional restricted groups repeat greedily,as observed against hbpp.
+
+172 own-source probes compare matched token streams or nonmatches with pinned
+hbpp,alongside190 previous marker probes. Nonmatches retain the preexisting own
+incomplete-statement diagnostic rather than leaving original text unchanged.
+Macro ampersand restrictions and empty/malformed alternatives remain rejected.
+A trailing empty choice is legal to Harbour but deliberately outside this
+increment;the negative regression records our narrower fail-closed boundary.
+Existing translate-prefix/call-form limitations,other result markers,and
+lexical reemission/stringify defects are not repaired. Token equality is not
+arbitrary end-to-end expression correctness.
+
+Six executable positive and six rejection regressions exercise both backends
+and target profiles. Fresh candidate default battery1110PASS ALLGREEN;LLVM
+254PASS (previous230 plus12 positive target cases and12 shared rejections).
+10218/10130 Rust comparison checks and46 exact error traces stay separate.
+Fourteen reviewed original console programs freshly byte-match Harbour/default/
+LLVM;this repeats existing evidence,not14 new originals. Two own reference
+programs and eight expected rejects reconfirm unchanged dotted/stringify gaps.
+
+Compile-only268x4 acceptance remains21/15 Linux and20/14 Windows.24 distinct
+originals move their first diagnostic (96 profile rows),without any newly
+accepted or lost accepted source.23 now stop at the separately unsupported
+`<.metaClass.>` result marker;one stops at a `#` lexical diagnostic. These are
+new frontiers,not24 passing programs. No class/RDD/runtime support is inferred.
+Frozen corpus ledgers remain historical and are not silently overwritten.
+Versioned results identify candidate-restricted;publication and independently
+rebuilt replay are recorded separately in verification logs.
+
+```
+python3 experiments/pp-markers/build_hpp.py --output /tmp/hpp
+python3 experiments/pp-markers/check_restricted_implemented.py \
+  --hbpp /path/to/hbpp --hpp /tmp/hpp --output-dir /tmp/restricted-oracle
+```

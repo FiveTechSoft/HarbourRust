@@ -1094,3 +1094,15 @@ pos tests/t1095_pp_identifier_translate.hb \n        42
 neg tests/t1096_pp_marker_malformed_neg.hb bad match marker
 neg tests/t1097_pp_identifier_optional.hb incomplete statement
 pos tests/t1098_pp_identifier_result_optional.hb \n        42
+pos tests/t1099_pp_restricted_choice.hb \n        42
+pos tests/t1100_pp_restricted_case.hb \n        42
+pos tests/t1101_pp_restricted_phrase.hb \n        42
+pos tests/t1102_pp_restricted_abbrev.hb \n        42
+pos tests/t1103_pp_restricted_optional.hb \n        42\n        42
+pos tests/t1104_pp_restricted_translate.hb \n        42
+neg tests/t1105_pp_restricted_exact_neg.hb incomplete statement
+neg tests/t1106_pp_restricted_unknown_neg.hb incomplete statement
+neg tests/t1107_pp_restricted_prefix_neg.hb incomplete statement
+neg tests/t1108_pp_restricted_quote_neg.hb incomplete statement
+neg tests/t1109_pp_restricted_empty_neg.hb bad match marker
+neg tests/t1110_pp_restricted_macro_neg.hb bad match marker

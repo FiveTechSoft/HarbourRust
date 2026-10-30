@@ -1,0 +1,1553 @@
+{
+  "scope": "Own-source restricted literal-list token oracle. Exact case-insensitive single/multi-token alternatives,optional repetition,numeric/empty-parens choices. No macro ampersand restriction or arbitrary grammar. Token equality is not lexical reemission or execution proof.",
+  "rows": [
+    {
+      "case": 0,
+      "directive": "command",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FROM alpha",
+      "source_sha256": "8b09abe9bdc015b213950d563d1e6b5c31c0882f23147be009cdd68ef4f5d56d",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 1,
+      "directive": "command",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE INHERIT alpha",
+      "source_sha256": "36c867ff59c263ccd82cc041ef0baf112d7db98f87b1056e10a046f89658f020",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 2,
+      "directive": "command",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE from alpha",
+      "source_sha256": "8dc1fdb14406e9428912752cff83869cd5eb91398cf05fac13e5c1e3c78c6c83",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 3,
+      "directive": "command",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FrOm alpha",
+      "source_sha256": "828905ae791a5e7f895969f32abeb55d20bb91b9498fd3a18f768936200826e2",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 4,
+      "directive": "command",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FR alpha",
+      "source_sha256": "460a2fd84b1be073ac442f02df236cda5f9c91c5f9e7db3fd370556f5d88ac06",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 5,
+      "directive": "command",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FRO alpha",
+      "source_sha256": "1cab7abfb3508da1477fde498315a4cadf8d97eb116323accd8cd832a8b9c0c8",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 6,
+      "directive": "command",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FROMAGE alpha",
+      "source_sha256": "7afab1bf115ed60533d37d9df5d54baba9c575e4edf6ffa86775fc9ca6398c14",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 7,
+      "directive": "command",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE OTHER alpha",
+      "source_sha256": "4bb2b3cc93ce52e2434e7257455795b1664ee1dfeeeec4a6123c18126a506bea",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 8,
+      "directive": "command",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FROM INHERIT alpha",
+      "source_sha256": "6e463749a4f92f654250e631713e23995371dc0bc8911702e5bdcb97156dc2b2",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 9,
+      "directive": "command",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE  alpha",
+      "source_sha256": "8c3c62bba96b7b966e7c3f9f155a937838e7b04eedbbe5fe8a20a5d8bcab03c1",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 10,
+      "directive": "command",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE INHE alpha",
+      "source_sha256": "e74fd4feed30b384135a69e4663108d4b1cdc9507b78e480527838992a5c3cd5",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 11,
+      "directive": "command",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE INHER alpha",
+      "source_sha256": "c8c9086e5404a6d73d73deb8599a3d7216cc72d5af422f540d07343f741d31f5",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 12,
+      "directive": "command",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE \"FROM\" alpha",
+      "source_sha256": "5dbf361a3ff3421506aacd899fab91bfdeeadc75ea1737b291e1218a45665c92",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 13,
+      "directive": "command",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE (FROM) alpha",
+      "source_sha256": "a1a9fbb640dec412cc342222cbc5b4db51931d82dd61cf5c934b94221fb38b0d",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 14,
+      "directive": "command",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE DESCENDING alpha",
+      "source_sha256": "296a0dd78efc0bddc324fc0681469e0cbc707edccfa6e95ac7412e52a4261194",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 15,
+      "directive": "command",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE descending alpha",
+      "source_sha256": "d629b2c750f9f9fdafc0d4bcf703cbf0f6c03790a70a676e6e8fd443b9b7c191",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 16,
+      "directive": "command",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE DESC alpha",
+      "source_sha256": "bdc3b6dc3285581213b86951f8f370c0c185a627149e3cfbdd29a7aa7a4ac406",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 17,
+      "directive": "command",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE DESCENDIN alpha",
+      "source_sha256": "68a4b85789ea3a982195d2abae16ca1d9e39ce0e5d46d45ce811d689470dd154",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 18,
+      "directive": "command",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE DESCENDINGLY alpha",
+      "source_sha256": "f879ca110f5ece2c73dade237d56fba82a0e7e70d3f7e6124bde03784b2f15a1",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 19,
+      "directive": "command",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE OTHER alpha",
+      "source_sha256": "2b0df524b245cb1714103f108b269c759fc89f2ff0fc5a5aea027be9ffd47746",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 20,
+      "directive": "command",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE  alpha",
+      "source_sha256": "bf88b5b90e84cb035573b668e68af1928ef9389c97aa665cd1841f268a564e7a",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 21,
+      "directive": "command",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE \"DESCENDING\" alpha",
+      "source_sha256": "4a82e8ea8374c0eddb227c38e9595364b089a75bf94b7e730db0430210f344a6",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 22,
+      "directive": "command",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE MODULE FRIENDLY alpha",
+      "source_sha256": "45aa21e2b859d9d239c8433accedd55da3b1906c1127e0f14b58788a06bf2a5f",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 23,
+      "directive": "command",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE module friendly alpha",
+      "source_sha256": "4b8412740eb4d7bc4b9fff90bdf1adb06db8293ea59e3bfc091075abf05b91a2",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 24,
+      "directive": "command",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE MODULE alpha",
+      "source_sha256": "1f8fca44f55fc7e448fbdfe1864dca32fc8573b0fed04ecbc1662a1913e82058",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 25,
+      "directive": "command",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE MODULE FRIEND alpha",
+      "source_sha256": "5f6739e0a3bf9e84056ad799fc9300ad24588447dd6471596b3fd5a24f78b41b",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 26,
+      "directive": "command",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE STATIC alpha",
+      "source_sha256": "6c795a1c77d2c4b50cc1bd67710b2c28d5d01a8d969bab658cf7303ae7f1b397",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 27,
+      "directive": "command",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE static alpha",
+      "source_sha256": "3b01209cd1dfd2a5f9069a9b658c90229dc68e96ab9f5c9ae011010729f482eb",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 28,
+      "directive": "command",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE MODULE FRIENDLY STATIC alpha",
+      "source_sha256": "b78d4597fe876acaaad8a35171150fb573191f6f8f6d8ae2e9b1ab44d7f2c22e",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 29,
+      "directive": "command",
+      "pattern": "PROBE <mode: 123, 456> <!name!>",
+      "input": "PROBE 123 alpha",
+      "source_sha256": "85e1acc516b7c71604467a6907ab3bf405bec3ebea7cf34022b9e799fece843a",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 30,
+      "directive": "command",
+      "pattern": "PROBE <mode: 123, 456> <!name!>",
+      "input": "PROBE 456 alpha",
+      "source_sha256": "6b02cdcee627f04377436fa2be2004997f0c636bb5488de6c198ce2eec488d9a",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 31,
+      "directive": "command",
+      "pattern": "PROBE <mode: 123, 456> <!name!>",
+      "input": "PROBE 12 alpha",
+      "source_sha256": "a740e4b83af1266e4be632d8e50b7a853b11f918e8f55fef3e46a9b1ba0d51b4",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 32,
+      "directive": "command",
+      "pattern": "PROBE <mode: 123, 456> <!name!>",
+      "input": "PROBE 1234 alpha",
+      "source_sha256": "c55e3f676b7a0baa3c77d42c439d42821884a3af4fddfac92efa3b71ac948a6f",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 33,
+      "directive": "command",
+      "pattern": "PROBE <mode: ()> <!name!>",
+      "input": "PROBE () alpha",
+      "source_sha256": "994f152c1a3538550419e6ce52bcb17899e29eb20ea18e1ef07141a68a6b9c46",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 34,
+      "directive": "command",
+      "pattern": "PROBE <mode: ()> <!name!>",
+      "input": "PROBE ( ) alpha",
+      "source_sha256": "75549a97f1773f87ac4d44710587ae54bcd97a959fc4fe0096a24c4c9f5e9fdd",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 35,
+      "directive": "command",
+      "pattern": "PROBE <mode: ()> <!name!>",
+      "input": "PROBE (x) alpha",
+      "source_sha256": "e8c1446db60796e8003ca70370055d09c89bdc1e15703464a0665a5ce39a4b5a",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 36,
+      "directive": "command",
+      "pattern": "PROBE <mode: ()> <!name!>",
+      "input": "PROBE  alpha",
+      "source_sha256": "8db0cae974be9d99e2b9e435d2263593cc1f32b10ab49377ea66b0515e00c998",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 37,
+      "directive": "command",
+      "pattern": "PROBE [<m: FROM, INHERIT>]",
+      "input": "PROBE",
+      "source_sha256": "a0efc1a3744e8e42569f55cace659538f1952265f4bde60d22c611c3270118d3",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 38,
+      "directive": "command",
+      "pattern": "PROBE [<m: FROM, INHERIT>]",
+      "input": "PROBE FROM INHERIT",
+      "source_sha256": "79f9e8de079dd7a671d7764129d306465a37f0689e0249ac4eb8b66d6a82fdcb",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 39,
+      "directive": "command",
+      "pattern": "PROBE [<m: FROM, INHERIT>] STOP",
+      "input": "PROBE FROM INHERIT STOP",
+      "source_sha256": "0da216c195bb601ea08eb00711f8c3dccaf67ec0675e58f7c83d3e2deebf1e8d",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 40,
+      "directive": "command",
+      "pattern": "PROBE [WORD <m: FROM, INHERIT>]",
+      "input": "PROBE WORD FROM WORD INHERIT",
+      "source_sha256": "e1baa8b7ca493d8f9db0d948a3ec19dd9c6e1d433659ea4304ab505dd0146bbf",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 41,
+      "directive": "command",
+      "pattern": "PROBE <m: FROM, INHERIT> <!n!>",
+      "input": "PROBE FROM alpha",
+      "source_sha256": "036072fd2121c19726bf27136a364ff74143daa7780b8ff836d478fffa5ec6be",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 42,
+      "directive": "command",
+      "pattern": "PROBE <m: FROM, INHERIT> <!n!>",
+      "input": "PROBE FROM 123",
+      "source_sha256": "f3b4767d044163b4e6cef31807e160557710eb8c1569a9e0c5d4c8995ac0e273",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 43,
+      "directive": "command",
+      "pattern": "PROBE [<m: MODULE FRIENDLY>] [<s: STATIC>]",
+      "input": "PROBE MODULE FRIENDLY STATIC",
+      "source_sha256": "473311c416cfce34782b30c3eefc72c060521a2219f15a6470cc64eddb33bb59",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 44,
+      "directive": "command",
+      "pattern": "PROBE <m: FROM, INHERIT> STOP",
+      "input": "PROBE FROM STOP",
+      "source_sha256": "627b78c0ea7fc88ed7b9691f4070c84a607d3ed62edc0db8554d8e8048de2680",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 45,
+      "directive": "command",
+      "pattern": "PROBE <m: FROM, INHERIT> STOP",
+      "input": "PROBE FROMAGE STOP",
+      "source_sha256": "94b1bf09259c6747bbdf588d1cb7e0154fd62ab5c2638e228c93508affc0febf",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 46,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FROM alpha",
+      "source_sha256": "9d9a108d75480bd8822c7e603e84b6cf12721714f786fbda588b98284f6d89f5",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 47,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE INHERIT alpha",
+      "source_sha256": "e2a9112542010e1cebd4b6438170615ce9fcefc4baf7535eed6e3ce995f2e104",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 48,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE from alpha",
+      "source_sha256": "1dec1e9c66669bc468a2eceef18acda3bb4e5582010fd482e1de25a1f8673953",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 49,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FrOm alpha",
+      "source_sha256": "73da2165748a2a001e9761e229458066e092bf3f4beef90f27d79ab343678ba5",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 50,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FR alpha",
+      "source_sha256": "f37ad294fa93fe4039b974570ff2c07a517bb5ca0dd198f097edaee051d28387",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 51,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FRO alpha",
+      "source_sha256": "240924020ad91f0494ccc4827c0780e5133e92d97af328a94b98f55d6f2689e9",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 52,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FROMAGE alpha",
+      "source_sha256": "1f9d3c28d63794b7ff06d8d20e4cb36003d1a052ebd2d3fc661ce85368241cf0",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 53,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE OTHER alpha",
+      "source_sha256": "1b48a6ed94d4070212422039d91c44f712044a770825d9157c7193a5d436b2c9",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 54,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FROM INHERIT alpha",
+      "source_sha256": "2fcfc2bccd40cdfedc61856e5c90e382bd1cd717e0c523fe4670337947b01bc1",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 55,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE  alpha",
+      "source_sha256": "83fed56be1e3411e02e71def199d796ae3dd147965142980d7c8cd4fae116e9d",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 56,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE INHE alpha",
+      "source_sha256": "6a7888229a3be44cd631e3d19ccf0d5d4b73ea1efa48751506fcebcb63a054ef",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 57,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE INHER alpha",
+      "source_sha256": "1f8a9320a268fb39908d1fae08d3dd23968ea65c5c36ea7a3cb44364fde0dfa3",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 58,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE \"FROM\" alpha",
+      "source_sha256": "ef6754aa4471d66cbd8a5922cf654421bc6edb35a85cecf782ea73239652e8b9",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 59,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE (FROM) alpha",
+      "source_sha256": "2335b7a9e21e6af550e08306cb9300e3e1126af040a1843cde3c23749dd08b82",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 60,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE DESCENDING alpha",
+      "source_sha256": "6b722022e47af14a882795eff87cc8a168c2fc30974c31d28ee9430c3ad4293d",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 61,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE descending alpha",
+      "source_sha256": "7f94e008f0353cb1ec6d9256182cb2e38e2a2e645ceed026ae32975745b73787",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 62,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE DESC alpha",
+      "source_sha256": "d973986aa57a7f006ad16015d9f8b7614d5908931b79b3ec349be84804bbd4fa",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 63,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE DESCENDIN alpha",
+      "source_sha256": "c3e5dcefd120d63ec3f15c1637d0a18d18c99a350c71ec226fd1daea748ffa21",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 64,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE DESCENDINGLY alpha",
+      "source_sha256": "b1932331a65359515d0e5c44335a5d1575ce76f2b7372ec4767d9dd1a3c83d73",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 65,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE OTHER alpha",
+      "source_sha256": "282fa259827f4c7d72ed16592b90fb8fbfe96fe24dd33d333c6b2f0c736af535",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 66,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE  alpha",
+      "source_sha256": "85b5e00696dfb722a4b337be67197fa0a9118d0b4728d17166cd406eed531a57",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 67,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE \"DESCENDING\" alpha",
+      "source_sha256": "bafd3e0621a15281f7029ec45f1b91d87f406af69e417780943b19d6bac9ad0e",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 68,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE MODULE FRIENDLY alpha",
+      "source_sha256": "24dab54186c4b2e66326f7e14d0b6b61a59e124c2ec33e2c5f27499e299375bb",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 69,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE module friendly alpha",
+      "source_sha256": "60239c0f935f5f7c7f56d4398f4390ef92fb277126567822b4cd3f1718ab57dd",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 70,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE MODULE alpha",
+      "source_sha256": "ef5446fdf93e88cad613f64b74550529ce57c0da8b5ad43fc78e73b299b6c332",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 71,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE MODULE FRIEND alpha",
+      "source_sha256": "d90e910200b61198f0e5e64a01ab365bcc891d32f2adb34c363df038a922dc50",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 72,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE STATIC alpha",
+      "source_sha256": "66b9c0cc67cd13d51dfad979329bd491a51d3f8703eb6f2265482dd8a7fb217c",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 73,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE static alpha",
+      "source_sha256": "83b82e9aa9ccd6c36028a7c952130e6e1d39b016830a7a05a3334220c186a461",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 74,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE MODULE FRIENDLY STATIC alpha",
+      "source_sha256": "bf35214e3d268cdf84bb277e0c1030082bc87c8a7fd1ea3da0fd90cd112df6a5",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 75,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: 123, 456> <!name!>",
+      "input": "PROBE 123 alpha",
+      "source_sha256": "8bc1e6a362374885dd74a51070b9cedf451b3bcafe95e7fd4ba372cccab7fd30",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 76,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: 123, 456> <!name!>",
+      "input": "PROBE 456 alpha",
+      "source_sha256": "e9e6fcbb4265d7765add34fd4b483ef8c2466161e9b599ccf7c576909d81b9f6",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 77,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: 123, 456> <!name!>",
+      "input": "PROBE 12 alpha",
+      "source_sha256": "8b25d04f35603ff5002b76ef15f1663dcd09db7e2e93e2558ff1e1aefac837e0",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 78,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: 123, 456> <!name!>",
+      "input": "PROBE 1234 alpha",
+      "source_sha256": "d75fbb74ad07c44bfdb196ec1dee3a5b22a8bc4fcf79a76db6235641d2cdc5fd",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 79,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: ()> <!name!>",
+      "input": "PROBE () alpha",
+      "source_sha256": "5a9a2da9d35c692fb6d4d9f107f7c7af19c14a7b2f9af9f3424c3a2d7206c035",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 80,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: ()> <!name!>",
+      "input": "PROBE ( ) alpha",
+      "source_sha256": "3f8a6fcfcc9cc8762b66506c9bbbc03f891141f10189eeec306e70926694a6e6",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 81,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: ()> <!name!>",
+      "input": "PROBE (x) alpha",
+      "source_sha256": "a941420045b28d29f1d410ef40ad4d6498c758d87a89d7419dcab51af715bdf8",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 82,
+      "directive": "xcommand",
+      "pattern": "PROBE <mode: ()> <!name!>",
+      "input": "PROBE  alpha",
+      "source_sha256": "2af0fedaf9b5bad6fed19ea2cb0d3a3e47d7afd7246503f86e1634e0f7515e12",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 83,
+      "directive": "xcommand",
+      "pattern": "PROBE [<m: FROM, INHERIT>]",
+      "input": "PROBE",
+      "source_sha256": "a78c7d2b133afb23fbe69cab3453e0e8647bc703593010effc3bb01e79660d95",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 84,
+      "directive": "xcommand",
+      "pattern": "PROBE [<m: FROM, INHERIT>]",
+      "input": "PROBE FROM INHERIT",
+      "source_sha256": "1db9680a82f02d4cf2f0b7c7d9f063381bb1198d43b5d08533e3bbf30717c0a8",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 85,
+      "directive": "xcommand",
+      "pattern": "PROBE [<m: FROM, INHERIT>] STOP",
+      "input": "PROBE FROM INHERIT STOP",
+      "source_sha256": "18b2fa79e41189c26e1ea2aa602c2a46c0a80b629b268fbff897ac53e895780f",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 86,
+      "directive": "xcommand",
+      "pattern": "PROBE [WORD <m: FROM, INHERIT>]",
+      "input": "PROBE WORD FROM WORD INHERIT",
+      "source_sha256": "25b1c14abc9465ad85a3e48f29560b5764b85cc7475614c9ab5d87e81fc24a5f",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 87,
+      "directive": "xcommand",
+      "pattern": "PROBE <m: FROM, INHERIT> <!n!>",
+      "input": "PROBE FROM alpha",
+      "source_sha256": "d977df64326ae04a14b25836d9b65eb6d7c0c89fc76e94a3bb7d32339c36ae7b",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 88,
+      "directive": "xcommand",
+      "pattern": "PROBE <m: FROM, INHERIT> <!n!>",
+      "input": "PROBE FROM 123",
+      "source_sha256": "278c3e3b503723f6e8339020eccc9cd0acca32964b8837c43514c7f846740a34",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 89,
+      "directive": "xcommand",
+      "pattern": "PROBE [<m: MODULE FRIENDLY>] [<s: STATIC>]",
+      "input": "PROBE MODULE FRIENDLY STATIC",
+      "source_sha256": "8d8efd4bc27f439136b4dddd8e404f54e642644d9bbfcc459db293495e91d008",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 90,
+      "directive": "xcommand",
+      "pattern": "PROBE <m: FROM, INHERIT> STOP",
+      "input": "PROBE FROM STOP",
+      "source_sha256": "b65baf1d474b2304598b52c044316a5fc2eec711185a1861acb0ea360e80e08c",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 91,
+      "directive": "xcommand",
+      "pattern": "PROBE <m: FROM, INHERIT> STOP",
+      "input": "PROBE FROMAGE STOP",
+      "source_sha256": "eca3f04f0031a2271dae5e07c592d209b294da2013bb1233dc0c3bbbdb362c1e",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 92,
+      "directive": "translate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FROM alpha",
+      "source_sha256": "158c09cfae29d4a58eab0b2570fc34f8b4bbe7430110d147753f2295fc9e36da",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 93,
+      "directive": "translate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE INHERIT alpha",
+      "source_sha256": "6a19b4f195e50c97cdd8ce1ab3634cf610621c608899d542d363a4143fafa762",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 94,
+      "directive": "translate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE from alpha",
+      "source_sha256": "f3c4f492d29731125a2b92af57d71390ed3eebb38398e3421c4cbd4da9ed2f45",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 95,
+      "directive": "translate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FrOm alpha",
+      "source_sha256": "1e647d5a4b476b2aa253193d4c8e29e9ac6e3678e51fc2be486d2ec8d9f9af00",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 96,
+      "directive": "translate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FR alpha",
+      "source_sha256": "a14bb25d0dc1b1ef067030432b03956b299f78408f241f6757aff03d233ecc42",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 97,
+      "directive": "translate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FRO alpha",
+      "source_sha256": "605c24627af6e5f660ee5a647d8f1069b48b5233554774eeb1caab6f4092cea0",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 98,
+      "directive": "translate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FROMAGE alpha",
+      "source_sha256": "829cefef90c0b671289cd5f88585d914e09294d75499559377c75774ec51559e",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 99,
+      "directive": "translate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE OTHER alpha",
+      "source_sha256": "17a78880ef8264fd3b5e5efcac1e90437ac616eca6fe02524ff61e6a4ef48043",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 100,
+      "directive": "translate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE  alpha",
+      "source_sha256": "d6abe04ace045261b0596f04979d4a2d7a702234e8c0b313fc595c8af42b230b",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 101,
+      "directive": "translate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE INHE alpha",
+      "source_sha256": "9517b3cd3d8728db009b1e74105d9526a284f0fc810fd4107584347867774de9",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 102,
+      "directive": "translate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE INHER alpha",
+      "source_sha256": "9be3aa53196ed0cd046d72dcf22e018fdcf9e9291147f67a0ee8cc3151529441",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 103,
+      "directive": "translate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE \"FROM\" alpha",
+      "source_sha256": "487eaa4695245c5bb2b8165ccbe32c4e9ed170ca7779ba333928e33ddaea04db",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 104,
+      "directive": "translate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE (FROM) alpha",
+      "source_sha256": "43402978468fb518e878d353d1a4283e94f11fff7a49c1e4979c973dde1be515",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 105,
+      "directive": "translate",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE DESCENDING alpha",
+      "source_sha256": "e104af77173d971752be070676b7a802b2a93654c70b64cc095908d8d4b67baa",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 106,
+      "directive": "translate",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE descending alpha",
+      "source_sha256": "a793b7eb73f9cb81d79474ecaf817ba6b2df9113b2fce4573b712edda6a6f7fb",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 107,
+      "directive": "translate",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE DESC alpha",
+      "source_sha256": "f7c7a2ce018d93340ce8299ea401c465e4a47f0f7f07dfe214930b2d0ab62b48",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 108,
+      "directive": "translate",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE DESCENDIN alpha",
+      "source_sha256": "941e1609cab0d402e36c45d6e0227ed5c51721b440725699cdcad647fbbdc510",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 109,
+      "directive": "translate",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE DESCENDINGLY alpha",
+      "source_sha256": "07e22ccbc80514c159eef50c0c4c31d5e6bccd5d099f4a1f8fbf76981265d105",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 110,
+      "directive": "translate",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE OTHER alpha",
+      "source_sha256": "aae0beddd6b136538782fe20b08df0d80339ee8f6392cb0ecedadc0083427f28",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 111,
+      "directive": "translate",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE  alpha",
+      "source_sha256": "1504dbc964aabbcc28da10973071055984b78a31a14830c42fcc5008fe2efdc0",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 112,
+      "directive": "translate",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE \"DESCENDING\" alpha",
+      "source_sha256": "75060ddc2b04d7c225161f781e5e24ab300e4eaae483c2be7cacc72114e3618b",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 113,
+      "directive": "translate",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE MODULE FRIENDLY alpha",
+      "source_sha256": "8b654a907097ed7d4b6e787cf56e307b9777b75582ff53fe3651f4267f9b71b1",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 114,
+      "directive": "translate",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE module friendly alpha",
+      "source_sha256": "e451da0583a2acd056603dab3d6ad866524a6e11bc3a1e080b85e222ee94ac61",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 115,
+      "directive": "translate",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE MODULE alpha",
+      "source_sha256": "c3a51f531cb12b07e27a8e1c3980ffff5b37d9b22ea93653bb91f8180f0ba991",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 116,
+      "directive": "translate",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE MODULE FRIEND alpha",
+      "source_sha256": "3df8221c261937d1f7258e1dbcca568362f5070e5f233ca0702b73030e533c46",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 117,
+      "directive": "translate",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE STATIC alpha",
+      "source_sha256": "aca8339a3fd9f78a8dd7287dc9d8e1342a704a61fe0cd2a10bd29d294e562e60",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 118,
+      "directive": "translate",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE static alpha",
+      "source_sha256": "19eb0bc85fd4b6721315c14a0f5044e6703c0c70c0173cdc5b86522fd15f13c6",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 119,
+      "directive": "translate",
+      "pattern": "PROBE <mode: 123, 456> <!name!>",
+      "input": "PROBE 123 alpha",
+      "source_sha256": "e7d5aacf0896963c2170ef1eb76fe1b6e1edb3a1449d379d1bd3e4d89e217448",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 120,
+      "directive": "translate",
+      "pattern": "PROBE <mode: 123, 456> <!name!>",
+      "input": "PROBE 456 alpha",
+      "source_sha256": "e2750bca22adfe4eb5e4eb86269e49ab1edf1b7e74d816ab498181752c24cf3e",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 121,
+      "directive": "translate",
+      "pattern": "PROBE <mode: 123, 456> <!name!>",
+      "input": "PROBE 12 alpha",
+      "source_sha256": "58d0f75b252b76073b669ea03c06625683a35692a6f4e90d3cec60c22a815e25",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 122,
+      "directive": "translate",
+      "pattern": "PROBE <mode: 123, 456> <!name!>",
+      "input": "PROBE 1234 alpha",
+      "source_sha256": "be10702d57be14172f0296da5fc9e10d04c6dea4c0fc03dc2231261ab0bc44de",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 123,
+      "directive": "translate",
+      "pattern": "PROBE [<m: FROM, INHERIT>]",
+      "input": "PROBE",
+      "source_sha256": "4deaf35287b9fab242d02ce4287e68932cf8668b427fd388c00c79dcc2f3c720",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 124,
+      "directive": "translate",
+      "pattern": "PROBE [<m: FROM, INHERIT>]",
+      "input": "PROBE FROM INHERIT",
+      "source_sha256": "ddad23bfd5e0fc723e32349b8d8de7d04411c64b7b077e3173df358dfbedc154",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 125,
+      "directive": "translate",
+      "pattern": "PROBE [<m: FROM, INHERIT>] STOP",
+      "input": "PROBE FROM INHERIT STOP",
+      "source_sha256": "31f035a38204ad7a1b6873830dc5f61cc96402c4bcd4f9ab80e54bebfb64ea7f",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 126,
+      "directive": "translate",
+      "pattern": "PROBE [WORD <m: FROM, INHERIT>]",
+      "input": "PROBE WORD FROM WORD INHERIT",
+      "source_sha256": "23d25bd3634d4f7b7f0015841c68b2f068d7045084807181e1555ba49a458591",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 127,
+      "directive": "translate",
+      "pattern": "PROBE <m: FROM, INHERIT> <!n!>",
+      "input": "PROBE FROM alpha",
+      "source_sha256": "b7358b898c32ae4ea4a51e94e40afcad109913be546dd0bb45c1867281aba70e",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 128,
+      "directive": "translate",
+      "pattern": "PROBE <m: FROM, INHERIT> <!n!>",
+      "input": "PROBE FROM 123",
+      "source_sha256": "c824e569483c50a74530fe76237f11c72a24667dd499387f1dee6cc81952d9d2",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 129,
+      "directive": "translate",
+      "pattern": "PROBE [<m: MODULE FRIENDLY>] [<s: STATIC>]",
+      "input": "PROBE MODULE FRIENDLY STATIC",
+      "source_sha256": "503db8c48933db0c3481ca313d9531804430c241f22d2bae372b4478e6c80720",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 130,
+      "directive": "translate",
+      "pattern": "PROBE <m: FROM, INHERIT> STOP",
+      "input": "PROBE FROM STOP",
+      "source_sha256": "3c49ce58178287be6393979caf458ba48759f26340469f48d31d3c5dcec67def",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 131,
+      "directive": "translate",
+      "pattern": "PROBE <m: FROM, INHERIT> STOP",
+      "input": "PROBE FROMAGE STOP",
+      "source_sha256": "98c127a50180b9da5161d68a6a262ac466d568676f9216741ded81532cfa9c64",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 132,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FROM alpha",
+      "source_sha256": "c3bbc3ae3f8a43cd80905a8dec896b59ea774c440adf8c02070edf0a1ddf5142",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 133,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE INHERIT alpha",
+      "source_sha256": "a180bf5ebff3598d3f2ae2482207b1d0d249acb5e3a0aa065621c130c4c04e37",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 134,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE from alpha",
+      "source_sha256": "109d561acf6c06877520e6720978c40b3e228b87d219711e4888ef6b1f5679db",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 135,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FrOm alpha",
+      "source_sha256": "833b27c67ef8de1026449a3195ab4df4823f12bdcb4f297cc36ff6943b5c8954",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 136,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FR alpha",
+      "source_sha256": "c19864d31cf3b69c5c295651bb0d39ef840970aa46d8f7a3a27065a7f82363eb",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 137,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FRO alpha",
+      "source_sha256": "d1ae7eac4689357194a3d71da3ec9ab9a5fa702415f6fcd4f60583b45753a835",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 138,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE FROMAGE alpha",
+      "source_sha256": "caee993ff0c77882d1e8de417339ad031dc274dfad0c3470788c57e52fea15a6",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 139,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE OTHER alpha",
+      "source_sha256": "464a6fdfacf5e6ae8ec7c4064e5303e203deac282ba35378f5a495f0fa5083d0",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 140,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE  alpha",
+      "source_sha256": "d0b91b43052521f6c898e7463c852aa123b81797250ecb07392abe9dcf732377",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 141,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE INHE alpha",
+      "source_sha256": "12ea1fd4aec7934fa7d166130bcc54147c05a14f3d6ed7d9837296999e7f7a53",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 142,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE INHER alpha",
+      "source_sha256": "444e1f9f5a596a33a9bc8214c469ad7a8418e937b3f705102efe00e2db23a28b",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 143,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE \"FROM\" alpha",
+      "source_sha256": "53656c252f58bc80f4b38fd21909510d384d4f4e18a4cef9b3ed87c1e67a5075",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 144,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: FROM, INHERIT> <!name!>",
+      "input": "PROBE (FROM) alpha",
+      "source_sha256": "5c5ce4e0d8b764e8d062e9e86afe1f4f87df98b29abf3506c67c6def8aab7f72",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 145,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE DESCENDING alpha",
+      "source_sha256": "a561f3b84032b96004d4ab445384b869c4bbb8cf16ca7f01dee613035b362ef0",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 146,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE descending alpha",
+      "source_sha256": "714830131c3c5d34a4f167436acb9e3906023f7906080fe7be6ae95ed3419909",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 147,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE DESC alpha",
+      "source_sha256": "5c1bc60b845167a461e7f3dd01356d561098e2614601352b5be05b90f097ef83",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 148,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE DESCENDIN alpha",
+      "source_sha256": "da43bb36d8dd70905b9426260c12c658ec85a64aa9f5d1b2db3f19545a07c859",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 149,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE DESCENDINGLY alpha",
+      "source_sha256": "36669c684158430339ae45bf58dc4b835c6bf5cf29728e19ba39475082f46a93",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 150,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE OTHER alpha",
+      "source_sha256": "9cad9ec5cf9e9e60c7f68ffac14fdc74b7df6fe80822827a00c63de47f3e1301",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 151,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE  alpha",
+      "source_sha256": "8b1382872b249ac6b7c3b13c0adf4d05f63615da7fbab3ac020c47bc152a8a01",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 152,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: DESCENDING> <!name!>",
+      "input": "PROBE \"DESCENDING\" alpha",
+      "source_sha256": "b5275bc70c47173daf5c11a6a1eb68a58425f869c4c97a1a8e523821428aac90",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 153,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE MODULE FRIENDLY alpha",
+      "source_sha256": "396d6155b9b0275d03b068adf47feaf8dd5031cd0eefaccdcc8ebe4affca2d08",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 154,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE module friendly alpha",
+      "source_sha256": "46f7f9a745525fa019c04cbeb6ab1d7f06a06c994a11d4e5394e119ca07110b6",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 155,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE MODULE alpha",
+      "source_sha256": "1df8cc3fd1375461fbe2c9b8dcf3c9dce44f48795d37c84831f8e785c7dd43b9",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 156,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE MODULE FRIEND alpha",
+      "source_sha256": "66151bdc87bb92c97736c390dc3c3e67165f0eded0fefe3f1bc5ee11161a3f43",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 157,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE STATIC alpha",
+      "source_sha256": "09b534d15e6cad370404c31fe2cb8fdd8456c9d53e7e5146bbca525e51e69c96",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 158,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: MODULE FRIENDLY, STATIC> <!name!>",
+      "input": "PROBE static alpha",
+      "source_sha256": "6310762fafdf473d9bd70557fe1a300cc8c4da3b4c521f563472d2f6ac1f9935",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 159,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: 123, 456> <!name!>",
+      "input": "PROBE 123 alpha",
+      "source_sha256": "b660bae312519aacf8a47ed08d97ff80b142c938df7f470f036f37ec0f96d1c8",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 160,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: 123, 456> <!name!>",
+      "input": "PROBE 456 alpha",
+      "source_sha256": "b296df57fa42f631fbada0ec06ca8604ba765da088d752710a1870f0cf11a148",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 161,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: 123, 456> <!name!>",
+      "input": "PROBE 12 alpha",
+      "source_sha256": "7841ad918afd67cb8be06b9d3ea573555fc3eae86021f1b0717b3f5235957348",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 162,
+      "directive": "xtranslate",
+      "pattern": "PROBE <mode: 123, 456> <!name!>",
+      "input": "PROBE 1234 alpha",
+      "source_sha256": "1a41dcc633872e47b6b483e5c90cc618e99682810f466f2300e5ee2e64f6cba7",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 163,
+      "directive": "xtranslate",
+      "pattern": "PROBE [<m: FROM, INHERIT>]",
+      "input": "PROBE",
+      "source_sha256": "b72b0663018d8e35c6524cc7eb5c7694c7075fb50ac3f4c323d847006c2545c6",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 164,
+      "directive": "xtranslate",
+      "pattern": "PROBE [<m: FROM, INHERIT>]",
+      "input": "PROBE FROM INHERIT",
+      "source_sha256": "1321695b5e63f28ad89557bedb342691e11d3f9e277bcaf04cdfd03236f9cba0",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 165,
+      "directive": "xtranslate",
+      "pattern": "PROBE [<m: FROM, INHERIT>] STOP",
+      "input": "PROBE FROM INHERIT STOP",
+      "source_sha256": "22a7884115eb48bc4dcf0c0f5a27fa6885b586f74322157609fa4184c208c4bb",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 166,
+      "directive": "xtranslate",
+      "pattern": "PROBE [WORD <m: FROM, INHERIT>]",
+      "input": "PROBE WORD FROM WORD INHERIT",
+      "source_sha256": "2773211de3872977f645446f5b25641a17b699f24feeca2d2f1c5445602978fa",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 167,
+      "directive": "xtranslate",
+      "pattern": "PROBE <m: FROM, INHERIT> <!n!>",
+      "input": "PROBE FROM alpha",
+      "source_sha256": "45c5ef5694451ec351011a98d492c108cd77e58bdfdf518a8ab6611f71befdf8",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 168,
+      "directive": "xtranslate",
+      "pattern": "PROBE <m: FROM, INHERIT> <!n!>",
+      "input": "PROBE FROM 123",
+      "source_sha256": "ce3a5d30fff84c528a949353511c63ec120a0677d00bedccff56a70061133d46",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    },
+    {
+      "case": 169,
+      "directive": "xtranslate",
+      "pattern": "PROBE [<m: MODULE FRIENDLY>] [<s: STATIC>]",
+      "input": "PROBE MODULE FRIENDLY STATIC",
+      "source_sha256": "1c92d053dfc1f7fc8900c72621c33c827d537482f3998d04a07f821cb3a283d5",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 170,
+      "directive": "xtranslate",
+      "pattern": "PROBE <m: FROM, INHERIT> STOP",
+      "input": "PROBE FROM STOP",
+      "source_sha256": "a5b90bac0252e1ca42820d3a03a3b2c1e2a8ebeab966ac853a46d8f10ab3d269",
+      "reference_rule_matched": true,
+      "comparison": "matched token streams including source case"
+    },
+    {
+      "case": 171,
+      "directive": "xtranslate",
+      "pattern": "PROBE <m: FROM, INHERIT> STOP",
+      "input": "PROBE FROMAGE STOP",
+      "source_sha256": "a21fc747dbd3911db72306b30369ac1b9fb85ce0e9026876110b129cf32d9ea2",
+      "reference_rule_matched": false,
+      "comparison": "nonmatch;existing stricter own diagnostic retained"
+    }
+  ]
+}
