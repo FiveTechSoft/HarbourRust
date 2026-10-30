@@ -521,10 +521,11 @@ and successful completion do not prove leak freedom,correct ownership or Rust
 speed parity. No closure/dynamic-value/persistence/allocator contract was changed
 or granted;these are future harness requirements,not new passing examples.
 
-### Directive/runtime-pp profiles:193 manual /198 reviewed-or-executed
+### Directive/runtime-pp profiles:193 manual /197 reviewed-or-executed
 
-Four additional full-source reviews give193 manual records and198 in the union
-(193+19-14). Historical executions remain19/14;no compile/run or pp change.
+Four additional full-source reviews give193 manual records and197 in the union
+(193+19-15). define overlaps historical execution,bringing overlap to15.
+Historical executions remain19/14;no compile/run or pp change.
 define requires separate external TEST-defined/undefined build profiles,not an
 environment edit. declare starts through INIT and combines typed declarations,
 macro-created dynamic names and class fields;its TODO about a string field
