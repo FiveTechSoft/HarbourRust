@@ -137,7 +137,8 @@
         "tests/while.prg",
         "tests/foreach.prg",
         "tests/foreach2.prg",
-        "tests/math.prg"
+        "tests/math.prg",
+        "tests/hbdoc.prg"
       ],
       "seed_regression_paths": [
         "tests/t358_foreach_strord_num.hb",
@@ -209,7 +210,8 @@
         "tests/foreach2.prg",
         "tests/parexpr.prg",
         "tests/codebl.prg",
-        "tests/codebloc.prg"
+        "tests/codebloc.prg",
+        "tests/hbdoc.prg"
       ],
       "seed_regression_paths": [
         "tests/t1040_seq_dyn_limit_neg.hb",
@@ -245,7 +247,8 @@
         "tests/foreach2.prg",
         "tests/memfile.prg",
         "tests/math.prg",
-        "tests/str.prg"
+        "tests/str.prg",
+        "tests/readhrb.prg"
       ],
       "seed_regression_paths": [
         "tests/t750_float_arith_mixed.hb",
@@ -314,7 +317,9 @@
         "tests/onidle.prg",
         "tests/math.prg",
         "tests/langmsg.prg",
-        "tests/op.prg"
+        "tests/op.prg",
+        "tests/readhrb.prg",
+        "tests/hbdoc.prg"
       ],
       "seed_regression_paths": [
         "tests/t208_nil_literal.hb",
@@ -431,7 +436,8 @@
         "tests/hrb.prg",
         "tests/hrbext.prg",
         "tests/dyn.prg",
-        "tests/declare.prg"
+        "tests/declare.prg",
+        "tests/readhrb.prg"
       ],
       "seed_regression_paths": [
         "tests/t681_init_proc_neg.hb",
@@ -494,7 +500,8 @@
         "tests/menuto.prg",
         "tests/langmsg.prg",
         "tests/longstr.prg",
-        "tests/str.prg"
+        "tests/str.prg",
+        "tests/readhrb.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -620,7 +627,9 @@
         "tests/largefil.prg",
         "tests/hsx.prg",
         "tests/rdd.prg",
-        "tests/sbar.prg"
+        "tests/sbar.prg",
+        "tests/readhrb.prg",
+        "tests/hbdoc.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -701,7 +710,8 @@
         "tests/menuto.prg",
         "tests/langmsg.prg",
         "tests/str.prg",
-        "tests/op.prg"
+        "tests/op.prg",
+        "tests/readhrb.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,

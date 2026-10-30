@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "206 distinct full-source manual metadata reviews; ledger computes union/overlap. Latest four distinguish language message lookup versus faults,long literal bytes,numeric format initial state and modal overloaded operator NIL result. No compile/run or new authority. Requirements not availability; tags not coverage.",
+  "scope": "208 distinct full-source manual metadata reviews; ledger computes union/overlap. Latest two distinguish binary HRB inspection from execution and documentation scanning from generated-file effects. No compile/run or new authority. Requirements not availability; tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -9736,6 +9736,122 @@
           "symbol_or_construct": "RETURN NIL",
           "lines": [
             106
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/readhrb.prg",
+      "sha256": "2965ce463bd44cc2ea52ee71223d48af54930324c14808c3fe0b1d3120ef118c",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main(cFrom);PrintItem/DecodeScope",
+      "build_unit": "single source binary-inspection tool,not module executor",
+      "families": [
+        "HRB-module",
+        "filesystem",
+        "input-terminal",
+        "set-runtime",
+        "bitwise",
+        "arrays"
+      ],
+      "dependency_requirements": [
+        "fileio.ch; binary HRB header,lengths,NUL-terminated symbols,scope flags;default .hrb input",
+        "ACCEPT optional pcode listing;alternate output setting calls;unchecked symbol type array index"
+      ],
+      "effects_or_harness_risks": [
+        "Reads supplied binary,changes alternate-output settings and prompts;does not load or execute HRB code"
+      ],
+      "output_comparison": "Header counts,lengths,symbol types,truncated input and prompt branch require format/bounds oracle;no instruction execution evidence",
+      "next_gate": "Synthetic tiny valid/truncated/malformed fixtures with strict time/output limits;inspect EOF/count bounds and settings semantics before running",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "Set( _SET_ALTERNATE, \"readhrb.out\" )",
+          "lines": [
+            56
+          ]
+        },
+        {
+          "symbol_or_construct": "DO WHILE hb_BCode( cBlock ) != 0",
+          "lines": [
+            87,
+            113
+          ]
+        },
+        {
+          "symbol_or_construct": "FOR m := 1 TO nLenCount",
+          "lines": [
+            128
+          ]
+        },
+        {
+          "symbol_or_construct": "aTypes[ nType ]",
+          "lines": [
+            154
+          ]
+        },
+        {
+          "symbol_or_construct": "ACCEPT",
+          "lines": [
+            100
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/hbdoc.prg",
+      "sha256": "b78c43a25540da9fd53267262f4c219594ef7eeb79f1f265e7a7f5ea19a06c88",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main(cRoot);DirGetName",
+      "build_unit": "single source documentation extraction/writer",
+      "families": [
+        "filesystem",
+        "documentation-extraction",
+        "arrays",
+        "foreach",
+        "byref"
+      ],
+      "dependency_requirements": [
+        "directry.ch,simpleio.ch; __hbdoc_* runtime;root autodetection using README/COPYING/config and contrib scan",
+        "Explicit root branch applies DirSepAdd to cDir rather than cRoot;directory metadata and output name extraction"
+      ],
+      "effects_or_harness_risks": [
+        "Walks ancestor directories/read docs,prints errors and saves HBD outputs;not passive read-only scanner"
+      ],
+      "output_comparison": "Root selection,metadata,order and parsed entries vary;TODO mentions HTML/PDF generators but none implemented here",
+      "next_gate": "Isolated tiny root fixture and output folder;explicit/autodetect root behavior,write destinations and parser errors verified before execution",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "DO WHILE hb_DirExists( cRoot + \"..\" )",
+          "lines": [
+            27
+          ]
+        },
+        {
+          "symbol_or_construct": "cDir := hb_DirSepAdd( cDir )",
+          "lines": [
+            36
+          ]
+        },
+        {
+          "symbol_or_construct": "__hbdoc_LoadDir",
+          "lines": [
+            62
+          ]
+        },
+        {
+          "symbol_or_construct": "__hbdoc_SaveHBD",
+          "lines": [
+            75
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_FNameSplit( cDir,, @cName )",
+          "lines": [
+            88
           ]
         }
       ]

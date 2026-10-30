@@ -1,7 +1,7 @@
 {
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "scope": "Manual review provenance and source-family index only. Not parser-recognized syntax or supported feature counts. Dependencies are not installed-availability claims. No compilation/execution. Does not replace17family seed or268audit.",
-  "reviewed_sources": 206,
+  "reviewed_sources": 208,
   "build_projects": 1,
   "family_index": [
     {
@@ -83,7 +83,8 @@
       "family": "HRB-module",
       "reviewed_sources": [
         "tests/hrb.prg",
-        "tests/hrbext.prg"
+        "tests/hrbext.prg",
+        "tests/readhrb.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -209,7 +210,9 @@
         "tests/memmgr.prg",
         "tests/ppapi.prg",
         "tests/math.prg",
-        "tests/langmsg.prg"
+        "tests/langmsg.prg",
+        "tests/readhrb.prg",
+        "tests/hbdoc.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -238,7 +241,8 @@
       "family": "bitwise",
       "reviewed_sources": [
         "tests/commouse.prg",
-        "tests/dyn.prg"
+        "tests/dyn.prg",
+        "tests/readhrb.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -256,7 +260,8 @@
         "tests/html.prg",
         "tests/foreach.prg",
         "tests/foreach2.prg",
-        "tests/codebl.prg"
+        "tests/codebl.prg",
+        "tests/hbdoc.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -539,7 +544,8 @@
     {
       "family": "documentation-extraction",
       "reviewed_sources": [
-        "tests/hbdocext.hb"
+        "tests/hbdocext.hb",
+        "tests/hbdoc.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -776,7 +782,9 @@
         "tests/largefil.prg",
         "tests/hsx.prg",
         "tests/rdd.prg",
-        "tests/sbar.prg"
+        "tests/sbar.prg",
+        "tests/readhrb.prg",
+        "tests/hbdoc.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -834,7 +842,8 @@
         "tests/regex.prg",
         "tests/regex2.prg",
         "tests/foreach.prg",
-        "tests/foreach2.prg"
+        "tests/foreach2.prg",
+        "tests/hbdoc.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -1038,7 +1047,8 @@
         "tests/menuto.prg",
         "tests/langmsg.prg",
         "tests/str.prg",
-        "tests/op.prg"
+        "tests/op.prg",
+        "tests/readhrb.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"
@@ -1485,7 +1495,8 @@
         "tests/regex2.prg",
         "tests/rdd.prg",
         "tests/menuto.prg",
-        "tests/str.prg"
+        "tests/str.prg",
+        "tests/readhrb.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"

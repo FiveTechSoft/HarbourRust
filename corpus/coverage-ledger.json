@@ -4,8 +4,8 @@
   "counts": {
     "inventory_files": 1203,
     "original_test_sources_compile_audited": 268,
-    "manual_entrypoint_dependency_reviews": 206,
-    "manually_reviewed_or_executed_sources": 209,
+    "manual_entrypoint_dependency_reviews": 208,
+    "manually_reviewed_or_executed_sources": 211,
     "frozen175_default_accepted": 20,
     "frozen175_llvm_accepted": 14,
     "execution_exact_by_profile": {
@@ -15891,8 +15891,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main(cRoot);DirGetName",
+        "build_unit": "single source documentation extraction/writer",
+        "families": [
+          "filesystem",
+          "documentation-extraction",
+          "arrays",
+          "foreach",
+          "byref"
+        ],
+        "next_gate": "Isolated tiny root fixture and output folder;explicit/autodetect root behavior,write destinations and parser errors verified before execution",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -20314,8 +20329,24 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main(cFrom);PrintItem/DecodeScope",
+        "build_unit": "single source binary-inspection tool,not module executor",
+        "families": [
+          "HRB-module",
+          "filesystem",
+          "input-terminal",
+          "set-runtime",
+          "bitwise",
+          "arrays"
+        ],
+        "next_gate": "Synthetic tiny valid/truncated/malformed fixtures with strict time/output limits;inspect EOF/count bounds and settings semantics before running",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {

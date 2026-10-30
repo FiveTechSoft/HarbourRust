@@ -584,3 +584,16 @@ future comparison must declare FIXED/DECIMALS and formatting boundaries before
 comparing both phases. op invokes a modal overloaded plus and replaces the
 object local with NIL:empty stdout would miss both dispatch and UI behavior.
 No numerical,localization,object/lifetime or operator contract was changed.
+
+### Inspection-tool profiles:208 manual /211 reviewed-or-executed
+
+Two additional full-source reviews give208 manual records and211 in the union
+(208+19-16). Historical executions remain19/14;no compile/run. readhrb inspects
+binary structure without loading/executing modules. Symbol terminators,counts,
+lengths and type-array indexes need malformed/truncated-input bounds tests;
+settings calls and ACCEPT introduce effects/input even for an inspection tool.
+hbdoc scans ancestors/contrib and saves HBD files,so it is not read-only. Its
+explicit-root branch normalizes cDir rather than cRoot,a source finding requiring
+an oracle,not a measured bug. TODO HTML/PDF generators are not implemented by
+this program. Both require tiny disposable fixtures and bounded writes/reads;
+review does not authorize arbitrary binary parsing or repository-wide scanning.
