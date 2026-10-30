@@ -22,7 +22,9 @@
         "tests/dbgcls.prg",
         "tests/dev.prg",
         "tests/files.prg",
-        "tests/set.prg"
+        "tests/set.prg",
+        "tests/pipes.prg",
+        "tests/dyn.prg"
       ],
       "seed_regression_paths": [
         "tests/t07_unicode_string.hb",
@@ -94,7 +96,8 @@
         "tests/base64.prg",
         "tests/ticktime.prg",
         "tests/for.prg",
-        "tests/commouse.prg"
+        "tests/commouse.prg",
+        "tests/pipes.prg"
       ],
       "seed_regression_paths": [
         "tests/t358_foreach_strord_num.hb",
@@ -141,7 +144,14 @@
         "tests/omacro.prg",
         "tests/setkeys.prg",
         "tests/com.prg",
-        "tests/commouse.prg"
+        "tests/commouse.prg",
+        "tests/ipsvr.prg",
+        "tests/server.prg",
+        "tests/pipes.prg",
+        "tests/cgi.prg",
+        "tests/html.prg",
+        "tests/inifile.prg",
+        "tests/hrbext.prg"
       ],
       "seed_regression_paths": [
         "tests/t1040_seq_dyn_limit_neg.hb",
@@ -169,7 +179,8 @@
         "tests/objasign.prg",
         "tests/ticktime.prg",
         "tests/base2.prg",
-        "tests/commouse.prg"
+        "tests/commouse.prg",
+        "tests/dyn.prg"
       ],
       "seed_regression_paths": [
         "tests/t750_float_arith_mixed.hb",
@@ -211,7 +222,10 @@
         "tests/checkbox.prg",
         "tests/read.prg",
         "tests/adir.prg",
-        "tests/files.prg"
+        "tests/files.prg",
+        "tests/cgi.prg",
+        "tests/guestbk.prg",
+        "tests/inifile.prg"
       ],
       "seed_regression_paths": [
         "tests/t208_nil_literal.hb",
@@ -263,7 +277,13 @@
         "tests/get.prg",
         "tests/getblock.prg",
         "tests/adir.prg",
-        "tests/setkeys.prg"
+        "tests/setkeys.prg",
+        "tests/server.prg",
+        "tests/cgi.prg",
+        "tests/html.prg",
+        "tests/guestbk.prg",
+        "tests/inifile.prg",
+        "tests/hrb.prg"
       ],
       "seed_regression_paths": [
         "tests/t150_cb_eval1.hb",
@@ -286,14 +306,17 @@
         "tests/mt/mttest03.prg",
         "tests/dynwin.prg",
         "tests/initproc.prg",
-        "tests/hrbext.prg",
         "tests/inline_c.prg",
         "tests/hbinline.prg",
         "tests/hbpp/compare.hb",
         "tests/statics2.prg",
         "tests/statinit.prg",
         "tests/statics1.prg",
-        "tests/libname.prg"
+        "tests/libname.prg",
+        "tests/guestbk.prg",
+        "tests/hrb.prg",
+        "tests/hrbext.prg",
+        "tests/dyn.prg"
       ],
       "seed_regression_paths": [
         "tests/t681_init_proc_neg.hb",
@@ -331,7 +354,12 @@
         "tests/dev.prg",
         "tests/adir.prg",
         "tests/set.prg",
-        "tests/setkeys.prg"
+        "tests/setkeys.prg",
+        "tests/pipes.prg",
+        "tests/cgi.prg",
+        "tests/html.prg",
+        "tests/inifile.prg",
+        "tests/dyn.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -353,7 +381,8 @@
         "tests/mt/mttest09.prg",
         "tests/mt/mttest10.prg",
         "tests/mt/mttest11.prg",
-        "tests/mt/mttest12.prg"
+        "tests/mt/mttest12.prg",
+        "tests/ipsvr.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -417,7 +446,15 @@
         "tests/adir.prg",
         "tests/files.prg",
         "tests/com.prg",
-        "tests/commouse.prg"
+        "tests/commouse.prg",
+        "tests/ipsvr.prg",
+        "tests/server.prg",
+        "tests/pipes.prg",
+        "tests/cgi.prg",
+        "tests/html.prg",
+        "tests/guestbk.prg",
+        "tests/inifile.prg",
+        "tests/hrb.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -466,7 +503,9 @@
         "tests/set.prg",
         "tests/setkeys.prg",
         "tests/com.prg",
-        "tests/commouse.prg"
+        "tests/commouse.prg",
+        "tests/ipsvr.prg",
+        "tests/server.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -507,7 +546,10 @@
         "tests/flink.prg",
         "tests/set.prg",
         "tests/com.prg",
-        "tests/commouse.prg"
+        "tests/commouse.prg",
+        "tests/pipes.prg",
+        "tests/cgi.prg",
+        "tests/guestbk.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,

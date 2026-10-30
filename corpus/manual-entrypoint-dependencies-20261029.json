@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "130 full-source manual metadata reviews;5 overlap prior19 executions. Latest six distinguish directory/SET/key/RDD stress and serial-device profiles. No new compilation, execution or authority. Dependencies are requirements, not verified availability. Tags are not coverage.",
+  "scope": "139 distinct full-source manual metadata reviews;5 overlap prior19 execution. Nine additional sources plus richer existing hrbext record distinguish listeners, self-spawning pipes, CGI libraries/applications, HRB and DLL profiles. No compile/link/run or authority. Requirements not verified availability; tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -1528,42 +1528,6 @@
           "lines": [
             9,
             11
-          ]
-        }
-      ]
-    },
-    {
-      "file": "tests/hrbext.prg",
-      "sha256": "64a6aa486ad84baee537ef98bbbf49584bdda1f469af8cf3906459c9ebe7e3a1",
-      "manual_review": "full source read,2026-10-29",
-      "profile": "source-review-only; no new compilation or execution",
-      "entrypoint": "Msg/Msg2 exports and INIT MsgInit,no Main",
-      "build_unit": "single source with explicit profile; not auto-runnable",
-      "families": [
-        "modules-linking",
-        "HRB-module",
-        "init-procedure"
-      ],
-      "dependency_requirements": [
-        "separate HRB host/loader, see hrb.prg"
-      ],
-      "effects_or_harness_risks": [
-        "module-load INIT output"
-      ],
-      "output_comparison": "not standalone application",
-      "next_gate": "review HRB loader and module lifecycle together",
-      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
-      "witnesses": [
-        {
-          "symbol_or_construct": "FUNCTION Msg()",
-          "lines": [
-            3
-          ]
-        },
-        {
-          "symbol_or_construct": "INIT PROCEDURE MsgInit",
-          "lines": [
-            12
           ]
         }
       ]
@@ -5800,6 +5764,551 @@
           ]
         }
       ]
+    },
+    {
+      "file": "tests/ipsvr.prg",
+      "sha256": "8a3ed02ef795e5003266faa60c768d134b9ebc61cf31311c9316d1295a587897",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main; process socket handler",
+      "build_unit": "single source with MT runtime",
+      "families": [
+        "network-sockets",
+        "threads",
+        "input-terminal",
+        "byref-buffer"
+      ],
+      "dependency_requirements": [
+        "inkey.ch,hbsocket.ch; MT HVM; detached worker threads; EOT-delimited requests",
+        "0.0.0.0 port10000; accept/receive timeouts"
+      ],
+      "effects_or_harness_risks": [
+        "Binds all interfaces; accepts and prints external bytes; detaches workers; waits for Escape; shutdown path closes listener"
+      ],
+      "output_comparison": "Non-MT return is not network coverage; timing, peer requests and thread interleaving vary",
+      "next_gate": "No automatic listener; isolated network namespace or separately approved loopback variant; bounded clients and worker teardown assertions",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "#define ADDRESS",
+          "lines": [
+            5
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_socketBind",
+          "lines": [
+            24
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_threadDetach",
+          "lines": [
+            39
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_socketRecv",
+          "lines": [
+            65
+          ]
+        },
+        {
+          "symbol_or_construct": "IF ! hb_mtvm()",
+          "lines": [
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/server.prg",
+      "sha256": "c1a8f8e99ab3e7553588bcd5d1b30aa9d86c0be27eb29fecf3ee2dbc18c208d1",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main(cPort); Progress callback",
+      "build_unit": "single source with Inet runtime",
+      "families": [
+        "network-sockets",
+        "GT-screen",
+        "input-terminal",
+        "closures",
+        "byref"
+      ],
+      "dependency_requirements": [
+        "hb_inetServer defaults port2000; Inet periodic callbacks with byref counter",
+        "Line protocol and screen progress; unspecified bind address in source call"
+      ],
+      "effects_or_harness_risks": [
+        "Opens listener and sends replies to clients; input-driven termination; receive can wait indefinitely through periodic callback"
+      ],
+      "output_comparison": "Connection, input, timing and screen state dependent",
+      "next_gate": "Isolated network and synthetic client; explicit bind-address verification, deadlines and socket teardown; never infer loopback",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_inetServer( Val( cPort ) )",
+          "lines": [
+            29
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_inetPeriodCallback",
+          "lines": [
+            68
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_inetRecvLine",
+          "lines": [
+            70,
+            71,
+            73
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_inetCleanup",
+          "lines": [
+            105
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/pipes.prg",
+      "sha256": "565190be97e816c557d98ee7933d0230cad6cc54105da659ad28141e9dc480fc",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "main(xChild); parent and two child profiles",
+      "build_unit": "single source self-spawning executable",
+      "families": [
+        "process-shell",
+        "file-handles",
+        "byref-buffer",
+        "preprocessor-platform",
+        "foreach",
+        "environment-clock",
+        "set-runtime"
+      ],
+      "dependency_requirements": [
+        "HB_GT_CGI_DEFAULT; self path from hb_argv; processOpen/Run/Value; pipe reads/writes",
+        "10MB buffer; platform-specific transfer counts; merged/split stdout/stderr; exit123 child"
+      ],
+      "effects_or_harness_risks": [
+        "Spawns child copies, opens pipes, delays and transfers bounded payloads; logs timestamps/PIDs/handles to stderr"
+      ],
+      "output_comparison": "Transfer equality and child status are invariants; read/write chunk sizes and diagnostics vary",
+      "next_gate": "Disposable executable path, child process deadlines/cleanup, separate stream captures and merged-stream alias assertion; not byte-exact timing log",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "cBuffer := space( 10000000 )",
+          "lines": [
+            34
+          ]
+        },
+        {
+          "symbol_or_construct": "errorLevel( 123 )",
+          "lines": [
+            42
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_processOpen",
+          "lines": [
+            89
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_processRun( cProg, cSrvData, @cRead, @cRead )",
+          "lines": [
+            148
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_tsToStr",
+          "lines": [
+            187
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/cgi.prg",
+      "sha256": "dd0f973c72e14e96865ecca921af6e4fa86b676877ffb1403a9e5e39c4220ec1",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "No Main; ParseString and THTML methods",
+      "build_unit": "library companion, not standalone application",
+      "families": [
+        "classes",
+        "filesystem",
+        "environment-query",
+        "strings",
+        "arrays",
+        "byref-buffer"
+      ],
+      "dependency_requirements": [
+        "fileio.ch,hbclass.ch; environment-based QUERY_STRING parsing; THTML template methods",
+        "May be used by guestbk; separate html.prg also defines THTML and must not be linked blindly"
+      ],
+      "effects_or_harness_risks": [
+        "Methods can read templates, create files, write HTTP bytes or inspect environment; defining file alone is not invoking all methods"
+      ],
+      "output_comparison": "Declared CGI environment, input decoding, files and method calls determine output; source does not open a socket",
+      "next_gate": "Own method-level harness with synthetic environment and disposable files; distinguish library definitions from effects actually invoked",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "FUNCTION ParseString",
+          "lines": [
+            85
+          ]
+        },
+        {
+          "symbol_or_construct": "CREATE CLASS THTML",
+          "lines": [
+            109
+          ]
+        },
+        {
+          "symbol_or_construct": "GetEnv( \"QUERY_STRING\"",
+          "lines": [
+            290
+          ]
+        },
+        {
+          "symbol_or_construct": "METHOD SaveToFile",
+          "lines": [
+            130,
+            260
+          ]
+        },
+        {
+          "symbol_or_construct": "FRead( hFile",
+          "lines": [
+            209
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/html.prg",
+      "sha256": "a0df9acf65d7642dc2797caaec7cf158817769a2a172add757370f84689d4b79",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main; local THTML implementation",
+      "build_unit": "standalone HTML-generation example",
+      "families": [
+        "classes",
+        "strings",
+        "byref",
+        "filesystem"
+      ],
+      "dependency_requirements": [
+        "hbclass.ch; locally defined THTML; hb_default byref; platform EOL"
+      ],
+      "effects_or_harness_risks": [
+        "Main writes generated HTML to stdout; SaveToFile exists but its Main call is commented; no browser or network call"
+      ],
+      "output_comparison": "Candidate deterministic text under declared EOL; file-writing method is not exercised by Main",
+      "next_gate": "Separate stdout-bytes oracle from uncalled file method and visual/web validity; do not link with cgi THTML definition",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "PROCEDURE Main",
+          "lines": [
+            13
+          ]
+        },
+        {
+          "symbol_or_construct": "// oHTML:SaveToFile",
+          "lines": [
+            27
+          ]
+        },
+        {
+          "symbol_or_construct": "CREATE CLASS THTML",
+          "lines": [
+            35
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_default( @cAlign",
+          "lines": [
+            90
+          ]
+        },
+        {
+          "symbol_or_construct": "METHOD SaveToFile",
+          "lines": [
+            51,
+            120
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/guestbk.prg",
+      "sha256": "fa0fd5391bf24396d37deb7c3592eb632afe7c386f774316a3c863985f9d9443",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "source-declared CGI application with cgi/inifile companions",
+      "families": [
+        "classes",
+        "filesystem",
+        "environment-query",
+        "environment-clock",
+        "arrays",
+        "script-startup"
+      ],
+      "dependency_requirements": [
+        "TIniFile from inifile.prg; THTML from cgi.prg; guestbk.ini and guestbk.html under /www/root",
+        "HBSHELL conditional SET PROCEDURE; QUERY_STRING Oper=A controls mutation"
+      ],
+      "effects_or_harness_risks": [
+        "Reads template/config; add branch increments entry count, stores query data/date/time and rewrites INI; outputs HTML; source itself does not start server"
+      ],
+      "output_comparison": "Existing INI entries, request and clock change output; absolute root requires controlled fixture plan",
+      "next_gate": "Never write live /www/root or deploy; disposable fixture mapping and synthetic request/clock; verify read/add effects separately",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "#define _WWW_ROOT_DIR_",
+          "lines": [
+            63
+          ]
+        },
+        {
+          "symbol_or_construct": "IF oHTML:QueryFields( \"Oper\" ) == \"A\"",
+          "lines": [
+            75
+          ]
+        },
+        {
+          "symbol_or_construct": "oIni:UpdateFile()",
+          "lines": [
+            93
+          ]
+        },
+        {
+          "symbol_or_construct": "SET PROCEDURE TO \"cgi.prg\"",
+          "lines": [
+            167
+          ]
+        },
+        {
+          "symbol_or_construct": "SET PROCEDURE TO \"inifile.prg\"",
+          "lines": [
+            168
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/inifile.prg",
+      "sha256": "b16e9d4d8ad0e85d5edf50465c62b00e092bf3fbdd1b0383e52408164ddf46f0",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "No Main; TIniFile methods",
+      "build_unit": "library companion used by guestbk",
+      "families": [
+        "classes",
+        "filesystem",
+        "arrays",
+        "array-aliasing",
+        "closures",
+        "byref-buffer",
+        "dates"
+      ],
+      "dependency_requirements": [
+        "fileio.ch,hbclass.ch; nested mutable Contents arrays; case-insensitive lookups and typed conversions",
+        "Constructor reads existing INI or creates missing path; UpdateFile recreates whole file"
+      ],
+      "effects_or_harness_risks": [
+        "New can create a file even on otherwise read-only call path; UpdateFile truncates/replaces contents; not passive configuration metadata"
+      ],
+      "output_comparison": "INI fixture, encoding, newline and method sequence dependent; no automatic standalone output",
+      "next_gate": "Disposable files; constructor/create/rewrite and round-trip/case/comment assertions; no unreviewed config path",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "CREATE CLASS TIniFile",
+          "lines": [
+            48
+          ]
+        },
+        {
+          "symbol_or_construct": "hFile := FCreate( cFilename )",
+          "lines": [
+            88
+          ]
+        },
+        {
+          "symbol_or_construct": "CurrArray := ::Contents[ Len( ::Contents ) ][ 2 ]",
+          "lines": [
+            116
+          ]
+        },
+        {
+          "symbol_or_construct": "METHOD PROCEDURE UpdateFile",
+          "lines": [
+            310
+          ]
+        },
+        {
+          "symbol_or_construct": "LOCAL hFile := FCreate( ::Filename )",
+          "lines": [
+            314
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/hrb.prg",
+      "sha256": "7f0d8ad29c3d4fb75528b87fe9f89ac11447004da48f304f82d28494240c0449",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main(n); executable Msg",
+      "build_unit": "application loading hrbext.hrb companion",
+      "families": [
+        "HRB-module",
+        "runtime-macro",
+        "process-shell",
+        "compiler-invocation",
+        "module-startup"
+      ],
+      "dependency_requirements": [
+        "hbhrb.ch; hrbext.prg compiled to HRB; bind default/local/overload profiles",
+        "Missing hrbext.hrb triggers shell compiler; macro Msg2 resolves loaded symbols"
+      ],
+      "effects_or_harness_risks": [
+        "Can spawn compiler, load/unload executable code and alter symbol resolution; overload retains loaded implementation"
+      ],
+      "output_comparison": "Binding mode and existing HRB identity matter; printed expectations are not measurements",
+      "next_gate": "Pinned separate artifact build, no implicit compiler shell; validate load/macro/unload lifetimes per mode before execution",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "hb_run( \"harbour hrbext.prg -gh\" )",
+          "lines": [
+            13
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_hrbLoad( n",
+          "lines": [
+            32
+          ]
+        },
+        {
+          "symbol_or_construct": "&cExe",
+          "lines": [
+            41
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_hrbUnload",
+          "lines": [
+            44
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/hrbext.prg",
+      "sha256": "64a6aa486ad84baee537ef98bbbf49584bdda1f469af8cf3906459c9ebe7e3a1",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Msg/Msg2; INIT MsgInit; no Main",
+      "build_unit": "HRB companion for hrb.prg, not standalone application",
+      "families": [
+        "HRB-module",
+        "init-procedure",
+        "functions",
+        "modules-linking"
+      ],
+      "dependency_requirements": [
+        "Compile as HRB; duplicate Msg symbol relative to executable; load-mode binding"
+      ],
+      "effects_or_harness_risks": [
+        "INIT prints on module startup; Msg/Msg2 dispatch according to loaded binding"
+      ],
+      "output_comparison": "Companion output depends on HRB loading rather than ordinary executable entrypoint",
+      "next_gate": "Review together with hrb runtime symbol/initialization/unload contract; no inferred standalone execution",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "FUNCTION Msg()",
+          "lines": [
+            3
+          ]
+        },
+        {
+          "symbol_or_construct": "FUNCTION Msg2()",
+          "lines": [
+            9
+          ]
+        },
+        {
+          "symbol_or_construct": "INIT PROCEDURE MsgInit()",
+          "lines": [
+            12
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/dyn.prg",
+      "sha256": "4ed4b8891d1a390d0beb3351cc7630b74b7d8f6dea6627c8a74a7152ec0a47cd",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source plus architecture-selected external test DLL",
+      "families": [
+        "dynamic-library-ABI",
+        "floating-point",
+        "strings",
+        "preprocessor-platform",
+        "bitwise"
+      ],
+      "dependency_requirements": [
+        "simpleio.ch,hbdyn.ch; test_x64.dll or test_x86.dll; exported TEST functions",
+        "CDECL signatures for signed/unsigned integer widths,float,double,char pointer and raw encoding"
+      ],
+      "effects_or_harness_risks": [
+        "Loads/calls external DLL functions; prints return comparisons; no OS-setting changes visible here"
+      ],
+      "output_comparison": "ABI widths, conversion and DLL identity determine behavior; OK/WRONG helper is not validation already performed",
+      "next_gate": "Build/review exact DLL and cross-architecture ABI plan separately; no new dynamic value/FFI authority from review",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "cFileName := \"test_x64.dll\"",
+          "lines": [
+            19
+          ]
+        },
+        {
+          "symbol_or_construct": "cFileName := \"test_x86.dll\"",
+          "lines": [
+            21
+          ]
+        },
+        {
+          "symbol_or_construct": "HB_DYN_CTYPE_LLONG_UNSIGNED",
+          "lines": [
+            36
+          ]
+        },
+        {
+          "symbol_or_construct": "HB_DYN_ENC_RAW",
+          "lines": [
+            40
+          ]
+        }
+      ]
     }
   ],
   "source_groupings": [
@@ -5811,6 +6320,25 @@
       "basis": "explicit companion-link instruction in both source comments plus Main calls Test",
       "kind": "source-declared grouping,not build-verified project",
       "entrypoint": "statics1 Main;statics2 Test"
+    },
+    {
+      "members": [
+        "tests/guestbk.prg",
+        "tests/cgi.prg",
+        "tests/inifile.prg"
+      ],
+      "basis": "guestbk HBSHELL SET PROCEDURE declarations and THTML/TIniFile usage; ini/html fixtures separately required",
+      "kind": "source-declared grouping,not build-verified project",
+      "entrypoint": "guestbk Main; cgi/inifile are library companions"
+    },
+    {
+      "members": [
+        "tests/hrb.prg",
+        "tests/hrbext.prg"
+      ],
+      "basis": "hrb explicitly compiles/loads hrbext.hrb; separate binary modules, not one ordinary link unit",
+      "kind": "source-declared application/module relationship,not build-verified project",
+      "entrypoint": "hrb Main; hrbext INIT and callable functions"
     }
   ]
 }

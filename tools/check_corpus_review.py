@@ -2,6 +2,7 @@
 """Validate manual metadata provenance. Never compile, execute or infer readiness."""
 import argparse,pathlib,json,hashlib,collections
 p=argparse.ArgumentParser();p.add_argument('--core',required=True);p.add_argument('--output',required=True);a=p.parse_args();repo=pathlib.Path(__file__).resolve().parents[1];corpus=repo/'corpus';core=pathlib.Path(a.core).resolve();review=json.loads((corpus/'manual-entrypoint-dependencies-20261029.json').read_text());inv=json.loads((corpus/'harbour-694428e1-inventory.json').read_text());inventory={r['path']:r for r in inv['files']};assert review['reference']==inv['reference'];families=collections.defaultdict(list)
+assert len(review['files']) == len({r['file'] for r in review['files']}), 'duplicate manual review source'
 for row in review['files']:
  path=row['file'];assert path in inventory;data=(core/path).read_bytes();assert hashlib.sha256(data).hexdigest()==row['sha256']==inventory[path]['sha256'],path
  lines=data.decode('utf-8').splitlines()

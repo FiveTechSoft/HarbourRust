@@ -4,8 +4,8 @@
   "counts": {
     "inventory_files": 1203,
     "original_test_sources_compile_audited": 268,
-    "manual_entrypoint_dependency_reviews": 130,
-    "manually_reviewed_or_executed_sources": 144,
+    "manual_entrypoint_dependency_reviews": 139,
+    "manually_reviewed_or_executed_sources": 153,
     "frozen175_default_accepted": 20,
     "frozen175_llvm_accepted": 14,
     "execution_exact_by_profile": {
@@ -12266,8 +12266,24 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "No Main; ParseString and THTML methods",
+        "build_unit": "library companion, not standalone application",
+        "families": [
+          "classes",
+          "filesystem",
+          "environment-query",
+          "strings",
+          "arrays",
+          "byref-buffer"
+        ],
+        "next_gate": "Own method-level harness with synthetic environment and disposable files; distinguish library definitions from effects actually invoked",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -14134,8 +14150,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "single source plus architecture-selected external test DLL",
+        "families": [
+          "dynamic-library-ABI",
+          "floating-point",
+          "strings",
+          "preprocessor-platform",
+          "bitwise"
+        ],
+        "next_gate": "Build/review exact DLL and cross-architecture ABI plan separately; no new dynamic value/FFI authority from review",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -15375,8 +15406,24 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main",
+        "build_unit": "source-declared CGI application with cgi/inifile companions",
+        "families": [
+          "classes",
+          "filesystem",
+          "environment-query",
+          "environment-clock",
+          "arrays",
+          "script-startup"
+        ],
+        "next_gate": "Never write live /www/root or deploy; disposable fixture mapping and synthetic request/clock; verify read/add effects separately",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -15661,8 +15708,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main(n); executable Msg",
+        "build_unit": "application loading hrbext.hrb companion",
+        "families": [
+          "HRB-module",
+          "runtime-macro",
+          "process-shell",
+          "compiler-invocation",
+          "module-startup"
+        ],
+        "next_gate": "Pinned separate artifact build, no implicit compiler shell; validate load/macro/unload lifetimes per mode before execution",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -15700,14 +15762,15 @@
       },
       "manual_review": {
         "evidence": "manual-entrypoint-dependencies-20261029.json",
-        "entrypoint": "Msg/Msg2 exports and INIT MsgInit,no Main",
-        "build_unit": "single source with explicit profile; not auto-runnable",
+        "entrypoint": "Msg/Msg2; INIT MsgInit; no Main",
+        "build_unit": "HRB companion for hrb.prg, not standalone application",
         "families": [
-          "modules-linking",
           "HRB-module",
-          "init-procedure"
+          "init-procedure",
+          "functions",
+          "modules-linking"
         ],
-        "next_gate": "review HRB loader and module lifecycle together",
+        "next_gate": "Review together with hrb runtime symbol/initialization/unload contract; no inferred standalone execution",
         "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
@@ -15773,8 +15836,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main; local THTML implementation",
+        "build_unit": "standalone HTML-generation example",
+        "families": [
+          "classes",
+          "strings",
+          "byref",
+          "filesystem"
+        ],
+        "next_gate": "Separate stdout-bytes oracle from uncalled file method and visual/web validity; do not link with cgi THTML definition",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -16044,8 +16121,25 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "No Main; TIniFile methods",
+        "build_unit": "library companion used by guestbk",
+        "families": [
+          "classes",
+          "filesystem",
+          "arrays",
+          "array-aliasing",
+          "closures",
+          "byref-buffer",
+          "dates"
+        ],
+        "next_gate": "Disposable files; constructor/create/rewrite and round-trip/case/comment assertions; no unreviewed config path",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -16391,8 +16485,22 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main; process socket handler",
+        "build_unit": "single source with MT runtime",
+        "families": [
+          "network-sockets",
+          "threads",
+          "input-terminal",
+          "byref-buffer"
+        ],
+        "next_gate": "No automatic listener; isolated network namespace or separately approved loopback variant; bounded clients and worker teardown assertions",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -18792,8 +18900,25 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "main(xChild); parent and two child profiles",
+        "build_unit": "single source self-spawning executable",
+        "families": [
+          "process-shell",
+          "file-handles",
+          "byref-buffer",
+          "preprocessor-platform",
+          "foreach",
+          "environment-clock",
+          "set-runtime"
+        ],
+        "next_gate": "Disposable executable path, child process deadlines/cleanup, separate stream captures and merged-stream alias assertion; not byte-exact timing log",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {
@@ -20009,8 +20134,23 @@
       },
       "execution": {},
       "review": {
-        "entrypoint": "not-reconciled",
-        "dependencies": "not-reconciled"
+        "entrypoint": "manually-reviewed-profile-specific",
+        "dependencies": "requirements-and-harness-risks-reviewed",
+        "limits": "metadata review only; no execution readiness or permission inferred"
+      },
+      "manual_review": {
+        "evidence": "manual-entrypoint-dependencies-20261029.json",
+        "entrypoint": "Main(cPort); Progress callback",
+        "build_unit": "single source with Inet runtime",
+        "families": [
+          "network-sockets",
+          "GT-screen",
+          "input-terminal",
+          "closures",
+          "byref"
+        ],
+        "next_gate": "Isolated network and synthetic client; explicit bind-address verification, deadlines and socket teardown; never infer loopback",
+        "execution_permission": "not granted by this record; use separately reviewed explicit allowlist"
       }
     },
     {

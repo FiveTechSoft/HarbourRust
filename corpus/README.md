@@ -369,3 +369,28 @@ return or failed open proves neither protocol nor device support. commouse has
 an undeclared nI and a packet branch that checks four bytes before reading a
 fifth;these are source-review findings,not measured failures or permission to
 rewrite the original. Fragmentation/buffer behavior requires a separate oracle.
+
+### Service/module profiles:139 manual /153 reviewed-or-executed
+
+Nine additional full-source reviews and a richer existing hrbext record give139
+distinct manual records and153 distinct sources in the union:139+19-5=153.
+Validators now reject duplicate manual source rows before counting them.
+Executions remain19default/14LLVM and are historical,not rerun.
+No compiler or original was compiled or run for this metadata batch.
+
+ipsvr binds0.0.0.0:10000 and detaches workers;server opens an Inet listener with
+an unspecified address in its call. Neither can be treated as loopback-only or
+run automatically. pipes spawns copies of itself,uses a10MB buffer,and tests
+merged stream aliases and an exit123 child;timestamps/PIDs/chunk boundaries
+need invariant-based comparison rather than exact diagnostics.
+
+cgi and inifile have no Main and are library companions for guestbk,not separate
+applications. guestbk uses an absolute /www/root fixture and can rewrite its INI;
+even TIniFile construction can create a missing file. html has its own THTML
+class and a commented SaveToFile call in Main;linking both THTML definitions is
+not the intended unit. hrb can invoke a shell compiler if the HRB is missing;
+hrbext is a separately loaded module with INIT and overlapping symbols,not an
+ordinary linked companion. dyn requires architecture-specific DLL exports and
+explicit type/calling-convention/encoding checks. Grouping metadata records
+these relationships without building,deployment,network/device access or new
+runtime authority. Original bodies are not copied into this repository.

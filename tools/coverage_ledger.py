@@ -14,6 +14,7 @@ for filename in ['console14-89f3ead-execution.json','default5-cda9176-execution.
   r=check(x);assert x['exact'];r['review']={'entrypoint':'reviewed-linux-console','dependencies':'reviewed-console-only','limits':'other targets not reviewed; no automatic bulk execution'}
   for backend in x['outputs']:r['execution']['linux-'+backend]={'exact_with_reference':True,'compiler':d['compiler'],'evidence':filename,'exit':x['outputs'][backend]['exit'],'stdout_bytes':x['outputs'][backend]['stdout_bytes']}
 manual=json.loads((root/'manual-entrypoint-dependencies-20261029.json').read_text())
+assert len(manual['files']) == len({r['file'] for r in manual['files']}), 'duplicate manual review source'
 for x in manual['files']:
  r=check(x);r['manual_review']={'evidence':'manual-entrypoint-dependencies-20261029.json','entrypoint':x['entrypoint'],'build_unit':x['build_unit'],'families':x['families'],'next_gate':x['next_gate'],'execution_permission':x['execution_permission']}
  # Retain reviewed-console execution provenance on the five overlaps.
