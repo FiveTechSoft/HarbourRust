@@ -331,3 +331,41 @@ measurement is part of this characterization. Production remains732eb4b.
 python3 experiments/pp-markers/check_generated_directive_gap.py \
   --hbpp /path/to/hbpp --hpp /tmp/hpp --output-dir /tmp/generated-gap
 ```
+
+## Generated command implementation, scoped experimental increment
+
+Escaped result markers and escaped optional brackets are now deferred one
+stage. Binding/substitution only sees current-stage markers;staged syntax is
+restored before registering the generated #command/#xcommand. Generated
+rules are validated on invocation of the factory,not when an unused factory
+is defined. Exact generated result names preserve the observed invalid-case
+boundary without changing the older unescaped name-validation contract.
+
+A generated command definition is registered in source order,not emitted as
+program text. Doubled separators followed by another command directive can
+register several definitions;quoted separators stay literal. Other generated
+directives remain explicitly unsupported. The existing16-expansion recursion
+limit still rejects circular command expansion. No general macro staging,
+class/runtime,Dyn,ownership or main/LLVM branch merge is included.
+
+Fresh pinned-hbpp replay verifies148observations. These are NOT148equal output
+streams:unknown/invalid definitions match rejection behavior;preexisting
+stricter own nonmatch errors are preserved where Harbour emits unmatched text.
+Eight own positive programs separately match freshly rebuilt Harbour bytes.
+Six new rejection fixtures cover unknown/case/exactness/recursion/unsupported
+and unescaped labels. Quoted generated separators were also probed directly.
+Batteries:1144PASS default and322PASS LLVM,including Windows/Wine;10218/10130
+Rust controls and46error traces are separate checks. Prior80null,172restricted
+and190marker checks pass;logical replay remains88checks plus2known matcher
+divergences,not90passes. Fourteen already-reviewed originals are exact again.
+
+Compile-only268x4 acceptance is unchanged21/15Linux20/14Windows.23originals
+advance beyond the escaped header marker to later incomplete-command errors;
+one other first diagnostic now explicitly rejects a generated directive
+outside command/xcommand scope. None is a new complete original acceptance.
+No fresh size or speed comparison is claimed. Main date work is untouched.
+
+```
+python3 experiments/pp-markers/check_generated_directive_implemented.py \
+  --hbpp /path/to/hbpp --hpp /tmp/current-hpp --output-dir /tmp/generated
+```

@@ -1,0 +1,1038 @@
+[
+  {
+    "case": 0,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 1,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 2,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNCTION, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 3,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( PROCEDURE, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 4,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNC, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 5,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 6,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 7,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 8,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 9,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 10,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 11,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 12,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 13,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 14,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 15,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 16,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 17,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 18,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 19,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 20,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 21,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 22,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 23,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 24,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 25,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 26,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNCTION, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 27,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( PROCEDURE, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 28,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNC, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 29,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 30,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 31,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( , alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 32,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNCTION, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 33,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( PROCEDURE, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 34,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNC, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 35,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 36,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 37,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 38,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNCTION, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 39,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( PROCEDURE, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 40,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 41,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 42,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 43,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 44,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 45,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 46,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 47,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 48,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 49,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 50,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 51,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 52,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 53,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 54,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 55,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 56,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 57,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 58,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 59,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 60,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 61,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 62,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNCTION, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 63,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( PROCEDURE, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 64,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 65,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 66,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 67,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( , alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 68,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNCTION, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 69,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( PROCEDURE, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 70,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 71,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 72,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 73,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 74,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNCTION, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 75,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( PROCEDURE, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 76,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNC, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 77,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 78,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 79,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 80,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 81,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 82,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 83,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 84,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 85,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 86,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 87,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 88,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 89,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 90,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 91,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 92,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 93,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 94,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 95,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 96,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 97,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 98,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNCTION, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 99,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( PROCEDURE, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 100,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNC, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 101,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 102,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 103,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( , alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 104,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNCTION, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 105,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( PROCEDURE, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 106,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNC, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 107,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 108,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 109,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 110,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNCTION, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 111,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( PROCEDURE, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 112,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 113,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 114,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 115,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 116,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 117,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 118,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 119,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 1: unknown result marker <kind: FUNCTION, PROCEDURE> (Harbour: E0008)\n"
+  },
+  {
+    "case": 120,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 121,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 122,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 123,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 124,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 125,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <missing> (Harbour: E0008)\n"
+  },
+  {
+    "case": 126,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 127,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 128,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 129,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 130,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 131,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 2: unknown result marker <KIND> (Harbour: E0008)\n"
+  },
+  {
+    "case": 132,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 133,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 134,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNCTION, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 135,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( PROCEDURE, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 136,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 137,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 138,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 139,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( , alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 140,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( FUNCTION, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 141,
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( PROCEDURE, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": 142,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": 143,
+    "pass": true,
+    "own_exit": 1,
+    "own_preprocessed": "",
+    "own_diagnostic": "error: line 3: incomplete statement for the command used here (Harbour: E0020)\n"
+  },
+  {
+    "case": "unused_unknown",
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "",
+    "own_diagnostic": ""
+  },
+  {
+    "case": "before_registration",
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "INNER FUNCTION alpha\nOUT( FUNCTION, alpha )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": "marker_free",
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "OUT( yes )\n",
+    "own_diagnostic": ""
+  },
+  {
+    "case": "unused_marker_free",
+    "pass": true,
+    "own_exit": 0,
+    "own_preprocessed": "INNER\n",
+    "own_diagnostic": ""
+  }
+]

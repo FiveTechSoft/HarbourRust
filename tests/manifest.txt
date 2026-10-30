@@ -1126,3 +1126,17 @@ neg tests/t1127_pp_null_unknown_neg.hb unknown result marker
 neg tests/t1128_pp_null_case_neg.hb unknown result marker
 neg tests/t1129_pp_null_malformed_neg.hb unknown result marker
 neg tests/t1130_pp_null_nonmatch_neg.hb incomplete statement
+pos tests/t1131_pp_generated_factory.hb \nok\nok
+pos tests/t1132_pp_generated_collision.hb \nok
+pos tests/t1133_pp_generated_optional.hb \n\nyes
+pos tests/t1134_pp_generated_ordinary.hb \nok
+pos tests/t1135_pp_generated_ordered.hb \n         1\n         2
+pos tests/t1136_pp_generated_unused.hb \n         7
+pos tests/t1137_pp_generated_multi.hb \n         1\n         2
+pos tests/t1138_pp_generated_local_scope.hb \n        42
+neg tests/t1139_pp_generated_unknown_neg.hb unknown result marker
+neg tests/t1140_pp_generated_case_neg.hb unknown result marker
+neg tests/t1141_pp_generated_exact_neg.hb incomplete statement
+neg tests/t1142_pp_generated_recursive_neg.hb command expansion too deep
+neg tests/t1143_pp_generated_unsupported_neg.hb generated directive outside
+neg tests/t1144_pp_generated_unescaped_neg.hb unknown result marker

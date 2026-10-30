@@ -523,9 +523,72 @@ fn lit_match(src: &str, lit: &str) -> bool {
 }
 
 
+// Hide one generation of escaped result syntax while binding/substitution
+// runs. Sentinels are chosen outside the source text and restored before output.
+fn staged_result(text: &str, avoid: &str) -> Result<(String, Vec<(char, String)>), String> {
+    fn save(text: &str, avoid: &str, value: String, saved: &mut Vec<(char, String)>) -> Result<char, String> {
+        let c = (0xe000..=0xf8ff).filter_map(char::from_u32)
+            .find(|c| !text.contains(*c) && !avoid.contains(*c) && !saved.iter().any(|(used, _)| used == c))
+            .ok_or("too many staged tokens")?;
+        saved.push((c, value));
+        Ok(c)
+    }
+    let b: Vec<char> = text.chars().collect();
+    let mut out = String::new();
+    let mut saved = Vec::new();
+    let mut brackets = Vec::new();
+    let mut i = 0;
+    while i < b.len() {
+        if b[i] == '\\' && i + 1 < b.len() && (b[i+1] == '<' || b[i+1] == '[') {
+            let c = b[i+1];
+            if c == '<' {
+                let mut j = i + 2;
+                while j < b.len() && b[j] != '>' { j += 1; }
+                if j == b.len() { return Err("unterminated escaped result marker".to_string()); }
+                out.push(save(text, avoid, b[i+1..=j].iter().collect(), &mut saved)?);
+                i = j + 1; continue;
+            }
+            brackets.push(true);
+            out.push(save(text, avoid, "[".to_string(), &mut saved)?);
+            i += 2; continue;
+        }
+        if b[i] == '[' { brackets.push(false); }
+        if b[i] == ']' && brackets.pop() == Some(true) {
+            out.push(save(text, avoid, "]".to_string(), &mut saved)?);
+        } else { out.push(b[i]); }
+        i += 1;
+    }
+    Ok((out, saved))
+}
+fn unstage_result(text: &str, saved: &[(char, String)]) -> String {
+    let mut out = String::new();
+    for c in text.chars() {
+        if let Some((_, value)) = saved.iter().find(|(token, _)| *token == c) { out.push_str(value); }
+        else { out.push(c); }
+    }
+    out
+}
+fn register_command(text: &str, pp: &mut Pp, line: usize) -> Result<bool, String> {
+    let t = text.trim();
+    if !t.starts_with('#') { return Ok(false); }
+    let rest = t[1..].trim_start();
+    let end = rest.find(char::is_whitespace).unwrap_or(rest.len());
+    let dir = rest[..end].to_uppercase();
+    if dir != "COMMAND" && dir != "XCOMMAND" { return Ok(false); }
+    let arg = rest[end..].trim();
+    let arrow = arg.find("=>").ok_or_else(|| format!("line {}: #{} needs `pattern => result`", line, dir.to_lowercase()))?;
+    let pattern = cmd_tokens(arg[..arrow].trim());
+    if pattern.is_empty() { return Err(format!("line {}: empty command pattern", line)); }
+    validate_markers(&pattern, line)?;
+    let result = arg[arrow+2..].trim().to_string();
+    validate_result_markers(&pattern, &result, line, true)?;
+    pp.cmds.push(Cmd { pattern, result, restricted_exact: dir.starts_with('X') });
+    Ok(true)
+}
+
 // Harbour E0008 (probe b46): a <marker> in the RESULT that does not exist
 // in the pattern is an error at define time.
-fn validate_result_markers(pattern: &[String], result: &str, line: usize) -> Result<(), String> {
+fn validate_result_markers(pattern: &[String], result: &str, line: usize, exact_plain: bool) -> Result<(), String> {
     let mut names: Vec<String> = Vec::new();
     let mut exact_names: Vec<String> = Vec::new();
     for t in pattern {
@@ -536,7 +599,8 @@ fn validate_result_markers(pattern: &[String], result: &str, line: usize) -> Res
             exact_names.push(base.to_string());
         }
     }
-    let rc: Vec<char> = result.chars().collect();
+    let (staged, _) = staged_result(result, "").map_err(|e| format!("line {}: {}", line, e))?;
+    let rc: Vec<char> = staged.chars().collect();
     let mut k = 0usize;
     while k < rc.len() {
         if rc[k] == '<' {
@@ -551,7 +615,8 @@ fn validate_result_markers(pattern: &[String], result: &str, line: usize) -> Res
                 let null_result = inner.len() >= 2 && inner.starts_with('-') && inner.ends_with('-');
                 let valid = if logical || null_result {
                     exact_names.contains(&inner[1..inner.len()-1].to_string())
-                } else { names.contains(&base.to_lowercase()) };
+                } else if exact_plain { exact_names.contains(&base.to_string()) }
+                else { names.contains(&base.to_lowercase()) };
                 if !valid {
                     return Err(format!("line {}: unknown result marker <{}> (Harbour: E0008)", line, inner));
                 }
@@ -854,7 +919,8 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
                     }
                 }
             }
-            let mut out = resolve_result_brackets(&c.result, &bound);
+            let (staged, saved) = staged_result(&c.result, &caps.join(" ")).map_err(|e| format!("line {}: {}", line_no, e))?;
+            let mut out = resolve_result_brackets(&staged, &bound);
             let mut pi = 0usize;
             for t in &c.pattern {
                 if t.starts_with('<') && t.ends_with('>') {
@@ -893,7 +959,7 @@ fn apply_commands(line: &str, cmds: &[Cmd], line_no: usize) -> Result<Option<Str
                     pi += 1;
                 }
             }
-            return Ok(Some(out));
+            return Ok(Some(unstage_result(&out, &saved)));
         }
     }
     if starts {
@@ -1073,6 +1139,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     let mut cur = statement.trim().to_string();
                     let mut depth = 0usize;
                     loop {
+                        if cur.trim_start().starts_with('#') { break; }
                         match apply_commands(&cur, &pp.cmds, line)? {
                             Some(x) => {
                                 depth += 1;
@@ -1081,6 +1148,35 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                             }
                             None => break,
                         }
+                    }
+                    // Generated command factories can emit several definitions.
+                    // Only a doubled separator followed by another command
+                    // directive ends this definition; ordinary body semicolons
+                    // belong to the newly registered rule.
+                    if cur.trim_start().starts_with('#') {
+                        let mut pending = cur.as_str();
+                        loop {
+                            let mut quote = None;
+                            let split = pending.char_indices().find_map(|(i, ch)| {
+                                if let Some(q) = quote {
+                                    if ch == q { quote = None; }
+                                    return None;
+                                }
+                                if ch == '\'' || ch == '"' { quote = Some(ch); return None; }
+                                if !pending[i..].starts_with(";;") { return None; }
+                                let tail = pending[i+2..].trim_start().to_ascii_uppercase();
+                                if tail.starts_with("#COMMAND ") || tail.starts_with("#XCOMMAND ") { Some(i) } else { None }
+                            });
+                            let (part, rest) = match split {
+                                Some(i) => (&pending[..i], Some(&pending[i+2..])),
+                                None => (pending, None),
+                            };
+                            if !register_command(part, pp, line)? {
+                                return Err(format!("line {}: generated directive outside command/xcommand scope", line));
+                            }
+                            if let Some(next) = rest { pending = next; } else { break; }
+                        }
+                        continue;
                     }
                     let expanded = expand(&cur, &pp.defs, line)?;
                     for part in split_statements(&expanded) {
@@ -1117,7 +1213,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     }
                     validate_markers(&pattern, line)?;
                     let result = arg[arrow + 2..].trim().to_string();
-                    validate_result_markers(&pattern, &result, line)?;
+                    validate_result_markers(&pattern, &result, line, false)?;
                     pp.cmds.push(Cmd { pattern, result, restricted_exact: dir.starts_with('X') });
                 }
             }
@@ -1149,7 +1245,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                                 return Err(format!("line {}: #translate needs `pattern => result`", line));
                             }
                             validate_markers(&pattern, line)?;
-                            validate_result_markers(&pattern, &result, line)?;
+                            validate_result_markers(&pattern, &result, line, false)?;
                             pp.cmds.push(Cmd { pattern, result, restricted_exact: dir.starts_with('X') });
                         }
                     }
