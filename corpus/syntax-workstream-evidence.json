@@ -67,7 +67,10 @@
         "tests/inline.prg",
         "tests/omacro.prg",
         "tests/get.prg",
-        "tests/alias.prg"
+        "tests/alias.prg",
+        "tests/clasinit.prg",
+        "tests/destruct.prg",
+        "tests/objects.prg"
       ],
       "seed_regression_paths": [
         "tests/t678_static_func_proc_note.hb",
@@ -103,7 +106,8 @@
         "tests/aliaslck.prg",
         "tests/use.prg",
         "tests/delim.prg",
-        "tests/sdf.prg"
+        "tests/sdf.prg",
+        "tests/destruct.prg"
       ],
       "seed_regression_paths": [
         "tests/t358_foreach_strord_num.hb",
@@ -158,7 +162,9 @@
         "tests/html.prg",
         "tests/inifile.prg",
         "tests/hrbext.prg",
-        "tests/alias.prg"
+        "tests/alias.prg",
+        "tests/overload.prg",
+        "tests/objarr.prg"
       ],
       "seed_regression_paths": [
         "tests/t1040_seq_dyn_limit_neg.hb",
@@ -188,7 +194,9 @@
         "tests/base2.prg",
         "tests/commouse.prg",
         "tests/dyn.prg",
-        "tests/dbf.prg"
+        "tests/dbf.prg",
+        "tests/objarr.prg",
+        "tests/dynobj.prg"
       ],
       "seed_regression_paths": [
         "tests/t750_float_arith_mixed.hb",
@@ -233,7 +241,10 @@
         "tests/files.prg",
         "tests/cgi.prg",
         "tests/guestbk.prg",
-        "tests/inifile.prg"
+        "tests/inifile.prg",
+        "tests/clasname.prg",
+        "tests/destruct.prg",
+        "tests/objarr.prg"
       ],
       "seed_regression_paths": [
         "tests/t208_nil_literal.hb",
@@ -293,7 +304,14 @@
         "tests/inifile.prg",
         "tests/hrb.prg",
         "tests/cdx.prg",
-        "tests/dbf.prg"
+        "tests/dbf.prg",
+        "tests/clasinit.prg",
+        "tests/clasname.prg",
+        "tests/destruct.prg",
+        "tests/overload.prg",
+        "tests/objects.prg",
+        "tests/objarr.prg",
+        "tests/dynobj.prg"
       ],
       "seed_regression_paths": [
         "tests/t150_cb_eval1.hb",
@@ -370,7 +388,9 @@
         "tests/html.prg",
         "tests/inifile.prg",
         "tests/dyn.prg",
-        "tests/dbi.prg"
+        "tests/dbi.prg",
+        "tests/clasname.prg",
+        "tests/overload.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -540,7 +560,8 @@
         "tests/aliasrt.prg",
         "tests/cdx.prg",
         "tests/ntx.prg",
-        "tests/dbf.prg"
+        "tests/dbf.prg",
+        "tests/dynobj.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,
@@ -585,7 +606,8 @@
         "tests/pipes.prg",
         "tests/cgi.prg",
         "tests/guestbk.prg",
-        "tests/use.prg"
+        "tests/use.prg",
+        "tests/objarr.prg"
       ],
       "seed_regression_paths": [],
       "seed_case_count": 0,

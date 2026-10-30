@@ -2,7 +2,7 @@
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
   "review_date": "2026-10-29",
-  "scope": "149 distinct full-source manual metadata reviews;5 overlap prior19 execution. Latest ten distinguish aliased lvalues, DBF/memo/index/lock/export and intentional error profiles. No new compilation or execution. Requirements not verified availability; tags not coverage.",
+  "scope": "156 distinct full-source manual metadata reviews;5 overlap prior19 execution. Latest seven distinguish fundamental messages, low-level class registry, defaults, operator overload, aliased members, dynamic shape and destructor/GC profiles. No new compile/run or authority. Requirements not availability; tags not coverage.",
   "build_projects": [
     {
       "file": "tests/multifnc/multifnc.hbp",
@@ -6821,6 +6821,388 @@
           "symbol_or_construct": "APPEND FROM test8 SDF",
           "lines": [
             47
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/clasinit.prg",
+      "sha256": "bcb4c6689110b78bf25fe212168145d22d4c10ae61480963568b6a1f5f56fda7",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source class/runtime profile; not auto-runnable",
+      "families": [
+        "classes",
+        "closures",
+        "file-static",
+        "dynamic-dispatch"
+      ],
+      "dependency_requirements": [
+        "HBClass registration, default-valued slots, AddInline and QSelf; instance serialization"
+      ],
+      "effects_or_harness_risks": [
+        "Registers class lazily and mutates one instance; creates second instance to observe default isolation"
+      ],
+      "output_comparison": "Serialized objects and method results depend on class slot/default semantics",
+      "next_gate": "Own class contract and default-instance isolation oracle; no inference from header presence",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "s_oClass:AddData( \"nTop\"   , 10 )",
+          "lines": [
+            31
+          ]
+        },
+        {
+          "symbol_or_construct": "oForm:nTop := 5",
+          "lines": [
+            12
+          ]
+        },
+        {
+          "symbol_or_construct": "oSecond := TForm():New()",
+          "lines": [
+            17
+          ]
+        },
+        {
+          "symbol_or_construct": "s_oClass:AddInline",
+          "lines": [
+            38
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/clasname.prg",
+      "sha256": "792df54ea3df5cbcfa3aafc41deb91be3dc25dfdc48543474c7b58e0599fe87a",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source class/runtime profile; not auto-runnable",
+      "families": [
+        "classes",
+        "arrays",
+        "nil-value",
+        "closures",
+        "dates"
+      ],
+      "dependency_requirements": [
+        "NOTEST; className messages on NIL,array,string,number,date,logical,block,error object",
+        "Literal/postfix message parsing with varied whitespace and nested results"
+      ],
+      "effects_or_harness_risks": [
+        "Console output and allocation only, but requires full fundamental-value message dispatch"
+      ],
+      "output_comparison": "Type/class identity mapping must be explicit; NOTEST is not a measured rejection",
+      "next_gate": "Own typed message-dispatch oracle and lexer/postfix boundaries; no tagged value contract granted",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "//NOTEST",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "symbol_or_construct": "? NIL:className()",
+          "lines": [
+            21
+          ]
+        },
+        {
+          "symbol_or_construct": "? .F.         :  className()",
+          "lines": [
+            40
+          ]
+        },
+        {
+          "symbol_or_construct": "( ( NIL:className() ):className() ):className()",
+          "lines": [
+            51
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/destruct.prg",
+      "sha256": "0cbd3f91c66b115dc25e1e14db7a01782d40b61e50662f592a59f08b364809c0",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source class/runtime profile; not auto-runnable",
+      "families": [
+        "classes",
+        "lifetime",
+        "cycles",
+        "error-system",
+        "exceptions-always",
+        "memvars-dynamic-binding"
+      ],
+      "dependency_requirements": [
+        "hbclass.ch; DESTRUCTOR; reference destruction and explicit hb_gcAll; ErrorBlock/BREAK",
+        "Self reference stored in instance, class or PUBLIC slot; GC cycles"
+      ],
+      "effects_or_harness_risks": [
+        "Changes PUBLIC P and error handler; creates cycles; deliberately tests resurrection/error paths"
+      ],
+      "output_comparison": "Destructor order/timing/error behavior requires lifecycle oracle; comments describing safety are not measured proof",
+      "next_gate": "Separate ownership/GC/destructor/resurrection design approval before implementation or harness; no stdout-only lifetime claim",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "DESTRUCTOR  dtor",
+          "lines": [
+            94
+          ]
+        },
+        {
+          "symbol_or_construct": "a := { o, NIL }; a[ 2 ] := a; a := NIL",
+          "lines": [
+            65,
+            66
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_gcAll()",
+          "lines": [
+            71,
+            73
+          ]
+        },
+        {
+          "symbol_or_construct": "::var2 := Self",
+          "lines": [
+            116
+          ]
+        },
+        {
+          "symbol_or_construct": "P := Self",
+          "lines": [
+            120
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/overload.prg",
+      "sha256": "25c77b47a72f63b19f406479066aa6ca0a78f223ea08501942b0868cbf84b2a6",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source class/runtime profile; not auto-runnable",
+      "families": [
+        "classes",
+        "dynamic-dispatch",
+        "strings",
+        "array-lvalue",
+        "varargs"
+      ],
+      "dependency_requirements": [
+        "hbclass.ch; overloaded comparisons,substring,concat and [] getter/setter",
+        "PCount/hb_PValue distinguish setter arity; Stuff creates changed string"
+      ],
+      "effects_or_harness_risks": [
+        "Object string mutation through overloaded index; console output"
+      ],
+      "output_comparison": "Operator resolution and result types need per-operator and setter/getter oracle",
+      "next_gate": "Class/operator dispatch contract; do not equate oString[] with fixed-array lowering",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "OPERATOR \"[]\" ARG nIndex",
+          "lines": [
+            55
+          ]
+        },
+        {
+          "symbol_or_construct": "PCount() > 2",
+          "lines": [
+            55
+          ]
+        },
+        {
+          "symbol_or_construct": "hb_PValue( 3 )",
+          "lines": [
+            56
+          ]
+        },
+        {
+          "symbol_or_construct": "oString[ 3 ] :=",
+          "lines": [
+            34
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/objects.prg",
+      "sha256": "156c79501c6b35662c7bd0d2afead8db0d2ffabecae7026864bd2d2b87d9035f",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source class/runtime profile; not auto-runnable",
+      "families": [
+        "classes",
+        "dynamic-dispatch",
+        "file-static",
+        "function-symbol-values"
+      ],
+      "dependency_requirements": [
+        "hboo.ch low-level __clsNew/__clsAddMsg/__clsInst; data messages,virtual method and QSelf"
+      ],
+      "effects_or_harness_risks": [
+        "Registers runtime class and creates instance; prints class handle and mutates cName"
+      ],
+      "output_comparison": "Class handle is runtime-specific,not identity-independent byte-stable output",
+      "next_gate": "Low-level class registry and message/virtual-method oracle; no new class ABI decision",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "#include \"hboo.ch\"",
+          "lines": [
+            4
+          ]
+        },
+        {
+          "symbol_or_construct": "__clsNew( \"TANY\", 3 )",
+          "lines": [
+            30
+          ]
+        },
+        {
+          "symbol_or_construct": "HB_OO_MSG_VIRTUAL",
+          "lines": [
+            35
+          ]
+        },
+        {
+          "symbol_or_construct": "? oObject:ClassH()",
+          "lines": [
+            12
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/objarr.prg",
+      "sha256": "0e95a6fd0a24ecd8060d98d32132da6da6595d717c864c59783e0fc17026ef2c",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source class/runtime profile; not auto-runnable",
+      "families": [
+        "classes",
+        "array-aliasing",
+        "function-result-lvalue",
+        "compound-assignment",
+        "floating-point",
+        "debug-runtime"
+      ],
+      "dependency_requirements": [
+        "HBClass object with dynamic array member; Get returns same array; QSelf",
+        "Compound/inc/modulus/power operators and VM stack/static introspection"
+      ],
+      "effects_or_harness_risks": [
+        "Mutates same cells via field and method-return paths; changes cell types; prints VM metadata"
+      ],
+      "output_comparison": "Aliasing/order semantics and introspection differ from scalar numeric benchmark",
+      "next_gate": "Explicit dynamic-array/lvalue/class ownership contract; separate stable state oracle from VM introspection",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "o:Get()[ 2 ] :=",
+          "lines": [
+            16,
+            20
+          ]
+        },
+        {
+          "symbol_or_construct": "o:Get()[ 2 ]++",
+          "lines": [
+            23
+          ]
+        },
+        {
+          "symbol_or_construct": "o:Get()[ 2 ] /= 1.5",
+          "lines": [
+            41
+          ]
+        },
+        {
+          "symbol_or_construct": "RETURN ::x",
+          "lines": [
+            86
+          ]
+        },
+        {
+          "symbol_or_construct": "__dbgVMVarSList",
+          "lines": [
+            55
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/dynobj.prg",
+      "sha256": "da035b1c2a9fa6f5a07eeddbf7d6bfdeeb2378c83090cf29e1f1c769be0bba50",
+      "manual_review": "full source read,2026-10-29",
+      "profile": "source-review-only; no new compilation or execution",
+      "entrypoint": "Main",
+      "build_unit": "single source class/runtime profile; not auto-runnable",
+      "families": [
+        "classes",
+        "dynamic-dispatch",
+        "closures",
+        "floating-point",
+        "input-terminal"
+      ],
+      "dependency_requirements": [
+        "HBClass; runtime add/modify/delete methods,inlines and data on existing object",
+        "Method symbols,QSelf,method-list serialization; WAIT pauses"
+      ],
+      "effects_or_harness_risks": [
+        "Mutates class registry after instantiation, invokes changed methods and waits; deletes members"
+      ],
+      "output_comparison": "Registry/list order and object layout mutation need explicit state oracle; commented crash path not executed",
+      "next_gate": "Dynamic class shape/cache invalidation and lifetime contract plus controlled input; no original run",
+      "execution_permission": "not granted by this record; use separately reviewed explicit allowlist",
+      "witnesses": [
+        {
+          "symbol_or_construct": "__objAddInline",
+          "lines": [
+            22
+          ]
+        },
+        {
+          "symbol_or_construct": "__objAddData",
+          "lines": [
+            48
+          ]
+        },
+        {
+          "symbol_or_construct": "__objModMethod",
+          "lines": [
+            59
+          ]
+        },
+        {
+          "symbol_or_construct": "__objModInline",
+          "lines": [
+            66
+          ]
+        },
+        {
+          "symbol_or_construct": "__objDelData",
+          "lines": [
+            94
+          ]
+        },
+        {
+          "symbol_or_construct": "WAIT \"Pause:\"",
+          "lines": [
+            157
           ]
         }
       ]

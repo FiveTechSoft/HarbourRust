@@ -415,3 +415,23 @@ delim/sdf both remove test8.txt and attempt import from a deliberately missing
 file;they need controlled error handling as well as export-byte comparisons.
 The old SDF implementation comment is not evidence of current support. None of
 these records authorizes RDD/runtime changes or access to existing user data.
+
+### Object lifecycle/dispatch profiles:156 manual /170 reviewed-or-executed
+
+Seven additional full-source reviews give156 distinct manual records and170 in
+the union (156+19-5). Historical executions remain19/14;no new compile or run.
+clasinit checks mutable instance defaults against a second instance;clasname
+sends className to fundamental values including NIL and varies postfix
+whitespace. objects uses the low-level class registry,not hbclass.ch macros,and
+prints a runtime class handle that is not a stable cross-implementation identity.
+
+overload distinguishes [] getter/setter by argument count;it cannot reuse fixed
+array lowering. objarr aliases object-member arrays through a method result and
+prints VM introspection;its arithmetic is not the scalar performance kernel.
+dynobj adds,changes and removes members after instantiation,requiring explicit
+shape/cache/lifetime semantics. destruct exercises cyclic GC,destructor timing
+and attempted self resurrection in instance,class and PUBLIC slots,with custom
+error handling. None of these reviews grants object representation,ownership,
+GC or dynamic dispatch contracts,and console equality alone would not establish
+lifetime correctness. Expected safety/error statements in comments are source
+claims,not newly measured results.
