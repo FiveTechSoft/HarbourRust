@@ -532,3 +532,22 @@ those literals. Three quoted controls now exactly match fbaef4e. A new mixed
 quoted/unquoted result regression covers both paths.1181default/394LLVM fresh
 local checks pass. This correction preserves historical literal behavior;it
 does not claim Harbour compatibility of marker-looking text in result literals.
+
+## Next gap: optional groups and expression boundaries
+
+192new behavioral observations,not192compatibility passes:84token matches,
+64explicit rejections,44successful-output mismatches.96ordinary-marker
+controls have identical pp output/diagnostics versus fbaef4e,so these gaps
+preexist the source-span/stringify increment. Examples:
+
+* `[WORD <x>]` on `WORD alpha WORD beta` can capture literal WORD into one
+  expression instead of rejecting an unbound repeated result or binding each
+  occurrence for a repeated result group.
+* `<x> [TAIL <y>]` can accept adjacent identifiers as one capture,where the
+  Harbour command does not match.
+* Non-call translate currently requires full input consumption instead of
+  Harbour's prefix replacement with remaining tokens preserved.
+
+Do not remove stringify guards merely because a single optional match works.
+Result-group repetition and expression boundaries need separate verified pp
+work. No production change in this characterization.

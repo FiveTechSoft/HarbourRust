@@ -1,0 +1,2702 @@
+{
+  "scope": "192characterization observations;not192compatibility passes",
+  "rows": [
+    {
+      "case": 0,
+      "source": "#command PROBE [WORD <x>] => OUT( #<x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 1,
+      "source": "#command PROBE [WORD <x>] => OUT( #<x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 2,
+      "source": "#command PROBE [WORD <x>] => OUT( #<x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 3,
+      "source": "#command PROBE [WORD <x>] => OUT( #<x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 4,
+      "source": "#command PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 5,
+      "source": "#command PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 6,
+      "source": "#command PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" \"beta\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 7,
+      "source": "#command PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 8,
+      "source": "#command PROBE [WORD <x>] => OUT( <x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 9,
+      "source": "#command PROBE [WORD <x>] => OUT( <x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 10,
+      "source": "#command PROBE [WORD <x>] => OUT( <x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha WORD beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 11,
+      "source": "#command PROBE [WORD <x>] => OUT( <x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 12,
+      "source": "#command PROBE [WORD <x>] => OUT( [<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 13,
+      "source": "#command PROBE [WORD <x>] => OUT( [<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 14,
+      "source": "#command PROBE [WORD <x>] => OUT( [<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha beta )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha WORD beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 15,
+      "source": "#command PROBE [WORD <x>] => OUT( [<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 16,
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 17,
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 18,
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 19,
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 20,
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 21,
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 22,
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 23,
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 24,
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 25,
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( WORD alpha )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 26,
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( WORD alpha WORD beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 27,
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 28,
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 29,
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( WORD alpha )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 30,
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( WORD alpha WORD beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 31,
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 32,
+      "source": "#command PROBE [WORD <x:alpha,beta>] => OUT( #<x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 33,
+      "source": "#command PROBE [WORD <x:alpha,beta>] => OUT( #<x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 34,
+      "source": "#command PROBE [WORD <x:alpha,beta>] => OUT( #<x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 35,
+      "source": "#command PROBE [WORD <x:alpha,beta>] => OUT( #<x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 36,
+      "source": "#command PROBE [WORD <x:alpha,beta>] => OUT( [#<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 37,
+      "source": "#command PROBE [WORD <x:alpha,beta>] => OUT( [#<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 38,
+      "source": "#command PROBE [WORD <x:alpha,beta>] => OUT( [#<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" \"beta\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 39,
+      "source": "#command PROBE [WORD <x:alpha,beta>] => OUT( [#<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 40,
+      "source": "#command PROBE [WORD <x:alpha,beta>] => OUT( <x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 41,
+      "source": "#command PROBE [WORD <x:alpha,beta>] => OUT( <x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 42,
+      "source": "#command PROBE [WORD <x:alpha,beta>] => OUT( <x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 43,
+      "source": "#command PROBE [WORD <x:alpha,beta>] => OUT( <x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 44,
+      "source": "#command PROBE [WORD <x:alpha,beta>] => OUT( [<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 45,
+      "source": "#command PROBE [WORD <x:alpha,beta>] => OUT( [<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 46,
+      "source": "#command PROBE [WORD <x:alpha,beta>] => OUT( [<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha beta )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha beta )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 47,
+      "source": "#command PROBE [WORD <x:alpha,beta>] => OUT( [<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 48,
+      "source": "#xcommand PROBE [WORD <x>] => OUT( #<x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 49,
+      "source": "#xcommand PROBE [WORD <x>] => OUT( #<x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 50,
+      "source": "#xcommand PROBE [WORD <x>] => OUT( #<x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 51,
+      "source": "#xcommand PROBE [WORD <x>] => OUT( #<x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 52,
+      "source": "#xcommand PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 53,
+      "source": "#xcommand PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 54,
+      "source": "#xcommand PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" \"beta\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 55,
+      "source": "#xcommand PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 56,
+      "source": "#xcommand PROBE [WORD <x>] => OUT( <x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 57,
+      "source": "#xcommand PROBE [WORD <x>] => OUT( <x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 58,
+      "source": "#xcommand PROBE [WORD <x>] => OUT( <x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha WORD beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 59,
+      "source": "#xcommand PROBE [WORD <x>] => OUT( <x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 60,
+      "source": "#xcommand PROBE [WORD <x>] => OUT( [<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 61,
+      "source": "#xcommand PROBE [WORD <x>] => OUT( [<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 62,
+      "source": "#xcommand PROBE [WORD <x>] => OUT( [<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha beta )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha WORD beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 63,
+      "source": "#xcommand PROBE [WORD <x>] => OUT( [<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 64,
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 65,
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 66,
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 67,
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 68,
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 69,
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 70,
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 71,
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 72,
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 73,
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( WORD alpha )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 74,
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( WORD alpha WORD beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 75,
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 76,
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 77,
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( WORD alpha )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 78,
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( WORD alpha WORD beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 79,
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 80,
+      "source": "#xcommand PROBE [WORD <x:alpha,beta>] => OUT( #<x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 81,
+      "source": "#xcommand PROBE [WORD <x:alpha,beta>] => OUT( #<x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 82,
+      "source": "#xcommand PROBE [WORD <x:alpha,beta>] => OUT( #<x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 83,
+      "source": "#xcommand PROBE [WORD <x:alpha,beta>] => OUT( #<x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 84,
+      "source": "#xcommand PROBE [WORD <x:alpha,beta>] => OUT( [#<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 85,
+      "source": "#xcommand PROBE [WORD <x:alpha,beta>] => OUT( [#<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 86,
+      "source": "#xcommand PROBE [WORD <x:alpha,beta>] => OUT( [#<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" \"beta\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 87,
+      "source": "#xcommand PROBE [WORD <x:alpha,beta>] => OUT( [#<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 88,
+      "source": "#xcommand PROBE [WORD <x:alpha,beta>] => OUT( <x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 89,
+      "source": "#xcommand PROBE [WORD <x:alpha,beta>] => OUT( <x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 90,
+      "source": "#xcommand PROBE [WORD <x:alpha,beta>] => OUT( <x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 91,
+      "source": "#xcommand PROBE [WORD <x:alpha,beta>] => OUT( <x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 92,
+      "source": "#xcommand PROBE [WORD <x:alpha,beta>] => OUT( [<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 93,
+      "source": "#xcommand PROBE [WORD <x:alpha,beta>] => OUT( [<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 94,
+      "source": "#xcommand PROBE [WORD <x:alpha,beta>] => OUT( [<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha beta )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha beta )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 95,
+      "source": "#xcommand PROBE [WORD <x:alpha,beta>] => OUT( [<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 96,
+      "source": "#translate PROBE [WORD <x>] => OUT( #<x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 97,
+      "source": "#translate PROBE [WORD <x>] => OUT( #<x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 98,
+      "source": "#translate PROBE [WORD <x>] => OUT( #<x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 99,
+      "source": "#translate PROBE [WORD <x>] => OUT( #<x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"\" ) alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 100,
+      "source": "#translate PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 101,
+      "source": "#translate PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 102,
+      "source": "#translate PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" \"beta\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 103,
+      "source": "#translate PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( ) alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 104,
+      "source": "#translate PROBE [WORD <x>] => OUT( <x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 105,
+      "source": "#translate PROBE [WORD <x>] => OUT( <x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 106,
+      "source": "#translate PROBE [WORD <x>] => OUT( <x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha WORD beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 107,
+      "source": "#translate PROBE [WORD <x>] => OUT( <x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( ) alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 108,
+      "source": "#translate PROBE [WORD <x>] => OUT( [<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 109,
+      "source": "#translate PROBE [WORD <x>] => OUT( [<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 110,
+      "source": "#translate PROBE [WORD <x>] => OUT( [<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha beta )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha WORD beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 111,
+      "source": "#translate PROBE [WORD <x>] => OUT( [<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( ) alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 112,
+      "source": "#translate PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 113,
+      "source": "#translate PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"WORD\" ) alpha\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 114,
+      "source": "#translate PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"WORD\" ) alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 115,
+      "source": "#translate PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 116,
+      "source": "#translate PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 117,
+      "source": "#translate PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"WORD\" ) alpha\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 118,
+      "source": "#translate PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"WORD\" ) alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 119,
+      "source": "#translate PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 120,
+      "source": "#translate PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 121,
+      "source": "#translate PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( WORD ) alpha\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( WORD alpha )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 122,
+      "source": "#translate PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( WORD ) alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( WORD alpha WORD beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 123,
+      "source": "#translate PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 124,
+      "source": "#translate PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 125,
+      "source": "#translate PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( WORD ) alpha\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( WORD alpha )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 126,
+      "source": "#translate PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( WORD ) alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( WORD alpha WORD beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 127,
+      "source": "#translate PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 128,
+      "source": "#translate PROBE [WORD <x:alpha,beta>] => OUT( #<x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 129,
+      "source": "#translate PROBE [WORD <x:alpha,beta>] => OUT( #<x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 130,
+      "source": "#translate PROBE [WORD <x:alpha,beta>] => OUT( #<x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 131,
+      "source": "#translate PROBE [WORD <x:alpha,beta>] => OUT( #<x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"\" ) alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 132,
+      "source": "#translate PROBE [WORD <x:alpha,beta>] => OUT( [#<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 133,
+      "source": "#translate PROBE [WORD <x:alpha,beta>] => OUT( [#<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 134,
+      "source": "#translate PROBE [WORD <x:alpha,beta>] => OUT( [#<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" \"beta\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 135,
+      "source": "#translate PROBE [WORD <x:alpha,beta>] => OUT( [#<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( ) alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 136,
+      "source": "#translate PROBE [WORD <x:alpha,beta>] => OUT( <x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 137,
+      "source": "#translate PROBE [WORD <x:alpha,beta>] => OUT( <x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 138,
+      "source": "#translate PROBE [WORD <x:alpha,beta>] => OUT( <x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 139,
+      "source": "#translate PROBE [WORD <x:alpha,beta>] => OUT( <x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( ) alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 140,
+      "source": "#translate PROBE [WORD <x:alpha,beta>] => OUT( [<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 141,
+      "source": "#translate PROBE [WORD <x:alpha,beta>] => OUT( [<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 142,
+      "source": "#translate PROBE [WORD <x:alpha,beta>] => OUT( [<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha beta )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha beta )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 143,
+      "source": "#translate PROBE [WORD <x:alpha,beta>] => OUT( [<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( ) alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 144,
+      "source": "#xtranslate PROBE [WORD <x>] => OUT( #<x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 145,
+      "source": "#xtranslate PROBE [WORD <x>] => OUT( #<x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 146,
+      "source": "#xtranslate PROBE [WORD <x>] => OUT( #<x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 147,
+      "source": "#xtranslate PROBE [WORD <x>] => OUT( #<x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"\" ) alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 148,
+      "source": "#xtranslate PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 149,
+      "source": "#xtranslate PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 150,
+      "source": "#xtranslate PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" \"beta\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 151,
+      "source": "#xtranslate PROBE [WORD <x>] => OUT( [#<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( ) alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 152,
+      "source": "#xtranslate PROBE [WORD <x>] => OUT( <x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 153,
+      "source": "#xtranslate PROBE [WORD <x>] => OUT( <x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 154,
+      "source": "#xtranslate PROBE [WORD <x>] => OUT( <x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha WORD beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 155,
+      "source": "#xtranslate PROBE [WORD <x>] => OUT( <x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( ) alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 156,
+      "source": "#xtranslate PROBE [WORD <x>] => OUT( [<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 157,
+      "source": "#xtranslate PROBE [WORD <x>] => OUT( [<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 158,
+      "source": "#xtranslate PROBE [WORD <x>] => OUT( [<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha beta )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha WORD beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 159,
+      "source": "#xtranslate PROBE [WORD <x>] => OUT( [<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( ) alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 160,
+      "source": "#xtranslate PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 161,
+      "source": "#xtranslate PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"WORD\" ) alpha\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 162,
+      "source": "#xtranslate PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"WORD\" ) alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 163,
+      "source": "#xtranslate PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 164,
+      "source": "#xtranslate PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 165,
+      "source": "#xtranslate PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"WORD\" ) alpha\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 166,
+      "source": "#xtranslate PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"WORD\" ) alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 167,
+      "source": "#xtranslate PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 168,
+      "source": "#xtranslate PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 169,
+      "source": "#xtranslate PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( WORD ) alpha\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( WORD alpha )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 170,
+      "source": "#xtranslate PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( WORD ) alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( WORD alpha WORD beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 171,
+      "source": "#xtranslate PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 172,
+      "source": "#xtranslate PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 173,
+      "source": "#xtranslate PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( WORD ) alpha\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( WORD alpha )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 174,
+      "source": "#xtranslate PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( WORD ) alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( WORD alpha WORD beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 175,
+      "source": "#xtranslate PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 176,
+      "source": "#xtranslate PROBE [WORD <x:alpha,beta>] => OUT( #<x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 177,
+      "source": "#xtranslate PROBE [WORD <x:alpha,beta>] => OUT( #<x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 178,
+      "source": "#xtranslate PROBE [WORD <x:alpha,beta>] => OUT( #<x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 179,
+      "source": "#xtranslate PROBE [WORD <x:alpha,beta>] => OUT( #<x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"\" ) alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 180,
+      "source": "#xtranslate PROBE [WORD <x:alpha,beta>] => OUT( [#<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 181,
+      "source": "#xtranslate PROBE [WORD <x:alpha,beta>] => OUT( [#<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 182,
+      "source": "#xtranslate PROBE [WORD <x:alpha,beta>] => OUT( [#<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( \"alpha\" \"beta\" )\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n",
+      "exact_tokens": false
+    },
+    {
+      "case": 183,
+      "source": "#xtranslate PROBE [WORD <x:alpha,beta>] => OUT( [#<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( ) alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 184,
+      "source": "#xtranslate PROBE [WORD <x:alpha,beta>] => OUT( <x> )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 185,
+      "source": "#xtranslate PROBE [WORD <x:alpha,beta>] => OUT( <x> )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 186,
+      "source": "#xtranslate PROBE [WORD <x:alpha,beta>] => OUT( <x> )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE WORD alpha WORD beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha beta )\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 187,
+      "source": "#xtranslate PROBE [WORD <x:alpha,beta>] => OUT( <x> )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( ) alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": false
+    },
+    {
+      "case": 188,
+      "source": "#xtranslate PROBE [WORD <x:alpha,beta>] => OUT( [<x>] )\nPROBE\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(  )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 189,
+      "source": "#xtranslate PROBE [WORD <x:alpha,beta>] => OUT( [<x>] )\nPROBE WORD alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 190,
+      "source": "#xtranslate PROBE [WORD <x:alpha,beta>] => OUT( [<x>] )\nPROBE WORD alpha WORD beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( alpha beta )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT( alpha beta )\n",
+      "own_error": "",
+      "exact_tokens": true
+    },
+    {
+      "case": 191,
+      "source": "#xtranslate PROBE [WORD <x:alpha,beta>] => OUT( [<x>] )\nPROBE alpha TAIL beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT( ) alpha TAIL beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL beta\n",
+      "own_error": "",
+      "exact_tokens": false
+    }
+  ],
+  "ordinary_baseline_controls": [
+    {
+      "case": 8,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT(  )\n"
+    },
+    {
+      "case": 9,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 10,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha WORD beta )\n"
+    },
+    {
+      "case": 11,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE alpha TAIL beta\n"
+    },
+    {
+      "case": 12,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT(  )\n"
+    },
+    {
+      "case": 13,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 14,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha WORD beta )\n"
+    },
+    {
+      "case": 15,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE alpha TAIL beta\n"
+    },
+    {
+      "case": 24,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE\n"
+    },
+    {
+      "case": 25,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( WORD alpha )\n"
+    },
+    {
+      "case": 26,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( WORD alpha WORD beta )\n"
+    },
+    {
+      "case": 27,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 28,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE\n"
+    },
+    {
+      "case": 29,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( WORD alpha )\n"
+    },
+    {
+      "case": 30,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( WORD alpha WORD beta )\n"
+    },
+    {
+      "case": 31,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 40,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT(  )\n"
+    },
+    {
+      "case": 41,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 42,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha beta )\n"
+    },
+    {
+      "case": 43,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE alpha TAIL beta\n"
+    },
+    {
+      "case": 44,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT(  )\n"
+    },
+    {
+      "case": 45,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 46,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha beta )\n"
+    },
+    {
+      "case": 47,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE alpha TAIL beta\n"
+    },
+    {
+      "case": 56,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT(  )\n"
+    },
+    {
+      "case": 57,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 58,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha WORD beta )\n"
+    },
+    {
+      "case": 59,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE alpha TAIL beta\n"
+    },
+    {
+      "case": 60,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT(  )\n"
+    },
+    {
+      "case": 61,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 62,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha WORD beta )\n"
+    },
+    {
+      "case": 63,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE alpha TAIL beta\n"
+    },
+    {
+      "case": 72,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE\n"
+    },
+    {
+      "case": 73,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( WORD alpha )\n"
+    },
+    {
+      "case": 74,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( WORD alpha WORD beta )\n"
+    },
+    {
+      "case": 75,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 76,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE\n"
+    },
+    {
+      "case": 77,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( WORD alpha )\n"
+    },
+    {
+      "case": 78,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( WORD alpha WORD beta )\n"
+    },
+    {
+      "case": 79,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 88,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT(  )\n"
+    },
+    {
+      "case": 89,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 90,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha beta )\n"
+    },
+    {
+      "case": 91,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE alpha TAIL beta\n"
+    },
+    {
+      "case": 92,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT(  )\n"
+    },
+    {
+      "case": 93,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 94,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha beta )\n"
+    },
+    {
+      "case": 95,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE alpha TAIL beta\n"
+    },
+    {
+      "case": 104,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT(  )\n"
+    },
+    {
+      "case": 105,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 106,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha WORD beta )\n"
+    },
+    {
+      "case": 107,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE alpha TAIL beta\n"
+    },
+    {
+      "case": 108,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT(  )\n"
+    },
+    {
+      "case": 109,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 110,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha WORD beta )\n"
+    },
+    {
+      "case": 111,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE alpha TAIL beta\n"
+    },
+    {
+      "case": 120,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE\n"
+    },
+    {
+      "case": 121,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( WORD alpha )\n"
+    },
+    {
+      "case": 122,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( WORD alpha WORD beta )\n"
+    },
+    {
+      "case": 123,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 124,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE\n"
+    },
+    {
+      "case": 125,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( WORD alpha )\n"
+    },
+    {
+      "case": 126,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( WORD alpha WORD beta )\n"
+    },
+    {
+      "case": 127,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 136,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT(  )\n"
+    },
+    {
+      "case": 137,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 138,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha beta )\n"
+    },
+    {
+      "case": 139,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE alpha TAIL beta\n"
+    },
+    {
+      "case": 140,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT(  )\n"
+    },
+    {
+      "case": 141,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 142,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha beta )\n"
+    },
+    {
+      "case": 143,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE alpha TAIL beta\n"
+    },
+    {
+      "case": 152,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT(  )\n"
+    },
+    {
+      "case": 153,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 154,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha WORD beta )\n"
+    },
+    {
+      "case": 155,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE alpha TAIL beta\n"
+    },
+    {
+      "case": 156,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT(  )\n"
+    },
+    {
+      "case": 157,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 158,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha WORD beta )\n"
+    },
+    {
+      "case": 159,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE alpha TAIL beta\n"
+    },
+    {
+      "case": 168,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE\n"
+    },
+    {
+      "case": 169,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( WORD alpha )\n"
+    },
+    {
+      "case": 170,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( WORD alpha WORD beta )\n"
+    },
+    {
+      "case": 171,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 172,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE\n"
+    },
+    {
+      "case": 173,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( WORD alpha )\n"
+    },
+    {
+      "case": 174,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( WORD alpha WORD beta )\n"
+    },
+    {
+      "case": 175,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 184,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT(  )\n"
+    },
+    {
+      "case": 185,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 186,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha beta )\n"
+    },
+    {
+      "case": 187,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE alpha TAIL beta\n"
+    },
+    {
+      "case": 188,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT(  )\n"
+    },
+    {
+      "case": 189,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha )\n"
+    },
+    {
+      "case": 190,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "OUT( alpha beta )\n"
+    },
+    {
+      "case": 191,
+      "identical_to_fbaef4e": true,
+      "baseline_exit": 0,
+      "baseline_output": "PROBE alpha TAIL beta\n"
+    }
+  ],
+  "summary": {
+    "observations": 192,
+    "exact_token_matches": 84,
+    "explicit_rejections": 64,
+    "successful_mismatches": 44,
+    "ordinary_controls_identical_to_fbaef4e": 96
+  }
+}
