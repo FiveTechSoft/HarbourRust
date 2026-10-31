@@ -6139,7 +6139,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     // pin only NARROWS the unknown element type, so joining
                     // it forward is sound: unpinned loops still reject at
                     // the use site if the body never pins).
-                    if env[k].ty == Ty::DArrU && matches!(env_body[k].ty, Ty::DArr | Ty::DArr2) {
+                    if env[k].ty == Ty::DArrU && matches!(env_body[k].ty, Ty::DArr | Ty::DArr2 | Ty::DArrDyn) {
                         env[k].ty = env_body[k].ty;
                     }
                 }
@@ -6179,7 +6179,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
                 for k in 0..outer {
                     env[k].moved = pre[k] || (fb && env_body[k].moved) || fexits.iter().any(|xs| xs[k]);
-                    if env[k].ty == Ty::DArrU && matches!(env_body[k].ty, Ty::DArr | Ty::DArr2) {
+                    if env[k].ty == Ty::DArrU && matches!(env_body[k].ty, Ty::DArr | Ty::DArr2 | Ty::DArrDyn) {
                         env[k].ty = env_body[k].ty;
                     }
                 }
@@ -6362,7 +6362,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
                 for k in 0..outer {
                     env[k].moved = pre[k] || (fb && env_body[k].moved) || fexits.iter().any(|xs| xs[k]);
-                    if env[k].ty == Ty::DArrU && matches!(env_body[k].ty, Ty::DArr | Ty::DArr2) {
+                    if env[k].ty == Ty::DArrU && matches!(env_body[k].ty, Ty::DArr | Ty::DArr2 | Ty::DArrDyn) {
                         env[k].ty = env_body[k].ty;
                     }
                 }
@@ -7077,7 +7077,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if env[idx].ro {
                     return Err(format!("line {}: cannot assign to the `for` loop variable `{}` (it advances only via the loop itself)", n, id));
                 }
-                if env[idx].ty == Ty::DArrU && matches!(t, Ty::DArr | Ty::DArr2) {
+                if env[idx].ty == Ty::DArrU && matches!(t, Ty::DArr | Ty::DArr2 | Ty::DArrDyn) {
                     // Assigning a pinned dynamic array pins the empty `{}`.
                     env[idx].ty = t;
                 } else if env[idx].ty == Ty::Dyn && matches!(t, Ty::I64 | Ty::Bool | Ty::Dyn | Ty::Str | Ty::StrOwn) {
@@ -7131,7 +7131,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
         Expr::ByRef(_) => {} // `@x` borrows the slot for the call; the owner keeps it (hk216)
         Expr::Var(id) => {
             if moving {
-                if let Some(v) = env.iter_mut().find(|v| v.name == *id && !v.byref && matches!(v.ty, Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash)) { v.moved = true; }
+                if let Some(v) = env.iter_mut().find(|v| v.name == *id && !v.byref && matches!(v.ty, Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash | Ty::DArrDyn)) { v.moved = true; }
             }
         }
         Expr::Bin(_, a, b) => { apply_moves(a, env, sigs, false); apply_moves(b, env, sigs, false); }
@@ -9089,7 +9089,9 @@ fn cg_darr1_literal(es: &[Expr], out: &mut String) {
             Expr::Log(b) => (3i64, if *b { "1".to_string() } else { "0".to_string() }),
             _ => unreachable!("checker"),
         };
-        out.push_str(&format!("    movq ${}, {}(%r11)\n    movq ${}, {}(%r11)\n", tag, i * 16, val, i * 16 + 8));
+        // imm64 payloads go through a register (same encoding limit as
+        // the mixed literal; verifier 5085ee9).
+        out.push_str(&format!("    movq ${}, {}(%r11)\n    mov ${}, %r10\n    mov %r10, {}(%r11)\n", tag, i * 16, val, i * 16 + 8));
     }
     out.push_str(&format!("    mov %r11, %rax\n    mov ${}, %edx\n", m));
 }
@@ -9108,7 +9110,9 @@ fn cg_darrdyn_literal(es: &[Expr], strs: &mut Vec<String>, out: &mut String) {
     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
     for (i, e) in es.iter().enumerate() {
         match e {
-            Expr::Int(v) => out.push_str(&format!("    mov (%rsp), %r11\n    movq $0, {}(%r11)\n    movq ${}, {}(%r11)\n", i * 16, v, i * 16 + 8)),
+            // imm64 payloads go through a register: a 64-bit immediate
+            // cannot be encoded as a store operand (verifier 5085ee9).
+            Expr::Int(v) => out.push_str(&format!("    mov ${}, %r10\n    mov (%rsp), %r11\n    movq $0, {}(%r11)\n    mov %r10, {}(%r11)\n", v, i * 16, i * 16 + 8)),
             Expr::Log(b) => out.push_str(&format!("    mov (%rsp), %r11\n    movq $3, {}(%r11)\n    movq ${}, {}(%r11)\n", i * 16, if *b { 1 } else { 0 }, i * 16 + 8)),
             Expr::Nil => out.push_str(&format!("    mov (%rsp), %r11\n    movq $1, {}(%r11)\n    movq $0, {}(%r11)\n", i * 16, i * 16 + 8)),
             Expr::Str(s) => {
@@ -9399,7 +9403,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 let vt = expr_ty(e, env, sigs);
                 let mut flip = None;
                 if let Some(v) = env.iter_mut().find(|v| v.name == *id) {
-                    if v.ty == Ty::DArrU && matches!(vt, Ty::DArr | Ty::DArr2) {
+                    if v.ty == Ty::DArrU && matches!(vt, Ty::DArr | Ty::DArr2 | Ty::DArrDyn) {
                         v.ty = vt;
                         flip = Some((v.off, (v.ty == Ty::DArr2) as u8));
                     }
@@ -10858,7 +10862,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    call hbc_freestr\n86:\n", off));
                                 out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
                             }
-                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash => {
+                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash | Ty::DArrDyn => {
                                 // Free the OLD value after the RHS exists
                                 // (self-assignment `a := a` moved through a
                                 // temporary: the source was nulled above, so
@@ -10867,7 +10871,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // CURRENT type (the old value's type).
                                 let cur_ty = env.iter().find(|x| x.name == *id).map(|x| x.ty);
                                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                                if cur_ty == Some(Ty::DArrS) {
+                                if cur_ty == Some(Ty::DArrDyn) {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov -{}(%rbp), %rsi\n    call hbc_dfree\n86:\n", off, off - 8));
+                                } else if cur_ty == Some(Ty::DArrS) {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov -{}(%rbp), %rsi\n    call hbc_sfree\n86:\n", off, off - 8));
                                 } else if cur_ty == Some(Ty::DArr2) {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov -{}(%rbp), %rsi\n    call hbc_free2\n86:\n", off, off - 8));
@@ -10883,7 +10889,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
                                 // Replicate the checker's pinning of `{}`.
                                 if let Some(v) = env.iter_mut().find(|x| x.name == *id) {
-                                    if v.ty == Ty::DArrU && matches!(t, Ty::DArr | Ty::DArr2) {
+                                    if v.ty == Ty::DArrU && matches!(t, Ty::DArr | Ty::DArr2 | Ty::DArrDyn) {
                                         v.ty = t;
                                     }
                                 }
@@ -14070,12 +14076,14 @@ hbc_print_i64:
     movb $45, (%rsi)
     dec %rsi
 3:
-    # Harbour `?` integer field (probes q1/q5/q6): positives right-align in
-    # max(10, digits+1); negatives in 10 when they fit, 20 otherwise.
     lea 1(%rsi), %r9
     lea -1(%rbp), %r10
     sub %r9, %r10
     inc %r10
+    # Harbour `?` integer field for literal/folded integers (probes
+    # q1/q5/q6): positives right-align in max(10, digits+1); negatives
+    # in 10 when they fit, 20 otherwise (negation is a runtime op in
+    # Harbour, so negative literals follow the 10/20 macro).
     cmpb $45, (%r9)
     je 5f
     lea 1(%r10), %rcx
@@ -14083,8 +14091,7 @@ hbc_print_i64:
     cmp %rax, %rcx
     cmovae %rcx, %rax
     jmp 6f
-5:
-    mov $10, %rax
+5:  mov $10, %rax
     cmp %rax, %r10
     jbe 6f
     mov $20, %rax
@@ -14105,9 +14112,12 @@ hbc_print_i64:
     leave
     ret
 
-# hbc_print_i64c: computed (runtime) i64 field (hk327/hk328): 10 within
-# -999999999..9999999999, else 20. Both threshold magnitudes are exactly
-# 10 digits, so the rule is one digit-count test for either sign.
+# hbc_print_i64c: computed (runtime) i64 field (hk327/hk328). Harbour
+# stamps runtime integers with the 10/20 macro length (hbdefs.h; oracle
+# w_var, 31Oct): 10 for -999999999..9999999999, else 20. Literal/folded
+# integers use hbc_print_i64 instead (positives max(10, digits+1));
+# Dyn-array cells in piece 1a hold literal-only values, so the Dyn
+# tag-0 arm prints via hbc_print_i64.
 hbc_print_i64c:
     push %rbp
     mov %rsp, %rbp
@@ -14137,6 +14147,9 @@ hbc_print_i64c:
     lea -1(%rbp), %r10
     sub %r9, %r10
     inc %r10
+    # Runtime-computed integers: Harbour stamps them with the 10/20
+    # macro length (w_var oracle, 31Oct): 10 within
+    # -999999999..9999999999, else 20.
     mov $10, %rax
     cmp %rax, %r10
     jbe 6f
@@ -14178,7 +14191,7 @@ hbc_print_dyn:
     syscall
     ret
 8:  mov %rdx, %rax
-    jmp hbc_print_i64c
+    jmp hbc_print_i64
 11: lea .Lfmsg(%rip), %rsi
     test %rdx, %rdx
     jz 12f
@@ -15890,8 +15903,12 @@ hbc_print_i64:
     leave
     ret
 
-# hbc_print_i64c: computed (runtime) i64 field (hk327/hk328): 10 within
-# -999999999..9999999999, else 20; one digit-count test for either sign.
+# hbc_print_i64c: computed (runtime) i64 field (hk327/hk328). Harbour
+# stamps runtime integers with the 10/20 macro length (hbdefs.h; oracle
+# w_var, 31Oct): 10 for -999999999..9999999999, else 20. Literal/folded
+# integers use hbc_print_i64 instead (positives max(10, digits+1));
+# Dyn-array cells in piece 1a hold literal-only values, so the Dyn
+# tag-0 arm prints via hbc_print_i64.
 hbc_print_i64c:
     push %rbp
     mov %rsp, %rbp
@@ -15961,7 +15978,7 @@ hbc_print_dyn:
     call hbc_print_str
     jmp 9f
 8:  mov %rdx, %rax
-    call hbc_print_i64c
+    call hbc_print_i64
     jmp 9f
 10: mov %rdx, %rax
     mov -8(%rax), %rdx
