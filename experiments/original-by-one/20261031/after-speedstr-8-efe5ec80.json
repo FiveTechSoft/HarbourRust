@@ -1,0 +1,267 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next8afterspeedstr",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/speedtst.prg",
+      "sha256": "4156453df514985308eaa576a3f84d4dcc36df237dc7f46345484def1a11e38a",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+generatedt000..t056+thTest/Scale+test+helpers",
+      "build_unit": "single-source-executable",
+      "profile": "HVM-multithread-RDD-benchmark",
+      "dependencies": "1033lines;millionloopsx56;PPgeneratedtests;mutex/threads;macro;closures;DBFcreate/delete;logs;CLI --only/--thread/--scale",
+      "boundary": "Not run: benchmarking/resource/thread/DBF harness;build defaultprofile not speed proof",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1020: unknown directive #cinline in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1020: unknown directive #cinline in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/statfun.prg",
+      "sha256": "febada350286c04c874b1b3777aa3d1a4523645cdd06d71f5ec207c7a9129d71",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+SecondOne",
+      "build_unit": "single-source-executable",
+      "profile": "static-function-existing-control",
+      "dependencies": "STATIC FUNCTION call",
+      "boundary": "Safe deterministic console existing control",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 44,
+        "stdout_sha256": "4c89a4a684ee3f66a2b6fe719412d47a172e2522eda70d299298e67e4063dfd2",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 44,
+            "stdout_sha256": "4c89a4a684ee3f66a2b6fe719412d47a172e2522eda70d299298e67e4063dfd2",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 44,
+            "stdout_sha256": "4c89a4a684ee3f66a2b6fe719412d47a172e2522eda70d299298e67e4063dfd2",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        }
+      }
+    },
+    {
+      "file": "tests/statics.prg",
+      "sha256": "0eed7ac0f58ab9add2b2457fb4ec20e9c6d950f8a047730bb3a4ca6b9cd859a1",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+Two+THREE+NumStat+DetachVar",
+      "build_unit": "single-source-executable",
+      "profile": "persistent-storage-detached-closure",
+      "dependencies": "file/function statics;string/array storage;detached increment closure",
+      "boundary": "Safe process-local reference console execution",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 406,
+        "stdout_sha256": "5d496c5f550f7778398e77dfcf23b85f242d5636452a0acd9441523b1b848d40",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 4: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 4: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/statics1.prg",
+      "sha256": "d37b4d0614a0e9e6b6aae34f5f375d52ac82c32ec49a20152f940310236e3ffc",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main;Test from statics2",
+      "build_unit": "two-source-executable-statics1+statics2",
+      "profile": "multi-source-statics-isolation",
+      "dependencies": "link statics1+statics2 originals;separate file static slots",
+      "boundary": "Build exact two-source executable and isolated run",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 388,
+        "stdout_sha256": "48bd356fc8e5098298ee50a9d3dd754b963a82bfa218cb4368c9573b1d347c0c",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/statics2.prg",
+      "sha256": "eb090f98bbc72d09f20e10dc652616b0afa0491d25e44190383cf5e1b52f9f5d",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Test",
+      "build_unit": "compile-only-companion-library-not-executable",
+      "profile": "multi-source-statics-companion",
+      "dependencies": "file STATIC uA/uB;companion of statics1",
+      "boundary": "Compile-only companion library;execution covered by statics1 combined build not standalone",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/statinit.prg",
+      "sha256": "5b1ef2ae0cca4d2734a14785e76ac108546193f2736c50dc33d089610854d8db",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+Hello",
+      "build_unit": "single-source-executable",
+      "profile": "static-codeblock-init-memvar",
+      "dependencies": "STATIC codeblocks;PUBLIC memory variable;Eval",
+      "boundary": "Safe process-local reference console run",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 130,
+        "stdout_sha256": "a22599f7b6fa4b47d9cc10ec219cacddbdf62389f1b1b7d7668cbf55f70ef3a9",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/str.prg",
+      "sha256": "370d00a7d1640e2f67499cbf362ec47c709e650e10add42b86c2e7f2e8a5367d",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+test",
+      "build_unit": "single-source-executable",
+      "profile": "numeric-formatting-fixed-interactive",
+      "dependencies": "SET FIXED;Str width/decimals including invalid forms;floatpowers;WAIT",
+      "boundary": "Not run: scripted WAIT and formatting state fixture",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/strdelim.prg",
+      "sha256": "1bad4c67281939aacca0dee210eca9d1e47bbd06ad40f7a77befe2cf08e0bac8",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "nested-heterogeneous-array-strings",
+      "dependencies": "nested NIL array mutated to string;commented indexes;bracket strings/quotes",
+      "boundary": "Safe deterministic reference console run",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 61,
+        "stdout_sha256": "49c535a09358d21fb999c3cb937dd4b3a02034ca51e92c2c3414a064fec6ebec",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: nested array elements must be integers in this increment",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: nested array elements must be integers in this increment",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}
