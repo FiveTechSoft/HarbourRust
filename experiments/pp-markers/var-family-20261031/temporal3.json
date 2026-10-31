@@ -1,0 +1,30 @@
+[
+  {
+    "source": "#command VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#command VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#command VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#command VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#command VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha,beta,gamma\n#uncommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha,beta,gamma\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\",\"beta\",\"gamma\" .F.)\n\nVAR alpha,beta,gamma\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"general\",\"alpha\" ,\"beta\",\"gamma\"   .F.)\nVAR alpha,beta,gamma\n",
+    "own_error": "",
+    "token_match": true
+  },
+  {
+    "source": "VAR alpha,beta,gamma\n#command VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#command VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#command VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#command VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#command VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha,beta,gamma\n",
+    "reference_exit": 0,
+    "reference_output": "VAR alpha,beta,gamma\n\n\n\n\n\nOUT(\"general\",\"alpha\",\"beta\",\"gamma\" .F.)\n",
+    "own_exit": 0,
+    "own_output": "VAR alpha,beta,gamma\nOUT(\"general\",\"alpha\" ,\"beta\",\"gamma\"   .F.)\n",
+    "own_error": "",
+    "token_match": true
+  },
+  {
+    "source": "#command VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#command VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#command VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#command VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#command VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha,beta,gamma\n#command VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha,beta,gamma\n",
+    "reference_exit": 0,
+    "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\",\"beta\",\"gamma\" .F.)\n\nOUT(\"general\",\"alpha\",\"beta\",\"gamma\" .F.)\n",
+    "own_exit": 1,
+    "own_output": "",
+    "own_error": "error: line 8: smart stringify with literal-bearing optional groups is outside this increment\n",
+    "token_match": false,
+    "classification": "duplicate sixth rule excludes bounded family; historical explicit guard preserved,not Harbour compatibility"
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "scope": "deduplicated own reduced VAR probes; token equality is not runtime or original coverage; rejection/unmatched counts are gaps",
+  "counts": {
+    "token_match": 4380,
+    "explicit_rejection_not_support": 3423,
+    "unmatched_known_gap": 8
+  },
+  "total": 7811,
+  "false_translations": 0
+}

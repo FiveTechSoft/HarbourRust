@@ -1,0 +1,131 @@
+{
+  "scope": "6own bounded family runtime oracle checks,not original corpus growth",
+  "rows": [
+    {
+      "file": "t1293_pp_var_family_comma.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\ngamma",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\ngamma",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\ngamma",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1294_pp_var_family_reorder.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\nnumber\n         3",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\nnumber\n         3",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\nnumber\n         3",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1295_pp_var_family_in.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\nparent\nnumber",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\nparent\nnumber",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\nparent\nnumber",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1296_pp_var_family_is.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1297_pp_var_family_isin.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nparent",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nparent",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nparent",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1298_pp_var_family_isto.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nobj",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nobj",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nobj",
+          "stderr": ""
+        }
+      }
+    }
+  ]
+}

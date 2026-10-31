@@ -78,6 +78,30 @@ impl Plan {
         }
         true
     }
+    pub fn var_variant(&self)->bool{
+        if !matches!(self.nodes.first(),Some(Node::Atom(Atom::Literal(t)))if identifier(t))||!matches!(self.nodes.get(1),Some(Node::Atom(Atom::Identifier(_)))){return false;}
+        if !matches!(self.nodes.get(2),Some(Node::Optional{atoms,..})if matches!(atoms.as_slice(),[Atom::Literal(t),Atom::Expression(_)]if t.eq_ignore_ascii_case("AS"))){return false;}
+        let tail=&self.nodes[3..];let mut keys=Vec::new();
+        for pair in tail.chunks(2){if pair.len()!=2{return false;}match (&pair[0],&pair[1]){(Node::Atom(Atom::Literal(t)),Node::Atom(Atom::Identifier(_)))=>keys.push(t.to_ascii_uppercase()),_=>return false}}
+        matches!(keys.iter().map(String::as_str).collect::<Vec<_>>().as_slice(),["IN"]|["IS"]|["IS","IN"]|["IS","TO"])
+    }
+    fn variant_matches(&self,source:&[String],exact:bool)->Result<Option<Matched>,&'static str>{
+        let lit=|s:&str,p:&str|s.eq_ignore_ascii_case(p)||(!exact&&s.len()>=4&&s.is_ascii()&&p.is_ascii()&&p.len()>s.len()&&p[..s.len()].eq_ignore_ascii_case(s));
+        if source.len()<2||!matches!(&self.nodes[0],Node::Atom(Atom::Literal(t))if lit(&source[0],t))||!identifier(&source[1]){return Ok(None);}
+        let root=match self.nodes[1]{Node::Atom(Atom::Identifier(id))=>id,_=>return Ok(None)};
+        let mut out=Matched{roots:vec![(root,(1,2))],iterations:Vec::new(),consumed:0};let mut at=2;
+        if source.get(at).map(|s|lit(s,"AS")).unwrap_or(false){
+            let begin=at+1;at=begin;let mut depth=0;
+            let anchor=match &self.nodes[3]{Node::Atom(Atom::Literal(t))=>t,_=>return Ok(None)};
+            while at<source.len(){if depth==0&&at>begin&&lit(&source[at],anchor)&&Self::expression_in_scope(&source[begin..at]){break;}if source[at]=="("{depth+=1;}if source[at]==")"{depth-=1;}at+=1;}
+            if !Self::expression_in_scope(&source[begin..at]){return Ok(None);}
+            if let Node::Optional{id,atoms}=&self.nodes[2]{if let Atom::Expression(marker)=atoms[1]{out.iterations.push(Iteration{group_id:*id,ordinal:0,tokens:(2,at),captures:vec![(marker,(begin,at))]});}}
+        }
+        for pair in self.nodes[3..].chunks(2){let (word,id)=match(&pair[0],&pair[1]){(Node::Atom(Atom::Literal(t)),Node::Atom(Atom::Identifier(id)))=>(t,*id),_=>return Ok(None)};
+            if at+1>=source.len()||!lit(&source[at],word)||!identifier(&source[at+1]){return Ok(None);}out.roots.push((id,(at+1,at+2)));at+=2;
+        }
+        if at!=source.len(){return Ok(None);}out.consumed=at;Ok(Some(out))
+    }
     fn identifier_matches(&self,source:&[String],exact:bool,prefix:bool)->Result<Option<Matched>,&'static str>{
         fn lit(s:&str,p:&str,exact:bool)->bool{s.eq_ignore_ascii_case(p)||(!exact&&s.is_ascii()&&p.is_ascii()&&s.len()>=4&&p.len()>s.len()&&p[..s.len()].eq_ignore_ascii_case(s))}
         fn atoms(atoms:&[Atom],source:&[String],start:usize,exact:bool)->Option<(usize,Vec<(usize,(usize,usize))>)>{
@@ -107,6 +131,7 @@ impl Plan {
         seq(&self.nodes,source,0,exact,prefix,Matched{roots:Vec::new(),iterations:Vec::new(),consumed:0},&mut 10000)
     }
     pub fn matches(&self,source:&[String],exact:bool,prefix:bool)->Result<Option<Matched>,&'static str>{
+        if self.var_variant(){return self.variant_matches(source,exact);}
         if !self.reduced_var(){return self.identifier_matches(source,exact,prefix);}
         if prefix{return Err("reduced VAR prefix translation outside bounded contract");}
         for token in source{

@@ -1288,3 +1288,11 @@ pos tests/t1289_pp_queue_undef.hb \n         1\n         9
 neg tests/t1290_pp_queue_cycle_neg.hb command expansion too deep
 neg tests/t1291_pp_queue_include_neg.hb generated directive outside command/xcommand scope
 neg tests/t1292_pp_queue_uncommand_neg.hb generated directive outside command/xcommand scope
+pos tests/t1293_pp_var_family_comma.hb \nalpha\nbeta\ngamma
+pos tests/t1294_pp_var_family_reorder.hb \nalpha\nnumber\n         3
+pos tests/t1295_pp_var_family_in.hb \nalpha\nparent\nnumber
+pos tests/t1296_pp_var_family_is.hb \nalpha\nbeta
+pos tests/t1297_pp_var_family_isin.hb \nalpha\nbeta\nparent
+pos tests/t1298_pp_var_family_isto.hb \nalpha\nbeta\nobj
+neg tests/t1299_pp_var_family_type_neg.hb overlapping VAR type expression outside bounded contract
+neg tests/t1300_pp_var_family_trailing_neg.hb statement not in the subset

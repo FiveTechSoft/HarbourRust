@@ -1110,7 +1110,7 @@ fn expand_fixed_translations(text: &str, rules: &[Cmd], calls: &[Cmd], line: usi
 fn single_identifier_group(c:&Cmd,source:&str,tokens:&[String],line:usize)->Option<Result<Option<String>,String>> {
     let plan=c.group_plan.as_ref()?;
     let identifier_only=c.pattern.len()==4&&c.pattern[1]=="["&&c.pattern[3]=="]"&&c.pattern[2].starts_with("<!");
-    if !identifier_only&&(!plan.reduced_var()||c.translation){return None;}
+    if !identifier_only&&(!(plan.reduced_var()||plan.var_variant())||c.translation){return None;}
     if !plan.nodes.iter().any(|n|matches!(n,group_plan::Node::Optional{..})){return None;}
     if !tokens.first().map(|t|lit_match(t,&c.pattern[0])).unwrap_or(false){return None;}
     // Nested result groups stay wholly on the historical path.
@@ -1195,7 +1195,18 @@ fn apply_commands(line: &str, cmds: &[Cmd], calls: &[Cmd], fixed_enabled: bool, 
         if !lit_match(&src[0], first) { continue; }
         let isolated=!cmds.iter().enumerate().any(|(oi,other)|oi!=ci && other.pattern.first().map(|word|lit_match(first,word)||lit_match(word,first)).unwrap_or(false))
             && !calls.iter().any(|other|other.pattern.first().map(|word|lit_match(first,word)||lit_match(word,first)).unwrap_or(false));
-        if let Some(result)=if isolated{single_identifier_group(c,line,&src,line_no)}else{None}{
+        let related:Vec<&Cmd>=cmds.iter().filter(|other|other.pattern.first().map(|word|lit_match(first,word)||lit_match(word,first)).unwrap_or(false)).collect();
+        let family=related.len()==5&&related.iter().any(|other|other.group_plan.as_ref().map(|p|p.reduced_var()).unwrap_or(false))&&related.iter().all(|other|!other.translation&&other.group_plan.as_ref().map(|p|p.reduced_var()||p.var_variant()).unwrap_or(false))&&!calls.iter().any(|other|other.pattern.first().map(|word|lit_match(first,word)||lit_match(word,first)).unwrap_or(false));
+        let family=family&&related.iter().filter(|c|c.group_plan.as_ref().map(|p|p.reduced_var()).unwrap_or(false)).count()==1&&related.iter().filter(|c|c.pattern.iter().any(|t|t=="IN")&&!c.pattern.iter().any(|t|t=="IS")).count()==1&&related.iter().filter(|c|c.pattern.iter().any(|t|t=="IS")&&!c.pattern.iter().any(|t|t=="IN"||t=="TO")).count()==1&&related.iter().filter(|c|c.pattern.iter().any(|t|t=="IS")&&c.pattern.iter().any(|t|t=="IN")).count()==1&&related.iter().filter(|c|c.pattern.iter().any(|t|t=="IS")&&c.pattern.iter().any(|t|t=="TO")).count()==1;
+        if family{
+            if let Some(at)=src.iter().enumerate().skip(2).find(|(_,t)|t.eq_ignore_ascii_case("AS")||t.eq_ignore_ascii_case("TYPE")).map(|(i,_)|i){
+                let type_atom=src.get(at+1);
+                let safe_atom=type_atom.map(|t|marker_ident(t)&&!["IN","IS","TO","AS","TYPE","INIT","ASSIGN"].iter().any(|w|t.eq_ignore_ascii_case(w))).unwrap_or(false);
+                let safe_tail=src.get(at+2).map(|t|["IN","IS","TO","AS","TYPE","INIT","ASSIGN","EXPORTED","VISIBLE","PROTECTED","HIDDEN","READONLY","RO","PERSISTENT","PROPERTY","SYNC"].iter().any(|w|t.eq_ignore_ascii_case(w))).unwrap_or(true);
+                if !safe_atom||!safe_tail{return Err(format!("line {}: overlapping VAR type expression outside bounded contract",line_no));}
+            }
+        }
+        if let Some(result)=if isolated||family{single_identifier_group(c,line,&src,line_no)}else{None}{
             match result {Ok(None)=>continue,other=>{
                 let lits=c.pattern.iter().filter(|t| !(t.starts_with('<')&&t.ends_with('>'))&&t.as_str()!="["&&t.as_str()!="]").count();
                 if best.map(|(bl,_)|lits>=bl).unwrap_or(true){best=Some((lits,ci));best_group=Some(other);best_caps.clear();}
