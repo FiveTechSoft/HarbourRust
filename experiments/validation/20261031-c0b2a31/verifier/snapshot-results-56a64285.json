@@ -1,0 +1,1624 @@
+{
+  "snapshot": "73c6ff1e392e27c316d3fb959b10af0cfea2c367",
+  "published": false,
+  "rows": [
+    {
+      "name": "parexpr",
+      "source_sha256": "132cb3b09bc3d8d7d1456049a3ad604c8fd9d5a1cf1440ae145ecd8b5e883ae1",
+      "source": "// The following code tests harbour's ability to cope with parenthesized\n// expressions.\n\n// These tests were written by Dave Pearson <davep@hagbard.demon.co.uk> and\n// are placed into the public domain.\n\n// This file is OK to have warnings.\n#ifdef __HARBOUR__\n   #pragma -es0\n#endif\n\nPROCEDURE Main()\n\n   LOCAL x\n   LOCAL y\n\n   // Simple one to start with.\n   x := ( 1 )\n   ? x\n\n   // Now with a little more complex:\n   x := ( 1, 2 )\n   ? x\n\n   // And a little more, this is really the same as the previous one.\n   x := ( 1, 2, 3 )\n   ? x\n\n   // Expression within expression\n   x := ( ( 1, 2, 3 ) )\n   ? x\n\n   // And a little more:\n   x := ( ( 1, 2, 3 ), ( 1, 2, 3 ) )\n   ? x\n\n   // Some inline assignments\n   x := ( y := 10, y )\n   ? x\n\n   x := ( ( y := ( 1, 2, 3 ) ), y * ( 10, 20, 30 ) )\n   ? x\n\n   // Now mix with statements and functions\n   ? ( 1, 2, 3 )\n\n   IF ( y := .T. )\n      ? \"Working\"\n   ELSE\n      ? \"Borken\"\n   ENDIF\n\n   IF ( x := 10, y := ( x == 10 ) )\n      ? \"Working\"\n   ELSE\n      ? \"Broken\"\n   ENDIF\n\n   IF ( Something( 1, 2, 3 ), .T. )\n      ? \"Working\"\n   ELSE\n      ? \"Broken\"\n   ENDIF\n\n   ?\n\n   // Now even some more testing of related code\n   // placed into public domain by Ryszard Glab\n\n   ? IF( (.F.,0,.T.), (\"some\", \"text\", \"IF Working\"), (\"some\", \"text\", \"Broken\") )\n   ? IF( (.T.,1,.F.), (\"some\", \"text\", \"Broken\"), (\"some\", \"text\", \"IF Working\") )\n\n   ? IF( (.T. .OR. .F.), IF( .T., \"Working\", \"Broken\" ), IF( .F., \"Broken\", \"Working\" ) )\n\n   /* The following code should generate syntax error if uncommented\n    * because IF token followed by any three expressions is interpreted\n    * as IIF inline\n    */\n// IF( .T., .F., .T. )\n//    ? \"Working\"\n// ELSE\n//    ? \"Broken\"\n// ENDIF\n\n   RETURN\n\nSTATIC FUNCTION Something( x, y, z )\n\n   // This does something and it does it well/\n\n   Return( NIL )\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/tmp/harbour-reference/tests/parexpr.prg -> /downloads/verify-parexpr-contracts/parexpr/default-linux/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         1\n         2\n         3\n         3\n         3\n        10\n        90\n         3\nWorking\nWorking\nWorking\n\nIF Working\nIF Working\nWorking",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/tmp/harbour-reference/tests/parexpr.prg -> /downloads/verify-parexpr-contracts/parexpr/default-windows/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         1\n         2\n         3\n         3\n         3\n        10\n        90\n         3\nWorking\nWorking\nWorking\n\nIF Working\nIF Working\nWorking",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Nil\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Nil\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n         1\n         2\n         3\n         3\n         3\n        10\n        90\n         3\nWorking\nWorking\nWorking\n\nIF Working\nIF Working\nWorking",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "shortcircuit_sequence",
+      "source_sha256": "19330bc3555f1580685f596d80f6f4725b6bfc5d132757cd43d30b098a698bc2",
+      "source": "procedure main()\nlocal x := 0\n? (.F. .and. (x := 1, .T.)), x\n? (.T. .or. (x := 2, .F.)), x\n? (.T. .and. (x := 3, .T.)), x\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr-contracts/shortcircuit_sequence.prg -> /downloads/verify-parexpr-contracts/shortcircuit_sequence/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n.F.          0\n.T.          0\n.T.          3",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr-contracts/shortcircuit_sequence.prg -> /downloads/verify-parexpr-contracts/shortcircuit_sequence/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n.F.          0\n.T.          0\n.T.          3",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: inline `:=` assignment expressions are not in this subset (default-backend feature added with the parexpr piece; the LLVM subset never accepted this form, so nothing previously supported is lost)\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: inline `:=` assignment expressions are not in this subset (default-backend feature added with the parexpr piece; the LLVM subset never accepted this form, so nothing previously supported is lost)\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n.F.          0\n.T.          0\n.T.          3",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "byref_order",
+      "source_sha256": "77c1c5b91985b5e1ced8afefdb5795f02362e5f9dc8ec26adaa8f243667082d5",
+      "source": "function touch(x)\nx += 1\n? x\nreturn x\nprocedure main()\nlocal x := 10\n? (touch(@x), touch(@x), x), x\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr-contracts/byref_order.prg -> /downloads/verify-parexpr-contracts/byref_order/default-linux/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        11\n        12\n        12         12",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr-contracts/byref_order.prg -> /downloads/verify-parexpr-contracts/byref_order/default-windows/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        11\n        12\n        12         12",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: ByRef(\"x\")\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: ByRef(\"x\")\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        11\n        12\n        12         12",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "owned_discard",
+      "source_sha256": "40505dfef2403859e1f9eed8bacf8feee0b5293df2a414698c484349bcb59582",
+      "source": "procedure main()\nlocal s := AllTrim(\" before \")\nlocal t := (AllTrim(\" discarded \"), s := AllTrim(\" retained \"), s)\n? s, t\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+          }
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+          }
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nretained retained",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "block_sequence",
+      "source_sha256": "4632af93a7b94c8e977bc0fd098e245132d95e6724a728a5b5599efd89ffddb1",
+      "source": "procedure main()\nlocal x := 0\nlocal b := {|| (x := x + 1, x := x + 2, x)}\n? Eval(b), x\n? Eval(b), x\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: codeblock captures are not in this increment (`x` is not a codeblock parameter)\n"
+          }
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: codeblock captures are not in this increment (`x` is not a codeblock parameter)\n"
+          }
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: codeblock captures are not in this increment (`x` is not a codeblock parameter)\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: codeblock captures are not in this increment (`x` is not a codeblock parameter)\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n         3          3\n         6          6",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "nil_only_call",
+      "source_sha256": "7440249114a1227cc3d9fcbdac17fd951d18b15b7ff82c127b1ebed7679e32c7",
+      "source": "function nothing()\n? \"effect\"\nreturn nil\nprocedure main()\n? (nothing(), nothing())\n? (nothing(), 7)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr-contracts/nil_only_call.prg -> /downloads/verify-parexpr-contracts/nil_only_call/default-linux/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\neffect\neffect\nNIL\neffect\n         7",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr-contracts/nil_only_call.prg -> /downloads/verify-parexpr-contracts/nil_only_call/default-windows/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\neffect\neffect\nNIL\neffect\n         7",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: NIL-only effect call `nothing` cannot be used as a value\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: NIL-only effect call `nothing` cannot be used as a value\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\neffect\neffect\nNIL\neffect\n         7",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "owned_final",
+      "source_sha256": "d5af6b9f214839eab47ba9467c889068317a5d342e614728377942f8ff745b01",
+      "source": "procedure main()\nlocal s := AllTrim(\" first \")\nlocal t := (s := AllTrim(\" second \"), s)\n? s, t\ns := AllTrim(\" changed \")\n? s, t\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: inline `:=` in an expression supports integer/logical values only in this increment; floats, strings, Dyn, arrays and blocks remain a named limit\n"
+          }
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: inline `:=` in an expression supports integer/logical values only in this increment; floats, strings, Dyn, arrays and blocks remain a named limit\n"
+          }
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: inline `:=` in an expression supports integer/logical values only in this increment; floats, strings, Dyn, arrays and blocks remain a named limit\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: inline `:=` in an expression supports integer/logical values only in this increment; floats, strings, Dyn, arrays and blocks remain a named limit\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nsecond second\nchanged second",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "nil_final_assign",
+      "source_sha256": "9462b0d52cc09da10d74ef3ea78926d6203eaa6b13d382af9e13957c0a2f01af",
+      "source": "procedure main()\nlocal x := 9\nlocal y := (x := nil)\n? x, y\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: inline `:=` in an expression supports integer/logical values only in this increment; floats, strings, Dyn, arrays and blocks remain a named limit\n"
+          }
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: inline `:=` in an expression supports integer/logical values only in this increment; floats, strings, Dyn, arrays and blocks remain a named limit\n"
+          }
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: inline `:=` in an expression supports integer/logical values only in this increment; floats, strings, Dyn, arrays and blocks remain a named limit\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: inline `:=` in an expression supports integer/logical values only in this increment; floats, strings, Dyn, arrays and blocks remain a named limit\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nNIL NIL",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "ordered_assign",
+      "source_sha256": "7aa8c1dc9d84f9799c10fdb1a2cfbbe3def74b12d83b8ffce2991fd33f1db07b",
+      "source": "procedure main()\nlocal x := 0, y := 0\n? (x := 1, y := x + 2, x := y * 2, x), x, y\n? (x := (y := 4, y + 1)), x, y\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr-contracts/ordered_assign.prg -> /downloads/verify-parexpr-contracts/ordered_assign/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         6          6          3\n         5          5          4",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr-contracts/ordered_assign.prg -> /downloads/verify-parexpr-contracts/ordered_assign/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         6          6          3\n         5          5          4",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: inline `:=` assignment expressions are not in this subset (default-backend feature added with the parexpr piece; the LLVM subset never accepted this form, so nothing previously supported is lost)\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: inline `:=` assignment expressions are not in this subset (default-backend feature added with the parexpr piece; the LLVM subset never accepted this form, so nothing previously supported is lost)\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n         6          6          3\n         5          5          4",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t711_dyn_bool_reassign",
+      "source_sha256": "d28d3fe169e8da732deca7a6542f312d1bba024e13763cb860e49d94a9d92e4b",
+      "source": "// pos (was neg 63s; SOURCE UNCHANGED, role converted with oracle\n// capture): a logical store into a Dyn slot lands tag 3 - the parexpr\n// piece admits it (the original assigns booleans into NIL-holding\n// locals). Readback pinned separately in t1382.\nprocedure main()\n   p( .t. )\n   return\nfunction p( x )\n   ? x\n   x := .f.\n   return\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t711_dyn_bool_reassign.hb -> /downloads/verify-parexpr-contracts/t711_dyn_bool_reassign/default-linux/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n.T.",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t711_dyn_bool_reassign.hb -> /downloads/verify-parexpr-contracts/t711_dyn_bool_reassign/default-windows/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n.T.",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: only I64/logical scalar signatures supported\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: only I64/logical scalar signatures supported\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n.T.",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t933_sequence_string",
+      "source_sha256": "99e754a53cfd42804343da7788c1cfeaf143af0812247518f7d15894466bd8e5",
+      "source": "function main()\n? (\"discard\",1)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t933_sequence_string.hb -> /downloads/verify-parexpr-contracts/t933_sequence_string/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         1",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t933_sequence_string.hb -> /downloads/verify-parexpr-contracts/t933_sequence_string/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         1",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Str(\"discard\")\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Str(\"discard\")\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n         1",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t941_sequence_assign",
+      "source_sha256": "27307214fa4ffa415d45fef48c7b14c90dfd4a6f44b078c4a791b246f667755b",
+      "source": "function main()\nlocal x := 1\n? (x := 2,x)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t941_sequence_assign.hb -> /downloads/verify-parexpr-contracts/t941_sequence_assign/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         2",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t941_sequence_assign.hb -> /downloads/verify-parexpr-contracts/t941_sequence_assign/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         2",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: inline `:=` assignment expressions are not in this subset (default-backend feature added with the parexpr piece; the LLVM subset never accepted this form, so nothing previously supported is lost)\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: inline `:=` assignment expressions are not in this subset (default-backend feature added with the parexpr piece; the LLVM subset never accepted this form, so nothing previously supported is lost)\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n         2",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t942_sequence_string_last",
+      "source_sha256": "1f7e01a296cc20320cea17613309cce40e2ffbc70e3b27209bc1edc7d356ec0d",
+      "source": "function main()\n? (1,\"last\")\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t942_sequence_string_last.hb -> /downloads/verify-parexpr-contracts/t942_sequence_string_last/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nlast",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t942_sequence_string_last.hb -> /downloads/verify-parexpr-contracts/t942_sequence_string_last/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nlast",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Str(\"last\")\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Str(\"last\")\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nlast",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1040_seq_dyn_var",
+      "source_sha256": "a8937b18af1d51041d0f44e90aaf682e7d966a6ebe14fcd1d644d56997caf577",
+      "source": "// pos (was neg t1040; SOURCE UNCHANGED, role converted with oracle\n// capture): a Dyn VARIABLE as a discarded sequence element reads the\n// slot borrowed - no payload ownership moves. Admitted with the\n// parexpr piece alongside NIL-only calls. Observable variant: t1381.\nfunction main()\nlocal d := NIL\n(d, 1)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1040_seq_dyn_var.hb -> /downloads/verify-parexpr-contracts/t1040_seq_dyn_var/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1040_seq_dyn_var.hb -> /downloads/verify-parexpr-contracts/t1040_seq_dyn_var/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Nil\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Nil\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1370_parexpr_inline_assign",
+      "source_sha256": "67d9cf4619b84357dc5be38ab6d4a0dca7215f2fc662406279ac3ab37855806f",
+      "source": "// pos: inline `:=` assignments as expressions (original parexpr piece):\n// the value is the NEW content; right-associative; nested sequences.\nfunction main()\n    local x\n    local y\n    x := ( y := 10, y )\n    ? x\n    ? y\n    x := ( ( y := ( 1, 2, 3 ) ), y * ( 10, 20, 30 ) )\n    ? x\n    ? y\n    return nil\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1370_parexpr_inline_assign.hb -> /downloads/verify-parexpr-contracts/t1370_parexpr_inline_assign/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        10\n        10\n        90\n         3",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1370_parexpr_inline_assign.hb -> /downloads/verify-parexpr-contracts/t1370_parexpr_inline_assign/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        10\n        10\n        90\n         3",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Nil\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Nil\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        10\n        10\n        90\n         3",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1371_parexpr_if_seqcond",
+      "source_sha256": "84e36c733d2fdf8c309cc5e375ae8498314eabe74b114cf3c4b2df97ae0bb4db",
+      "source": "// pos: block IF with a parenthesized comma-sequence condition (one\n// top-level comma is NOT inline IIF); NIL-only call as a discarded\n// sequence element; single parenthesized inline assignment condition.\nfunction something(x, y, z)\n    return nil\nfunction main()\n    local x\n    local y\n    IF ( y := .T. )\n        ? \"Working\"\n    ENDIF\n    IF ( x := 10, y := ( x == 10 ) )\n        ? \"Working\"\n        ? x, y\n    ENDIF\n    IF ( something(1, 2, 3), .T. )\n        ? \"Working\"\n    ENDIF\n    return nil\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1371_parexpr_if_seqcond.hb -> /downloads/verify-parexpr-contracts/t1371_parexpr_if_seqcond/default-linux/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nWorking\nWorking\n        10 .T.\nWorking",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1371_parexpr_if_seqcond.hb -> /downloads/verify-parexpr-contracts/t1371_parexpr_if_seqcond/default-windows/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nWorking\nWorking\n        10 .T.\nWorking",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Nil\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Nil\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nWorking\nWorking\n        10 .T.\nWorking",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1372_parexpr_iif_strseq",
+      "source_sha256": "04f2020510e823cd432382bc6989b92f6b2947d8956476ea08f86b3172bf485b",
+      "source": "// pos: inline IIF over comma sequences, including rodata string\n// sequences (parexpr's (\"some\", \"text\", ...) shapes).\nfunction main()\n    ? IF( (.F.,0,.T.), (\"some\", \"text\", \"IF Working\"), (\"some\", \"text\", \"Broken\") )\n    ? IF( (.T.,1,.F.), (\"some\", \"text\", \"Broken\"), (\"some\", \"text\", \"IF Working\") )\n    ? IF( (.T. .OR. .F.), IF( .T., \"Working\", \"Broken\" ), IF( .F., \"Broken\", \"Working\" ) )\n    return nil\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1372_parexpr_iif_strseq.hb -> /downloads/verify-parexpr-contracts/t1372_parexpr_iif_strseq/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nIF Working\nIF Working\nWorking",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1372_parexpr_iif_strseq.hb -> /downloads/verify-parexpr-contracts/t1372_parexpr_iif_strseq/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nIF Working\nIF Working\nWorking",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Str(\"some\")\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Str(\"some\")\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nIF Working\nIF Working\nWorking",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1373_return_nil_parens",
+      "source_sha256": "4f1a72cb4021f993eea1110f4eed299471156409a1a639529b6c76e40da867d4",
+      "source": "// pos: `Return( NIL )` is the same value-free NIL return as bare\n// `return nil` (parexpr.prg's own form), in main and in a function.\nfunction something()\n    Return( NIL )\nfunction main()\n    ? something()\n    Return( NIL )\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1373_return_nil_parens.hb -> /downloads/verify-parexpr-contracts/t1373_return_nil_parens/default-linux/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nNIL",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1373_return_nil_parens.hb -> /downloads/verify-parexpr-contracts/t1373_return_nil_parens/default-windows/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nNIL",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: NIL-only effect call `something` cannot be used as a value\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: NIL-only effect call `something` cannot be used as a value\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nNIL",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1374_pragma_es0",
+      "source_sha256": "2142a17e374be7ca56bd1e5c54b6b99f6b1531943ad7b9ff86fb12dd5d16bf72",
+      "source": "// pos: `#pragma -es<N>` (warning severity) is inert here - warnings do\n// not exist in this dialect, so the switch changes no byte of output.\n#pragma -es0\nfunction main()\n    ? ( 1, 2, 3 )\n    return nil\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1374_pragma_es0.hb -> /downloads/verify-parexpr-contracts/t1374_pragma_es0/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         3",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1374_pragma_es0.hb -> /downloads/verify-parexpr-contracts/t1374_pragma_es0/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         3",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "aot": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "runtimewrap": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "runtimeassemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         3",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "aot": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "runtimewrap": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "runtimeassemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         3",
+            "stderr": ""
+          },
+          "exact": true
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n         3",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1380_nilonly_shapes",
+      "source_sha256": "3cad8adb49f34d93b9b56b56c188ed70ee7cafc6b24c4df9e7decbbedb194da0",
+      "source": "// pos: NIL-only detection only trusts return EXPRESSIONS. A conditional\n// bare return plus the closing `return nil` stays NIL-only (discarded\n// in a sequence); a recursive NIL-only function is NIL-only too (the\n// recursive call is a statement, never a returned value). A function\n// returning any expression is NOT NIL-only (named limit, t1378).\nfunction cond_ret(x)\n    if x > 0\n        return\n    endif\n    return nil\nfunction rec_nil(n)\n    if n > 1\n        rec_nil(n - 1)\n    endif\n    return nil\nfunction main()\n    ? ( cond_ret(1), \"ok\" )\n    ? ( cond_ret(0), \"ok\" )\n    ? ( rec_nil(3), \"ok\" )\n    return nil\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1380_nilonly_shapes.hb -> /downloads/verify-parexpr-contracts/t1380_nilonly_shapes/default-linux/program.s (3 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nok\nok\nok",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1380_nilonly_shapes.hb -> /downloads/verify-parexpr-contracts/t1380_nilonly_shapes/default-windows/program.s (3 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nok\nok\nok",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Str(\"ok\")\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Str(\"ok\")\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nok\nok\nok",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1381_seq_dyn_var_observable",
+      "source_sha256": "56c0f95898aef26e67e3af6999a210e2764927fdcfbf5a744a020350190d2b63",
+      "source": "// pos: observable variant of the t1040 admission - the discarded Dyn\n// variable is read borrowed, the sequence value is the last element.\nfunction main()\nlocal d := NIL\n? (d, 2)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1381_seq_dyn_var_observable.hb -> /downloads/verify-parexpr-contracts/t1381_seq_dyn_var_observable/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         2",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1381_seq_dyn_var_observable.hb -> /downloads/verify-parexpr-contracts/t1381_seq_dyn_var_observable/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         2",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Nil\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: Nil\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n         2",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1382_dyn_bool_readback",
+      "source_sha256": "cf9c8016a74e481e7da54463644f0f52ee5f772d75a8c061d11c28ca4b163bca",
+      "source": "// pos: observable variant of the t711 admission - a logical stored\n// into a Dyn slot (tag 3) reads back as a logical.\nprocedure main()\n   p( .t. )\n   return\nfunction p( x )\n   ? x\n   x := .f.\n   ? x\n   return\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1382_dyn_bool_readback.hb -> /downloads/verify-parexpr-contracts/t1382_dyn_bool_readback/default-linux/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n.T.\n.F.",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1382_dyn_bool_readback.hb -> /downloads/verify-parexpr-contracts/t1382_dyn_bool_readback/default-windows/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n.T.\n.F.",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: only I64/logical scalar signatures supported\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: only I64/logical scalar signatures supported\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n.T.\n.F.",
+        "stderr": ""
+      }
+    }
+  ]
+}

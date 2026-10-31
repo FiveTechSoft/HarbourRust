@@ -1,0 +1,377 @@
+[
+  {
+    "name": "t1375_set_float_rhs_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: inline `:=` in an expression supports integer/logical values only in this increment; floats, strings, Dyn, arrays and blocks remain a named limit\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: inline `:=` in an expression supports integer/logical values only in this increment; floats, strings, Dyn, arrays and blocks remain a named limit\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: inline `:=` in an expression supports integer/logical values only in this increment; floats, strings, Dyn, arrays and blocks remain a named limit\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: inline `:=` in an expression supports integer/logical values only in this increment; floats, strings, Dyn, arrays and blocks remain a named limit\n"
+      }
+    }
+  },
+  {
+    "name": "t1376_set_undeclared_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 4: assignment to undeclared variable `z` (declare it with `local` first)\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 4: assignment to undeclared variable `z` (declare it with `local` first)\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 4: assignment to undeclared variable `z` (declare it with `local` first)\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 4: assignment to undeclared variable `z` (declare it with `local` first)\n"
+      }
+    }
+  },
+  {
+    "name": "t1377_pragma_other_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: #pragma `-b-` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: #pragma `-b-` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: #pragma `-b-` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: #pragma `-b-` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)\n"
+      }
+    }
+  },
+  {
+    "name": "t1378_seq_dyn_call_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 10: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 10: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 10: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 10: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+      }
+    }
+  },
+  {
+    "name": "t1379_set_byref_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: inline `:=` through a by-reference parameter is not in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: inline `:=` through a by-reference parameter is not in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: inline `:=` through a by-reference parameter is not in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: inline `:=` through a by-reference parameter is not in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "t934_sequence_dyn_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+      }
+    }
+  },
+  {
+    "name": "t935_sequence_array_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+      }
+    }
+  },
+  {
+    "name": "t936_sequence_block_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit\n"
+      }
+    }
+  },
+  {
+    "name": "t937_sequence_capture_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: codeblock captures are not in this increment (`x` is not a codeblock parameter)\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: codeblock captures are not in this increment (`x` is not a codeblock parameter)\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: codeblock captures are not in this increment (`x` is not a codeblock parameter)\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: codeblock captures are not in this increment (`x` is not a codeblock parameter)\n"
+      }
+    }
+  },
+  {
+    "name": "t938_sequence_lvalue_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: expression ++/-- requires a variable lvalue in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: expression ++/-- requires a variable lvalue in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: expression ++/-- requires a variable lvalue in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: expression ++/-- requires a variable lvalue in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "t939_sequence_missing_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: unexpected token RParen in expression\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: unexpected token RParen in expression\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: unexpected token RParen in expression\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: unexpected token RParen in expression\n"
+      }
+    }
+  },
+  {
+    "name": "t940_sequence_empty_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: unexpected token Comma in expression\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: unexpected token Comma in expression\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: unexpected token Comma in expression\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: unexpected token Comma in expression\n"
+      }
+    }
+  },
+  {
+    "name": "t943_sequence_undefined_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: undefined variable `missing`\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: undefined variable `missing`\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: undefined variable `missing`\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: undefined variable `missing`\n"
+      }
+    }
+  },
+  {
+    "name": "t991_inline_if_arity_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `if` without `endif`\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `if` without `endif`\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `if` without `endif`\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `if` without `endif`\n"
+      }
+    }
+  },
+  {
+    "name": "t995_inline_if_extra_branch_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `if` without `endif`\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `if` without `endif`\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `if` without `endif`\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `if` without `endif`\n"
+      }
+    }
+  }
+]
