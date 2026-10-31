@@ -32,7 +32,25 @@ use std::process;
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { F64, I64, Str, Bool, Arr(usize), Block(usize), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefStrOwn }
+enum Ty { F64, I64, Str, Bool, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefStrOwn }
+
+// What a codeblock body's LAST expression returns (original t1.prg piece):
+// Int = an i64 in %rax; Nil = a payload-free Dyn NIL pair (%rax=1, %rdx=0,
+// oracles t1a-t1h: eval returns NIL). The kind travels WITH the type so a
+// block's runtime return convention is never assumed from a variable or a
+// block id: assignment, parameter passing and function returns carry it,
+// and routes that would mix kinds are named rejections, not miscompiles.
+#[derive(Clone, Copy, PartialEq, Debug)]
+enum BRet { Int, Nil }
+
+// Classify a block body's return kind from its last expression. The checker
+// decides admissibility; this only classifies what the checker admitted.
+fn block_body_kind(body: &[Expr], sigs: &[Sig]) -> BRet {
+    match body.last() {
+        Some(Expr::Call(id, _)) if is_output_call(id) || sigs.iter().any(|s| s.name == *id && s.nil_ret_only) => BRet::Nil,
+        _ => BRet::Int,
+    }
+}
 
 // Dyn is the tagged-union value for any route that can carry NIL (probes
 // n1/n2/n3): a 16-byte {tag, payload} pair, tag 0 = i64 payload, tag 1 =
@@ -3174,7 +3192,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     // arity exactly - a conservative named rejection, not
                     // a miscompile (registered limitation).
                     if !args.is_empty() {
-                        pin_vars(f, &args[0], Ty::Block(args.len() - 1), pin, n)?;
+                        pin_vars(f, &args[0], Ty::Block(args.len() - 1, BRet::Int), pin, n)?;
                         // The extra eval arguments are integers here (same
                         // contract as the checker), so they pin I64 too.
                         for a in &args[1..] { pin_vars(f, a, Ty::I64, pin, n)?; }
@@ -4382,8 +4400,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `eval` needs a codeblock as its first argument", n));
                 }
                 let t0 = type_expr(&args[0], env, sigs, n)?;
-                let k = match t0 {
-                    Ty::Block(k) => k,
+                let (k, bk) = match t0 {
+                    Ty::Block(k, bk) => (k, bk),
                     _ => return Err(format!("line {}: `eval` expects a codeblock as its first argument", n)),
                 };
                 if args.len() - 1 < k {
@@ -4394,7 +4412,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         return Err(format!("line {}: codeblock arguments must be integers in this increment", n));
                     }
                 }
-                return Ok(Ty::I64);
+                // A NIL-only block returns the payload-free Dyn pair
+                // (oracle t1b: `? eval(b)` prints NIL after the body ran).
+                return Ok(match bk { BRet::Int => Ty::I64, BRet::Nil => Ty::Dyn });
             }
             if is_builtin(id, "iif") {
                 // iif(cond, a, b) (oracle hk321): LAZY - only the chosen
@@ -4438,7 +4458,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 let mut item_env = env.to_vec();
                 for a in args {
                     let t = type_expr(a, &mut item_env, sigs, n)?;
-                    if matches!(t, Ty::Block(_)) { return Err(format!("line {}: cannot print a codeblock in this increment", n)); }
+                    if matches!(t, Ty::Block(..)) { return Err(format!("line {}: cannot print a codeblock in this increment", n)); }
                     if matches!(t, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash) && !matches!(a, Expr::Var(_)) {
                         return Err(format!("line {}: cannot print a temporary array or hash directly in this increment (assign it to a variable and print the variable)", n));
                     }
@@ -4744,9 +4764,15 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     // Two codeblocks of different arity: name both arities so
                     // the diagnostic is not "must be a codeblock, got a
                     // codeblock" (33q, parent-reported defect on t446).
-                    if let (Ty::Block(want), Ty::Block(got)) = (sig_params[i], ta) {
-                        return Err(format!("line {}: argument {} of `{}` must be a codeblock of {} argument(s), got a codeblock of {} argument(s)",
-                            n, i + 1, id, want, got));
+                    if let (Ty::Block(wa, wk), Ty::Block(ga, gk)) = (sig_params[i], ta) {
+                        if wa != ga {
+                            return Err(format!("line {}: argument {} of `{}` must be a codeblock of {} argument(s), got a codeblock of {} argument(s)",
+                                n, i + 1, id, wa, ga));
+                        }
+                        return Err(format!("line {}: argument {} of `{}` must be an {}-returning codeblock, got a {}-returning one",
+                            n, i + 1, id,
+                            if wk == BRet::Int { "integer" } else { "NIL" },
+                            if gk == BRet::Int { "integer" } else { "NIL" }));
                     }
                     return Err(format!("line {}: argument {} of `{}` must be {}, got {}",
                         n, i + 1, id,
@@ -4982,13 +5008,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             if let Ty::Arr(_) = tb {
                 return Err(format!("line {}: arrays do not compare in this increment", n));
             }
-            if let Ty::Block(_) = ta {
+            if let Ty::Block(..) = ta {
                 return Err(format!("line {}: codeblocks do not compare in this increment", n));
             }
             if ta == Ty::DArr || tb == Ty::DArr {
                 return Err(format!("line {}: dynamic arrays do not compare in this increment", n));
             }
-            if let Ty::Block(_) = tb {
+            if let Ty::Block(..) = tb {
                 return Err(format!("line {}: codeblocks do not compare in this increment", n));
             }
             if ta == Ty::I64 && tb == Ty::I64 {
@@ -5323,12 +5349,15 @@ fn check_block_body(params: &[String], body: &[Expr], sigs: &mut Vec<Sig>, n: us
     let mut benv: Vec<Local> = params.iter().map(|p| Local { name: p.clone(), ty: Ty::I64, moved: false, ro: false, byref: false }).collect();
     for (i, e) in body.iter().enumerate() {
         let t = type_expr(e, &mut benv, sigs, n)?;
-        let discarded_print = i + 1 < body.len() && matches!(e, Expr::Call(id, _) if is_output_call(id));
-        if t != Ty::I64 && !discarded_print {
-            return Err(format!("line {}: codeblock bodies are integer expressions in this increment", n));
+        // A discarded non-final NIL-producing call runs for its effect
+        // (oracle t1f: {|| 42, QOut("test") } prints and returns NIL).
+        let discarded_nil = i + 1 < body.len() && matches!(e, Expr::Call(id, _) if is_output_call(id) || sigs.iter().any(|s| s.name == *id && s.nil_ret_only));
+        let final_nil = i + 1 == body.len() && t == Ty::Dyn && matches!(e, Expr::Call(id, _) if is_output_call(id) || sigs.iter().any(|s| s.name == *id && s.nil_ret_only));
+        if t != Ty::I64 && !discarded_nil && !final_nil {
+            return Err(format!("line {}: codeblock bodies are integer expressions or NIL-only calls in this increment", n));
         }
     }
-    Ok(Ty::Block(params.len()))
+    Ok(Ty::Block(params.len(), block_body_kind(body, sigs)))
 }
 
 fn ty_name(t: Ty) -> &'static str {
@@ -5346,7 +5375,7 @@ fn ty_name(t: Ty) -> &'static str {
         Ty::DArrU => "a dynamic array",
         Ty::DArr2 => "an array of arrays",
         Ty::Arr(_) => "an array",
-        Ty::Block(_) => "a codeblock",
+        Ty::Block(..) => "a codeblock",
         Ty::DArr => "a dynamic array",
         Ty::DArrRef => "a borrowed array",
         Ty::DArrRef2 => "a borrowed array",
@@ -5828,7 +5857,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         }
                     }
                     let t = type_expr(e, env, sigs, *n)?;
-                    if let Ty::Block(_) = t {
+                    if let Ty::Block(..) = t {
                         return Err(format!("line {}: cannot print a codeblock in this increment", n));
                     }
                     if matches!(t, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash) {
@@ -5881,7 +5910,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     falls = false;
                 } else
                 {
-                if let Ty::Block(_) = t {
+                if let Ty::Block(..) = t {
                     return Err(format!("line {}: codeblocks cannot be returned in this increment", n));
                 }
 
@@ -6891,6 +6920,20 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     // rodata literal into an owned slot (hk225): the
                     // assignment boundary hands over an owned copy, same
                     // contract as a rodata argument to an owned parameter.
+                } else if let (Ty::Block(oa, ok), Ty::Block(na, nk)) = (env[idx].ty, t) {
+                    // This arm matches EVERY block-to-block assignment,
+                    // equal types included: same arity AND same return kind
+                    // is a plain reassignment (verifier 13:32: b := {||11};
+                    // b := {||22} is Harbour-valid; QOutA -> QOutB inside a
+                    // branch is not a mix). Only a real difference errors:
+                    // same arity with a different kind names the mix, an
+                    // arity change is a generic mismatch.
+                    if oa == na && ok != nk {
+                        return Err(format!("line {}: `{}` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment", n, id));
+                    }
+                    if oa != na {
+                        return Err(format!("line {}: type mismatch in assignment to `{}`", n, id));
+                    }
                 } else if env[idx].ty != t {
                     return Err(format!("line {}: type mismatch in assignment to `{}`", n, id));
                 }
@@ -7125,7 +7168,7 @@ fn fold_int(e: &Expr) -> Option<i64> {
     }
 }
 fn size_of(t: Ty) -> usize {
-    match t { Ty::F64 => 16, Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(_) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefStrOwn => 8 }
+    match t { Ty::F64 => 16, Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(..) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefStrOwn => 8 }
 }
 
 #[derive(Clone)]
@@ -7224,7 +7267,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 Ty::RefI64 => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n", v.off)),
                 Ty::RefStrOwn => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n    mov 8(%r11), %rdx\n", v.off)),
                 Ty::F64 => unreachable!("floats load through cg_f64_load (xmm0/rdi), never the rax/rdx channel"),
-                Ty::I64 | Ty::Block(_) | Ty::Bool => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
+                Ty::I64 | Ty::Block(..) | Ty::Bool => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
                 Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash => {
                     // ptr at -(off), len at -(off-8) — same layout as the store
                     out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
@@ -8042,7 +8085,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     out.push_str("    test %rdx, %rdx\n    sete %al\n    movzbq %al, %rax\n");
                 }
                 Ty::Dyn => { out.push_str("    mov $1, %eax\n"); } // literal NIL only
-                Ty::Block(_) => { cg_expr(e, env, sigs, strs, out, target); out.push_str("    xor %eax, %eax\n"); }
+                Ty::Block(..) => { cg_expr(e, env, sigs, strs, out, target); out.push_str("    xor %eax, %eax\n"); }
                 Ty::I64 | Ty::Bool => {
                     cg_expr(e, env, sigs, strs, out, target);
                     out.push_str("    test %rax, %rax\n    sete %al\n    movzbq %al, %rax\n");
@@ -8086,7 +8129,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             // are discarded afterwards, matching probe c7b), push the first
             // k as call arguments, then call the block pointer indirectly
             // with the standard convention.
-            let k = match expr_ty(&args[0], env, sigs) { Ty::Block(k) => k, _ => unreachable!("checked") };
+            let k = match expr_ty(&args[0], env, sigs) { Ty::Block(k, _) => k, _ => unreachable!("checked") };
             for a in &args[1..] {
                 cg_expr(a, env, sigs, strs, out, target);
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
@@ -8910,7 +8953,8 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "empty") { return Ty::Bool; }
             if is_output_call(id) { return Ty::Dyn; }
             if is_builtin(id, "hb_pvalue") { return Ty::Dyn; }
-            if is_builtin(id, "asc") || is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
+            if is_builtin(id, "eval") { return match expr_ty(&args[0], env, sigs) { Ty::Block(_, BRet::Nil) => Ty::Dyn, _ => Ty::I64 }; }
+            if is_builtin(id, "asc") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
             if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id, "chr") { return Ty::StrOwn; }
@@ -8940,7 +8984,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::Index2(_, _, _) => Ty::Dyn,
         Expr::Index3(_, _, _, _) => Ty::Dyn,
         Expr::Index4(_, _, _, _, _) => Ty::Dyn,
-        Expr::BlockLit(_, ps, _) => Ty::Block(ps.len()),
+        Expr::BlockLit(_, ps, body) => Ty::Block(ps.len(), block_body_kind(body, sigs)),
         Expr::DArrNew => Ty::DArrU,
         Expr::HashLit(_) => Ty::Hash,
     }
@@ -9746,7 +9790,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             out.push_str(&format!("    test %rax, %rax\n    jz 95f\n    lea .Lstr{}(%rip), %rax\n    jmp 96f\n95:\n    lea .Lstr{}(%rip), %rax\n96:\n    mov $3, %edx\n    call hbc_print_str\n", ti, fi));
                         }
                         Ty::Arr(_) => unreachable!("whole-array printing rejected in analysis"),
-                        Ty::Block(_) => unreachable!("codeblock printing rejected in analysis"),
+                        Ty::Block(..) => unreachable!("codeblock printing rejected in analysis"),
                         Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 => unreachable!("whole-array printing rejected in analysis"),
                         Ty::Hash => unreachable!("whole-hash printing rejected in analysis"),
                     }
@@ -9872,7 +9916,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             }
                         }
                         match t {
-                            Ty::I64 | Ty::Block(_) | Ty::Bool => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
+                            Ty::I64 | Ty::Block(..) | Ty::Bool => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
                             Ty::Str => {
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
@@ -10483,7 +10527,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
                             }
-                            Ty::I64 | Ty::Block(_) if lty == Ty::Dyn => {
+                            Ty::I64 | Ty::Block(..) if lty == Ty::Dyn => {
                                 // Dyn slot, i64 value: tag it in (probe n2:
                                 // reassignment re-tags a live variable).
                                 // A live tag-4 payload is released first.
@@ -10493,7 +10537,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
                             }
-                            Ty::I64 | Ty::Block(_) | Ty::Bool => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
+                            Ty::I64 | Ty::Block(..) | Ty::Bool => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
                             Ty::Dyn if lty == Ty::I64 => {
                                 // i64 slot receiving a Dyn: the tag is
                                 // checked at runtime (NIL -> clean error).

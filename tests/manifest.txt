@@ -864,7 +864,7 @@ pos tests/t866_qout_nil.hb \nA         65 .T.\nU .T.B C\nU .T.\n\ndone
 pos tests/t867_qout_effects.hb P          1P          2\n         1          2 A          1.25 NIL\n.T.          1\nblock          4 Btail\n         5\ninnerside\nNIL NIL outer\n\nU U
 pos tests/t868_qout_ownership.hb B C A\n.T.          1         65\nDE\n.T.
 pos tests/t869_qout_memcheck.hb \nC DE F A\n.T.          1         65\nGB\n        72\n         0
-neg tests/t870_qout_block_result_neg.hb codeblock bodies are integer expressions
+pos tests/t870_qout_block_result_neg.hb \ntest
 neg tests/t871_qqout_array_temp_neg.hb cannot print a temporary array or hash
 neg tests/t872_qout_block_arg_neg.hb cannot print a codeblock
 neg tests/t873_qout_move_neg.hb use of moved value
@@ -1377,3 +1377,11 @@ pos tests/t1040_seq_dyn_var.hb
 pos tests/t1380_nilonly_shapes.hb \nok\nok\nok
 pos tests/t1381_seq_dyn_var_observable.hb \n         2
 pos tests/t1382_dyn_bool_readback.hb \n.T.\n.F.
+pos tests/t1384_eval_nil_result.hb \ntest\ntest\nNIL\ntest\ntest\nNIL\ninline\nseq\nNILa bx\nNIL
+pos tests/t1385_block_param_int.hb \n        42
+pos tests/t1386_block_userfn_nilret.hb \nhi\nNIL
+neg tests/t1387_cb_neg_kind_mix.hb would hold both integer- and NIL-returning codeblocks
+neg tests/t1388_cb_neg_param_kind.hb must be an integer-returning codeblock, got a NIL-returning one
+neg tests/t1389_cb_neg_iif_blocks.hb `iif` branches must share a scalar type
+posx tests/t1390_eval_nil_arith.hb 1 \ntestType error: NIL used as a number\nCallstack:\n  at main (tests/t1390_eval_nil_arith.hb:3)
+pos tests/t1391_block_reassign_samekind.hb \n        22\nB\nNIL\nC\nNIL
