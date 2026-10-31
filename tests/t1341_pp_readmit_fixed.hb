@@ -1,0 +1,5 @@
+PROCEDURE Main()
+#define WORD TOKEN
+#xtranslate TOKEN FOO => 7
+? WORD FOO
+RETURN

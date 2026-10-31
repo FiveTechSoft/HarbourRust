@@ -1333,3 +1333,6 @@ pos tests/t1335_pp_concat_math.hb \n         7
 pos tests/t1336_pp_concat_nested.hb \n         7
 neg tests/t1337_pp_concat_scope.hb inline plain-tail expression outside bounded contract
 neg tests/t1338_pp_concat_incomplete.hb inline plain-tail expression outside bounded contract
+pos tests/t1339_pp_readmit_alias.hb \n         7
+pos tests/t1340_pp_readmit_call.hb \n         7
+pos tests/t1341_pp_readmit_fixed.hb \n         7

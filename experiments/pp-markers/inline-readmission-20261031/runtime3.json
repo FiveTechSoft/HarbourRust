@@ -1,0 +1,67 @@
+{
+  "rows": [
+    {
+      "file": "t1339_pp_readmit_alias.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1340_pp_readmit_call.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1341_pp_readmit_fixed.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        }
+      }
+    }
+  ]
+}

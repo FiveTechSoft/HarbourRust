@@ -1758,7 +1758,6 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     // Match each source statement separately. Expansion can
                     // itself emit separators; split again only after expansion.
                     let mut cur = statement.trim().to_string();
-                    let fixed_enabled = expand(&cur,&pp.defs,line).map(|expanded|expanded == cur).unwrap_or(false);
                     let mut depth = inherited_depth;
                     loop {
                         let directive=cur.trim_start().to_ascii_uppercase();
@@ -1783,6 +1782,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                             cur=expanded_macros;
                             continue;
                         }
+                        let fixed_enabled=expand(&cur,&pp.defs,line).map(|expanded|expanded==cur).unwrap_or(false);
                         if fixed_enabled { cur = expand_fixed_translations(&cur,&pp.cmds,&pp.call_rules,line)?; }
                         match apply_commands(&cur, &pp.cmds, &pp.call_rules, fixed_enabled, line)? {
                             Some((x,rule_id)) => {

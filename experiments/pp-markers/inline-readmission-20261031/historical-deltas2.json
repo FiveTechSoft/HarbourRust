@@ -1,0 +1,33 @@
+{
+  "total": 30631,
+  "changes": [
+    {
+      "source": "#define WORD TOKEN\n#translate TOKEN FOO => 7\n? WORD FOO\n",
+      "baseline": [
+        0,
+        "? TOKEN FOO\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? 7\n",
+        ""
+      ],
+      "reference_output": "\n\n? 7\n"
+    },
+    {
+      "source": "#translate TOKEN FOO => 7\n#define WORD TOKEN\n? WORD FOO\n",
+      "baseline": [
+        0,
+        "? TOKEN FOO\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? 7\n",
+        ""
+      ],
+      "reference_output": "\n\n? 7\n"
+    }
+  ]
+}
