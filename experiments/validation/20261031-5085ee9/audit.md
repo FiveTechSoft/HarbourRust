@@ -41,9 +41,12 @@ authoritative count.)
 
 ## Tests/scripts used for the identity claims
 
-- tests/run_battery.sh at 5085ee94 (blob e8f1ff8b... manifest, 1424 cases)
-  with the binary above: the 31Oct 16:53 green run (t528 double-failure
-  incident preserved under t528-incident/).
+- tests/run_battery.sh at 5085ee94 (blob e8f1ff8b... manifest, 1424 cases):
+  the 31Oct 16:53 green run (t528 double-failure incident preserved under
+  t528-incident/). The run's compiler binary hash was NOT captured at run
+  time; the binary/source binding above is a post-hoc reconstruction
+  (rebuild verified 16:57, re-verified with the full src tree 17:29), not a
+  run-time anchor. This limitation is permanent for that run.
 - The equivalence check of 16:57 compared hr-aeval working-copy files
   byte-for-byte against `git show 5085ee94:<path>` for src/hbc.rs,
   tests/manifest.txt and the 7 touched test files.
