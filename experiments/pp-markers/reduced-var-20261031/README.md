@@ -38,7 +38,7 @@ and compiler, with three separately reported outcomes:
 - 0 false translations observed. This is evidence, not a completeness proof.
 
 Run `check_reduced_var.py --hbpp ... --hpp ... --output-dir ...` from any cwd.
-24 main reduced examples and 3 definition/removal temporal controls match.
+24 main reduced examples and 3 command definition/removal temporal controls match.
 5801 existing own pp fixtures retain exact exit/stdout/stderr (0 changes). Earlier inactive generic candidate and its
 20-boundary grid are research history, NOT the production admission contract.
 In particular their incomplete/macro/array positives may now be scope errors.
@@ -54,3 +54,7 @@ exit/first diagnostics to the refactor baseline; acceptance stays21/15Linux,
 20/14Windows. 14 unchanged reviewed Linux originals match freshly built Harbour
 exactly in both backends. No real hbclass VAR/class support or original unlock
 is claimed. No size/speed comparison or debugger implementation is included.
+
+Known pre-existing removal gap: `#uncommand` against an `#xcommand` rule
+removes it here but not in pinned Harbour. This increment does not change that
+behavior. X-rule removal is not certified by the three command temporal probes.
