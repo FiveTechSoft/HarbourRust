@@ -1473,3 +1473,14 @@ neg tests/t1474_aview_idxconsume.hb may not mention the viewed array
 neg tests/t1475_aview_idxmutate.hb may not mention the viewed array
 neg tests/t1476_borrow_idxconsume.hb may not mention the owner array
 neg tests/t1477_borrow_idxmutate.hb may not mention the owner array
+pos tests/t1478_stepc_ntos_union.hb 1,C,U,L,
+pos tests/t1479_stepc_ntos_wrongtype.hb C
+neg tests/t1480_stepc_iif_cellarm.hb branches must share a scalar type
+neg tests/t1481_stepc_iif_store.hb array-view
+posx tests/t1482_stepc_guard_nil.hb 1 Type error: NIL used as a number\nCallstack:\n  at show (tests/t1482_stepc_guard_nil.hb:7)\n  at main (tests/t1482_stepc_guard_nil.hb:4)\n
+posx tests/t1483_stepc_guard_log.hb 1 Type error: NIL used as a number\nCallstack:\n  at show (tests/t1483_stepc_guard_log.hb:7)\n  at main (tests/t1483_stepc_guard_log.hb:4)\n
+posx tests/t1484_stepc_guard_arr.hb 1 Type error: NIL used as a number\nCallstack:\n  at show (tests/t1484_stepc_guard_arr.hb:7)\n  at main (tests/t1484_stepc_guard_arr.hb:4)\n
+pos tests/t1485_stepc_mem_nested.hb 5C\n         0\n         0
+pos tests/t1486_stepc_mem_recur.hb 1,2,3,4,\n         0\n         0
+pos tests/t1487_stepc_mem_2out.hb 7C\n         0\n         0
+pos2 tests/t1488_stepc_mem_1000.hb tests/t1488_stepc_mem_1000_linux.out tests/t1488_stepc_mem_1000_windows.out

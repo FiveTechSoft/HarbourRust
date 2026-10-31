@@ -4774,7 +4774,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             if is_builtin(id,"hb_ntos") {
                 if args.len()!=1 { return Err(format!("line {}: `hb_ntos` takes one argument in this increment",n)); }
-                if type_expr(&args[0],env,sigs,n)? != Ty::I64 {
+                let ta = type_expr(&args[0],env,sigs,n)?;
+                // ains piece 1b step (c): a Dyn argument (an array/view
+                // cell) converts through the verified tag-0 guard
+                // hbc_dyn_to_i64; any other tag at runtime is the clean
+                // registered type error, never a crash. The cell stays
+                // borrowed - never freed here.
+                if ta != Ty::I64 && ta != Ty::Dyn {
                     return Err(format!("line {}: `hb_ntos` expects an integer argument in this increment (no decimal formatting yet)",n));
                 }
                 return Ok(Ty::StrOwn);
@@ -8207,6 +8213,12 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
         }
         Expr::Call(id,args) if is_builtin(id,"str") || is_builtin(id,"hb_ntos") => {
             cg_expr(&args[0],env,sigs,strs,out,target);
+            // ains piece 1b step (c): Dyn cell -> integer via the verified
+            // tag-0 guard (both runtimes; other tags raise the clean
+            // registered type error). `str` never sees Dyn (its checker
+            // still requires I64); the conditional is inert for it.
+            if expr_ty(&args[0],env,sigs)==Ty::Dyn { out.push_str("    call hbc_dyn_to_i64
+"); }
             if is_builtin(id,"hb_ntos") {
                 out.push_str("    mov %rax, %rdi\n    call hbc_str_int_plain\n");
             } else {
