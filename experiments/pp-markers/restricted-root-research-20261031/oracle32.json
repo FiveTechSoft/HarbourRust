@@ -1,0 +1,354 @@
+[
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x>,<\"scope\">,<\"t\">,<\"hidden\">)\nSHOW New() \n",
+    "exit": 0,
+    "output": "\nOUT(New(),,,)\n",
+    "own": [
+      0,
+      "OUT(New ( ),,,)\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x> [,<\"scope\">] [,<\"t\">] [,<\"hidden\">])\nSHOW New() \n",
+    "exit": 0,
+    "output": "\nOUT(New())\n",
+    "own": [
+      0,
+      "OUT(New ( )   )\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x>,<\"scope\">,<\"t\">,<\"hidden\">)\nSHOW New() PUBLIC\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"PUBLIC\",,)\n",
+    "own": [
+      0,
+      "OUT(New ( ),\"PUBLIC\",,)\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x> [,<\"scope\">] [,<\"t\">] [,<\"hidden\">])\nSHOW New() PUBLIC\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"PUBLIC\")\n",
+    "own": [
+      0,
+      "OUT(New ( ) ,\"PUBLIC\"  )\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x>,<\"scope\">,<\"t\">,<\"hidden\">)\nSHOW New() VISIBLE\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"VISIBLE\",,)\n",
+    "own": [
+      0,
+      "OUT(New ( ),\"VISIBLE\",,)\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x> [,<\"scope\">] [,<\"t\">] [,<\"hidden\">])\nSHOW New() VISIBLE\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"VISIBLE\")\n",
+    "own": [
+      0,
+      "OUT(New ( ) ,\"VISIBLE\"  )\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x>,<\"scope\">,<\"t\">,<\"hidden\">)\nSHOW New() AS number PUBLIC\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"PUBLIC\",\"number\",)\n",
+    "own": [
+      0,
+      "OUT(New ( ),\"PUBLIC\",\"number\",)\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x> [,<\"scope\">] [,<\"t\">] [,<\"hidden\">])\nSHOW New() AS number PUBLIC\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"PUBLIC\",\"number\")\n",
+    "own": [
+      0,
+      "OUT(New ( ) ,\"PUBLIC\" ,\"number\" )\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x>,<\"scope\">,<\"t\">,<\"hidden\">)\nSHOW New() VISIBLE AS number\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"VISIBLE\",\"number\",)\n",
+    "own": [
+      0,
+      "OUT(New ( ),\"VISIBLE\",\"number\",)\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x> [,<\"scope\">] [,<\"t\">] [,<\"hidden\">])\nSHOW New() VISIBLE AS number\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"VISIBLE\",\"number\")\n",
+    "own": [
+      0,
+      "OUT(New ( ) ,\"VISIBLE\" ,\"number\" )\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x>,<\"scope\">,<\"t\">,<\"hidden\">)\nSHOW New() HIDDEN PUBLIC\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"PUBLIC\",,\"HIDDEN\")\n",
+    "own": [
+      0,
+      "OUT(New ( ),\"PUBLIC\",,\"HIDDEN\")\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x> [,<\"scope\">] [,<\"t\">] [,<\"hidden\">])\nSHOW New() HIDDEN PUBLIC\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"PUBLIC\",\"HIDDEN\")\n",
+    "own": [
+      0,
+      "OUT(New ( ) ,\"PUBLIC\"  ,\"HIDDEN\")\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x>,<\"scope\">,<\"t\">,<\"hidden\">)\nSHOW New() PUBLIC HIDDEN\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"PUBLIC\",,\"HIDDEN\")\n",
+    "own": [
+      0,
+      "OUT(New ( ),\"PUBLIC\",,\"HIDDEN\")\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x> [,<\"scope\">] [,<\"t\">] [,<\"hidden\">])\nSHOW New() PUBLIC HIDDEN\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"PUBLIC\",\"HIDDEN\")\n",
+    "own": [
+      0,
+      "OUT(New ( ) ,\"PUBLIC\"  ,\"HIDDEN\")\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x>,<\"scope\">,<\"t\">,<\"hidden\">)\nSHOW New() PUBLIC VISIBLE\n",
+    "exit": 0,
+    "output": "\nSHOW New() PUBLIC VISIBLE\n",
+    "own": [
+      0,
+      "SHOW New() PUBLIC VISIBLE\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x> [,<\"scope\">] [,<\"t\">] [,<\"hidden\">])\nSHOW New() PUBLIC VISIBLE\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"PUBLIC\",\"VISIBLE\")\n",
+    "own": [
+      0,
+      "OUT(New ( ) ,\"PUBLIC\",\"VISIBLE\"  )\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x>,<\"scope\">,<\"t\">,<\"hidden\">)\nSHOW New() PUBLIC PUBLIC\n",
+    "exit": 0,
+    "output": "\nSHOW New() PUBLIC PUBLIC\n",
+    "own": [
+      0,
+      "SHOW New() PUBLIC PUBLIC\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x> [,<\"scope\">] [,<\"t\">] [,<\"hidden\">])\nSHOW New() PUBLIC PUBLIC\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"PUBLIC\",\"PUBLIC\")\n",
+    "own": [
+      0,
+      "OUT(New ( ) ,\"PUBLIC\",\"PUBLIC\"  )\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x>,<\"scope\">,<\"t\">,<\"hidden\">)\nSHOW New() PUB\n",
+    "exit": 0,
+    "output": "\nSHOW New() PUB\n",
+    "own": [
+      0,
+      "SHOW New() PUB\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x> [,<\"scope\">] [,<\"t\">] [,<\"hidden\">])\nSHOW New() PUB\n",
+    "exit": 0,
+    "output": "\nSHOW New() PUB\n",
+    "own": [
+      0,
+      "SHOW New() PUB\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x>,<\"scope\">,<\"t\">,<\"hidden\">)\nSHOW New() VISI\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"VISI\",,)\n",
+    "own": [
+      0,
+      "OUT(New ( ),\"VISI\",,)\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x> [,<\"scope\">] [,<\"t\">] [,<\"hidden\">])\nSHOW New() VISI\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"VISI\")\n",
+    "own": [
+      0,
+      "OUT(New ( ) ,\"VISI\"  )\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x>,<\"scope\">,<\"t\">,<\"hidden\">)\nSHOW New() visib\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"visib\",,)\n",
+    "own": [
+      0,
+      "OUT(New ( ),\"visib\",,)\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x> [,<\"scope\">] [,<\"t\">] [,<\"hidden\">])\nSHOW New() visib\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"visib\")\n",
+    "own": [
+      0,
+      "OUT(New ( ) ,\"visib\"  )\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x>,<\"scope\">,<\"t\">,<\"hidden\">)\nSHOW New() AS PUBLIC\n",
+    "exit": 0,
+    "output": "\nOUT(New(),,\"PUBLIC\",)\n",
+    "own": [
+      0,
+      "OUT(New ( ),,\"PUBLIC\",)\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x> [,<\"scope\">] [,<\"t\">] [,<\"hidden\">])\nSHOW New() AS PUBLIC\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"PUBLIC\")\n",
+    "own": [
+      0,
+      "OUT(New ( )  ,\"PUBLIC\" )\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x>,<\"scope\">,<\"t\">,<\"hidden\">)\nSHOW New() AS number+PUBLIC\n",
+    "exit": 0,
+    "output": "\nOUT(New(),,\"number+PUBLIC\",)\n",
+    "own": [
+      0,
+      "OUT(New ( ),,\"number+PUBLIC\",)\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x> [,<\"scope\">] [,<\"t\">] [,<\"hidden\">])\nSHOW New() AS number+PUBLIC\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"number+PUBLIC\")\n",
+    "own": [
+      0,
+      "OUT(New ( )  ,\"number+PUBLIC\" )\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x>,<\"scope\">,<\"t\">,<\"hidden\">)\nSHOW New() AS number UNKNOWN\n",
+    "exit": 0,
+    "output": "\nSHOW New() AS number UNKNOWN\n",
+    "own": [
+      0,
+      "SHOW New() AS number UNKNOWN\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x> [,<\"scope\">] [,<\"t\">] [,<\"hidden\">])\nSHOW New() AS number UNKNOWN\n",
+    "exit": 0,
+    "output": "\nSHOW New() AS number UNKNOWN\n",
+    "own": [
+      0,
+      "SHOW New() AS number UNKNOWN\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x>,<\"scope\">,<\"t\">,<\"hidden\">)\nSHOW New() DECL PUBLIC DECL\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"PUBLIC\",,)\n",
+    "own": [
+      0,
+      "OUT(New ( ),\"PUBLIC\",,)\n",
+      ""
+    ],
+    "match": true
+  },
+  {
+    "source": "#command SHOW <x> [<scope:PUBLIC,VISIBLE>] [AS <t>] [<hidden:HIDDEN>] [DECL] => OUT(<x> [,<\"scope\">] [,<\"t\">] [,<\"hidden\">])\nSHOW New() DECL PUBLIC DECL\n",
+    "exit": 0,
+    "output": "\nOUT(New(),\"PUBLIC\")\n",
+    "own": [
+      0,
+      "OUT(New ( ) ,\"PUBLIC\"  )\n",
+      ""
+    ],
+    "match": true
+  }
+]

@@ -1,0 +1,1298 @@
+[
+  {
+    "file": "tests/cgi.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 536: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 139: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/cgi.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 536: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 139: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/cgi.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 536: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 139: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/cgi.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 536: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 139: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/clasinh.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 342: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 18: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clasinh.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 342: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 18: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clasinh.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 342: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 18: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clasinh.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 342: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 18: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/classch.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 331: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 25: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/classch.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 331: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 25: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/classch.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 331: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 25: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/classch.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 331: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 25: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/cls.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 347: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 29: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/cls.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 347: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 29: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/cls.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 347: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 29: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/cls.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 347: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 29: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsccast.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 645: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 642: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsccast.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 645: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 642: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsccast.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 645: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 642: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsccast.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 645: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 642: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsnv.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 376: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 373: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsnv.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 376: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 373: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsnv.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 376: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 373: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsnv.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 376: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 373: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsscast.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 679: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 676: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsscast.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 679: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 676: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsscast.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 679: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 676: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    }
+  },
+  {
+    "file": "tests/clsscast.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 679: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 676: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    }
+  },
+  {
+    "file": "tests/declare.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 348: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 64: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/declare.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 348: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 64: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/declare.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 348: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 64: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/declare.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 348: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 64: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/foreach2.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 366: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 48: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/foreach2.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 366: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 48: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/foreach2.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 366: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 48: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/foreach2.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 366: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 48: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/html.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 386: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 55: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/html.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 386: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 55: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/html.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 386: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 55: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/html.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 386: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 55: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/inhprob.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 342: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 13: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/inhprob.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 342: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 13: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/inhprob.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 342: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 13: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/inhprob.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 342: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 13: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/inifile.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 481: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 70: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/inifile.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 481: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 70: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/inifile.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 481: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 70: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/inifile.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 481: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 70: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/inifiles.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 510: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 99: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/inifiles.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 510: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 99: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/inifiles.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 510: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 99: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/inifiles.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 510: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 99: generated directive outside command/xcommand scope"
+      ]
+    }
+  },
+  {
+    "file": "tests/money.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 42: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/money.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 42: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/money.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 42: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/money.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 42: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/op.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 405: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 77: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/op.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 405: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 77: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/op.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 405: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 77: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/op.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 405: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 77: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/overload.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 336: character not allowed `#` (U+0023)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 43: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/overload.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 336: character not allowed `#` (U+0023)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 43: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/overload.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 336: character not allowed `#` (U+0023)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 43: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/overload.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 336: character not allowed `#` (U+0023)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 43: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/persist.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 335: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 30: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/persist.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 335: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 30: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/persist.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 335: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 30: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/persist.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 335: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 30: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/stripem.prg",
+    "mode": "current",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 485: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 65: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/stripem.prg",
+    "mode": "llvm",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 485: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 65: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/stripem.prg",
+    "mode": "current_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 485: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 65: command expansion too deep (recursive command?)"
+      ]
+    }
+  },
+  {
+    "file": "tests/stripem.prg",
+    "mode": "llvm_windows",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 485: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "candidate": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 65: command expansion too deep (recursive command?)"
+      ]
+    }
+  }
+]

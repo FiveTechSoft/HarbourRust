@@ -1,0 +1,38 @@
+--- production/group_plan.rs
++++ inactive/group_plan.rs
+@@ -59,13 +59,18 @@
+         let mut at=0;expr(tokens,&mut at,0)&&at==tokens.len()
+     }
+     pub fn expression_root(&self)->bool{
+-        if self.nodes.len()<3 || self.nodes.len()>8 || !matches!(self.nodes.first(),Some(Node::Atom(Atom::Literal(t)))if identifier(t)) || !matches!(self.nodes.get(1),Some(Node::Atom(Atom::Expression(_)))){return false;}
+-        let mut anchors=Vec::new();
++        if self.nodes.len()<3 || self.nodes.len()>10 || !matches!(self.nodes.first(),Some(Node::Atom(Atom::Literal(t)))if identifier(t)) || !matches!(self.nodes.get(1),Some(Node::Atom(Atom::Expression(_)))){return false;}
++        let mut anchors:Vec<String>=Vec::new();
+         for node in &self.nodes[2..]{
+             let atoms=match node{Node::Optional{atoms,..}=>atoms,_=>return false};
+-            match atoms.as_slice(){[Atom::Literal(t)]|[Atom::Literal(t),Atom::Expression(_)] if identifier(t)=>{
+-                if anchors.iter().any(|a:&String|a.eq_ignore_ascii_case(t)){return false;}anchors.push(t.clone());
+-            },_=>return false}
++            let keys=match atoms.as_slice(){
++                [Atom::Literal(t)]|[Atom::Literal(t),Atom::Expression(_)] if identifier(t)=>vec![t.clone()],
++                [Atom::Restricted(_,choices)] if choices.iter().all(|c|c.len()==1)=>choices.iter().map(|c|c[0].clone()).collect(),
++                _=>return false};
++            for key in keys{
++                if anchors.iter().any(|a|a.eq_ignore_ascii_case(&key)||(a.len()>=4&&key.len()>=4&&a[..4].eq_ignore_ascii_case(&key[..4]))){return false;}
++                anchors.push(key);
++            }
+         }true
+     }
+     fn expression_root_matches(&self,source:&[String],exact:bool,adjacent:&[bool])->Result<Option<Matched>,&'static str>{
+@@ -97,8 +102,9 @@
+         while at<source.len(){
+             let mut next=None;
+             for node in &self.nodes[2..]{if let Node::Optional{id,atoms}=node{
+-                let word=match &atoms[0]{Atom::Literal(t)=>t,_=>return Ok(None)};
+-                if !lit(&source[at],word){continue;}let start=at;let mut end=at+1;let mut captures=Vec::new();
++                let matches=match &atoms[0]{Atom::Literal(t)=>lit(&source[at],t),Atom::Restricted(_,choices)=>choices.iter().any(|c|lit(&source[at],&c[0])),_=>return Ok(None)};
++                if !matches{continue;}let start=at;let mut end=at+1;let mut captures=Vec::new();
++                if let Atom::Restricted(marker,_) = &atoms[0]{captures.push((*marker,(at,at+1)));}
+                 if let Some(Atom::Expression(marker))=atoms.get(1){let n=match prefix(&source[end..],&adjacent[end..]){Some(n)=>n,None=>return Ok(None)};captures.push((*marker,(end,end+n)));end+=n;}
+                 next=Some((*id,start,end,captures));break;
+             }}
