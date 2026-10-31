@@ -1,0 +1,290 @@
+{
+ "phase": "extras/utils/contrib build units (after tests phase CLOSED 268/268 at 4a2da426)",
+ "order": "inventory path lexicographic: extras first, then utils, then contrib",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "extras/hbxlsxml/xlsxml.prg",
+   "sha256": "bdea371443b8583d0f63b13d05e79bb7217cd3408bbc0e51efda4b14263f30bb",
+   "review": "full source manually read 2026-11-01 (459 lines)",
+   "entrypoint": "none (library): CREATE CLASS ExcelWriterXML (workbook/styles/sheets + writeData + doc* accessors)",
+   "build_unit": "static library per hbxlsxml.hbp (-hblib: xlsxml.prg + xlsxml_s.prg + xlsxml_y.prg, hbx export list)",
+   "profile": "B-extras Excel 2003 XML (SpreadsheetML) writer library, GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "hbclass.ch (CREATE CLASS/METHOD/VAR INIT); fileio.ch; hashes {=>} pervasively; FOR EACH with __enumKey/__enumValue; objects; hb_FCreate/FWrite; Date()/Time() embedded in DocumentProperties",
+   "boundary": "Not run: library, no Main; generated XML embeds Date()/Time() - not byte-portable oracles",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 hbxlsxml.hbp -> libhbxlsxml.a OK at pin 694428e1",
+   "reference_run": "not-run (library)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 56: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 56: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 56: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 56: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/hbxlsxml/xlsxml_s.prg",
+   "sha256": "b09d670719222f2b2529faf492d8283f79c352361bc06cb46adae3abb922b786",
+   "review": "full source manually read 2026-11-01 (334 lines)",
+   "entrypoint": "none (library): CREATE CLASS ExcelWriterXML_Sheet (cells/colWidth/rowHeight/mergeCells/comments hashes + getSheetXML)",
+   "build_unit": "static library per hbxlsxml.hbp (-hblib: xlsxml.prg + xlsxml_s.prg + xlsxml_y.prg, hbx export list)",
+   "profile": "B-extras Excel 2003 XML (SpreadsheetML) writer library, GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "hbclass.ch (CREATE CLASS/METHOD/VAR INIT); fileio.ch; hashes {=>} pervasively; FOR EACH with __enumKey/__enumValue; objects; hb_FCreate/FWrite; Date()/Time() embedded in DocumentProperties",
+   "boundary": "Not run: library, no Main; generated XML embeds Date()/Time() - not byte-portable oracles",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 hbxlsxml.hbp -> libhbxlsxml.a OK at pin 694428e1",
+   "reference_run": "not-run (library)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 54: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 54: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 54: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 54: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/hbxlsxml/xlsxml_y.prg",
+   "sha256": "45d02647bd7e935ae77f358a66b51f4627ba165f4fde9e3334e68a555e125006",
+   "review": "full source manually read 2026-11-01 (778 lines)",
+   "entrypoint": "none (library): CREATE CLASS ExcelWriterXML_Style (alignment/font/border/interior/numberFormat + getColorIE named-color table)",
+   "build_unit": "static library per hbxlsxml.hbp (-hblib: xlsxml.prg + xlsxml_s.prg + xlsxml_y.prg, hbx export list)",
+   "profile": "B-extras Excel 2003 XML (SpreadsheetML) writer library, GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "hbclass.ch (CREATE CLASS/METHOD/VAR INIT); fileio.ch; hashes {=>} pervasively; FOR EACH with __enumKey/__enumValue; objects; hb_FCreate/FWrite; Date()/Time() embedded in DocumentProperties",
+   "boundary": "Not run: library, no Main; generated XML embeds Date()/Time() - not byte-portable oracles",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 hbxlsxml.hbp -> libhbxlsxml.a OK at pin 694428e1",
+   "reference_run": "not-run (library)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 55: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 55: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 55: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 55: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/hbxlsxml/tests/example.prg",
+   "sha256": "53a9635dac7615f31d3827ad788a7c68c9b342c6db4cca6ede5c8633cf690c02",
+   "review": "full source manually read 2026-11-01 (266 lines)",
+   "entrypoint": "Main",
+   "build_unit": "single-source executable against the hbxlsxml library",
+   "profile": "B-extras hbxlsxml demo",
+   "dependencies": "#require hbxlsxml; OOP message sends throughout; invoice-style sheet, 40 data rows via Date()-arith, SUM formulas; writes XML to cwd; Date()/Time() embedded",
+   "boundary": "Reference run rc0, stdout = 32B GT terminal-init escape frame (no text), stderr 0; artifact example.xml 73422B - XML embeds Date()/Time(), not a byte-portable oracle",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 + libhbxlsxml.a links OK at pin 694428e1",
+   "reference_run": "run: rc0 (see boundary)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/hbxlsxml/tests/example2.prg",
+   "sha256": "c8585f9a0009acbc842334d240c52eaaf5bb2537f1269fff3e08b469d76aebd0",
+   "review": "full source manually read 2026-11-01 (156 lines)",
+   "entrypoint": "Main",
+   "build_unit": "single-source executable against the hbxlsxml library",
+   "profile": "B-extras hbxlsxml demo",
+   "dependencies": "#require hbxlsxml; OOP message sends throughout; alignment/formula/formatting sheets; writes XML to cwd; Date()/Time() embedded",
+   "boundary": "Reference run rc0, stdout = 32B GT terminal-init escape frame (no text), stderr 0; artifact example2.xml 3966B - XML embeds Date()/Time(), not a byte-portable oracle",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 + libhbxlsxml.a links OK at pin 694428e1",
+   "reference_run": "run: rc0 (see boundary)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/hbxlsxml/tests/example3.prg",
+   "sha256": "d34efa10e364843dd3726ce83345a5e1dd309d582d3b2f48e6b51c9a7c50ef3f",
+   "review": "full source manually read 2026-11-01 (80 lines)",
+   "entrypoint": "Main",
+   "build_unit": "single-source executable against the hbxlsxml library",
+   "profile": "B-extras hbxlsxml demo",
+   "dependencies": "#require hbxlsxml; OOP message sends throughout; single sheet, styled cells, cellMerge; writes XML to cwd; Date()/Time() embedded",
+   "boundary": "Reference run rc0, stdout = 32B GT terminal-init escape frame (no text), stderr 0; artifact example3.xml 1871B - XML embeds Date()/Time(), not a byte-portable oracle",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 + libhbxlsxml.a links OK at pin 694428e1",
+   "reference_run": "run: rc0 (see boundary)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ]
+}
