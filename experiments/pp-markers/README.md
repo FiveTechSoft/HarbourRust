@@ -815,3 +815,18 @@ Harbour captures. Those observations are not compatibility passes, and this
 increment does not change that marker or captured translation prefix matching.
 Literal-bearing optional stringify and repeated/disjoint captures remain outside
 the admitted contract. No classes/runtime/ABI/main change and no speed/size claim.
+
+## Extended marker is not a parenthesis-only marker
+
+Own480plus280black-box observations record a historical <(x)> contract gap.
+Harbour accepts unspaced file/expression tokens, quoted data, parenthesized
+expressions and macro forms. A parenthesized source retains its delimiters under
+<x>, #<x>, and normal <"x">. Result-side <(x)> is smart stringify, not an
+instruction to add parentheses: it quotes a filename/bare token, retains a quoted
+string or parenthesized expression, and treats macro captures specially. Source
+whitespace and top-level commas affect boundaries; captured translations can
+replace a prefix. The current parenthesis-only matcher and unconditional
+re-parenthesization do not implement that contract. These760observations are
+characterization evidence only, not760passes. No implementation is claimed here.
+A future correction must preserve token/source identity and separate match-marker
+semantics from result-marker semantics, with explicit macro/optional boundaries.
