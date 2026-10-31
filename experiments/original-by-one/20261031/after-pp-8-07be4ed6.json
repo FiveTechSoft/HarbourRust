@@ -1,0 +1,253 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next8afterpp",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/ppapi.prg",
+      "sha256": "7d6b6902c42fa2e44fac5e8dc39efe56388f154be1641de87703441d787228a6",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "runtime-preprocessor-GT",
+      "dependencies": "__pp_Init/Process/AddRule/StdRules;CLS;WAIT;runtime script strings",
+      "boundary": "Not run: runtime preprocessor library plus scripted key/screen fixture",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 10: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 10: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/pragma.prg",
+      "sha256": "544ae06f493a89dfddcad7c601f33088f2c4d3bf5d9c3a54e494e79abd198776",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "compile-only-expected-invalid-pragma-value",
+      "profile": "compile-negative-pragma",
+      "dependencies": "TracePragmas/Shortcut/ExitSeverity syntax;invalid WarningLevel8",
+      "boundary": "Compile-only: original explicitly expects invalid-value error;NOTEST",
+      "reference_build_exit": 6,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #pragma in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #pragma in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "reference_diagnostic": "\n/tmp/harbour-reference/tests/pragma.prg(7) Error E0024  Error in #pragma\n\n/tmp/harbour-reference/tests/pragma.prg(8) Error E0024  Error in #pragma\n\n/tmp/harbour-reference/tests/pragma.prg(28) Error E0024  Error in #pragma\n\n/tmp/harbour-reference/tests/pragma.prg(40) Error E0024  Error in #pragma\n\n/tmp/harbour-reference/tests/pragma.prg(52) Error E0024  Error in #pragma\nhbmk2: Error: Running Harbour compiler (built-in). 1\n('/tmp/harbour-reference/bin/linux/gcc/harbour') -n2 /tmp/harbour-reference/tests/pragma.prg -q -o/tmp/hbmk_nqfhji.dir/ -i/tmp/harbour-reference/include\nHarbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n(3) #pragma TracePragmas set to 'On'\n(4) #pragma ExitSeverity set to '1'\n(12) #pragma Shortcut set to 'On'\n(14) #pragma Shortcut set to 'Off'\n(16) #pragma Shortcut set to 'On'\n(18) #pragma Shortcut set to 'OFF'\n(20) #pragma Shortcut set to 'On'\n(22) #pragma Shortcut set to 'OFF'\n(24) #pragma Shortcut set to 'On'\n(26) #pragma Shortcut set to 'OFF'\n(43) #pragma ExitSeverity set to '0'\n(44) #pragma ExitSeverity set to '1'\n(45) #pragma ExitSeverity set to '0'\n(46) #pragma ExitSeverity set to '1'\n(47) #pragma ExitSeverity set to '0'\n(48) #pragma ExitSeverity set to '2'\n(49) #pragma ExitSeverity set to '1'\n\n5 errors\n\nNo code generated.\n"
+    },
+    {
+      "file": "tests/procline.prg",
+      "sha256": "8bdaa18da5476c96b1c76688c013673ccb82049470606fba3367e93c125b5121",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "source-line-introspection-existing-control",
+      "dependencies": "ProcLine;literal expected labels differ actual source lines",
+      "boundary": "Safe deterministic source-line output;actual behavior wins stale labels",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 123,
+        "stdout_sha256": "94966c7ec9d6293543cc0e7cece15ffb8710bfa9fd31fc7970d1a7feeb76298f",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 123,
+            "stdout_sha256": "94966c7ec9d6293543cc0e7cece15ffb8710bfa9fd31fc7970d1a7feeb76298f",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 123,
+            "stdout_sha256": "94966c7ec9d6293543cc0e7cece15ffb8710bfa9fd31fc7970d1a7feeb76298f",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        }
+      }
+    },
+    {
+      "file": "tests/procname.prg",
+      "sha256": "383cb23145c16bf61f701c3a369a7d94415f9eaa89bbb9cde98a139edf9f24ae",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+Two+Three+Four+Five",
+      "build_unit": "single-source-executable",
+      "profile": "callstack-name-line-introspection",
+      "dependencies": "ProcName depth;ProcLine postincrement;Empty;hb_eol",
+      "boundary": "Safe bounded console callstack query",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 150,
+        "stdout_sha256": "f9195a66f0d3aa743d77d673ed1bb438397e9872055e5a808a018918a0400243",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 31: `ProcName` supports only no argument or literal zero (current frame); ancestor/dynamic levels are not in this increment",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 31: `ProcName` supports only no argument or literal zero (current frame); ancestor/dynamic levels are not in this increment",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/profiler.prg",
+      "sha256": "4c3e85d7f08fe0c60c1c77557e81d1f78252fdd0ba77221d6feaa239a3619339",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+DrawScreen+DoNothingForTwoSeconds+CallMe500Times+Browser",
+      "build_unit": "single-source-executable",
+      "profile": "runtime-profiler-GT",
+      "dependencies": "HBProfile gather/report;MemoEdit;TBrowse;Inkey",
+      "boundary": "Not run: library/profiling profile and scripted interactive GT needed",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 135: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 135: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/rdd.prg",
+      "sha256": "e966fa02019a304fb524662d332d3398dfdd2f0589ede592164651e0ac4eab6a",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "RDD-multidriver-file-roundtrip",
+      "dependencies": "DBFCDX/SDF/DELIM/DBFNTX/DBF;testdbf create/drop;RDD list",
+      "boundary": "Not run: disposable multidriver DBF fixture and error handler needed",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 10: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 10: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/rdd2.prg",
+      "sha256": "f1b7e88ad67109b20801835d884e54c74e9f1ef20212783a003cfe59d1a6a63d",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+ErrorSys+MyError+CompareArray+NotifyUser",
+      "build_unit": "single-source-executable",
+      "profile": "RDD-index-validation",
+      "dependencies": "100records;DBFNTX/DBFCDX;date/memo;index/filter/exact;deletes test_?.*;optional ADS",
+      "boundary": "Not run: explicit isolated fixture and RDD profile;default args only prints usage not validation",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 293: unterminated dotted word `.dbf` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 293: unterminated dotted word `.dbf` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/read.prg",
+      "sha256": "9e8e683f190ad788958cd9d0cf0daa943a6143dd19de2b51fbabf557e073b5cd",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+ShowVar",
+      "build_unit": "single-source-executable",
+      "profile": "GT-GET-system",
+      "dependencies": "GET object/array lvalues;READ;F2 key;Alert",
+      "boundary": "Not run: scripted keyboard/GET state and screen fixture needed",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 122: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 122: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}
