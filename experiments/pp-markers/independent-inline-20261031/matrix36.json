@@ -1,0 +1,364 @@
+{
+  "rows": [
+    {
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New, VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_New, 7\n",
+      "own_exit": 0,
+      "own_output": "? Test_New, 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New + VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_New + 7\n",
+      "own_exit": 0,
+      "own_output": "? Test_New + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\nWRAP(JOIN Test New(),VALUE)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nWRAP(Test_New(),7)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(Test_New(),7)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? VALUE,JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? 7,Test_New\n",
+      "own_exit": 0,
+      "own_output": "? 7,Test_New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN VALUE New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? JOIN 7 New\n",
+      "own_exit": 0,
+      "own_output": "? JOIN 7 New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? \"JOIN Test New\",VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? \"JOIN Test New\",7\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test New\",7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New, VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_New, 7\n",
+      "own_exit": 0,
+      "own_output": "? Test_New, 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New + VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_New + 7\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test New + 7\n",
+      "own_error": "",
+      "match": false,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New(),VALUE)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nWRAP(Test_New(),7)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(Test_New ( ),7)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? VALUE,JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? 7,Test_New\n",
+      "own_exit": 0,
+      "own_output": "? 7,Test_New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN VALUE New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? JOIN 7 New\n",
+      "own_exit": 0,
+      "own_output": "? JOIN 7 New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? \"JOIN Test New\",VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? \"JOIN Test New\",7\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test New\",7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define VALUE F(1)\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New, VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_New, F(1)\n",
+      "own_exit": 0,
+      "own_output": "? Test_New, F(1)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE F(1)\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New + VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_New + F(1)\n",
+      "own_exit": 0,
+      "own_output": "? Test_New + F(1)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE F(1)\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\nWRAP(JOIN Test New(),VALUE)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nWRAP(Test_New(),F(1))\n",
+      "own_exit": 0,
+      "own_output": "WRAP(Test_New(),F(1))\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE F(1)\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? VALUE,JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? F(1),Test_New\n",
+      "own_exit": 0,
+      "own_output": "? F(1),Test_New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE F(1)\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN VALUE New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? JOIN F(1) New\n",
+      "own_exit": 0,
+      "own_output": "? JOIN F(1) New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define VALUE F(1)\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? \"JOIN Test New\",VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? \"JOIN Test New\",F(1)\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test New\",F(1)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define VALUE F(1)\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New, VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_New, F(1)\n",
+      "own_exit": 0,
+      "own_output": "? Test_New, F(1)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE F(1)\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New + VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_New + F(1)\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test New + F(1)\n",
+      "own_error": "",
+      "match": false,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE F(1)\n#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New(),VALUE)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nWRAP(Test_New(),F(1))\n",
+      "own_exit": 0,
+      "own_output": "WRAP(Test_New ( ),F(1))\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE F(1)\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? VALUE,JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? F(1),Test_New\n",
+      "own_exit": 0,
+      "own_output": "? F(1),Test_New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE F(1)\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN VALUE New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? F_(1) New\n",
+      "own_exit": 0,
+      "own_output": "? JOIN F(1) New\n",
+      "own_error": "",
+      "match": false,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE F(1)\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? \"JOIN Test New\",VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? \"JOIN Test New\",F(1)\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test New\",F(1)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define VALUE [a//b]\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New, VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_New, [a\n",
+      "own_exit": 0,
+      "own_output": "? Test_New, [a\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE [a//b]\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New + VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_New + [a\n",
+      "own_exit": 0,
+      "own_output": "? Test_New + [a\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE [a//b]\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\nWRAP(JOIN Test New(),VALUE)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nWRAP(Test_New(),[a)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(Test_New(),[a)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE [a//b]\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? VALUE,JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? [a,Test_New\n",
+      "own_exit": 0,
+      "own_output": "? [a,Test_New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE [a//b]\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN VALUE New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? JOIN [a New\n",
+      "own_exit": 0,
+      "own_output": "? JOIN [a New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define VALUE [a//b]\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? \"JOIN Test New\",VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? \"JOIN Test New\",[a\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test New\",[a\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define VALUE [a//b]\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New, VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_New, [a\n",
+      "own_exit": 0,
+      "own_output": "? Test_New, [a\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE [a//b]\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New + VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_New + [a\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test New + [a\n",
+      "own_error": "",
+      "match": false,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE [a//b]\n#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New(),VALUE)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nWRAP(Test_New(),[a)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(Test_New ( ),[a)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE [a//b]\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? VALUE,JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? [a,Test_New\n",
+      "own_exit": 0,
+      "own_output": "? [a,Test_New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define VALUE [a//b]\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN VALUE New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? JOIN [a New\n",
+      "own_exit": 0,
+      "own_output": "? JOIN [a New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define VALUE [a//b]\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? \"JOIN Test New\",VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? \"JOIN Test New\",[a\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test New\",[a\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    }
+  ]
+}

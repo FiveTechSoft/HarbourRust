@@ -1,0 +1,95 @@
+{
+  "rows": [
+    {
+      "name": "unsupported_macro",
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New[VALUE]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_New[7]\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test New[7]\n",
+      "own_error": "",
+      "baseline_exit": 0,
+      "baseline_output": "? JOIN Test New[7]\n",
+      "match": false,
+      "baseline_match": false
+    },
+    {
+      "name": "no_macro_unsupported",
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? VALUE, JOIN Test New[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? 7, Test_New[1]\n",
+      "own_exit": 0,
+      "own_output": "? 7, JOIN Test New[1]\n",
+      "own_error": "",
+      "baseline_exit": 0,
+      "baseline_output": "? 7, JOIN Test New[1]\n",
+      "match": false,
+      "baseline_match": false
+    },
+    {
+      "name": "cycle",
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> => JOIN <a>\n? VALUE,JOIN Test\n",
+      "reference_exit": 1,
+      "reference_output": "\n\n? 7,JOIN Test\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 3: fixed translation expansion too deep (recursive translate?)\n",
+      "baseline_exit": 0,
+      "baseline_output": "? 7,JOIN Test\n",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "name": "quoted",
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? \"JOIN Test New\",VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? \"JOIN Test New\",7\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test New\",7\n",
+      "own_error": "",
+      "baseline_exit": 0,
+      "baseline_output": "? \"JOIN Test New\",7\n",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "name": "factory",
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n#xcommand MAKE => #xcommand SHOW JOIN Test New => OUT(VALUE)\nMAKE\nSHOW JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\nSHOW Test_New\n",
+      "own_exit": 0,
+      "own_output": "SHOW Test_New\n",
+      "own_error": "",
+      "baseline_exit": 0,
+      "baseline_output": "SHOW Test_New\n",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "name": "define_siblings",
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n#xcommand BOTH => ? JOIN Test New,VALUE;#define VALUE 8;? JOIN Test New,VALUE\nBOTH\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? Test_New,7;? Test_New,8\n",
+      "own_exit": 0,
+      "own_output": "? Test_New,7\n? Test_New,8\n",
+      "own_error": "",
+      "baseline_exit": 0,
+      "baseline_output": "? JOIN Test New,7\n? JOIN Test New,8\n",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "name": "undef_siblings",
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n#xcommand BOTH => ? JOIN Test New,VALUE;#undef VALUE;? JOIN Test New\nBOTH\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? Test_New,7;? Test_New\n",
+      "own_exit": 0,
+      "own_output": "? Test_New,7\n? Test_New\n",
+      "own_error": "",
+      "baseline_exit": 0,
+      "baseline_output": "? JOIN Test New,7\n? Test_New\n",
+      "match": true,
+      "baseline_match": false
+    }
+  ]
+}

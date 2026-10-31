@@ -1,0 +1,88 @@
+{
+  "rows": [
+    {
+      "file": "t1342_pp_independent_ident.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1          7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1          7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1          7",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1343_pp_independent_plain.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1          7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1          7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1          7",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1344_pp_independent_temporal.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1          7\n         1          8",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1          7\n         1          8",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1          7\n         1          8",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1345_pp_independent_call.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1          7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1          7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1          7",
+          "stderr": ""
+        }
+      }
+    }
+  ]
+}
