@@ -26,8 +26,8 @@ with an ungrouped logical result is correctly left untranslated by both pp
 implementations (t1277); it is NOT a positive runtime case. First fixture used a
 trailing directive semicolon that swallowed PROCEDURE in both implementations;
 fixed the fixture instead of changing the pp continuation contract.
-Local full gates:1276manifest+5aux=1281defaultPASS,584LLVM PASS. All268originals x4
+Local+independent remote full gates:1276manifest+5aux=1281defaultPASS,584LLVM PASS. All268originals x4
 first diagnostics/exit identical (21/15Linux20/14Windows);14reviewed unchanged
 Linux console originals freshly exact in Harbour/default/LLVM. No original
 unlock,size/speed,main,runtime/ABI/ownership/debugger change. Independent remote
-verification follows publication. Historical xcommand removal mismatch remains.
+2778replay,diagnostic audit,14originals and full gates verified. Historical xcommand removal mismatch remains.
