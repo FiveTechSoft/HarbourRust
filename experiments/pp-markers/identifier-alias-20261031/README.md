@@ -28,5 +28,5 @@ Fourteen reviewed unchanged Linux originals match newly built Harbour exactly.
 268x4 audit has zero diagnostic changes, accepted counts remain21/15 Linux,
 20/14 Windows. METHOD helpers and the full class header are still wrong;
 no newly compiled original, no class runtime/ABI/ownership changes, no main
-change and no new size/speed claim. Independent remote checks are required
-before closeout; their completion is recorded separately.
+change and no new size/speed claim. Independent remote clone536ab00 also passes1308/634,205focused checks
+(48known gaps excluded),268x4zero diagnostic deltas and14exact originals.

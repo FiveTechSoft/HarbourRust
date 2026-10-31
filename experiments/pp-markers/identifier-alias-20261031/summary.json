@@ -19,5 +19,14 @@
   },
   "original_runtime_exact_linux": 14,
   "runtime_own_exact_linux": 6,
-  "scope": "object-like ASCII identifier aliases only;no METHOD whole-header/original unlock;not general macro phase completion"
+  "scope": "object-like ASCII identifier aliases only;no METHOD whole-header/original unlock;not general macro phase completion",
+  "independent_remote": {
+    "compiler": "536ab00",
+    "default_pass": 1308,
+    "llvm_pass": 634,
+    "focused_alias_pass": 205,
+    "known_matrix_gaps": 48,
+    "original_runtime_exact_linux": 14,
+    "original_diagnostic_changes_268x4": 0
+  }
 }
