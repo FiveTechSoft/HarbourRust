@@ -1,0 +1,2094 @@
+{
+  "rows": [
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_<b>\nJOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\nTest_New\n",
+      "candidate_exit": 0,
+      "candidate_output": "Test_New\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New(1,2)\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_<b>\nWRAP(JOIN Test New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(Test_New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(Test_New)\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? \"JOIN Test New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test New\"\n",
+      "candidate_exit": 0,
+      "candidate_output": "? \"JOIN Test New\"\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New + 7\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a><b>\nJOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\nTestNew\n",
+      "candidate_exit": 0,
+      "candidate_output": "TestNew\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a><b>\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a><b>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew(1,2)\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a><b>\nWRAP(JOIN Test New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(TestNew)\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(TestNew)\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a><b>\n? \"JOIN Test New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test New\"\n",
+      "candidate_exit": 0,
+      "candidate_output": "? \"JOIN Test New\"\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a><b>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew + 7\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\nJOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(Test,New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "OUT(Test,New)\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New)\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New)(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New)(1,2)\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\nWRAP(JOIN Test New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,New))\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? \"JOIN Test New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test New\"\n",
+      "candidate_exit": 0,
+      "candidate_output": "? \"JOIN Test New\"\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New) + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New) + 7\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\nTest_New\n",
+      "candidate_exit": 0,
+      "candidate_output": "Test_New\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New ( 1 , 2 )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(Test_New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(Test_New)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? \"JOIN Test New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test New\"\n",
+      "candidate_exit": 0,
+      "candidate_output": "? \"JOIN Test New\"\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New + 7\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a><b>\nJOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\nTestNew\n",
+      "candidate_exit": 0,
+      "candidate_output": "TestNew\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a><b>\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a><b>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew ( 1 , 2 )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a><b>\nWRAP(JOIN Test New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(TestNew)\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(TestNew)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a><b>\n? \"JOIN Test New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test New\"\n",
+      "candidate_exit": 0,
+      "candidate_output": "? \"JOIN Test New\"\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a><b>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew + 7\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nJOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(Test,New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "OUT(Test,New)\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New(1,2))\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New ( 1 , 2 ))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,New))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? \"JOIN Test New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test New\"\n",
+      "candidate_exit": 0,
+      "candidate_output": "? \"JOIN Test New\"\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New + 7)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New + 7)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_<b>\nJOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\nTest_New\n",
+      "candidate_exit": 0,
+      "candidate_output": "Test_New\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New(1,2)\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_<b>\nWRAP(JOIN Test New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(Test_New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(Test_New)\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_<b>\n? \"JOIN Test New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test New\"\n",
+      "candidate_exit": 0,
+      "candidate_output": "? \"JOIN Test New\"\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New + 7\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a><b>\nJOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\nTestNew\n",
+      "candidate_exit": 0,
+      "candidate_output": "TestNew\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a><b>\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a><b>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew(1,2)\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a><b>\nWRAP(JOIN Test New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(TestNew)\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(TestNew)\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a><b>\n? \"JOIN Test New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test New\"\n",
+      "candidate_exit": 0,
+      "candidate_output": "? \"JOIN Test New\"\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a><b>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew + 7\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>,<b>)\nJOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(Test,New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "OUT(Test,New)\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New)\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New)(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New)(1,2)\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>,<b>)\nWRAP(JOIN Test New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,New))\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? \"JOIN Test New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test New\"\n",
+      "candidate_exit": 0,
+      "candidate_output": "? \"JOIN Test New\"\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New) + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New) + 7\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\nTest_New\n",
+      "candidate_exit": 0,
+      "candidate_output": "Test_New\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New ( 1 , 2 )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(Test_New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(Test_New)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? \"JOIN Test New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test New\"\n",
+      "candidate_exit": 0,
+      "candidate_output": "? \"JOIN Test New\"\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New + 7\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a><b>\nJOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\nTestNew\n",
+      "candidate_exit": 0,
+      "candidate_output": "TestNew\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a><b>\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a><b>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew ( 1 , 2 )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a><b>\nWRAP(JOIN Test New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(TestNew)\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(TestNew)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a><b>\n? \"JOIN Test New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test New\"\n",
+      "candidate_exit": 0,
+      "candidate_output": "? \"JOIN Test New\"\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a><b>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew + 7\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => OUT(<a>,<b>)\nJOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(Test,New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "OUT(Test,New)\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New(1,2))\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New ( 1 , 2 ))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,New))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => OUT(<a>,<b>)\n? \"JOIN Test New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test New\"\n",
+      "candidate_exit": 0,
+      "candidate_output": "? \"JOIN Test New\"\n",
+      "candidate_error": "",
+      "baseline_match": true,
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New + 7)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New + 7)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,New))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New()\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New())\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New ( ))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New())\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New()))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,New ( )))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New(1,2))\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New ( 1 , 2 ))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New(1,2))\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New(1,2)))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,New ( 1 , 2 )))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New(1,2)+7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New(1,2)+7)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New ( 1 , 2 ) + 7)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New(1,2)+7)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New(1,2)+7))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,New ( 1 , 2 ) + 7))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New + 7)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New + 7)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New + 7)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New + 7))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,New + 7))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New) Other\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New) Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New Other)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New) Other)\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,New) Other)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New JOIN Other Last\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New) OUT(Other,Last)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New) OUT(Other,Last)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New JOIN Other Last)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New) OUT(Other,Last))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,New) OUT(Other,Last))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New + JOIN Other Last\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New + JOIN) Other Last\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New + JOIN) Other Last\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New + JOIN Other Last)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New + JOIN) Other Last)\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,New + JOIN) Other Last)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New[1])\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test New[1]\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New[1])\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New[1]))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test New[1])\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New[1,2]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New[1,2])\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test New[1,2]\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New[1,2])\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New[1,2]))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test New[1,2])\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New->Field\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New->Field)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test New->Field\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New->Field)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New->Field))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test New->Field)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New:Field\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New:Field)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test New:Field\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New:Field)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New:Field))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test New:Field)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New:Call(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New:Call(1))\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test New:Call(1)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New:Call(1))\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New:Call(1)))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test New:Call(1))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test -New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,-New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,- New)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test -New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,-New))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,- New))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test +New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,+New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,+ New)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test +New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,+New))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,+ New))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test !New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,!New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test !New\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test !New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,!New))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test !New)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test .NOT. New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,! New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test .NOT. New\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test .NOT. New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,! New))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test .NOT. New)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test (New)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,(New))\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,( New ))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test (New))\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,(New)))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,( New )))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test (New+Other)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,(New+Other))\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,( New + Other ))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test (New+Other))\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,(New+Other)))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,( New + Other )))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test \"New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,\"New\")\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,\"New\")\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test \"New\")\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,\"New\"))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,\"New\"))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test e\"New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,\"New\")\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test e\"New\"\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test e\"New\")\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,\"New\"))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test e\"New\")\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test [New]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,[New])\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test [New]\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test [New])\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,[New]))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test [New])\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test {1,2}\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,{1,2})\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test {1,2}\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test {1,2})\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,{1,2}))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test {1,2})\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test {||New}\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,{||New})\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test {||New}\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test {||New})\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,{||New}))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test {||New})\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test &New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,&New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test &New\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test &New)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,&New))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test &New)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New++\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New++)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test New++\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New++)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New++))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test New++)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New := 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New := 7)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test New := 7\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New := 7)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New := 7))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test New := 7)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New == Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New == Other)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test New == Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New == Other)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New == Other))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test New == Other)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New .AND. Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New .AND. Other)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test New .AND. Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New .AND. Other)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New .AND. Other))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test New .AND. Other)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New +\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New +)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test New +\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New +)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New +))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(JOIN Test New +)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New(1\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New(1)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test New(1\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New(1))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,New ( 1 ))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New,7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New),7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New),7\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New,7)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New),7)\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,New),7)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New))\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\nWRAP(JOIN Test New))\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test,New)))\n",
+      "candidate_exit": 0,
+      "candidate_output": "WRAP(OUT(Test,New)))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New()\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New()\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New ( )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New ( 1 , 2 )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New + 7\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test (New)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_(New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_( New )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test \"New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_\"New\"\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_\"New\"\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New Other\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New[1]\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test New[1]\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New+Other()\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New+Other()\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New + Other ( )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New + JOIN Other Last\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + Other_Last\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New + Other_Last\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a><b>\n? JOIN Test New()\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew()\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew ( )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a><b>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew ( 1 , 2 )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a><b>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew + 7\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a><b>\n? JOIN Test (New)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test(New)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test( New )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a><b>\n? JOIN Test \"New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test\"New\"\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test\"New\"\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a><b>\n? JOIN Test New Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew Other\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a><b>\n? JOIN Test New[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew[1]\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test New[1]\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a><b>\n? JOIN Test New+Other()\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew+Other()\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew + Other ( )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a><b>\n? JOIN Test New + JOIN Other Last\n",
+      "reference_exit": 0,
+      "reference_output": "\n? TestNew + OtherLast\n",
+      "candidate_exit": 0,
+      "candidate_output": "? TestNew + OtherLast\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New()\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New())\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New ( ))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New(1,2))\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New ( 1 , 2 ))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New + 7)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New + 7)\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test (New)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,(New))\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,( New ))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test \"New\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,\"New\")\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,\"New\")\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New) Other\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New) Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New[1])\n",
+      "candidate_exit": 0,
+      "candidate_output": "? JOIN Test New[1]\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New+Other()\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New+Other())\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New + Other ( ))\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<a>,<b>)\n? JOIN Test New + JOIN Other Last\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test,New + JOIN) Other Last\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(Test,New + JOIN) Other Last\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New + 7\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New ( 1 , 2 )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New + JOIN Other Last\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + Other_Last\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New + Other_Last\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New Other\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_ <b>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ New + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_ New + 7\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_ <b>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ New(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_ New ( 1 , 2 )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_ <b>\n? JOIN Test New + JOIN Other Last\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ New + Other_ Last\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_ New + Other_ Last\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_ <b>\n? JOIN Test New Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ New Other\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_ New Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a> _<b>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test _New + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test _New + 7\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a> _<b>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test _New(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test _New ( 1 , 2 )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a> _<b>\n? JOIN Test New + JOIN Other Last\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test _New + Other _Last\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test _New + Other _Last\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a> _<b>\n? JOIN Test New Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test _New Other\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test _New Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => PREFIX<b>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? PREFIXNew + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? PREFIXNew + 7\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => PREFIX<b>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? PREFIXNew(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? PREFIXNew ( 1 , 2 )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => PREFIX<b>\n? JOIN Test New + JOIN Other Last\n",
+      "reference_exit": 0,
+      "reference_output": "\n? PREFIXNew + PREFIXLast\n",
+      "candidate_exit": 0,
+      "candidate_output": "? PREFIXNew + PREFIXLast\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => PREFIX<b>\n? JOIN Test New Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? PREFIXNew Other\n",
+      "candidate_exit": 0,
+      "candidate_output": "? PREFIXNew Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <b>SUFFIX\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? New + 7SUFFIX\n",
+      "candidate_exit": 0,
+      "candidate_output": "? New + 7SUFFIX\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <b>SUFFIX\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? New(1,2)SUFFIX\n",
+      "candidate_exit": 0,
+      "candidate_output": "? New ( 1 , 2 )SUFFIX\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <b>SUFFIX\n? JOIN Test New + JOIN Other Last\n",
+      "reference_exit": 0,
+      "reference_output": "\n? New + OtherSUFFIX Last\n",
+      "candidate_exit": 0,
+      "candidate_output": "? New + JOINSUFFIX Other Last\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <b>SUFFIX\n? JOIN Test New Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? NewSUFFIX Other\n",
+      "candidate_exit": 0,
+      "candidate_output": "? NewSUFFIX Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <b>_<a>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? New + 7_Test\n",
+      "candidate_exit": 0,
+      "candidate_output": "? New + 7_Test\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <b>_<a>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? New(1,2)_Test\n",
+      "candidate_exit": 0,
+      "candidate_output": "? New ( 1 , 2 )_Test\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <b>_<a>\n? JOIN Test New + JOIN Other Last\n",
+      "reference_exit": 0,
+      "reference_output": "\n? New + Test__ Other Last\n",
+      "candidate_exit": 0,
+      "candidate_output": "? New + JOIN_Test Other Last\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <b>_<a>\n? JOIN Test New Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? New_Test Other\n",
+      "candidate_exit": 0,
+      "candidate_output": "? New_Test Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b> + <b>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + 7 + New + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New + 7 + New + 7\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b> + <b>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New(1,2) + New(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New ( 1 , 2 ) + New ( 1 , 2 )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b> + <b>\n? JOIN Test New + JOIN Other Last\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + JOIN + New + Other_Last + Last\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New + JOIN + New + Other_Last + Last\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b> + <b>\n? JOIN Test New Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + New Other\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New + New Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<b>),<a>_<b>\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(New + 7),Test_New + 7\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(New + 7),Test_New + 7\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<b>),<a>_<b>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(New(1,2)),Test_New(1,2)\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(New ( 1 , 2 )),Test_New ( 1 , 2 )\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<b>),<a>_<b>\n? JOIN Test New + JOIN Other Last\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(New + JOIN),Test_New + OUT(Last),Other_Last\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(New + JOIN),Test_New + OUT(Last),Other_Last\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<b>),<a>_<b>\n? JOIN Test New Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(New),Test_New Other\n",
+      "candidate_exit": 0,
+      "candidate_output": "? OUT(New),Test_New Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>()\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + 7()\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New + 7()\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>()\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New(1,2)()\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New ( 1 , 2 )()\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>()\n? JOIN Test New + JOIN Other Last\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + JOIN() Other Last\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New + JOIN() Other Last\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>()\n? JOIN Test New Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New() Other\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New() Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b> TAIL\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + 7 TAIL\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New + 7 TAIL\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b> TAIL\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New(1,2) TAIL\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New ( 1 , 2 ) TAIL\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b> TAIL\n? JOIN Test New + JOIN Other Last\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + TAIL_Other TAIL Last\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New + TAIL_Other TAIL Last\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b> TAIL\n? JOIN Test New Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New TAIL Other\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_New TAIL Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<\"b\">\n? JOIN Test New + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_\"New + 7\"\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_\"New + 7\"\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<\"b\">\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_\"New(1,2)\"\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_\"New(1,2)\"\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<\"b\">\n? JOIN Test New + JOIN Other Last\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_\"New + JOIN\" Other Last\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_\"New + JOIN\" Other Last\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<\"b\">\n? JOIN Test New Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_\"New\" Other\n",
+      "candidate_exit": 0,
+      "candidate_output": "? Test_\"New\" Other\n",
+      "candidate_error": "",
+      "baseline_match": false,
+      "match": true
+    }
+  ]
+}

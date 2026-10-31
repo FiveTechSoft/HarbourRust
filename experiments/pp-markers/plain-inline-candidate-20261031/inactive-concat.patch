@@ -1,0 +1,78 @@
+--- production/pp.rs
++++ inactive/pp.rs
+@@ -1090,6 +1090,33 @@
+     }
+ }
+ 
++fn plain_tail_translation(c:&Cmd)->bool{
++ c.translation && c.pattern.len()==3 && marker_ident(&c.pattern[0])
++ && c.pattern[1].starts_with("<!") && c.pattern[1].ends_with("!>")
++ && c.result.trim()==format!("<{}>_<{}>",marker_name(&c.pattern[1][1..c.pattern[1].len()-1]),&c.pattern[2][1..c.pattern[2].len()-1])
++ && c.pattern[2].starts_with('<') && c.pattern[2].ends_with('>') && marker_ident(&c.pattern[2][1..c.pattern[2].len()-1])
++}
++fn plain_tail_prefix(t:&[String])->Option<usize>{
++ fn expr(t:&[String],p:&mut usize,d:usize)->bool{
++  if d>64 || !atom(t,p,d+1){return false;}
++  while t.get(*p).map(|s|matches!(s.as_str(),"+"|"-"|"*"|"/"|"%"|"^"|"**")).unwrap_or(false){*p+=1;if !atom(t,p,d+1){return false;}}
++  true
++ }
++ fn atom(t:&[String],p:&mut usize,d:usize)->bool{
++  if d>64{return false;}let s=match t.get(*p){Some(s)=>s,None=>return false};
++  if s=="+"||s=="-"{*p+=1;return atom(t,p,d+1);}
++  if s=="("{*p+=1;if !expr(t,p,d+1)||t.get(*p).map(String::as_str)!=Some(")"){return false;}*p+=1;return true;}
++  let id=marker_ident(s);if !id&&!s.bytes().all(|c|c.is_ascii_digit())&&!(s.len()>1&&((s.starts_with('"')&&s.ends_with('"'))||(s.starts_with('\'')&&s.ends_with('\'')))){return false;}
++  *p+=1;
++  if id&&t.get(*p).map(String::as_str)==Some("("){
++   *p+=1;if t.get(*p).map(String::as_str)!=Some(")"){loop{if !expr(t,p,d+1){return false;}if t.get(*p).map(String::as_str)!=Some(","){break;}*p+=1;}}
++   if t.get(*p).map(String::as_str)!=Some(")"){return false;}*p+=1;
++  }true
++ }
++ let mut p=0;if !expr(t,&mut p,0){return None;}
++ if let Some(next)=t.get(p){if !(marker_ident(next)||matches!(next.as_str(),","|")"|";")){return None;}}
++ Some(p)
++}
+ fn identifier_translation(c:&Cmd)->bool{
+     c.translation && c.pattern.first().map(|t|!t.starts_with('<')).unwrap_or(false)
+         && c.pattern.iter().skip(1).any(|t|t.starts_with("<!"))
+@@ -1100,7 +1127,7 @@
+ }
+ // New identifier captures enter inline mode only with no related rules.
+ fn active_fixed_translation(c: &Cmd, rules: &[Cmd], calls: &[Cmd]) -> bool {
+-    if identifier_translation(c){return !rules.iter().any(|other|other.rule_id!=c.rule_id&&c.pattern.first().zip(other.pattern.first()).map(|(a,b)|lit_match(a,b)||lit_match(b,a)).unwrap_or(false))&&!calls.iter().any(|other|c.pattern.first().zip(other.pattern.first()).map(|(a,b)|lit_match(a,b)||lit_match(b,a)).unwrap_or(false));}
++    if identifier_translation(c)||plain_tail_translation(c){return !rules.iter().any(|other|other.rule_id!=c.rule_id&&c.pattern.first().zip(other.pattern.first()).map(|(a,b)|lit_match(a,b)||lit_match(b,a)).unwrap_or(false))&&!calls.iter().any(|other|c.pattern.first().zip(other.pattern.first()).map(|(a,b)|lit_match(a,b)||lit_match(b,a)).unwrap_or(false));}
+     fixed_translation(c) && !rules.iter().filter(|other| other.translation && !fixed_translation(other)).chain(calls.iter()).any(|other| c.pattern.first().zip(other.pattern.first()).map(|(a,b)|lit_match(a,b)||lit_match(b,a)).unwrap_or(false))
+ }
+ fn expand_fixed_translations(text: &str, rules: &[Cmd], calls: &[Cmd], line: usize) -> Result<String, String> {
+@@ -1114,19 +1141,24 @@
+         while i < tokens.len() {
+             let token = &tokens[i];
+             if escape_literal_end(token,0)==Some(token.len()) || token.starts_with('"') || token.starts_with('\'') || (token.starts_with('[') && token.ends_with(']')) { i += 1; continue; }
+-            let found = rules.iter().rev().find(|c| active_fixed_translation(c,rules,calls)
+-                && i+c.pattern.len()<=tokens.len()
+-                && c.pattern.iter().zip(&tokens[i..]).all(|(p,t)|
+-                    if p.starts_with("<!")&&p.ends_with("!>"){marker_ident(t)}else if c.restricted_exact {t.eq_ignore_ascii_case(p)} else {lit_match(t,p)}));
+-            if let Some(rule) = found {
++            let found = rules.iter().rev().find_map(|c|{
++                if !active_fixed_translation(c,rules,calls){return None;}
++                if plain_tail_translation(c){
++                    if i+2>=tokens.len() || !(if c.restricted_exact {tokens[i].eq_ignore_ascii_case(&c.pattern[0])}else{lit_match(&tokens[i],&c.pattern[0])}) || !marker_ident(&tokens[i+1]){return None;}
++                    let n=plain_tail_prefix(&tokens[i+2..])?;
++                    return Some((c,n+2,vec![Capture::from_tokens(&tokens[i+1..i+2]),Capture::from_tokens(&tokens[i+2..i+2+n])]));
++                }
++                if i+c.pattern.len()>tokens.len()||!c.pattern.iter().zip(&tokens[i..]).all(|(p,t)|if p.starts_with("<!")&&p.ends_with("!>"){marker_ident(t)}else if c.restricted_exact {t.eq_ignore_ascii_case(p)} else {lit_match(t,p)}){return None;}
++                let caps=c.pattern.iter().zip(&tokens[i..]).filter(|(p,_)|p.starts_with("<!")).map(|(_,t)|Capture::from_tokens(std::slice::from_ref(t))).collect();Some((c,c.pattern.len(),caps))
++            });
++            if let Some((rule,consumed,caps)) = found {
+                 replacements += 1;
+                 if replacements > 10000 { return Err(format!("line {}: fixed translation replacement limit exceeded",line)); }
+                 let (start,_) = spans[&(tokens[i].as_ptr() as usize)];
+-                let (_,end) = spans[&(tokens[i+rule.pattern.len()-1].as_ptr() as usize)];
++                let (_,end) = spans[&(tokens[i+consumed-1].as_ptr() as usize)];
+                 out.push_str(&current[at..start]);
+-                let caps:Vec<Capture>=rule.pattern.iter().zip(&tokens[i..]).filter(|(p,_)|p.starts_with("<!")).map(|(_,t)|Capture::from_tokens(std::slice::from_ref(t))).collect();
+                 out.push_str(&render_command(rule,&caps,&current,&tokens,line)?);
+-                at=end; i+=rule.pattern.len(); changed=true;
++                at=end; i+=consumed; changed=true;
+             } else { i+=1; }
+         }
+         if !changed { return Ok(current); }
