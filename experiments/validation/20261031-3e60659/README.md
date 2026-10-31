@@ -15,7 +15,7 @@ kind-aware eval. Compiler commit 3e60659, branch experiment/llvm-scalar-aot.
   byte-exact on Linux AND Wine, 16000 bytes each
   (t1_original_oracle.out, t1_wine.out). Source NOT committed (license
   unresolved; MIT repo). Pins: md5 2a4b9aac74885cd38a2b95e1f66237fe,
-  sha256 0205eaa1f29140bd069a4e988955fca45f8b4a20f5027085fd8716b41757ad.
+  sha256 250205eaa1f29140bd069a4e988955fca45f8b4a20f5027085fd8716b41757ad.
 - Verifier evidence (independent): verifier-evidence/ - snapshot results,
   negatives, source preservation, nil-arithmetic, t1v2 build log, published
   identity audit, revert identity audit (revert-identity-69e3b891.json:
@@ -43,9 +43,9 @@ kind-aware eval. Compiler commit 3e60659, branch experiment/llvm-scalar-aot.
 3. 96446df reverts 5835276. Net tree diff 3e60659..96446df is EMPTY
    (verifier-confirmed on the remote). src/ was never touched by the harness
    commit or its revert.
-4. Attempt 2 (14:46, under the reverted harness) was killed after ~2 minutes
-   for the guard fix and accredits NOTHING. Log preserved:
-   llvm-gate-attempt2-killed-for-guard-fix.log.
+4. Attempt 2 (14:46, under 5835276's retry harness - the one the audit later
+   proved unsafe) was killed after ~2 minutes and accredits NOTHING. Log
+   preserved: llvm-gate-attempt2-killed-for-guard-fix.log.
 
 ## What this bundle does NOT establish
 

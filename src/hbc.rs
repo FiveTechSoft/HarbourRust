@@ -3185,8 +3185,11 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     return Ok(());
                 }
                 if is_builtin(id,"padr") {
+                    // Arity belongs to the checker; never index past args[0]
+                    // here - PadR() with no arguments must reach the checker's
+                    // named rejection, not panic the compiler (t1403).
                     if !args.is_empty() { pin_vars(f,&args[0],Ty::Str,pin,n)?; walk(f,&args[0],sigs,lit,pin,printed,n)?; }
-                    for a in &args[1..] { pin_vars(f,a,Ty::I64,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
+                    if args.len() > 1 { for a in &args[1..] { pin_vars(f,a,Ty::I64,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; } }
                     return Ok(());
                 }
                 if is_builtin(id, "chr") {
@@ -7028,8 +7031,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 return;
             }
             if is_builtin(id,"padr") {
-                apply_moves(&args[0],env,sigs,false);
-                apply_moves(&args[1],env,sigs,false);
+                for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
             if is_builtin(id,"str") || is_builtin(id,"hb_ntos") {

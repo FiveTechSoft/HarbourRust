@@ -1396,3 +1396,6 @@ neg tests/t1399_str_neg_float.hb expects integer argument(s) in this increment
 neg tests/t1400_str_neg_string.hb expects integer argument(s) in this increment
 neg tests/t1401_padr_neg_arity.hb `padr` takes 2 arguments in this increment
 neg tests/t1402_hb_ntos_neg_arity.hb `hb_ntos` takes one argument in this increment
+neg tests/t1403_padr_neg_noargs.hb `padr` takes 2 arguments in this increment
+neg tests/t1404_str_neg_noargs.hb `str` takes 1 or 2 arguments in this increment
+neg tests/t1405_hb_ntos_neg_noargs.hb `hb_ntos` takes one argument in this increment
