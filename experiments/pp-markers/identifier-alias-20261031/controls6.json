@@ -1,0 +1,58 @@
+{
+  "rows": [
+    {
+      "name": "factory_raw",
+      "source": "#define TOKEN SHOW\n#xcommand MAKE => #xcommand TOKEN \\<x> => OUT(\\<x>)\nMAKE\nTOKEN New\nSHOW New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW New\nSHOW New\n",
+      "own_exit": 0,
+      "own_output": "SHOW New\nSHOW New\n",
+      "own_error": ""
+    },
+    {
+      "name": "factory_capture",
+      "source": "#define VALUE alpha\n#xcommand MAKE <!n!> => #xcommand <n> \\<x> => OUT(\\<x>)\nMAKE VALUE\nVALUE New\nalpha New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(New)\nOUT(New)\n",
+      "own_exit": 0,
+      "own_output": "OUT(New)\nOUT(New)\n",
+      "own_error": ""
+    },
+    {
+      "name": "generated_define",
+      "source": "#define ALIAS END\n#xcommand FIRST => #define ALIAS NEXT ; ALIAS New\n#xcommand NEXT <x> => OUT(<x>)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n OUT(New)\n",
+      "own_exit": 0,
+      "own_output": "OUT(New)\n",
+      "own_error": ""
+    },
+    {
+      "name": "quoted",
+      "source": "#define ALIAS END\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW \"ALIAS\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT('\"ALIAS\"')\n",
+      "own_exit": 0,
+      "own_output": "OUT('\"ALIAS\"')\n",
+      "own_error": ""
+    },
+    {
+      "name": "alias_chain",
+      "source": "#define A B\n#define B END\n#xcommand END <x> => OUT(<x>)\nA New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(New)\n",
+      "own_exit": 0,
+      "own_output": "OUT(New)\n",
+      "own_error": ""
+    },
+    {
+      "name": "alias_temporal",
+      "source": "#define ALIAS FIRST\n#xcommand FIRST <x> => OUT(<x>)\n#xcommand SECOND <x> => RESULT(<x>)\nALIAS New\n#undef ALIAS\n#define ALIAS SECOND\nALIAS Again\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(New)\n\n\nRESULT(Again)\n",
+      "own_exit": 0,
+      "own_output": "OUT(New)\nRESULT(Again)\n",
+      "own_error": ""
+    }
+  ]
+}

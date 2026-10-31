@@ -1,0 +1,77 @@
+{
+  "total": 29688,
+  "changes": [
+    {
+      "source": "#define ALIAS PROBE\n#xcommand PROBE <x> => ALIAS <x>\nPROBE alpha\n",
+      "baseline": [
+        0,
+        "PROBE alpha\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 3: command expansion too deep (recursive command?)\n"
+      ],
+      "reference": [
+        1,
+        "\n\nALIAS alpha\n",
+        ""
+      ]
+    },
+    {
+      "source": "#define TEXT alpha;beta\n#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH => PROBE TEXT ; PROBE gamma\nBOTH\n",
+      "baseline": [
+        0,
+        "OUT(alpha\nbeta)\nOUT(gamma)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(alpha)\nbeta\nOUT(gamma)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nOUT(alpha;beta) ; OUT(gamma)\n",
+        ""
+      ]
+    },
+    {
+      "source": "PROCEDURE Main()\n#define STR [a//b]\n? STR\nRETURN\n",
+      "baseline": [
+        0,
+        "PROCEDURE Main()\n? [a\nRETURN\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 3: unterminated bracket string\n"
+      ],
+      "reference": [
+        0,
+        "PROCEDURE Main()\n\n? [a\nRETURN\n",
+        ""
+      ]
+    },
+    {
+      "source": "PROCEDURE Main()\n#define X 7\n#command SHOW <x> => ? <x>\nSHOW [X]\nRETURN\n",
+      "baseline": [
+        0,
+        "PROCEDURE Main()\n? [ X ]\nRETURN\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "PROCEDURE Main()\n? [ 7 ]\nRETURN\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "PROCEDURE Main()\n\n\n? [7]\nRETURN\n",
+        ""
+      ]
+    }
+  ]
+}

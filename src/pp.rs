@@ -300,6 +300,30 @@ pub fn expand(line: &str, defs: &HashMap<String, Def>, line_no: usize) -> Result
     expand_depth(line, defs, line_no, 0, true)
 }
 
+// Early command rescans admit only object-like identifier-alias chains.
+// Chains ending at a function macro or a non-identifier body stay late.
+// Cycles remain eligible so expand's existing recursion bound rejects them.
+fn identifier_aliases(defs: &HashMap<String, Def>) -> HashMap<String, Def> {
+    fn ident(text: &str) -> bool {
+        let bytes = text.as_bytes();
+        !bytes.is_empty()
+            && (bytes[0].is_ascii_alphabetic() || bytes[0] == b'_')
+            && bytes.iter().all(|c| c.is_ascii_alphanumeric() || *c == b'_')
+    }
+    defs.iter().filter(|(name, _)| {
+        let mut key = name.as_str();
+        let mut seen = std::collections::HashSet::new();
+        loop {
+            if !seen.insert(key) { return true; }
+            match defs.get(key) {
+                None => return true,
+                Some(d) if !d.funclike && ident(d.body.trim()) => key = d.body.trim(),
+                _ => return false,
+            }
+        }
+    }).map(|(name, def)| (name.clone(), def.clone())).collect()
+}
+
 fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: usize, source_brackets: bool) -> Result<String, String> {
     if depth > 16 { return Err(format!("line {}: macro expansion too deep (recursive define?)", line_no)); }
     let b = line.as_bytes();
@@ -1700,6 +1724,13 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                             continue 'work;
                         }
                         if cur.trim_start().starts_with('#'){break;}
+                        let aliases=identifier_aliases(&pp.defs);
+                        let expanded_macros=expand(&cur,&aliases,line)?;
+                        if expanded_macros!=cur{
+                            if expanded_macros.len()>1_048_576{return Err(format!("line {}: command output limit exceeded",line));}
+                            cur=expanded_macros;
+                            continue;
+                        }
                         if fixed_enabled { cur = expand_fixed_translations(&cur,&pp.cmds,&pp.call_rules,line)?; }
                         match apply_commands(&cur, &pp.cmds, &pp.call_rules, fixed_enabled, line)? {
                             Some((x,rule_id)) => {

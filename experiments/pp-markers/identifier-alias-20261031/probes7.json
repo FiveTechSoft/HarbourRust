@@ -1,0 +1,67 @@
+{
+  "rows": [
+    {
+      "name": "mode",
+      "source": "#define MODE DECL\n#xcommand METHOD <x> => METHOD <x> MODE\n#xcommand METHOD <x> DECL => OUT(<x>)\nMETHOD New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(New)\n",
+      "own_exit": 0,
+      "own_output": "OUT(New)\n",
+      "own_error": ""
+    },
+    {
+      "name": "mode_reversed",
+      "source": "#define MODE DECL\n#xcommand METHOD <x> DECL => OUT(<x>)\n#xcommand METHOD <x> => METHOD <x> MODE\nMETHOD New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(New)\n",
+      "own_exit": 0,
+      "own_output": "OUT(New)\n",
+      "own_error": ""
+    },
+    {
+      "name": "macro_first",
+      "source": "#define ALIAS METHOD\n#xcommand METHOD <x> => OUT(<x>)\nALIAS New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(New)\n",
+      "own_exit": 0,
+      "own_output": "OUT(New)\n",
+      "own_error": ""
+    },
+    {
+      "name": "macro_each",
+      "source": "#define NEXT SECOND\n#xcommand FIRST <x> => NEXT <x>\n#xcommand SECOND <x> => OUT(<x>)\nFIRST New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(New)\n",
+      "own_exit": 0,
+      "own_output": "OUT(New)\n",
+      "own_error": ""
+    },
+    {
+      "name": "undef_guard",
+      "source": "#define MODE DECL\n#xcommand FIRST => #undef MODE ; MODE\nFIRST\nMODE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n MODE\nMODE\n",
+      "own_exit": 0,
+      "own_output": "MODE\nMODE\n",
+      "own_error": ""
+    },
+    {
+      "name": "embedded_undef",
+      "source": "#define MODE DECL\n#xcommand FIRST => OUT(1) ;; #undef MODE ;; OUT(2)\nFIRST\nMODE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; OUT(2)\nMODE\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\nOUT(2)\nMODE\n",
+      "own_error": ""
+    },
+    {
+      "name": "declare",
+      "source": "#xcommand DECLARE <!name!> <!class!> => #xcommand METHOD \\<type:FUNCTION,PROCEDURE> <name> CLASS <class> => OUT(\\<type>,\"ok\")\nDECLARE New Test\nMETHOD FUNCTION New CLASS Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(FUNCTION,\"ok\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(FUNCTION,\"ok\")\n",
+      "own_error": ""
+    }
+  ]
+}

@@ -1296,3 +1296,11 @@ pos tests/t1297_pp_var_family_isin.hb \nalpha\nbeta\nparent
 pos tests/t1298_pp_var_family_isto.hb \nalpha\nbeta\nobj
 neg tests/t1299_pp_var_family_type_neg.hb overlapping VAR type expression outside bounded contract
 neg tests/t1300_pp_var_family_trailing_neg.hb statement not in the subset
+pos tests/t1301_pp_alias_source.hb \n         7
+pos tests/t1302_pp_alias_rescan.hb \n         7
+pos tests/t1303_pp_alias_mode.hb \n         7
+pos tests/t1304_pp_alias_temporal.hb \n         7\n         8
+pos tests/t1305_pp_alias_generated_define.hb \n         7
+pos tests/t1306_pp_alias_chain.hb \n         7
+neg tests/t1307_pp_alias_command_cycle.hb command expansion too deep
+neg tests/t1308_pp_alias_define_cycle.hb macro expansion too deep

@@ -1,0 +1,18 @@
+{
+  "total": 29688,
+  "changes": [
+    {
+      "source": "#define ALIAS PROBE\n#xcommand PROBE <x> => ALIAS <x>\nPROBE alpha\n",
+      "baseline": [
+        0,
+        "PROBE alpha\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 3: command expansion too deep (recursive command?)\n"
+      ]
+    }
+  ]
+}

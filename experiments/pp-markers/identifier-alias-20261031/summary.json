@@ -1,0 +1,23 @@
+{
+  "historical_replay": 29688,
+  "delta_count": 1,
+  "delta": "alias-command recursion now rejected like Harbour",
+  "matrix_total": 240,
+  "matrix_token_matches": 192,
+  "preexisting_gaps": 48,
+  "new_regressions_observed": 0,
+  "default_total_pass": 1308,
+  "default_manifest_pass": 1303,
+  "default_auxiliary_pass": 5,
+  "llvm_pass": 634,
+  "original_diagnostic_changes_268x4": 0,
+  "original_accepted": {
+    "linux_default": 21,
+    "linux_llvm": 15,
+    "windows_default": 20,
+    "windows_llvm": 14
+  },
+  "original_runtime_exact_linux": 14,
+  "runtime_own_exact_linux": 6,
+  "scope": "object-like ASCII identifier aliases only;no METHOD whole-header/original unlock;not general macro phase completion"
+}
