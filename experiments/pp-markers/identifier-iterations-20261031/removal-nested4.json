@@ -1,0 +1,34 @@
+[
+  {
+    "source": "#command PROBE [<!x!>] => OUT([[<(x)>]])\nPROBE alpha beta\n",
+    "reference_output": "\nPROBE alpha beta\n",
+    "own_exit": 1,
+    "own_output": "",
+    "own_error": "error: line 2: smart stringify of repeated/disjoint captures is outside this increment\n",
+    "historical_identical": true
+  },
+  {
+    "source": "#command PROBE [<!x!>] => OUT([<(x)>],[#<x>])\nPROBE alpha beta\n",
+    "reference_output": "\nOUT(\"alpha\"\"beta\",\"alpha\"\"beta\")\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"alpha\"\"beta\",\"alpha\"\"beta\")\n",
+    "own_error": "",
+    "historical_identical": false
+  },
+  {
+    "source": "#command PROBE [<!x!>] => OUT([<(x)>])\n#uncommand PROBE [<!x!>] => OUT([<(x)>])\nPROBE alpha beta\n",
+    "reference_output": "\n\nPROBE alpha beta\n",
+    "own_exit": 0,
+    "own_output": "PROBE alpha beta\n",
+    "own_error": "",
+    "historical_identical": true
+  },
+  {
+    "source": "#command PROBE [<!x!>] => OUT([<(x)>])\n#command PROBE [<!x!>] => OUT([<(x)>])\n#uncommand PROBE [<!x!>] => OUT([<(x)>])\nPROBE alpha beta\n",
+    "reference_output": "\n\n\nOUT(\"alpha\"\"beta\")\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"alpha\"\"beta\")\n",
+    "own_error": "",
+    "historical_identical": false
+  }
+]

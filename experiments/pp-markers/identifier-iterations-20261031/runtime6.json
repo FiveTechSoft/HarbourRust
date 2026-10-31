@@ -1,0 +1,56 @@
+[
+  {
+    "source": "#command SHOW [<!x!>] => [? <(x)> ;]\nprocedure main()\nlocal alpha := 11, beta := 22\nSHOW alpha beta\nreturn\n",
+    "reference_compile_exit": 0,
+    "own_compile_exit": 0,
+    "own_error": "",
+    "exact": true,
+    "reference_stdout": "\nalpha\nbeta",
+    "own_stdout": "\nalpha\nbeta"
+  },
+  {
+    "source": "#command SHOW [<!x!>] => [? #<x> ;]\nprocedure main()\nlocal alpha := 11, beta := 22\nSHOW alpha beta gamma\nreturn\n",
+    "reference_compile_exit": 0,
+    "own_compile_exit": 0,
+    "own_error": "",
+    "exact": true,
+    "reference_stdout": "\nalpha\nbeta\ngamma",
+    "own_stdout": "\nalpha\nbeta\ngamma"
+  },
+  {
+    "source": "#command SHOW [<!x!>] => [? <\"x\"> ;]\nprocedure main()\nlocal alpha := 11, beta := 22\nSHOW alpha beta\nreturn\n",
+    "reference_compile_exit": 0,
+    "own_compile_exit": 0,
+    "own_error": "",
+    "exact": true,
+    "reference_stdout": "\nalpha\nbeta",
+    "own_stdout": "\nalpha\nbeta"
+  },
+  {
+    "source": "#command SHOW [<!x!>] => [? <x> ;]\nprocedure main()\nlocal alpha := 11, beta := 22\nSHOW alpha beta\nreturn\n",
+    "reference_compile_exit": 0,
+    "own_compile_exit": 0,
+    "own_error": "",
+    "exact": true,
+    "reference_stdout": "\n        11\n        22",
+    "own_stdout": "\n        11\n        22"
+  },
+  {
+    "source": "#command SHOW [<!x!>] => [? <.x.> ;]\nprocedure main()\nlocal alpha := 11, beta := 22\nSHOW alpha beta\nreturn\n",
+    "reference_compile_exit": 0,
+    "own_compile_exit": 0,
+    "own_error": "",
+    "exact": true,
+    "reference_stdout": "\n.T.\n.T.",
+    "own_stdout": "\n.T.\n.T."
+  },
+  {
+    "source": "#command SHOW [<!x!>] => [? <(x)> ;]\nprocedure main()\nlocal alpha := 11, beta := 22\nSHOW \nreturn\n",
+    "reference_compile_exit": 0,
+    "own_compile_exit": 0,
+    "own_error": "",
+    "exact": true,
+    "reference_stdout": "",
+    "own_stdout": ""
+  }
+]

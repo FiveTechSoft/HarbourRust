@@ -1100,6 +1100,91 @@ fn expand_fixed_translations(text: &str, rules: &[Cmd], calls: &[Cmd], line: usi
     Err(format!("line {}: fixed translation expansion too deep (recursive translate?)",line))
 }
 
+
+// Scoped group/iteration path:one optional identifier group, no pattern literals/nesting.
+#[derive(Clone)]
+struct GroupIteration { group_id: usize, ordinal: usize, span: (usize,usize), captures: Vec<Capture> }
+struct GroupMatch { group_id: usize, iterations: Vec<GroupIteration>, consumed: usize }
+fn single_identifier_group(c:&Cmd,source:&str,tokens:&[String],line:usize)->Option<Result<Option<String>,String>> {
+    if c.pattern.len()!=4 || c.pattern[1]!="[" || c.pattern[3]!="]" || !c.pattern[2].starts_with("<!") {return None;}
+    if !tokens.first().map(|t|lit_match(t,&c.pattern[0])).unwrap_or(false){return None;}
+    // Nested result groups stay wholly on the historical path.
+    let mut depth=0;let mut q=None;let mut at=0;
+    while at<c.result.len(){
+        if q.is_none(){if let Some(end)=escape_literal_end(&c.result,at){at=end;continue;}}
+        let ch=c.result.as_bytes()[at];
+        if q==Some(ch){q=None;}else if q.is_none(){
+            if ch==b'"'||ch==b'\''{q=Some(ch);}
+            else if ch==b'['{depth+=1;if depth>1{return None;}}
+            else if ch==b']'{depth-=1;}
+        }
+        at+=1;
+    }
+
+    let work=|| -> Result<Option<String>,String> {
+        let spans=source_spans(source,tokens)?;
+        let mut matched=GroupMatch{group_id:1,iterations:Vec::new(),consumed:1};
+        for (i,t) in tokens.iter().enumerate().skip(1){
+            if !marker_ident(t){break;}
+            matched.iterations.push(GroupIteration{group_id:1,ordinal:i-1,span:spans[&(t.as_ptr()as usize)],captures:vec![Capture::from_tokens(&tokens[i..i+1])]});matched.consumed=i+1;
+        }
+        if !c.translation && matched.consumed!=tokens.len(){return Ok(None);}
+        let (staged,mut saved)=staged_result(&c.result,source)?;
+        // The historical renderer substitutes inside quotes. Shield only this
+        // new iteration path's source-result literals before delegating atoms.
+        let mut text=String::new();let mut at=0;
+        while at<staged.len(){
+            if staged.as_bytes()[at]==b'<'{if let Some(n)=staged[at..].find('>'){let end=at+n+1;text.push_str(&staged[at..end]);at=end;continue;}}
+            let escaped=escape_literal_end(&staged,at);
+            let ch=staged.as_bytes()[at];
+            let stop=if let Some(end)=escaped{Some(end)}else if ch==b'"'||ch==b'\''{staged[at+1..].find(ch as char).map(|n|at+n+2)}else{None};
+            if let Some(end)=stop{
+                let token=(0xe000..=0xf8ff).filter_map(char::from_u32).find(|ch|!staged.contains(*ch)&&!source.contains(*ch)&&!saved.iter().any(|(used,_)|used==ch)).ok_or("too many staged result literals")?;
+                saved.push((token,staged[at..end].to_string()));text.push(token);at=end;
+            }else{let ch=staged[at..].chars().next().unwrap();text.push(ch);at+=ch.len_utf8();}
+        }
+        // One-level result plan: strings and staged escaped brackets are data.
+        let base=marker_name(&c.pattern[2][1..c.pattern[2].len()-1]);
+        let needles=[format!("<{}>",base),format!("#<{}>",base),format!("<({})>",base),format!("<\"{}\">",base),format!("<.{}.>",base),format!("<-{}->",base)];
+        let owns=|part:&str|needles.iter().any(|needle|!stringify_positions(part,needle).is_empty());
+        let mut pieces:Vec<(bool,&str)>=Vec::new();let bytes=text.as_bytes();let mut cursor=0;let mut start=0;let mut group_start=None;let mut q=None;
+        while cursor<bytes.len(){
+            if q.is_none(){if let Some(end)=escape_literal_end(&text,cursor){cursor=end;continue;}}
+            let ch=bytes[cursor];
+            if q==Some(ch){q=None;cursor+=1;continue;}
+            if q.is_some(){cursor+=1;continue;}
+            if ch==b'"'||ch==b'\''{q=Some(ch);cursor+=1;continue;}
+            if ch==b'['{
+                if group_start.is_some(){return Err("nested result groups are outside the identifier iteration increment".into());}
+                pieces.push((false,&text[start..cursor]));group_start=Some(cursor+1);
+            }else if ch==b']'{
+                let begin=group_start.take().ok_or("unbalanced result group")?;
+                pieces.push((true,&text[begin..cursor]));start=cursor+1;
+            }
+            cursor+=1;
+        }
+        if group_start.is_some(){return Err("unbalanced result group".into());}
+        pieces.push((false,&text[start..]));
+        if matched.iterations.len()>1 && pieces.iter().any(|(group,part)|!group&&owns(part)){return Ok(None);}
+        let mut out=String::new();
+        for (group,part) in pieces{
+            if group&&!owns(part){continue;}
+            let flat=Cmd{pattern:vec![c.pattern[0].clone(),c.pattern[2].clone()],result:part.into(),translation:false,restricted_exact:c.restricted_exact};
+            if group{
+                for it in &matched.iterations{
+                    debug_assert_eq!(it.group_id,matched.group_id);debug_assert!(it.ordinal<matched.iterations.len());debug_assert!(it.span.0<=it.span.1);
+                    out.push_str(&render_command(&flat,&it.captures,source,tokens,line)?);
+                }
+            }else{
+                let cap=matched.iterations.first().map(|it|it.captures[0].clone()).unwrap_or_else(Capture::empty);
+                out.push_str(&render_command(&flat,&[cap],source,tokens,line)?);
+            }
+        }
+        if matched.consumed<tokens.len(){let end=spans[&(tokens[matched.consumed-1].as_ptr()as usize)].1;out.push_str(&source[end..]);}
+        Ok(Some(unstage_result(&out,&saved)))
+    };
+    Some(work().map_err(|e|format!("line {}: {}",line,e)))
+}
 fn apply_commands(line: &str, cmds: &[Cmd], calls: &[Cmd], fixed_enabled: bool, line_no: usize) -> Result<Option<String>, String> {
     let src = source_tokens(line);
     if src.is_empty() { return Ok(None); }
@@ -1108,22 +1193,33 @@ fn apply_commands(line: &str, cmds: &[Cmd], calls: &[Cmd], fixed_enabled: bool, 
     // LATEST definition (b47/b47b/b47c).
     let mut best: Option<(usize, usize)> = None; // (literal count, index)
     let mut best_caps: Vec<Capture> = Vec::new();
+    let mut best_group: Option<Result<Option<String>,String>>=None;
     for (ci, c) in cmds.iter().enumerate() {
         if fixed_enabled && active_fixed_translation(c,cmds,calls) { continue; }
         let first = match c.pattern.first() { Some(f) => f, None => continue };
         if first.starts_with('<') { continue; }
         if !lit_match(&src[0], first) { continue; }
+        let isolated=!cmds.iter().enumerate().any(|(oi,other)|oi!=ci && other.pattern.first().map(|word|lit_match(first,word)||lit_match(word,first)).unwrap_or(false))
+            && !calls.iter().any(|other|other.pattern.first().map(|word|lit_match(first,word)||lit_match(word,first)).unwrap_or(false));
+        if let Some(result)=if isolated{single_identifier_group(c,line,&src,line_no)}else{None}{
+            match result {Ok(None)=>continue,other=>{
+                let lits=c.pattern.iter().filter(|t| !(t.starts_with('<')&&t.ends_with('>'))&&t.as_str()!="["&&t.as_str()!="]").count();
+                if best.map(|(bl,_)|lits>=bl).unwrap_or(true){best=Some((lits,ci));best_group=Some(other);best_caps.clear();}
+            }}
+            continue;
+        }
         if let Some(caps) = cmd_match(&c.pattern, &src, c.restricted_exact) {
             let lits = c.pattern.iter().filter(|t| !(t.starts_with('<') && t.ends_with('>')) && t.as_str() != "[" && t.as_str() != "]").count();
             // probes b47/b47b/b47c: equal literal counts keep the LATEST
             // definition (>= replaces the current winner with a later tie).
             if best.map(|(bl, _)| lits >= bl).unwrap_or(true) {
                 best = Some((lits, ci));
-                best_caps = caps;
+                best_caps = caps;best_group=None;
             }
         }
     }
     if let Some((_, ci)) = best {
+        if let Some(result)=best_group{return result;}
         let c = &cmds[ci];
         let caps = best_caps;
         return render_command(c, &caps, line, &src, line_no).map(Some);

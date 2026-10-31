@@ -1234,7 +1234,7 @@ pos tests/t1235_pp_smart_quotes.hb \na  b\nc  d
 pos tests/t1236_pp_smart_list.hb \nalpha          3 a  b
 pos tests/t1237_pp_smart_optional.hb \n\nalpha
 pos tests/t1238_pp_smart_identifier.hb \nalpha
-neg tests/t1239_pp_smart_repeat_neg.hb smart stringify of repeated/disjoint captures
+neg tests/t1239_pp_smart_repeat_neg.hb trailing tokens after expression
 neg tests/t1240_pp_smart_escape_neg.hb numeric string escapes are outside
 neg tests/t1241_pp_smart_restricted_repeat_neg.hb smart stringify of repeated/disjoint captures
 neg tests/t1242_pp_smart_optional_literal_neg.hb smart stringify with literal-bearing optional groups
@@ -1242,3 +1242,9 @@ pos tests/t1243_pp_smart_escape_ascii.hb \n         3          9\n         3    
 pos tests/t1244_pp_smart_escape_list.hb \na"b a\\b
 pos tests/t1245_pp_smart_escape_quote.hb \na"b\na\\b
 pos tests/t1246_pp_smart_escape_marker.hb \n#<x>
+pos tests/t1247_pp_iter_identifier_smart.hb \nalpha\nbeta
+pos tests/t1248_pp_iter_identifier_dumb.hb \nalpha\nbeta
+pos tests/t1249_pp_iter_identifier_normal.hb \nalpha\nbeta
+pos tests/t1250_pp_iter_identifier_plain.hb \n        11\n        22
+pos tests/t1251_pp_iter_identifier_logical.hb \n.T.\n.T.
+pos tests/t1252_pp_iter_identifier_empty.hb

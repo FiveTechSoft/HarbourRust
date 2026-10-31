@@ -990,3 +990,40 @@ does not match alpha beta,while result[(<x>)]emits(alpha)(beta). This rules out
 a blanket full-input gate as a fix for v3optional false accepts. Per-group,
 per-iteration source captures and result association are required. Evidence is
 replayed exactly against pinned hbpp;these are not new production support cases.
+
+## Isolated optional identifier iteration
+
+The new path covers only a rule family with one optional pattern group
+`KEYWORD [<!x!>]`,one identifier marker,and no overlapping first-keyword rules
+(including call-form translations). GroupMatch/GroupIteration keeps group ID,
+iteration ordinal,source span and separate Capture values. A result group is
+rendered for each iteration;it never splits or retokenizes fused capture text.
+Repeated use outside an associated result group cannot match. Empty,plain,
+dumb/normal/smart stringify and logical/null results use existing atom rendering.
+
+The family guard checks currently active rules,including abbreviation overlap,
+so definitions/removals change eligibility at their source position. Any overlap
+keeps the WHOLE family on its historical match/render path. This is preservation,
+NOT a claim that historical overlap priority is Harbour-compatible. The measured
+latest-general versus earlier-specific priority case remains a separate gap.
+
+Strings in the new result path are staged as data,including marker-like text
+and bracket text. A nested result group stays on the historical path. Nested or
+multiple PATTERN groups,literal-bearing optional patterns,other marker kinds,
+unknown markers inside literal definitions and general priority are outside this
+increment. Multiple sibling result groups associated with this one pattern group
+are measured independently;this is not multiple-pattern-group association.
+
+t1239now reaches the expression parser:correct preprocessing gives adjacent
+string literals,but that expression syntax is not implemented. It remains a
+negative case with a later parser diagnostic,not new expression support.
+Six new console fixtures use separate emitted statements and are freshly exact
+Harbour/default. Existing80own identifier cases and410smart+3scope rejections,
+168nonplain stringify checks and family/removal/literal controls pass. Full268x4
+original diagnostics are identical to ea076a3,and14unchanged reviewed console
+originals are freshly exact Harbour/default/LLVM. No speed or size claim.
+
+Evidence in `identifier-iterations-20261031/`;replay80cases with
+`check_identifier_iterations.py --hbpp /path/hbpp --hpp /path/hpp
+--output-dir /tmp/identifier-iterations`. Inactive extended candidates remain
+inactive and are not prerequisites of this implementation.
