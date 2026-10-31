@@ -678,3 +678,13 @@ Adding a lexer arm alone would therefore corrupt content earlier in the pipeline
 A coherent bracket-literal slice needs context-sensitive literal/index handling
 across those stages,using existing Str values and no new runtime representation.
 Escape strings are a separate contract. No production change here.
+
+21additional context observations:literal/index decisions occur before and
+after expansion. Raw RETURN [a,b] and macro-body [a,b] need not normalize in
+hbpp output even though a later expression accepts a string. A bracket after
+a closed literal is indexing,including whitespace. Stringifying a bracket
+capture containing both quote kinds can require e"...",not only another
+bracket delimiter. Therefore bracket-string source support does not by itself
+prove every previously blocked stringify result is representable. Keep escape
+results explicitly outside the bracket-only slice rather than silently dropping
+a bracket layer or changing the string contents.
