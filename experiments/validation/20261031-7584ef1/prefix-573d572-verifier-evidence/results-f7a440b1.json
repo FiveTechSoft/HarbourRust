@@ -1,0 +1,554 @@
+[
+  {
+    "name": "original",
+    "source": "PROCEDURE Main()\n\n   LOCAL a := { 100, 200, 300 }\n\n   AEval( a, {| nValue, nIndex | QOut( nValue, nIndex ) } )\n\n   RETURN\n",
+    "source_sha256": "46ae515cde1b6bdcd886eadbccb610ee10e1d2128e7d231b90486486a0c67ed5",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n       100          1\n       200          2\n       300          3",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-aeval-contracts/original.prg -> /downloads/verify-aeval-contracts/original.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n       100          1\n       200          2\n       300          3",
+      "stderr": ""
+    },
+    "exact": true
+  },
+  {
+    "name": "start_effects",
+    "source": "function main()\nlocal a := {10,20,30}\nAEval(a,{|x,i| QOut(x,i)},mark(1),mark(2))\nreturn nil\nfunction mark(n)\n? n\nreturn n+0\n",
+    "source_sha256": "8bc23345ff37259eae872d0052ad9c17c5eb1baff6035b71cf384795ec9f349f",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n         1\n         2\n        10          1\n        20          2",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-aeval-contracts/start_effects.prg -> /downloads/verify-aeval-contracts/start_effects.s (2 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n         1\n         1\n         2\n         2\n        10          1\n        20          2",
+      "stderr": ""
+    },
+    "exact": false
+  },
+  {
+    "name": "count_on_negstart",
+    "source": "function main()\nlocal a := {10,20,30}\nAEval(a,{|x,i| QOut(x,i)},mark(-1),mark(2))\nreturn nil\nfunction mark(n)\n? n\nreturn n+0\n",
+    "source_sha256": "05af77640924a261017d2a1ef97180a8b4184aaf26f16d52d926d1a8100198e4",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n        -1\n         2",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-aeval-contracts/count_on_negstart.prg -> /downloads/verify-aeval-contracts/count_on_negstart.s (2 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n        -1\n        -1",
+      "stderr": ""
+    },
+    "exact": false
+  },
+  {
+    "name": "overflow_count",
+    "source": "function main()\nlocal a := {10,20,30}\nAEval(a,{|x,i| QOut(x,i)},2,9223372036854775807)\nreturn nil\n",
+    "source_sha256": "c18a21772e5d1da95ae106f18751fbdfff44919de49d6d89610a84d8e36f7020",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n        20          2\n        30          3",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-aeval-contracts/overflow_count.prg -> /downloads/verify-aeval-contracts/overflow_count.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "exact": false
+  },
+  {
+    "name": "overflow_start",
+    "source": "function main()\nlocal a := {10,20,30}\nAEval(a,{|x,i| QOut(x,i)},9223372036854775807,2)\nreturn nil\n",
+    "source_sha256": "477173b9e2a77a93deaa429548d2be98f457f752f52ff2429da8b4c38dc108bb",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-aeval-contracts/overflow_start.prg -> /downloads/verify-aeval-contracts/overflow_start.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "exact": true
+  },
+  {
+    "name": "callback_returns",
+    "source": "function main()\nlocal a := {10,20,30}\nAEval(a,{|x,i| x+i})\nAEval(a,{|x,i| x:=99})\nAEval(a,{|x,i| QOut(x,i)})\nreturn nil\n",
+    "source_sha256": "8245841a8e2af666a63b4cbaf359c012e09d4220f3a373022e171589ef6c3061",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n        10          1\n        20          2\n        30          3",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: line 4: expected `,` or `}` in the codeblock body, got Some(Assign)\n"
+    }
+  },
+  {
+    "name": "empty",
+    "source": "function main()\nlocal a := {}\nAEval(a,{|x,i| QOut(x,i)})\nreturn nil\n",
+    "source_sha256": "230805e65c21bc2c5795bee0a7e78cec1f15984ad8d641bda595eff5834a749f",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: line 3: the element type of `a` is unknown until its first `AAdd` (pin it first)\n"
+    }
+  },
+  {
+    "name": "capturing_mutation",
+    "source": "function main()\nlocal a := {10,20,30}\nAEval(a,{|x,i| a[i]:=x+1})\nAEval(a,{|x,i| QOut(x,i)})\nreturn nil\n",
+    "source_sha256": "02fd3b82102632194622d9433695f5681c0b31025719ddce04dad27cbd4da42e",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n        11          1\n        21          2\n        31          3",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: line 3: expected `,` or `}` in the codeblock body, got Some(Assign)\n"
+    }
+  },
+  {
+    "name": "block_one_param",
+    "source": "function main()\nlocal a := {10,20,30}\nAEval(a,{|x| QOut(x)})\nreturn nil\n",
+    "source_sha256": "a2b6ee9623bb5296ab6029544dbc590306aed773da8b4ba109eb3dcf2060428f",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n        10\n        20\n        30",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-aeval-contracts/block_one_param.prg -> /downloads/verify-aeval-contracts/block_one_param.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n        10\n        20\n        30",
+      "stderr": ""
+    },
+    "exact": true
+  },
+  {
+    "name": "block_zero_param",
+    "source": "function main()\nlocal a := {10,20,30}\nAEval(a,{|| QOut(\"X\")})\nreturn nil\n",
+    "source_sha256": "a5c4f0c0ef71cdf0ec39c6b188f58ee8ce9849929998b795dd1a7de278e81f34",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\nX\nX\nX",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-aeval-contracts/block_zero_param.prg -> /downloads/verify-aeval-contracts/block_zero_param.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\nX\nX\nX",
+      "stderr": ""
+    },
+    "exact": true
+  },
+  {
+    "name": "neg_bounds",
+    "source": "function main()\nlocal a := {10,20,30}\nAEval(a,{|x,i| QOut(x,i)},0,-1)\nAEval(a,{|x,i| QOut(x,i)},-1,2)\nAEval(a,{|x,i| QOut(x,i)},1,0)\nreturn nil\n",
+    "source_sha256": "8ff190585b7076b618f625bda04fd7b06bbfd6204a1c6cd466f617ccaa076b5d",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n        10          1\n        20          2\n        30          3",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-aeval-contracts/neg_bounds.prg -> /downloads/verify-aeval-contracts/neg_bounds.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n        10          1\n        20          2\n        30          3",
+      "stderr": ""
+    },
+    "exact": true
+  },
+  {
+    "name": "callback_intret",
+    "source": "function main()\nlocal a := {10,20,30}\nAEval(a,{|x,i| x+i})\nAEval(a,{|x,i| QOut(x,i)})\nreturn nil\n",
+    "source_sha256": "19f7dbc99986267653411bb7c1a35424991aea932d8dd6a8d10fa002f864975f",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n        10          1\n        20          2\n        30          3",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-aeval-contracts/callback_intret.prg -> /downloads/verify-aeval-contracts/callback_intret.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n        10          1\n        20          2\n        30          3",
+      "stderr": ""
+    },
+    "exact": true
+  },
+  {
+    "name": "callback_paramassign",
+    "source": "function main()\nlocal a := {10,20,30}\nAEval(a,{|x,i| (x:=99)})\nAEval(a,{|x,i| QOut(x,i)})\nreturn nil\n",
+    "source_sha256": "da3434b5b7c31098c43e5756c29caa5b7bbfa5029ec2ce24fe28aea1f6010cf0",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n        10          1\n        20          2\n        30          3",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-aeval-contracts/callback_paramassign.prg -> /downloads/verify-aeval-contracts/callback_paramassign.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n        10          1\n        20          2\n        30          3",
+      "stderr": ""
+    },
+    "exact": true
+  },
+  {
+    "name": "capture_parenthesized",
+    "source": "function main()\nlocal a := {10,20,30}\nAEval(a,{|x,i| (a[i]:=x+1)})\nAEval(a,{|x,i| QOut(x,i)})\nreturn nil\n",
+    "source_sha256": "9c1410203a9f36957874a4ccc1e4abad0f59a47acdff0a21b022ed3d79063b0e",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n        11          1\n        21          2\n        31          3",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: line 3: missing )\n"
+    }
+  },
+  {
+    "name": "empty_pinned",
+    "source": "function main()\nlocal a := {10}\nASize(a,0)\nAEval(a,{|x,i| QOut(x,i)})\nreturn nil\n",
+    "source_sha256": "24b1013ed14399780683d066a928876ab297494117265135629b76d33304ca9b",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: line 3: `ASize` applies to dynamic arrays (`{}`); `a` is not one\n"
+    }
+  },
+  {
+    "name": "generated_collision",
+    "source": "function main()\nlocal a := {10,20,30}\nlocal __aeval_s_4 := 99\nAEval(a,{|x,i| QOut(x,i)})\n? __aeval_s_4\nreturn nil\n",
+    "source_sha256": "505e1d7441e573e46fc630a76042522db1c83011de92aa691540b69b7f054ab3",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n        10          1\n        20          2\n        30          3\n        99",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: line 4: duplicate local `__aeval_s_4`\n"
+    }
+  },
+  {
+    "name": "t1412_aeval_basic",
+    "source": "// pos: AEval(a, block) statement over an int array - ascending loop,\n// block evaluated with (element, index); oracle arreval shape.\nfunction main()\n   local a := { 100, 200, 300 }\n   AEval( a, {| nValue, nIndex | QOut( nValue, nIndex ) } )\n   return nil\n",
+    "source_sha256": "ec51d01a8c5c787136261c5ab7aa7e8b3f197f6350fae5dbd00f2490875ed517",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n       100          1\n       200          2\n       300          3",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-aeval-contracts/t1412_aeval_basic.prg -> /downloads/verify-aeval-contracts/t1412_aeval_basic.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n       100          1\n       200          2\n       300          3",
+      "stderr": ""
+    },
+    "exact": true
+  },
+  {
+    "name": "t1413_aeval_bounds",
+    "source": "// pos: AEval bounds per oracle ae2/ae4 - start 3; start 2 count 2;\n// start beyond len -> none; start 0 -> from 1; count 0 -> none;\n// negative start -> none; negative count -> to the end.\nfunction main()\n   local a := { 10, 20, 30, 40, 50 }\n   ? \"start3:\"\n   AEval( a, {|x,i| QOut(x,i) }, 3 )\n   ? \"start2count2:\"\n   AEval( a, {|x,i| QOut(x,i) }, 2, 2 )\n   ? \"start9:\"\n   AEval( a, {|x,i| QOut(x,i) }, 9 )\n   ? \"start0:\"\n   AEval( a, {|x,i| QOut(x,i) }, 0 )\n   ? \"count0:\"\n   AEval( a, {|x,i| QOut(x,i) }, 1, 0 )\n   ? \"negstart:\"\n   AEval( a, {|x,i| QOut(x,i) }, -2 )\n   ? \"negcount:\"\n   AEval( a, {|x,i| QOut(x,i) }, 2, -1 )\n   ? \"end\"\n   return nil\n",
+    "source_sha256": "9c4a34a2b1b337a25e6a391b3e15f9f011a9c91b7a72693c63cc3a589b16c0c8",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\nstart3:\n        30          3\n        40          4\n        50          5\nstart2count2:\n        20          2\n        30          3\nstart9:\nstart0:\n        10          1\n        20          2\n        30          3\n        40          4\n        50          5\ncount0:\nnegstart:\nnegcount:\n        20          2\n        30          3\n        40          4\n        50          5\nend",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-aeval-contracts/t1413_aeval_bounds.prg -> /downloads/verify-aeval-contracts/t1413_aeval_bounds.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\nstart3:\n        30          3\n        40          4\n        50          5\nstart2count2:\n        20          2\n        30          3\nstart9:\nstart0:\n        10          1\n        20          2\n        30          3\n        40          4\n        50          5\ncount0:\nnegstart:\nnegcount:\n        20          2\n        30          3\n        40          4\n        50          5\nend",
+      "stderr": ""
+    },
+    "exact": true
+  }
+]

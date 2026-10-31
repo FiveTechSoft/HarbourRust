@@ -1,0 +1,184 @@
+[
+  {
+    "name": "zero",
+    "source": "function main()\nlocal a := {1,2}\nlocal s := {\"a\",\"b\"}\nlocal x := 1\nAEval()\nreturn nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: unknown function `aeval` (must be defined before use)\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: unknown function `aeval` (must be defined before use)\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: unknown function `aeval` (must be defined before use)\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: unknown function `aeval` (must be defined before use)\n"
+      }
+    }
+  },
+  {
+    "name": "nonarray",
+    "source": "function main()\nlocal a := {1,2}\nlocal s := {\"a\",\"b\"}\nlocal x := 1\nAEval(x,{|n,i| QOut(n,i)})\nreturn nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `len` expects an array\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `len` expects an array\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `len` expects an array\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `len` expects an array\n"
+      }
+    }
+  },
+  {
+    "name": "nonblock",
+    "source": "function main()\nlocal a := {1,2}\nlocal s := {\"a\",\"b\"}\nlocal x := 1\nAEval(a,42)\nreturn nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `eval` expects a codeblock as its first argument\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `eval` expects a codeblock as its first argument\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `eval` expects a codeblock as its first argument\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `eval` expects a codeblock as its first argument\n"
+      }
+    }
+  },
+  {
+    "name": "floatstart",
+    "source": "function main()\nlocal a := {1,2}\nlocal s := {\"a\",\"b\"}\nlocal x := 1\nAEval(a,{|n,i| QOut(n,i)},1.5)\nreturn nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `for` bounds must be integers\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `for` bounds must be integers\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `for` bounds must be integers\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `for` bounds must be integers\n"
+      }
+    }
+  },
+  {
+    "name": "floatcount",
+    "source": "function main()\nlocal a := {1,2}\nlocal s := {\"a\",\"b\"}\nlocal x := 1\nAEval(a,{|n,i| QOut(n,i)},1,1.5)\nreturn nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `min` needs matching integer, float or logical arguments; mixed numeric/Dyn/other types are not in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `min` needs matching integer, float or logical arguments; mixed numeric/Dyn/other types are not in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `min` needs matching integer, float or logical arguments; mixed numeric/Dyn/other types are not in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `min` needs matching integer, float or logical arguments; mixed numeric/Dyn/other types are not in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "stringarray",
+    "source": "function main()\nlocal a := {1,2}\nlocal s := {\"a\",\"b\"}\nlocal x := 1\nAEval(s,{|n,i| QOut(n,i)})\nreturn nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: codeblock arguments must be integers in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: codeblock arguments must be integers in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: codeblock arguments must be integers in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: codeblock arguments must be integers in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "fifth",
+    "source": "function main()\nlocal a := {1,2}\nlocal s := {\"a\",\"b\"}\nlocal x := 1\nAEval(a,{|n,i| QOut(n,i)},1,1,1)\nreturn nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `aeval` takes 2 to 4 arguments (array, block [, start [, count]])\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `aeval` takes 2 to 4 arguments (array, block [, start [, count]])\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `aeval` takes 2 to 4 arguments (array, block [, start [, count]])\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 5: `aeval` takes 2 to 4 arguments (array, block [, start [, count]])\n"
+      }
+    }
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "commit": "573d5720ec0796e7a3c63d9cc6e3fbe696b9e5a0",
+  "tag": "573d5720ec0796e7a3c63d9cc6e3fbe696b9e5a0",
+  "remote_observed": "573d5720ec0796e7a3c63d9cc6e3fbe696b9e5a0",
+  "tree": "c072348f97d216d8e6734542ecc8fcf6fa5e38a5",
+  "original_sha256": "46ae515cde1b6bdcd886eadbccb610ee10e1d2128e7d231b90486486a0c67ed5",
+  "original_bytes": 122,
+  "source_unchanged": true,
+  "writer_sha_record": "46ae515cde1b6bdcd886eadbccb610ee10e1d2128e7d231b90486486a0c67ed5  /home/sandbox/work/harbour-ref/tests/arreval.prg\n"
+}
