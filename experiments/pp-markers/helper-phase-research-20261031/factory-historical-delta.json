@@ -1,0 +1,18 @@
+{
+  "total": 30013,
+  "changes": [
+    {
+      "source": "#xcommand BOTH => #xcommand A => OUT(1) ;; #xcommand B => OUT(2)\nBOTH\nA\nB\n",
+      "baseline": [
+        0,
+        "OUT(1)\nOUT(2)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(1)\n\nOUT(2)\n",
+        ""
+      ]
+    }
+  ]
+}
