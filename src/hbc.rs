@@ -3953,44 +3953,57 @@ fn borrow_stmts_ok(stmts: &[Stmt], pname: &str) -> Option<usize> {
 // Read-only view safety is checked structurally, before emission. The table
 // is complete and dependency elimination is iterated to a fixed point, so
 // forward calls and recursive SCCs never depend on definition order.
-fn aview_expr_safe(e: &Expr, p: &str, sigs: &[Sig], whole: bool, cell: bool) -> bool {
+fn aview_expr_safe(e: &Expr, p: &str, sigs: &[Sig], strict: bool, whole: bool, cell: bool) -> bool {
     match e {
         Expr::Var(v) if v == p => whole,
         Expr::ByRef(v) | Expr::Inc(v, ..) if v == p => false,
         Expr::Index(v, i) if v == p => cell && !expr_mentions(i, p),
         Expr::Index2(v, ..) | Expr::Index3(v, ..) | Expr::Index4(v, ..) | Expr::IdxCompound(v, ..) if v == p => false,
-        Expr::Set(v, r) => v != p && aview_expr_safe(r, p, sigs, false, false),
+        Expr::Set(v, r) => v != p && aview_expr_safe(r, p, sigs, strict, false, false),
         Expr::Call(id, args) => {
             if !args.iter().any(|a| aview_mentions(a, p)) { return true; }
-            if ["len", "valtype", "hb_isarray", "hb_isnumeric"].iter().any(|b| is_builtin(id, b)) {
-                return args.len() == 1 && aview_expr_safe(&args[0], p, sigs, true, true);
+            if is_builtin(id, "len") {
+                // Len(view) is implemented in this increment.
+                return args.len() == 1 && aview_expr_safe(&args[0], p, sigs, strict, true, false);
+            }
+            if ["valtype", "hb_isarray", "hb_isnumeric"].iter().any(|b| is_builtin(id, b)) {
+                // Cell classification ONLY in strict mode: whole-view
+                // ValType/HB_IS* is not implemented, so a body that reads
+                // the whole param keeps its old measured contract
+                // (borrow/owned) instead of pinning a view (t412
+                // regression; t271/t273 rule: positive measured contracts
+                // take precedence - the old path's own checks then guard
+                // escape/mutation, this never becomes an unsafe fallback).
+                // Intent mode (strict=false) still admits the whole read
+                // so it is not confused with an escape/mutation intent.
+                return args.len() == 1 && aview_expr_safe(&args[0], p, sigs, strict, !strict, true);
             }
             if is_builtin(id, "hb_ntos") {
-                return args.len() == 1 && aview_expr_safe(&args[0], p, sigs, false, true);
+                return args.len() == 1 && aview_expr_safe(&args[0], p, sigs, strict, false, true);
             }
             if is_builtin(id, "iif") {
-                return cell && args.len() == 3 && args.iter().all(|a| aview_expr_safe(a, p, sigs, false, true));
+                return cell && args.len() == 3 && args.iter().all(|a| aview_expr_safe(a, p, sigs, strict, false, true));
             }
             if is_output_call(id) {
                 // A direct borrowed cell could be tag 6 or borrowed tag 4.
                 // Keep it out of the generic Dyn output/free path until the
                 // immediate-output union consumer has its own cleanup rule.
-                return args.iter().all(|a| aview_expr_safe(a, p, sigs, false, false));
+                return args.iter().all(|a| aview_expr_safe(a, p, sigs, strict, false, false));
             }
             match sigs.iter().find(|s| s.name == *id) {
                 Some(s) => args.iter().enumerate().all(|(i,a)| {
                     if !aview_mentions(a,p) { return true; }
                     let value_is_view=matches!(a,Expr::Var(v)|Expr::Index(v,_) if v==p);
-                    if value_is_view { s.aview.get(i).copied().unwrap_or(false) && aview_expr_safe(a,p,sigs,true,true) }
-                    else { aview_expr_safe(a,p,sigs,false,false) }
+                    if value_is_view { s.aview.get(i).copied().unwrap_or(false) && aview_expr_safe(a,p,sigs,strict,true,true) }
+                    else { aview_expr_safe(a,p,sigs,strict,false,false) }
                 }),
                 None => false, // unknown routes cannot consume a view
             }
         }
         Expr::Bin(_, a,b) | Expr::Cmp(_,a,b) | Expr::LAnd(a,b) | Expr::LOr(a,b) =>
-            aview_expr_safe(a,p,sigs,false,false) && aview_expr_safe(b,p,sigs,false,false),
-        Expr::LNot(a) => aview_expr_safe(a,p,sigs,false,false),
-        Expr::Seq(es) => es.iter().all(|a| aview_expr_safe(a,p,sigs,false,false)),
+            aview_expr_safe(a,p,sigs,strict,false,false) && aview_expr_safe(b,p,sigs,strict,false,false),
+        Expr::LNot(a) => aview_expr_safe(a,p,sigs,strict,false,false),
+        Expr::Seq(es) => es.iter().all(|a| aview_expr_safe(a,p,sigs,strict,false,false)),
         Expr::ArrLit(es) => !es.iter().any(|a| aview_mentions(a,p)),
         Expr::HashLit(es) => !es.iter().any(|(a,b)| aview_mentions(a,p) || aview_mentions(b,p)),
         Expr::BlockLit(_,_,es) => !es.iter().any(|a| aview_mentions(a,p)),
@@ -4009,16 +4022,16 @@ fn aview_mentions(e: &Expr, p: &str) -> bool {
         _ => expr_mentions(e,p),
     }
 }
-fn aview_stmts_safe(ss: &[Stmt], p: &str, sigs: &[Sig]) -> bool {
+fn aview_stmts_safe(ss: &[Stmt], p: &str, sigs: &[Sig], strict: bool) -> bool {
     ss.iter().all(|s| match s {
-        Stmt::Local(_,v,e) | Stmt::Assign(_,v,e) => v != p && aview_expr_safe(e,p,sigs,false,false),
-        Stmt::Print(_,es,_) => es.iter().all(|e| aview_expr_safe(e,p,sigs,false,true)),
-        Stmt::Ret(_,Some(e)) => aview_expr_safe(e,p,sigs,false,false),
+        Stmt::Local(_,v,e) | Stmt::Assign(_,v,e) => v != p && aview_expr_safe(e,p,sigs,strict,false,false),
+        Stmt::Print(_,es,_) => es.iter().all(|e| aview_expr_safe(e,p,sigs,strict,false,true)),
+        Stmt::Ret(_,Some(e)) => aview_expr_safe(e,p,sigs,strict,false,false),
         Stmt::Ret(_,None) | Stmt::Exit(_) | Stmt::Loop(_) => true,
-        Stmt::CallStmt(_,e) => aview_expr_safe(e,p,sigs,false,false),
-        Stmt::If(_,c,a,b) => aview_expr_safe(c,p,sigs,false,false) && aview_stmts_safe(a,p,sigs) && aview_stmts_safe(b,p,sigs),
-        Stmt::While(_,c,b) => aview_expr_safe(c,p,sigs,false,false) && aview_stmts_safe(b,p,sigs),
-        Stmt::For(_,v,a,b,_,ss) => v != p && aview_expr_safe(a,p,sigs,false,false) && aview_expr_safe(b,p,sigs,false,false) && aview_stmts_safe(ss,p,sigs),
+        Stmt::CallStmt(_,e) => aview_expr_safe(e,p,sigs,strict,false,false),
+        Stmt::If(_,c,a,b) => aview_expr_safe(c,p,sigs,strict,false,false) && aview_stmts_safe(a,p,sigs,strict) && aview_stmts_safe(b,p,sigs,strict),
+        Stmt::While(_,c,b) => aview_expr_safe(c,p,sigs,strict,false,false) && aview_stmts_safe(b,p,sigs,strict),
+        Stmt::For(_,v,a,b,_,ss) => v != p && aview_expr_safe(a,p,sigs,strict,false,false) && aview_expr_safe(b,p,sigs,strict,false,false) && aview_stmts_safe(ss,p,sigs,strict),
         // Unhandled operations reject the candidate conservatively. This
         // whitelist does not modify the existing mutable-borrow contract.
         _ => false,
@@ -4042,7 +4055,7 @@ fn aview_array_evidence(ss: &[Stmt], p: &str) -> bool {
         _ => false,
     })
 }
-fn aview_candidates(funcs: &[Func], base: &[Sig]) -> Vec<Vec<bool>> {
+fn aview_candidates(funcs: &[Func], base: &[Sig], strict: bool) -> Vec<Vec<bool>> {
     let mut tab = base.to_vec();
     // Greatest fixed point for safety of read-only forwarding, including
     // mutually recursive SCCs. Only body array evidence activates a view
@@ -4052,7 +4065,7 @@ fn aview_candidates(funcs: &[Func], base: &[Sig]) -> Vec<Vec<bool>> {
         let old: Vec<Vec<bool>> = tab.iter().map(|s| s.aview.clone()).collect();
         for (fi,f) in funcs.iter().enumerate() {
             for (pi,p) in f.params.iter().enumerate() {
-                if old[fi][pi] && !aview_stmts_safe(&f.stmts,p,&tab) { tab[fi].aview[pi] = false; }
+                if old[fi][pi] && !aview_stmts_safe(&f.stmts,p,&tab,strict) { tab[fi].aview[pi] = false; }
             }
         }
         if tab.iter().zip(&old).all(|(s,b)| s.aview == *b) { break; }
@@ -4998,10 +5011,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                             // repros index_consume_only / own_index_mutate:
                             // runtime Bound error vs Harbour rc 0). Reject
                             // the mention nominally; the workaround is a
-                            // local computed before the call. A view root
-                            // (AView) cannot be consumed or mutated through
-                            // the read-only view contract, so its
-                            // self-mentions stay legal.
+                            // local computed before the call. The AView
+                            // exemption is defensive only: a call in the
+                            // index of a view root (f(s[count(s)])) is
+                            // already rejected by earlier checks in this
+                            // increment - NOT an admitted shape (registered
+                            // limitation, view_selfidx).
                             if rty != Ty::AView && expr_mentions(ie, rid) {
                                 return Err(format!("line {}: the index of a view argument may not mention the viewed array `{}` (an indirect call there could consume or mutate it before the sub-view exists); compute the index into a local first (ains piece 1b)", n, rid));
                             }
@@ -17853,7 +17868,8 @@ fn main() {
         }
         let mut cur: Vec<Sig> = Vec::with_capacity(funcs.len());
         let before = view.clone();
-        let aview_safe = aview_candidates(&funcs, &view);
+        let aview_safe = aview_candidates(&funcs, &view, true);
+        let aview_intent = aview_candidates(&funcs, &view, false);
         // Argument evidence (arg_ev) is NOT reset between rounds: the
         // only recorded fact is "some call site passed a float", and
         // float-typedness is monotone across the fixpoint (literals and
@@ -17882,12 +17898,19 @@ fn main() {
                 Err(m) => (view[fi].params.clone(), view[fi].inferred.clone(), Some(m)),
             };
             for i in 0..ptys.len() {
-                if view[fi].aview[i] || ptys[i]==Ty::AView || aview_array_evidence(&f.stmts,&f.params[i]) {
+                let evidence = aview_array_evidence(&f.stmts,&f.params[i]);
+                // Cell-classification evidence pins a view only when the
+                // body is strictly view-implementable. Evidence plus an
+                // escape/mutation intent keeps the pin so the named
+                // rejection fires - never a silent fallback to the owned
+                // contract. Evidence with only whole reads (t412) stays
+                // on its old measured contract.
+                if view[fi].aview[i] || ptys[i]==Ty::AView || (evidence && aview_safe[fi][i]) || (evidence && !aview_intent[fi][i]) {
                     view[fi].aview[i] = true;
                     ptys[i] = Ty::AView;
                 }
             }
-            if f.params.iter().enumerate().any(|(i,_)| view[fi].aview[i] && !aview_safe[fi][i]) {
+            if f.params.iter().enumerate().any(|(i,_)| view[fi].aview[i] && !aview_intent[fi][i]) {
                 if first_err.is_none() { first_err = Some(format!("array-view parameter of `{}` cannot escape, mutate, be captured, or pass to an unknown/owned route (ains piece 1b)", f.name)); }
             }
             // Parameters enter the frame as owned locals: integer arguments copy,
