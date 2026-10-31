@@ -1,0 +1,173 @@
+{
+  "scope": "8own reduced VAR runtime oracle checks,not original corpus growth",
+  "rows": [
+    {
+      "file": "t1253_pp_reduced_var_root.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1254_pp_reduced_var_comma.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\ngamma",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\ngamma",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\ngamma",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1255_pp_reduced_var_type.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nnumber",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nnumber",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nnumber",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1256_pp_reduced_var_init.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\n         3",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\n         3",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\n         3",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1257_pp_reduced_var_reorder.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nnumber\n         3",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nnumber\n         3",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nnumber\n         3",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1258_pp_reduced_var_duplicates.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\nnumber\ntext\n         1\n         2",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\nnumber\ntext\n         1\n         2",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\nnumber\ntext\n         1\n         2",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1259_pp_reduced_var_smart.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\n1 + 2",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\n1 + 2",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\n1 + 2",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1260_pp_reduced_var_operand.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\n         5",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\n         5",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\n         5",
+          "stderr": ""
+        }
+      }
+    }
+  ]
+}

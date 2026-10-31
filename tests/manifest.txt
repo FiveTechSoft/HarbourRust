@@ -1248,3 +1248,15 @@ pos tests/t1249_pp_iter_identifier_normal.hb \nalpha\nbeta
 pos tests/t1250_pp_iter_identifier_plain.hb \n        11\n        22
 pos tests/t1251_pp_iter_identifier_logical.hb \n.T.\n.T.
 pos tests/t1252_pp_iter_identifier_empty.hb
+pos tests/t1253_pp_reduced_var_root.hb \nalpha
+pos tests/t1254_pp_reduced_var_comma.hb \nalpha\nbeta\ngamma
+pos tests/t1255_pp_reduced_var_type.hb \nalpha\nbeta\nnumber
+pos tests/t1256_pp_reduced_var_init.hb \nalpha\n         3
+pos tests/t1257_pp_reduced_var_reorder.hb \nalpha\nbeta\nnumber\n         3
+pos tests/t1258_pp_reduced_var_duplicates.hb \nalpha\nnumber\ntext\n         1\n         2
+pos tests/t1259_pp_reduced_var_smart.hb \nalpha\n1 + 2
+pos tests/t1260_pp_reduced_var_operand.hb \nalpha\n         5
+neg tests/t1261_pp_reduced_var_macro_neg.hb reduced VAR expression atom outside bounded contract
+neg tests/t1262_pp_reduced_var_power_neg.hb reduced VAR expression shape outside bounded contract
+neg tests/t1263_pp_reduced_var_incomplete_neg.hb reduced VAR expression shape outside bounded contract
+neg tests/t1264_pp_reduced_var_dot_neg.hb reduced VAR expression atom outside bounded contract

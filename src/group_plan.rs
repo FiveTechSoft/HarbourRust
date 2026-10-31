@@ -1,6 +1,6 @@
-// Own bounded one-level identifier capture plan. Not a production pp path.
+// Own bounded one-level capture ownership plan. Caller gates eligible shapes.
 #[derive(Debug,Clone,PartialEq)]
-pub enum Atom { Literal(String), Identifier(usize) }
+pub enum Atom { Literal(String), Identifier(usize), Restricted(usize,Vec<Vec<String>>), Expression(usize) }
 #[derive(Debug,Clone,PartialEq)]
 pub enum Node { Atom(Atom), Optional{ id:usize, atoms:Vec<Atom> } }
 #[derive(Debug)]
@@ -11,10 +11,18 @@ pub struct Iteration { pub group_id:usize, pub ordinal:usize, pub tokens:(usize,
 pub struct Matched { pub roots:Vec<(usize,(usize,usize))>,pub iterations:Vec<Iteration>,pub consumed:usize }
 fn identifier(s:&str)->bool { let b=s.as_bytes();!b.is_empty()&&(b[0].is_ascii_alphabetic()||b[0]==b'_')&&b[1..].iter().all(|b|b.is_ascii_alphanumeric()||*b==b'_') }
 fn atom(t:&str,owner:Option<usize>,markers:&mut Vec<(String,Option<usize>)>)->Option<Atom>{
-    if t.starts_with("<!")&&t.ends_with("!>"){
-        let name=&t[2..t.len()-2];if !identifier(name)||markers.iter().any(|(n,_)|n.eq_ignore_ascii_case(name)){return None;}
-        let i=markers.len();markers.push((name.into(),owner));Some(Atom::Identifier(i))
-    }else if t.starts_with('<')||t=="["||t=="]"{None}else{Some(Atom::Literal(t.into()))}
+    if t.starts_with('<')&&t.ends_with('>'){
+        let inner=&t[1..t.len()-1];
+        let name=if inner.starts_with('!')&&inner.ends_with('!'){&inner[1..inner.len()-1]}else{inner.split(':').next()?};
+        if !identifier(name)||markers.iter().any(|(n,_)|n.eq_ignore_ascii_case(name)){return None;}
+        let id=markers.len();markers.push((name.into(),owner));
+        if inner.starts_with('!'){Some(Atom::Identifier(id))}
+        else if let Some((_,choices))=inner.split_once(':'){
+            let choices:Vec<Vec<String>>=choices.split(',').map(|s|s.split_whitespace().map(String::from).collect()).collect();
+            if choices.iter().any(|seq|seq.is_empty()||seq.iter().any(|s|!identifier(s))){return None;}
+            Some(Atom::Restricted(id,choices))
+        }else{Some(Atom::Expression(id))}
+    }else if t=="["||t=="]"{None}else{Some(Atom::Literal(t.into()))}
 }
 impl Plan {
     pub fn parse(tokens:&[String])->Option<Self>{
@@ -23,17 +31,54 @@ impl Plan {
             if tokens[i]=="["{
                 let id=i;let mut atoms=Vec::new();i+=1;
                 while i<tokens.len()&&tokens[i]!="]"{atoms.push(atom(&tokens[i],Some(id),&mut markers)?);i+=1;}
-                if i==tokens.len()||atoms.is_empty()||!atoms.iter().any(|a|matches!(a,Atom::Identifier(_))){return None;}
+                if i==tokens.len()||atoms.is_empty()||!atoms.iter().any(|a|matches!(a,Atom::Identifier(_)|Atom::Restricted(_,_)|Atom::Expression(_))){return None;}
                 nodes.push(Node::Optional{id,atoms});i+=1;
             }else{nodes.push(Node::Atom(atom(&tokens[i],None,&mut markers)?));i+=1;}
         }
         Some(Self{nodes,markers})
     }
-    pub fn matches(&self,source:&[String],exact:bool,prefix:bool)->Result<Option<Matched>,&'static str>{
+    fn expression_in_scope(tokens:&[String])->bool{
+        fn expr(t:&[String],at:&mut usize,depth:usize)->bool{
+            if depth>64||!primary(t,at,depth+1){return false;}
+            while t.get(*at).map(|s|matches!(s.as_str(),"+"|"-"|"*"|"/"|"%"|"^")).unwrap_or(false){*at+=1;if !primary(t,at,depth+1){return false;}}
+            true
+        }
+        fn primary(t:&[String],at:&mut usize,depth:usize)->bool{
+            if depth>64{return false;}let s=match t.get(*at){Some(s)=>s,None=>return false};
+            if s=="+"||s=="-"{*at+=1;return primary(t,at,depth+1);}
+            if s=="("{*at+=1;if !expr(t,at,depth+1)||t.get(*at).map(String::as_str)!=Some(")"){return false;}*at+=1;return true;}
+            let name=identifier(s);
+            if !name&&!s.bytes().all(|b|b.is_ascii_digit())&&!(s.len()>=2&&((s.starts_with('"')&&s.ends_with('"'))||(s.starts_with('\'')&&s.ends_with('\'')))){return false;}
+            *at+=1;
+            if name&&t.get(*at).map(String::as_str)==Some("("){
+                *at+=1;if t.get(*at).map(String::as_str)!=Some(")"){loop{if !expr(t,at,depth+1){return false;}if t.get(*at).map(String::as_str)!=Some(","){break;}*at+=1;}}
+                if t.get(*at).map(String::as_str)!=Some(")"){return false;}*at+=1;
+            }
+            true
+        }
+        let mut at=0;expr(tokens,&mut at,0)&&at==tokens.len()
+    }
+    pub fn reduced_var(&self)->bool{
+        if self.nodes.len()!=5{return false;}
+        if !matches!(&self.nodes[0],Node::Atom(Atom::Literal(t)) if identifier(t))||!matches!(&self.nodes[1],Node::Atom(Atom::Identifier(_))){return false;}
+        let expected=[0,1,2];let mut names=Vec::new();
+        for (node,kind) in self.nodes[2..].iter().zip(expected){
+            let atoms=match node{Node::Optional{atoms,..}=>atoms,_=>return false};
+            if atoms.len()!=2{return false;}
+            match (&atoms[0],&atoms[1],kind){
+                (Atom::Literal(t),Atom::Identifier(_),0)if t==","=>{},
+                (Atom::Restricted(_,choices),Atom::Identifier(_),1)|(Atom::Restricted(_,choices),Atom::Expression(_),2)=>{
+                    for seq in choices{if seq.len()!=1||seq[0].len()<4&&seq[0].len()!=2{return false;}let word=seq[0].to_ascii_uppercase();if names.iter().any(|n:&String|n==&word||(n.len()>=4&&word.len()>=4&&n[..4]==word[..4])){return false;}names.push(word);}
+                },_=>return false,
+            }
+        }
+        true
+    }
+    fn identifier_matches(&self,source:&[String],exact:bool,prefix:bool)->Result<Option<Matched>,&'static str>{
         fn lit(s:&str,p:&str,exact:bool)->bool{s.eq_ignore_ascii_case(p)||(!exact&&s.is_ascii()&&p.is_ascii()&&s.len()>=4&&p.len()>s.len()&&p[..s.len()].eq_ignore_ascii_case(s))}
         fn atoms(atoms:&[Atom],source:&[String],start:usize,exact:bool)->Option<(usize,Vec<(usize,(usize,usize))>)>{
             let mut at=start;let mut caps=Vec::new();
-            for a in atoms{let t=source.get(at)?;match a{Atom::Literal(l)=>if !lit(t,l,exact){return None;},Atom::Identifier(id)=>{if !identifier(t){return None;}caps.push((*id,(at,at+1)));}}at+=1;}
+            for a in atoms{let t=source.get(at)?;match a{Atom::Literal(l)=>if !lit(t,l,exact){return None;},Atom::Identifier(id)=>{if !identifier(t){return None;}caps.push((*id,(at,at+1)));},_=>return None}at+=1;}
             Some((at,caps))
         }
         fn seq(nodes:&[Node],source:&[String],at:usize,exact:bool,prefix:bool,state:Matched,budget:&mut usize)->Result<Option<Matched>,&'static str>{
@@ -57,6 +102,69 @@ impl Plan {
         }
         seq(&self.nodes,source,0,exact,prefix,Matched{roots:Vec::new(),iterations:Vec::new(),consumed:0},&mut 10000)
     }
+    pub fn matches(&self,source:&[String],exact:bool,prefix:bool)->Result<Option<Matched>,&'static str>{
+        if !self.reduced_var(){return self.identifier_matches(source,exact,prefix);}
+        if prefix{return Err("reduced VAR prefix translation outside bounded contract");}
+        for token in source{
+            if identifier(token)||token.bytes().all(|b|b.is_ascii_digit())||token.starts_with('"')||token.starts_with('\'')||matches!(token.as_str(),"("|")"|","|"+"|"-"|"*"|"/"|"%"|"^"|"**"){continue;}
+            return Err("reduced VAR expression atom outside bounded contract");
+        }
+        fn lit(s:&str,p:&str,exact:bool)->bool{s.eq_ignore_ascii_case(p)||(!exact&&s.is_ascii()&&p.is_ascii()&&s.len()>=4&&p.len()>s.len()&&p[..s.len()].eq_ignore_ascii_case(s))}
+        fn anchor(a:&Atom,source:&[String],at:usize,exact:bool)->bool{
+            match a{Atom::Literal(t)=>source.get(at).map(|s|lit(s,t,exact)).unwrap_or(false),Atom::Restricted(_,choices)=>choices.iter().any(|seq|at+seq.len()<=source.len()&&seq.iter().zip(&source[at..]).all(|(p,s)|lit(s,p,exact))),_=>false}
+        }
+        fn atoms(group:&[Atom],source:&[String],start:usize,exact:bool,anchors:&[&Atom])->Option<(usize,Vec<(usize,(usize,usize))>)>{
+            let mut at=start;let mut caps=Vec::new();
+            for (ai,a) in group.iter().enumerate(){
+                let t=source.get(at)?;
+                match a{
+                    Atom::Literal(l)=>{if !lit(t,l,exact){return None;}at+=1;}
+                    Atom::Identifier(id)=>{if !identifier(t){return None;}caps.push((*id,(at,at+1)));at+=1;}
+                    Atom::Restricted(id,choices)=>{let choice=choices.iter().find(|seq|at+seq.len()<=source.len()&&seq.iter().zip(&source[at..]).all(|(p,s)|lit(s,p,exact)))?;caps.push((*id,(at,at+choice.len())));at+=choice.len();}
+                    Atom::Expression(id)=>{
+                        if ai+1!=group.len(){return None;}let begin=at;let mut depth=Vec::new();let mut previous_atom=false;
+                        while at<source.len(){let t=source[at].as_str();
+                            if at>begin&&previous_atom&&depth.is_empty()&&anchors.iter().any(|a|anchor(a,source,at,exact)){break;}
+                            let operator=["+","-","*","/","%","^","**","=","==","!=","<>","<",">","<=",">=",":=",":","::",".",".AND.",".OR.",".NOT.","!","$","&","++","--","@","~","|","\\","?","=>"].iter().any(|op|t.eq_ignore_ascii_case(op));
+                            if depth.is_empty(){
+                                if t=="."&&at>begin&&source[begin]=="&"{previous_atom=at+1>=source.len()||anchors.iter().any(|a|anchor(a,source,at+1,exact));at+=1;continue;}
+                                if at>begin&&source[at-1].eq_ignore_ascii_case("d")&&(t.starts_with('"')||t.starts_with('\'')){previous_atom=true;at+=1;continue;}
+                                if previous_atom&&!operator&&t!="("&&t!="["&&t!="{"&&t!=")"&&t!="]"&&t!="}"{break;}
+                                if operator{if t!="++"&&t!="--"{previous_atom=false;}}else{previous_atom=true;}
+                            }
+                            if t=="("{depth.push(")");}else if t=="["{depth.push("]");}else if t=="{"{depth.push("}");}
+                            else if t==")"||t=="]"||t=="}"{if depth.pop()!=Some(t){return None;}}
+                            at+=1;
+                        }
+                        if at==begin{return None;}
+                        if source[begin..at].iter().any(|t|t.as_bytes().first().map(u8::is_ascii_digit).unwrap_or(false)&&!t.bytes().all(|b|b.is_ascii_digit())&&!t.strip_prefix("0x").or_else(||t.strip_prefix("0X")).map(|n|!n.is_empty()&&n.bytes().all(|b|b.is_ascii_hexdigit())).unwrap_or(false)&&!t.strip_prefix("0d").or_else(||t.strip_prefix("0D")).map(|n|!n.is_empty()&&n.bytes().all(|b|b.is_ascii_digit())).unwrap_or(false)){return None;}
+                        caps.push((*id,(begin,at)));
+                    }
+                }
+            }
+            Some((at,caps))
+        }
+        let mut out=Matched{roots:Vec::new(),iterations:Vec::new(),consumed:0};let mut at=0;let mut first_group=self.nodes.len();
+        for (i,node) in self.nodes.iter().enumerate(){match node{
+            Node::Atom(a)=>{let(end,caps)=match atoms(std::slice::from_ref(a),source,at,exact,&[]){Some(v)=>v,None=>return Ok(None)};out.roots.extend(caps);at=end;}
+            Node::Optional{..}=>{first_group=i;break;}
+        }}
+        let groups=&self.nodes[first_group..];
+        if groups.iter().any(|n|matches!(n,Node::Atom(_))){return Err("required suffix after optional cluster outside reduced VAR plan");}
+        let anchors:Vec<&Atom>=groups.iter().filter_map(|n|match n{Node::Optional{atoms,..}=>atoms.first(),_=>None}).collect();
+        let mut budget=1024;
+        loop{
+            let mut found=None;
+            for n in groups{if let Node::Optional{id,atoms:group}=n{if let Some((end,caps))=atoms(group,source,at,exact,&anchors){if end>at{found=Some((*id,end,caps));break;}}}}
+            if let Some((id,end,caps))=found{if budget==0{return Err("reduced VAR group iteration limit exceeded");}budget-=1;let ordinal=out.iterations.iter().filter(|it|it.group_id==id).count();out.iterations.push(Iteration{group_id:id,ordinal,tokens:(at,end),captures:caps});at=end;}else{break;}
+        }
+        if !prefix&&at!=source.len(){return Ok(None);}
+        for it in &out.iterations{for (id,(start,end)) in &it.captures{
+            if self.nodes.iter().any(|node|matches!(node,Node::Optional{atoms,..} if atoms.iter().any(|a|matches!(a,Atom::Expression(m) if m==id))))&&!Self::expression_in_scope(&source[*start..*end]){return Err("reduced VAR expression shape outside bounded contract");}
+        }}
+        out.consumed=at;Ok(Some(out))
+    }
+
 }
 #[cfg(test)]
 mod tests{
@@ -110,4 +218,17 @@ use super::*;fn w(t:&[&str])->Vec<String>{t.iter().map(|s|s.to_string()).collect
 #[test]fn root_and_singleton_broadcast_with_comma_group(){let p=Plan::parse(&w(&["SHOW","<!a!>","[",",","<!b!>","]","[","AS","<!t!>","]"])).unwrap();let m=p.matches(&w(&["SHOW","alpha",",","beta",",","gamma","AS","number"]),true,false).unwrap().unwrap();let r=p.result_iterations(&m,&[0,1,2],true).unwrap();assert_eq!(r.len(),2);assert_eq!(r[0].captures,vec![(0,(1,2)),(1,(3,4)),(2,(7,8))]);assert_eq!(r[1].captures,vec![(0,(1,2)),(1,(5,6)),(2,(7,8))]);assert!(p.result_iterations(&m,&[1],false).is_err());}
 #[test]fn missing_sibling_does_not_drop_bound_root_group(){let p=Plan::parse(&w(&["SHOW","<!a!>","[",",","<!b!>","]"])).unwrap();let m=p.matches(&w(&["SHOW","alpha"]),true,false).unwrap().unwrap();assert_eq!(p.result_iterations(&m,&[0,1],true).unwrap().len(),1);assert!(p.result_iterations(&m,&[1],true).unwrap().is_empty());}
 #[test]fn multiple_repeated_owners_not_silently_crossed(){let p=Plan::parse(&w(&["SHOW","[","X","<!x!>","]","[","Y","<!y!>","]"])).unwrap();let m=p.matches(&w(&["SHOW","X","a","X","b","Y","c","Y","d"]),true,false).unwrap().unwrap();assert!(p.result_iterations(&m,&[0,1],true).is_err());}
+}
+
+#[cfg(test)]mod reduced_tests{
+ use super::*;
+ fn w(s:&[&str])->Vec<String>{s.iter().map(|s|s.to_string()).collect()}
+ fn p()->Plan{Plan::parse(&w(&["PROBE","<!a!>","[",",","<!b!>","]","[","<tp:TYPE,AS>","<!t!>","]","[","<ini:INIT,ASSIGN>","<v>","]"])).unwrap()}
+ #[test]fn reduced_topology_is_explicit(){assert!(p().reduced_var());assert!(!Plan::parse(&w(&["PROBE","[","<x:alpha,beta>","]"])).unwrap().reduced_var());}
+ #[test]fn reduced_dispatch_reorders(){let p=p();let m=p.matches(&w(&["PROBE","alpha","INIT","1","AS","number"]),true,false).unwrap().unwrap();assert_eq!(m.iterations.iter().map(|i|i.group_id).collect::<Vec<_>>(),vec![10,6]);}
+ #[test]fn reduced_anchor_is_operand_after_operator(){let p=p();assert!(p.matches(&w(&["PROBE","alpha","INIT","a","+","AS"]),true,false).unwrap().is_some());assert!(p.matches(&w(&["PROBE","alpha","INIT","a","+","AS","number"]),true,false).unwrap().is_none());}
+ #[test]fn reduced_unsupported_atoms_fail_closed(){let p=p();for e in [w(&["1e2"]),w(&["a",".","1"]),w(&["&","name","."]),w(&["a","**","2"])]{let mut t=w(&["PROBE","alpha","INIT"]);t.extend(e);assert!(p.matches(&t,true,false).is_err());}}
+ #[test]fn reduced_expression_admission_is_not_a_general_parser(){assert!(Plan::expression_in_scope(&w(&["f","(","1",",","2",")","+","3"])));assert!(!Plan::expression_in_scope(&w(&["1","+"])));assert!(!Plan::expression_in_scope(&w(&[","])));}
+ #[test]fn reduced_prefix_stays_out(){assert!(p().matches(&w(&["PROBE","alpha"]),true,true).is_err());}
+ #[test]fn reduced_iteration_cap(){let mut t=w(&["PROBE","alpha"]);for _ in 0..1025{t.extend(w(&[",","beta"]));}assert!(p().matches(&t,true,false).is_err());}
 }
