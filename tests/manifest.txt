@@ -1404,3 +1404,4 @@ neg tests/t1407_replicate_neg_noargs.hb `replicate` takes 2 arguments in this in
 neg tests/t1408_replicate_neg_onearg.hb `replicate` takes 2 arguments in this increment
 neg tests/t1409_replicate_neg_intfirst.hb `replicate` expects a string as its first argument
 neg tests/t1410_replicate_neg_strcount.hb `replicate` expects an integer count
+pos tests/t1411_replicate_userfn_arg.hb \nababab

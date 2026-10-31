@@ -1,0 +1,210 @@
+[
+  {
+    "name": "guard_t1369",
+    "source": "// neg: an unknown function nested in a user-call argument is a clean\n// named rejection, never a compiler panic (preexisting hole in the\n// placeholder-parameter skip; verifier results-63f29286).\nfunction take(s)\n    ? s\n    return nil\nfunction main()\n    take(nosuchfn_xyzzy(\"ab\", 3))\n    return nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 8: unknown function `nosuchfn_xyzzy` (must be defined before use)\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 8: unknown function `nosuchfn_xyzzy` (must be defined before use)\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 8: unknown function `nosuchfn_xyzzy` (must be defined before use)\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 8: unknown function `nosuchfn_xyzzy` (must be defined before use)\n"
+      }
+    }
+  },
+  {
+    "name": "neg1407",
+    "source": "function main()\n    ? Replicate()\n    return nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` takes 2 arguments in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` takes 2 arguments in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` takes 2 arguments in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` takes 2 arguments in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "neg1408",
+    "source": "function main()\n    ? Replicate(\"x\")\n    return nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` takes 2 arguments in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` takes 2 arguments in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` takes 2 arguments in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` takes 2 arguments in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "neg1409",
+    "source": "function main()\n    ? Replicate(5,3)\n    return nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` expects a string as its first argument\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` expects a string as its first argument\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` expects a string as its first argument\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` expects a string as its first argument\n"
+      }
+    }
+  },
+  {
+    "name": "neg1410",
+    "source": "function main()\n    ? Replicate(\"x\",\"y\")\n    return nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` expects an integer count\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` expects an integer count\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` expects an integer count\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` expects an integer count\n"
+      }
+    }
+  },
+  {
+    "name": "float",
+    "source": "function main()\n? Replicate(\"ab\",1.5)\nreturn nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` expects an integer count\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` expects an integer count\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` expects an integer count\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` expects an integer count\n"
+      }
+    }
+  },
+  {
+    "name": "closure_zero",
+    "source": "function main()\nlocal b := {|| Replicate() }\nreturn nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` takes 2 arguments in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` takes 2 arguments in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` takes 2 arguments in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` takes 2 arguments in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "three",
+    "source": "function main()\n? Replicate(\"x\",3,4)\nreturn nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` takes 2 arguments in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` takes 2 arguments in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` takes 2 arguments in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `replicate` takes 2 arguments in this increment\n"
+      }
+    }
+  }
+]

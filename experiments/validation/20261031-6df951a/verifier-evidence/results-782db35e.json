@@ -1,0 +1,709 @@
+[
+  {
+    "name": "zero_edges",
+    "source": "function main()\n? \"[\"+Replicate(\"\",9223372036854775807)+\"]\"\n? \"[\"+Replicate(\"abc\",-9223372036854775807-1)+\"]\"\n? \"[\"+Replicate(\"abc\",1)+\"]\"\nreturn nil\n",
+    "results": {
+      "linux": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/zero_edges.prg -> /downloads/verify-replicate-contracts/zero_edges-linux.s (1 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\n[]\n[]\n[abc]",
+          "stderr": ""
+        },
+        "exact": true
+      },
+      "windows": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/zero_edges.prg -> /downloads/verify-replicate-contracts/zero_edges-windows.s (1 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\n[]\n[]\n[abc]",
+          "stderr": ""
+        },
+        "exact": true
+      }
+    },
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n[]\n[]\n[abc]",
+      "stderr": ""
+    },
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Str(\"[\")\n"
+    }
+  },
+  {
+    "name": "doubling",
+    "source": "function main()\n? Replicate(\"abc\",5)\n? Replicate(\"abc\",7)\n? Replicate(\"abc\",8)\n? Replicate(\"abc\",9)\n? Len(Replicate(\"abc\",100001))\nreturn nil\n",
+    "results": {
+      "linux": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/doubling.prg -> /downloads/verify-replicate-contracts/doubling-linux.s (1 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\nabcabcabcabcabc\nabcabcabcabcabcabcabc\nabcabcabcabcabcabcabcabc\nabcabcabcabcabcabcabcabcabc\n    300003",
+          "stderr": ""
+        },
+        "exact": true
+      },
+      "windows": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/doubling.prg -> /downloads/verify-replicate-contracts/doubling-windows.s (1 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\nabcabcabcabcabc\nabcabcabcabcabcabcabc\nabcabcabcabcabcabcabcabc\nabcabcabcabcabcabcabcabcabc\n    300003",
+          "stderr": ""
+        },
+        "exact": true
+      }
+    },
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\nabcabcabcabcabc\nabcabcabcabcabcabcabc\nabcabcabcabcabcabcabcabc\nabcabcabcabcabcabcabcabcabc\n    300003",
+      "stderr": ""
+    },
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Call(\"replicate\", [Str(\"abc\"), Int(\"5\")])\n"
+    }
+  },
+  {
+    "name": "nul_bytes",
+    "source": "function main()\nOutStd(Replicate(\"a\"+Chr(0)+\"b\",3))\nreturn nil\n",
+    "results": {
+      "linux": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/nul_bytes.prg -> /downloads/verify-replicate-contracts/nul_bytes-linux.s (1 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "a\u0000ba\u0000ba\u0000b",
+          "stderr": ""
+        },
+        "exact": true
+      },
+      "windows": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/nul_bytes.prg -> /downloads/verify-replicate-contracts/nul_bytes-windows.s (1 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "a\u0000ba\u0000ba\u0000b",
+          "stderr": ""
+        },
+        "exact": true
+      }
+    },
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "a\u0000ba\u0000ba\u0000b",
+      "stderr": ""
+    },
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Call(\"replicate\", [Bin('+', Bin('+', Str(\"a\"), Call(\"chr\", [Int(\"0\")])), Str(\"b\")), Int(\"3\")])\n"
+    }
+  },
+  {
+    "name": "owned_reuse",
+    "source": "function main()\nlocal a := hb_ntos(123)\nlocal b := Replicate(a,3)\n? a\n? b\n? Replicate(Replicate(LTrim(\"  xy\"),3),2)\n? PadR(Replicate(\"ab\",3),8)\nreturn nil\n",
+    "results": {
+      "linux": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/owned_reuse.prg -> /downloads/verify-replicate-contracts/owned_reuse-linux.s (1 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\n123\n123123123\nxyxyxyxyxyxy\nababab",
+          "stderr": ""
+        },
+        "exact": true
+      },
+      "windows": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/owned_reuse.prg -> /downloads/verify-replicate-contracts/owned_reuse-windows.s (1 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\n123\n123123123\nxyxyxyxyxyxy\nababab",
+          "stderr": ""
+        },
+        "exact": true
+      }
+    },
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n123\n123123123\nxyxyxyxyxyxy\nababab",
+      "stderr": ""
+    },
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Call(\"hb_ntos\", [Int(\"123\")])\n"
+    }
+  },
+  {
+    "name": "effects",
+    "source": "function main()\n? Replicate(txt(),num(3))\n? Replicate(txt(),num(0))\nreturn nil\nfunction txt()\n? \"S\"\nreturn \"ab\"\nfunction num(n)\n? n\nreturn n+0\n",
+    "results": {
+      "linux": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/effects.prg -> /downloads/verify-replicate-contracts/effects-linux.s (3 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\nS\n         3\nababab\nS\n         0\n",
+          "stderr": ""
+        },
+        "exact": true
+      },
+      "windows": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/effects.prg -> /downloads/verify-replicate-contracts/effects-windows.s (3 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\nS\n         3\nababab\nS\n         0\n",
+          "stderr": ""
+        },
+        "exact": true
+      }
+    },
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\nS\n         3\nababab\nS\n         0\n",
+      "stderr": ""
+    },
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: only I64/logical scalar signatures supported\n"
+    }
+  },
+  {
+    "name": "infer_params",
+    "source": "function main()\n? rep(\"ab\",4)\nreturn nil\nfunction rep(s,n)\nreturn Replicate(s,n)\n",
+    "results": {
+      "linux": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/infer_params.prg -> /downloads/verify-replicate-contracts/infer_params-linux.s (2 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\nabababab",
+          "stderr": ""
+        },
+        "exact": true
+      },
+      "windows": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/infer_params.prg -> /downloads/verify-replicate-contracts/infer_params-windows.s (2 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\nabababab",
+          "stderr": ""
+        },
+        "exact": true
+      }
+    },
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\nabababab",
+      "stderr": ""
+    },
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: only I64/logical scalar signatures supported\n"
+    }
+  },
+  {
+    "name": "formerly_unknown",
+    "source": "// neg: an unknown function nested in a user-call argument is a clean\n// named rejection, never a compiler panic (preexisting hole in the\n// placeholder-parameter skip; verifier results-63f29286).\nfunction take(s)\n    ? s\n    return nil\nfunction main()\n    take(Replicate(\"ab\", 3))\n    return nil\n",
+    "results": {
+      "linux": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/formerly_unknown.prg -> /downloads/verify-replicate-contracts/formerly_unknown-linux.s (2 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\nababab",
+          "stderr": ""
+        },
+        "exact": true
+      },
+      "windows": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/formerly_unknown.prg -> /downloads/verify-replicate-contracts/formerly_unknown-windows.s (2 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\nababab",
+          "stderr": ""
+        },
+        "exact": true
+      }
+    },
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\nababab",
+      "stderr": ""
+    },
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: only I64/logical scalar signatures supported\n"
+    }
+  },
+  {
+    "name": "published_t1406",
+    "source": "function main()\n    ? \"[\" + Replicate(\"ab\",3) + \"]\"\n    ? \"[\" + Replicate(\"x\",0) + \"]\"\n    ? \"[\" + Replicate(\"x\",-1) + \"]\"\n    ? \"[\" + Replicate(\"\",5) + \"]\"\n    ? Len(Replicate(\"a\",1000000))\n    ? \"[\" + Replicate(\"0123456789\",2) + \"]\"\n    ? \"[\" + Replicate(LTrim(\"  ab\"),3) + \"]\"\n    ? \"[\" + Replicate(\"z\",Len(\"abcd\")) + \"]\"\n    return nil\n",
+    "results": {
+      "linux": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/published_t1406.prg -> /downloads/verify-replicate-contracts/published_t1406-linux.s (1 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\n[ababab]\n[]\n[]\n[]\n   1000000\n[01234567890123456789]\n[ababab]\n[zzzz]",
+          "stderr": ""
+        },
+        "exact": true
+      },
+      "windows": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/published_t1406.prg -> /downloads/verify-replicate-contracts/published_t1406-windows.s (1 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\n[ababab]\n[]\n[]\n[]\n   1000000\n[01234567890123456789]\n[ababab]\n[zzzz]",
+          "stderr": ""
+        },
+        "exact": true
+      }
+    },
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n[ababab]\n[]\n[]\n[]\n   1000000\n[01234567890123456789]\n[ababab]\n[zzzz]",
+      "stderr": ""
+    },
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Str(\"[\")\n"
+    }
+  },
+  {
+    "name": "overflow_mult",
+    "source": "function main()\n? Replicate(\"ab\",9223372036854775807)\nreturn nil\n",
+    "results": {
+      "linux": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/overflow_mult.prg -> /downloads/verify-replicate-contracts/overflow_mult-linux.s (1 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 1,
+          "stdout": "Out of memory\nCallstack:\n  at main (/downloads/verify-replicate-contracts/overflow_mult.prg:2)\n",
+          "stderr": ""
+        },
+        "exact": false
+      },
+      "windows": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/overflow_mult.prg -> /downloads/verify-replicate-contracts/overflow_mult-windows.s (1 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 1,
+          "stdout": "Out of memory\nCallstack:\n  at main (/downloads/verify-replicate-contracts/overflow_mult.prg:2)\n",
+          "stderr": ""
+        },
+        "exact": false
+      }
+    },
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Call(\"replicate\", [Str(\"ab\"), Int(\"9223372036854775807\")])\n"
+    }
+  },
+  {
+    "name": "overflow_alloc",
+    "source": "function main()\n? Replicate(\"a\",9223372036854775807)\nreturn nil\n",
+    "results": {
+      "linux": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/overflow_alloc.prg -> /downloads/verify-replicate-contracts/overflow_alloc-linux.s (1 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 1,
+          "stdout": "Out of memory\nCallstack:\n  at main (/downloads/verify-replicate-contracts/overflow_alloc.prg:2)\n",
+          "stderr": ""
+        },
+        "exact": false
+      },
+      "windows": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/overflow_alloc.prg -> /downloads/verify-replicate-contracts/overflow_alloc-windows.s (1 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 1,
+          "stdout": "Out of memory\nCallstack:\n  at main (/downloads/verify-replicate-contracts/overflow_alloc.prg:2)\n",
+          "stderr": ""
+        },
+        "exact": false
+      }
+    },
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Call(\"replicate\", [Str(\"a\"), Int(\"9223372036854775807\")])\n"
+    }
+  },
+  {
+    "name": "balance",
+    "source": "function main()\nexercise()\n? hb_memcheck()\nreturn nil\nfunction exercise()\nlocal s := Replicate(\"a\",3)\ns := Replicate(s,2)\n? Replicate(Replicate(\"x\",0),2)\n? Replicate(LTrim(\"  ab\"),3)\nreturn nil\n",
+    "results": {
+      "linux": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/balance.prg -> /downloads/verify-replicate-contracts/balance-linux.s (2 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\n\nababab\n         0",
+          "stderr": ""
+        },
+        "exact": false
+      },
+      "windows": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-replicate-contracts/balance.prg -> /downloads/verify-replicate-contracts/balance-windows.s (2 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\n\nababab\n         0",
+          "stderr": ""
+        },
+        "exact": false
+      }
+    },
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Call(\"hb_memcheck\", [])\n"
+    }
+  }
+]
