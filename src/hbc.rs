@@ -4389,6 +4389,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::F64);
             }
+            if is_builtin(id, "pcount") {
+                // PCount() needs the CALLER's argument count; the calling
+                // convention carries no count in this increment (extra
+                // arguments are already rejected by name), so the
+                // introspection is a named rejection, not a silent 0.
+                return Err(format!("line {}: `PCount` is not in this increment (the calling convention carries no argument count; `hb_PValue` over the declared parameters is the supported introspection)", n));
+            }
             if is_builtin(id, "hb_symbol_unused") {
                 // HB_SYMBOL_UNUSED(s) (multiarg): Harbour's macro expands to
                 // ((s)) - a read-only mention that silences unused warnings.
