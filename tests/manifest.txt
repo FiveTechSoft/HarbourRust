@@ -1419,7 +1419,7 @@ pos tests/t1422_mixed_dyn_cells.hb \nN\nC\nU\nL\n         1\nx\nNIL\n.T.\nN\nC\n
 pos tests/t1423_mixed_dyn_arith.hb \nC\nL\n        10\n         6\n         0
 neg tests/t1424_mixed_cell_store_neg.hb storing a cell of the mixed array
 neg tests/t1425_mixed_cell_assign_neg.hb storing into a cell of the mixed array
-neg tests/t1426_mixed_isnumeric_neg.hb unknown function `hb_isnumeric`
+neg tests/t1426_mixed_isnumeric_neg.hb over this expression is not measured
 pos tests/t1427_mixed_dyn_pos_t139form.hb \n         1\ndos
 pos tests/t1428_mixed_dyn_pos_t697form.hb \na\n         1
 pos tests/t1429_mixed_imm64_bounds.hb \n 9223372036854775807\n-9223372036854775807\n 2147483647\n 2147483648\n         -2147483648\n         -2147483649\n 9223372036854775807
@@ -1430,3 +1430,4 @@ pos tests/t1433_int_width_matrix.hb \n 2147483647\n 9999999999\n2147483648\n    
 pos tests/t1434_mixed_empty_to_mixed_direct.hb \nx\nx\n         0
 pos tests/t1435_mixed_empty_to_mixed_loop.hb \nx\n         0
 neg tests/t1436_mixed_branch_pin_neg.hb unknown until its first
+pos tests/t1437_isx_builtins.hb \n.T.\n.F.\n.F.\n.F.\n.F.\n.T.\n.F.\n.T.\n.T.\n.F.\n.T.

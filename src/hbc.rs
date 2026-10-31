@@ -4101,6 +4101,36 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(match args.len() { 1 => Ty::DArr, 2 => Ty::DArr2, 3 => Ty::DArr3, _ => Ty::DArr4 });
             }
+            if is_builtin(id, "hb_isnumeric") || is_builtin(id, "hb_isarray") {
+                // HB_ISNUMERIC/HB_ISARRAY(x) (ains piece 1b): runtime tag
+                // tests on measured shapes, mirroring ValType's measured
+                // roots. A scalar Dyn casilla reads tag 0 (numeric) / tag 6
+                // (array); a child-array casilla {ptr, len} is never numeric
+                // and is an array iff its ptr is non-null. Static types
+                // classify at compile time. Borrows - never moves. Deeper
+                // indexing and other expressions are named rejections.
+                if args.len() != 1 {
+                    return Err(format!("line {}: `{}` takes one argument", n, id));
+                }
+                match &args[0] {
+                    Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Log(_) | Expr::Float(..) | Expr::FloatV(..) => {}
+                    Expr::Var(v) => {
+                        match env.iter().rev().find(|x| x.name == *v).map(|x| x.ty.clone()) {
+                            Some(Ty::Dyn) => return Err(format!("line {}: `{}` over a Dyn variable is not measured in this PoC (cell reads stay in place: `{}`(a[i]))", n, id, id)),
+                            Some(_) => {}
+                            None => return Err(format!("line {}: `{}` names no visible variable", n, v)),
+                        }
+                    }
+                    Expr::Index(v, _) => {
+                        match env.iter().rev().find(|x| x.name == *v).map(|x| x.ty.clone()) {
+                            Some(Ty::DArr) | Some(Ty::DArrDyn) | Some(Ty::DArr2) | Some(Ty::DArrS) | Some(Ty::DArr4) => {}
+                            _ => return Err(format!("line {}: `{}` over this array depth is not measured in this PoC", n, id)),
+                        }
+                    }
+                    _ => return Err(format!("line {}: `{}` over this expression is not measured in this PoC", n, id)),
+                }
+                return Ok(Ty::Bool);
+            }
             if is_builtin(id, "valtype") {
                 // ValType(x): a one-character type tag (hk88-hk92). Borrows
                 // its argument; the argument evaluates fully with its
@@ -7151,6 +7181,11 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 apply_moves(&args[0], env, sigs, false);
                 return;
             }
+            if is_builtin(id, "hb_isnumeric") || is_builtin(id, "hb_isarray") {
+                // ains piece 1b: tag tests borrow their argument.
+                apply_moves(&args[0], env, sigs, false);
+                return;
+            }
             if is_builtin(id, "valtype") {
                 // ValType borrows its argument (hk88-hk92): nothing moves.
                 apply_moves(&args[0], env, sigs, false);
@@ -7537,6 +7572,99 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str(&format!("    jmp .Liife{}\n.Liift{}:\n", k, k));
                 scalar_side(&args[1], out);
                 out.push_str(&format!(".Liife{}:\n", k));
+            }
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_isnumeric") || is_builtin(id, "hb_isarray") => {
+            // ains piece 1b: HB_ISNUMERIC = (tag == 0) on scalar Dyn
+            // casillas, .F. on child-array casillas; HB_ISARRAY =
+            // (tag == 6) on scalar casillas, (ptr != 0) on child-array
+            // casillas. Static types classify at compile time. Index
+            // arguments evaluate once with their effects, bounds-checked
+            // exactly like ValType (hbc_bound_error on a miss). Borrows.
+            let want_num = is_builtin(id, "hb_isnumeric");
+            let konst = |out: &mut String, b: bool| out.push_str(if b { "    mov $1, %rax
+" } else { "    xor %eax, %eax
+" });
+            let classify_tag = |out: &mut String, want_num: bool| {
+                // %r10 = tag word; result in %rax as Bool (1/0)
+                if want_num {
+                    out.push_str("    xor %eax, %eax
+    test %r10, %r10
+    sete %al
+");
+                } else {
+                    out.push_str("    xor %eax, %eax
+    cmp $6, %r10
+    sete %al
+");
+                }
+            };
+            match &args[0] {
+                Expr::Int(_) | Expr::Float(..) | Expr::FloatV(..) => konst(out, want_num),
+                Expr::Str(_) | Expr::Nil | Expr::Log(_) => konst(out, false),
+                Expr::Var(v) => {
+                    let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                    match var.ty {
+                        Ty::I64 | Ty::F64 => konst(out, want_num),
+                        Ty::Bool | Ty::Str | Ty::StrOwn => konst(out, false),
+                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn | Ty::Arr(_) => konst(out, !want_num),
+                        _ => unreachable!("checked"),
+                    }
+                }
+                Expr::Index(v, ie) => {
+                    let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                    cg_expr(ie, env, sigs, strs, out, target);
+                    match var.ty {
+                        Ty::DArr | Ty::DArrS | Ty::DArrDyn => {
+                            out.push_str(&format!("    cmp $1, %rax
+    jl 70f
+    cmp -{}(%rbp), %rax
+    jg 70f
+", var.off - 8));
+                            out.push_str(&format!("    mov -{}(%rbp), %r11
+", var.off));
+                            out.push_str("    dec %rax
+    shl $4, %rax
+    add %r11, %rax
+    mov (%rax), %r10
+    jmp 71f
+70:
+    call hbc_bound_error
+71:
+");
+                            classify_tag(out, want_num);
+                        }
+                        Ty::DArr2 | Ty::DArr4 => {
+                            out.push_str(&format!("    cmp $1, %rax
+    jl 70f
+    cmp -{}(%rbp), %rax
+    jg 70f
+", var.off - 8));
+                            out.push_str(&format!("    mov -{}(%rbp), %r11
+", var.off));
+                            out.push_str("    dec %rax
+    shl $4, %rax
+    add %r11, %rax
+    mov (%rax), %r10
+    jmp 71f
+70:
+    call hbc_bound_error
+71:
+");
+                            if want_num {
+                                out.push_str("    xor %eax, %eax
+");
+                            } else {
+                                out.push_str("    xor %eax, %eax
+    test %r10, %r10
+    setne %al
+");
+                            }
+                        }
+                        _ => unreachable!("checked"),
+                    }
+                }
+                _ => unreachable!("checked"),
             }
         }
         Expr::Call(id, args) if is_builtin(id, "valtype") => {
