@@ -1,0 +1,65 @@
+[
+  {
+    "source": "#command PROBE [<!x!>] => OUT(\"<x>\",[<(x)>])\nPROBE alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"<x>\",\"alpha\"\"beta\")\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"<x>\",\"alpha\"\"beta\")\n",
+    "own_error": "",
+    "token_match": false
+  },
+  {
+    "source": "#command PROBE [<!x!>] => OUT(\"[data]\",[<(x)>,])\nPROBE alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"[data]\",\"alpha\",\"beta\",)\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"[data]\",\"alpha\",\"beta\",)\n",
+    "own_error": "",
+    "token_match": false
+  },
+  {
+    "source": "#command PROBE [<!x!>] => OUT(\"<unrelated>\",[<(x)>])\nPROBE alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"<unrelated>\",\"alpha\"\"beta\")\n",
+    "own_exit": 1,
+    "own_output": "",
+    "own_error": "error: line 1: unknown result marker <unrelated> (Harbour: E0008)\n",
+    "token_match": false
+  },
+  {
+    "source": "#command PROBE [<!x!>] => OUT([\"<x>\"])\nPROBE alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT()\n",
+    "own_exit": 0,
+    "own_output": "OUT()\n",
+    "own_error": "",
+    "token_match": true
+  },
+  {
+    "source": "#command PROBE [<!x!>] => OUT([<(x)>])\n#command PROBE alpha beta => EXACT\nPROBE alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\n\nEXACT\n",
+    "own_exit": 0,
+    "own_output": "EXACT\n",
+    "own_error": "",
+    "token_match": true
+  },
+  {
+    "source": "#command PROBE alpha beta => EXACT\n#command PROBE [<!x!>] => OUT([<(x)>])\nPROBE alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\n\nOUT(\"alpha\"\"beta\")\n",
+    "own_exit": 0,
+    "own_output": "EXACT\n",
+    "own_error": "",
+    "token_match": false
+  },
+  {
+    "source": "#command PROBE [<!x!>] => A([<(x)>])\n#command PROBE [<!y!>] => B([<(y)>])\nPROBE alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\n\nB(\"alpha\"\"beta\")\n",
+    "own_exit": 0,
+    "own_output": "B(\"alpha\"\"beta\")\n",
+    "own_error": "",
+    "token_match": true
+  }
+]
