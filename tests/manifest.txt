@@ -1358,7 +1358,7 @@ neg tests/t1365_hb_pvalue_block_neg.hb `hb_PValue` inside a codeblock is not in 
 neg tests/t1366_omitted_float_pin_neg.hb but a call site omits it
 neg tests/t1367_hb_pvalue_float_neg.hb Dyn has no float payload tag
 neg tests/t1368_pcount_neg.hb `PCount` is not in this increment
-neg tests/t1369_unknown_nested_arg_neg.hb unknown function `replicate`
+neg tests/t1369_unknown_nested_arg_neg.hb unknown function `nosuchfn_xyzzy`
 pos tests/t1370_parexpr_inline_assign.hb \n        10\n        10\n        90\n         3
 pos tests/t1371_parexpr_if_seqcond.hb \nWorking\nWorking\n        10 .T.\nWorking
 pos tests/t1372_parexpr_iif_strseq.hb \nIF Working\nIF Working\nWorking
@@ -1399,3 +1399,8 @@ neg tests/t1402_hb_ntos_neg_arity.hb `hb_ntos` takes one argument in this increm
 neg tests/t1403_padr_neg_noargs.hb `padr` takes 2 arguments in this increment
 neg tests/t1404_str_neg_noargs.hb `str` takes 1 or 2 arguments in this increment
 neg tests/t1405_hb_ntos_neg_noargs.hb `hb_ntos` takes one argument in this increment
+pos tests/t1406_replicate.hb \n[ababab]\n[]\n[]\n[]\n   1000000\n[01234567890123456789]\n[ababab]\n[zzzz]
+neg tests/t1407_replicate_neg_noargs.hb `replicate` takes 2 arguments in this increment
+neg tests/t1408_replicate_neg_onearg.hb `replicate` takes 2 arguments in this increment
+neg tests/t1409_replicate_neg_intfirst.hb `replicate` expects a string as its first argument
+neg tests/t1410_replicate_neg_strcount.hb `replicate` expects an integer count

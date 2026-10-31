@@ -1457,7 +1457,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -3192,6 +3192,11 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     if args.len() > 1 { for a in &args[1..] { pin_vars(f,a,Ty::I64,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; } }
                     return Ok(());
                 }
+                if is_builtin(id,"replicate") {
+                    if !args.is_empty() { pin_vars(f,&args[0],Ty::Str,pin,n)?; walk(f,&args[0],sigs,lit,pin,printed,n)?; }
+                    if args.len() > 1 { for a in &args[1..] { pin_vars(f,a,Ty::I64,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; } }
+                    return Ok(());
+                }
                 if is_builtin(id, "chr") {
                     for a in args { pin_vars(f, a, Ty::I64, pin, n)?; walk(f, a, sigs, lit, pin, printed, n)?; }
                     return Ok(());
@@ -4493,6 +4498,16 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 if type_expr(&args[1],env,sigs,n)? != Ty::I64 {
                     return Err(format!("line {}: `padr` expects an integer width",n));
+                }
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"replicate") {
+                if args.len()!=2 { return Err(format!("line {}: `replicate` takes 2 arguments in this increment",n)); }
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
+                    return Err(format!("line {}: `replicate` expects a string as its first argument",n));
+                }
+                if type_expr(&args[1],env,sigs,n)? != Ty::I64 {
+                    return Err(format!("line {}: `replicate` expects an integer count",n));
                 }
                 return Ok(Ty::StrOwn);
             }
@@ -7034,6 +7049,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
+            if is_builtin(id,"replicate") {
+                for a in args { apply_moves(a,env,sigs,false); }
+                return;
+            }
             if is_builtin(id,"str") || is_builtin(id,"hb_ntos") {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
@@ -7616,6 +7635,17 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
             cg_expr(&args[1],env,sigs,strs,out,target);
             out.push_str("    mov %rax, %rdx\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_padr\n");
+            if temp {
+                out.push_str("    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n");
+            }
+            out.push_str("    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"replicate") => {
+            let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            cg_expr(&args[1],env,sigs,strs,out,target);
+            out.push_str("    mov %rax, %rdx\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_replicate\n");
             if temp {
                 out.push_str("    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n");
             }
@@ -9034,7 +9064,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "asc") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
             if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
-            if is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") { return Ty::StrOwn; }
+            if is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
                 // Branch unification mirrors the checker (oracle hk321).
@@ -13606,6 +13636,72 @@ hbc_padr:
 6:  mov %rcx, %rax
     mov %rbx, %rdx
     add $8, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_replicate: rdi/rsi = source bytes/len, rdx = count -> rax/rdx owned.
+# Harbour Replicate (oracle repl-probes r1): count<=0 or empty source ->
+# empty string; otherwise the source bytes repeated count times
+# (len*count total, copy-doubling after the first copy).
+hbc_replicate:
+    test %rdx, %rdx
+    jle .Lrep_empty
+    test %rsi, %rsi
+    jnz 1f
+.Lrep_empty:
+    xor %esi, %esi
+    jmp hbc_strcpy
+1:  mov %rsi, %rax
+    imul %rdx, %rax
+    jo hbc_oom
+    test %rax, %rax
+    js hbc_oom
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    sub $24, %rsp
+    mov %rdi, %r12
+    mov %rsi, %r13
+    mov %rax, %rbx
+    lea 16(%rax), %rdi
+    call hbc_alloc
+    mov %rbx, (%rax)
+    mov %rbx, 8(%rax)
+    lea 16(%rax), %rcx
+    xor %r8d, %r8d
+2:  cmp %r13, %r8
+    jae 3f
+    movzbl (%r12,%r8), %r9d
+    mov %r9b, (%rcx,%r8)
+    inc %r8
+    jmp 2b
+3:  mov %r13, %r8
+4:  cmp %rbx, %r8
+    jae 6f
+    mov %r8, %r9
+    mov %rbx, %r10
+    sub %r8, %r10
+    cmp %r10, %r9
+    jle 5f
+    mov %r10, %r9
+5:  lea (%rcx,%r8), %rdi
+    xor %r11d, %r11d
+7:  cmp %r9, %r11
+    jae 8f
+    movzbl (%rcx,%r11), %eax
+    mov %al, (%rdi,%r11)
+    inc %r11
+    jmp 7b
+8:  add %r9, %r8
+    jmp 4b
+6:  mov %rcx, %rax
+    mov %rbx, %rdx
+    add $24, %rsp
     pop %r13
     pop %r12
     pop %rbx

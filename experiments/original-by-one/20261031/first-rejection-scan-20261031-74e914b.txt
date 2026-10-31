@@ -1,0 +1,240 @@
+First-rejection scan of tests/*.prg originals (Harbour @694428e1), 2026-10-31, compiler 74e914b (strings piece), -I tests -I include.
+DATA ONLY: one first error per unit; says nothing about later blockers, does NOT prove any design unauthorized, and does NOT prove no piece can unlock a unit. Update incrementally, do not re-run full scans per continuation.
+
+BLOCKED achoice :: error: line 174: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED achoice2 :: error: line 194: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED achoice3 :: error: line 179: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED achoice5 :: error: line 118: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED achoice6 :: error: line 125: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED adir :: error: line 25: unexpected token Comma in expression
+BLOCKED ains :: error: line 12: unknown function `aclone` (must be defined before use)
+BLOCKED alias :: error: line 12: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED aliaslck :: error: line 14: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED aliasrt :: error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED altd :: error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+COMPILES and_or
+BLOCKED array :: error: line 7: array elements must be integers in this increment
+BLOCKED array16 :: error: line 24: expected `name[idx, ...] := expr`
+BLOCKED arrayidx :: error: line 19: `a[i] /= e` is parked: Harbour `/` always yields decimals (0.80 for 4/5) and the integer array cell cann
+BLOCKED arrays :: error: line 24: expected `name[idx, ...] := expr`
+BLOCKED arreval :: error: line 5: unknown function `aeval` (must be defined before use)
+BLOCKED arrindex :: error: line 5: unexpected token Comma in expression
+BLOCKED asort :: error: line 12: unexpected token Comma in expression
+BLOCKED base2 :: error: line 9: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded i
+BLOCKED base64 :: error: line 57: hash values are tagged scalars (integer, logical or NIL) in this increment
+BLOCKED begin :: error: line 10: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED big5_gen :: error: line 171: the `for` step must be a non-zero integer literal in this PoC
+BLOCKED box :: error: line 64: unknown function `dispbox` (must be defined before use)
+BLOCKED box2 :: error: line 67: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED box3 :: error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED browse :: error: line 120: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED brwpos :: error: line 113: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUN
+BLOCKED byref :: error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+COMPILES calling
+BLOCKED cdow :: error: line 3: unknown function `cmonth` (must be defined before use)
+BLOCKED cdx :: error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED cgi :: error: line 536: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED checkbox :: error: line 9: expected `local name [:= expr]`
+BLOCKED clasinh :: error: line 342: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED clasinit :: error: line 25: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED clasname :: error: line 13: unknown function `aeval` (must be defined before use)
+BLOCKED classch :: error: line 331: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED classes :: error: line 15: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED cls :: error: line 347: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED clsccast :: error: line 645: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED clsdata :: error: line 15: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED clsicast :: error: line 477: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED clsnv :: error: line 376: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED clsscast :: error: line 679: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED clsscope :: error: line 635: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED cmphello :: error: line 15: unknown function `hb_run` (must be defined before use)
+BLOCKED codebl :: error: line 1: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCT
+BLOCKED codebl2 :: error: line 14: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded 
+BLOCKED codebloc :: error: line 48: expression ++/-- requires a variable lvalue in this increment
+BLOCKED color :: error: line 68: unknown function `set` (must be defined before use)
+BLOCKED com :: error: line 94: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+COMPILES comments
+BLOCKED commouse :: error: line 98: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED cpinfo :: error: line 96: unterminated dotted word `.txt` (Harbour logical tokens need a closing dot)
+BLOCKED curdirt :: error: line 3: unknown function `curdir` (must be defined before use)
+BLOCKED cursor :: error: line 13: unknown function `setcursor` (must be defined before use)
+BLOCKED dates :: error: line 7: unknown function `date` (must be defined before use)
+BLOCKED dates2 :: error: line 3: unknown function `hb_stod` (must be defined before use)
+BLOCKED dates3 :: error: line 7: unknown function `set` (must be defined before use)
+BLOCKED datetime :: error: line 59: unknown function `hb_datetime` (must be defined before use)
+BLOCKED db_brows :: error: line 379: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded
+BLOCKED dbeval :: error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED dbf :: error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED dbgcls :: error: line 1: #pragma `-b+` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)
+BLOCKED dbi :: error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED ddate :: error: line 27: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded 
+BLOCKED debug :: error: line 205: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED declare :: error: line 348: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+COMPILES define
+BLOCKED delim :: error: line 45: unterminated dotted word `.txt` (Harbour logical tokens need a closing dot)
+BLOCKED destruct :: error: line 94: command expansion too deep (recursive command?)
+BLOCKED dev :: error: line 10: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to ou
+BLOCKED directry :: error: line 62: `==` against NIL is measured only for numbers, strings, NIL and dynamic casillas (hk128/hk129)
+BLOCKED diskspac :: error: line 101: unknown function `hb_dirbase` (must be defined before use)
+BLOCKED disp :: error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+COMPILES docase
+BLOCKED dupvars :: error: line 7: duplicate local `a`
+BLOCKED dyn :: error: line 125: expected `,` or `)` in call arguments, got Some(Assign)
+BLOCKED dynobj :: error: line 22: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED dynsym :: error: line 3: unknown function `__dynscount` (must be defined before use)
+COMPILES dynwin
+COMPILES errsys
+COMPILES exit
+BLOCKED extend1 :: error: line 39: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+COMPILES fib
+BLOCKED fileio :: error: line 9: unknown function `fcreate` (must be defined before use)
+BLOCKED fileio2 :: error: line 9: unknown function `fcreate` (must be defined before use)
+BLOCKED files :: error: line 19: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED flink :: error: line 59: unknown function `hb_memowrit` (must be defined before use)
+BLOCKED flock :: error: line 194: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUN
+BLOCKED for :: error: line 8: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCT
+BLOCKED for2 :: error: line 10: unknown function `inkey` (must be defined before use)
+BLOCKED foreach :: error: line 48: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED foreach2 :: error: line 366: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+COMPILES fornext
+BLOCKED funcarr :: error: line 13: trailing tokens after expression
+BLOCKED fwdref :: error: line 5: codeblock captures are not in this increment (`nspan` is not a codeblock parameter)
+BLOCKED get :: error: line 13: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded 
+BLOCKED getblock :: error: line 34: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded 
+BLOCKED gfx :: error: line 227: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED gfx2 :: error: line 228: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED gtchars :: error: line 129: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED gtcolors :: error: line 12: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED gtkeys :: error: line 409: expected `,` or `}` in the codeblock body, got Some(EqEq)
+BLOCKED gtstd :: error: line 16: statement not in the subset (At)
+BLOCKED gtwin :: error: line 78: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED gtxfnt :: error: line 122: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED guestbk :: error: line 66: classes are not in this increment yet (parser landed; runtime representation pending)
+BLOCKED hbdoc :: error: line 149: expected `,` or `)` in call arguments, got Some(Assign)
+BLOCKED hbinline :: error: line 11: trailing tokens after expression
+COMPILES hello
+BLOCKED hrb :: error: line 102: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded
+BLOCKED hrbext :: error: line 12: INIT/EXIT PROCEDURE is not in this increment (startup/teardown ordering needs its own design)
+BLOCKED hsx :: error: line 140: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED html :: error: line 386: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED idle :: error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+COMPILES ifelse
+COMPILES ifinline
+BLOCKED inherit :: error: line 136: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED inhprob :: error: line 342: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED inifile :: error: line 481: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED inifiles :: error: line 510: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED initexit :: error: line 4: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCT
+BLOCKED initproc :: error: line 1: INIT/EXIT PROCEDURE is not in this increment (startup/teardown ordering needs its own design)
+BLOCKED inkey :: error: line 170: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED inline :: error: line 18: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED inline_c :: error: line 9: #pragma `begindump` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)
+BLOCKED iotcp :: error: line 312: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED ipclnt :: error: line 76: expected `,` or `)` in call arguments, got Some(Assign)
+BLOCKED ipsvr :: error: line 193: expected `,` or `)` in call arguments, got Some(Assign)
+BLOCKED keywords :: error: line 761: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded
+BLOCKED langapi :: error: line 4: REQUEST `hb_lang_hu` cannot be honored: the subset has no module linking; only functions defined in this 
+BLOCKED langmsg :: error: line 130: expected `local name [:= expr]`
+BLOCKED largefil :: error: line 12: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED lbl :: error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED libname :: error: line 59: unknown function `hb_libname` (must be defined before use)
+BLOCKED linecont :: error: line 25: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED lnlenli1 :: error: line 14: expected `,` or `}` in the array literal, got None
+COMPILES lnlenli2
+BLOCKED longdev :: error: line 17: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to ou
+COMPILES longstr
+BLOCKED longstr2 :: error: line 18: use of moved value `short` (heap values - strings and dynamic arrays - move on assignment, call or retur
+BLOCKED macro :: error: line 327: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded
+BLOCKED math :: error: line 65: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+COMPILES mem
+BLOCKED memfile :: error: line 18: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED memmgr :: error: line 100: error in #if expression
+BLOCKED memory :: error: line 63: unknown function `memory` (must be defined before use)
+BLOCKED memvar :: error: line 36: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED menuto :: error: line 114: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED money :: error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED mouse :: error: line 121: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to o
+BLOCKED multiarg :: error: line 31: `hb_PValue` in `shoutarg` would expose parameter #3 as Dyn, but Dyn has no float payload tag in this inc
+BLOCKED newrdd :: error: line 12: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to ou
+BLOCKED ntx :: error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+COMPILES nums
+BLOCKED objarr :: error: line 15: trailing tokens after expression
+BLOCKED objasign :: error: line 21: expression ++/-- requires a variable lvalue in this increment
+BLOCKED objects :: error: line 97: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED omacro :: error: line 17: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded 
+BLOCKED onidle :: error: line 65: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED op :: error: line 405: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED os :: error: line 5: unknown function `os` (must be defined before use)
+BLOCKED osshell :: error: line 18: statement not in the subset (LogNot)
+BLOCKED output :: error: line 9: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to out
+BLOCKED overload :: error: line 336: character not allowed `#` (U+0023)
+COMPILES parexpr
+BLOCKED parseini :: error: line 14: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to ou
+COMPILES passref
+BLOCKED persist :: error: line 335: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED pipes :: error: line 177: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED pp :: error: line 11: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded 
+BLOCKED ppapi :: error: line 10: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED pragma :: error: line 3: #pragma `TracePragmas=On` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)
+COMPILES procline
+BLOCKED procname :: error: line 31: `ProcName` supports only no argument or literal zero (current frame); ancestor/dynamic levels are not in
+BLOCKED profiler :: error: line 135: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED rdd :: error: line 10: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to ou
+BLOCKED rdd2 :: error: line 293: unterminated dotted word `.dbf` (Harbour logical tokens need a closing dot)
+BLOCKED read :: error: line 122: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to o
+BLOCKED readhrb :: error: line 93: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNC
+COMPILES recursiv
+BLOCKED regex :: error: line 11: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED regex2 :: error: line 125: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to o
+COMPILES returns
+BLOCKED round :: error: line 11: type mismatch in assignment to `value`
+BLOCKED rpt :: error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED rto_get :: error: line 301: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUN
+BLOCKED rto_tb :: error: line 194: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUN
+BLOCKED say :: error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED sbar :: error: line 238: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED scroll :: error: line 80: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to ou
+BLOCKED sdf :: error: line 46: unterminated dotted word `.txt` (Harbour logical tokens need a closing dot)
+BLOCKED seconds :: error: line 9: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED server :: error: line 17: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED set :: error: line 8: statement not in the subset (At)
+BLOCKED set_num :: error: line 7: undefined variable `_set_count`
+BLOCKED setkeys :: error: line 165: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED setmode :: error: line 13: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED sha1 :: error: line 8: unknown function `hb_sha1` (must be defined before use)
+BLOCKED sha2 :: error: line 21: unknown function `replicate` (must be defined before use)
+BLOCKED sortbug :: error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED sound :: error: line 3: unknown function `seconds` (must be defined before use)
+BLOCKED speed :: error: line 3: unexpected token Comma in expression
+BLOCKED speedstr :: error: line 359: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded
+BLOCKED speedtst :: error: line 1020: unknown directive #cinline in this PoC
+COMPILES statfun
+BLOCKED statics :: error: line 4: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCT
+BLOCKED statics1 :: error: line 5: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCT
+BLOCKED statics2 :: error: line 5: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCT
+BLOCKED statinit :: error: line 6: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCT
+BLOCKED str :: error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED strdelim :: error: line 5: nested array elements must be integers in this increment
+BLOCKED stripem :: error: line 485: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED switch :: error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED symbolt :: error: line 6: classes are not in this increment yet (parser landed; runtime representation pending)
+COMPILES t1
+BLOCKED tb1 :: error: line 294: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED tbrowse :: error: line 134: expected `,` or `}` in the codeblock body, got Some(Assign)
+BLOCKED test :: error: line 18: `for each` needs a flat or string array or a hash in this increment
+BLOCKED ticktime :: error: line 6: unknown function `hb_milliseconds` (must be defined before use)
+BLOCKED transfrm :: error: line 8: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCT
+BLOCKED uc16_gen :: error: line 236: the `for` step must be a non-zero integer literal in this PoC
+BLOCKED use :: error: line 62: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED utf8at :: error: line 86: unexpected token Comma in expression
+BLOCKED varparam :: error: line 203: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)
+BLOCKED vars :: error: line 23: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED vec1 :: error: line 8: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED version :: error: line 8: unknown function `version` (must be defined before use)
+BLOCKED video :: error: line 188: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to o
+BLOCKED vmasort :: error: line 10: unknown function `val` (must be defined before use)
+BLOCKED warnings :: error: line 138: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded
+BLOCKED wcecon :: error: line 102: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+COMPILES while
+BLOCKED wvt_fs :: error: line 205: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)
+BLOCKED wvtext :: error: line 254: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUN

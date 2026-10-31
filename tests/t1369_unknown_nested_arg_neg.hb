@@ -5,5 +5,5 @@ function take(s)
     ? s
     return nil
 function main()
-    take(Replicate("ab", 3))
+    take(nosuchfn_xyzzy("ab", 3))
     return nil
