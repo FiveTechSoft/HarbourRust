@@ -50,3 +50,27 @@ removal controls, real hbclass families, nested/quoted/escaped separator probes.
 Global latest-naive remains rejected by its prior17original recursion deltas.
 No real header VAR/classes,global priority,rescan support,main,runtime/ABI,
 ownership,debugger,size/speed or original unlock is claimed by this evidence.
+
+## Ordered queue second inactive candidate
+
+QUEUE-INACTIVE.patch preserves statement depth in a bounded front queue and
+processes stateful siblings in order. It handles simple/nested sequence and
+factory temporal probes without retroactively changing a prior sibling. Generated
+DEFINE/UNDEF as queue items are supported only in this experiment. Adding their
+execution removes the first candidate's21earlier original errors:268x4compile
+profiles again have0first-diagnostic/exit deltas versus the published baseline.
+This does not certify the queue or claim a language increment: full batteries,
+original runtime and differential classification have not been run.
+
+New seven DEFINE/UNDEF/removal probes expose remaining directive boundaries:
+DEFINE/UNDEF sibling effects match Harbour, while generated UNCOMMAND is not
+supported by the candidate (Harbour's measured generated uncommand has its own
+behavior and must not inherit direct-source removal assumptions). A DEFINE's
+body ends at a generated separator, while COMMAND bodies keep their own factory
+boundary. Fixing this boundary in the temp candidate makes generated F(x)=x+1
+work for later siblings and later source statements. This intentionally changes
+the old t1143 explicit generated-DEFINE rejection; do not alter that expected
+rejection without phase/runtime evidence and a clearly admitted new contract.
+
+No queue variant is installed in src/. Provenance, stable rule identity,
+output-size budget, all directive scope guards and full gates remain open.

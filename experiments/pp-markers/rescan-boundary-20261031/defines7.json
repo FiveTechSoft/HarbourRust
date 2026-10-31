@@ -1,0 +1,116 @@
+{
+  "rows": [
+    {
+      "name": "factory_define",
+      "source": "#xcommand FACTORY => #define X 7\nFACTORY\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n7\n",
+      "baseline": {
+        "exit": 1,
+        "output": "",
+        "error": "error: line 2: generated directive outside command/xcommand scope\n"
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "7\n",
+        "error": ""
+      }
+    },
+    {
+      "name": "sequence_define",
+      "source": "#xcommand BOTH => X ; #define X 7 ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\nX ; 7\n7\n",
+      "baseline": {
+        "exit": 0,
+        "output": "X \n #define X 7 \n X\nX\n",
+        "error": ""
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "X\n7\n7\n",
+        "error": ""
+      }
+    },
+    {
+      "name": "sequence_undef",
+      "source": "#define X 7\n#xcommand BOTH => X ; #undef X ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n7 ; X\nX\n",
+      "baseline": {
+        "exit": 0,
+        "output": "7 \n #undef 7 \n 7\n7\n",
+        "error": ""
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "7\nX\nX\n",
+        "error": ""
+      }
+    },
+    {
+      "name": "factory_sequence",
+      "source": "#xcommand FACTORY => #define X 7\n#xcommand BOTH => X ; FACTORY ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX ; 7\n7\n",
+      "baseline": {
+        "exit": 0,
+        "output": "X \n FACTORY \n X\nX\n",
+        "error": ""
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "X\n7\n7\n",
+        "error": ""
+      }
+    },
+    {
+      "name": "remove_sequence",
+      "source": "#xcommand INNER => OUT(1)\n#xcommand BOTH => INNER ; #uncommand INNER => OUT(1) ; INNER\nBOTH\nINNER\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; OUT(1)\nOUT(1)\n",
+      "baseline": {
+        "exit": 0,
+        "output": "INNER \n #uncommand INNER => OUT(1) \n INNER\nOUT(1)\n",
+        "error": ""
+      },
+      "candidate": {
+        "exit": 1,
+        "output": "",
+        "error": "error: line 3: generated directive outside command/xcommand scope\n"
+      }
+    },
+    {
+      "name": "defines_argument",
+      "source": "#define X 1\n#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH => PROBE X ; #undef X ; #define X 2 ; PROBE X\nBOTH\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(1) ; OUT(2)\n",
+      "baseline": {
+        "exit": 0,
+        "output": "OUT(1 \n # undef 1 \n # define 1 2 \n PROBE 1)\n",
+        "error": ""
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "OUT(1)\nOUT(2)\n",
+        "error": ""
+      }
+    },
+    {
+      "name": "function_define",
+      "source": "#xcommand BOTH => #define F(x) x+1 ; F(2)\nBOTH\nF(3)\n",
+      "reference_exit": 0,
+      "reference_output": "\n 2+1\n3+1\n",
+      "baseline": {
+        "exit": 1,
+        "output": "",
+        "error": "error: line 2: generated directive outside command/xcommand scope\n"
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "2+1\n3+1\n",
+        "error": ""
+      }
+    }
+  ]
+}

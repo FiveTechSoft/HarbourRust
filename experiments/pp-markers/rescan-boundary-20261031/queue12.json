@@ -1,0 +1,232 @@
+{
+  "rows": [
+    {
+      "name": "basic",
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH <x> => PROBE <x> ; PROBE <x>\nBOTH alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(alpha) ; OUT(alpha)\n",
+      "reference_error": "",
+      "baseline": {
+        "exit": 0,
+        "output": "OUT(alpha \n PROBE alpha)\n",
+        "error": "",
+        "token_match": false
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "OUT(alpha)\nOUT(alpha)\n",
+        "error": "",
+        "token_match": true
+      }
+    },
+    {
+      "name": "unknown_first",
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH <x> => UNKNOWN <x> ; PROBE <x>\nBOTH alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nUNKNOWN alpha ; OUT(alpha)\n",
+      "reference_error": "",
+      "baseline": {
+        "exit": 0,
+        "output": "UNKNOWN alpha \n PROBE alpha\n",
+        "error": "",
+        "token_match": false
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "UNKNOWN alpha\nOUT(alpha)\n",
+        "error": "",
+        "token_match": true
+      }
+    },
+    {
+      "name": "unknown_last",
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH <x> => PROBE <x> ; UNKNOWN <x>\nBOTH alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(alpha) ; UNKNOWN alpha\n",
+      "reference_error": "",
+      "baseline": {
+        "exit": 0,
+        "output": "OUT(alpha \n UNKNOWN alpha)\n",
+        "error": "",
+        "token_match": false
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "OUT(alpha)\nUNKNOWN alpha\n",
+        "error": "",
+        "token_match": true
+      }
+    },
+    {
+      "name": "quoted",
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH => PROBE \"a;b\" ; PROBE \"c;d\"\nBOTH\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(\"a;b\") ; OUT(\"c;d\")\n",
+      "reference_error": "",
+      "baseline": {
+        "exit": 0,
+        "output": "OUT(\"a;b\" \n PROBE \"c;d\")\n",
+        "error": "",
+        "token_match": false
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "OUT(\"a;b\")\nOUT(\"c;d\")\n",
+        "error": "",
+        "token_match": true
+      }
+    },
+    {
+      "name": "nested",
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH <x> => PROBE <x> ; PROBE <x>\n#xcommand FOUR <x> => BOTH <x> ; BOTH <x>\nFOUR alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha)\n",
+      "reference_error": "",
+      "baseline": {
+        "exit": 0,
+        "output": "OUT(alpha \n BOTH alpha \n PROBE alpha \n BOTH alpha)\n",
+        "error": "",
+        "token_match": false
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "OUT(alpha)\nOUT(alpha)\nOUT(alpha)\nOUT(alpha)\n",
+        "error": "",
+        "token_match": true
+      }
+    },
+    {
+      "name": "self_sibling",
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH <x> => BOTH <x> ; PROBE <x>\nBOTH alpha\n",
+      "reference_exit": 1,
+      "reference_output": "\n\nBOTH alpha ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha)\n",
+      "reference_error": "",
+      "baseline": {
+        "exit": 1,
+        "output": "",
+        "error": "error: line 3: command expansion too deep (recursive command?)\n",
+        "token_match": false
+      },
+      "candidate": {
+        "exit": 1,
+        "output": "",
+        "error": "error: line 3: command expansion too deep (recursive command?)\n",
+        "token_match": false
+      }
+    },
+    {
+      "name": "empty_child",
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH <x> => ; PROBE <x> ;; PROBE <x> ;\nBOTH alpha\n",
+      "reference_exit": 0,
+      "reference_output": "",
+      "reference_error": "",
+      "baseline": {
+        "exit": 0,
+        "output": "",
+        "error": "",
+        "token_match": true
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "",
+        "error": "",
+        "token_match": true
+      }
+    },
+    {
+      "name": "factory_child",
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand FACTORY => #xcommand INNER => OUT(1)\n#xcommand BOTH => FACTORY ; INNER\nBOTH\nINNER\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n OUT(1)\nOUT(1)\n",
+      "reference_error": "",
+      "baseline": {
+        "exit": 0,
+        "output": "FACTORY \n INNER\nINNER\n",
+        "error": "",
+        "token_match": false
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "OUT(1)\nOUT(1)\n",
+        "error": "",
+        "token_match": true
+      }
+    },
+    {
+      "name": "child_factory_order",
+      "source": "#xcommand FACTORY => #xcommand INNER => OUT(1)\n#xcommand BOTH => INNER ; FACTORY ; INNER\nBOTH\nINNER\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nINNER ; OUT(1)\nOUT(1)\n",
+      "reference_error": "",
+      "baseline": {
+        "exit": 0,
+        "output": "INNER \n FACTORY \n INNER\nINNER\n",
+        "error": "",
+        "token_match": false
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "INNER\nOUT(1)\nOUT(1)\n",
+        "error": "",
+        "token_match": true
+      }
+    },
+    {
+      "name": "call_translation",
+      "source": "#xtranslate WRAP(<x>) => PROBE <x> ; PROBE <x>\n#xcommand PROBE <x> => OUT(<x>)\nWRAP(alpha)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(alpha) ; OUT(alpha)\n",
+      "reference_error": "",
+      "baseline": {
+        "exit": 0,
+        "output": "PROBE alpha \n PROBE alpha\n",
+        "error": "",
+        "token_match": false
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "PROBE alpha \n PROBE alpha\n",
+        "error": "",
+        "token_match": false
+      }
+    },
+    {
+      "name": "variable_define",
+      "source": "#define TEXT alpha;beta\n#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH => PROBE TEXT ; PROBE gamma\nBOTH\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(alpha;beta) ; OUT(gamma)\n",
+      "reference_error": "",
+      "baseline": {
+        "exit": 0,
+        "output": "OUT(alpha\nbeta \n PROBE gamma)\n",
+        "error": "",
+        "token_match": false
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "OUT(alpha\nbeta)\nOUT(gamma)\n",
+        "error": "",
+        "token_match": true
+      }
+    },
+    {
+      "name": "generated_directive_whole",
+      "source": "#xcommand BOTH => #xcommand A => OUT(1) ;; #xcommand B => OUT(2)\nBOTH\nA\nB\n",
+      "reference_exit": 0,
+      "reference_output": "\n;\nOUT(1)\nOUT(2)\n",
+      "reference_error": "",
+      "baseline": {
+        "exit": 0,
+        "output": "OUT(1)\nOUT(2)\n",
+        "error": "",
+        "token_match": true
+      },
+      "candidate": {
+        "exit": 0,
+        "output": "OUT(1)\nOUT(2)\n",
+        "error": "",
+        "token_match": true
+      }
+    }
+  ]
+}

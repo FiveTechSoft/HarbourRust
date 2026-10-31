@@ -1,0 +1,45 @@
+--- a/src/pp.rs
++++ b/src/pp.rs
+@@ -1668,14 +1668,25 @@
+         let t = raw.trim_start();
+         if !t.starts_with('#') {
+             if emitting {
+-                for statement in split_statements(t) {
++                let mut pending:std::collections::VecDeque<(String,usize)>=split_statements(t).into_iter().map(|s|(s.to_string(),0)).collect();
++                let mut rescan_budget=10000usize;
++                'work: while let Some((statement,inherited_depth))=pending.pop_front() {
++                    if rescan_budget==0{return Err(format!("line {}: command rescan budget exceeded",line));}rescan_budget-=1;
+                     // Match each source statement separately. Expansion can
+                     // itself emit separators; split again only after expansion.
+                     let mut cur = statement.trim().to_string();
+                     let fixed_enabled = expand(&cur,&pp.defs,line).map(|expanded|expanded == cur).unwrap_or(false);
+-                    let mut depth = 0usize;
++                    let mut depth = inherited_depth;
+                     loop {
+-                        if cur.trim_start().starts_with('#') { break; }
++                        let directive=cur.trim_start().to_ascii_uppercase();
++                        if directive.starts_with("#COMMAND ")||directive.starts_with("#XCOMMAND "){break;}
++                        let parts=split_statements(&cur);
++                        if parts.len()>1{
++                            if pending.len()+parts.len()>10000{return Err(format!("line {}: command rescan queue exceeded",line));}
++                            for part in parts.into_iter().rev(){pending.push_front((part.to_string(),depth));}
++                            continue 'work;
++                        }
++                        if cur.trim_start().starts_with('#'){break;}
+                         if fixed_enabled { cur = expand_fixed_translations(&cur,&pp.cmds,&pp.call_rules,line)?; }
+                         match apply_commands(&cur, &pp.cmds, &pp.call_rules, fixed_enabled, line)? {
+                             Some(x) => {
+@@ -1709,7 +1720,12 @@
+                                 None => (pending, None),
+                             };
+                             if !register_command(part, pp, line)? {
+-                                return Err(format!("line {}: generated directive outside command/xcommand scope", line));
++                                let rest=part.trim().strip_prefix('#').unwrap_or("").trim_start();
++                                let end=rest.find(char::is_whitespace).unwrap_or(rest.len());
++                                let (directive,arg)=(&rest[..end].to_ascii_uppercase(),rest[end..].trim());
++                                if directive=="UNDEF"{pp.defs.remove(arg);}
++                                else if directive=="DEFINE"{let(name,params,body,funclike)=parse_define(arg,line)?;pp.defs.insert(name,Def{params,funclike,body,dup:1});}
++                                else{return Err(format!("line {}: generated directive outside command/xcommand scope", line));}
+                             }
+                             if let Some(next) = rest { pending = next; } else { break; }
+                         }
