@@ -1506,3 +1506,17 @@ posx tests/t1516_dynret_owner_posx.hb 1 Type error: NIL used as a number\nCallst
 posx tests/t1517_dynparam_owner_posx.hb 1 Type error: NIL used as a number\nCallstack:\n  at main (tests/t1517_dynparam_owner_posx.hb:9)
 neg tests/t1518_dynout_freeze_neg.hb is borrowed by a cell read in this output statement
 neg tests/t1519_dynselfroot_neg.hb may not mention it (an assignment there frees the array before the store)
+pos tests/t1520_asize_dyn_pos.hb \n         5          1 NIL\n         2          1          2\n         0\n         0
+pos tests/t1521_ains_dyn_pos.hb \n         3          1          2 NIL\n         3 NIL          1          2\n         3 NIL\n         3 NIL
+pos tests/t1522_adel_dyn_pos.hb \n         6          1          2          3          4          5 NIL\n         2 NIL\n         2\n         2 NIL
+pos tests/t1523_afill_dyn_pos.hb \n! ! !\n         2 X X\n         2          9          9          5\n.T.\nNIL
+pos tests/t1524_afill_strclone_pos.hb \na z z\nMUT z\n         2 a MUT
+pos tests/t1525_mutbalance_pos.hb \n         2 a s20
+posx tests/t1526_afill_arrdyn_posx.hb 1 Type error: NIL used as a number\nCallstack:\n  at main (tests/t1526_afill_arrdyn_posx.hb:5)
+posx tests/t1527_asizenil_posx.hb 1 Type error: NIL used as a number\nCallstack:\n  at main (tests/t1527_asizenil_posx.hb:4)
+neg tests/t1528_asizeexpr_neg.hb unknown function `asize`
+neg tests/t1529_afillarr_neg.hb aliases the child in Harbour (probe g3)
+neg tests/t1530_aistyped_neg.hb statically-typed arrays are not in this increment
+neg tests/t1531_adelrhs_neg.hb unknown function `adel`
+neg tests/t1532_afillarity_neg.hb `AFill` takes two to four arguments
+neg tests/t1533_afillfloat_neg.hb the Dyn float tag is still undecided

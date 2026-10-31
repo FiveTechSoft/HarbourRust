@@ -488,6 +488,7 @@ fn stmt_line(s: &Stmt) -> usize {
         Stmt::CallStmt(n,..) | Stmt::AAdd(n,..) | Stmt::AAddSub(n,..) |
         Stmt::ASizeSub(n,..) | Stmt::AAddSub2(n,..) | Stmt::ASizeSub2(n,..) |
         Stmt::AAddSub3(n,..) | Stmt::ASizeSub3(n,..) | Stmt::ASize(n,..) |
+        Stmt::AIns(n,..) | Stmt::ADel(n,..) | Stmt::AFill(n,..) |
         Stmt::Exit(n) | Stmt::Loop(n) | Stmt::For(n,..) | Stmt::ForEach(n,..) => *n,
     }
 }
@@ -818,6 +819,9 @@ enum Stmt {
     SendSet(usize, Expr, String, Expr), // obj:name := expr (simple receiver)
     SendStmt(usize, Expr),              // obj:name(args) used as a statement
     CallStmt(usize, Expr),              // bare f(args) statement (oracle hk216): runs for effect, return discarded
+    AIns(usize, String, Expr),          // AIns(x, i) as a STATEMENT on a Dyn-held scalar array (ains P2 stage 2; statement-only contract, reviewer contrast 31Oct)
+    ADel(usize, String, Expr),          // ADel(x, i) as a STATEMENT (same contract)
+    AFill(usize, String, Expr, Option<Expr>, Option<Expr>), // AFill(x, v [, start [, count]]) as a STATEMENT (same contract)
     AAdd(usize, String, Expr),  // AAdd(a, x): grow dynamic array in place (probe d1)
     AAddSub(usize, String, Expr, Expr), // AAdd(a[i], x): grow the subarray (probe m5)
     ASizeSub(usize, String, Expr, Expr), // ASize(a[i], n): resize the subarray
@@ -2139,7 +2143,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     *i += 1;
                     continue;
                 }
-                if (is_builtin(&id, "aadd") || is_builtin(&id, "asize") || is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hdelat") || is_builtin(&id, "hb_hclear") || is_builtin(&id, "hb_hfill") || is_builtin(&id, "hb_hset") || is_builtin(&id, "hb_hmerge") || is_builtin(&id, "hb_hcopy") || is_builtin(&id, "hb_hsetcasematch")) && toks.len() >= 4 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen {
+                if (is_builtin(&id, "aadd") || is_builtin(&id, "asize") || is_builtin(&id, "ains") || is_builtin(&id, "adel") || is_builtin(&id, "afill") || is_builtin(&id, "hb_hdel") || is_builtin(&id, "hb_hdelat") || is_builtin(&id, "hb_hclear") || is_builtin(&id, "hb_hfill") || is_builtin(&id, "hb_hset") || is_builtin(&id, "hb_hmerge") || is_builtin(&id, "hb_hcopy") || is_builtin(&id, "hb_hsetcasematch")) && toks.len() >= 4 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen {
                     // AAdd(a, x) / ASize(a, n) as a STATEMENT: in-place
                     // mutation of the named local (Harbour writes these as
                     // calls; the statement form is the PoC surface - probe
@@ -2193,6 +2197,49 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         let start = if parts.len() >= 3 { Some(parse_expr_tokens(parts[2].to_vec(), n)?) } else { None };
                         let count = if parts.len() == 4 { Some(parse_expr_tokens(parts[3].to_vec(), n)?) } else { None };
                         out.push(Stmt::HCopy(n, src, dst, start, count));
+                        *i += 1;
+                        continue;
+                    }
+                    if is_builtin(&id, "ains") || is_builtin(&id, "adel") || is_builtin(&id, "afill") {
+                        // ains P2 stage 2: AIns/ADel/AFill as STATEMENTS
+                        // over a Dyn-held scalar array (statement-only
+                        // contract). The head must be a bare variable;
+                        // subscript heads are a named rejection.
+                        let mut parts: Vec<&[Tok]> = Vec::new();
+                        let mut d0a = 0i32;
+                        let mut last = 0usize;
+                        for (p, tk) in inner.iter().enumerate() {
+                            match tk {
+                                Tok::LBracket | Tok::LParen | Tok::LBrace => d0a += 1,
+                                Tok::RBracket | Tok::RParen | Tok::RBrace => d0a -= 1,
+                                Tok::Comma if d0a == 0 => { parts.push(&inner[last..p]); last = p + 1; }
+                                _ => {}
+                            }
+                        }
+                        parts.push(&inner[last..]);
+                        let v = match parts[0] {
+                            [Tok::Ident(v)] => { check_ident(v, n)?; v.clone() }
+                            _ => return Err(format!("line {}: the first argument of `{}` must be an array variable (subscript forms are not in this increment)", n, id)),
+                        };
+                        if is_builtin(&id, "afill") {
+                            if parts.len() < 2 || parts.len() > 4 {
+                                return Err(format!("line {}: `AFill` takes two to four arguments", n));
+                            }
+                            let val = parse_expr_tokens(parts[1].to_vec(), n)?;
+                            let start = if parts.len() >= 3 { Some(parse_expr_tokens(parts[2].to_vec(), n)?) } else { None };
+                            let count = if parts.len() == 4 { Some(parse_expr_tokens(parts[3].to_vec(), n)?) } else { None };
+                            out.push(Stmt::AFill(n, v, val, start, count));
+                        } else {
+                            if parts.len() != 2 {
+                                return Err(format!("line {}: `{}` takes two arguments", n, id));
+                            }
+                            let ie = parse_expr_tokens(parts[1].to_vec(), n)?;
+                            if is_builtin(&id, "ains") {
+                                out.push(Stmt::AIns(n, v, ie));
+                            } else {
+                                out.push(Stmt::ADel(n, v, ie));
+                            }
+                        }
                         *i += 1;
                         continue;
                     }
@@ -3632,6 +3679,20 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     pin_vars(f, e, Ty::I64, pin, *n)?;
                     walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
+                Stmt::AIns(n, id, ie) | Stmt::ADel(n, id, ie) => {
+                    // ains P2 stage 2: the mutator root pins Dyn.
+                    pin_vars(f, &Expr::Var(id.clone()), Ty::Dyn, pin, *n)?;
+                    pin_vars(f, ie, Ty::I64, pin, *n)?;
+                    walk(f, ie, sigs, lit, pin, printed, *n)?;
+                }
+                Stmt::AFill(n, id, e, se, ce) => {
+                    pin_vars(f, &Expr::Var(id.clone()), Ty::Dyn, pin, *n)?;
+                    walk(f, e, sigs, lit, pin, printed, *n)?;
+                    for oe in se.iter().chain(ce.iter()) {
+                        pin_vars(f, oe, Ty::I64, pin, *n)?;
+                        walk(f, oe, sigs, lit, pin, printed, *n)?;
+                    }
+                }
                 Stmt::AAddSub(n, id, ie, e) | Stmt::ASizeSub(n, id, ie, e) => {
                     if is_param(f, id).is_some() {
                         // AAdd/ASize on p[i] pins the parameter to an array
@@ -3999,6 +4060,15 @@ fn borrow_stmts_ok(stmts: &[Stmt], pname: &str) -> Option<usize> {
             }
             Stmt::AAdd(_, _, e) | Stmt::ASize(_, _, e) | Stmt::AAddSub(_, _, _, e) | Stmt::ASizeSub(_, _, _, e) => {
                 if borrow_expr_ok(e, pname) { None } else { Some(0) }
+            }
+            Stmt::AIns(_, _, e) | Stmt::ADel(_, _, e) => {
+                if borrow_expr_ok(e, pname) { None } else { Some(0) }
+            }
+            Stmt::AFill(n, _, e, se, ce) => {
+                let ok = borrow_expr_ok(e, pname)
+                    && se.as_ref().map_or(true, |x| borrow_expr_ok(x, pname))
+                    && ce.as_ref().map_or(true, |x| borrow_expr_ok(x, pname));
+                if ok { None } else { Some(*n) }
             }
             Stmt::AAddSub3(n, _, a, b, c, e) | Stmt::ASizeSub3(n, _, a, b, c, e) => {
                 if !borrow_expr_ok(a, pname) || !borrow_expr_ok(b, pname) || !borrow_expr_ok(c, pname) || !borrow_expr_ok(e, pname) { Some(*n) } else { None }
@@ -6149,6 +6219,7 @@ fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
         Stmt::Assign(_, id, e) => id != name && expr_ok(e, name),
         Stmt::ArrSet(_, id, ie, e) | Stmt::ArrSet2(_, id, ie, e, _) | Stmt::ArrSet3(_, id, ie, e, _, _) | Stmt::ArrSet4(_, id, ie, e, ..) => id != name && expr_ok(ie, name) && expr_ok(e, name),
         Stmt::AAdd(_, id, _) | Stmt::ASize(_, id, _) | Stmt::AAddSub(_, id, _, _) | Stmt::ASizeSub(_, id, _, _) | Stmt::AAddSub2(_, id, _, _, _) | Stmt::ASizeSub2(_, id, _, _, _) | Stmt::AAddSub3(_, id, ..) | Stmt::ASizeSub3(_, id, ..) => id != name,
+        Stmt::AIns(_, id, _) | Stmt::ADel(_, id, _) | Stmt::AFill(_, id, ..) => id != name,
         Stmt::SendStmt(_, e) => expr_ok(e, name),
         Stmt::If(_, c, a, b) => expr_ok(c, name) && foreach_coll_untouched(a, name) && foreach_coll_untouched(b, name),
         Stmt::While(_, c, b) => expr_ok(c, name) && foreach_coll_untouched(b, name),
@@ -6212,7 +6283,8 @@ fn foreach_barr_lv_ok(stmts: &[Stmt], name: &str) -> bool {
         Stmt::ArrSet2(_, _, i1, i2, e) => !mentions(i1, name) && !mentions(i2, name) && !mentions(e, name),
         Stmt::ArrSet3(_, _, i1, i2, i3, e) => !mentions(i1, name) && !mentions(i2, name) && !mentions(i3, name) && !mentions(e, name),
         Stmt::ArrSet4(_, _, i1, i2, i3, i4, e) => !mentions(i1, name) && !mentions(i2, name) && !mentions(i3, name) && !mentions(i4, name) && !mentions(e, name),
-        Stmt::AAdd(_, id, e) | Stmt::ASize(_, id, e) => id != name && !mentions(e, name),
+        Stmt::AAdd(_, id, e) | Stmt::ASize(_, id, e) | Stmt::AIns(_, id, e) | Stmt::ADel(_, id, e) => id != name && !mentions(e, name),
+        Stmt::AFill(_, id, e, se, ce) => id != name && !mentions(e, name) && se.as_ref().map_or(true, |x| !mentions(x, name)) && ce.as_ref().map_or(true, |x| !mentions(x, name)),
         Stmt::AAddSub(_, id, i, e) | Stmt::ASizeSub(_, id, i, e) => id != name && !mentions(i, name) && !mentions(e, name),
         Stmt::AAddSub2(_, id, i, j, e) | Stmt::ASizeSub2(_, id, i, j, e) => id != name && !mentions(i, name) && !mentions(j, name) && !mentions(e, name),
         Stmt::AAddSub3(_, id, i, j, k, e) | Stmt::ASizeSub3(_, id, i, j, k, e) => id != name && !mentions(i, name) && !mentions(j, name) && !mentions(k, name) && !mentions(e, name),
@@ -6255,7 +6327,8 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
         Stmt::ArrSet2(_, _, i1, i2, e) => !mentions(i1, name) && !mentions(i2, name) && !mentions(e, name),
         Stmt::ArrSet3(_, _, i1, i2, i3, e) => !mentions(i1, name) && !mentions(i2, name) && !mentions(i3, name) && !mentions(e, name),
         Stmt::ArrSet4(_, _, i1, i2, i3, i4, e) => !mentions(i1, name) && !mentions(i2, name) && !mentions(i3, name) && !mentions(i4, name) && !mentions(e, name),
-        Stmt::AAdd(_, _, e) | Stmt::ASize(_, _, e) => !mentions(e, name),
+        Stmt::AAdd(_, _, e) | Stmt::ASize(_, _, e) | Stmt::AIns(_, _, e) | Stmt::ADel(_, _, e) => !mentions(e, name),
+        Stmt::AFill(_, _, e, se, ce) => !mentions(e, name) && se.as_ref().map_or(true, |x| !mentions(x, name)) && ce.as_ref().map_or(true, |x| !mentions(x, name)),
         Stmt::AAddSub(_, _, i, e) | Stmt::ASizeSub(_, _, i, e) => !mentions(i, name) && !mentions(e, name),
         Stmt::AAddSub2(_, _, i, j, e) | Stmt::ASizeSub2(_, _, i, j, e) => !mentions(i, name) && !mentions(j, name) && !mentions(e, name),
         Stmt::AAddSub3(_, _, i, j, k, e) | Stmt::ASizeSub3(_, _, i, j, k, e) => !mentions(i, name) && !mentions(j, name) && !mentions(k, name) && !mentions(e, name),
@@ -6350,7 +6423,13 @@ fn stmt_mentions(s: &Stmt, name: &str) -> bool {
         Stmt::SelfSet(_, _, e) => expr_mentions(e, name),
         Stmt::SendSet(_, r, _, e) => expr_mentions(r, name) || expr_mentions(e, name),
         Stmt::SendStmt(_, e) | Stmt::CallStmt(_, e) => expr_mentions(e, name),
-        Stmt::AAdd(_, id, e) | Stmt::ASize(_, id, e) => id == name || expr_mentions(e, name),
+        Stmt::AAdd(_, id, e) | Stmt::ASize(_, id, e) | Stmt::AIns(_, id, e) | Stmt::ADel(_, id, e) => id == name || expr_mentions(e, name),
+        Stmt::AFill(_, id, e, se, ce) => {
+            id == name
+                || expr_mentions(e, name)
+                || se.as_ref().map_or(false, |x| expr_mentions(x, name))
+                || ce.as_ref().map_or(false, |x| expr_mentions(x, name))
+        }
         Stmt::AAddSub(_, id, i, e) | Stmt::ASizeSub(_, id, i, e) => {
             id == name || expr_mentions(i, name) || expr_mentions(e, name)
         }
@@ -7012,6 +7091,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     // array of strings is a clean runtime error in this
                     // increment (Harbour grows with NIL casillas, hk13).
                     Ty::DArr | Ty::DArr2 | Ty::DArrS | Ty::DArr3 => {}
+                    // ains P2 stage 2: a Dyn root resizes through the
+                    // tag-8 guard at runtime (a NIL payload is a clean
+                    // rc1 - registered differential vs Harbour's headless
+                    // dialog hang, probe g4).
+                    Ty::Dyn => {}
                     Ty::DArrU => return Err(format!("line {}: the element type of `{}` is unknown until its first `AAdd` (pin it first)", n, id)),
                     Ty::DArr4 => return Err(format!("line {}: `ASize` on the root of a four-level array is not in this increment", n)),
                     _ => return Err(format!("line {}: `ASize` applies to dynamic arrays (`{{}}`); `{}` is not one", n, id)),
@@ -7023,6 +7107,55 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 apply_moves(e, env, sigs, false);
                 if env[kp].moved {
                     return Err(format!("line {}: use of moved value `{}`", n, id));
+                }
+            }
+            Stmt::AIns(n, id, ie) | Stmt::ADel(n, id, ie) => {
+                // ains P2 stage 2: insert/delete in place on a Dyn-held
+                // scalar array. Statically-typed arrays are a named
+                // rejection in this increment.
+                let kp = match env.iter().position(|v| v.name == *id) {
+                    Some(k) => k,
+                    None => return Err(format!("line {}: undeclared variable `{}`", n, id)),
+                };
+                if env[kp].moved {
+                    return Err(format!("line {}: use of moved value `{}`", n, id));
+                }
+                if env[kp].ty != Ty::Dyn {
+                    return Err(format!("line {}: `AIns`/`ADel` apply to Dyn-held arrays (`x := {{...}}`); `{}` has another type (statically-typed arrays are not in this increment)", n, id));
+                }
+                let t = type_expr(ie, env, sigs, *n)?;
+                if !matches!(t, Ty::I64 | Ty::Dyn) {
+                    return Err(format!("line {}: array index must be an integer", n));
+                }
+                apply_moves(ie, env, sigs, false);
+            }
+            Stmt::AFill(n, id, e, se, ce) => {
+                // ains P2 stage 2: fill in place on a Dyn-held scalar
+                // array. Scalar values only: an ARRAY value aliases the
+                // child in Harbour (probe g3) and is rejected; a float
+                // waits on the Dyn-float decision.
+                let kp = match env.iter().position(|v| v.name == *id) {
+                    Some(k) => k,
+                    None => return Err(format!("line {}: undeclared variable `{}`", n, id)),
+                };
+                if env[kp].moved {
+                    return Err(format!("line {}: use of moved value `{}`", n, id));
+                }
+                if env[kp].ty != Ty::Dyn {
+                    return Err(format!("line {}: `AFill` applies to Dyn-held arrays (`x := {{...}}`); `{}` has another type (statically-typed arrays are not in this increment)", n, id));
+                }
+                let t = type_expr(e, env, sigs, *n)?;
+                match t {
+                    Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::Dyn => {}
+                    Ty::F64 => return Err(format!("line {}: `AFill` with a float value is not in this increment (the Dyn float tag is still undecided)", n)),
+                    _ => return Err(format!("line {}: `AFill` with an array value aliases the child in Harbour (probe g3); scalar values only in this increment", n)),
+                }
+                apply_moves(e, env, sigs, false);
+                for oe in se.iter().chain(ce.iter()) {
+                    if type_expr(oe, env, sigs, *n)? != Ty::I64 {
+                        return Err(format!("line {}: `AFill` start and count must be integers", n));
+                    }
+                    apply_moves(oe, env, sigs, false);
                 }
             }
             Stmt::ASizeSub(n, id, ie, e) => {
@@ -11963,6 +12096,402 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     }
                 }
             }
+            Stmt::ASize(_, id, e) if env.iter().any(|v| v.name == *id && v.ty == Ty::Dyn) => {
+                // ains P2 stage 2 (contract v1, option C: realloc-by-copy
+                // exact fit; live == capacity keeps hbc_free/dfree and the
+                // registry validators verbatim). n < 0 empties (oracle
+                // m3); 8 + n*16 through the same checked arithmetic as
+                // hbc_asize (overflow -> OOM noreturn; the old slot stays
+                // owner until the new block exists). Discarded shrink
+                // cells lose their tag-4 payloads BEFORE the old block is
+                // freed; grown cells read NIL {1, 0} (oracle e1). Guard
+                // tag 8 BEFORE the count word. .L labels only.
+                let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
+                let k = fresh_lbl();
+                cg_expr(e, env, sigs, strs, out, target);
+                let asm = r#"    xor %ecx, %ecx
+    test %rax, %rax
+    cmovs %rcx, %rax
+    sub $48, %rsp
+    mov %rax, 16(%rsp)
+    mov -@P@(%rbp), %r11
+    cmpq $8, -@T@(%rbp)
+    jne hbc_type_error
+    mov %r11, (%rsp)
+    xor %r10, %r10
+    test %r11, %r11
+    jz .Lasn@K@
+    mov -8(%r11), %r10
+.Lasn@K@:
+    mov %r10, 8(%rsp)
+    mov 16(%rsp), %rdi
+    imul $16, %rdi
+    jo hbc_oom
+    add $8, %rdi
+    jc hbc_oom
+    call hbc_alloc
+    mov 16(%rsp), %rcx
+    mov %rcx, (%rax)
+    add $8, %rax
+    mov %rax, 24(%rsp)
+    mov (%rsp), %rsi
+    mov %rax, %rdi
+    mov 8(%rsp), %rcx
+    cmp 16(%rsp), %rcx
+    jle .Lascp@K@
+    mov 16(%rsp), %rcx
+.Lascp@K@:
+    shl $4, %rcx
+    rep movsb
+    mov 8(%rsp), %rcx
+.Lasg@K@:
+    cmp 16(%rsp), %rcx
+    jge .Lasd@K@
+    mov 24(%rsp), %rdi
+    mov %rcx, %r10
+    shl $4, %r10
+    movq $1, (%rdi,%r10)
+    movq $0, 8(%rdi,%r10)
+    inc %rcx
+    jmp .Lasg@K@
+.Lasd@K@:
+    mov 8(%rsp), %rcx
+.Lass@K@:
+    cmp 16(%rsp), %rcx
+    jle .Lasf@K@
+    dec %rcx
+    mov (%rsp), %r11
+    mov %rcx, %r10
+    shl $4, %r10
+    cmpq $4, (%r11,%r10)
+    jne .Lass@K@
+    mov 8(%r11,%r10), %rdi
+    test %rdi, %rdi
+    jz .Lass@K@
+    mov %rcx, 32(%rsp)
+    call hbc_freestr
+    mov 32(%rsp), %rcx
+    jmp .Lass@K@
+.Lasf@K@:
+    mov (%rsp), %rdi
+    test %rdi, %rdi
+    jz .Lasx@K@
+    mov $16, %esi
+    call hbc_free
+.Lasx@K@:
+    mov 24(%rsp), %rax
+    mov %rax, -@P@(%rbp)
+    add $48, %rsp
+"#.replace("@P@", &(v.off - 8).to_string()).replace("@T@", &v.off.to_string()).replace("@K@", &k.to_string());
+                out.push_str(&asm);
+            }
+            Stmt::AIns(_, id, ie) => {
+                // ains P2 stage 2: insert NIL at i (len fixed; the LAST
+                // cell is discarded, its tag-4 payload freed first).
+                // i = 0 clamps to 1; i < 0 and i > len are no-ops
+                // (oracles g5/g6/m2). Backward shift. Guard tag 8 BEFORE
+                // the count word. .L labels only.
+                let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
+                let k = fresh_lbl();
+                if expr_ty(ie, env, sigs) == Ty::Dyn {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                } else {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                }
+                let asm = r#"    mov %rax, %rcx
+    mov -@P@(%rbp), %r11
+    cmpq $8, -@T@(%rbp)
+    jne hbc_type_error
+    test %r11, %r11
+    jz .Laid@K@
+    test %rcx, %rcx
+    js .Laid@K@
+    jne .Laiz@K@
+    mov $1, %rcx
+.Laiz@K@:
+    cmp -8(%r11), %rcx
+    jg .Laid@K@
+    mov -8(%r11), %r10
+    dec %r10
+    shl $4, %r10
+    add %r11, %r10
+    cmpq $4, (%r10)
+    jne .Laisf@K@
+    mov 8(%r10), %rdi
+    test %rdi, %rdi
+    jz .Laisf@K@
+    sub $32, %rsp
+    mov %rcx, (%rsp)
+    mov %r11, 8(%rsp)
+    call hbc_freestr
+    mov (%rsp), %rcx
+    mov 8(%rsp), %r11
+    add $32, %rsp
+.Laisf@K@:
+    mov -8(%r11), %r10
+    sub %rcx, %r10
+    jle .Lain@K@
+    mov -8(%r11), %rax
+    dec %rax
+    shl $4, %rax
+    lea (%r11,%rax), %rdi
+    lea -16(%rdi), %rsi
+.Laish@K@:
+    mov (%rsi), %rdx
+    mov %rdx, (%rdi)
+    mov 8(%rsi), %rdx
+    mov %rdx, 8(%rdi)
+    sub $16, %rsi
+    sub $16, %rdi
+    dec %r10
+    jnz .Laish@K@
+.Lain@K@:
+    mov %rcx, %rax
+    dec %rax
+    shl $4, %rax
+    movq $1, (%r11,%rax)
+    movq $0, 8(%r11,%rax)
+.Laid@K@:
+"#.replace("@P@", &(v.off - 8).to_string()).replace("@T@", &v.off.to_string()).replace("@K@", &k.to_string());
+                out.push_str(&asm);
+            }
+            Stmt::ADel(_, id, ie) => {
+                // ains P2 stage 2: delete the cell at i (len fixed; the
+                // deleted cell's tag-4 payload is freed first, the tail
+                // shifts up, the last cell reads NIL). i = 0 clamps to 1;
+                // i < 0 and i > len are no-ops (oracles g5/g6/m2). Guard
+                // tag 8 BEFORE the count word. .L labels only.
+                let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
+                let k = fresh_lbl();
+                if expr_ty(ie, env, sigs) == Ty::Dyn {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                } else {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                }
+                let asm = r#"    mov %rax, %rcx
+    mov -@P@(%rbp), %r11
+    cmpq $8, -@T@(%rbp)
+    jne hbc_type_error
+    test %r11, %r11
+    jz .Ladd@K@
+    test %rcx, %rcx
+    js .Ladd@K@
+    jne .Ladz@K@
+    mov $1, %rcx
+.Ladz@K@:
+    cmp -8(%r11), %rcx
+    jg .Ladd@K@
+    mov %rcx, %r10
+    dec %r10
+    shl $4, %r10
+    add %r11, %r10
+    cmpq $4, (%r10)
+    jne .Ladsf@K@
+    mov 8(%r10), %rdi
+    test %rdi, %rdi
+    jz .Ladsf@K@
+    sub $32, %rsp
+    mov %rcx, (%rsp)
+    mov %r11, 8(%rsp)
+    call hbc_freestr
+    mov (%rsp), %rcx
+    mov 8(%rsp), %r11
+    add $32, %rsp
+.Ladsf@K@:
+    mov -8(%r11), %r10
+    sub %rcx, %r10
+    jle .Ladn@K@
+    mov %rcx, %rax
+    dec %rax
+    shl $4, %rax
+    lea (%r11,%rax), %rdi
+    lea 16(%rdi), %rsi
+.Ladsh@K@:
+    mov (%rsi), %rdx
+    mov %rdx, (%rdi)
+    mov 8(%rsi), %rdx
+    mov %rdx, 8(%rdi)
+    add $16, %rsi
+    add $16, %rdi
+    dec %r10
+    jnz .Ladsh@K@
+.Ladn@K@:
+    mov -8(%r11), %rax
+    dec %rax
+    shl $4, %rax
+    movq $1, (%r11,%rax)
+    movq $0, 8(%r11,%rax)
+.Ladd@K@:
+"#.replace("@P@", &(v.off - 8).to_string()).replace("@T@", &v.off.to_string()).replace("@K@", &k.to_string());
+                out.push_str(&asm);
+            }
+            Stmt::AFill(_, id, e, se, ce) => {
+                // ains P2 stage 2 (reviewer M1): scalar fill on a Dyn-held
+                // array. A string value is CLONED PER CELL (no shared
+                // payload pointers); a Dyn RHS dispatches at runtime (tag
+                // 8 -> clean type error; scalar tags store their pair;
+                // string tags clone per cell). start = 0 clamps to 1;
+                // start < 0 (no range clip-up), start > len and
+                // count <= 0 are no-ops; count clamps at len (oracles
+                // g7/m2). Each overwritten cell's tag-4 payload is freed
+                // first. Guard tag 8 BEFORE the count word. .L labels
+                // only. Frame: 0 DATA, 8 count, 16 j, 24 kind, 32 a,
+                // 40 b, 48 start, 56 temp-free, 64 raw count, 72 scratch.
+                let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
+                let k = fresh_lbl();
+                let rt = expr_ty(e, env, sigs);
+                cg_value(e, env, sigs, strs, out, target);
+                out.push_str("    sub $96, %rsp\n");
+                match rt {
+                    Ty::I64 => out.push_str("    mov %rax, %rdx\n    movq $0, 24(%rsp)\n    movq $0, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    movq $0, 56(%rsp)\n"),
+                    Ty::Bool => out.push_str("    mov %rax, %rdx\n    movq $0, 24(%rsp)\n    movq $3, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    movq $0, 56(%rsp)\n"),
+                    Ty::Str => out.push_str("    movq $1, 24(%rsp)\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    movq $0, 56(%rsp)\n"),
+                    Ty::StrOwn => {
+                        out.push_str("    movq $1, 24(%rsp)\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n");
+                        if matches!(e, Expr::Var(_)) {
+                            out.push_str("    movq $0, 56(%rsp)\n");
+                        } else {
+                            // Owned temporary: cloned per cell, then freed.
+                            out.push_str("    mov %rax, 56(%rsp)\n");
+                        }
+                    }
+                    Ty::Dyn => {
+                        let asm = r#"    cmp $2, %rax
+    je .Lfds@K@
+    cmp $4, %rax
+    je .Lfds@K@
+    cmp $8, %rax
+    je hbc_type_error
+    cmp $0, %rax
+    je .Lfdp@K@
+    cmp $1, %rax
+    je .Lfdp@K@
+    cmp $3, %rax
+    je .Lfdp@K@
+    jmp hbc_type_error
+.Lfdp@K@:
+    movq $0, 24(%rsp)
+    mov %rax, 32(%rsp)
+    mov %rdx, 40(%rsp)
+    movq $0, 56(%rsp)
+    jmp .Lfdd@K@
+.Lfds@K@:
+    mov -8(%rdx), %rcx
+    movq $1, 24(%rsp)
+    mov %rdx, 32(%rsp)
+    mov %rcx, 40(%rsp)
+"#.replace("@K@", &k.to_string());
+                        out.push_str(&asm);
+                        if matches!(e, Expr::Var(_)) {
+                            let asm2 = "    movq $0, 56(%rsp)\n.Lfdd@K@:\n".replace("@K@", &k.to_string());
+                            out.push_str(&asm2);
+                        } else {
+                            let asm2 = r#"    cmp $4, %rax
+    jne .Lfdz@K@
+    mov %rdx, 56(%rsp)
+    jmp .Lfdd@K@
+.Lfdz@K@:
+    movq $0, 56(%rsp)
+.Lfdd@K@:
+"#.replace("@K@", &k.to_string());
+                            out.push_str(&asm2);
+                        }
+                    }
+                    _ => unreachable!("checked"),
+                }
+                match se {
+                    Some(x) => { cg_expr(x, env, sigs, strs, out, target); out.push_str("    mov %rax, 48(%rsp)\n"); }
+                    None => out.push_str("    movq $1, 48(%rsp)\n"),
+                }
+                match ce {
+                    Some(x) => { cg_expr(x, env, sigs, strs, out, target); out.push_str("    mov %rax, 64(%rsp)\n"); }
+                    None => out.push_str("    mov $0x7fffffffffffffff, %rax\n    mov %rax, 64(%rsp)\n"),
+                }
+                let asm = r#"    mov -@P@(%rbp), %r11
+    cmpq $8, -@T@(%rbp)
+    jne hbc_type_error
+    test %r11, %r11
+    jz .Lfdn@K@
+    mov %r11, (%rsp)
+    mov -8(%r11), %r10
+    mov 48(%rsp), %rcx
+    test %rcx, %rcx
+    js .Lfdn@K@
+    jne .Lfz@K@
+    mov $1, %rcx
+.Lfz@K@:
+    cmp %r10, %rcx
+    jg .Lfdn@K@
+    mov %r10, %rax
+    sub %rcx, %rax
+    inc %rax
+    mov 64(%rsp), %rdx
+    test %rdx, %rdx
+    jle .Lfdn@K@
+    cmp %rax, %rdx
+    jle .Lfc@K@
+    mov %rax, %rdx
+.Lfc@K@:
+    mov %rdx, 8(%rsp)
+    dec %rcx
+    mov %rcx, 48(%rsp)
+    movq $0, 16(%rsp)
+.Lfl@K@:
+    mov 16(%rsp), %rcx
+    cmp 8(%rsp), %rcx
+    jge .Lfe@K@
+    mov 48(%rsp), %rax
+    add %rcx, %rax
+    shl $4, %rax
+    add (%rsp), %rax
+    cmpq $4, (%rax)
+    jne .Lfnf@K@
+    mov 8(%rax), %rdi
+    test %rdi, %rdi
+    jz .Lfnf@K@
+    mov %rax, 72(%rsp)
+    call hbc_freestr
+    mov 72(%rsp), %rax
+.Lfnf@K@:
+    cmpq $1, 24(%rsp)
+    je .Lfs@K@
+    mov 32(%rsp), %r10
+    mov %r10, (%rax)
+    mov 40(%rsp), %r10
+    mov %r10, 8(%rax)
+    jmp .Lfn@K@
+.Lfs@K@:
+    mov %rax, 72(%rsp)
+    mov 32(%rsp), %rdi
+    mov 40(%rsp), %rsi
+    call hbc_strcpy
+    mov 72(%rsp), %r10
+    movq $4, (%r10)
+    mov %rax, 8(%r10)
+.Lfn@K@:
+    incq 16(%rsp)
+    jmp .Lfl@K@
+.Lfe@K@:
+    mov 56(%rsp), %rdi
+    test %rdi, %rdi
+    jz .Lft@K@
+    call hbc_freestr
+.Lft@K@:
+    add $96, %rsp
+    jmp .Lfx@K@
+.Lfdn@K@:
+    mov 56(%rsp), %rdi
+    test %rdi, %rdi
+    jz .Lft2@K@
+    call hbc_freestr
+.Lft2@K@:
+    add $96, %rsp
+.Lfx@K@:
+"#.replace("@P@", &(v.off - 8).to_string()).replace("@T@", &v.off.to_string()).replace("@K@", &k.to_string());
+                out.push_str(&asm);
+            }
             Stmt::ASize(_, id, e) => {
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
                 // kind 0: flat (grow NIL). kind 1: arrays (grow the empty
@@ -12677,6 +13206,8 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
             Stmt::SendSet(_, o, _, e) => { collect_blocks_expr(o, out); collect_blocks_expr(e, out); }
             Stmt::Ret(_, None) | Stmt::Exit(_) | Stmt::Loop(_) => {}
             Stmt::AAdd(_, _, e) | Stmt::ASize(_, _, e) => collect_blocks_expr(e, out),
+            Stmt::AIns(_, _, e) | Stmt::ADel(_, _, e) => collect_blocks_expr(e, out),
+            Stmt::AFill(_, _, e, se, ce) => { collect_blocks_expr(e, out); if let Some(x) = se { collect_blocks_expr(x, out); } if let Some(x) = ce { collect_blocks_expr(x, out); } }
             Stmt::ArrSet2(_, _, ie, ie2, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(ie2, out); collect_blocks_expr(e, out); }
             Stmt::ArrSet3(_, _, ie, ie2, ie3, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(ie2, out); collect_blocks_expr(ie3, out); collect_blocks_expr(e, out); }
             Stmt::ArrSet4(_, _, ie, ie2, ie3, ie4, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(ie2, out); collect_blocks_expr(ie3, out); collect_blocks_expr(ie4, out); collect_blocks_expr(e, out); }
