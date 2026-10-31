@@ -640,3 +640,46 @@ Official references:
 - https://sourceware.org/gdb/current/onlinedocs/gdb.html/Optimized-Code.html
 - https://lldb.llvm.org/use/lldbdap.html
 - https://lld.llvm.org/windows_support.html
+
+## M1 · Native multithreading (planned, not implemented)
+
+Added to the roadmap on2026-10-31 at the user's request ("anotalo todo en el
+roadmap"). This records a separate phase; it does not advance implementation
+ahead of syntax/original-corpus work, and it authorizes no RC, ABI, float-tag
+or MT implementation. Every point below stays planned/pending decision until
+the user decides the memory model.
+
+Current state: single-threaded code generation on both targets; a
+process-global allocator not audited for concurrent access; closures that
+cannot outlive their creating scope; no TLS addressing, no thread spawn/join,
+no mutex runtime, no per-thread statics/memvars. Reference evidence (verifier,
+pin694428e1): all12 tests/mt sources compile under Harbour -mt; six
+deterministic executions exit0 were observed - mttest01 returns a string and a
+closure whose detached local stays alive after its thread ends, mttest02/03
+exercise per-thread QUIT/ALWAYS/EXIT closing order, mttest05/06 sum correctly
+from thread statics and private memvars, mttest07 sums a mutex-guarded queue.
+The other six need keys/GT/DBF layers or run an intentional race. This
+reference evidence does not demonstrate HarbourRust multithreading.
+
+Route (each phase enters through its own originals, one by one):
+
+1. Escaping closures, single-threaded first: detached locals with verified
+   ownership and release. This is the semantic core of mttest01 and requires
+   the pending shared-memory decision (the2026-10-25 RC question remains
+   unanswered; a comparison of the viable memory models - aliasing, lifetime
+   after join, cycles, cost and Harbour compatibility - is in preparation and
+   will be presented before any implementation).
+2. TLS plus spawn/join: Harbour's per-thread state (thread statics, private
+   memvars) on thread-local storage; native threads, no VM.
+3. Mutex and queues: mttest07; the allocator becomes concurrency-safe (lock
+   or per-thread arenas, per the memory decision).
+4. Per-thread QUIT/ALWAYS/EXIT closing order. MT originals that need GT or
+   DBF enter only with those respective layers.
+
+Oracles: byte-exact output comparison against the Harbour reference only
+where the program's output is deterministic; no interleaving order is
+required that Harbour itself does not guarantee. Backend parity: the default
+backend receives each phase first; the LLVM subset keeps its explicit named
+rejection for the same constructs until separately implemented, as with
+previous pieces. Exit gate: the twelve tests/mt originals one by one, with
+deterministic outputs byte-exact against the pinned reference.
