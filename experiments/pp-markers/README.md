@@ -776,3 +776,18 @@ to the separately unresolved captured-translation prefix contract. The original
 _pp_test uses an intentionally incomplete XTRANS(<x:&>( pattern,so accepting
 its definition alone does not establish call matching or complete acceptance.
 Any emitted runtime macro operator remains the existing named native limit.
+
+## Directive-template bracket regression and correction
+
+The bracket-source increment301e081 accidentally let optional brackets in a
+continued #command template enter string context.23originals then stopped in
+hbclass.ch:576before their previous body diagnostics. Unchanged total acceptance
+DID NOT mean no regression. The source-literal predicate now explicitly excludes
+directive templates;their brackets retain their original pattern/result meaning.
+A new continued restricted-list optional-template console fixture matches fresh
+Harbour output.23of23affected first diagnostics are restored exactly versus
+75176dd. The full comparison versus75176ddhas only4remaining diagnostic advances
+(_pp_test,pp,strdelim,vec1),with no accepted/lost originals.13bracket-source phase
+checks and12escape stringify checks still pass.1227default/478LLVM checks pass
+fresh locally;14reviewed originals remain freshly exact. This corrects a real
+regression;earlier baed678must not be described as regression-free.

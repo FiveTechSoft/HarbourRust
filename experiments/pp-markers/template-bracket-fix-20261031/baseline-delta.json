@@ -1,0 +1,70 @@
+[
+  {
+    "file": "tests/hbpp/_pp_test.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 120: stringify requiring bracket/escape literal is outside this increment"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 248: bad match marker <x:&> in #command/#translate (Harbour: E0010)"
+      ]
+    }
+  },
+  {
+    "file": "tests/pp.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 39: list stringify with bracket tokens is outside this increment"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 11: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+      ]
+    }
+  },
+  {
+    "file": "tests/strdelim.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 5: unexpected token LBracket in expression"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 5: nested array elements must be integers in this increment"
+      ]
+    }
+  },
+  {
+    "file": "tests/vec1.prg",
+    "before": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 6: unterminated string"
+      ]
+    },
+    "after": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 8: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)"
+      ]
+    }
+  }
+]

@@ -1,0 +1,577 @@
+[
+  {
+    "file": "tests/cgi.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 506: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 506: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/clasinh.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 332: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 332: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/classch.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 330: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 330: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/cls.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 339: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 339: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/clsccast.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 632: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 632: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/clsicast.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/clsnv.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 356: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 356: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/clsscast.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 666: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 666: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/clsscope.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 488: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 488: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/declare.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 337: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 337: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/destruct.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 94: command expansion too deep (recursive command?)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 94: command expansion too deep (recursive command?)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/foreach2.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 358: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 358: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/html.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/inhprob.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 329: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 329: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/inifile.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 458: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 458: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/inifiles.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 487: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 487: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/macro.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 327: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 327: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/money.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 439: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 439: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/op.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 391: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 391: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/overload.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 336: character not allowed `#` (U+0023)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 336: character not allowed `#` (U+0023)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/persist.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 334: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 334: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/speedstr.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 359: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 359: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+      ]
+    },
+    "restored_exact": true
+  },
+  {
+    "file": "tests/stripem.prg",
+    "baseline75176dd": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 459: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "regressed": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 576: #command needs `pattern => result`"
+      ]
+    },
+    "corrected": {
+      "compiled": false,
+      "exit": 1,
+      "diagnostic": [
+        "error: line 459: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+      ]
+    },
+    "restored_exact": true
+  }
+]

@@ -1222,3 +1222,4 @@ pos tests/t1223_escape_continuation.hb \na";b
 pos tests/t1224_pp_list_index.hb \na[1,2] b\na[b[1,2]] c
 pos tests/t1225_pp_list_index_whole.hb \na [ f(1,2) ], b
 pos tests/t1226_pp_list_index_literal.hb \na[1] "b;c"
+pos tests/t1227_pp_template_continuation.hb \nOK

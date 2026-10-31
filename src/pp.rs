@@ -448,6 +448,8 @@ fn quote_literal(text:&str)->String {
 }
 
 pub fn bracket_literal_start(text: &str, at: usize) -> bool {
+    // Directive brackets are pattern/result syntax,not source literals.
+    if text.trim_start().starts_with('#') {return false;}
     let before=text[..at].trim_end().to_ascii_uppercase();
     if [".AND.",".OR.",".NOT."].iter().any(|op|before.ends_with(op)) {return true;}
     match text[..at].bytes().rev().find(|c|!c.is_ascii_whitespace()) {
