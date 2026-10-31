@@ -1,0 +1,542 @@
+[
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &x DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&x\")\n",
+    "exit": 0,
+    "own": "OUT(\"&x\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &x DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(x)\n",
+    "exit": 0,
+    "own": "OUT(x)\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &x DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(x)\n",
+    "exit": 0,
+    "own": "OUT(x)\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &x. DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&x.\")\n",
+    "exit": 0,
+    "own": "OUT(\"&x.\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &x. DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(x)\n",
+    "exit": 0,
+    "own": "OUT(x)\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &x. DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(x)\n",
+    "exit": 0,
+    "own": "OUT(x)\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE & x DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"& x\")\n",
+    "exit": 0,
+    "own": "OUT(\"& x\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE & x DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"& x\")\n",
+    "exit": 0,
+    "own": "OUT(\"& x\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE & x DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"& x\")\n",
+    "exit": 0,
+    "own": "OUT(\"& x\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE & x . DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"& x . DECL\")\n",
+    "exit": 0,
+    "own": "OUT(\"& x . DECL\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE & x . DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"& x . DECL\")\n",
+    "exit": 0,
+    "own": "OUT(\"& x . DECL\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE & x . DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"& x . DECL\")\n",
+    "exit": 0,
+    "own": "OUT(\"& x . DECL\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &x.suffix DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&x.suffix\")\n",
+    "exit": 0,
+    "own": "OUT(\"&x.suffix\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &x.suffix DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&x.suffix\")\n",
+    "exit": 0,
+    "own": "OUT(\"&x.suffix\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &x.suffix DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&x.suffix\")\n",
+    "exit": 0,
+    "own": "OUT(\"&x.suffix\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &x.. DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&x.. DECL\")\n",
+    "exit": 0,
+    "own": "OUT(\"&x.. DECL\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &x.. DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&x.. DECL\")\n",
+    "exit": 0,
+    "own": "OUT(\"&x.. DECL\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &x.. DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&x.. DECL\")\n",
+    "exit": 0,
+    "own": "OUT(\"&x.. DECL\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &x[1] DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&x[1]\")\n",
+    "exit": 0,
+    "own": "OUT(\"&x[1]\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &x[1] DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&x[1]\")\n",
+    "exit": 0,
+    "own": "OUT(\"&x[1]\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &x[1] DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&x[1]\")\n",
+    "exit": 0,
+    "own": "OUT(\"&x[1]\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &(x) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&(x)\")\n",
+    "exit": 0,
+    "own": "OUT(\"&(x)\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &(x) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT((x))\n",
+    "exit": 0,
+    "own": "OUT((x))\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &(x) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT((x))\n",
+    "exit": 0,
+    "own": "OUT((x))\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE & (x) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"& (x)\")\n",
+    "exit": 0,
+    "own": "OUT(\"& (x)\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE & (x) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT((x))\n",
+    "exit": 0,
+    "own": "OUT((x))\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE & (x) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT((x))\n",
+    "exit": 0,
+    "own": "OUT((x))\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &(x)+1 DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&(x)+1\")\n",
+    "exit": 0,
+    "own": "OUT(\"&(x)+1\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &(x)+1 DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT((x)+1)\n",
+    "exit": 0,
+    "own": "OUT((x)+1)\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &(x)+1 DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT((x)+1)\n",
+    "exit": 0,
+    "own": "OUT((x)+1)\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &(f(1,2)) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&(f(1,2))\")\n",
+    "exit": 0,
+    "own": "OUT(\"&(f(1,2))\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &(f(1,2)) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT((f(1,2)))\n",
+    "exit": 0,
+    "own": "OUT((f(1,2)))\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &(f(1,2)) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT((f(1,2)))\n",
+    "exit": 0,
+    "own": "OUT((f(1,2)))\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &(\"a\") DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT('&(\"a\")')\n",
+    "exit": 0,
+    "own": "OUT('&(\"a\")')\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &(\"a\") DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT((\"a\"))\n",
+    "exit": 0,
+    "own": "OUT((\"a\"))\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &(\"a\") DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT((\"a\"))\n",
+    "exit": 0,
+    "own": "OUT((\"a\"))\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &(\"a)\" ) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT('&(\"a)\" )')\n",
+    "exit": 0,
+    "own": "OUT('&(\"a)\" )')\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &(\"a)\" ) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT((\"a)\" ))\n",
+    "exit": 0,
+    "own": "OUT((\"a)\" ))\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &(\"a)\" ) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT((\"a)\" ))\n",
+    "exit": 0,
+    "own": "OUT((\"a)\" ))\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &x + 1 DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&x + 1\")\n",
+    "exit": 0,
+    "own": "OUT(\"&x + 1\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &x + 1 DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&x + 1\")\n",
+    "exit": 0,
+    "own": "OUT(\"&x + 1\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &x + 1 DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&x + 1\")\n",
+    "exit": 0,
+    "own": "OUT(\"&x + 1\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &(x) + &(y) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&(x) + &(y)\")\n",
+    "exit": 0,
+    "own": "OUT(\"&(x) + &(y)\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &(x) + &(y) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT((x) + &(y))\n",
+    "exit": 0,
+    "own": "OUT((x) + &(y))\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &(x) + &(y) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT((x) + &(y))\n",
+    "exit": 0,
+    "own": "OUT((x) + &(y))\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &(x)(1) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&(x)(1)\")\n",
+    "exit": 0,
+    "own": "OUT(\"&(x)(1)\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &(x)(1) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT((x)(1))\n",
+    "exit": 0,
+    "own": "OUT((x)(1))\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &(x)(1) DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT((x)(1))\n",
+    "exit": 0,
+    "own": "OUT((x)(1))\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &(x)foo DECL\n",
+    "refexit": 0,
+    "ref": "\nPROBE &(x)foo DECL\n",
+    "exit": 0,
+    "own": "PROBE &(x)foo DECL\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &(x)foo DECL\n",
+    "refexit": 0,
+    "ref": "\nPROBE &(x)foo DECL\n",
+    "exit": 0,
+    "own": "PROBE &(x)foo DECL\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &(x)foo DECL\n",
+    "refexit": 0,
+    "ref": "\nPROBE &(x)foo DECL\n",
+    "exit": 0,
+    "own": "PROBE &(x)foo DECL\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &x. DECL DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&x.\")\n",
+    "exit": 0,
+    "own": "OUT(\"&x.\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &x. DECL DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(x)\n",
+    "exit": 0,
+    "own": "OUT(x)\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &x. DECL DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(x)\n",
+    "exit": 0,
+    "own": "OUT(x)\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &x. AS T DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(\"&x.\")\n",
+    "exit": 0,
+    "own": "OUT(\"&x.\")\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &x. AS T DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(x)\n",
+    "exit": 0,
+    "own": "OUT(x)\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &x. AS T DECL\n",
+    "refexit": 0,
+    "ref": "\nOUT(x)\n",
+    "exit": 0,
+    "own": "OUT(x)\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(#<x>)\nPROBE &x. &y. DECL\n",
+    "refexit": 0,
+    "ref": "\nPROBE &x. &y. DECL\n",
+    "exit": 0,
+    "own": "PROBE &x. &y. DECL\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<\"x\">)\nPROBE &x. &y. DECL\n",
+    "refexit": 0,
+    "ref": "\nPROBE &x. &y. DECL\n",
+    "exit": 0,
+    "own": "PROBE &x. &y. DECL\n",
+    "error": "",
+    "match": true
+  },
+  {
+    "source": "#xcommand PROBE <x> [AS <t>] [DECL] => OUT(<(x)>)\nPROBE &x. &y. DECL\n",
+    "refexit": 0,
+    "ref": "\nPROBE &x. &y. DECL\n",
+    "exit": 0,
+    "own": "PROBE &x. &y. DECL\n",
+    "error": "",
+    "match": true
+  }
+]

@@ -1,0 +1,632 @@
+[
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(#<x>)\nPROBE name DECL\n",
+    "expr": "name",
+    "result": "#<x>",
+    "exit": 0,
+    "output": "\nOUT(\"name\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<\"x\">)\nPROBE name DECL\n",
+    "expr": "name",
+    "result": "<\"x\">",
+    "exit": 0,
+    "output": "\nOUT(\"name\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<(x)>)\nPROBE name DECL\n",
+    "expr": "name",
+    "result": "<(x)>",
+    "exit": 0,
+    "output": "\nOUT(\"name\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<x>)\nPROBE name DECL\n",
+    "expr": "name",
+    "result": "<x>",
+    "exit": 0,
+    "output": "\nOUT(name)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<.x.>)\nPROBE name DECL\n",
+    "expr": "name",
+    "result": "<.x.>",
+    "exit": 0,
+    "output": "\nOUT(.T.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<-x->)\nPROBE name DECL\n",
+    "expr": "name",
+    "result": "<-x->",
+    "exit": 0,
+    "output": "\nOUT()\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(#<x>)\nPROBE &name DECL\n",
+    "expr": "&name",
+    "result": "#<x>",
+    "exit": 0,
+    "output": "\nOUT(\"&name\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<\"x\">)\nPROBE &name DECL\n",
+    "expr": "&name",
+    "result": "<\"x\">",
+    "exit": 0,
+    "output": "\nOUT(name)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<(x)>)\nPROBE &name DECL\n",
+    "expr": "&name",
+    "result": "<(x)>",
+    "exit": 0,
+    "output": "\nOUT(name)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<x>)\nPROBE &name DECL\n",
+    "expr": "&name",
+    "result": "<x>",
+    "exit": 0,
+    "output": "\nOUT(&name)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<.x.>)\nPROBE &name DECL\n",
+    "expr": "&name",
+    "result": "<.x.>",
+    "exit": 0,
+    "output": "\nOUT(.T.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<-x->)\nPROBE &name DECL\n",
+    "expr": "&name",
+    "result": "<-x->",
+    "exit": 0,
+    "output": "\nOUT()\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(#<x>)\nPROBE &name. DECL\n",
+    "expr": "&name.",
+    "result": "#<x>",
+    "exit": 0,
+    "output": "\nOUT(\"&name.\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<\"x\">)\nPROBE &name. DECL\n",
+    "expr": "&name.",
+    "result": "<\"x\">",
+    "exit": 0,
+    "output": "\nOUT(name)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<(x)>)\nPROBE &name. DECL\n",
+    "expr": "&name.",
+    "result": "<(x)>",
+    "exit": 0,
+    "output": "\nOUT(name)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<x>)\nPROBE &name. DECL\n",
+    "expr": "&name.",
+    "result": "<x>",
+    "exit": 0,
+    "output": "\nOUT(&name.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<.x.>)\nPROBE &name. DECL\n",
+    "expr": "&name.",
+    "result": "<.x.>",
+    "exit": 0,
+    "output": "\nOUT(.T.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<-x->)\nPROBE &name. DECL\n",
+    "expr": "&name.",
+    "result": "<-x->",
+    "exit": 0,
+    "output": "\nOUT()\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(#<x>)\nPROBE & name . DECL\n",
+    "expr": "& name .",
+    "result": "#<x>",
+    "exit": 0,
+    "output": "\nOUT(\"& name . DECL\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<\"x\">)\nPROBE & name . DECL\n",
+    "expr": "& name .",
+    "result": "<\"x\">",
+    "exit": 0,
+    "output": "\nOUT(\"& name . DECL\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<(x)>)\nPROBE & name . DECL\n",
+    "expr": "& name .",
+    "result": "<(x)>",
+    "exit": 0,
+    "output": "\nOUT(\"& name . DECL\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<x>)\nPROBE & name . DECL\n",
+    "expr": "& name .",
+    "result": "<x>",
+    "exit": 0,
+    "output": "\nOUT(& name . DECL)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<.x.>)\nPROBE & name . DECL\n",
+    "expr": "& name .",
+    "result": "<.x.>",
+    "exit": 0,
+    "output": "\nOUT(.T.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<-x->)\nPROBE & name . DECL\n",
+    "expr": "& name .",
+    "result": "<-x->",
+    "exit": 0,
+    "output": "\nOUT()\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(#<x>)\nPROBE pre&name. DECL\n",
+    "expr": "pre&name.",
+    "result": "#<x>",
+    "exit": 0,
+    "output": "\nOUT(\"pre&name.\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<\"x\">)\nPROBE pre&name. DECL\n",
+    "expr": "pre&name.",
+    "result": "<\"x\">",
+    "exit": 0,
+    "output": "\nOUT(\"pre&name.\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<(x)>)\nPROBE pre&name. DECL\n",
+    "expr": "pre&name.",
+    "result": "<(x)>",
+    "exit": 0,
+    "output": "\nOUT(\"pre&name.\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<x>)\nPROBE pre&name. DECL\n",
+    "expr": "pre&name.",
+    "result": "<x>",
+    "exit": 0,
+    "output": "\nOUT(pre&name.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<.x.>)\nPROBE pre&name. DECL\n",
+    "expr": "pre&name.",
+    "result": "<.x.>",
+    "exit": 0,
+    "output": "\nOUT(.T.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<-x->)\nPROBE pre&name. DECL\n",
+    "expr": "pre&name.",
+    "result": "<-x->",
+    "exit": 0,
+    "output": "\nOUT()\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(#<x>)\nPROBE &name.suffix DECL\n",
+    "expr": "&name.suffix",
+    "result": "#<x>",
+    "exit": 0,
+    "output": "\nOUT(\"&name.suffix\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<\"x\">)\nPROBE &name.suffix DECL\n",
+    "expr": "&name.suffix",
+    "result": "<\"x\">",
+    "exit": 0,
+    "output": "\nOUT(\"&name.suffix\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<(x)>)\nPROBE &name.suffix DECL\n",
+    "expr": "&name.suffix",
+    "result": "<(x)>",
+    "exit": 0,
+    "output": "\nOUT(\"&name.suffix\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<x>)\nPROBE &name.suffix DECL\n",
+    "expr": "&name.suffix",
+    "result": "<x>",
+    "exit": 0,
+    "output": "\nOUT(&name.suffix)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<.x.>)\nPROBE &name.suffix DECL\n",
+    "expr": "&name.suffix",
+    "result": "<.x.>",
+    "exit": 0,
+    "output": "\nOUT(.T.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<-x->)\nPROBE &name.suffix DECL\n",
+    "expr": "&name.suffix",
+    "result": "<-x->",
+    "exit": 0,
+    "output": "\nOUT()\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(#<x>)\nPROBE &(name) DECL\n",
+    "expr": "&(name)",
+    "result": "#<x>",
+    "exit": 0,
+    "output": "\nOUT(\"&(name)\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<\"x\">)\nPROBE &(name) DECL\n",
+    "expr": "&(name)",
+    "result": "<\"x\">",
+    "exit": 0,
+    "output": "\nOUT((name))\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<(x)>)\nPROBE &(name) DECL\n",
+    "expr": "&(name)",
+    "result": "<(x)>",
+    "exit": 0,
+    "output": "\nOUT((name))\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<x>)\nPROBE &(name) DECL\n",
+    "expr": "&(name)",
+    "result": "<x>",
+    "exit": 0,
+    "output": "\nOUT(&(name))\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<.x.>)\nPROBE &(name) DECL\n",
+    "expr": "&(name)",
+    "result": "<.x.>",
+    "exit": 0,
+    "output": "\nOUT(.T.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<-x->)\nPROBE &(name) DECL\n",
+    "expr": "&(name)",
+    "result": "<-x->",
+    "exit": 0,
+    "output": "\nOUT()\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(#<x>)\nPROBE &(\"name\") DECL\n",
+    "expr": "&(\"name\")",
+    "result": "#<x>",
+    "exit": 0,
+    "output": "\nOUT('&(\"name\")')\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<\"x\">)\nPROBE &(\"name\") DECL\n",
+    "expr": "&(\"name\")",
+    "result": "<\"x\">",
+    "exit": 0,
+    "output": "\nOUT((\"name\"))\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<(x)>)\nPROBE &(\"name\") DECL\n",
+    "expr": "&(\"name\")",
+    "result": "<(x)>",
+    "exit": 0,
+    "output": "\nOUT((\"name\"))\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<x>)\nPROBE &(\"name\") DECL\n",
+    "expr": "&(\"name\")",
+    "result": "<x>",
+    "exit": 0,
+    "output": "\nOUT(&(\"name\"))\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<.x.>)\nPROBE &(\"name\") DECL\n",
+    "expr": "&(\"name\")",
+    "result": "<.x.>",
+    "exit": 0,
+    "output": "\nOUT(.T.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<-x->)\nPROBE &(\"name\") DECL\n",
+    "expr": "&(\"name\")",
+    "result": "<-x->",
+    "exit": 0,
+    "output": "\nOUT()\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(#<x>)\nPROBE \"name\" DECL\n",
+    "expr": "\"name\"",
+    "result": "#<x>",
+    "exit": 0,
+    "output": "\nOUT('\"name\"')\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<\"x\">)\nPROBE \"name\" DECL\n",
+    "expr": "\"name\"",
+    "result": "<\"x\">",
+    "exit": 0,
+    "output": "\nOUT('\"name\"')\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<(x)>)\nPROBE \"name\" DECL\n",
+    "expr": "\"name\"",
+    "result": "<(x)>",
+    "exit": 0,
+    "output": "\nOUT(\"name\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<x>)\nPROBE \"name\" DECL\n",
+    "expr": "\"name\"",
+    "result": "<x>",
+    "exit": 0,
+    "output": "\nOUT(\"name\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<.x.>)\nPROBE \"name\" DECL\n",
+    "expr": "\"name\"",
+    "result": "<.x.>",
+    "exit": 0,
+    "output": "\nOUT(.T.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<-x->)\nPROBE \"name\" DECL\n",
+    "expr": "\"name\"",
+    "result": "<-x->",
+    "exit": 0,
+    "output": "\nOUT()\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(#<x>)\nPROBE 'name' DECL\n",
+    "expr": "'name'",
+    "result": "#<x>",
+    "exit": 0,
+    "output": "\nOUT('\"name\"')\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<\"x\">)\nPROBE 'name' DECL\n",
+    "expr": "'name'",
+    "result": "<\"x\">",
+    "exit": 0,
+    "output": "\nOUT('\"name\"')\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<(x)>)\nPROBE 'name' DECL\n",
+    "expr": "'name'",
+    "result": "<(x)>",
+    "exit": 0,
+    "output": "\nOUT(\"name\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<x>)\nPROBE 'name' DECL\n",
+    "expr": "'name'",
+    "result": "<x>",
+    "exit": 0,
+    "output": "\nOUT(\"name\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<.x.>)\nPROBE 'name' DECL\n",
+    "expr": "'name'",
+    "result": "<.x.>",
+    "exit": 0,
+    "output": "\nOUT(.T.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<-x->)\nPROBE 'name' DECL\n",
+    "expr": "'name'",
+    "result": "<-x->",
+    "exit": 0,
+    "output": "\nOUT()\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(#<x>)\nPROBE [name] DECL\n",
+    "expr": "[name]",
+    "result": "#<x>",
+    "exit": 0,
+    "output": "\nOUT(\"[name]\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<\"x\">)\nPROBE [name] DECL\n",
+    "expr": "[name]",
+    "result": "<\"x\">",
+    "exit": 0,
+    "output": "\nOUT(\"[name]\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<(x)>)\nPROBE [name] DECL\n",
+    "expr": "[name]",
+    "result": "<(x)>",
+    "exit": 0,
+    "output": "\nOUT(\"[name]\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<x>)\nPROBE [name] DECL\n",
+    "expr": "[name]",
+    "result": "<x>",
+    "exit": 0,
+    "output": "\nOUT([name])\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<.x.>)\nPROBE [name] DECL\n",
+    "expr": "[name]",
+    "result": "<.x.>",
+    "exit": 0,
+    "output": "\nOUT(.T.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<-x->)\nPROBE [name] DECL\n",
+    "expr": "[name]",
+    "result": "<-x->",
+    "exit": 0,
+    "output": "\nOUT()\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(#<x>)\nPROBE e\"line\" DECL\n",
+    "expr": "e\"line\"",
+    "result": "#<x>",
+    "exit": 0,
+    "output": "\nOUT('\"line\"')\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<\"x\">)\nPROBE e\"line\" DECL\n",
+    "expr": "e\"line\"",
+    "result": "<\"x\">",
+    "exit": 0,
+    "output": "\nOUT('\"line\"')\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<(x)>)\nPROBE e\"line\" DECL\n",
+    "expr": "e\"line\"",
+    "result": "<(x)>",
+    "exit": 0,
+    "output": "\nOUT(\"line\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<x>)\nPROBE e\"line\" DECL\n",
+    "expr": "e\"line\"",
+    "result": "<x>",
+    "exit": 0,
+    "output": "\nOUT(\"line\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<.x.>)\nPROBE e\"line\" DECL\n",
+    "expr": "e\"line\"",
+    "result": "<.x.>",
+    "exit": 0,
+    "output": "\nOUT(.T.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<-x->)\nPROBE e\"line\" DECL\n",
+    "expr": "e\"line\"",
+    "result": "<-x->",
+    "exit": 0,
+    "output": "\nOUT()\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(#<x>)\nPROBE d\"2026-01-01\" DECL\n",
+    "expr": "d\"2026-01-01\"",
+    "result": "#<x>",
+    "exit": 0,
+    "output": "\nOUT('d\"2026-01-01\"')\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<\"x\">)\nPROBE d\"2026-01-01\" DECL\n",
+    "expr": "d\"2026-01-01\"",
+    "result": "<\"x\">",
+    "exit": 0,
+    "output": "\nOUT('d\"2026-01-01\"')\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<(x)>)\nPROBE d\"2026-01-01\" DECL\n",
+    "expr": "d\"2026-01-01\"",
+    "result": "<(x)>",
+    "exit": 0,
+    "output": "\nOUT('d\"2026-01-01\"')\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<x>)\nPROBE d\"2026-01-01\" DECL\n",
+    "expr": "d\"2026-01-01\"",
+    "result": "<x>",
+    "exit": 0,
+    "output": "\nOUT(d\"2026-01-01\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<.x.>)\nPROBE d\"2026-01-01\" DECL\n",
+    "expr": "d\"2026-01-01\"",
+    "result": "<.x.>",
+    "exit": 0,
+    "output": "\nOUT(.T.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<-x->)\nPROBE d\"2026-01-01\" DECL\n",
+    "expr": "d\"2026-01-01\"",
+    "result": "<-x->",
+    "exit": 0,
+    "output": "\nOUT()\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(#<x>)\nPROBE f(1,2) DECL\n",
+    "expr": "f(1,2)",
+    "result": "#<x>",
+    "exit": 0,
+    "output": "\nOUT(\"f(1,2)\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<\"x\">)\nPROBE f(1,2) DECL\n",
+    "expr": "f(1,2)",
+    "result": "<\"x\">",
+    "exit": 0,
+    "output": "\nOUT(\"f(1,2)\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<(x)>)\nPROBE f(1,2) DECL\n",
+    "expr": "f(1,2)",
+    "result": "<(x)>",
+    "exit": 0,
+    "output": "\nOUT(\"f(1,2)\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<x>)\nPROBE f(1,2) DECL\n",
+    "expr": "f(1,2)",
+    "result": "<x>",
+    "exit": 0,
+    "output": "\nOUT(f(1,2))\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<.x.>)\nPROBE f(1,2) DECL\n",
+    "expr": "f(1,2)",
+    "result": "<.x.>",
+    "exit": 0,
+    "output": "\nOUT(.T.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<-x->)\nPROBE f(1,2) DECL\n",
+    "expr": "f(1,2)",
+    "result": "<-x->",
+    "exit": 0,
+    "output": "\nOUT()\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(#<x>)\nPROBE a + &name. DECL\n",
+    "expr": "a + &name.",
+    "result": "#<x>",
+    "exit": 0,
+    "output": "\nOUT(\"a + &name.\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<\"x\">)\nPROBE a + &name. DECL\n",
+    "expr": "a + &name.",
+    "result": "<\"x\">",
+    "exit": 0,
+    "output": "\nOUT(\"a + &name.\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<(x)>)\nPROBE a + &name. DECL\n",
+    "expr": "a + &name.",
+    "result": "<(x)>",
+    "exit": 0,
+    "output": "\nOUT(\"a + &name.\")\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<x>)\nPROBE a + &name. DECL\n",
+    "expr": "a + &name.",
+    "result": "<x>",
+    "exit": 0,
+    "output": "\nOUT(a + &name.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<.x.>)\nPROBE a + &name. DECL\n",
+    "expr": "a + &name.",
+    "result": "<.x.>",
+    "exit": 0,
+    "output": "\nOUT(.T.)\n"
+  },
+  {
+    "source": "#xcommand PROBE <x> [DECL] => OUT(<-x->)\nPROBE a + &name. DECL\n",
+    "expr": "a + &name.",
+    "result": "<-x->",
+    "exit": 0,
+    "output": "\nOUT()\n"
+  }
+]

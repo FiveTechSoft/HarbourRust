@@ -1,0 +1,413 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "inactive-source-aware-v4",
+  "scope": "14 manually reviewed Linux console originals accepted by LLVM. No adaptations, no whitespace normalization. Default versus LLVM versus freshly rebuilt Harbour pcode/GTSTD. No speed claim.",
+  "rows": [
+    {
+      "file": "tests/comments.prg",
+      "sha256": "6d6e0744f7beeec597f35dffbdb4aec2faa1da7b12b0c0c778b56db647adb615",
+      "target": "linux",
+      "source": "unchanged",
+      "review": "manually inspected: deterministic console output only; no files,network,GUI,interactive input or data mutation",
+      "outputs": {
+        "harbour": {
+          "exit": 0,
+          "stdout_bytes": 4,
+          "stdout_sha256": "9a36f7126969e5257d0f65a08b7cd78a5be93fa78ede0fac7eba087c058bb9a2",
+          "stderr_bytes": 0
+        },
+        "default": {
+          "exit": 0,
+          "stdout_bytes": 4,
+          "stdout_sha256": "9a36f7126969e5257d0f65a08b7cd78a5be93fa78ede0fac7eba087c058bb9a2",
+          "stderr_bytes": 0
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout_bytes": 4,
+          "stdout_sha256": "9a36f7126969e5257d0f65a08b7cd78a5be93fa78ede0fac7eba087c058bb9a2",
+          "stderr_bytes": 0
+        }
+      },
+      "reference_compile_exit": 0,
+      "exact": true
+    },
+    {
+      "file": "tests/define.prg",
+      "sha256": "5f474e3a31544a0c390dda8f0bf461e6e59bfa9593b36310bbf078c31ca23869",
+      "target": "linux",
+      "source": "unchanged",
+      "review": "manually inspected: deterministic console output only; no files,network,GUI,interactive input or data mutation",
+      "outputs": {
+        "harbour": {
+          "exit": 0,
+          "stdout_bytes": 221,
+          "stdout_sha256": "0c263443b3c31ca451081dec336a0908f00b089b7cade388a582b0902f2234d6",
+          "stderr_bytes": 0
+        },
+        "default": {
+          "exit": 0,
+          "stdout_bytes": 221,
+          "stdout_sha256": "0c263443b3c31ca451081dec336a0908f00b089b7cade388a582b0902f2234d6",
+          "stderr_bytes": 0
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout_bytes": 221,
+          "stdout_sha256": "0c263443b3c31ca451081dec336a0908f00b089b7cade388a582b0902f2234d6",
+          "stderr_bytes": 0
+        }
+      },
+      "reference_compile_exit": 0,
+      "exact": true
+    },
+    {
+      "file": "tests/docase.prg",
+      "sha256": "fcb9869eb4407d2bc312d97277809380c2dc8414eb237afef1036dcc12c74d88",
+      "target": "linux",
+      "source": "unchanged",
+      "review": "manually inspected: deterministic console output only; no files,network,GUI,interactive input or data mutation",
+      "outputs": {
+        "harbour": {
+          "exit": 0,
+          "stdout_bytes": 47,
+          "stdout_sha256": "8945ffd22ee651310548509edba14fc4f25dfa770821273723faff2e43ca721d",
+          "stderr_bytes": 0
+        },
+        "default": {
+          "exit": 0,
+          "stdout_bytes": 47,
+          "stdout_sha256": "8945ffd22ee651310548509edba14fc4f25dfa770821273723faff2e43ca721d",
+          "stderr_bytes": 0
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout_bytes": 47,
+          "stdout_sha256": "8945ffd22ee651310548509edba14fc4f25dfa770821273723faff2e43ca721d",
+          "stderr_bytes": 0
+        }
+      },
+      "reference_compile_exit": 0,
+      "exact": true
+    },
+    {
+      "file": "tests/exit.prg",
+      "sha256": "a14961def1156ec029d6c93bfbda7ce05b9ee5900f842e42843046bff1a9163d",
+      "target": "linux",
+      "source": "unchanged",
+      "review": "manually inspected: deterministic console output only; no files,network,GUI,interactive input or data mutation",
+      "outputs": {
+        "harbour": {
+          "exit": 0,
+          "stdout_bytes": 41,
+          "stdout_sha256": "9fa3922b9d25ffba8b047e42f04276cf09ef8ba0b976321dd0234993ec0d7f1c",
+          "stderr_bytes": 0
+        },
+        "default": {
+          "exit": 0,
+          "stdout_bytes": 41,
+          "stdout_sha256": "9fa3922b9d25ffba8b047e42f04276cf09ef8ba0b976321dd0234993ec0d7f1c",
+          "stderr_bytes": 0
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout_bytes": 41,
+          "stdout_sha256": "9fa3922b9d25ffba8b047e42f04276cf09ef8ba0b976321dd0234993ec0d7f1c",
+          "stderr_bytes": 0
+        }
+      },
+      "reference_compile_exit": 0,
+      "exact": true
+    },
+    {
+      "file": "tests/fornext.prg",
+      "sha256": "7df8bbea5c9daacfe9d8a439ab2d4ebce3417ce4b15628276819b451cc6aa585",
+      "target": "linux",
+      "source": "unchanged",
+      "review": "manually inspected: deterministic console output only; no files,network,GUI,interactive input or data mutation",
+      "outputs": {
+        "harbour": {
+          "exit": 0,
+          "stdout_bytes": 337,
+          "stdout_sha256": "3be9b43c08371420ded21a3401e3ba59cf4f4c54460c7645a3d36b51ee734f4f",
+          "stderr_bytes": 0
+        },
+        "default": {
+          "exit": 0,
+          "stdout_bytes": 337,
+          "stdout_sha256": "3be9b43c08371420ded21a3401e3ba59cf4f4c54460c7645a3d36b51ee734f4f",
+          "stderr_bytes": 0
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout_bytes": 337,
+          "stdout_sha256": "3be9b43c08371420ded21a3401e3ba59cf4f4c54460c7645a3d36b51ee734f4f",
+          "stderr_bytes": 0
+        }
+      },
+      "reference_compile_exit": 0,
+      "exact": true
+    },
+    {
+      "file": "tests/hello.prg",
+      "sha256": "98dc39ac220990b0cbc2df0b9f7f619cdeb00131408020df5378fe6897de6b11",
+      "target": "linux",
+      "source": "unchanged",
+      "review": "manually inspected: deterministic console output only; no files,network,GUI,interactive input or data mutation",
+      "outputs": {
+        "harbour": {
+          "exit": 0,
+          "stdout_bytes": 14,
+          "stdout_sha256": "12eb8bbe90a3e5f327285c29665a2021bd4c62ebcee33fb199ac28f1ff797913",
+          "stderr_bytes": 0
+        },
+        "default": {
+          "exit": 0,
+          "stdout_bytes": 14,
+          "stdout_sha256": "12eb8bbe90a3e5f327285c29665a2021bd4c62ebcee33fb199ac28f1ff797913",
+          "stderr_bytes": 0
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout_bytes": 14,
+          "stdout_sha256": "12eb8bbe90a3e5f327285c29665a2021bd4c62ebcee33fb199ac28f1ff797913",
+          "stderr_bytes": 0
+        }
+      },
+      "reference_compile_exit": 0,
+      "exact": true
+    },
+    {
+      "file": "tests/ifelse.prg",
+      "sha256": "3514e2804a8090bfe025af3e036294fdd8afafdf8554ededb3bcb888b1f03836",
+      "target": "linux",
+      "source": "unchanged",
+      "review": "manually inspected: deterministic console output only; no files,network,GUI,interactive input or data mutation",
+      "outputs": {
+        "harbour": {
+          "exit": 0,
+          "stdout_bytes": 111,
+          "stdout_sha256": "ab6c02ac2d4e545d4f0e39271f9649badd7961c19c387ee580f1b953adaa2bed",
+          "stderr_bytes": 0
+        },
+        "default": {
+          "exit": 0,
+          "stdout_bytes": 111,
+          "stdout_sha256": "ab6c02ac2d4e545d4f0e39271f9649badd7961c19c387ee580f1b953adaa2bed",
+          "stderr_bytes": 0
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout_bytes": 111,
+          "stdout_sha256": "ab6c02ac2d4e545d4f0e39271f9649badd7961c19c387ee580f1b953adaa2bed",
+          "stderr_bytes": 0
+        }
+      },
+      "reference_compile_exit": 0,
+      "exact": true
+    },
+    {
+      "file": "tests/ifinline.prg",
+      "sha256": "cef71077a08117c32e49ec468be7f38a5ca5817aa2a6175136ba4ed5cf3afa08",
+      "target": "linux",
+      "source": "unchanged",
+      "review": "manually inspected: deterministic console output only; no files,network,GUI,interactive input or data mutation",
+      "outputs": {
+        "harbour": {
+          "exit": 0,
+          "stdout_bytes": 88,
+          "stdout_sha256": "71eb989804269a4ab2c3f6818d285423944b4ac2316f0073cdedc6430d257501",
+          "stderr_bytes": 0
+        },
+        "default": {
+          "exit": 0,
+          "stdout_bytes": 88,
+          "stdout_sha256": "71eb989804269a4ab2c3f6818d285423944b4ac2316f0073cdedc6430d257501",
+          "stderr_bytes": 0
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout_bytes": 88,
+          "stdout_sha256": "71eb989804269a4ab2c3f6818d285423944b4ac2316f0073cdedc6430d257501",
+          "stderr_bytes": 0
+        }
+      },
+      "reference_compile_exit": 0,
+      "exact": true
+    },
+    {
+      "file": "tests/longstr.prg",
+      "sha256": "ccc83f05e2f8f0aa89dc2f90807586c9cbf584066a41177dd7457d9f914bbdb1",
+      "target": "linux",
+      "source": "unchanged",
+      "review": "manually inspected: deterministic console output only; no files,network,GUI,interactive input or data mutation",
+      "outputs": {
+        "harbour": {
+          "exit": 0,
+          "stdout_bytes": 502,
+          "stdout_sha256": "cd912cebd243763c1325e9493e68f39c4a2e750c06f55bd4b9b43e86aa1bf186",
+          "stderr_bytes": 0
+        },
+        "default": {
+          "exit": 0,
+          "stdout_bytes": 502,
+          "stdout_sha256": "cd912cebd243763c1325e9493e68f39c4a2e750c06f55bd4b9b43e86aa1bf186",
+          "stderr_bytes": 0
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout_bytes": 502,
+          "stdout_sha256": "cd912cebd243763c1325e9493e68f39c4a2e750c06f55bd4b9b43e86aa1bf186",
+          "stderr_bytes": 0
+        }
+      },
+      "reference_compile_exit": 0,
+      "exact": true
+    },
+    {
+      "file": "tests/procline.prg",
+      "sha256": "8bdaa18da5476c96b1c76688c013673ccb82049470606fba3367e93c125b5121",
+      "target": "linux",
+      "source": "unchanged",
+      "review": "manually inspected: deterministic console output only; no files,network,GUI,interactive input or data mutation",
+      "outputs": {
+        "harbour": {
+          "exit": 0,
+          "stdout_bytes": 123,
+          "stdout_sha256": "94966c7ec9d6293543cc0e7cece15ffb8710bfa9fd31fc7970d1a7feeb76298f",
+          "stderr_bytes": 0
+        },
+        "default": {
+          "exit": 0,
+          "stdout_bytes": 123,
+          "stdout_sha256": "94966c7ec9d6293543cc0e7cece15ffb8710bfa9fd31fc7970d1a7feeb76298f",
+          "stderr_bytes": 0
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout_bytes": 123,
+          "stdout_sha256": "94966c7ec9d6293543cc0e7cece15ffb8710bfa9fd31fc7970d1a7feeb76298f",
+          "stderr_bytes": 0
+        }
+      },
+      "reference_compile_exit": 0,
+      "exact": true
+    },
+    {
+      "file": "tests/recursiv.prg",
+      "sha256": "48239c4d3d37cc414d4a6fca7ee7ba3c302b7bc210247792a8e83db9de0f8e5f",
+      "target": "linux",
+      "source": "unchanged",
+      "review": "manually inspected: deterministic console output only; no files,network,GUI,interactive input or data mutation",
+      "outputs": {
+        "harbour": {
+          "exit": 0,
+          "stdout_bytes": 47,
+          "stdout_sha256": "a3b62014de4cdb761c0f148eea8e7382f0cd5b63ee07154d102323674bdcc052",
+          "stderr_bytes": 0
+        },
+        "default": {
+          "exit": 0,
+          "stdout_bytes": 47,
+          "stdout_sha256": "a3b62014de4cdb761c0f148eea8e7382f0cd5b63ee07154d102323674bdcc052",
+          "stderr_bytes": 0
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout_bytes": 47,
+          "stdout_sha256": "a3b62014de4cdb761c0f148eea8e7382f0cd5b63ee07154d102323674bdcc052",
+          "stderr_bytes": 0
+        }
+      },
+      "reference_compile_exit": 0,
+      "exact": true
+    },
+    {
+      "file": "tests/returns.prg",
+      "sha256": "52d62274849940932670b12d7929f63e88e87432437a5b5a2f7f181eb6319758",
+      "target": "linux",
+      "source": "unchanged",
+      "review": "manually inspected: deterministic console output only; no files,network,GUI,interactive input or data mutation",
+      "outputs": {
+        "harbour": {
+          "exit": 0,
+          "stdout_bytes": 56,
+          "stdout_sha256": "dd18f5c46224b97c8f0e167029efc9cbc90e20b8051dfbd4d7c36322eba37c6a",
+          "stderr_bytes": 0
+        },
+        "default": {
+          "exit": 0,
+          "stdout_bytes": 56,
+          "stdout_sha256": "dd18f5c46224b97c8f0e167029efc9cbc90e20b8051dfbd4d7c36322eba37c6a",
+          "stderr_bytes": 0
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout_bytes": 56,
+          "stdout_sha256": "dd18f5c46224b97c8f0e167029efc9cbc90e20b8051dfbd4d7c36322eba37c6a",
+          "stderr_bytes": 0
+        }
+      },
+      "reference_compile_exit": 0,
+      "exact": true
+    },
+    {
+      "file": "tests/statfun.prg",
+      "sha256": "febada350286c04c874b1b3777aa3d1a4523645cdd06d71f5ec207c7a9129d71",
+      "target": "linux",
+      "source": "unchanged",
+      "review": "manually inspected: deterministic console output only; no files,network,GUI,interactive input or data mutation",
+      "outputs": {
+        "harbour": {
+          "exit": 0,
+          "stdout_bytes": 44,
+          "stdout_sha256": "4c89a4a684ee3f66a2b6fe719412d47a172e2522eda70d299298e67e4063dfd2",
+          "stderr_bytes": 0
+        },
+        "default": {
+          "exit": 0,
+          "stdout_bytes": 44,
+          "stdout_sha256": "4c89a4a684ee3f66a2b6fe719412d47a172e2522eda70d299298e67e4063dfd2",
+          "stderr_bytes": 0
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout_bytes": 44,
+          "stdout_sha256": "4c89a4a684ee3f66a2b6fe719412d47a172e2522eda70d299298e67e4063dfd2",
+          "stderr_bytes": 0
+        }
+      },
+      "reference_compile_exit": 0,
+      "exact": true
+    },
+    {
+      "file": "tests/while.prg",
+      "sha256": "81542a0a84c8ce27b7205a6c475ed811847b0dd913eac4a19e0f3dc62c40bf57",
+      "target": "linux",
+      "source": "unchanged",
+      "review": "manually inspected: deterministic console output only; no files,network,GUI,interactive input or data mutation",
+      "outputs": {
+        "harbour": {
+          "exit": 0,
+          "stdout_bytes": 11000,
+          "stdout_sha256": "b7ffa74f2f7e6a965603bea55cf7d29eaead10122f7d45fde8dd8ad7ee6e8527",
+          "stderr_bytes": 0
+        },
+        "default": {
+          "exit": 0,
+          "stdout_bytes": 11000,
+          "stdout_sha256": "b7ffa74f2f7e6a965603bea55cf7d29eaead10122f7d45fde8dd8ad7ee6e8527",
+          "stderr_bytes": 0
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout_bytes": 11000,
+          "stdout_sha256": "b7ffa74f2f7e6a965603bea55cf7d29eaead10122f7d45fde8dd8ad7ee6e8527",
+          "stderr_bytes": 0
+        }
+      },
+      "reference_compile_exit": 0,
+      "exact": true
+    }
+  ]
+}

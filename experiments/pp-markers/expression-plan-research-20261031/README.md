@@ -58,3 +58,16 @@ No production activation, no new repository/runtime/original audit gates.
 Conservative patch still stored independently as group_plan.rs.patch/pp.rs.patch.
 Next isolate plain result support from special marker semantics or implement and
 oracle-test the source-aware stringify contract before considering activation.
+
+## Source-aware v4 validation, NOT production
+
+Normal stringify single macros now differs deliberately from dumb stringify.
+Fresh normal/smart/dumb macro60/60 exact. Earlier90controls88exact:two plain
+literal quote/escape normalization differences are historical, not certified.
+Fresh full default1344=1339manifest+5aux;LLVM698 in separate local validation
+copy. Fresh rebuilt Harbour/default/LLVM originals14/14exact;268x4original
+audit zero phase/diagnostic/acceptance changes. No remote independent closure,
+no permanent integration tests, no bytes/speed measurements, no activation.
+Latest replay details in v4-replay-deltas.json. Next add regression fixtures,
+repeat local full gates and independent remote closure before considering
+production. These patches remain research, production src unchanged.
