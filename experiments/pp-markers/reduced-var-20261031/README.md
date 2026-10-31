@@ -48,7 +48,8 @@ than changing its expected rejection merely to make the grid green.
 8 own runtime programs match Harbour/default/LLVM exact exit/stdout/stderr on
 Linux (`runtime8.json`); both compiler backends/targets are in the normal runners.
 4 new explicit-rejection regressions also run in both backends/target profiles.
-Local full gates: 1264 manifest rows default + 5 auxiliaries; 550 LLVM PASS rows
+Local and independent remote full gates: 1259 manifest rows + 5 auxiliaries
+=1264 default PASS lines; 550 LLVM PASS rows
 plus suite-specific controls. 268 originals x 4 compile profiles have identical
 exit/first diagnostics to the refactor baseline; acceptance stays21/15Linux,
 20/14Windows. 14 unchanged reviewed Linux originals match freshly built Harbour
