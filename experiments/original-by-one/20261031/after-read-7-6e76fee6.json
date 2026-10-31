@@ -1,0 +1,239 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next7afterread",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/readhrb.prg",
+      "sha256": "2965ce463bd44cc2ea52ee71223d48af54930324c14808c3fe0b1d3120ef118c",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+PrintItem+DecodeScope",
+      "build_unit": "single-source-executable",
+      "profile": "HRB-binary-reader-GT",
+      "dependencies": "binary HRB symbol/pcode parser;alternate readhrb.out;ACCEPT",
+      "boundary": "Not run: valid HRB fixture and scripted ACCEPT;missing-file branch not full verification",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 93: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 93: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/recursiv.prg",
+      "sha256": "48239c4d3d37cc414d4a6fca7ee7ba3c302b7bc210247792a8e83db9de0f8e5f",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+f",
+      "build_unit": "single-source-executable",
+      "profile": "recursive-factorial-existing-control",
+      "dependencies": "inline IIF recursive call;factorial10",
+      "boundary": "Safe deterministic console run;already admitted baseline control",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 47,
+        "stdout_sha256": "a3b62014de4cdb761c0f148eea8e7382f0cd5b63ee07154d102323674bdcc052",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 47,
+            "stdout_sha256": "a3b62014de4cdb761c0f148eea8e7382f0cd5b63ee07154d102323674bdcc052",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 47,
+            "stdout_sha256": "a3b62014de4cdb761c0f148eea8e7382f0cd5b63ee07154d102323674bdcc052",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        }
+      }
+    },
+    {
+      "file": "tests/regex.prg",
+      "sha256": "5361da1b5a164e473062865ede82566cf1bc1df727cc055998e32148620e7346",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "regex-library-GT",
+      "dependencies": "hb_regexComp/regex/Split/AtX;screen placement;Inkey",
+      "boundary": "Not run: regex library plus GT snapshot/key fixture",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 11: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 11: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/regex2.prg",
+      "sha256": "d47b9027ccb5a86826f2c5b636ae065bd1e0c2f5e708c1c82acc401e53260b79",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "regex-interactive-GET",
+      "dependencies": "GET/READ regex and sentence;LastKey;compiled regex",
+      "boundary": "Not run: interactive GET keyboard and regex cases needed",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 125: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 125: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/returns.prg",
+      "sha256": "52d62274849940932670b12d7929f63e88e87432437a5b5a2f7f181eb6319758",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+Two",
+      "build_unit": "single-source-executable",
+      "profile": "multiple-procedure-returns-existing-control",
+      "dependencies": "DO CASE;early procedure RETURN;unreachable output",
+      "boundary": "Safe deterministic console run;already admitted baseline control",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 56,
+        "stdout_sha256": "dd18f5c46224b97c8f0e167029efc9cbc90e20b8051dfbd4d7c36322eba37c6a",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 56,
+            "stdout_sha256": "dd18f5c46224b97c8f0e167029efc9cbc90e20b8051dfbd4d7c36322eba37c6a",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 56,
+            "stdout_sha256": "dd18f5c46224b97c8f0e167029efc9cbc90e20b8051dfbd4d7c36322eba37c6a",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        }
+      }
+    },
+    {
+      "file": "tests/round.prg",
+      "sha256": "2f10e38afeb6be6499362e2a55d2b79bb20575341ba64193a99f57e14f8a5f3a",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "F64-rounding-loop",
+      "dependencies": "100iterations -5..-4.901 step.001;Round3/2/1/0",
+      "boundary": "Safe bounded deterministic numeric reference console run",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 6796,
+        "stdout_sha256": "b095644338087340bce93a7386a31abc82c8975be2a7b3201922d2c3cc23842f",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 11: type mismatch in assignment to `value`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 11: type mismatch in assignment to `value`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/rpt.prg",
+      "sha256": "739fdc4a87e0b5b41750dcdacdd16045ed1013d6461039f5a3a0a4161170e7f2",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "RDD-report-form",
+      "dependencies": "USE test NEW;REPORT FORM test",
+      "boundary": "Not run: disposable DBF and report definition plus output route needed",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}
