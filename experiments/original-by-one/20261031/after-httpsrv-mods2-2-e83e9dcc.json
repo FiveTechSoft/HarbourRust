@@ -1,0 +1,103 @@
+{
+ "phase": "extras/utils/contrib build units (after tests phase CLOSED 268/268 at 4a2da426)",
+ "order": "inventory path lexicographic: extras first, then utils, then contrib",
+ "unit_note": "httpsrv modules/ sub-unit COMPLETE (5/5). Pending in httpsrv: core uhttpd/_cgifunc/_cookie/_session (4682 lines).",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "extras/httpsrv/modules/showcounter.prg",
+   "sha256": "a80d9087a9b1944b8cb61d82138cbd44732843627612ddd8dfb76b7102fe00fd",
+   "review": "full source manually read 2026-11-01 (193 lines)",
+   "entrypoint": "HRBMAIN (uHTTPD CGI module, -gh .hrb)",
+   "build_unit": "httpsrv modules unit (5 .prg -> .hrb) - COMPLETE with this batch; core uhttpd lib unit (4682 lines) pending",
+   "profile": "B-extras uHTTPD server module, GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "MEMVAR _REQUEST; GDImage class (hbgd contrib lib); gdTiled constant; #define with hb_ps() path expressions; hb_RandomInt; GIF assembly from digit sprites",
+   "boundary": "counter image generator module; reads contrib/hbgd/tests/digits GIFs",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 modules.hbp (-gh) compiles all modules to .hrb OK at pin 694428e1; not run standalone (require the uHTTPD server and an HTTP request context)",
+   "reference_run": "not-run (requires running uHTTPD server + HTTP request)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/httpsrv/modules/tableservletdb.prg",
+   "sha256": "cea2cfd82bced40925a85fcc208504d39daea401618e81f90b76281fcd316645",
+   "review": "full source manually read 2026-11-01 (389 lines)",
+   "entrypoint": "HRBMAIN (uHTTPD CGI module, -gh .hrb)",
+   "build_unit": "httpsrv modules unit (5 .prg -> .hrb) - COMPLETE with this batch; core uhttpd lib unit (4682 lines) pending",
+   "profile": "B-extras uHTTPD server module, GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "MEMVAR _REQUEST; CREATE CLASS TableManager + BasicXML; CLASS VAR INIT; DBF access (USE/SHARED/alias->field/dbSkip); SWITCH; AEval codeblock; hb_NumToHex",
+   "boundary": "XML table servlet over a DBF; XML encoding by hand",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 modules.hbp (-gh) compiles all modules to .hrb OK at pin 694428e1; not run standalone (require the uHTTPD server and an HTTP request context)",
+   "reference_run": "not-run (requires running uHTTPD server + HTTP request)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 109: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 109: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 109: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 109: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ]
+}
