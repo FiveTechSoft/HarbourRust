@@ -1,0 +1,151 @@
+{
+ "phase": "extras/utils/contrib build units (after tests phase CLOSED 268/268 at 4a2da426)",
+ "order": "inventory path lexicographic: extras first, then utils, then contrib",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "extras/hbvpdf/core.prg",
+   "sha256": "593283425b37623f78f02df8f2567deb8d0505e8ee6572a27f6b1936a4df48bb",
+   "review": "full source manually read 2026-11-01 (2587 lines)",
+   "entrypoint": "none (library): pdfInit/pdfOpen/pdfNewPage/pdfAtSay/pdfBox/pdfBox1/pdfCenter/pdfRJust/pdfText/pdfTextCount/pdfImage/pdfSetFont/pdfBook*/pdfHeader* stack + TIFF/JPEG info readers + token/array-file statics",
+   "build_unit": "static library per hbvpdf.hbp (-hblib: core.prg + fonts.prg, hbx export list)",
+   "profile": "B-extras PDF generation library",
+   "dependencies": "hbvpdf.ch (PARAMLEN/REPORT*/IMAGE_* constants); fileio.ch; fonts.prg (__pdf_fontsdat via #pragma __streaminclude fonts.dat); floats pervasively (mm/inch geometry); THREAD STATIC t_aReport; __defaultNIL byref pattern; code blocks in AScan; Date()/Time() embedded in PDF CreationDate; image data files at use sites",
+   "boundary": "Not run: library, no Main; produced PDFs embed Date/Time (CreationDate) - not byte-portable oracles",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 hbvpdf.hbp -> libhbvpdf.a OK at pin 694428e1",
+   "reference_run": "not-run (library)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1318: unterminated dotted word `.tmp` (Harbour logical tokens need a closing dot)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1318: unterminated dotted word `.tmp` (Harbour logical tokens need a closing dot)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1318: unterminated dotted word `.tmp` (Harbour logical tokens need a closing dot)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1318: unterminated dotted word `.tmp` (Harbour logical tokens need a closing dot)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "first_rejection_note": "lexer rejects the `temp.tmp` filename in `COPY File ( cFile ) TO temp.tmp` (pdfOpenHeader): dotted word read as an unterminated Harbour logical token - a LEXER-level rejection before any statement-subset check"
+  },
+  {
+   "file": "extras/hbvpdf/fonts.prg",
+   "sha256": "3e31a1e14692c394f572bf90a629f472e1a3c81f2a6e2e8dabbd5a4cd8e49f72",
+   "review": "full source manually read 2026-11-01 (3 lines)",
+   "entrypoint": "none (library member): __pdf_fontsdat() returns fonts.dat as a string literal",
+   "build_unit": "member of the hbvpdf static library (hbvpdf.hbp)",
+   "profile": "B-extras PDF generation library (font metrics blob)",
+   "dependencies": "#pragma __streaminclude \"fonts.dat\" | RETURN %s (embeds fonts.dat, 5376 bytes, at compile time)",
+   "boundary": "Not run: library member, no Main",
+   "reference_build_exit": 0,
+   "reference_build_note": "builds inside libhbvpdf.a (same hbmk2 invocation as core.prg)",
+   "reference_run": "not-run (library)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 3: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 3: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 3: #pragma `__streaminclude \"fonts.dat\" | RETURN %s` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 3: #pragma `__streaminclude \"fonts.dat\" | RETURN %s` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "first_rejection_note": "DIAGNOSTIC DIFFERS baseline vs HEAD: HEAD names the exact pragma and the accepted -es<N> subset; baseline has the generic unknown-directive message. Both reject."
+  },
+  {
+   "file": "extras/hbvpdf/tests/pdf_demo.prg",
+   "sha256": "2740bcca58cd33c5eb67c719a89057861ddb6289439cfa212dea2eac8903e46a",
+   "review": "full source manually read 2026-11-01 (179 lines)",
+   "entrypoint": "Main + static CToN",
+   "build_unit": "single-source executable against the hbvpdf library",
+   "profile": "B-extras PDF demo (grid/box/memo/font/image/bookmark pages)",
+   "dependencies": "#require hbvpdf; data files tests/files/{color.tif,color.jpg,test.txt}; SET DATE FORMAT command; MemoRead; writes test.pdf + test.hea to cwd; Date()/Time() inside the PDF",
+   "boundary": "Reference run reaches a GT error dialog 'Error BASE/1003 Variable does not exist: REPORTPAGE' (Quit/Retry) and hangs headless: rc124 with timeout, controlled differential, NOT an oracle; partial artifacts before the dialog: test.hea 71B, test.pdf 10B. Upstream behaviour at the pin recorded as-is (no adaptation).",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 pdf_demo.prg + libhbvpdf.a links OK at pin 694428e1",
+   "reference_run": "run-attempted: rc124 (headless GT error dialog), stdout 2253B terminal escape frame, stderr 0B",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ]
+}
