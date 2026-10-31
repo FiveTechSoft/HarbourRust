@@ -1,0 +1,252 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next8afterstrdelim",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/stripem.prg",
+      "sha256": "ba52b8c5eaac822f347e54f4008dfbc0a53825d17107e52aa4b64d3aeedcbe97",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TTextFile methods",
+      "build_unit": "single-source-executable",
+      "profile": "text-file-class-transform",
+      "dependencies": "__FILE__ default output adjacent .out;file read/write;hb_ValToExp;class",
+      "boundary": "Not run: default writes beside original;requires explicit disposable input/output fixture",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 485: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 485: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/switch.prg",
+      "sha256": "e408d8cf1d9558e6e69f59dd55cde8a0c6d94efe71363623d40bc0d853b57c26",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "switch-fallthrough-dynamic-cases",
+      "dependencies": "PRIVATE;heterogeneous switch/case constant expressions;fallthrough/nested switch",
+      "boundary": "Safe process-local deterministic reference console run",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 364,
+        "stdout_sha256": "60614748e0f662ec18f8d37db161c64c7bde9deb06e29654d554b134c5e567b5",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/symbolt.prg",
+      "sha256": "5778210e22ebee4d39e8ae83a7a34e0f4c742bdf22601faa655cc5d09b705d56",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "symbol-class-indirect-call",
+      "dependencies": "SYMBOL():New;Exec QOUT;IsEqual;name",
+      "boundary": "Safe process-local deterministic console run",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 201,
+        "stdout_sha256": "f54bec5b37a7546a54f7ba449ff477c2d87503e0b1e0a790ace6757322cccce8",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: classes are not in this increment yet (parser landed; runtime representation pending)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: classes are not in this increment yet (parser landed; runtime representation pending)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/t1.prg",
+      "sha256": "250205eaa1f29140bd069a4e988955fca45f8b4a20f5027085fd8716b41757ad",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "codeblock-console-loop",
+      "dependencies": "1000iterations QOut block and counter",
+      "boundary": "Safe bounded stdout capture, no timing claim",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 16000,
+        "stdout_sha256": "1a209150d6c161635869b126412956562b573a0fff9525c511cc87f16893d0c2",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: codeblock bodies are integer expressions in this increment",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: codeblock bodies are integer expressions in this increment",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/tb1.prg",
+      "sha256": "346ed9b799d3b8f4ed0cacc450510fe1850ee4026448221337e29097663971b9",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "TBrowse-mouse-custom-columns",
+      "dependencies": "static positions;TBrowse/TBColumn;captured closures;mouseHitTest;colors/widths/freeze",
+      "boundary": "Not run: keyboard/mouse/screen fixture",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 294: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 294: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/tbrowse.prg",
+      "sha256": "46098c5aae95ce62295daec3384c367e4b33b11ed7d894f1d0aae8ccdee27afc",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+conditionalDefProc",
+      "build_unit": "single-source-executable",
+      "profile": "TBrowse-mixed-array-GT",
+      "dependencies": "mixed typed array columns;date;Alert;keyboard navigation;cursorrestore",
+      "boundary": "Not run: Alert/key/screenshots and fixed-clock fixture",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 134: expected `,` or `}` in the codeblock body, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 134: expected `,` or `}` in the codeblock body, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/test.prg",
+      "sha256": "e99e9fa8d9364a9aa805996e1f28bb12ceb36a3b5ee448198e3121c5dfc8dc7e",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+StrDump",
+      "build_unit": "single-source-executable",
+      "profile": "binary-string-trim-enumeration",
+      "dependencies": "Chr0 strings;FOR EACH chars;Asc;trim outputs",
+      "boundary": "Safe deterministic binary output capture",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 170,
+        "stdout_sha256": "ccb7248bada94ea9429d1f6251eae5e322d63b20ff630e287d31e86c87457439",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 18: `for each` needs a flat or string array or a hash in this increment",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 18: `for each` needs a flat or string array or a hash in this increment",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/ticktime.prg",
+      "sha256": "50533024489041ffb9ffe013a4115e3d6b746141e046b3e53f772656d4ee9f6a",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "clock-resolution-busy-benchmark",
+      "dependencies": "hb_MilliSeconds10second busyloop;min/avg/max/ticks",
+      "boundary": "Not run: timing benchmark not correctness sample;no resource/speed assertion",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: trailing tokens after expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: trailing tokens after expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}
