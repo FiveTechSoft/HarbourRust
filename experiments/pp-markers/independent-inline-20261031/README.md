@@ -15,3 +15,6 @@ Four own runtime sources exact full Harbour/default/LLVM Linux. Local full
 diagnosticdeltas,accepted21/15Linux20/14Windows unchanged. Declaration fragment
 nowTTest_New(),but other METHOD/header output still wrong. No original unlock,
 classruntime,ABI/ownership/main,size/speed claim. Remote pending.
+
+Independentremoteee4a697fresh1344/698fullgates,14originalsexact,268x4zero
+diagnosticdeltas. runtime4.jsoncontains4sources,not inheritedgenerator6label.
