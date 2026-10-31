@@ -1,0 +1,36 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next1afterrpt",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/rto_get.prg",
+      "sha256": "9105bb336f4c3d31776c76bbc47bd441d88802d171ec9bbb66713e1d952e6805",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TGetTOVS/TIns+TGetAssign+TGetTest+TEST_CALL+CallStack+LogMe+LogGETVars+XToStr/E/X+ArrayToList+ErrorMessage+OBJ_CREATE",
+      "build_unit": "single-source-executable",
+      "profile": "GET-class-regression-generated-log-GT",
+      "dependencies": "1845lines;GET object methods/properties;focus/edit/picture/colors;scripted keystrokes;ErrorBlock recovery;ProcName/Line;FWrite tget_hb.txt;optional CALLBACKSTACK/RTEDETAILS/NODUMP",
+      "boundary": "Not run: complete source read, GT screen/cursor observations and log-file oracle need explicit terminal fixture;scripted methods are not proof of visual correctness",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 301: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 301: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}
