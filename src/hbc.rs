@@ -32,7 +32,7 @@ use std::process;
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { F64, I64, Str, Bool, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefStrOwn }
+enum Ty { F64, I64, Str, Bool, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefStrOwn, DArrDyn }
 
 // What a codeblock body's LAST expression returns (original t1.prg piece):
 // Int = an i64 in %rax; Nil = a payload-free Dyn NIL pair (%rax=1, %rdx=0,
@@ -1457,7 +1457,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "dfree", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -4118,7 +4118,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         // DArr4 first level: child-array casilla -
                         // "A" (hk114, byte-measured via hk117 markers).
                         match env.iter().rev().find(|x| x.name == *v).map(|x| x.ty.clone()) {
-                            Some(Ty::DArr) | Some(Ty::DArr2) | Some(Ty::DArrRef) | Some(Ty::DArrS) | Some(Ty::DArr4) | Some(Ty::Hash) => {}
+                            Some(Ty::DArr) | Some(Ty::DArrDyn) | Some(Ty::DArr2) | Some(Ty::DArrRef) | Some(Ty::DArrS) | Some(Ty::DArr4) | Some(Ty::Hash) => {}
                             _ => return Err(format!("line {}: `ValType` over this array depth is not measured in this PoC", n)),
                         }
                     }
@@ -5276,6 +5276,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             for e in es {
                 let t = type_expr(e, env, sigs, n)?;
                 if !matches!(t, Ty::I64 | Ty::Bool) {
+                    // Mixed scalar literal (ains piece 1a): every element a
+                    // scalar literal (integer, string, logical, NIL) -> a
+                    // Dyn-cell dynamic array. Nested arrays stay on their
+                    // own paths; anything else keeps the named rejection.
+                    if !es.is_empty() && es.iter().all(|x| matches!(x, Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Log(_))) {
+                        return Ok(Ty::DArrDyn);
+                    }
                     return Err(format!("line {}: array elements must be integers or logicals in this increment", n));
                 }
                 if t == Ty::Bool { has_log = true; }
@@ -5345,7 +5352,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             match env.iter().find(|v| v.name == *id) {
                 None => Err(format!("line {}: undefined variable `{}`", n, id)),
-                Some(v) if v.ty == Ty::DArr => {
+                Some(v) if v.ty == Ty::DArr || v.ty == Ty::DArrDyn => {
                     if v.moved {
                         return Err(format!("line {}: use of moved value `{}`", n, id));
                     }
@@ -5518,6 +5525,7 @@ fn ty_name(t: Ty) -> &'static str {
         Ty::Arr(_) => "an array",
         Ty::Block(..) => "a codeblock",
         Ty::DArr => "a dynamic array",
+        Ty::DArrDyn => "a dynamic array",
         Ty::DArrRef => "a borrowed array",
         Ty::DArrRef2 => "a borrowed array",
         Ty::Dyn => "a dynamic value",
@@ -5950,6 +5958,16 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
             Stmt::Local(n, id, e) => {
                 if env.iter().any(|v| v.name == *id) {
                     return Err(format!("line {}: duplicate local `{}`", n, id));
+                }
+                // ains piece 1a: a Dyn-cell read borrowed from a DArrDyn
+                // cannot be STORED into a variable - the cell owns its
+                // payload and a Dyn local would free it again at scope
+                // exit (double free). Consuming positions only:
+                // printing, ValType, HB_ISNUMERIC/HB_ISARRAY.
+                if let Expr::Index(v, _) = e {
+                    if env.iter().any(|x| x.name == *v && x.ty == Ty::DArrDyn) {
+                        return Err(format!("line {}: storing a cell of the mixed array `{}` into a variable is not in this increment (the cell owns its payload; use it in place: printing, ValType, HB_ISNUMERIC/HB_ISARRAY)", n, v));
+                    }
                 }
                 let t = type_expr(e, env, sigs, *n)?;
                 if t == Ty::Bool && dyn_names.contains(id) {
@@ -6930,6 +6948,12 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     Ty::DArr4 => {
                         return Err(format!("line {}: assigning into an element of a four-level array is not in this increment", n));
                     }
+                    Ty::DArrDyn => {
+                        // ains piece 1a: a store must free the old cell
+                        // payload first; that overwrite path lands in the
+                        // next piece. Named rejection, never a silent copy.
+                        return Err(format!("line {}: storing into a cell of the mixed array `{}` is not in this increment", n, id));
+                    }
                     _ => return Err(format!("line {}: indexed assignment applies to arrays; `{}` is not an array", n, id)),
                 }
                 // The parent must not move while the indexed borrow exists
@@ -7029,6 +7053,13 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
             }
             Stmt::Assign(n, id, e) => {
+                // ains piece 1a: same guard as `local` - a DArrDyn cell
+                // read cannot be stored (the cell owns its payload).
+                if let Expr::Index(v, _) = e {
+                    if env.iter().any(|x| x.name == *v && x.ty == Ty::DArrDyn) {
+                        return Err(format!("line {}: storing a cell of the mixed array `{}` into a variable is not in this increment (the cell owns its payload; use it in place: printing, ValType, HB_ISNUMERIC/HB_ISARRAY)", n, v));
+                    }
+                }
                 // RHS is evaluated first; a Str source variable moves.
                 let t = type_expr(e, env, sigs, *n)?;
                 if let Expr::Var(v) = e {
@@ -7321,7 +7352,7 @@ fn fold_int(e: &Expr) -> Option<i64> {
     }
 }
 fn size_of(t: Ty) -> usize {
-    match t { Ty::F64 => 16, Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(..) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefStrOwn => 8 }
+    match t { Ty::F64 => 16, Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(..) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefStrOwn => 8 }
 }
 
 #[derive(Clone)]
@@ -7421,7 +7452,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 Ty::RefStrOwn => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n    mov 8(%r11), %rdx\n", v.off)),
                 Ty::F64 => unreachable!("floats load through cg_f64_load (xmm0/rdi), never the rax/rdx channel"),
                 Ty::I64 | Ty::Block(..) | Ty::Bool => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
-                Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash => {
+                Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrDyn => {
                     // ptr at -(off), len at -(off-8) — same layout as the store
                     out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
                     out.push_str(&format!("    mov -{}(%rbp), %rdx\n", v.off - 8));
@@ -7572,7 +7603,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     } else {
                     cg_expr(ie, env, sigs, strs, out, target);
                     match var.ty {
-                        Ty::DArr | Ty::DArrS => {
+                        Ty::DArr | Ty::DArrS | Ty::DArrDyn => {
                             out.push_str(&format!("    cmp $1, %rax\n    jl 87f\n    cmp -{}(%rbp), %rax\n    jg 87f\n", var.off - 8));
                             out.push_str(&format!("    mov -{}(%rbp), %r11\n", var.off));
                             out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
@@ -8555,7 +8586,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     // owner and the caller's later frees see null.
                     if let Expr::Var(src) = a {
                         if matches!(ta, Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash) {
-                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
+                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::DArrDyn)) {
                                 out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                             }
                         }
@@ -8651,7 +8682,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
                 return;
             }
-            if v.ty == Ty::DArr {
+            if v.ty == Ty::DArr || v.ty == Ty::DArrDyn {
                 // Dynamic array read: bounds are 1..=len (runtime word);
                 // elements are {tag, payload} pairs (rax=tag, rdx=payload).
                 // Borrow only - nothing is moved or nulled.
@@ -9030,6 +9061,9 @@ fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out
         if es.iter().all(|x| matches!(x, Expr::Int(_) | Expr::Log(_))) && es.iter().any(|x| matches!(x, Expr::Log(_))) {
             return cg_darr1_literal(es, out);
         }
+        if !es.is_empty() && es.iter().all(|x| matches!(x, Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Log(_))) && es.iter().any(|x| matches!(x, Expr::Str(_) | Expr::Nil)) {
+            return cg_darrdyn_literal(es, strs, out);
+        }
     }
     if let Expr::Str(s) = e {
         let idx = strs.len();
@@ -9058,6 +9092,35 @@ fn cg_darr1_literal(es: &[Expr], out: &mut String) {
         out.push_str(&format!("    movq ${}, {}(%r11)\n    movq ${}, {}(%r11)\n", tag, i * 16, val, i * 16 + 8));
     }
     out.push_str(&format!("    mov %r11, %rax\n    mov ${}, %edx\n", m));
+}
+
+// The materialization of a mixed scalar literal (ains piece 1a): a
+// Dyn-cell dynamic array - {tag, payload} cells, tag 0 = integer,
+// 1 = NIL, 3 = logical, 4 = OWNED string copy (rodata strings are
+// copied on store; borrowed tag-2 strings never live in a cell). The
+// base pointer rides the stack because hbc_strcpy may clobber
+// caller-saved registers (DArrS precedent). Tag 5 stays reserved for
+// the pending float decision; tag 6 (owned subarray) lands in 1b.
+fn cg_darrdyn_literal(es: &[Expr], strs: &mut Vec<String>, out: &mut String) {
+    let m = es.len();
+    out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + m * 16));
+    out.push_str(&format!("    movq ${}, (%rax)\n    add $8, %rax\n", m));
+    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+    for (i, e) in es.iter().enumerate() {
+        match e {
+            Expr::Int(v) => out.push_str(&format!("    mov (%rsp), %r11\n    movq $0, {}(%r11)\n    movq ${}, {}(%r11)\n", i * 16, v, i * 16 + 8)),
+            Expr::Log(b) => out.push_str(&format!("    mov (%rsp), %r11\n    movq $3, {}(%r11)\n    movq ${}, {}(%r11)\n", i * 16, if *b { 1 } else { 0 }, i * 16 + 8)),
+            Expr::Nil => out.push_str(&format!("    mov (%rsp), %r11\n    movq $1, {}(%r11)\n    movq $0, {}(%r11)\n", i * 16, i * 16 + 8)),
+            Expr::Str(s) => {
+                let idx = strs.len();
+                strs.push(s.clone());
+                out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hbc_strcpy\n", idx, s.as_bytes().len()));
+                out.push_str(&format!("    mov (%rsp), %r11\n    movq $4, {}(%r11)\n    mov %rax, {}(%r11)\n", i * 16, i * 16 + 8));
+            }
+            _ => unreachable!("checker"),
+        }
+    }
+    out.push_str(&format!("    mov (%rsp), %rax\n    add $16, %rsp\n    mov ${}, %edx\n", m));
 }
 
 // Emit an array-producing expression into a frame slot: a literal stores
@@ -9141,7 +9204,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_bitindex(id) { return if is_builtin(id,"hb_bittest") {Ty::Bool} else {Ty::I64}; }
             if is_bitop(id) { return Ty::I64; }
             if is_builtin(id, "min") || is_builtin(id, "max") { return expr_ty(&args[0], env, sigs); }
-            if is_builtin(id, "empty") { return Ty::Bool; }
+            if is_builtin(id, "empty") || is_builtin(id, "hb_isnumeric") || is_builtin(id, "hb_isarray") { return Ty::Bool; }
             if is_output_call(id) { return Ty::Dyn; }
             if is_builtin(id, "hb_pvalue") { return Ty::Dyn; }
             if is_builtin(id, "eval") { return match expr_ty(&args[0], env, sigs) { Ty::Block(_, BRet::Nil) => Ty::Dyn, _ => Ty::I64 }; }
@@ -9165,6 +9228,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             else if es.iter().any(|e| matches!(e, Expr::ArrLit(_) | Expr::DArrNew)) { Ty::DArr2 }
             else if es.iter().all(|e| matches!(e, Expr::Int(_) | Expr::Log(_))) && es.iter().any(|e| matches!(e, Expr::Log(_))) { Ty::DArr }
             else if !es.is_empty() && es.iter().all(|e| matches!(e, Expr::Str(_))) { Ty::DArrS }
+            else if !es.is_empty() && es.iter().all(|e| matches!(e, Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Log(_))) && es.iter().any(|e| matches!(e, Expr::Str(_) | Expr::Nil)) { Ty::DArrDyn }
             else { Ty::Arr(es.len()) }
         }
         Expr::Index(id, _) => match env.iter().find(|v| v.name == *id).map(|v| v.ty) {
@@ -9310,8 +9374,8 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 if t == Ty::Dyn && matches!(e, Expr::Nil) && !byref_names.contains(id) && bare_local_is_for_counter(stmts, si, id) { t = Ty::I64; }
                 *frame += size_of(t);
                 env.push(CgLocal { name: id.clone(), ty: t, off: *frame });
-                if matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::Dyn) {
-                    darr_slots.push((*frame, if t == Ty::Dyn { 7 } else if t == Ty::Hash { 2 } else if t == Ty::DArr3 { 3 } else if t == Ty::DArr4 { 6 } else if t == Ty::DArrS { 4 } else if t == Ty::StrOwn { 5 } else { (t == Ty::DArr2) as u8 }));
+                if matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::Dyn | Ty::DArrDyn) {
+                    darr_slots.push((*frame, if t == Ty::Dyn { 7 } else if t == Ty::Hash { 2 } else if t == Ty::DArr3 { 3 } else if t == Ty::DArr4 { 6 } else if t == Ty::DArrS { 4 } else if t == Ty::StrOwn { 5 } else if t == Ty::DArrDyn { 8 } else { (t == Ty::DArr2) as u8 }));
                 }
             }
             Stmt::AAdd(_, id, e) => {
@@ -9380,7 +9444,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                     // registered so the prologue zeroes it and the
                     // epilogue frees it on every exit path.
                     let t = expr_ty(coll, env, sigs);
-                    let class = if t == Ty::Hash { 2 } else if t == Ty::DArrS { 4 } else { 0 };
+                    let class = if t == Ty::Hash { 2 } else if t == Ty::DArrS { 4 } else if t == Ty::DArrDyn { 8 } else { 0 };
                     darr_slots.push((*frame, class));
                 }
                 *frame += 8; // hidden slot: 1-based iteration index
@@ -9966,10 +10030,13 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         }
                         Ty::Dyn => {
                             out.push_str("    call hbc_print_dyn\n");
-                            if !matches!(e, Expr::Var(_)) {
-                                // An owned temporary (a call result): a
-                                // tag-4 payload is released right after
-                                // printing; a Var stays owned by its slot.
+                            // An owned temporary (a call result) releases a
+                            // tag-4 payload right after printing; a Var stays
+                            // owned by its slot, and a DArrDyn cell read stays
+                            // owned by its CELL (ains piece 1a - the cell is
+                            // borrowed, never moved out).
+                            let cell_borrow = matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArrDyn));
+                            if !matches!(e, Expr::Var(_)) && !cell_borrow {
                                 out.push_str(&format!("    cmpq $4, {}(%rsp)\n    jne 95f\n    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je 95f\n    call hbc_freestr\n95:\n", off, off + 8));
                             }
                         }
@@ -9982,7 +10049,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         }
                         Ty::Arr(_) => unreachable!("whole-array printing rejected in analysis"),
                         Ty::Block(..) => unreachable!("codeblock printing rejected in analysis"),
-                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 => unreachable!("whole-array printing rejected in analysis"),
+                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn => unreachable!("whole-array printing rejected in analysis"),
                         Ty::Hash => unreachable!("whole-hash printing rejected in analysis"),
                     }
                 }
@@ -10018,6 +10085,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     Ty::DArr => out.push_str("    mov %rax, %rdi
     mov $16, %esi
     call hbc_free
+"),
+                    Ty::DArrDyn => out.push_str("    mov %rax, %rdi
+    mov %rdx, %rsi
+    call hbc_dfree
 "),
                     Ty::DArrS => out.push_str("    mov %rax, %rdi
     mov %rdx, %rsi
@@ -10102,7 +10173,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         // A moved-out DArr SOURCE slot is nulled right after
                         // the load: every allocation keeps exactly one owner.
                         if let Expr::Var(src) = e {
-                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
+                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::DArrDyn)) {
                                 out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                             }
                         }
@@ -10112,7 +10183,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
                             }
-                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::Dyn => {
+                            Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::Dyn | Ty::DArrDyn => {
                                 // A Dyn initialized FROM A VAR borrows its
                                 // pair: clone any string payload so the new
                                 // slot owns its own copy (the same boundary
@@ -10139,6 +10210,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_sfree\n85:\n", off, off - 8));
                                 } else if class == 5 {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n85:\n", off));
+                                } else if class == 8 {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_dfree\n85:\n", off, off - 8));
                                 } else if class == 7 {
                                     out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne 85f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n85:\n", off, off - 8));
                                 } else {
@@ -10214,7 +10287,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // the epilogue never frees the returned allocation (parent
                 // rule: move the return to the output before cleanup).
                 if let Expr::Var(src) = e {
-                    if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
+                    if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::DArrDyn)) {
                         out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                     }
                 }
@@ -10703,7 +10776,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         // fully evaluated (parent rule: move transfers; the
                         // old slot must not free what it no longer owns).
                         if let Expr::Var(src) = e {
-                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash)) {
+                            if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::DArrDyn)) {
                                 out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                             }
                         }
@@ -11820,6 +11893,11 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
                 // StrOwn: an owned string copy; hbc_freestr(ptr) releases
                 // exactly 16 + cap bytes (cap at ptr-16, len at ptr-8).
                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hbc_freestr\n91{}:\n", off, i, i));
+            }
+            8 => {
+                // DArrDyn (ains 1a): free owned cell payloads, then the
+                // block - hbc_dfree walks the {tag, payload} cells.
+                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov -{}(%rbp), %rsi\n    call hbc_dfree\n91{}:\n", off, i, off - 8, i));
             }
             7 => {
                 // Dyn slot: free the payload only for an OWNED string
@@ -14766,6 +14844,39 @@ hbc_free2:
     pop %rbx
     ret
 
+# hbc_dfree: rdi = Dyn-cell array data pointer (non-null), rsi = live
+# element count (ains piece 1a). Frees each owned payload (tag 4 string
+# copy) then the block itself. Tag 6 (owned subarray) has no cells in
+# piece 1a; piece 1b extends the walk recursively with the child length
+# from the subarray's own header.
+hbc_dfree:
+    push %rbx
+    push %r12
+    push %r13
+    mov %rdi, %rbx
+    mov %rsi, %r12
+    xor %r13, %r13
+881: cmp %r12, %r13
+    jge 882f
+    mov %r13, %rax
+    shl $4, %rax
+    mov (%rbx,%rax), %rcx
+    cmp $4, %rcx
+    jne 883f
+    mov 8(%rbx,%rax), %rdi
+    test %rdi, %rdi
+    jz 883f
+    call hbc_freestr
+883: inc %r13
+    jmp 881b
+882: mov %rbx, %rdi
+    mov $16, %esi
+    call hbc_free
+    pop %r13
+    pop %r12
+    pop %rbx
+    ret
+
 # hbc_rfree: rdi = block of (ptr,len) pairs, rsi = pair count, rdx =
 # pair-levels (>= 2). Generic recursive free: a child of a block with
 # more than two pair-levels is freed by hbc_rfree at one level less; a
@@ -16514,6 +16625,39 @@ hbc_free2:
     pop %r12
     pop %rbx
     pop %rbp
+    ret
+
+# hbc_dfree: rdi = Dyn-cell array data pointer (non-null), rsi = live
+# element count (ains piece 1a). Frees each owned payload (tag 4 string
+# copy) then the block itself. Tag 6 (owned subarray) has no cells in
+# piece 1a; piece 1b extends the walk recursively with the child length
+# from the subarray's own header.
+hbc_dfree:
+    push %rbx
+    push %r12
+    push %r13
+    mov %rdi, %rbx
+    mov %rsi, %r12
+    xor %r13, %r13
+881: cmp %r12, %r13
+    jge 882f
+    mov %r13, %rax
+    shl $4, %rax
+    mov (%rbx,%rax), %rcx
+    cmp $4, %rcx
+    jne 883f
+    mov 8(%rbx,%rax), %rdi
+    test %rdi, %rdi
+    jz 883f
+    call hbc_freestr
+883: inc %r13
+    jmp 881b
+882: mov %rbx, %rdi
+    mov $16, %esi
+    call hbc_free
+    pop %r13
+    pop %r12
+    pop %rbx
     ret
 
 # hbc_rfree: rdi = block of (ptr,len) pairs, rsi = pair count, rdx =

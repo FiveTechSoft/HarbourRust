@@ -138,7 +138,7 @@ neg tests/t134_arr_neg_str_index.hb is not an array
 neg tests/t135_arr_neg_print_whole.hb cannot print a temporary array or hash
 neg tests/t136_arr_neg_pass_arg.hb is copied at the boundary only into a flat dynamic-array parameter
 neg tests/t137_arr_neg_size_mismatch.hb type mismatch in assignment
-neg tests/t139_arr_neg_mixed.hb array elements must be integers
+neg tests/t139_arr_neg_mixed.hb array elements cannot mix integers and arrays
 pos tests/t140_arr_call_index.hb \n        77\n        77\n        20
 pos tests/t141_arr_set_order.hb \n         2\n         1\n        99
 posx tests/t142_arr_bound_max.hb 1 Bound error: array access\nCallstack:\n  at main (tests/t142_arr_bound_max.hb:5)
@@ -1415,3 +1415,8 @@ pos tests/t1418_aeval_args_even_when_empty.hb \n        -1\n         2\ndone
 pos tests/t1419_aeval_end_overflow.hb \n        20          2\n        30          3
 pos tests/t1420_aeval_hygienic_temps.hb \n        10          1\n        20          2\n        99
 neg tests/t1421_aeval_neg_zeroarg.hb `aeval` takes 2 to 4 arguments
+pos tests/t1422_mixed_dyn_cells.hb \nN\nC\nU\nL\n         1\nx\nNIL\n.T.\nN\nC\nU\nL\n         1\nx\nNIL\n.T.\n         0
+pos tests/t1423_mixed_dyn_arith.hb \nC\nL\n        10\n         6\n         0
+neg tests/t1424_mixed_cell_store_neg.hb storing a cell of the mixed array
+neg tests/t1425_mixed_cell_assign_neg.hb storing into a cell of the mixed array
+neg tests/t1426_mixed_isnumeric_neg.hb unknown function `hb_isnumeric`
