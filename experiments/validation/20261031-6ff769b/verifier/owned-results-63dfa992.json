@@ -1,0 +1,197 @@
+[
+  {
+    "name": "pvalue_index_once",
+    "source": "function take(a,b)\nlocal i := 0\n? hb_PValue(++i), i\n? hb_PValue(++i), i\n? hb_PValue(0), hb_PValue(-1), hb_PValue(3)\nreturn nil\nfunction main()\ntake(11,22)\nreturn nil\n",
+    "source_sha256": "d97dd77e3a9188348c400f4ec46b3423a4a9f9c22a70a49b7c7520ce2ca7ed4d",
+    "targets": {
+      "linux": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-panic5a3722a-scope/pvalue_index_once.prg -> /downloads/verify-panic5a3722a-scope/pvalue_index_once-linux.s (2 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\n        11          1\n        22          2\nNIL NIL NIL",
+          "stderr": ""
+        }
+      },
+      "windows": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-panic5a3722a-scope/pvalue_index_once.prg -> /downloads/verify-panic5a3722a-scope/pvalue_index_once-windows.s (2 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\n        11          1\n        22          2\nNIL NIL NIL",
+          "stderr": ""
+        }
+      }
+    },
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n        11          1\n        22          2\nNIL NIL NIL",
+      "stderr": ""
+    },
+    "exact": {
+      "linux": true,
+      "windows": true
+    }
+  },
+  {
+    "name": "pvalue_byref_mutated",
+    "source": "function take(a)\na := a + 1\n? hb_PValue(1)\nreturn nil\nfunction main()\nlocal x := 41\ntake(@x)\n? x\nreturn nil\n",
+    "source_sha256": "6d4cdbcc88eabb80f671838cb2fe5644cce115ca0817ee37329704bc501c7ded",
+    "targets": {
+      "linux": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-panic5a3722a-scope/pvalue_byref_mutated.prg -> /downloads/verify-panic5a3722a-scope/pvalue_byref_mutated-linux.s (2 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\n        42\n        42",
+          "stderr": ""
+        }
+      },
+      "windows": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-panic5a3722a-scope/pvalue_byref_mutated.prg -> /downloads/verify-panic5a3722a-scope/pvalue_byref_mutated-windows.s (2 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\n        42\n        42",
+          "stderr": ""
+        }
+      }
+    },
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n        42\n        42",
+      "stderr": ""
+    },
+    "exact": {
+      "linux": true,
+      "windows": true
+    }
+  },
+  {
+    "name": "pvalue_owned_string_copy",
+    "source": "function take(s)\nlocal copy := hb_PValue(1)\n? copy\n? hb_PValue(1)\n? s\nreturn nil\nfunction main()\nlocal owned := AllTrim(\" ababab \")\ntake(owned)\nreturn nil\n",
+    "source_sha256": "a3c9b1d64bbef16a806fd0be85ed820109a9fd52f77ea675073485f291acf3f3",
+    "targets": {
+      "linux": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-panic5a3722a-scope/pvalue_owned_string_copy.prg -> /downloads/verify-panic5a3722a-scope/pvalue_owned_string_copy-linux.s (2 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\nababab\nababab\nababab",
+          "stderr": ""
+        }
+      },
+      "windows": {
+        "compile": {
+          "exit": 0,
+          "stdout": "/downloads/verify-panic5a3722a-scope/pvalue_owned_string_copy.prg -> /downloads/verify-panic5a3722a-scope/pvalue_owned_string_copy-windows.s (2 functions)\n",
+          "stderr": ""
+        },
+        "assemble": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "link": {
+          "exit": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "exit": 0,
+          "stdout": "\nababab\nababab\nababab",
+          "stderr": ""
+        }
+      }
+    },
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\nababab\nababab\nababab",
+      "stderr": ""
+    },
+    "exact": {
+      "linux": true,
+      "windows": true
+    }
+  }
+]

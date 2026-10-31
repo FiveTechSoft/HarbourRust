@@ -1,0 +1,86 @@
+[
+  {
+    "name": "print_owned_no_copy",
+    "source": "function take(s)\n? hb_PValue(1)\n? s\nreturn nil\nfunction main()\ntake(Replicate(\"ab\",3))\nreturn nil\n",
+    "compilers": {
+      "42cbe67": {
+        "linux": {
+          "exit": 101,
+          "stdout": "",
+          "stderr": "\nthread 'main' (2134892) panicked at src/hbc.rs:6810:59:\nchecked\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+        },
+        "windows": {
+          "exit": 101,
+          "stdout": "",
+          "stderr": "\nthread 'main' (2134893) panicked at src/hbc.rs:6810:59:\nchecked\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+        }
+      },
+      "10074c6": {
+        "linux": {
+          "exit": 101,
+          "stdout": "",
+          "stderr": "\nthread 'main' (2134894) panicked at src/hbc.rs:6952:59:\nchecked\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+        },
+        "windows": {
+          "exit": 101,
+          "stdout": "",
+          "stderr": "\nthread 'main' (2134895) panicked at src/hbc.rs:6952:59:\nchecked\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+        }
+      },
+      "5a3722a": {
+        "linux": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 6: unknown function `replicate` (must be defined before use)\n"
+        },
+        "windows": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 6: unknown function `replicate` (must be defined before use)\n"
+        }
+      }
+    }
+  },
+  {
+    "name": "replicate_only",
+    "source": "function main()\n? Replicate(\"ab\",3)\nreturn nil\n",
+    "compilers": {
+      "42cbe67": {
+        "linux": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 2: unknown function `replicate` (must be defined before use)\n"
+        },
+        "windows": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 2: unknown function `replicate` (must be defined before use)\n"
+        }
+      },
+      "10074c6": {
+        "linux": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 2: unknown function `replicate` (must be defined before use)\n"
+        },
+        "windows": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 2: unknown function `replicate` (must be defined before use)\n"
+        }
+      },
+      "5a3722a": {
+        "linux": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 2: unknown function `replicate` (must be defined before use)\n"
+        },
+        "windows": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 2: unknown function `replicate` (must be defined before use)\n"
+        }
+      }
+    }
+  }
+]
