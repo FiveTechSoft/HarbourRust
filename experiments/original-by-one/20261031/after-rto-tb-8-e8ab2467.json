@@ -1,0 +1,237 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next8afterrto_tb",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/say.prg",
+      "sha256": "f4eb0b144d73cb60b8d9b026737f55d169fabe67ed70a333f7d4791502c82900",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "GT-picture-date-display",
+      "dependencies": "SAY PICTURE;DATE/CENTURY;box;screen coordinates",
+      "boundary": "Not run: fixed clock plus GT screenshot/picture fixture",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/sbar.prg",
+      "sha256": "675373164bccfdb1fc58c2d792fe498163df7b3078c6178f031d9a667628d9e7",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+InitScrlBar+updateFilesScroll",
+      "build_unit": "single-source-executable",
+      "profile": "GT-scrollbar-directory-menu",
+      "dependencies": "ScrollBar object;Directory;AChoice closure;UTF8 boxes;keys",
+      "boundary": "Not run: disposable directory inventory plus keyboard/GT fixture",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 238: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 238: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/scroll.prg",
+      "sha256": "871da5f2128fef51e0a41d2522d88f9f33477025f58e1a891cacaab0d0bbd746",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+pause",
+      "build_unit": "single-source-executable",
+      "profile": "GT-spatial-scrolling",
+      "dependencies": "DispBegin/End;SaveScreen/RestScreen;2D Scroll;WAIT",
+      "boundary": "Not run: actual screen image/crop scrolling plus scripted pauses needed",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 80: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 80: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/sdf.prg",
+      "sha256": "7b3df5379278a9d27bf4deeeb19f382518ffa21fb1506a3d402d5a659290d2ad",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "RDD-SDF-export-append-negative",
+      "dependencies": "test DBF;COPY multiple filters/ranges to test1..7;delete test8;APPEND missing SDF",
+      "boundary": "Not run: explicit disposable DBF/SDF and error recovery fixture;NOTEST",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 46: unterminated dotted word `.txt` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 46: unterminated dotted word `.txt` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/seconds.prg",
+      "sha256": "ad501934a1ed2758f527bd3ee7a797c7f463e87511735818c30a819b769416cb",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main(cParam)",
+      "build_unit": "single-source-executable",
+      "profile": "clock-interactive-parameter",
+      "dependencies": "Seconds;default10Inkey;numeric argument bypasses waits",
+      "boundary": "Not run: default interactive, bounded argument/clock fixture not yet arranged",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/server.prg",
+      "sha256": "c1a8f8e99ab3e7553588bcd5d1b30aa9d86c0be27eb29fecf3ee2dbc18c208d1",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main(cPort)+Progress",
+      "build_unit": "single-source-executable",
+      "profile": "network-server-GT",
+      "dependencies": "inet server default2000;accept/send/recv;timeouts callbacks;Inkey",
+      "boundary": "Not run: no socket listener without isolated network/client and termination fixture",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 17: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 17: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/set.prg",
+      "sha256": "774266b1b55a921d8a90eddf484f6ca82e24226edda1fbec68059c5b6648e1dd",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+testline",
+      "build_unit": "single-source-executable",
+      "profile": "runtime-settings-query-GT",
+      "dependencies": "Set numeric selectors;screen placement;DirSeparator changes process setting",
+      "boundary": "Not run: current settings/profile output and GT fixture needed",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 8: statement not in the subset (At)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 8: statement not in the subset (At)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/set_num.prg",
+      "sha256": "5366e13b0dfc0fe7000348bda7b50a32260bb85a27aa681fed978817170279b3",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "runtime-settings-query",
+      "dependencies": "_SET_COUNT;Set(n)",
+      "boundary": "Safe readonly console query of process runtime settings",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 274,
+        "stdout_sha256": "dbc956c622f838eebf04d9aa8eb2bc0840b5bdb88d7cb6480911a370c0c194ed",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 7: undefined variable `_set_count`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 7: undefined variable `_set_count`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}
