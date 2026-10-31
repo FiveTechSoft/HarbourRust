@@ -10599,12 +10599,14 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                 if !inline {
                     if !stderr { out.push_str("    movq $0, hbc_pending(%rip)\n"); }
                     out.push_str("    call hbc_print_nl\n");
-                } else if !stderr && raw {
-                    out.push_str("    movq $0, hbc_pending(%rip)\n");
                 }
                 // A `??` emits NOTHING at fragment start: the held spaces
-                // are re-emitted by the first render site that actually
-                // writes (q18/q21: an empty or bare `??` must not flush).
+                // are re-emitted by the first FORMATTED render site that
+                // actually writes (q18/q21: an empty or bare `??` must
+                // not flush; q22/q23: a Dyn/cell EMPTY STRING must not
+                // flush either). Raw OutStd writes splice inline and
+                // leave the hold untouched (q24/q26), exactly like
+                // OutErr on its own channel (q15).
                 // Harbour renders a whole dynamic array or hash as
                 // NOTHING (oracles hk16/hk20/hk21/hk24) and QOut
                 // space-trims the END of the line (hk22/hk24/hk25);
@@ -10630,7 +10632,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                     let t = expr_ty(e, env, sigs);
                     let off = 16 * (es.len() - 1 - i);
                     if i > 0 {
-                        if !stderr { out.push_str("    call hbc_pflush\n"); }
+                        if !stderr && !raw { out.push_str("    call hbc_pflush\n"); }
                         out.push_str("    call hbc_print_sep\n");
                     }
                     if renders_empty(e) { continue; }
@@ -10645,14 +10647,16 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         let id = print_lbl();
                         out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
                         out.push_str(&format!("    cmp $2, %rax\n    je .Lprs{}\n    cmp $4, %rax\n    je .Lprs{}\n    cmp $7, %rax\n    je .Lprf{}\n", id, id, id));
-                        if !stderr { out.push_str("    push %rdx\n    push %rax\n    call hbc_pflush\n    pop %rax\n    pop %rdx\n"); }
+                        if !stderr && !raw {
+                            out.push_str("    cmp $0, %rax\n    je 87f\n    cmp $1, %rax\n    je 87f\n    cmp $3, %rax\n    jne 88f\n87:\n    push %rdx\n    push %rax\n    call hbc_pflush\n    pop %rax\n    pop %rdx\n88:\n");
+                        }
                         out.push_str(&format!("    call hbc_print_dyncell\n    jmp .Lpre{}\n", id));
                         out.push_str(&format!(".Lprs{}:\n    mov %rdx, %rax\n    mov -8(%rax), %rdx\n", id));
                         if is_last && !stderr {
                             out.push_str("    call hbc_pstrt\n");
                         } else {
                             if is_last { out.push_str(rtrim); }
-                            if !stderr && !is_last {
+                            if !stderr && !raw && !is_last {
                                 out.push_str(&format!("    test %rdx, %rdx\n    jz 91f\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov -8(%rax), %rdx\n91:\n", off + 8));
                             }
                             out.push_str("    call hbc_print_str\n");
@@ -10663,7 +10667,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             out.push_str("    call hbc_pstrt\n");
                         } else {
                             if is_last { out.push_str(rtrim); }
-                            if !stderr && !is_last {
+                            if !stderr && !raw && !is_last {
                                 out.push_str(&format!("    test %rdx, %rdx\n    jz 91f\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov -8(%rax), %rdx\n91:\n", off + 8));
                             }
                             out.push_str("    call hbc_print_str\n");
@@ -10686,13 +10690,13 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             } else {
                                 out.push_str("    call hbc_pstrt\n");
                             }
-                            if !stderr {
+                            if !stderr && !raw {
                                 out.push_str("    jmp 96f\n95:\n    call hbc_pflush\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
                             } else {
                                 out.push_str("    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
                             }
                         } else {
-                            if !stderr {
+                            if !stderr && !raw {
                                 out.push_str(&format!("    cmp $2, %rdx\n    jne 95f\n    mov -8(%rax), %rdx\n    test %rdx, %rdx\n    jz 91f\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov -8(%rax), %rdx\n91:\n    call hbc_print_str\n    jmp 96f\n95:\n    call hbc_pflush\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n", off));
                             } else {
                                 out.push_str("    cmp $2, %rdx\n    jne 95f\n    mov -8(%rax), %rdx\n    call hbc_print_str\n    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
@@ -10704,7 +10708,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         // A NIL casilla prints NIL (n1); a live child
                         // prints nothing (n5).
                         out.push_str(&format!("    mov {}(%rsp), %rax\n", off));
-                        if !stderr {
+                        if !stderr && !raw {
                             out.push_str("    test %rax, %rax\n    jz 95f\n    jmp 96f\n95:\n    call hbc_pflush\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
                         } else {
                             out.push_str("    test %rax, %rax\n    jz 95f\n    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
@@ -10713,11 +10717,11 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                     }
                     if t == Ty::F64 {
                         // Numbers never trail spaces: no line-end trim.
-                        if !stderr { out.push_str("    call hbc_pflush\n"); }
+                        if !stderr && !raw { out.push_str("    call hbc_pflush\n"); }
                         out.push_str(&format!("    movsd {}(%rsp), %xmm0\n    mov {}(%rsp), %rdi\n    call hbc_print_f64\n", off, off + 8));
                         continue;
                     }
-                    if !stderr && matches!(t, Ty::I64 | Ty::Dyn | Ty::Bool) {
+                    if !stderr && !raw && matches!(t, Ty::I64 | Ty::Bool) {
                         out.push_str("    call hbc_pflush\n");
                     }
                     out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
@@ -10737,7 +10741,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                                 out.push_str("    call hbc_pstrt\n");
                             } else {
                                 if is_last { out.push_str(rtrim); }
-                                if !stderr && !is_last {
+                                if !stderr && !raw && !is_last {
                                     out.push_str(&format!("    test %rdx, %rdx\n    jz 91f\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n91:\n", off, off + 8));
                                 }
                                 out.push_str("    call hbc_print_str\n");
@@ -10753,6 +10757,9 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             // DArrDyn cell reads carry literal provenance
                             // (piece 1a cells are literal-only): the lit
                             // variant prints tag 0 with the literal rule.
+                            if !stderr && !raw {
+                                out.push_str(&format!("    cmp $0, %rax\n    je 87f\n    cmp $1, %rax\n    je 87f\n    cmp $3, %rax\n    je 87f\n    cmp $2, %rax\n    je 89f\n    cmp $4, %rax\n    jne 88f\n89:\n    mov -8(%rdx), %rcx\n    test %rcx, %rcx\n    jz 88f\n87:\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n88:\n", off, off + 8));
+                            }
                             let lit_cell = matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArrDyn));
                             out.push_str(if lit_cell { "    call hbc_print_dynlit\n" } else { "    call hbc_print_dyn\n" });
                             // An owned temporary (a call result) releases a
