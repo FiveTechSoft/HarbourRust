@@ -1,0 +1,168 @@
+PASS existing regression t997_original_recursiv.hb windows
+PASS direct trace-global executable linkage and target relocations
+PASS interned trace text bytes/update sequence perfextra.hb linux
+PASS interned trace text bytes/update sequence perfextra.hb windows
+PASS interned trace text bytes/update sequence corpus.hb linux
+PASS interned trace text bytes/update sequence corpus.hb windows
+PASS interned trace text bytes/update sequence arraywork.hb linux
+PASS interned trace text bytes/update sequence arraywork.hb windows
+PASS interned trace text bytes/update sequence error-after-call.hb linux
+PASS interned trace text bytes/update sequence error-after-call.hb windows
+PASS interned trace text bytes/update sequence error-bitops.hb linux
+PASS interned trace text bytes/update sequence error-bitops.hb windows
+PASS interned trace text bytes/update sequence error-boolcalls.hb linux
+PASS interned trace text bytes/update sequence error-boolcalls.hb windows
+PASS marker shared rejection t1299_pp_var_family_type_neg.hb linux
+PASS marker shared rejection t1299_pp_var_family_type_neg.hb windows
+PASS marker shared rejection t1300_pp_var_family_trailing_neg.hb linux
+PASS marker shared rejection t1300_pp_var_family_trailing_neg.hb windows
+PASS marker shared rejection t1290_pp_queue_cycle_neg.hb linux
+PASS marker shared rejection t1290_pp_queue_cycle_neg.hb windows
+PASS marker shared rejection t1291_pp_queue_include_neg.hb linux
+PASS marker shared rejection t1291_pp_queue_include_neg.hb windows
+PASS marker shared rejection t1292_pp_queue_uncommand_neg.hb linux
+PASS marker shared rejection t1292_pp_queue_uncommand_neg.hb windows
+PASS marker shared rejection t1277_pp_var_flags_repeat.hb linux
+PASS marker shared rejection t1277_pp_var_flags_repeat.hb windows
+PASS marker shared rejection t1280_pp_var_flags_macro_neg.hb linux
+PASS marker shared rejection t1280_pp_var_flags_macro_neg.hb windows
+PASS marker shared rejection t1281_pp_var_flags_incomplete_neg.hb linux
+PASS marker shared rejection t1281_pp_var_flags_incomplete_neg.hb windows
+PASS marker shared rejection t1271_pp_plain_type_macro_neg.hb linux
+PASS marker shared rejection t1271_pp_plain_type_macro_neg.hb windows
+PASS marker shared rejection t1272_pp_plain_type_incomplete_neg.hb linux
+PASS marker shared rejection t1272_pp_plain_type_incomplete_neg.hb windows
+PASS marker shared rejection t1261_pp_reduced_var_macro_neg.hb linux
+PASS marker shared rejection t1261_pp_reduced_var_macro_neg.hb windows
+PASS marker shared rejection t1262_pp_reduced_var_power_neg.hb linux
+PASS marker shared rejection t1262_pp_reduced_var_power_neg.hb windows
+PASS marker shared rejection t1263_pp_reduced_var_incomplete_neg.hb linux
+PASS marker shared rejection t1263_pp_reduced_var_incomplete_neg.hb windows
+PASS marker shared rejection t1264_pp_reduced_var_dot_neg.hb linux
+PASS marker shared rejection t1264_pp_reduced_var_dot_neg.hb windows
+PASS marker shared rejection t1241_pp_smart_restricted_repeat_neg.hb linux
+PASS marker shared rejection t1241_pp_smart_restricted_repeat_neg.hb windows
+PASS marker shared rejection t1242_pp_smart_optional_literal_neg.hb linux
+PASS marker shared rejection t1242_pp_smart_optional_literal_neg.hb windows
+PASS marker shared rejection t1239_pp_smart_repeat_neg.hb linux
+PASS marker shared rejection t1239_pp_smart_repeat_neg.hb windows
+PASS marker shared rejection t1240_pp_smart_escape_neg.hb linux
+PASS marker shared rejection t1240_pp_smart_escape_neg.hb windows
+PASS marker shared rejection t1218_bracket_macro_quotes_neg.hb linux
+PASS marker shared rejection t1218_bracket_macro_quotes_neg.hb windows
+PASS marker shared rejection t1216_bracket_unterminated_neg.hb linux
+PASS marker shared rejection t1216_bracket_unterminated_neg.hb windows
+PASS marker shared rejection t1209_pp_macro_bracket_comma_neg.hb linux
+PASS marker shared rejection t1209_pp_macro_bracket_comma_neg.hb windows
+PASS marker shared rejection t1208_pp_macro_mismatch_neg.hb linux
+PASS marker shared rejection t1208_pp_macro_mismatch_neg.hb windows
+PASS marker shared rejection t1202_pp_list_escape_neg.hb linux
+PASS marker shared rejection t1202_pp_list_escape_neg.hb windows
+PASS marker shared rejection t1195_pp_normal_stringify_quotes_neg.hb linux
+PASS marker shared rejection t1195_pp_normal_stringify_quotes_neg.hb windows
+PASS marker shared rejection t1196_pp_normal_stringify_list_neg.hb linux
+PASS marker shared rejection t1196_pp_normal_stringify_list_neg.hb windows
+PASS marker shared rejection t1189_pp_fixed_translate_recursive_neg.hb linux
+PASS marker shared rejection t1189_pp_fixed_translate_recursive_neg.hb windows
+PASS marker shared rejection t1177_pp_stringify_mixed_quotes_neg.hb linux
+PASS marker shared rejection t1177_pp_stringify_mixed_quotes_neg.hb windows
+PASS marker shared rejection t1178_pp_stringify_escape_neg.hb linux
+PASS marker shared rejection t1178_pp_stringify_escape_neg.hb windows
+PASS marker shared rejection t1179_pp_stringify_list_neg.hb linux
+PASS marker shared rejection t1179_pp_stringify_list_neg.hb windows
+PASS marker shared rejection t1180_pp_stringify_other_form_neg.hb linux
+PASS marker shared rejection t1180_pp_stringify_other_form_neg.hb windows
+PASS marker shared rejection t1167_pp_atoms_spaced_assign_neg.hb linux
+PASS marker shared rejection t1167_pp_atoms_spaced_assign_neg.hb windows
+PASS marker shared rejection t1168_pp_atoms_spaced_logical_neg.hb linux
+PASS marker shared rejection t1168_pp_atoms_spaced_logical_neg.hb windows
+PASS marker shared rejection t1156_pp_call_unknown_neg.hb linux
+PASS marker shared rejection t1156_pp_call_unknown_neg.hb windows
+PASS marker shared rejection t1157_pp_call_case_neg.hb linux
+PASS marker shared rejection t1157_pp_call_case_neg.hb windows
+PASS marker shared rejection t1158_pp_call_recursive_neg.hb linux
+PASS marker shared rejection t1158_pp_call_recursive_neg.hb windows
+PASS marker shared rejection t1159_pp_call_removed_neg.hb linux
+PASS marker shared rejection t1159_pp_call_removed_neg.hb windows
+PASS marker shared rejection t1139_pp_generated_unknown_neg.hb linux
+PASS marker shared rejection t1139_pp_generated_unknown_neg.hb windows
+PASS marker shared rejection t1140_pp_generated_case_neg.hb linux
+PASS marker shared rejection t1140_pp_generated_case_neg.hb windows
+PASS marker shared rejection t1141_pp_generated_exact_neg.hb linux
+PASS marker shared rejection t1141_pp_generated_exact_neg.hb windows
+PASS marker shared rejection t1142_pp_generated_recursive_neg.hb linux
+PASS marker shared rejection t1142_pp_generated_recursive_neg.hb windows
+PASS marker shared rejection t1143_pp_generated_unsupported_neg.hb linux
+PASS marker shared rejection t1143_pp_generated_unsupported_neg.hb windows
+PASS marker shared rejection t1144_pp_generated_unescaped_neg.hb linux
+PASS marker shared rejection t1144_pp_generated_unescaped_neg.hb windows
+PASS marker shared rejection t1127_pp_null_unknown_neg.hb linux
+PASS marker shared rejection t1127_pp_null_unknown_neg.hb windows
+PASS marker shared rejection t1128_pp_null_case_neg.hb linux
+PASS marker shared rejection t1128_pp_null_case_neg.hb windows
+PASS marker shared rejection t1129_pp_null_malformed_neg.hb linux
+PASS marker shared rejection t1129_pp_null_malformed_neg.hb windows
+PASS marker shared rejection t1130_pp_null_nonmatch_neg.hb linux
+PASS marker shared rejection t1130_pp_null_nonmatch_neg.hb windows
+PASS marker shared rejection t1117_pp_logical_unknown_neg.hb linux
+PASS marker shared rejection t1117_pp_logical_unknown_neg.hb windows
+PASS marker shared rejection t1118_pp_logical_case_neg.hb linux
+PASS marker shared rejection t1118_pp_logical_case_neg.hb windows
+PASS marker shared rejection t1119_pp_logical_malformed_neg.hb linux
+PASS marker shared rejection t1119_pp_logical_malformed_neg.hb windows
+PASS marker shared rejection t1120_pp_logical_nonmatch_neg.hb linux
+PASS marker shared rejection t1120_pp_logical_nonmatch_neg.hb windows
+PASS marker shared rejection t1105_pp_restricted_exact_neg.hb linux
+PASS marker shared rejection t1105_pp_restricted_exact_neg.hb windows
+PASS marker shared rejection t1106_pp_restricted_unknown_neg.hb linux
+PASS marker shared rejection t1106_pp_restricted_unknown_neg.hb windows
+PASS marker shared rejection t1107_pp_restricted_prefix_neg.hb linux
+PASS marker shared rejection t1107_pp_restricted_prefix_neg.hb windows
+PASS marker shared rejection t1108_pp_restricted_quote_neg.hb linux
+PASS marker shared rejection t1108_pp_restricted_quote_neg.hb windows
+PASS marker shared rejection t1109_pp_restricted_empty_neg.hb linux
+PASS marker shared rejection t1109_pp_restricted_empty_neg.hb windows
+PASS marker shared rejection t1110_pp_restricted_macro_neg.hb linux
+PASS marker shared rejection t1110_pp_restricted_macro_neg.hb windows
+PASS marker shared rejection t1091_pp_identifier_literal_neg.hb linux
+PASS marker shared rejection t1091_pp_identifier_literal_neg.hb windows
+PASS marker shared rejection t1092_pp_identifier_expr_neg.hb linux
+PASS marker shared rejection t1092_pp_identifier_expr_neg.hb windows
+PASS marker shared rejection t1093_pp_wildcard_follow_neg.hb linux
+PASS marker shared rejection t1093_pp_wildcard_follow_neg.hb windows
+PASS marker shared rejection t1094_pp_marker_remove.hb linux
+PASS marker shared rejection t1094_pp_marker_remove.hb windows
+PASS marker shared rejection t1096_pp_marker_malformed_neg.hb linux
+PASS marker shared rejection t1096_pp_marker_malformed_neg.hb windows
+PASS marker shared rejection t1097_pp_identifier_optional.hb linux
+PASS marker shared rejection t1097_pp_identifier_optional.hb windows
+warning: value assigned to `i` is never read
+  --> run/perfextra-rust.rs:22:162
+   |
+22 | ...;let mut i=0i64;f.at("  at bitmix (perfextra.hb:4)\n");let mut x=1i64;f.at("  at bitmix (perfextra.hb:5)\n");i=1;while i<=n {f.at...
+   |               ^^^^ this value is reassigned later and never used                                                --- `i` is overwritten here before the previous value is read
+   |
+   = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `i` is never read
+  --> run/perfextra-rust.rs:23:176
+   |
+23 | ...et mut i=0i64;f.at("  at minmaxloop (perfextra.hb:11)\n");let mut x=n;f.at("  at minmaxloop (perfextra.hb:12)\n");i=1;while i<=n ...
+   |             ^^^^ this value is reassigned later and never used                                                       --- `i` is overwritten here before the previous value is read
+
+warning: value assigned to `i` is never read
+  --> run/perfextra-rust.rs:25:170
+   |
+25 | ...et mut i=0i64;f.at("  at callloop (perfextra.hb:20)\n");let mut x=1i64;f.at("  at callloop (perfextra.hb:21)\n");i=1;while i<=n {...
+   |             ^^^^ this value is reassigned later and never used                                                      --- `i` is overwritten here before the previous value is read
+
+warning: value assigned to `i` is never read
+  --> run/perfextra-rust.rs:26:167
+   |
+26 | ...et mut i=0i64;f.at("  at reverse (perfextra.hb:27)\n");let mut x=0i64;f.at("  at reverse (perfextra.hb:28)\n");i=n;while i>=1 {f....
+   |             ^^^^ this value is reassigned later and never used                                                    --- `i` is overwritten here before the previous value is read
+
+warning: 4 warnings emitted
+
+10130 extra backend/Rust comparisons PASS
+GATE-TAIL-PASS

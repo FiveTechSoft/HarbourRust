@@ -1,0 +1,1172 @@
+warning: unreachable pattern
+    --> ../../src/hbc.rs:2613:17
+     |
+2609 |                 [Tok::KwMethod, Tok::Ident(m), Tok::LParen, rest @ .., Tok::RParen, Tok::KwClass, Tok::Ident(c)] => {
+     |                 ------------------------------------------------------------------------------------------------ matches all the relevant values
+...
+2613 |                 [Tok::KwMethod, Tok::Ident(m), Tok::LParen, Tok::RParen, Tok::KwClass, Tok::Ident(c)] => {
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no value can reach this
+     |
+     = note: `#[warn(unreachable_patterns)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `x`
+    --> ../../src/hbc.rs:4482:37
+     |
+4482 |                         if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn)) {
+     |                                     ^ help: if this is intentional, prefix it with an underscore: `_x`
+     |
+     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `x`
+    --> ../../src/hbc.rs:5538:33
+     |
+5538 |                     if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn)) {
+     |                                 ^ help: if this is intentional, prefix it with an underscore: `_x`
+
+warning: unused variable: `x`
+    --> ../../src/hbc.rs:6615:37
+     |
+6615 |                         if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn)) {
+     |                                     ^ help: if this is intentional, prefix it with an underscore: `_x`
+
+warning: variable does not need to be mutable
+     --> ../../src/hbc.rs:16121:9
+      |
+16121 |     let mut sigs: Vec<Sig>;
+      |         ----^^^^
+      |         |
+      |         help: remove this `mut`
+      |
+      = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: type `Def` is more private than the item `Pp::defs`
+  --> ../../src/pp.rs:35:5
+   |
+35 |     pub defs: HashMap<String, Def>, // key: exact name (macro names are case-sensitive)
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ field `Pp::defs` is reachable at visibility `pub(crate)`
+   |
+note: but type `Def` is only usable at visibility `pub(self)`
+  --> ../../src/pp.rs:21:1
+   |
+21 | struct Def {
+   | ^^^^^^^^^^
+   = note: `#[warn(private_interfaces)]` on by default
+
+warning: type `Def` is more private than the item `eval_if`
+  --> ../../src/pp.rs:97:1
+   |
+97 | pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<bool, String> {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `eval_if` is reachable at visibility `pub(crate)`
+   |
+note: but type `Def` is only usable at visibility `pub(self)`
+  --> ../../src/pp.rs:21:1
+   |
+21 | struct Def {
+   | ^^^^^^^^^^
+
+warning: type `Def` is more private than the item `expand`
+   --> ../../src/pp.rs:299:1
+    |
+299 | pub fn expand(line: &str, defs: &HashMap<String, Def>, line_no: usize) -> Result<String, String> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `expand` is reachable at visibility `pub(crate)`
+    |
+note: but type `Def` is only usable at visibility `pub(self)`
+   --> ../../src/pp.rs:21:1
+    |
+ 21 | struct Def {
+    | ^^^^^^^^^^
+
+warning: field `0` is never read
+   --> ../../src/hbc.rs:759:13
+    |
+759 |     SelfGet(String),             // ::name inside a method (class parser landed; codegen pending)
+    |     ------- ^^^^^^
+    |     |
+    |     field in this variant
+    |
+    = note: `Expr` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+    |
+759 -     SelfGet(String),             // ::name inside a method (class parser landed; codegen pending)
+759 +     SelfGet(()),             // ::name inside a method (class parser landed; codegen pending)
+    |
+
+warning: field `1` is never read
+   --> ../../src/hbc.rs:760:21
+    |
+760 |     Send(Box<Expr>, String, Vec<Expr>), // obj:name(args) / obj:name - Harbour message send (cl1/cl10)
+    |     ----            ^^^^^^
+    |     |
+    |     field in this variant
+    |
+    = note: `Expr` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+    |
+760 -     Send(Box<Expr>, String, Vec<Expr>), // obj:name(args) / obj:name - Harbour message send (cl1/cl10)
+760 +     Send(Box<Expr>, (), Vec<Expr>), // obj:name(args) / obj:name - Harbour message send (cl1/cl10)
+    |
+
+warning: field `1` is never read
+   --> ../../src/hbc.rs:791:20
+    |
+791 |     SelfSet(usize, String, Expr),       // ::name := expr
+    |     -------        ^^^^^^
+    |     |
+    |     field in this variant
+    |
+    = note: `Stmt` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+    |
+791 -     SelfSet(usize, String, Expr),       // ::name := expr
+791 +     SelfSet(usize, (), Expr),       // ::name := expr
+    |
+
+warning: field `2` is never read
+   --> ../../src/hbc.rs:792:26
+    |
+792 |     SendSet(usize, Expr, String, Expr), // obj:name := expr (simple receiver)
+    |     -------              ^^^^^^
+    |     |
+    |     field in this variant
+    |
+    = note: `Stmt` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+    |
+792 -     SendSet(usize, Expr, String, Expr), // obj:name := expr (simple receiver)
+792 +     SendSet(usize, Expr, (), Expr), // obj:name := expr (simple receiver)
+    |
+
+warning: field `parent` is never read
+    --> ../../src/hbc.rs:2475:5
+     |
+2473 | struct ClassDecl {
+     |        --------- field in this struct
+2474 |     name: String,
+2475 |     parent: Option<String>,
+     |     ^^^^^^
+
+warning: fields `class_name` and `f` are never read
+    --> ../../src/hbc.rs:2480:5
+     |
+2479 | struct MethodDef {
+     |        --------- fields in this struct
+2480 |     class_name: String,
+     |     ^^^^^^^^^^
+2481 |     f: Func,
+     |     ^
+
+warning: field `dup` is never read
+  --> ../../src/pp.rs:31:5
+   |
+21 | struct Def {
+   |        --- field in this struct
+...
+31 |     dup: u32,
+   |     ^^^
+   |
+   = note: `Def` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: this method call resolves to `<&[T; N] as IntoIterator>::into_iter` (due to backwards compatibility), but will resolve to `<[T; N] as IntoIterator>::into_iter` in Rust 2021
+    --> ../../src/hbc.rs:6392:54
+     |
+6392 |                 for oe in [se.as_ref(), ce.as_ref()].into_iter().flatten() {
+     |                                                      ^^^^^^^^^
+     |
+     = warning: this changes meaning in Rust 2021
+     = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2021/IntoIterator-for-arrays.html>
+     = note: `#[warn(array_into_iter)]` (part of `#[warn(rust_2021_compatibility)]`) on by default
+help: use `.iter()` instead of `.into_iter()` to avoid ambiguity
+     |
+6392 -                 for oe in [se.as_ref(), ce.as_ref()].into_iter().flatten() {
+6392 +                 for oe in [se.as_ref(), ce.as_ref()].iter().flatten() {
+     |
+help: or use `IntoIterator::into_iter(..)` instead of `.into_iter()` to explicitly iterate by value
+     |
+6392 -                 for oe in [se.as_ref(), ce.as_ref()].into_iter().flatten() {
+6392 +                 for oe in IntoIterator::into_iter([se.as_ref(), ce.as_ref()]).flatten() {
+     |
+
+warning: 16 warnings emitted
+
+perfextra.hb -> run/perfextra-current.s (7 functions)
+PASS Linux exact output perfextra
+corpus.hb -> run/corpus-current.s (8 functions)
+PASS Linux exact output corpus
+edge.hb -> run/edge-current.s (2 functions)
+PASS Linux exact output edge
+procline.hb -> run/procline-current.s (2 functions)
+PASS Linux exact output procline
+audit.hb -> run/audit-current.s (2 functions)
+PASS Linux exact output audit
+arraywork.hb -> run/arraywork-current.s (3 functions)
+PASS Linux exact output arraywork
+logic.hb -> run/logic-current.s (3 functions)
+PASS Linux exact output logic
+loopcontrol.hb -> run/loopcontrol-current.s (2 functions)
+PASS Linux exact output loopcontrol
+sequence.hb -> run/sequence-current.s (3 functions)
+PASS Linux exact output sequence
+minmax.hb -> run/minmax-current.s (2 functions)
+PASS Linux exact output minmax
+bitops.hb -> run/bitops-current.s (2 functions)
+PASS Linux exact output bitops
+empty.hb -> run/empty-current.s (2 functions)
+PASS Linux exact output empty
+interaction.hb -> run/interaction-current.s (2 functions)
+PASS Linux exact output interaction
+boolcalls.hb -> run/boolcalls-current.s (7 functions)
+PASS Linux exact output boolcalls
+booloutput.hb -> run/booloutput-current.s (3 functions)
+PASS Linux exact output booloutput
+boolminmax.hb -> run/boolminmax-current.s (2 functions)
+PASS Linux exact output boolminmax
+boolscope.hb -> run/boolscope-current.s (2 functions)
+PASS Linux exact output boolscope
+integeredges.hb -> run/integeredges-current.s (2 functions)
+PASS Linux exact output integeredges
+scopedslots.hb -> run/scopedslots-current.s (3 functions)
+PASS Linux exact output scopedslots
+barecounter.hb -> run/barecounter-current.s (2 functions)
+PASS Linux exact output barecounter
+discardeffects.hb -> run/discardeffects-current.s (2 functions)
+PASS Linux exact output discardeffects
+nilcompare.hb -> run/nilcompare-current.s (2 functions)
+PASS Linux exact output nilcompare
+printchoice.hb -> run/printchoice-current.s (2 functions)
+PASS Linux exact output printchoice
+borrowedstrings.hb -> run/borrowedstrings-current.s (2 functions)
+PASS Linux exact output borrowedstrings
+longstr-original.prg -> run/longstr-original-current.s (1 functions)
+PASS Linux exact output longstr-original
+voideffects.hb -> run/voideffects-current.s (6 functions)
+PASS Linux exact output voideffects
+returns-original.prg -> run/returns-original-current.s (2 functions)
+PASS Linux exact output returns-original
+ifelse-original.prg -> run/ifelse-original-current.s (2 functions)
+PASS Linux exact output ifelse-original
+statfun-original.prg -> run/statfun-original-current.s (2 functions)
+PASS Linux exact output statfun-original
+exit-original.prg -> run/exit-original-current.s (1 functions)
+PASS Linux exact output exit-original
+fornext-original.prg -> run/fornext-original-current.s (1 functions)
+PASS Linux exact output fornext-original
+PASS independent logic truth/effect oracle (88 integers)
+PASS independent loop-control observations (33 integers)
+PASS independent sequence observations (25 integers)
+PASS independent Min/Max observations (22 integers)
+PASS independent bit-operation observations (29 integers)
+PASS independent Empty observations (20 integers)
+PASS independent cross-feature interaction oracle (33 inputs)
+PASS independent logical-call observations (37 integers)
+PASS independent logical-output byte oracle
+PASS independent logical Min/Max byte oracle
+PASS independent disjoint logical-local scope byte oracle
+PASS independent signed-I64 edge arithmetic/compare value oracle (8 pairs)
+PASS independent scoped declaration/array byte oracle
+PASS unchanged fornext/hk339 expected bytes (337 bytes)
+PASS bare counter effects, zero-trip and scope restoration
+PASS discarded output effects: lazy arms, sequence order and NIL no-op
+PASS literal NIL/scalar comparison: constants preserve operand effects
+PASS static literal IIF print selection and unchanged original exit bytes
+PASS NIL-only void originals and recursive/early-return effects exact bytes
+PASS borrowed constants/raw OutStd exact bytes including NUL and trailing spaces
+5089 differential scalar calls PASS
+warning: value assigned to `i` is never read
+  --> run/validate-traced-rust.rs:13:114
+   |
+13 |  let mut f=frame();f.enter();f.at("  at sumloop (corpus.hb:2)\n");f.at("  at sumloop (corpus.hb:2)\n");let mut i=0i64;
+   |                                                                                                                  ^^^^ this value is reassigned later and never used
+14 |  f.at("  at sumloop (corpus.hb:3)\n");let mut s=0i64;
+15 |  f.at("  at sumloop (corpus.hb:4)\n");i=1;
+   |                                       --- `i` is overwritten here before the previous value is read
+   |
+   = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `i` is never read
+  --> run/validate-traced-rust.rs:20:120
+   |
+20 |  let mut f=frame();f.enter();f.at("  at branchloop (corpus.hb:9)\n");f.at("  at branchloop (corpus.hb:9)\n");let mut i=0i64;
+   |                                                                                                                        ^^^^ this value is reassigned later and never used
+21 |  f.at("  at branchloop (corpus.hb:10)\n");let mut s=0i64;
+22 |  f.at("  at branchloop (corpus.hb:11)\n");i=1;
+   |                                           --- `i` is overwritten here before the previous value is read
+
+warning: value assigned to `i` is never read
+  --> run/validate-traced-rust.rs:30:122
+   |
+30 |  let mut f=frame();f.enter();f.at("  at recurrence (corpus.hb:22)\n");f.at("  at recurrence (corpus.hb:22)\n");let mut i=0i64;
+   |                                                                                                                          ^^^^ this value is reassigned later and never used
+31 |  f.at("  at recurrence (corpus.hb:23)\n");let mut s=1i64;
+32 |  f.at("  at recurrence (corpus.hb:24)\n");i=1;
+   |                                           --- `i` is overwritten here before the previous value is read
+
+warning: value assigned to `i` is never read
+  --> run/validate-traced-rust.rs:38:54
+   |
+38 |  f.at("  at arraywalk (arraywork.hb:3)\n");let mut i=0i64;
+   |                                                      ^^^^ this value is reassigned later and never used
+...
+41 |  f.at("  at arraywalk (arraywork.hb:6)\n");i=1;
+   |                                            --- `i` is overwritten here before the previous value is read
+
+warning: value assigned to `i` is never read
+  --> run/validate-traced-rust.rs:49:56
+   |
+49 |  f.at("  at arraywalk2 (arraywork.hb:19)\n");let mut i=0i64;
+   |                                                        ^^^^ this value is reassigned later and never used
+...
+52 |  f.at("  at arraywalk2 (arraywork.hb:22)\n");i=1;
+   |                                              --- `i` is overwritten here before the previous value is read
+
+warning: panic message contains an unused formatting placeholder
+  --> run/validate-traced-rust.rs:62:60
+   |
+62 |   assert!(hbc_trace_top.is_null(),"trace link leaked for n={n}");
+   |                                                            ^^^
+   |
+   = note: this message is not used as a format string when given without arguments, but will be in Rust 2021
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2021/panic-macro-consistency.html>
+   = note: `#[warn(non_fmt_panics)]` (part of `#[warn(rust_2021_compatibility)]`) on by default
+help: add the missing argument
+   |
+62 |   assert!(hbc_trace_top.is_null(),"trace link leaked for n={n}", ...);
+   |                                                                +++++
+help: or add a "{}" format string to use the message literally
+   |
+62 |   assert!(hbc_trace_top.is_null(),"{}", "trace link leaked for n={n}");
+   |                                   +++++
+
+warning: 6 warnings emitted
+
+10218 backend/Rust comparisons PASS; trace chain null after every batch
+SKIP timing samples (set RUN_BENCHMARKS=1 explicitly)
+PASS Linux ABI canary
+PASS Wine exact output perfextra
+PASS Wine exact output corpus
+PASS Wine exact output edge
+PASS Wine exact output procline
+PASS Wine exact output audit
+PASS Wine exact output arraywork
+PASS Wine exact output logic
+PASS Wine exact output loopcontrol
+PASS Wine exact output sequence
+PASS Wine exact output minmax
+PASS Wine exact output bitops
+PASS Wine exact output empty
+PASS Wine exact output interaction
+PASS Wine exact output boolcalls
+PASS Wine exact output booloutput
+PASS Wine exact output boolminmax
+PASS Wine exact output boolscope
+PASS Wine exact output integeredges
+PASS Wine exact output scopedslots
+PASS Wine exact output barecounter
+PASS Wine exact output discardeffects
+PASS Wine exact output nilcompare
+PASS Wine exact output printchoice
+borrowedstrings.hb -> run/borrowedstrings_current_w.s (2 functions)
+PASS Wine exact output borrowedstrings
+longstr-original.prg -> run/longstr-original_current_w.s (1 functions)
+PASS Wine exact output longstr-original
+PASS Wine exact output voideffects
+PASS Wine exact output returns-original
+PASS Wine exact output ifelse-original
+PASS Wine exact output statfun-original
+PASS Wine exact output exit-original
+PASS Wine exact output fornext-original
+PASS Wine ABI canary
+PASS internal void/call-void ABI shape and trace unlink at every return
+PASS native platform hb_eol and unchanged longstr binary expectations
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-borrowedraw.hb:5)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-borrowedraw.hb:5)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-void-argument.hb:7)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-void-argument.hb:7)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-void-return.hb:10)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-void-return.hb:10)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at helper (error-void-recursive.hb:6)
+  at helper (error-void-recursive.hb:4)
+  at helper (error-void-recursive.hb:4)
+  at main (error-void-recursive.hb:10)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at helper (error-void-recursive.hb:6)
+  at helper (error-void-recursive.hb:4)
+  at helper (error-void-recursive.hb:4)
+  at main (error-void-recursive.hb:10)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-nilcompare.hb:4)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-nilcompare.hb:4)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-nilcompare-left.hb:4)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-nilcompare-left.hb:4)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
+Callstack:
+  at deep (error-inc.hb:3)
+  at middle (error-inc.hb:5)
+  at main (error-inc.hb:7)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
+Callstack:
+  at deep (error-inc.hb:3)
+  at middle (error-inc.hb:5)
+  at main (error-inc.hb:7)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
+Callstack:
+  at descend (error-recursive.hb:4)
+  at descend (error-recursive.hb:4)
+  at descend (error-recursive.hb:4)
+  at descend (error-recursive.hb:4)
+  at main (error-recursive.hb:6)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
+Callstack:
+  at descend (error-recursive.hb:4)
+  at descend (error-recursive.hb:4)
+  at descend (error-recursive.hb:4)
+  at descend (error-recursive.hb:4)
+  at main (error-recursive.hb:6)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
+Callstack:
+  at main (error-after-call.hb:7)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
+Callstack:
+  at main (error-after-call.hb:7)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
+Callstack:
+  at fail (./trace-include.ch:3)
+  at main (error-include.hb:3)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
+Callstack:
+  at fail (./trace-include.ch:3)
+  at main (error-include.hb:3)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-bound.hb:4)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-bound.hb:4)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-bound-write.hb:4)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-bound-write.hb:4)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at probe (error-logic-and.hb:4)
+  at main (error-logic-and.hb:9)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at probe (error-logic-and.hb:4)
+  at main (error-logic-and.hb:9)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at probe (error-logic-or.hb:4)
+  at main (error-logic-or.hb:9)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at probe (error-logic-or.hb:4)
+  at main (error-logic-or.hb:9)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT 
+         7Bound error: array access
+Callstack:
+  at probe (error-loopcontrol.hb:20)
+  at main (error-loopcontrol.hb:25)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT 
+         7Bound error: array access
+Callstack:
+  at probe (error-loopcontrol.hb:20)
+  at main (error-loopcontrol.hb:25)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at probe (error-loop-test.hb:4)
+  at main (error-loop-test.hb:13)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at probe (error-loop-test.hb:4)
+  at main (error-loop-test.hb:13)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at probe (error-sequence.hb:4)
+  at main (error-sequence.hb:7)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at probe (error-sequence.hb:4)
+  at main (error-sequence.hb:7)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT 
+         7Bound error: array access
+Callstack:
+  at main (error-minmax.hb:7)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT 
+         7Bound error: array access
+Callstack:
+  at main (error-minmax.hb:7)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT 
+         7Bound error: array access
+Callstack:
+  at main (error-bitops.hb:7)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT 
+         7Bound error: array access
+Callstack:
+  at main (error-bitops.hb:7)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-empty.hb:4)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-empty.hb:4)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at invalid (error-boolcalls.hb:3)
+  at relay (error-boolcalls.hb:5)
+  at main (error-boolcalls.hb:7)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at invalid (error-boolcalls.hb:3)
+  at relay (error-boolcalls.hb:5)
+  at main (error-boolcalls.hb:7)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-booloutput.hb:4)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at main (error-booloutput.hb:4)
+
+linux current exit 1 stderr b''
+linux llvm exit 1 stderr b''
+linux ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at probe (error-scopedslots.hb:6)
+  at main (error-scopedslots.hb:14)
+
+windows current exit 1 stderr b''
+windows llvm exit 1 stderr b''
+windows ERROR TRACE EXACT Bound error: array access
+Callstack:
+  at probe (error-scopedslots.hb:6)
+  at main (error-scopedslots.hb:14)
+
+PASS fail-closed string-effect-tree
+PASS fail-closed string-chr-high
+PASS fail-closed string-chr-dynamic
+PASS fail-closed string-dead-escape
+PASS fail-closed string-dead-reassign
+PASS fail-closed string-capture
+PASS fail-closed string-reassign
+PASS fail-closed string-return
+PASS fail-closed string-escape-arg
+PASS fail-closed string-byref
+PASS fail-closed outstd-result
+PASS fail-closed void-unknown-proof
+PASS fail-closed void-dyn-parameter
+PASS fail-closed void-value-sequence-last
+PASS fail-closed void-value-dead-iif
+PASS fail-closed void-value-array
+PASS fail-closed void-nil-local
+PASS fail-closed void-value-print
+PASS fail-closed void-value-dead
+PASS fail-closed void-value-branch
+PASS fail-closed void-value-arg
+PASS fail-closed void-value-local
+PASS fail-closed void-value-cmp
+PASS fail-closed void-value-return
+PASS fail-closed void-mixed-return
+PASS fail-closed void-output-return
+PASS fail-closed void-dead-value-return
+PASS fail-closed sequence-float
+PASS fail-closed bitindex-dynamic
+PASS fail-closed bitindex-range
+PASS fail-closed bitops-float
+PASS fail-closed empty-string
+PASS fail-closed empty-nil
+PASS fail-closed bool-byref
+PASS fail-closed bool-param-integer
+PASS fail-closed float
+PASS fail-closed array-logical
+PASS fail-closed array-mixed-logical
+PASS fail-closed array-dead-logical
+PASS fail-closed dead-scoped-string
+PASS fail-closed local-self-init
+PASS fail-closed for-counter-escape
+PASS fail-closed block-local-escape
+PASS fail-closed for-counter-array
+PASS fail-closed print-iif-variable
+PASS fail-closed print-iif-storage
+PASS fail-closed print-iif-nested-string
+PASS fail-closed nil-order
+PASS fail-closed nil-exact-bool
+PASS fail-closed nil-owned-value
+PASS fail-closed nil-both-values
+PASS fail-closed nil-output-value
+PASS fail-closed effect-dead-unsupported
+PASS fail-closed effect-after-return
+PASS fail-closed output-result-value
+PASS fail-closed nil-result-storage
+PASS fail-closed output-result-storage
+PASS fail-closed outerr-effect
+PASS fail-closed bare-local-observed
+PASS fail-closed bare-local-bound
+PASS fail-closed bare-local-nested
+PASS fail-closed array-dynamic
+PASS fail-closed array-param
+PASS fail-closed array-nested
+PASS fail-closed array-copy
+PASS fail-closed array-aadd
+PASS fail-closed nil
+PASS fail-closed string-copy
+PASS fail-closed byref
+PASS fail-closed builtin
+PASS fail-closed minmax-float
+PASS fail-closed dead-string-return
+PASS fail-closed dead-builtin-chain
+PASS fail-closed dead-string-exit
+PASS fail-closed dead-division-loop
+PASS fail-closed dead-string-if
+PASS fail-closed exit-outside
+PASS fail-closed loop-outside
+PASS fail-closed instrument
+PASS existing regression t1346_pp_root_expression.hb linux
+PASS existing regression t1346_pp_root_expression.hb windows
+PASS existing regression t1347_pp_root_reorder.hb linux
+PASS existing regression t1347_pp_root_reorder.hb windows
+PASS existing regression t1348_pp_root_iterations.hb linux
+PASS existing regression t1348_pp_root_iterations.hb windows
+PASS existing regression t1349_pp_root_index.hb linux
+PASS existing regression t1349_pp_root_index.hb windows
+PASS existing regression t1350_pp_root_macro_normal.hb linux
+PASS existing regression t1350_pp_root_macro_normal.hb windows
+PASS existing regression t1351_pp_root_macro_expr.hb linux
+PASS existing regression t1351_pp_root_macro_expr.hb windows
+PASS existing regression t1352_pp_root_comparisons.hb linux
+PASS existing regression t1352_pp_root_comparisons.hb windows
+PASS existing regression t1353_pp_root_overlap.hb linux
+PASS existing regression t1353_pp_root_overlap.hb windows
+PASS existing regression t1342_pp_independent_ident.hb linux
+PASS existing regression t1342_pp_independent_ident.hb windows
+PASS existing regression t1343_pp_independent_plain.hb linux
+PASS existing regression t1343_pp_independent_plain.hb windows
+PASS existing regression t1344_pp_independent_temporal.hb linux
+PASS existing regression t1344_pp_independent_temporal.hb windows
+PASS existing regression t1345_pp_independent_call.hb linux
+PASS existing regression t1345_pp_independent_call.hb windows
+PASS existing regression t1339_pp_readmit_alias.hb linux
+PASS existing regression t1339_pp_readmit_alias.hb windows
+PASS existing regression t1340_pp_readmit_call.hb linux
+PASS existing regression t1340_pp_readmit_call.hb windows
+PASS existing regression t1341_pp_readmit_fixed.hb linux
+PASS existing regression t1341_pp_readmit_fixed.hb windows
+PASS existing regression t1333_pp_concat_bare.hb linux
+PASS existing regression t1333_pp_concat_bare.hb windows
+PASS existing regression t1334_pp_concat_call.hb linux
+PASS existing regression t1334_pp_concat_call.hb windows
+PASS existing regression t1335_pp_concat_math.hb linux
+PASS existing regression t1335_pp_concat_math.hb windows
+PASS existing regression t1336_pp_concat_nested.hb linux
+PASS existing regression t1336_pp_concat_nested.hb windows
+PASS existing regression t1326_pp_inline_ident_one.hb linux
+PASS existing regression t1326_pp_inline_ident_one.hb windows
+PASS existing regression t1328_pp_inline_ident_join.hb linux
+PASS existing regression t1328_pp_inline_ident_join.hb windows
+PASS existing regression t1329_pp_inline_ident_call.hb linux
+PASS existing regression t1329_pp_inline_ident_call.hb windows
+PASS existing regression t1330_pp_inline_ident_suffix.hb linux
+PASS existing regression t1330_pp_inline_ident_suffix.hb windows
+PASS existing regression t1331_pp_inline_ident_quote.hb linux
+PASS existing regression t1331_pp_inline_ident_quote.hb windows
+PASS existing regression t1319_pp_call_source.hb linux
+PASS existing regression t1319_pp_call_source.hb windows
+PASS existing regression t1320_pp_call_head.hb linux
+PASS existing regression t1320_pp_call_head.hb windows
+PASS existing regression t1321_pp_call_rescan.hb linux
+PASS existing regression t1321_pp_call_rescan.hb windows
+PASS existing regression t1322_pp_call_factory.hb linux
+PASS existing regression t1322_pp_call_factory.hb windows
+PASS existing regression t1323_pp_call_stringify.hb linux
+PASS existing regression t1323_pp_call_stringify.hb windows
+PASS existing regression t1324_pp_call_temporal.hb linux
+PASS existing regression t1324_pp_call_temporal.hb windows
+PASS existing regression t1315_pp_factory_separator.hb linux
+PASS existing regression t1315_pp_factory_separator.hb windows
+PASS existing regression t1316_pp_factory_separator.hb linux
+PASS existing regression t1316_pp_factory_separator.hb windows
+PASS existing regression t1317_pp_factory_separator.hb linux
+PASS existing regression t1317_pp_factory_separator.hb windows
+PASS existing regression t1318_pp_factory_separator.hb linux
+PASS existing regression t1318_pp_factory_separator.hb windows
+PASS existing regression t1309_pp_continuation_separator.hb linux
+PASS existing regression t1309_pp_continuation_separator.hb windows
+PASS existing regression t1310_pp_continuation_separator.hb linux
+PASS existing regression t1310_pp_continuation_separator.hb windows
+PASS existing regression t1311_pp_continuation_separator.hb linux
+PASS existing regression t1311_pp_continuation_separator.hb windows
+PASS existing regression t1312_pp_continuation_separator.hb linux
+PASS existing regression t1312_pp_continuation_separator.hb windows
+PASS existing regression t1313_pp_continuation_separator.hb linux
+PASS existing regression t1313_pp_continuation_separator.hb windows
+PASS existing regression t1314_pp_continuation_separator.hb linux
+PASS existing regression t1314_pp_continuation_separator.hb windows
+PASS existing regression t1301_pp_alias_source.hb linux
+PASS existing regression t1301_pp_alias_source.hb windows
+PASS existing regression t1302_pp_alias_rescan.hb linux
+PASS existing regression t1302_pp_alias_rescan.hb windows
+PASS existing regression t1303_pp_alias_mode.hb linux
+PASS existing regression t1303_pp_alias_mode.hb windows
+PASS existing regression t1304_pp_alias_temporal.hb linux
+PASS existing regression t1304_pp_alias_temporal.hb windows
+PASS existing regression t1305_pp_alias_generated_define.hb linux
+PASS existing regression t1305_pp_alias_generated_define.hb windows
+PASS existing regression t1306_pp_alias_chain.hb linux
+PASS existing regression t1306_pp_alias_chain.hb windows
+PASS existing regression t1293_pp_var_family_comma.hb linux
+PASS existing regression t1293_pp_var_family_comma.hb windows
+PASS existing regression t1294_pp_var_family_reorder.hb linux
+PASS existing regression t1294_pp_var_family_reorder.hb windows
+PASS existing regression t1295_pp_var_family_in.hb linux
+PASS existing regression t1295_pp_var_family_in.hb windows
+PASS existing regression t1296_pp_var_family_is.hb linux
+PASS existing regression t1296_pp_var_family_is.hb windows
+PASS existing regression t1297_pp_var_family_isin.hb linux
+PASS existing regression t1297_pp_var_family_isin.hb windows
+PASS existing regression t1298_pp_var_family_isto.hb linux
+PASS existing regression t1298_pp_var_family_isto.hb windows
+PASS existing regression t1282_pp_queue_siblings.hb linux
+PASS existing regression t1282_pp_queue_siblings.hb windows
+PASS existing regression t1283_pp_queue_nested.hb linux
+PASS existing regression t1283_pp_queue_nested.hb windows
+PASS existing regression t1284_pp_queue_quoted.hb linux
+PASS existing regression t1284_pp_queue_quoted.hb windows
+PASS existing regression t1285_pp_queue_factory.hb linux
+PASS existing regression t1285_pp_queue_factory.hb windows
+PASS existing regression t1286_pp_queue_define.hb linux
+PASS existing regression t1286_pp_queue_define.hb windows
+PASS existing regression t1287_pp_queue_define_order.hb linux
+PASS existing regression t1287_pp_queue_define_order.hb windows
+PASS existing regression t1288_pp_queue_function_define.hb linux
+PASS existing regression t1288_pp_queue_function_define.hb windows
+PASS existing regression t1289_pp_queue_undef.hb linux
+PASS existing regression t1289_pp_queue_undef.hb windows
+PASS existing regression t1273_pp_var_flags_absent.hb linux
+PASS existing regression t1273_pp_var_flags_absent.hb windows
+PASS existing regression t1274_pp_var_flags_all.hb linux
+PASS existing regression t1274_pp_var_flags_all.hb windows
+PASS existing regression t1275_pp_var_flags_aliases.hb linux
+PASS existing regression t1275_pp_var_flags_aliases.hb windows
+PASS existing regression t1276_pp_var_flags_reorder.hb linux
+PASS existing regression t1276_pp_var_flags_reorder.hb windows
+PASS existing regression t1278_pp_var_flags_operand.hb linux
+PASS existing regression t1278_pp_var_flags_operand.hb windows
+PASS existing regression t1279_pp_var_flags_capture.hb linux
+PASS existing regression t1279_pp_var_flags_capture.hb windows
+PASS existing regression t1265_pp_plain_type_name.hb linux
+PASS existing regression t1265_pp_plain_type_name.hb windows
+PASS existing regression t1266_pp_plain_type_expression.hb linux
+PASS existing regression t1266_pp_plain_type_expression.hb windows
+PASS existing regression t1267_pp_plain_type_call.hb linux
+PASS existing regression t1267_pp_plain_type_call.hb windows
+PASS existing regression t1268_pp_plain_type_reorder.hb linux
+PASS existing regression t1268_pp_plain_type_reorder.hb windows
+PASS existing regression t1269_pp_plain_type_repeats.hb linux
+PASS existing regression t1269_pp_plain_type_repeats.hb windows
+PASS existing regression t1270_pp_plain_type_operand.hb linux
+PASS existing regression t1270_pp_plain_type_operand.hb windows
+PASS existing regression t1253_pp_reduced_var_root.hb linux
+PASS existing regression t1253_pp_reduced_var_root.hb windows
+PASS existing regression t1254_pp_reduced_var_comma.hb linux
+PASS existing regression t1254_pp_reduced_var_comma.hb windows
+PASS existing regression t1255_pp_reduced_var_type.hb linux
+PASS existing regression t1255_pp_reduced_var_type.hb windows
+PASS existing regression t1256_pp_reduced_var_init.hb linux
+PASS existing regression t1256_pp_reduced_var_init.hb windows
+PASS existing regression t1257_pp_reduced_var_reorder.hb linux
+PASS existing regression t1257_pp_reduced_var_reorder.hb windows
+PASS existing regression t1258_pp_reduced_var_duplicates.hb linux
+PASS existing regression t1258_pp_reduced_var_duplicates.hb windows
+PASS existing regression t1259_pp_reduced_var_smart.hb linux
+PASS existing regression t1259_pp_reduced_var_smart.hb windows
+PASS existing regression t1260_pp_reduced_var_operand.hb linux
+PASS existing regression t1260_pp_reduced_var_operand.hb windows
+PASS existing regression t1247_pp_iter_identifier_smart.hb linux
+PASS existing regression t1247_pp_iter_identifier_smart.hb windows
+PASS existing regression t1248_pp_iter_identifier_dumb.hb linux
+PASS existing regression t1248_pp_iter_identifier_dumb.hb windows
+PASS existing regression t1249_pp_iter_identifier_normal.hb linux
+PASS existing regression t1249_pp_iter_identifier_normal.hb windows
+PASS existing regression t1250_pp_iter_identifier_plain.hb linux
+PASS existing regression t1250_pp_iter_identifier_plain.hb windows
+PASS existing regression t1251_pp_iter_identifier_logical.hb linux
+PASS existing regression t1251_pp_iter_identifier_logical.hb windows
+PASS existing regression t1252_pp_iter_identifier_empty.hb linux
+PASS existing regression t1252_pp_iter_identifier_empty.hb windows
+PASS existing regression t1244_pp_smart_escape_list.hb linux
+PASS existing regression t1244_pp_smart_escape_list.hb windows
+PASS existing regression t1245_pp_smart_escape_quote.hb linux
+PASS existing regression t1245_pp_smart_escape_quote.hb windows
+PASS existing regression t1246_pp_smart_escape_marker.hb linux
+PASS existing regression t1246_pp_smart_escape_marker.hb windows
+PASS existing regression t1233_pp_smart_bare.hb linux
+PASS existing regression t1233_pp_smart_bare.hb windows
+PASS existing regression t1234_pp_smart_parentheses.hb linux
+PASS existing regression t1234_pp_smart_parentheses.hb windows
+PASS existing regression t1235_pp_smart_quotes.hb linux
+PASS existing regression t1235_pp_smart_quotes.hb windows
+PASS existing regression t1236_pp_smart_list.hb linux
+PASS existing regression t1236_pp_smart_list.hb windows
+PASS existing regression t1237_pp_smart_optional.hb linux
+PASS existing regression t1237_pp_smart_optional.hb windows
+PASS existing regression t1238_pp_smart_identifier.hb linux
+PASS existing regression t1238_pp_smart_identifier.hb windows
+PASS existing regression t1228_pp_identifier_stringify.hb linux
+PASS existing regression t1228_pp_identifier_stringify.hb windows
+PASS existing regression t1229_pp_restricted_stringify.hb linux
+PASS existing regression t1229_pp_restricted_stringify.hb windows
+PASS existing regression t1230_pp_wildcard_stringify.hb linux
+PASS existing regression t1230_pp_wildcard_stringify.hb windows
+PASS existing regression t1231_pp_wildcard_normal.hb linux
+PASS existing regression t1231_pp_wildcard_normal.hb windows
+PASS existing regression t1232_pp_optional_marker_stringify.hb linux
+PASS existing regression t1232_pp_optional_marker_stringify.hb windows
+PASS existing regression t1227_pp_template_continuation.hb linux
+PASS existing regression t1227_pp_template_continuation.hb windows
+PASS existing regression t1224_pp_list_index.hb linux
+PASS existing regression t1224_pp_list_index.hb windows
+PASS existing regression t1225_pp_list_index_whole.hb linux
+PASS existing regression t1225_pp_list_index_whole.hb windows
+PASS existing regression t1226_pp_list_index_literal.hb linux
+PASS existing regression t1226_pp_list_index_literal.hb windows
+PASS existing regression t1220_escape_protection.hb linux
+PASS existing regression t1220_escape_protection.hb windows
+PASS existing regression t1221_escape_stringify.hb linux
+PASS existing regression t1221_escape_stringify.hb windows
+PASS existing regression t1222_escape_call_macro.hb linux
+PASS existing regression t1222_escape_call_macro.hb windows
+PASS existing regression t1210_bracket_literals.hb linux
+PASS existing regression t1210_bracket_literals.hb windows
+PASS existing regression t1211_bracket_index_context.hb linux
+PASS existing regression t1211_bracket_index_context.hb windows
+PASS existing regression t1212_bracket_macro.hb linux
+PASS existing regression t1212_bracket_macro.hb windows
+PASS existing regression t1213_bracket_semicolon.hb linux
+PASS existing regression t1213_bracket_semicolon.hb windows
+PASS existing regression t1215_bracket_translate.hb linux
+PASS existing regression t1215_bracket_translate.hb windows
+PASS existing regression t1203_pp_macro_nested_array.hb linux
+PASS existing regression t1203_pp_macro_nested_array.hb windows
+PASS existing regression t1204_pp_macro_nested_pair.hb linux
+PASS existing regression t1204_pp_macro_nested_pair.hb windows
+PASS existing regression t1205_pp_macro_simultaneous.hb linux
+PASS existing regression t1205_pp_macro_simultaneous.hb windows
+PASS existing regression t1206_pp_macro_strings.hb linux
+PASS existing regression t1206_pp_macro_strings.hb windows
+PASS existing regression t1207_pp_macro_nested_calls.hb linux
+PASS existing regression t1207_pp_macro_nested_calls.hb windows
+PASS existing regression t1197_pp_list_stringify.hb linux
+PASS existing regression t1197_pp_list_stringify.hb windows
+PASS existing regression t1198_pp_list_normal.hb linux
+PASS existing regression t1198_pp_list_normal.hb windows
+PASS existing regression t1199_pp_list_quotes.hb linux
+PASS existing regression t1199_pp_list_quotes.hb windows
+PASS existing regression t1200_pp_list_absent.hb linux
+PASS existing regression t1200_pp_list_absent.hb windows
+PASS existing regression t1201_pp_list_empty.hb linux
+PASS existing regression t1201_pp_list_empty.hb windows
+PASS existing regression t1190_pp_normal_stringify.hb linux
+PASS existing regression t1190_pp_normal_stringify.hb windows
+PASS existing regression t1191_pp_normal_stringify_absent.hb linux
+PASS existing regression t1191_pp_normal_stringify_absent.hb windows
+PASS existing regression t1192_pp_normal_stringify_mix.hb linux
+PASS existing regression t1192_pp_normal_stringify_mix.hb windows
+PASS existing regression t1193_pp_normal_stringify_marker.hb linux
+PASS existing regression t1193_pp_normal_stringify_marker.hb windows
+PASS existing regression t1194_pp_normal_stringify_call.hb linux
+PASS existing regression t1194_pp_normal_stringify_call.hb windows
+PASS existing regression t1182_pp_fixed_translate_inline.hb linux
+PASS existing regression t1182_pp_fixed_translate_inline.hb windows
+PASS existing regression t1183_pp_fixed_translate_order.hb linux
+PASS existing regression t1183_pp_fixed_translate_order.hb windows
+PASS existing regression t1184_pp_fixed_translate_specific.hb linux
+PASS existing regression t1184_pp_fixed_translate_specific.hb windows
+PASS existing regression t1185_pp_fixed_translate_remove.hb linux
+PASS existing regression t1185_pp_fixed_translate_remove.hb windows
+PASS existing regression t1186_pp_fixed_translate_temporal.hb linux
+PASS existing regression t1186_pp_fixed_translate_temporal.hb windows
+PASS existing regression t1187_pp_fixed_translate_command.hb linux
+PASS existing regression t1187_pp_fixed_translate_command.hb windows
+PASS existing regression t1188_pp_fixed_xtranslate.hb linux
+PASS existing regression t1188_pp_fixed_xtranslate.hb windows
+PASS existing regression t1181_pp_stringify_quoted_result.hb linux
+PASS existing regression t1181_pp_stringify_quoted_result.hb windows
+PASS existing regression t1169_pp_stringify_spaces.hb linux
+PASS existing regression t1169_pp_stringify_spaces.hb windows
+PASS existing regression t1170_pp_stringify_quotes.hb linux
+PASS existing regression t1170_pp_stringify_quotes.hb windows
+PASS existing regression t1171_pp_stringify_absent.hb linux
+PASS existing regression t1171_pp_stringify_absent.hb windows
+PASS existing regression t1172_pp_stringify_optional.hb linux
+PASS existing regression t1172_pp_stringify_optional.hb windows
+PASS existing regression t1173_pp_stringify_repeat_text.hb linux
+PASS existing regression t1173_pp_stringify_repeat_text.hb windows
+PASS existing regression t1174_pp_stringify_call.hb linux
+PASS existing regression t1174_pp_stringify_call.hb windows
+PASS existing regression t1175_pp_stringify_dotted.hb linux
+PASS existing regression t1175_pp_stringify_dotted.hb windows
+PASS existing regression t1176_pp_stringify_literal_marker.hb linux
+PASS existing regression t1176_pp_stringify_literal_marker.hb windows
+PASS existing regression t1160_pp_atoms_logical.hb linux
+PASS existing regression t1160_pp_atoms_logical.hb windows
+PASS existing regression t1161_pp_atoms_compare.hb linux
+PASS existing regression t1161_pp_atoms_compare.hb windows
+PASS existing regression t1162_pp_atoms_assign.hb linux
+PASS existing regression t1162_pp_atoms_assign.hb windows
+PASS existing regression t1163_pp_atoms_increment.hb linux
+PASS existing regression t1163_pp_atoms_increment.hb windows
+PASS existing regression t1165_pp_atoms_call.hb linux
+PASS existing regression t1165_pp_atoms_call.hb windows
+PASS existing regression t1166_pp_atoms_quoted.hb linux
+PASS existing regression t1166_pp_atoms_quoted.hb windows
+PASS existing regression t1148_pp_call_optional.hb linux
+PASS existing regression t1148_pp_call_optional.hb windows
+PASS existing regression t1149_pp_call_overload.hb linux
+PASS existing regression t1149_pp_call_overload.hb windows
+PASS existing regression t1150_pp_call_order.hb linux
+PASS existing regression t1150_pp_call_order.hb windows
+PASS existing regression t1151_pp_call_case.hb linux
+PASS existing regression t1151_pp_call_case.hb windows
+PASS existing regression t1152_pp_call_remove.hb linux
+PASS existing regression t1152_pp_call_remove.hb windows
+PASS existing regression t1153_pp_call_quoted.hb linux
+PASS existing regression t1153_pp_call_quoted.hb windows
+PASS existing regression t1154_pp_call_chain.hb linux
+PASS existing regression t1154_pp_call_chain.hb windows
+PASS existing regression t1155_pp_call_nested.hb linux
+PASS existing regression t1155_pp_call_nested.hb windows
+PASS existing regression t1145_pp_nonmatch_procedure.hb linux
+PASS existing regression t1145_pp_nonmatch_procedure.hb windows
+PASS existing regression t1146_pp_nonmatch_assignment.hb linux
+PASS existing regression t1146_pp_nonmatch_assignment.hb windows
+PASS existing regression t1147_pp_nonmatch_call.hb linux
+PASS existing regression t1147_pp_nonmatch_call.hb windows
+PASS existing regression t1131_pp_generated_factory.hb linux
+PASS existing regression t1131_pp_generated_factory.hb windows
+PASS existing regression t1132_pp_generated_collision.hb linux
+PASS existing regression t1132_pp_generated_collision.hb windows
+PASS existing regression t1133_pp_generated_optional.hb linux
+PASS existing regression t1133_pp_generated_optional.hb windows
+PASS existing regression t1134_pp_generated_ordinary.hb linux
+PASS existing regression t1134_pp_generated_ordinary.hb windows
+PASS existing regression t1135_pp_generated_ordered.hb linux
+PASS existing regression t1135_pp_generated_ordered.hb windows
+PASS existing regression t1136_pp_generated_unused.hb linux
+PASS existing regression t1136_pp_generated_unused.hb windows
+PASS existing regression t1137_pp_generated_multi.hb linux
+PASS existing regression t1137_pp_generated_multi.hb windows
+PASS existing regression t1138_pp_generated_local_scope.hb linux
+PASS existing regression t1138_pp_generated_local_scope.hb windows
+PASS existing regression t1121_pp_null_erase.hb linux
+PASS existing regression t1121_pp_null_erase.hb windows
+PASS existing regression t1122_pp_null_group.hb linux
+PASS existing regression t1122_pp_null_group.hb windows
+PASS existing regression t1123_pp_null_payload.hb linux
+PASS existing regression t1123_pp_null_payload.hb windows
+PASS existing regression t1124_pp_null_mixed.hb linux
+PASS existing regression t1124_pp_null_mixed.hb windows
+PASS existing regression t1125_pp_null_translate.hb linux
+PASS existing regression t1125_pp_null_translate.hb windows
+PASS existing regression t1126_pp_null_name.hb linux
+PASS existing regression t1126_pp_null_name.hb windows
+PASS existing regression t1111_pp_logical_presence.hb linux
+PASS existing regression t1111_pp_logical_presence.hb windows
+PASS existing regression t1112_pp_logical_false_payload.hb linux
+PASS existing regression t1112_pp_logical_false_payload.hb windows
+PASS existing regression t1113_pp_logical_group.hb linux
+PASS existing regression t1113_pp_logical_group.hb windows
+PASS existing regression t1114_pp_logical_mixed.hb linux
+PASS existing regression t1114_pp_logical_mixed.hb windows
+PASS existing regression t1115_pp_logical_translate.hb linux
+PASS existing regression t1115_pp_logical_translate.hb windows
+PASS existing regression t1116_pp_logical_required.hb linux
+PASS existing regression t1116_pp_logical_required.hb windows
+PASS existing regression t1099_pp_restricted_choice.hb linux
+PASS existing regression t1099_pp_restricted_choice.hb windows
+PASS existing regression t1100_pp_restricted_case.hb linux
+PASS existing regression t1100_pp_restricted_case.hb windows
+PASS existing regression t1101_pp_restricted_phrase.hb linux
+PASS existing regression t1101_pp_restricted_phrase.hb windows
+PASS existing regression t1102_pp_restricted_abbrev.hb linux
+PASS existing regression t1102_pp_restricted_abbrev.hb windows
+PASS existing regression t1103_pp_restricted_optional.hb linux
+PASS existing regression t1103_pp_restricted_optional.hb windows
+PASS existing regression t1104_pp_restricted_translate.hb linux
+PASS existing regression t1104_pp_restricted_translate.hb windows
+PASS existing regression t1087_pp_identifier_marker.hb linux
+PASS existing regression t1087_pp_identifier_marker.hb windows
+PASS existing regression t1088_pp_identifier_pair.hb linux
+PASS existing regression t1088_pp_identifier_pair.hb windows
+PASS existing regression t1089_pp_wildcard_marker.hb linux
+PASS existing regression t1089_pp_wildcard_marker.hb windows
+PASS existing regression t1090_pp_wildcard_optional.hb linux
+PASS existing regression t1090_pp_wildcard_optional.hb windows
+PASS existing regression t1095_pp_identifier_translate.hb linux
+PASS existing regression t1095_pp_identifier_translate.hb windows
+PASS existing regression t1098_pp_identifier_result_optional.hb linux
+PASS existing regression t1098_pp_identifier_result_optional.hb windows
+PASS existing regression t28_exit_loop.hb linux
+PASS existing regression t28_exit_loop.hb windows
+PASS existing regression t42_for_exit_loop.hb linux
+PASS existing regression t42_for_exit_loop.hb windows
+PASS existing regression t48_nested_exit.hb linux
+PASS existing regression t48_nested_exit.hb windows
+PASS existing regression t49_nested_loop.hb linux
+Traceback (most recent call last):
+  File "/home/sandbox/work/harbourrust/experiments/llvm-scalar/check_regressions.py", line 71, in <module>
+    assert result.returncode == want_rc and result.stderr == b'', (case, target, backend, result)
+AssertionError: ('t49_nested_loop.hb', 'windows', 'llvm', CompletedProcess(args=['/home/sandbox/work/wine-run.sh', 'experiments/llvm-scalar/run/reg-t49_nested_loop-windows-llvm.exe'], returncode=0, stdout=b'\n         1\n         3\n         1\n         1\n         3\n         2\n         1\n         3\n         3', stderr=b'wine: Unhandled page fault on read access to 0000000000000008 at address 00000002279B2B41 (thread 0090), starting debugger...\n'))
