@@ -1470,3 +1470,5 @@ neg tests/t1470_aview_outputcell.hb array-view
 neg tests/t1471_aview_outstdcell.hb array-view
 neg tests/t1472_aview_outerrcell.hb array-view
 neg tests/t1473_aview_qoutcell.hb array-view
+neg tests/t1474_aview_idxconsume.hb may not mention the viewed array
+neg tests/t1475_aview_idxmutate.hb may not mention the viewed array

@@ -4979,13 +4979,31 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                             }
                         }
                         Expr::Index(rid, ie) => {
-                            match env.iter().find(|x| x.name == *rid).map(|x| x.ty) {
-                                Some(t) if matches!(t, Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::AView) => {}
+                            let rty = match env.iter().find(|x| x.name == *rid).map(|x| x.ty) {
+                                Some(t) if matches!(t, Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::AView) => t,
                                 Some(t) => return Err(format!("line {}: argument {} of `{}`: a sub-view element comes from an array of arrays or another view, got {}", n, i + 1, id, ty_name(t))),
                                 None => return Err(format!("line {}: undefined variable `{}`", n, rid)),
-                            }
+                            };
                             if type_expr(ie, env, sigs, n)? != Ty::I64 {
                                 return Err(format!("line {}: array index must be an integer", n));
+                            }
+                            // ains piece 1b guardrail (independent review of
+                            // 243209ae): the index evaluates BEFORE the
+                            // sub-view header is built, and type_expr does
+                            // not apply the index's moves (apply_moves runs
+                            // per statement), so an index that mentions the
+                            // owner - always through an indirect call, a
+                            // direct mention is not an integer - can consume
+                            // or mutate the array under the view (verifier
+                            // repros index_consume_only / own_index_mutate:
+                            // runtime Bound error vs Harbour rc 0). Reject
+                            // the mention nominally; the workaround is a
+                            // local computed before the call. A view root
+                            // (AView) cannot be consumed or mutated through
+                            // the read-only view contract, so its
+                            // self-mentions stay legal.
+                            if rty != Ty::AView && expr_mentions(ie, rid) {
+                                return Err(format!("line {}: the index of a view argument may not mention the viewed array `{}` (an indirect call there could consume or mutate it before the sub-view exists); compute the index into a local first (ains piece 1b)", n, rid));
                             }
                             rid
                         }
