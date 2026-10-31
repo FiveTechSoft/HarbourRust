@@ -20,9 +20,9 @@ and output-dir. Prior6134replay categories remain identical,410smart+3explicit
 rejections pass,80identifier16family controls pass.16plan units pass.
 
 Six new own runtime programs match Harbour/default/LLVM exact Linux exit and
-stdout/stderr. Six positive/two rejection manifest rows added. Full local gates:
+stdout/stderr. Six positive/two rejection manifest rows added. Full local and independent remote gates:
 1267manifest+5aux=1272default PASS lines;566LLVM PASS lines. All268originals x4
 compile profiles retain exact prior exit/first diagnostics;21/15Linux20/14Windows.
 14reviewed unchanged Linux console originals exact versus freshly built Harbour
 in both backends. No original unlock,size/speed,main,runtime/ABI/ownership/debugger
-implementation change. Independent remote verification follows publication.
+implementation change. Independent remote6148replay/diagnostic audit and full gates verified.
