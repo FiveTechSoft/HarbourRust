@@ -1,0 +1,257 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next8afterguestbk",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/hbdoc.prg",
+      "sha256": "b78c43a25540da9fd53267262f4c219594ef7eeb79f1f265e7a7f5ea19a06c88",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+DirGetName",
+      "build_unit": "single-source-executable",
+      "profile": "documentation-generator-files",
+      "dependencies": "directry.ch/simpleio.ch;__hbdoc_LoadDir/SaveHBD;directoryscanclock",
+      "boundary": "WritesHBD;pininputtree+disposableoutputfixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 149: expected `,` or `)` in call arguments, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 149: expected `,` or `)` in call arguments, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/hbinline.prg",
+      "sha256": "2ecb2f20d091b354501e079b54cd575bbcb1f84fda869bd37a9a74c8f6d8c556",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+hb_inLine",
+      "build_unit": "single-source-executable",
+      "profile": "inline-C-build",
+      "dependencies": "inlineCblockswithhb_retc/parcplusHarbourfunctionnamecollision",
+      "boundary": "RequiresinlineCtoolchain/extendABI;safeconsoleownreferencebuild",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 39,
+        "stdout_sha256": "9e23575011bb9d84b3f4d9a8eac44b28dc6470dbe7703b0c867e63bc26841297",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 11: trailing tokens after expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 11: trailing tokens after expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/hello.prg",
+      "sha256": "98dc39ac220990b0cbc2df0b9f7f619cdeb00131408020df5378fe6897de6b11",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "console-existing",
+      "dependencies": "QOutliteral",
+      "boundary": "Existingcontrolnotnew",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 14,
+        "stdout_sha256": "12eb8bbe90a3e5f327285c29665a2021bd4c62ebcee33fb199ac28f1ff797913",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 14,
+            "stdout_sha256": "12eb8bbe90a3e5f327285c29665a2021bd4c62ebcee33fb199ac28f1ff797913",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 14,
+            "stdout_sha256": "12eb8bbe90a3e5f327285c29665a2021bd4c62ebcee33fb199ac28f1ff797913",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        }
+      }
+    },
+    {
+      "file": "tests/hrb.prg",
+      "sha256": "7f0d8ad29c3d4fb75528b87fe9f89ac11447004da48f304f82d28494240c0449",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+Msg",
+      "build_unit": "single-source-executable",
+      "profile": "runtime-pcode-loader",
+      "dependencies": "hbhrb.ch;compilehrbextifabsentviahb_run;hrbload/unload/overload;runtime&cExe",
+      "boundary": "Needpinnedhrbcompanion+processfixture/dynamicevaluator;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 102: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 102: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/hrbext.prg",
+      "sha256": "64a6aa486ad84baee537ef98bbbf49584bdda1f469af8cf3906459c9ebe7e3a1",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Msg/Msg2+INITMsgInit;noMain",
+      "build_unit": "pcode-companion-HRB-noMain",
+      "profile": "pcode-companion",
+      "dependencies": "Companiontohrb.prg;INIToutput;dynamicbindings",
+      "boundary": "BuildasHRBnotstandaloneexec;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 12: INIT/EXIT PROCEDURE is not in this increment (startup/teardown ordering needs its own design)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 12: INIT/EXIT PROCEDURE is not in this increment (startup/teardown ordering needs its own design)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/hsx.prg",
+      "sha256": "e4204444d62d324c6aadb4bc617a0bd821f2131778037b8b690d993c17699436",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "RDD-search-index-GT",
+      "dependencies": "dbinfo.ch;testDBF;hs_Index/Next/Verify/Filter;WAIT/Browse",
+      "boundary": "IsolatedDBF/HSXfixtures+GTinput;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 140: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 140: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/html.prg",
+      "sha256": "a0df9acf65d7642dc2797caaec7cf158817769a2a172add757370f84689d4b79",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+THTMLmethods",
+      "build_unit": "single-source-executable",
+      "profile": "object-HTML-console",
+      "dependencies": "hbclass.ch;stringHTMLgeneration;ShowResultstdout;SaveToFilemethodnotcalled",
+      "boundary": "Safeconsolecallpathnofiles/network;objectsemanticsunsupported",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 331,
+        "stdout_sha256": "d76392bbdc17ffdcc1aadfcae9851f690031eaaae9053b823bc934db8389366e",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 386: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 386: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/idle.prg",
+      "sha256": "2a970fa958e9735eabfb5101d719e76273085454ceba91f415c6cc28382a66e7",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "GT-idle-clock",
+      "dependencies": "idlecallbackregistration;Inkeytimers;SETIDLEREPEAT;CLS",
+      "boundary": "Requiresvirtualtimeandkey/screenfixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}

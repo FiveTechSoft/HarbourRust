@@ -1,0 +1,252 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next8aftermemory",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/memvar.prg",
+      "sha256": "864f0ccc461c5452264345a3ce8b9aee434d1ec196cd4ded28b703e5f4eba846",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+Test1..9+scope helpers+initmem",
+      "build_unit": "single-source-executable",
+      "profile": "dynamic-memvar-interactive",
+      "dependencies": "PRIVATE/PUBLIC/PARAMETERS;reference/detached block;WAIT",
+      "boundary": "Not run: scripted keys and scope snapshots needed",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 36: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 36: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/menuto.prg",
+      "sha256": "394bd60c0798a9b768311e12fecad0f49a5041e0bd4a5e7a8be6db4e0c0e962d",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+RECURSE",
+      "build_unit": "single-source-executable",
+      "profile": "GT-menu-recursive",
+      "dependencies": "MENU TO;PROMPT;SET KEY F8;mouse/key mask",
+      "boundary": "Not run: interactive GT keyboard/menu recursion fixture needed",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 114: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 114: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/money.prg",
+      "sha256": "84dde9ea38403e2f3b5637eb19514b9b08fb10cbcf1d966a1e44039405b9793e",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+Money methods+IsMoney+GenError",
+      "build_unit": "single-source-executable",
+      "profile": "class-operator-overload",
+      "dependencies": "hbclass;operators;integer cents;error objects",
+      "boundary": "Safe process-local console example;original unchanged",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 162,
+        "stdout_sha256": "59e68ff611bda84de86b23a5b8fdc43cad0043482cd0045b76db63a6fc52b822",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/mouse.prg",
+      "sha256": "31ac022c7a89f51208951d9d5408ba9880e167e48a0ea7cae31991569aafd43d",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+MUPDATE+MINRECT+TEST1+TEST2+CHECKEXIT",
+      "build_unit": "single-source-executable",
+      "profile": "GT-mouse-hardware",
+      "dependencies": "MPresent;mouse button/move events;screen bounds;Inkey",
+      "boundary": "Not run: no hardware/GT fixture;no empty no-mouse branch claimed as support",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 121: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 121: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/multiarg.prg",
+      "sha256": "6b370115396072c1ec50894822274bf8103b425d606245b572796bf5f1e51bf7",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+ShoutArg",
+      "build_unit": "single-source-executable",
+      "profile": "runtime-call-argument-introspection",
+      "dependencies": "missing args NIL;hb_PValue",
+      "boundary": "Safe console execution;actual argument introspection",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 104,
+        "stdout_sha256": "53d196cb694f584e3f502d24a8effa7248e0d43be5f05bffeb741adebc1524f7",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 10: `shoutarg` takes 11 argument(s), got 4",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 10: `shoutarg` takes 11 argument(s), got 4",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/newrdd.prg",
+      "sha256": "83a0521f97df68caa59881e916bb3416dfa42dc42ad0cbaf6453ff2d67b6efc5",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "RDD-interactive-file-mutation",
+      "dependencies": "test.dbf;DBF/DBFCDX;sort/filter/locks/pack/zap;Inkey",
+      "boundary": "Not run: disposable DBF/memo/index and keys required;never shared data",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 12: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 12: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/ntx.prg",
+      "sha256": "3a3d71e438956f2dd12f6b0beebd53ebf59a344a65db729c8d14aba5ec4afe3f",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "RDD-index-interactive",
+      "dependencies": "USE test;three NTX indexes;SET ORDER;forward/backward scans;Inkey;index deletion",
+      "boundary": "Not run: disposable test DBF and indexes plus scripted keys required",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/nums.prg",
+      "sha256": "2efaea2b4519fa35fbacc3bb0224f5e034735ff3c67bee2fe6cbef404760bfca",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "numeric-literals-format",
+      "dependencies": "I64,F64,hex,leading-dot decimal;QOut",
+      "boundary": "Safe deterministic console run",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 73,
+        "stdout_sha256": "f87c096891e5a4308eedc713b045c117326828065700b43b5aeb36fc0ca212ae",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 73,
+            "stdout_sha256": "f87c096891e5a4308eedc713b045c117326828065700b43b5aeb36fc0ca212ae",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: LLVM scalar: expression unsupported: Float(\"12000.123\", 3)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}

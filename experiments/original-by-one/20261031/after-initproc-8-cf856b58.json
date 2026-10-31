@@ -1,0 +1,243 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next8afterinitproc",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/inkey.prg",
+      "sha256": "7594cf67f0d164de9f5a038027b9f132d37852704a0b2718aa51d1f3b4ce7dcb",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+Results/NextTest/TEST1..7",
+      "build_unit": "single-source-executable",
+      "profile": "GT-keyboard-timing",
+      "dependencies": "inkey.ch;AltDconditional;KEYBOARD/CLEARTYPEAHEAD;2sectimers;mouse;Tone",
+      "boundary": "GTkey/timing/audioscript;debuggerAltDnotopened;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 170: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 170: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/inline.prg",
+      "sha256": "031566c3afeb359e9ddea8f1b23f4f9f6e3ca4391532977840b1698c906603eb",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TForm/New",
+      "build_unit": "single-source-executable",
+      "profile": "object-inline-console",
+      "dependencies": "STATICclassbuilder;QSelf;inlineShowcapturesSelf",
+      "boundary": "Safeconsole;objectruntimeunsupported",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 33,
+        "stdout_sha256": "f8c6243401dd7c54c77443d0c84e671389deb1433df20da1b49a23cd2e86262d",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 18: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 18: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/inline_c.prg",
+      "sha256": "7326cba837c7b9348f6ca4fa6faf6803db0359915a4eebbe2fa7f40d9c598d03",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+EndDumpTest+C_FUNC",
+      "build_unit": "single-source-executable",
+      "profile": "inline-C-console",
+      "dependencies": "pragmabegindump/enddump;hbapi.h;HB_FUNC/retc",
+      "boundary": "SafeconsoleCbridgeoriginalreference;notcopyimplementation",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 38,
+        "stdout_sha256": "5b99546e8bc2106d82d33bd44afbc9b689a26e6eefdc9e46346a9a893bc63db9",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: unknown directive #pragma in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: unknown directive #pragma in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/iotcp.prg",
+      "sha256": "5c18b10a84225b4c931c33304992f7c590dcefe1bf987a6a5b0a97f62f4d0c92",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+IOTCPmethods+INITCLIPINIT",
+      "build_unit": "single-source-executable",
+      "profile": "network-IO-redirector",
+      "dependencies": "hbiousr.ch/hbsocket.ch/fileio.ch/error.ch;IOUSRregister;DEFAULTsmtp.gmail.com25;EHLO/QUIT",
+      "boundary": "Outboundnetworksideeffects,neverrun;requiresisolatedsocketfixture",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 312: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 312: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/ipclnt.prg",
+      "sha256": "c731de98e53f0f335a8d93abbe46db9f59189ba8c40ea5fb623a8f075364acaa",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "network-client",
+      "dependencies": "hbsocket.ch;127.0.0.1port10000;sendfourmessagesquit",
+      "boundary": "Needsisolatedpairedserverfixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 76: expected `,` or `)` in call arguments, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 76: expected `,` or `)` in call arguments, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/ipsvr.prg",
+      "sha256": "8a3ed02ef795e5003266faa60c768d134b9ebc61cf31311c9316d1295a587897",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+process",
+      "build_unit": "single-source-executable",
+      "profile": "network-server-threads",
+      "dependencies": "inkey.ch/hbsocket.ch;bind0.0.0.0port10000;threadperconnection;3saccept",
+      "boundary": "Needsnetworknamespace/thread/socketlifetimecontract;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 193: expected `,` or `)` in call arguments, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 193: expected `,` or `)` in call arguments, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/keywords.prg",
+      "sha256": "360bfc9387b8a0f6e06d528d35f8158f70c899b227035ee0c294226d2ead770e",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "NoTestMain+keywordnamedfunctions;unsafeINIT/EXIT",
+      "build_unit": "compile-only-static-archive-NOTEST-never-execute",
+      "profile": "compile-only-lexical",
+      "dependencies": "keywords.ch;NOTESTsyntax-only;keywordidentifiers/macros/alias/capture/globalSTATICS",
+      "boundary": "Explicitcompile-onlyunit;neverexecuteunsafeINIT/EXIT",
+      "reference_build_exit": 6,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 761: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 761: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "reference_diagnostic": "\n/tmp/harbour-reference/tests/keywords.prg(117) Error E0013  NEXT does not match FOR\n\n/tmp/harbour-reference/tests/keywords.prg(250) Error E0020  Incomplete statement or unbalanced delimiters\n\n/tmp/harbour-reference/tests/keywords.prg(251) Error E0046  CASE or OTHERWISE does not match DO CASE or SWITCH\n\n/tmp/harbour-reference/tests/keywords.prg(255) Error E0046  CASE or OTHERWISE does not match DO CASE or SWITCH\n\n/tmp/harbour-reference/tests/keywords.prg(258) Error E0046  CASE or OTHERWISE does not match DO CASE or SWITCH\n\n/tmp/harbour-reference/tests/keywords.prg(259) Error E0046  CASE or OTHERWISE does not match DO CASE or SWITCH\n\n/tmp/harbour-reference/tests/keywords.prg(260) Error E0046  CASE or OTHERWISE does not match DO CASE or SWITCH\n\n/tmp/harbour-reference/tests/keywords.prg(261) Error E0046  CASE or OTHERWISE does not match DO CASE or SWITCH\n\n/tmp/harbour-reference/tests/keywords.prg(262) Error E0046  CASE or OTHERWISE does not match DO CASE or SWITCH\n\n/tmp/harbour-reference/tests/keywords.prg(267) Error E0046  CASE or OTHERWISE does not match DO CASE or SWITCH\n\n/tmp/harbour-reference/tests/keywords.prg(269) Error E0046  CASE or OTHERWISE does not match DO CASE or SWITCH\n\n/tmp/harbour-reference/tests/keywords.prg(270) Error E0046  CASE or OTHERWISE does not match DO CASE or SWITCH\n\n/tmp/harbour-reference/tests/keywords.prg(273) Error E0046  CASE or OTHERWISE does not match DO CASE or SWITCH\n\n/tmp/harbour-reference/tests/keywords.prg(275) Error E0012  ENDCASE does not match DO CASE\n\n/tmp/harbour-reference/tests/keywords.prg(282) Error E0030  Syntax error \"syntax error at 'FUNCTION'\"\n\n/tmp/harbour-reference/tests/keywords.prg(342) Error E0020  Incomplete statement or unbalanced delimiters\n\n/tmp/harbour-reference/tests/keywords.prg(343) Error E0020  Incomplete statement or unbalanced delimiters\n\n/tmp/harbour-reference/tests/keywords.prg(418) Error E0030  Syntax error \"syntax error at 'FUNCTION'\"\n\n/tmp/harbour-reference/tests/keywords.prg(440) Error E0010  ENDIF does not match IF\n\n/tmp/harbour-reference/tests/keywords.prg(448) Error E0010  ENDIF does not match IF\n\n/tmp/harbour-reference/tests/keywords.prg(575) Error E0021  Incorrect number of arguments in FIELDNAME \nPassed: 0, expected: 1\n\n/tmp/harbour-reference/tests/keywords.prg(576) Error E0023  Invalid use of '@' (pass by reference) 'FIELD'\n\n/tmp/harbour-reference/tests/keywords.prg(657) Error E0023  Invalid use of '@' (pass by reference) 'IN'\n\n/tmp/harbour-reference/tests/keywords.prg(902) Error E0020  Incomplete statement or unbalanced delimiters\n\n/tmp/harbour-reference/tests/keywords.prg(903) Error E0020  Incomplete statement or unbalanced delimiters\nCannot open do.prg, assumed external\nCannot open exit.prg, assumed external\nCannot open external.prg, assumed external\nCannot open exte.prg, assumed external\nCannot open field.prg, assumed external\nCannot open INIT.prg, assumed external\nhbmk2: Error: Running Harbour compiler (built-in). 1\n('/tmp/harbour-reference/bin/linux/gcc/harbour') -n1 /tmp/harbour-reference/tests/keywords.prg -q -o/tmp/hbmk_ni8vzk.dir/ -i/tmp/harbour-reference/include\nHarbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n\n25 errors\n\nNo code generated.\n"
+    },
+    {
+      "file": "tests/langapi.prg",
+      "sha256": "69e18b21a26c83cf85a46db92f46ecdf7150e628ddf3a284e72f60f2e5802d99",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "locale-clock",
+      "dependencies": "REQUESTHULang/KOLang;langselectnames;NationMsg/CMonth/CDoWDate",
+      "boundary": "Pinnedclock/locale/datadependencies;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 4: REQUEST `hb_lang_hu` cannot be honored: the subset has no module linking; only functions defined in this file may be requested",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 4: REQUEST `hb_lang_hu` cannot be honored: the subset has no module linking; only functions defined in this file may be requested",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}

@@ -8001,18 +8001,24 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
         Expr::ArrLit(_) => unreachable!("array literals are emitted via cg_array_value"),
         Expr::IdxCompound(id, ie, op, re) => {
             // a[i] op= e on a fixed integer array (arrayidx contract):
-            // the index is evaluated once and FIRST, the right side once
-            // and SECOND, then the bounds check, load, operation and
-            // store together - the order Harbour's reference-then-
-            // operate sequence gives a[++i] += Bump(@i) (stores into the
-            // original cell). The cell is Copy i64, so no ownership is
-            // involved; the expression yields the NEW cell value in rax.
-            // Wrapping arithmetic, exactly like the scalar `x op= e`
-            // desugar into Bin (hk246); Harbour's integer promotion to
-            // double on overflow is the parked numeric decision.
+            // the index is evaluated once and FIRST, the BOUNDS CHECK
+            // runs before the right side, then the right side once, and
+            // the load, operation and store together. Harbour order,
+            // verifier-observed (results-6de7d717 bounds_rhs_order):
+            // a[0] += bump(@n) under ErrorBlock/RECOVER leaves n = 0 -
+            // the bound error pre-empts the right side entirely, so no
+            // rhs effect may run before the cell is known in range.
+            // (The in-range order oracle is unchanged: a[++i] += Bump(@i)
+            // stores into the cell the first index evaluation named.)
+            // The cell is Copy i64, so no ownership is involved; the
+            // expression yields the NEW cell value in rax. Wrapping
+            // arithmetic, exactly like the scalar `x op= e` desugar into
+            // Bin (hk246); Harbour's integer promotion to double on
+            // overflow is the parked numeric decision (registered).
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
             let k = match v.ty { Ty::Arr(k) => k, _ => unreachable!("checked") };
             cg_expr(ie, env, sigs, strs, out, target);
+            out.push_str(&format!("    cmp $1, %rax\n    jl 81f\n    cmp ${}, %rax\n    jg 81f\n", k));
             match target {
                 Target::Linux => out.push_str("    push %rax\n"),
                 Target::Windows => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"),
@@ -8025,8 +8031,8 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 Target::Linux => out.push_str("    mov %rax, %rcx\n    pop %r10\n"),
                 Target::Windows => out.push_str("    mov %rax, %rcx\n    mov (%rsp), %r10\n    add $16, %rsp\n"),
             }
-            // %r10 = index (evaluated once), %rcx = right side (once)
-            out.push_str(&format!("    cmp $1, %r10\n    jl 81f\n    cmp ${}, %r10\n    jg 81f\n", k));
+            // %r10 = index (evaluated once, bounds already checked),
+            // %rcx = right side (evaluated once, after the bounds check)
             out.push_str(&format!("    lea -{}(%rbp), %r11\n    mov -8(%r11,%r10,8), %rax\n", v.off));
             match op {
                 '+' => out.push_str("    add %rcx, %rax\n"),

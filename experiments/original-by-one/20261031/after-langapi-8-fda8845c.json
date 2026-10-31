@@ -1,0 +1,249 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next8afterlangapi",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/langmsg.prg",
+      "sha256": "93196bcdbb0c429408261688cbdea75ea367eb2e7e9048def5fca51f9ad2053b",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+GET_DAYS/MONTHS/ERR/IERR/HB_LANGERRINTR",
+      "build_unit": "single-source-executable",
+      "profile": "locale-GT-calendar",
+      "dependencies": "hblang.ch;langtables;Date;Inkey",
+      "boundary": "Needlanguage/clock/keyfixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 130: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 130: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/largefil.prg",
+      "sha256": "6965dfc8a607773a38ee2ae1a9d8f7ff01df51b5e5881939618c5d7b427776fb",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "RDD-disk-stress",
+      "dependencies": "DBFCDX5millionrecords>2GB+index500kseeks;delete;Inkey",
+      "boundary": "Hugewritesnotexecuted;needexplicitboundedresourcefixture",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 12: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 12: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/lbl.prg",
+      "sha256": "3c32ed40077961792c17bb1026e97fe10508edd977af2ec3016f598dbde9ef82",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "RDD-label-printer",
+      "dependencies": "USEtest;LABELFORMtest",
+      "boundary": "NeedDBF+labeldefinition+printerfixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/libname.prg",
+      "sha256": "999c188bd15984c98a8050c838259aa44d0b2fdac4b346c963f8b64994c6e41f",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "platform-path-console",
+      "dependencies": "simpleio.ch;hb_libName/hb_pspathconventions",
+      "boundary": "SafeconsoleLinuxprofile;separatetargetplatformoutputs",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 136,
+        "stdout_sha256": "e246269db08b453b1c4bb6fef8b5800e3583bc54766286e6b34a5bc14e0a4d99",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 59: unknown function `hb_libname` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 59: unknown function `hb_libname` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/linecont.prg",
+      "sha256": "4263d55c3c7237f988671d09cff69f97d6549ec215a7a3b159c9e1fc074aa76f",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TEST1/TEST2;externalTEST3..13",
+      "build_unit": "compile-only-library-unresolved-dependencies-not-executable",
+      "profile": "compile-only-syntax",
+      "dependencies": "NOTESTcontinuations;NILarithmetic;undefinedtestfunctions",
+      "boundary": "Staticlibrarysyntaxbuild,norun,noinventedstubstolink",
+      "reference_build_exit": 6,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 25: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 25: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "reference_diagnostic": "\n/tmp/harbour-reference/tests/linecont.prg(53) Error E0030  Syntax error \"syntax error at ';'\"\n\n/tmp/harbour-reference/tests/linecont.prg(58) Error E0030  Syntax error \"syntax error at ';'\"\nhbmk2: Error: Running Harbour compiler (built-in). 1\n('/tmp/harbour-reference/bin/linux/gcc/harbour') -n1 /tmp/harbour-reference/tests/linecont.prg -q -o/tmp/hbmk_hogfmb.dir/ -i/tmp/harbour-reference/include\nHarbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n\n2 errors\n\nNo code generated.\n"
+    },
+    {
+      "file": "tests/lnlenli1.prg",
+      "sha256": "f013872beee52f91ee630339a575a3242efcf35b9da29883a34fc75708808e34",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+LongLine1;externalI_",
+      "build_unit": "compile-only-library-unresolved-dependencies-not-executable",
+      "profile": "compile-only-longline",
+      "dependencies": "NOTESTnestedarray/blockhugepreprocessedline",
+      "boundary": "LibrarybuildunresolvedI_avoided;norun",
+      "reference_build_exit": 6,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 14: expected `,` or `}` in the array literal, got None",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 14: expected `,` or `}` in the array literal, got None",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "reference_diagnostic": "\n/tmp/harbour-reference/tests/lnlenli1.prg(97) Error E0020  Incomplete statement or unbalanced delimiters\nhbmk2: Error: Running Harbour compiler (built-in). 1\n('/tmp/harbour-reference/bin/linux/gcc/harbour') -n1 /tmp/harbour-reference/tests/lnlenli1.prg -q -o/tmp/hbmk_9dorcx.dir/ -i/tmp/harbour-reference/include\nHarbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n\n1 error\n\nNo code generated.\n"
+    },
+    {
+      "file": "tests/lnlenli2.prg",
+      "sha256": "f4ac937364b71cb6cadcafc8b7c3f0f17e0eddb55a8d434d9c39499d1a231039",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+LongLine2",
+      "build_unit": "single-source-executable",
+      "profile": "console-existing-default",
+      "dependencies": "NOTESTlongliteralstringarrayreturnunused",
+      "boundary": "Safeemptyoutputexistingdefaultcontrol,LLVMrejectnamed",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: LLVM scalar: only I64/logical scalar signatures supported",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/longdev.prg",
+      "sha256": "6e08dd0af993932fef09d0eeed8d9985331da1348b717800ff5b5213a3d5db4a",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "printer-file-longstrings",
+      "dependencies": "80KBstring;SETPRINTER/DEVICE;longdev.prnreadback",
+      "boundary": "Disposableprinter/filefixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 17: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 17: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}

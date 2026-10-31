@@ -1,0 +1,8 @@
+{
+  "bounds_print_default.prg": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := 0\n? a[i] += bump()\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+  "bounds_print_reference.prg": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := 0\nErrorBlock({|e|Break(e)})\nBEGIN SEQUENCE\n? a[i] += bump()\nRECOVER\n? \"CAUGHT\"\nEND SEQUENCE\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+  "bounds-print.stdout": "\nRHS-EFFECTBound error: array access\nCallstack:\n  at main (bounds_print_default.prg:4)\n",
+  "bounds-print.stderr": "",
+  "bounds-print-ref.stdout": "\nCAUGHT",
+  "bounds-print-ref.stderr": ""
+}

@@ -1,0 +1,72 @@
+[
+  {
+    "name": "bounds_rhs_order",
+    "source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL n := 0\nErrorBlock({|e|Break(e)})\nBEGIN SEQUENCE\n? a[0] += bump(@n)\nRECOVER\n? n\nEND SEQUENCE\nRETURN\nFUNCTION bump(n)\nn++\nRETURN 5\n",
+    "ref_compile": 0,
+    "reference": {
+      "exit": 0,
+      "stdout": "\n         0",
+      "stderr": ""
+    },
+    "default_compile": 1,
+    "default_diagnostic": "error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)\n"
+  },
+  {
+    "name": "nested_rhs",
+    "source": "PROCEDURE Main()\nLOCAL a := {1,2}\n? a[1] += a[2] *= 3\n? a[1],a[2]\nRETURN\n",
+    "ref_compile": 0,
+    "reference": {
+      "exit": 0,
+      "stdout": "\n         7\n         7          6",
+      "stderr": ""
+    },
+    "default_compile": 0,
+    "default_diagnostic": "",
+    "default": {
+      "exit": 0,
+      "stdout": "\n         7\n         7          6",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "rhs_old_cell",
+    "source": "PROCEDURE Main()\nLOCAL a := {3,4}\n? a[1] += a[1] *= 2\n? a[1]\nRETURN\n",
+    "ref_compile": 0,
+    "reference": {
+      "exit": 0,
+      "stdout": "\n        12\n        12",
+      "stderr": ""
+    },
+    "default_compile": 0,
+    "default_diagnostic": "",
+    "default": {
+      "exit": 0,
+      "stdout": "\n        12\n        12",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "shadowed_root",
+    "source": "PROCEDURE Main()\nLOCAL a := {1,2}\nIF .T.\nLOCAL a := {7,8,9}\n? a[3] += 1\nENDIF\n? a[1]\nRETURN\n",
+    "ref_compile": 6,
+    "default_compile": 1,
+    "default_diagnostic": "error: line 4: duplicate local `a`\n"
+  },
+  {
+    "name": "overflow",
+    "source": "PROCEDURE Main()\nLOCAL a := {9223372036854775807}\n? a[1] += 1\n? a[1]\nRETURN\n",
+    "ref_compile": 0,
+    "reference": {
+      "exit": 0,
+      "stdout": "\n 9223372036854776000\n 9223372036854776000",
+      "stderr": ""
+    },
+    "default_compile": 0,
+    "default_diagnostic": "",
+    "default": {
+      "exit": 0,
+      "stdout": "\n-9223372036854775808\n-9223372036854775808",
+      "stderr": ""
+    }
+  }
+]

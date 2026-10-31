@@ -3989,3 +3989,20 @@ numeric-cell decision (proposal recorded, not approved). The LLVM
 subset rejects the new form with an explicit named error; support is
 default-backend only and the LLVM subset never accepted this form, so
 no previously supported program is lost.
+
+Bounds-before-rhs correction (t1357, 2026-10-31, arrayidx follow-up):
+the independent verifier observed (results-6de7d717 bounds_rhs_order)
+that Harbour raises the out-of-range bound error BEFORE the right side
+of `a[i] op= e` runs: `a[0] += bump(@n)` under ErrorBlock/RECOVER
+leaves n = 0. d331930 evaluated the right side before checking bounds;
+the codegen now checks the variable index in range first, so no rhs
+effect can run for an out-of-range cell (t1357: exit 1 with the clean
+trace, no RHS-EFFECT printed, on both targets). The in-range order
+oracle (t1355) is unchanged and still byte-exact. The verifier harness
+uses ErrorBlock/BEGIN SEQUENCE only to capture the error - no
+byte-exact error-output claim between runtimes; the HR clean trace
+format is the registered failure-mode difference (t133 family).
+Overflow note (registered I64 limit, unchanged): `a[1] += 1` on
+MAXINT64 wraps (Harbour promotes to a double print) - the scalar
+`x op= e` model, numeric promotion parked with the numeric-cell
+decision.

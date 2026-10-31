@@ -1,0 +1,277 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next8afteridle",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/ifelse.prg",
+      "sha256": "3514e2804a8090bfe025af3e036294fdd8afafdf8554ededb3bcb888b1f03836",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TestValue",
+      "build_unit": "single-source-executable",
+      "profile": "console-existing",
+      "dependencies": "IFELSEIFELSE;procedureI64args",
+      "boundary": "Existingcontrolnotnew",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 111,
+        "stdout_sha256": "ab6c02ac2d4e545d4f0e39271f9649badd7961c19c387ee580f1b953adaa2bed",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 111,
+            "stdout_sha256": "ab6c02ac2d4e545d4f0e39271f9649badd7961c19c387ee580f1b953adaa2bed",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 111,
+            "stdout_sha256": "ab6c02ac2d4e545d4f0e39271f9649badd7961c19c387ee580f1b953adaa2bed",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        }
+      }
+    },
+    {
+      "file": "tests/ifinline.prg",
+      "sha256": "cef71077a08117c32e49ec468be7f38a5ca5817aa2a6175136ba4ed5cf3afa08",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "console-existing",
+      "dependencies": "if/iifexpressioneffectcalls;missingargumentNIL",
+      "boundary": "Existingcontrolnotnew",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 88,
+        "stdout_sha256": "71eb989804269a4ab2c3f6818d285423944b4ac2316f0073cdedc6430d257501",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 88,
+            "stdout_sha256": "71eb989804269a4ab2c3f6818d285423944b4ac2316f0073cdedc6430d257501",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 88,
+            "stdout_sha256": "71eb989804269a4ab2c3f6818d285423944b4ac2316f0073cdedc6430d257501",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        }
+      }
+    },
+    {
+      "file": "tests/inherit.prg",
+      "sha256": "2c761daae89dec36056773e04ff62730f32fdf69762e0c7f6805581dfc67f900",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TEmpty/TOnTop/TTextFile+methods",
+      "build_unit": "single-source-executable",
+      "profile": "object-file-copy",
+      "dependencies": "fileio.ch;__FILE__readand.outwriteadjacenttosource;inheritanceSTATICbuilders",
+      "boundary": "Mustcopysourceuntouchedtodisposablefixturebeforeexecution;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 136: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 136: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/inhprob.prg",
+      "sha256": "892d09516432c8e8c21ae130985571d3dfa4f1346c579c28dcf13d74d5bac640",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+One/Two/Three",
+      "build_unit": "single-source-executable",
+      "profile": "object-inheritance-console",
+      "dependencies": "hbclass.ch;supercalls;virtualdispatchinheritedinline",
+      "boundary": "Safeconsole;objectsemanticsunsupported",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 6,
+        "stdout_sha256": "091af6628ce631c8860f3b84e3482514880642dfdcb9c9744f4f33cc6fba6d2a",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 342: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 342: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/inifile.prg",
+      "sha256": "b16e9d4d8ad0e85d5edf50465c62b00e092bf3fbdd1b0383e52408164ddf46f0",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "TIniFilemethods;noMain",
+      "build_unit": "static-library-companion-noMain",
+      "profile": "library-companion",
+      "dependencies": "fileio.ch/hbclass.ch;INIreadwriteparser;sharednestedContents",
+      "boundary": "NoMain;staticlibrarycompanionguestbk;notstandaloneexec",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 481: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 481: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/inifiles.prg",
+      "sha256": "53f69a4e01dabebb118fe1903947e4347dde88cc47af6684e30518bd3c79d900",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TIniFilemethods",
+      "build_unit": "single-source-executable",
+      "profile": "object-INI-mutation-clock",
+      "dependencies": "fileio.ch/hbclass.ch;harbour.iniupdateTodayDate;ReadSectionsindex",
+      "boundary": "NeedpinnedINI/clock+disposablewritefixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 510: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 510: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/initexit.prg",
+      "sha256": "68611b3e13eead9f6385802cb16f255bcde31954cdeacce865f87cd255488f71",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+INITSecondOne/Third/initStatics+EXITFifth/Sixth",
+      "build_unit": "single-source-executable",
+      "profile": "startup-teardown-console",
+      "dependencies": "fileSTATICF64;PUBLICfromINIT;startupandteardownorder",
+      "boundary": "Safeconsole;INIT/EXITordercontractunsupported",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 302,
+        "stdout_sha256": "58fb83e41400348f472f34db49501087aa16f48f6b7bc7bb51b7d13eeb965a3f",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 4: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 4: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/initproc.prg",
+      "sha256": "890c8d8d8ae1333a923dfe323f6820349d500f30a48d6a3623b2eea73fc10406",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "INITInit+Main",
+      "build_unit": "single-source-executable",
+      "profile": "startup-only-console",
+      "dependencies": "INITprocedurebeforeMain;nosideeffectsoutsideconsole",
+      "boundary": "Safeconsole;verifyactualMainbehaviornotcommentassumption",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 41,
+        "stdout_sha256": "298efaeb4f2c2e44a2bba17fbe5ff49a3aa261a749a8f93663e0b845a7d4b681",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1: INIT/EXIT PROCEDURE is not in this increment (startup/teardown ordering needs its own design)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1: INIT/EXIT PROCEDURE is not in this increment (startup/teardown ordering needs its own design)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}

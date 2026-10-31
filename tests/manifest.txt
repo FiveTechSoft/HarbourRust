@@ -1351,3 +1351,4 @@ pos tests/t1353_pp_root_overlap.hb \n         8\n         9\n         7
 pos tests/t1354_idxcompound_stmt.hb \n        11         -8         30          4
 pos tests/t1355_idxcompound_expr_order.hb \n        15\n         2\n        15         20         30         40
 neg tests/t1356_idxcompound_div_parked.hb is parked: Harbour `/` always yields decimals
+posx tests/t1357_idxcompound_oob_order.hb 1 Bound error: array access\nCallstack:\n  at main (tests/t1357_idxcompound_oob_order.hb:12)\n

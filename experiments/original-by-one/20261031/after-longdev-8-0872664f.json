@@ -1,0 +1,277 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next8afterlongdev",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/longstr.prg",
+      "sha256": "ccc83f05e2f8f0aa89dc2f90807586c9cbf584066a41177dd7457d9f914bbdb1",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "console-existing-control",
+      "dependencies": "simpleio.ch;long string;Chr;CRLF",
+      "boundary": "Safe deterministic console;previously admitted control",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 502,
+        "stdout_sha256": "cd912cebd243763c1325e9493e68f39c4a2e750c06f55bd4b9b43e86aa1bf186",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 502,
+            "stdout_sha256": "cd912cebd243763c1325e9493e68f39c4a2e750c06f55bd4b9b43e86aa1bf186",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 502,
+            "stdout_sha256": "cd912cebd243763c1325e9493e68f39c4a2e750c06f55bd4b9b43e86aa1bf186",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        }
+      }
+    },
+    {
+      "file": "tests/longstr2.prg",
+      "sha256": "e6988e6f3320bfc5ac75b66f7c8e51c4d2868f03a284dfe439976687f5f0504a",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "console-large-output",
+      "dependencies": "string doubling to 1310720 bytes;OutStd/OutErr/QOut",
+      "boundary": "Bounded capture to disposable files, no terminal flooding",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 1351762,
+        "stdout_sha256": "cb7b9694116886ac1bb5ff04fd6c49619a15fc24efa1c99bc1b08569151c674c",
+        "stderr_bytes": 32
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 18: use of moved value `short` (heap values - strings and dynamic arrays - move on assignment, call or return; they do not copy)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 18: use of moved value `short` (heap values - strings and dynamic arrays - move on assignment, call or return; they do not copy)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/macro.prg",
+      "sha256": "19dfc8e201b797e25d3cf0e4eab8ebb8fed3b529c91bc15b1fb92566622ce9fb",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TValue+SubFun+Type tests",
+      "build_unit": "single-source-executable",
+      "profile": "runtime-macro-memvar-class",
+      "dependencies": "MEMVAR/PRIVATE/PUBLIC;dynamic macro lvalues;class;ErrorBlock",
+      "boundary": "Process-local runtime symbols;safe isolated execution",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 1363,
+        "stdout_sha256": "85af6dae9a45e4240518159fd9b3e92fe18f8c62b27e271da5042b1b7169c795",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 327: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 327: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/math.prg",
+      "sha256": "d859e11b7090b4c4da709523f43946b36f30dd18b8f72f1e93c39a3651f052c5",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+localmatherr",
+      "build_unit": "single-source-executable",
+      "profile": "floating-math-error-GT",
+      "dependencies": "CLS;Exp/Log/Sqrt;math error mode/block;invalid arguments",
+      "boundary": "Not run: error/GT response fixture needed",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 65: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 65: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/mem.prg",
+      "sha256": "1bf2e483a27bedd1cbb93f4b5df5ed896c10b9fe9afa052247e8cf7721ed0078",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "console-local-values",
+      "dependencies": "uninitialized locals assigned strings and numbers;HB_SYMBOL_UNUSED",
+      "boundary": "Safe no-output run;initialization inference boundary",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: LLVM scalar: expression unsupported: Nil",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/memfile.prg",
+      "sha256": "82c078bdc9a35f9b6b88aeb8296d508ea12129edecf469a4b4a12d923f1a0375",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "memvar-file-roundtrip",
+      "dependencies": "SAVE/RESTORE memory files;Date;FErase",
+      "boundary": "Run only in disposable directory;wall-clock Date output not deterministic",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 285,
+        "stdout_sha256": "b9924c12eae23bb302d784d6b6d4d5ae62abb61f6fccaedd329f57c463d24199",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 18: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 18: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/memmgr.prg",
+      "sha256": "30b2efe1400038006cac087f8ba4796d9f9007ff5b1a7015ab43235dfdc4c5d3",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+build_mode",
+      "build_unit": "single-source-executable",
+      "profile": "memory-stress-interactive",
+      "dependencies": "100000 loops;Space50000;array growth;WAIT;clock/version",
+      "boundary": "Not run: stress and interactive WAIT need explicit bounded fixture",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 100: error in #if expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 100: error in #if expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/memory.prg",
+      "sha256": "52433b41f01058ccacbcd3435e90c27db1629ae7d900eb75117ecbf0ec04c97d",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "runtime-memory-statistics",
+      "dependencies": "hbmemory.ch;Memory counters",
+      "boundary": "Safe readonly runtime counters;values build/profile dependent",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 406,
+        "stdout_sha256": "0e059b77392b58f0bf5217d32804fe9ea606da96447481837f19f27d73dfbc83",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 63: unknown function `memory` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 63: unknown function `memory` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}
