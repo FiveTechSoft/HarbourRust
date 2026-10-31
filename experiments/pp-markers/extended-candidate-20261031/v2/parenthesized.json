@@ -1,0 +1,525 @@
+{
+  "scope": "52own parenthesized candidate checks;not production support",
+  "rows": [
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) + y z\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) + y z\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) + y z\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) + y z\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) + y z\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) + y z\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) + y + z\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) + y + z)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) + y + z)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) + y + z\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) + y + z\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) + y + z\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) + f(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) + f(1,2))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) + f(1,2))\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) + f(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) + f(1,2)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) + f(1,2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) + {1,2}\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) + {1,2})\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) + {1,2})\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) + {1,2}\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) + {1,2}\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) + {1,2}\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) + a[1,2]\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) + a[1,2])\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) + a[1,2])\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) + a[1,2]\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) + a[1,2]\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) + a[1,2]\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) + \"a b\"\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) + \"a b\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) + \"a b\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) + \"a b\"\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) + \"a b\"\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) + \"a b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) + [a b]\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) + \"a b\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) + [a b])\n",
+      "own_error": "",
+      "token_match": false
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) + [a b]\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) + \"a b\"\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) + [a b]\n",
+      "own_error": "",
+      "token_match": false
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) AND y\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) AND y\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) AND y\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) AND y\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) AND y\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) AND y\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) .AND. y\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) .AND. y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) .AND. y)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) .AND. y\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) .AND. y\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) .AND. y\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) / y\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) / y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) / y)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) / y\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) / y\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) / y\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) := y\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) := y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) := y)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) := y\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) := y\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) := y\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) = y\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) = y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) = y)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) = y\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) = y\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) = y\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) : y\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) : y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) : y)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) : y\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) : y\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) : y\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) y\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) y\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) y\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) y\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) y\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) y\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) +\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) +)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) +)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) +\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) +\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) +\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) (y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) (y))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) (y))\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) (y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) (y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) (y)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) + ( y z )\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) + ( y z ))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) + ( y z ))\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) + ( y z )\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) + ( y z )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) + ( y z )\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) + &name.\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) + &name.)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) + &name.)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) + &name.\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) + &name.\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) + &name.\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) + &( y + z )\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) + &( y + z ))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) + &( y + z ))\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) + &( y + z )\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) + &( y + z )\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) + &( y + z )\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE ((x) + y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(((x) + y))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT(((x) + y))\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE ((x) + y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE ((x) + y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE ((x) + y)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x,y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x,y))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x,y))\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x,y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x,y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x,y)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x),y\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x),y\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x),y\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x),y\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x),y\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x),y\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x + y\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x + y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x + y)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x + y\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x + y\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x + y\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) TAIL\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) TAIL\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x))\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x) + y TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x) + y TAIL\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x) + y TAIL\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x) + y TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x) + y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x) + y)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> => HIT(<x>)\nPROBE (x)+yTAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((x)+yTAIL)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "HIT((x)+yTAIL)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <(x)> TAIL => HIT(<x>)\nPROBE (x)+yTAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (x)+yTAIL\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (x)+yTAIL\n",
+      "own_error": "",
+      "token_match": true
+    }
+  ]
+}
