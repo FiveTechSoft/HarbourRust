@@ -21,7 +21,14 @@ fail=0
 # overwrite them. No retries, ever.
 RUNID=${RUNID:-$(date +%Y%m%d-%H%M%S)-$$}
 MANIFEST_FILE=${MANIFEST_FILE:-tests/manifest.txt}
+# The failure directory is created EXCLUSIVELY (mkdir, not -p): reusing a
+# RUNID is rejected outright, so no invocation can overwrite another's
+# snapshots. Inside a run, each failing case gets its own subdirectory.
 mkdir -p gen/failures
+if ! mkdir "gen/failures/$RUNID" 2>/dev/null; then
+  echo "FATAL: gen/failures/$RUNID already exists - choose a fresh RUNID (snapshots are never overwritten)" >&2
+  exit 2
+fi
 RUSTC=$(command -v rustc || echo "$HOME/.cargo/bin/rustc")
 {
   echo "runID: $RUNID"
@@ -32,8 +39,10 @@ RUSTC=$(command -v rustc || echo "$HOME/.cargo/bin/rustc")
   echo "$MANIFEST_FILE sha256: $(sha256sum "$MANIFEST_FILE" | awk '{print $1}')"
   echo "tests/run_battery.sh sha256: $(sha256sum tests/run_battery.sh | awk '{print $1}')"
 } | tee gen/run-$RUNID.header
-preserve_failure() { # base - immutable per-run snapshot of raw artifacts
-  local b=$1 d=gen/failures/$RUNID/$b x
+preserve_failure() { # base - per-case snapshot dir inside the exclusive run dir
+  local b=$1
+  local d="gen/failures/$RUNID/$b"
+  local x
   mkdir -p "$d"
   for x in expected linux.stdout linux.stderr linux.rc wine.stdout wine.stderr wine.rc hbc-linux.err hbc-win.err neg-linux.out neg-linux.rc neg-win.out neg-win.rc; do
     [ -e "gen/$b.$x" ] && cp "gen/$b.$x" "$d/"
@@ -161,4 +170,7 @@ fi
   echo "src/hbc.rs sha256 at end: $(sha256sum src/hbc.rs | awk '{print $1}')"
   echo "$MANIFEST_FILE sha256 at end: $(sha256sum "$MANIFEST_FILE" | awk '{print $1}')"
 } >> gen/run-$RUNID.header
+# Link the end anchor into the failure dir too (shared run-level file; the
+# per-case snapshots themselves are never touched after creation).
+[ -d "gen/failures/$RUNID" ] && cp gen/run-$RUNID.header "gen/failures/$RUNID/run.header"
 if [ $fail -eq 0 ]; then echo "ALL GREEN"; else echo "BATTERY FAILURES"; exit 1; fi
