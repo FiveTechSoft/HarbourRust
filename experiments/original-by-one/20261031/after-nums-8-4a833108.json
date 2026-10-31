@@ -1,0 +1,259 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next8afternums",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/objarr.prg",
+      "sha256": "0e95a6fd0a24ecd8060d98d32132da6da6595d717c864c59783e0fc17026ef2c",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TNumber+New+Get",
+      "build_unit": "single-source-executable",
+      "profile": "class-array-cell-update-debug-introspection",
+      "dependencies": "HBClass;heterogeneous array data/getter;compound F64 update;debug stack/statics",
+      "boundary": "Safe process-local reference run;not proof of debugger implementation",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 1399,
+        "stdout_sha256": "86e5ba0e925d2dc342b331e2e4c56527a0a79d5ddcbd865d93093d9a9f9fd62f",
+        "stderr_bytes": 0,
+        "execution_note": "original first run retained; not rerun after subsequent omacro timeout"
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 15: trailing tokens after expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 15: trailing tokens after expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/objasign.prg",
+      "sha256": "1adccdded71eab12da0066bc96aa52df4cb34be991fd85e6466ef6e64a733323",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TNumber+New",
+      "build_unit": "single-source-executable",
+      "profile": "class-data-update-debug-introspection",
+      "dependencies": "HBClass;heterogeneous data slot;post/pre update;compound decimals;debug introspection",
+      "boundary": "Safe process-local reference run;no new representation authorized",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 1445,
+        "stdout_sha256": "183846d3bfa61153b434ebb86a2bad389956999237389702073bc85c667a6a7e",
+        "stderr_bytes": 0,
+        "execution_note": "original first run retained; not rerun after subsequent omacro timeout"
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 21: expression ++/-- requires a variable lvalue in this increment",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 21: expression ++/-- requires a variable lvalue in this increment",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/objects.prg",
+      "sha256": "156c79501c6b35662c7bd0d2afead8db0d2ffabecae7026864bd2d2b87d9035f",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TAny+New+Test",
+      "build_unit": "single-source-executable",
+      "profile": "lowlevel-class-runtime",
+      "dependencies": "hboo.ch;__clsNew/AddMsg/Inst;QSelf;virtual method",
+      "boundary": "Safe process-local reference console execution",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 82,
+        "stdout_sha256": "314629360e49de0adb897b84b0d6e4a7d9028fed60d1f53d3336901d13408f4d",
+        "stderr_bytes": 0,
+        "execution_note": "original first run retained; not rerun after subsequent omacro timeout"
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 97: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 97: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/omacro.prg",
+      "sha256": "93518f3dcf3c5e908de4421e7afdc3f581162c52ad0b9fda3b9e19f9703755da",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "object-runtime-macro-message",
+      "dependencies": "ErrorNew;PRIVATE;WITH OBJECT;runtime macro selectors and updates",
+      "boundary": "Reference runtime timed out under headless gtstd; needs error/GT harness diagnosis before re-execution",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "timeout_seconds": 10,
+        "exit": null,
+        "execution_note": "first bounded run timed out; output not retained; not rerun"
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 17: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 17: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/onidle.prg",
+      "sha256": "d0635183835540ad9fb3a27112bf4091470f2f504012df329eca8a544fb80e27",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TEST",
+      "build_unit": "single-source-executable",
+      "profile": "GT-idle-cyclic-GC",
+      "dependencies": "30-second Inkey;idle callbacks;cyclic arrays and self-referential block;GC counters",
+      "boundary": "Not run: interactive time/GT/GC fixture;cycles not implicitly approved",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 65: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 65: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/op.prg",
+      "sha256": "2c66dcb218480bbe5c09c171f1225274845d6dc8bf71abc03af368e4f9dd19b4",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TCar New/SUM",
+      "build_unit": "single-source-executable",
+      "profile": "class-operator-alert",
+      "dependencies": "hbclass;operator+;Alert",
+      "boundary": "Not run: interactive Alert response needed;GPL original only behavioral oracle",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 405: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 405: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/os.prg",
+      "sha256": "18e978cb594856a9692b5b156d9bc6c7153bdc47218240ba94e1f14e47a8c258",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "OS-runtime-query",
+      "dependencies": "OS function platform/build dependent",
+      "boundary": "Safe readonly reference console run;not cross-platform exact contract",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 22,
+        "stdout_sha256": "043af4388f221f3b4ddcc49c7a809ec75151c97c08697182011ff524233beb0e",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: unknown function `os` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: unknown function `os` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/osshell.prg",
+      "sha256": "e220a922c815fff837f8e171a6a01f8c2344423091b9ba6e75be19d5f2f04798",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "external-shell-interactive",
+      "dependencies": "GetEnv SHELL/COMSPEC;RUN shell command",
+      "boundary": "Not run: launches external interactive shell;NOTEST source warns against autotest",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 18: statement not in the subset (LogNot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 18: statement not in the subset (LogNot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}

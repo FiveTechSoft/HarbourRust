@@ -1,0 +1,875 @@
+{
+  "commit": "d16ec77d03faa340ecdf407705f10f35ee3688f3",
+  "scope": "fresh compiler; concrete bounds/order verification only; no full batteries",
+  "rows": [
+    {
+      "name": "t1354_idxcompound_stmt",
+      "source": "// Indexed compound assignment, statement form (arrayidx family):\n// `a[i] op= e` for +, -, * on integer cells, with the resulting\n// value discarded, like a bare call statement (hk216).\nfunction main()\n   local a := { 1, 2, 3, 4 }\n   a[ 1 ] += 10\n   a[ 2 ] -= 10\n   a[ 3 ] *= 10\n   ? a[ 1 ], a[ 2 ], a[ 3 ], a[ 4 ]\nreturn nil\n",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77/tests/t1354_idxcompound_stmt.hb -> /downloads/verify-d16ec77-scope/t1354_idxcompound_stmt-linux.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        11         -8         30          4",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77/tests/t1354_idxcompound_stmt.hb -> /downloads/verify-d16ec77-scope/t1354_idxcompound_stmt-windows.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        11         -8         30          4",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        11         -8         30          4",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1355_idxcompound_expr_order",
+      "source": "// Order oracle for `a[i] op= e` used as an expression (arrayidx\n// contract): the index expression evaluates ONCE, FIRST; the rhs\n// evaluates once, second; the store targets the cell the FIRST\n// index evaluation named, even when the rhs mutates the index.\nfunction bump( x )\n   x := x + 1\n   return 5\nfunction main()\n   local a := { 10, 20, 30, 40 }\n   local index := 0\n   ? a[ ++index ] += bump( @index )\n   ? index\n   ? a[ 1 ], a[ 2 ], a[ 3 ], a[ 4 ]\nreturn nil\n",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77/tests/t1355_idxcompound_expr_order.hb -> /downloads/verify-d16ec77-scope/t1355_idxcompound_expr_order-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        15\n         2\n        15         20         30         40",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77/tests/t1355_idxcompound_expr_order.hb -> /downloads/verify-d16ec77-scope/t1355_idxcompound_expr_order-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        15\n         2\n        15         20         30         40",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        15\n         2\n        15         20         30         40",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1357_idxcompound_oob_order",
+      "source": "// Bounds before the right side (verifier-observed Harbour order,\n// results-6de7d717 bounds_rhs_order): with a VARIABLE out-of-range\n// index, a[i] op= e raises the bound error WITHOUT running e - bump\n// must never print RHS-EFFECT (a literal 0 is a compile-time\n// rejection, so the runtime order needs a variable index).\nfunction bump()\n   ?? \"RHS-EFFECT \"\nreturn 5\nfunction main()\n   local a := { 1, 2 }\n   local i := 0\n   ? a[ i ] += bump()\nreturn nil\n",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77/tests/t1357_idxcompound_oob_order.hb -> /downloads/verify-d16ec77-scope/t1357_idxcompound_oob_order-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77/tests/t1357_idxcompound_oob_order.hb:12)\n",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77/tests/t1357_idxcompound_oob_order.hb -> /downloads/verify-d16ec77-scope/t1357_idxcompound_oob_order-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77/tests/t1357_idxcompound_oob_order.hb:12)\n",
+            "stderr": ""
+          }
+        }
+      }
+    },
+    {
+      "name": "bounds_plus_neg1",
+      "source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := -1\n? a[i] += bump()\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_plus_neg1.prg -> /downloads/verify-d16ec77-scope/bounds_plus_neg1-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_plus_neg1.prg:4)\n",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_plus_neg1.prg -> /downloads/verify-d16ec77-scope/bounds_plus_neg1-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_plus_neg1.prg:4)\n",
+            "stderr": ""
+          }
+        }
+      },
+      "reference_source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := -1\nErrorBlock({|e|Break(e)})\nBEGIN SEQUENCE\n? a[i] += bump()\nRECOVER\n? \"CAUGHT\"\nEND SEQUENCE\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nCAUGHT",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bounds_plus_0",
+      "source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := 0\n? a[i] += bump()\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_plus_0.prg -> /downloads/verify-d16ec77-scope/bounds_plus_0-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_plus_0.prg:4)\n",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_plus_0.prg -> /downloads/verify-d16ec77-scope/bounds_plus_0-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_plus_0.prg:4)\n",
+            "stderr": ""
+          }
+        }
+      },
+      "reference_source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := 0\nErrorBlock({|e|Break(e)})\nBEGIN SEQUENCE\n? a[i] += bump()\nRECOVER\n? \"CAUGHT\"\nEND SEQUENCE\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nCAUGHT",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bounds_plus_3",
+      "source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := 3\n? a[i] += bump()\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_plus_3.prg -> /downloads/verify-d16ec77-scope/bounds_plus_3-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_plus_3.prg:4)\n",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_plus_3.prg -> /downloads/verify-d16ec77-scope/bounds_plus_3-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_plus_3.prg:4)\n",
+            "stderr": ""
+          }
+        }
+      },
+      "reference_source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := 3\nErrorBlock({|e|Break(e)})\nBEGIN SEQUENCE\n? a[i] += bump()\nRECOVER\n? \"CAUGHT\"\nEND SEQUENCE\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nCAUGHT",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bounds_minus_neg1",
+      "source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := -1\n? a[i] -= bump()\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_minus_neg1.prg -> /downloads/verify-d16ec77-scope/bounds_minus_neg1-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_minus_neg1.prg:4)\n",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_minus_neg1.prg -> /downloads/verify-d16ec77-scope/bounds_minus_neg1-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_minus_neg1.prg:4)\n",
+            "stderr": ""
+          }
+        }
+      },
+      "reference_source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := -1\nErrorBlock({|e|Break(e)})\nBEGIN SEQUENCE\n? a[i] -= bump()\nRECOVER\n? \"CAUGHT\"\nEND SEQUENCE\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nCAUGHT",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bounds_minus_0",
+      "source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := 0\n? a[i] -= bump()\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_minus_0.prg -> /downloads/verify-d16ec77-scope/bounds_minus_0-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_minus_0.prg:4)\n",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_minus_0.prg -> /downloads/verify-d16ec77-scope/bounds_minus_0-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_minus_0.prg:4)\n",
+            "stderr": ""
+          }
+        }
+      },
+      "reference_source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := 0\nErrorBlock({|e|Break(e)})\nBEGIN SEQUENCE\n? a[i] -= bump()\nRECOVER\n? \"CAUGHT\"\nEND SEQUENCE\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nCAUGHT",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bounds_minus_3",
+      "source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := 3\n? a[i] -= bump()\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_minus_3.prg -> /downloads/verify-d16ec77-scope/bounds_minus_3-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_minus_3.prg:4)\n",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_minus_3.prg -> /downloads/verify-d16ec77-scope/bounds_minus_3-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_minus_3.prg:4)\n",
+            "stderr": ""
+          }
+        }
+      },
+      "reference_source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := 3\nErrorBlock({|e|Break(e)})\nBEGIN SEQUENCE\n? a[i] -= bump()\nRECOVER\n? \"CAUGHT\"\nEND SEQUENCE\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nCAUGHT",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bounds_times_neg1",
+      "source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := -1\n? a[i] *= bump()\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_times_neg1.prg -> /downloads/verify-d16ec77-scope/bounds_times_neg1-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_times_neg1.prg:4)\n",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_times_neg1.prg -> /downloads/verify-d16ec77-scope/bounds_times_neg1-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_times_neg1.prg:4)\n",
+            "stderr": ""
+          }
+        }
+      },
+      "reference_source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := -1\nErrorBlock({|e|Break(e)})\nBEGIN SEQUENCE\n? a[i] *= bump()\nRECOVER\n? \"CAUGHT\"\nEND SEQUENCE\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nCAUGHT",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bounds_times_0",
+      "source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := 0\n? a[i] *= bump()\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_times_0.prg -> /downloads/verify-d16ec77-scope/bounds_times_0-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_times_0.prg:4)\n",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_times_0.prg -> /downloads/verify-d16ec77-scope/bounds_times_0-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_times_0.prg:4)\n",
+            "stderr": ""
+          }
+        }
+      },
+      "reference_source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := 0\nErrorBlock({|e|Break(e)})\nBEGIN SEQUENCE\n? a[i] *= bump()\nRECOVER\n? \"CAUGHT\"\nEND SEQUENCE\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nCAUGHT",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bounds_times_3",
+      "source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := 3\n? a[i] *= bump()\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_times_3.prg -> /downloads/verify-d16ec77-scope/bounds_times_3-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_times_3.prg:4)\n",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d16ec77-scope/bounds_times_3.prg -> /downloads/verify-d16ec77-scope/bounds_times_3-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 1,
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77-scope/bounds_times_3.prg:4)\n",
+            "stderr": ""
+          }
+        }
+      },
+      "reference_source": "PROCEDURE Main()\nLOCAL a := {1,2}\nLOCAL i := 3\nErrorBlock({|e|Break(e)})\nBEGIN SEQUENCE\n? a[i] *= bump()\nRECOVER\n? \"CAUGHT\"\nEND SEQUENCE\nRETURN\nFUNCTION bump()\n? \"RHS-EFFECT\"\nRETURN 5\n",
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nCAUGHT",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "nested_rhs",
+      "source": "PROCEDURE Main()\nLOCAL a := {1,2}\n? a[1] += a[2] *= 3\n? a[1],a[2]\nRETURN\n",
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n         7\n         7          6",
+        "stderr": ""
+      },
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d331930-extra/nested_rhs.prg -> /downloads/verify-d16ec77-scope/nested_rhs-linux.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         7\n         7          6",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d331930-extra/nested_rhs.prg -> /downloads/verify-d16ec77-scope/nested_rhs-windows.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         7\n         7          6",
+            "stderr": ""
+          }
+        }
+      }
+    },
+    {
+      "name": "rhs_old_cell",
+      "source": "PROCEDURE Main()\nLOCAL a := {3,4}\n? a[1] += a[1] *= 2\n? a[1]\nRETURN\n",
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        12\n        12",
+        "stderr": ""
+      },
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d331930-extra/rhs_old_cell.prg -> /downloads/verify-d16ec77-scope/rhs_old_cell-linux.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        12\n        12",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-d331930-extra/rhs_old_cell.prg -> /downloads/verify-d16ec77-scope/rhs_old_cell-windows.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        12\n        12",
+            "stderr": ""
+          }
+        }
+      }
+    }
+  ],
+  "assertions": "14 cases x Linux/Windows verified: 10 bounds failure cases suppress RHS, 4 valid paths byte-exact to Harbour; all stderr empty",
+  "scope_limits": "No full batteries rerun. Default I64 indexed +=/-=/*= only. Original arrayidx remains F64-blocked; integer overflow promotion not fixed.",
+  "named_limits": {
+    "t1355": {
+      "exit": 1,
+      "stderr": "error: LLVM scalar: indexed compound assignment `a[i] op= e` is not in this subset (default-backend feature added with the arrayidx piece; the LLVM subset never accepted this form, so nothing previously supported is lost)\n"
+    },
+    "t1357": {
+      "exit": 1,
+      "stderr": "error: LLVM scalar: indexed compound assignment `a[i] op= e` is not in this subset (default-backend feature added with the arrayidx piece; the LLVM subset never accepted this form, so nothing previously supported is lost)\n"
+    },
+    "arrayidx": {
+      "exit": 1,
+      "stderr": "error: line 19: `a[i] /= e` is parked: Harbour `/` always yields decimals (0.80 for 4/5) and the integer array cell cannot hold them until the numeric-cell decision (proposal recorded, not approved)\n"
+    }
+  },
+  "preserved_ledgers": {
+    "after-longdev-8": {
+      "count": 1,
+      "byte_identical": true
+    },
+    "after-memory-8": {
+      "count": 1,
+      "byte_identical": true
+    },
+    "reconciled157": {
+      "count": 1,
+      "byte_identical": true
+    }
+  }
+}

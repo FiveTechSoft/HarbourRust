@@ -16156,20 +16156,65 @@ fn main() {
                 }
                 Err(m) => (view[fi].params.clone(), view[fi].inferred.clone(), Some(m)),
             };
-            let mut env: Vec<Local> = Vec::new();
             // Parameters enter the frame as owned locals: integer arguments copy,
             // string arguments move (callers hand over ownership). A parameter
             // some caller passes as `@p` is BORROWED from that caller instead
             // (hk216): the flag rejects moving it out (the caller keeps it).
             let brp: std::collections::HashSet<usize> = byref_params.get(&f.name).cloned().unwrap_or_default().into_iter().collect();
+            let byref_names: std::collections::HashSet<String> = byref_locals.get(&f.name).cloned().unwrap_or_default();
+            let dyn_names = prescan_dyn(f, &view, &ptys);
+            // Direct self-recursion retry (fib piece). A recursive call
+            // that precedes every RETURN of its own function deadlocks
+            // the fixpoint on "`f` never returns a value" (fib.prg):
+            // the body check aborts at the call, no return is reached,
+            // the table converges with the error still pending. When the
+            // unaided check fails with EXACTLY that error naming THIS
+            // function, retry the body once with the function's own
+            // table entry seeded by the return its checked prefix
+            // already accumulated (early-return shapes keep their
+            // precise inference) or Dyn when no return was reached (a
+            // tagged return; the exact type is not provable without
+            // running). A failed retry restores the entry and reports
+            // the ORIGINAL error, so pinned rejections keep their
+            // diagnostic (t1004/t1005); mutual recursion never names
+            // itself here and keeps the limit (t1360). The fixpoint
+            // re-verifies the seeded entry against the body's recomputed
+            // return on the next round, so a wrong seed cannot
+            // stabilize. Call-site flags accumulated in `view` by the
+            // aborted pass are monotone and stay (same discipline as
+            // mid-round errors elsewhere).
+            let mut env: Vec<Local> = Vec::new();
             for (i, p) in f.params.iter().enumerate() {
                 env.push(Local { name: p.clone(), ty: ptys[i], moved: false, ro: false, byref: brp.contains(&i) });
             }
-            let byref_names: std::collections::HashSet<String> = byref_locals.get(&f.name).cloned().unwrap_or_default();
             let mut ret = None;
             let mut top_exits: Vec<Vec<bool>> = Vec::new();
-            let dyn_names = prescan_dyn(f, &view, &ptys);
-            let res = check_stmts(&f.stmts, &mut env, &mut view, &mut ret, None, &mut top_exits, &dyn_names, &byref_names);
+            let mut res = check_stmts(&f.stmts, &mut env, &mut view, &mut ret, None, &mut top_exits, &dyn_names, &byref_names);
+            if let Err(m) = &res {
+                let self_deadlock = m.contains("never returns a value")
+                    && m.contains(&format!("`{}`", f.name));
+                if self_deadlock {
+                    let first = (m.clone(), ret);
+                    let saved = view[fi].ret;
+                    view[fi].ret = ret.or(Some(Ty::Dyn));
+                    let mut env2: Vec<Local> = Vec::new();
+                    for (i, p) in f.params.iter().enumerate() {
+                        env2.push(Local { name: p.clone(), ty: ptys[i], moved: false, ro: false, byref: brp.contains(&i) });
+                    }
+                    let mut ret2 = None;
+                    let mut top_exits2: Vec<Vec<bool>> = Vec::new();
+                    let res2 = check_stmts(&f.stmts, &mut env2, &mut view, &mut ret2, None, &mut top_exits2, &dyn_names, &byref_names);
+                    if res2.is_ok() {
+                        res = res2;
+                        ret = ret2;
+                        top_exits = top_exits2;
+                    } else {
+                        view[fi].ret = saved;
+                        res = Err(first.0);
+                        ret = first.1;
+                    }
+                }
+            }
             f.dyn_names = dyn_names;
             if let Err(m) = res {
                 if first_err.is_none() { first_err = Some(m); }

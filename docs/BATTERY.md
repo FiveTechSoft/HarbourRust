@@ -4,7 +4,7 @@
 `pos <file> <escaped expected stdout>` or `neg <file> <error substring>`.
 Positive expectations are derived per category, not assumed:
 
-- **HB-EXACT** (67 tests): bytes captured from the Harbour 3.2.1dev
+- **HB-EXACT** (69 tests): bytes captured from the Harbour 3.2.1dev
   reference compiled with `-gtstd` (clean stdio, no ANSI console codes).
   The earlier quick oracle (`hbmk2 file.hb` script mode) runs ONLY the
   first function in the file, not `main` - it was never valid for
@@ -4006,3 +4006,21 @@ Overflow note (registered I64 limit, unchanged): `a[1] += 1` on
 MAXINT64 wraps (Harbour promotes to a double print) - the scalar
 `x op= e` model, numeric promotion parked with the numeric-cell
 decision.
+
+Direct self-recursion return inference (t1358-t1360, 2026-10-31, fib
+piece): a recursive call precedes the RETURN whose expression feeds
+return inference, so the unaided fixpoint deadlocked on "never returns
+a value" (fib.prg: `fibr` rejected despite `RETURN nFib`). A direct
+self-call with an unknown return now types from the function's own
+partial return (early-return shapes keep their precise inference) or
+from Dyn when no return has been checked yet; the fixpoint re-verifies
+the final unified return against the real signature. t1358 (bare-local
+self-recursion) and t1359 (mutual recursion with early literal
+returns, already covered by partial returns) are HB-EXACT (oracle:
+Harbour 3.2.1dev r2610242111 @694428e1c12f, `hbmk2 -quiet -gtstd -w0`,
+byte-exact on first capture). t1360 pins the remaining named limit:
+mutual recursion with RETURN only at the end of each body. fib.prg
+itself (original, not versioned - Harbour source stays oracle-side)
+runs byte-exact, 440 bytes, on Linux and Wine; its Dyn signatures stay
+outside the LLVM scalar subset (named rejection, default backend
+only).
