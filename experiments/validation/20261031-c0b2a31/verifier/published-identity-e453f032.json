@@ -1,0 +1,155 @@
+{
+  "snapshot": "73c6ff1e392e27c316d3fb959b10af0cfea2c367",
+  "published_piece": "c0b2a31feb2e97348459b8e64ec70a04d78c12e7",
+  "published_head": "2cfcda11cdad57b1bdc94922b58970d217d1b4a1",
+  "identity": {
+    "c0b2a31feb2e97348459b8e64ec70a04d78c12e7": {
+      "full_tree_equal": true,
+      "changed_paths": [],
+      "subtrees": {
+        "src": {
+          "snapshot_object": "84c3763319136cee26eb5118d654cba6acffbafb",
+          "published_object": "84c3763319136cee26eb5118d654cba6acffbafb",
+          "equal": true
+        },
+        "tests": {
+          "snapshot_object": "cb060e2f56da3b7d7d01934a30eb1cff0acffc31",
+          "published_object": "cb060e2f56da3b7d7d01934a30eb1cff0acffc31",
+          "equal": true
+        },
+        "tests/manifest.txt": {
+          "snapshot_object": "cfc0c8484dc3590fefabd16c3ce4b1734bf0403c",
+          "published_object": "cfc0c8484dc3590fefabd16c3ce4b1734bf0403c",
+          "equal": true
+        },
+        "experiments/llvm-scalar/llvm_aot.py": {
+          "snapshot_object": "afad038f0565bbfb8173d21be7e3e27bf0d5b0a4",
+          "published_object": "afad038f0565bbfb8173d21be7e3e27bf0d5b0a4",
+          "equal": true
+        },
+        "experiments/llvm-scalar/link_runtime.py": {
+          "snapshot_object": "38434df9f7f943be0585de2e6f38017f4fb62ddd",
+          "published_object": "38434df9f7f943be0585de2e6f38017f4fb62ddd",
+          "equal": true
+        }
+      }
+    },
+    "2cfcda11cdad57b1bdc94922b58970d217d1b4a1": {
+      "full_tree_equal": false,
+      "changed_paths": [
+        "A\texperiments/validation/20261031-c0b2a31/README.md",
+        "A\texperiments/validation/20261031-c0b2a31/battery-round4.log",
+        "A\texperiments/validation/20261031-c0b2a31/llvm-gate-round1-aborted.log",
+        "A\texperiments/validation/20261031-c0b2a31/llvm-gate-round2-green.log",
+        "A\texperiments/validation/20261031-c0b2a31/parexpr_hb.out",
+        "A\texperiments/validation/20261031-c0b2a31/parexpr_hr.out",
+        "A\texperiments/validation/20261031-c0b2a31/parexpr_win.out",
+        "A\texperiments/validation/20261031-c0b2a31/t1162-fail-evidence/fail-block.txt",
+        "A\texperiments/validation/20261031-c0b2a31/t1162-fail-evidence/gate-log-at-abort.log",
+        "A\texperiments/validation/20261031-c0b2a31/t1162-fail-evidence/reg-t1162_pp_atoms_assign-windows-llvm.exe",
+        "A\texperiments/validation/20261031-c0b2a31/t1162-fail-evidence/standalone-rerun-5x.txt",
+        "A\texperiments/validation/20261031-c0b2a31/t1370_parexpr_inline_assign_hb.out",
+        "A\texperiments/validation/20261031-c0b2a31/t1371_parexpr_if_seqcond_hb.out",
+        "A\texperiments/validation/20261031-c0b2a31/t1372_parexpr_iif_strseq_hb.out",
+        "A\texperiments/validation/20261031-c0b2a31/t1373_return_nil_parens_hb.out",
+        "A\texperiments/validation/20261031-c0b2a31/t1374_pragma_es0_hb.out",
+        "A\texperiments/validation/20261031-c0b2a31/t1380_hb.out",
+        "A\texperiments/validation/20261031-c0b2a31/t1381_seq_dyn_var_observable_hb.out",
+        "A\texperiments/validation/20261031-c0b2a31/t1382_dyn_bool_readback_hb.out",
+        "A\texperiments/validation/20261031-c0b2a31/t760-fail-evidence/fail-block.txt",
+        "A\texperiments/validation/20261031-c0b2a31/t760-fail-evidence/t760_f64_nested_call_arg",
+        "A\texperiments/validation/20261031-c0b2a31/t760-fail-evidence/t760_f64_nested_call_arg.exe",
+        "A\texperiments/validation/20261031-c0b2a31/t760-fail-evidence/t760_f64_nested_call_arg.o",
+        "A\texperiments/validation/20261031-c0b2a31/t760-fail-evidence/t760_f64_nested_call_arg.s",
+        "A\texperiments/validation/20261031-c0b2a31/t760-fail-evidence/t760_f64_nested_call_arg_w.o",
+        "A\texperiments/validation/20261031-c0b2a31/t760-fail-evidence/t760_f64_nested_call_arg_w.s",
+        "A\texperiments/validation/20261031-c0b2a31/verifier/snapshot-negatives-37ba7946.json",
+        "A\texperiments/validation/20261031-c0b2a31/verifier/snapshot-results-56a64285.json",
+        "A\texperiments/validation/20261031-c0b2a31/verifier/source-preservation-7c08919f.json",
+        "A\texperiments/validation/20261031-c0b2a31/verifier/verify-parexpr73c6ff1-build-112fc5b6.log"
+      ],
+      "subtrees": {
+        "src": {
+          "snapshot_object": "84c3763319136cee26eb5118d654cba6acffbafb",
+          "published_object": "84c3763319136cee26eb5118d654cba6acffbafb",
+          "equal": true
+        },
+        "tests": {
+          "snapshot_object": "cb060e2f56da3b7d7d01934a30eb1cff0acffc31",
+          "published_object": "cb060e2f56da3b7d7d01934a30eb1cff0acffc31",
+          "equal": true
+        },
+        "tests/manifest.txt": {
+          "snapshot_object": "cfc0c8484dc3590fefabd16c3ce4b1734bf0403c",
+          "published_object": "cfc0c8484dc3590fefabd16c3ce4b1734bf0403c",
+          "equal": true
+        },
+        "experiments/llvm-scalar/llvm_aot.py": {
+          "snapshot_object": "afad038f0565bbfb8173d21be7e3e27bf0d5b0a4",
+          "published_object": "afad038f0565bbfb8173d21be7e3e27bf0d5b0a4",
+          "equal": true
+        },
+        "experiments/llvm-scalar/link_runtime.py": {
+          "snapshot_object": "38434df9f7f943be0585de2e6f38017f4fb62ddd",
+          "published_object": "38434df9f7f943be0585de2e6f38017f4fb62ddd",
+          "equal": true
+        }
+      }
+    }
+  },
+  "admitted_default_case_count": 18,
+  "case_sources_preserved": [
+    {
+      "file": "tests/t711_dyn_bool_reassign.hb",
+      "equal_to_executed_sha256": true
+    },
+    {
+      "file": "tests/t933_sequence_string.hb",
+      "equal_to_executed_sha256": true
+    },
+    {
+      "file": "tests/t941_sequence_assign.hb",
+      "equal_to_executed_sha256": true
+    },
+    {
+      "file": "tests/t942_sequence_string_last.hb",
+      "equal_to_executed_sha256": true
+    },
+    {
+      "file": "tests/t1040_seq_dyn_var.hb",
+      "equal_to_executed_sha256": true
+    },
+    {
+      "file": "tests/t1370_parexpr_inline_assign.hb",
+      "equal_to_executed_sha256": true
+    },
+    {
+      "file": "tests/t1371_parexpr_if_seqcond.hb",
+      "equal_to_executed_sha256": true
+    },
+    {
+      "file": "tests/t1372_parexpr_iif_strseq.hb",
+      "equal_to_executed_sha256": true
+    },
+    {
+      "file": "tests/t1373_return_nil_parens.hb",
+      "equal_to_executed_sha256": true
+    },
+    {
+      "file": "tests/t1374_pragma_es0.hb",
+      "equal_to_executed_sha256": true
+    },
+    {
+      "file": "tests/t1380_nilonly_shapes.hb",
+      "equal_to_executed_sha256": true
+    },
+    {
+      "file": "tests/t1381_seq_dyn_var_observable.hb",
+      "equal_to_executed_sha256": true
+    },
+    {
+      "file": "tests/t1382_dyn_bool_readback.hb",
+      "equal_to_executed_sha256": true
+    }
+  ]
+}
