@@ -1427,3 +1427,6 @@ pos tests/t1430_mixed_reassign.hb \n         2\nanother\n         0
 neg tests/t1431_mixed_use_after_move_neg.hb use of moved value `a`
 pos tests/t1432_mixed_empty_to_mixed_reassign.hb \nx\n         0
 pos tests/t1433_int_width_matrix.hb \n 2147483647\n 9999999999\n2147483648\n         10000000000\n         -1000000000\n    -12345
+pos tests/t1434_mixed_empty_to_mixed_direct.hb \nx\nx\n         0
+pos tests/t1435_mixed_empty_to_mixed_loop.hb \nx\n         0
+neg tests/t1436_mixed_branch_pin_neg.hb unknown until its first
