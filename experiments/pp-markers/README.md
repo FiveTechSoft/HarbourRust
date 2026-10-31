@@ -898,7 +898,7 @@ literal can cause a deliberate conservative rejection in this slice.
 
 Six boundary controls retain correct single iterations,multiword restricted
 choices,absent optionals and unrelated literal optionals.410pp outputs match
-Harbour and3scope rejections pass.1242default/506LLVM checks pass locally.
+Harbour and3scope rejections pass.1242default/508LLVM checks pass locally.
 Full268x4audit differs from284d009only in classch error text at the SAME line21;
 there is no new phase regression or acceptance change.14original exact checks
 were freshly run before the final guard narrowing;remote final checks follow.
@@ -909,3 +909,10 @@ been advertised as repeated compatibility. Their scoped regressions were rerun:
 and104normal checks pass. These guards do not change their execution paths.
 Raw/plain matching may still fuse or overcapture repeated groups,as preserved in
 the repeated characterization evidence. No general preprocessor-complete claim.
+
+
+Independent remote validation ofa4bd444completed:1242default/508LLVM,410exact
+pp checks plus3scope rejections,and14reviewed original programs fresh exact
+versus Harbour/default/LLVM.268x4audit matches local exactly. Earlier506LLVM
+wording was a counting mistake;the final logs contain508PASS lines. This
+correction changes evidence text only,not the compiler or its admitted scope.
