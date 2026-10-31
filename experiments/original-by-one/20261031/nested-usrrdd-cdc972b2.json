@@ -1,0 +1,221 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "sources_unchanged": true,
+  "source_count": 6,
+  "build_unit_count": 6,
+  "rows": [
+    {
+      "files": [
+        {
+          "file": "tests/usrrdd/exarr.prg",
+          "sha256": "0f5ed37a814f8a3b7ceed70c2ee91e838e66376824e5a5b31a5320fe91207b02"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-with-core-RDD-library",
+      "profile": "ARRAYRDD-in-memory",
+      "reference_options": [
+        "-gtstd",
+        "-q",
+        "-lhbusrrdd"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "boundary": "Not run:requires disposable RDD/input/output and locking/error oracle;several samples contain WAIT/Browse;exlog mutates test table and logs user/network identity",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 55: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 55: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/usrrdd/exfcm.prg",
+          "sha256": "5da9efce0df1afd53867738a01bd8680920bcaf682af3996bbf2ac9ec6a7dd92"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-with-core-RDD-library",
+      "profile": "FCOMMA-csv-navigation",
+      "reference_options": [
+        "-gtstd",
+        "-q",
+        "-lhbusrrdd"
+      ],
+      "reference_build_exit": 7,
+      "reference_run": "not-run",
+      "boundary": "Not run:requires disposable RDD/input/output and locking/error oracle;several samples contain WAIT/Browse;exlog mutates test table and logs user/network identity",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: unterminated dotted word `.csv` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: unterminated dotted word `.csv` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n\nhbmk2: Hint: Add option 'hbmisc.hbc' for missing function(s): FCOMMA()\nhbmk2: Warning: Ignoring explicitly specified core library: hbusrrdd (in option\n       '-lhbusrrdd')\n/usr/bin/ld: /tmp/hbmk_lleyva.dir/exfcm.o:(.data.rel+0x1f0): undefined reference to `HB_FUN_FCOMMA'\ncollect2: error: ld returned 1 exit status\nhbmk2: Error: Running linker. 1\ngcc '/tmp/hbmk_lleyva.dir/exfcm.o' '/tmp/hbmk_lleyva.dir/hbmk_qltcri.o'   -Wl,--start-group -lhbextern -lhbdebug -lhbvm -lhbrtl -lhblang -lhbcpage -lgtcgi -lgtpca -lgtstd -lgttrm -lhbrdd -lhbuddall -lhbusrrdd -lrddntx -lrddcdx -lrddnsx -lrddfpt -lhbrdd -lhbhsx -lhbsix -lhbmacro -lhbcplr -lhbpp -lhbcommon -lm -ldl -lrt -lz -lhbpcre   -Wl,--end-group -o'/downloads/original-by-one/nested-usrrdd/exfcm/reference' -L'/tmp/harbour-reference/lib/linux/gcc'\n",
+      "dependency_recheck": "hbmk2 hinted hbmisc.hbc; retried installed contrib/hbmisc/hbmisc.hbc, linker cannot find libhbmisc. Core hbusrrdd does not provide FCOMMA. Not treated as source-language compile failure."
+    },
+    {
+      "files": [
+        {
+          "file": "tests/usrrdd/exhsx.prg",
+          "sha256": "5a5495b1321277294d83bc5064b559f9d1f7c6e65fef707e7c4547b4352e5eda"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-with-core-RDD-library",
+      "profile": "HSX-text-search-filter",
+      "reference_options": [
+        "-gtstd",
+        "-q",
+        "-lhbhsx"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "boundary": "Not run:requires disposable RDD/input/output and locking/error oracle;several samples contain WAIT/Browse;exlog mutates test table and logs user/network identity",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 131: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 131: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/usrrdd/exlog.prg",
+          "sha256": "27b1655b1dc2058c3aff111d8330a8470918315edeb27ddb2b77662888d183b6"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-with-core-RDD-library",
+      "profile": "LOGRDD-write-audit",
+      "reference_options": [
+        "-gtstd",
+        "-q",
+        "-lhbusrrdd"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "boundary": "Not run:requires disposable RDD/input/output and locking/error oracle;several samples contain WAIT/Browse;exlog mutates test table and logs user/network identity",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 270: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 270: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/usrrdd/exmemo.prg",
+          "sha256": "d6d586207e4ee5999aefdb50d9fff2c6bd20f482653cfaccd1d5e9664863f654"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-with-core-RDD-library",
+      "profile": "three-memo-RDD-create",
+      "reference_options": [
+        "-gtstd",
+        "-q",
+        "-lhbusrrdd"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "boundary": "Not run:requires disposable RDD/input/output and locking/error oracle;several samples contain WAIT/Browse;exlog mutates test table and logs user/network identity",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1: REQUEST `dbtcdx` cannot be honored: the subset has no module linking; only functions defined in this file may be requested",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1: REQUEST `dbtcdx` cannot be honored: the subset has no module linking; only functions defined in this file may be requested",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/usrrdd/exrlx.prg",
+          "sha256": "5eaed4b1bd49ddecff46f7eaa3a814197737422116f86d05901f8b03c99917dc"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-with-core-RDD-library",
+      "profile": "RLCDX-recursive-lock-list",
+      "reference_options": [
+        "-gtstd",
+        "-q",
+        "-lhbusrrdd"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "boundary": "Not run:requires disposable RDD/input/output and locking/error oracle;several samples contain WAIT/Browse;exlog mutates test table and logs user/network identity",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}
