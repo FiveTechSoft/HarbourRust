@@ -1,0 +1,463 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "tests lexicographic,next15unitsafterains;not15compatibilitypasses",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/alias.prg",
+      "sha256": "b3db629b5ba8276fb32281c24e4b6fbff9fbb3c6a73a149392266c06c794796c",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main;static Test",
+      "build_unit": "single source",
+      "profile": "compile-inspection-notest",
+      "dependencies": "FIELD/MEMVAR/work-area alias runtime",
+      "boundary": "NOTEST pcode visual inspection,not normal executable comparison;no run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 12: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 12: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/aliaslck.prg",
+      "sha256": "5aa3f40f1bf739465226632d5f67f69aee027fd05dd9a2a134285e5e7142ea61",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main+setLock+dspLock",
+      "build_unit": "single source",
+      "profile": "rdd-files-interactive",
+      "dependencies": "DBF creation/locking/deletion,WAIT,FOR EACH",
+      "boundary": "RDD/extend integration and isolated DB fixtures;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 14: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 14: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/aliasrt.prg",
+      "sha256": "daf09275354c200fcca655a1dbc66ad7f5656aad306a2295c2c5598156ded13d",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "rdd-files-interactive",
+      "dependencies": "test.dbf mutating AGE,aliases,Inkey",
+      "boundary": "Existing test database is modified;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/altd.prg",
+      "sha256": "42be1ca00253b4c2caf8b2bc02c6847c0ad5a33869cbfc7e26d35042be6a2029",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "debugger-interactive",
+      "dependencies": "CLS,AltD,Alert;compile debug option",
+      "boundary": "Debugger planned separately,GT pending;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/and_or.prg",
+      "sha256": "085ba30dfd4ab2497e66ee65398e31f88b6221903c35501c55cf9d44fd4b23ac",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main+AndOr+DispAndReturnNIL",
+      "build_unit": "single source",
+      "profile": "intentional-fault",
+      "dependencies": "Dynamic logical type error at last call",
+      "boundary": "Error harness needed;normal prefix not compatibility;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 20: argument 1 of `andor` must be a boolean, got an integer",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 20: argument 1 of `andor` must be a boolean, got an integer",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/array.prg",
+      "sha256": "1249646c4392ef9755302986b2ed07513c53791243c79f3be1cdf1cb850ee050",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "cyclic-array",
+      "dependencies": "a[1]:=a;NIL removal",
+      "boundary": "Shared self-reference/cycle conflicts with current ownership contract",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 41,
+        "stdout_sha256": "958d28f31b478e47e81c26a79061ee497a3612f73464c3132872fb806de0f71b",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 7: array elements must be integers in this increment",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 7: array elements must be integers in this increment",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/array16.prg",
+      "sha256": "ac9b6823ec62b7bb51545c2331ba8fe35ad52d937fc9fa1f82ac8be8723ab2c1",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main+Test+ReleaseTest",
+      "build_unit": "single source",
+      "profile": "mixed-nested-arrays",
+      "dependencies": "Mixed cells,nested replacement,resizing,index inc",
+      "boundary": "Dynamic cell representation and alias/lifetime needs separation from existing owned APIs",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 215,
+        "stdout_sha256": "0406b95050aa8b00eb14a527efc701e1ae8cd4090209062bfe477431f6db513e",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 24: expected `name[idx, ...] := expr`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 24: expected `name[idx, ...] := expr`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/arrayidx.prg",
+      "sha256": "a41ffeeb22586851ef340d28ca92de31ae038d71910c83b47a3e2f59041a5ba5",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "integer-array-expression",
+      "dependencies": "Indexed compound assignments +=,-=,*=,/=,^=,%= as values",
+      "boundary": "Compiler expression assignment gap;existing integer-array semantics,not new sharing",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 150,
+        "stdout_sha256": "b7d7e6c8529108cf25573f4ecd7d86bfe00d0deb90cc1013ed6bc1ea7b2e320b",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 13: unexpected token Eq in expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 13: unexpected token Eq in expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/arrays.prg",
+      "sha256": "ba50f00df709d80e455bf8a5b6b807e789485d835b6b458e4cb23784187a7139",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main+Test+ReleaseTest",
+      "build_unit": "single source",
+      "profile": "mixed-nested-arrays",
+      "dependencies": "Mixed cells,nested replacement,resizing,index inc",
+      "boundary": "Same dynamic-cell family asarray16;no separate approval question",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 207,
+        "stdout_sha256": "18e1faa68baca4140b218b4c23cd12cb0f922b8fbb511ebc2829f9fc977be25a",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 24: expected `name[idx, ...] := expr`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 24: expected `name[idx, ...] := expr`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/arreval.prg",
+      "sha256": "46ae515cde1b6bdcd886eadbccb610ee10e1d2128e7d231b90486486a0c67ed5",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "closure-console",
+      "dependencies": "AEval block with value+index,QOut",
+      "boundary": "Library AEval and block effect/signature contract,not persistent shared ownership",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 66,
+        "stdout_sha256": "e1775ecaeab1d9db9e98d47ded0105ba0a00a64347a259feccef31d1338e86ca",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: unknown function `aeval` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: unknown function `aeval` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/arrindex.prg",
+      "sha256": "b5b8c547480d330440064602e4a48d49fd70c59079da3c42bb21871f67b26d1d",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "nested-nil-array",
+      "dependencies": "NIL holes,subarray indexing,stringVal",
+      "boundary": "Dynamic-cell/nested representation and builtinVal",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 6,
+        "stdout_sha256": "7c129c8425088eceabb295100cb1908261e970075c8c2e9c53df5411dc98c46e",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: unexpected token Comma in expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: unexpected token Comma in expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/asort.prg",
+      "sha256": "fae776d775143e22bcce1dde2694e8ea306d734ca3c7b21bec0f896be331273b",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main+aDump+xToStr",
+      "build_unit": "single source",
+      "profile": "heterogeneous-sort-clock",
+      "dependencies": "Objects,blocks,date,mixed arrayASort",
+      "boundary": "Requires objects,dateenvironment,sortorder;not byte-stable without fixture;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 12: unexpected token Comma in expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 12: unexpected token Comma in expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/base2.prg",
+      "sha256": "4f8f66bd71161e9d6eca43fdfa89da042407faf1ae36400c9f138182d9d129ee",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "runtime-macro-interactive",
+      "dependencies": "Binary numeric literals,&runtime evaluation,WAIT",
+      "boundary": "Runtime macro and GT not authorized by parser correction;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/base64.prg",
+      "sha256": "255d1bee3b28b4f1fc2679117d5c5e536e76b42ea6769abec195649ca0616a38",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "hash-library-console",
+      "dependencies": "simpleio.ch,stringhash,FOREACHenumKey,base64 funcs",
+      "boundary": "Safe deterministic reference;HarbourRust hashstring/enumeration/library support absent",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 463,
+        "stdout_sha256": "8804e67163e2a112c5ce5691098350c9627138792e940f781ff978a867d054ee",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 57: hash values are tagged scalars (integer, logical or NIL) in this increment",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 57: hash values are tagged scalars (integer, logical or NIL) in this increment",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/begin.prg",
+      "sha256": "6fca41b70d8dfe6b69351603db9f799bdf39f80874551a1dd52020c713eb5ea8",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main+Break1..4",
+      "build_unit": "single source",
+      "profile": "dynamic-unwind-captured-block",
+      "dependencies": "PRIVATE/MEMVAR,cross-callBREAK,error,recovery with captured block",
+      "boundary": "Exceptionvalue/lifetime/closure contract needed;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 10: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 10: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,209 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "tests lexicographic,first7 source build units;not7compatibilitypasses",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/achoice.prg",
+      "sha256": "171eff5f276fba3f4ffb1914a0d12aabc6e1f1bb506275fe5585d1df1e3e6562",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "interactive-terminal",
+      "dependencies": "achoice.ch,inkey.ch;AChoice,screen positioning,keys",
+      "boundary": "Requires GT keyboard/screen contract and scripted interaction; not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 174: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 174: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/achoice2.prg",
+      "sha256": "50a56922a62632fe68a996405494100f4728056ce06c2ca13dd6516b7ec41168",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "interactive-terminal-dynamic",
+      "dependencies": "inkey.ch,achoice.ch;PUBLIC mixed arrays,AChoice callbacks",
+      "boundary": "Requires GT plus dynamic mixed-value arrays and memvar contract;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 194: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 194: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/achoice3.prg",
+      "sha256": "815afba6eb99ca937f00b1dd8ed601ad26202977f77002aa65f94449d7175818",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "interactive-terminal-dynamic",
+      "dependencies": "achoice.ch,inkey.ch;PRIVATE array,AChoice,closure,Alert,key injection",
+      "boundary": "Requires GT,closure/memvar contract and keyboard harness;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 179: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 179: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/achoice5.prg",
+      "sha256": "685e6881d2a93991e6f18ff65b1b8142387b8035b6f9e9c66483e5e34c9ffd95",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "interactive-terminal",
+      "dependencies": "inkey.ch;CLS,DispBox,AChoice",
+      "boundary": "Requires GT and scripted input;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 118: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 118: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/achoice6.prg",
+      "sha256": "58868901398d01ed4462539e0e11f262212f23ff8745e1e24ab5438d5e95ace1",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "interactive-terminal-fault",
+      "dependencies": "inkey.ch;fractional coordinates,key injection,AChoice",
+      "boundary": "Intentional runtime-fault/visual case;GT/floating-point/error harness required;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 125: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 125: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/adir.prg",
+      "sha256": "891710506f6e39b76eb043efc0dc0f04115e3950b769e2571781a721b5decace",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "filesystem-fixture",
+      "dependencies": "ADir,Array,AEval closures,date formatting",
+      "boundary": "Reads cwd+parent and intentional bad argument;isolated directory and fault harness needed;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 25: unexpected token Comma in expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 25: unexpected token Comma in expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/ains.prg",
+      "sha256": "eb6264dc181c5ed9db843dd7602e43a08d085a282639750eee2dce6689987df4",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main+aDump",
+      "build_unit": "single source",
+      "profile": "dynamic-arrays-console",
+      "dependencies": "AClone,AIns,ADel,ASize,AFill,ValType,mixed/nested cells",
+      "boundary": "Safe deterministic console reference run;HarbourRust dynamic cell/lifetime contract unresolved",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 720,
+        "stdout_sha256": "51c0188f2b4c461caaa1877fbe82008bab150ab343a141b3e4e7605ed4cafe7d",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 12: unknown function `aclone` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 12: unknown function `aclone` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}
