@@ -1,0 +1,157 @@
+{
+  "rows": [
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New\n",
+      "value": "New",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"New\",)\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New()\n",
+      "value": "New()",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"New()\",)\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New(a,b)\n",
+      "value": "New(a,b)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"New(a,b)\",)\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New + 7\n",
+      "value": "New + 7",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"New + 7\",)\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New Other\n",
+      "value": "New Other",
+      "reference_exit": 0,
+      "reference_output": "\nMETHOD New Other\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() INLINE OUT(7)\n",
+      "value": "New() INLINE OUT(7)",
+      "reference_exit": 0,
+      "reference_output": "\nMETHOD New() INLINE OUT(7)\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() CLASS Test\n",
+      "value": "New() CLASS Test",
+      "reference_exit": 0,
+      "reference_output": "\nMETHOD New() CLASS Test\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() DECL\n",
+      "value": "New() DECL",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"New()\",)\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() AS Number\n",
+      "value": "New() AS Number",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"New()\",\"Number\")\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() AS Number DECL\n",
+      "value": "New() AS Number DECL",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"New()\",\"Number\")\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() UNKNOWN\n",
+      "value": "New() UNKNOWN",
+      "reference_exit": 0,
+      "reference_output": "\nMETHOD New() UNKNOWN\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD (New)\n",
+      "value": "(New)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"(New)\",)\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD \"New\"\n",
+      "value": "\"New\"",
+      "reference_exit": 0,
+      "reference_output": "\nOUT('\"New\"',)\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New[1]\n",
+      "value": "New[1]",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"New[1]\",)\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() AS Number + Other\n",
+      "value": "New() AS Number + Other",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"New()\",\"Number + Other\")\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() AS Number CLASS Test\n",
+      "value": "New() AS Number CLASS Test",
+      "reference_exit": 0,
+      "reference_output": "\nMETHOD New() AS Number CLASS Test\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() AS Number INLINE OUT(7)\n",
+      "value": "New() AS Number INLINE OUT(7)",
+      "reference_exit": 0,
+      "reference_output": "\nMETHOD New() AS Number INLINE OUT(7)\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+    }
+  ]
+}
