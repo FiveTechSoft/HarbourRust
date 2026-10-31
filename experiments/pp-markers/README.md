@@ -830,3 +830,15 @@ re-parenthesization do not implement that contract. These760observations are
 characterization evidence only, not760passes. No implementation is claimed here.
 A future correction must preserve token/source identity and separate match-marker
 semantics from result-marker semantics, with explicit macro/optional boundaries.
+
+## Smart-result candidate held back after original diagnostic audit
+
+384own smart-result observations are preserved with a reversible candidate patch.
+292scoped output checks and4explicit rejection checks pass for that candidate;
+its local1240default/504LLVM tests pass. It is deliberately NOT enabled because
+3originals move to earlier diagnostics: classch on repeated/disjoint captures,
+_pp_test and pp on smart macro captures. Those are regressions, not progress.
+Production remains1232default/488LLVM from5a7223e; this evidence commit does not
+change compiler semantics. Candidate fixtures, results and exact diagnostic deltas
+are under smart-result-candidate-20261031. Resolving preprocessing macro smart
+results does not authorize or require a native runtime macro evaluator.

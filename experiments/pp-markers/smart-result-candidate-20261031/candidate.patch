@@ -1,0 +1,132 @@
+diff --git a/experiments/llvm-scalar/check_marker_rejections.py b/experiments/llvm-scalar/check_marker_rejections.py
+index 11da4a6..f4c5939 100644
+--- a/experiments/llvm-scalar/check_marker_rejections.py
++++ b/experiments/llvm-scalar/check_marker_rejections.py
+@@ -1,7 +1,7 @@
+ """Same fail-closed preprocessor boundary under both backends/target profiles."""
+ import pathlib,subprocess
+ root=pathlib.Path(__file__).resolve().parents[2]
+-for case in ['t1218_bracket_macro_quotes_neg.hb'] + ['t1216_bracket_unterminated_neg.hb'] + ['t1209_pp_macro_bracket_comma_neg.hb'] + ['t1208_pp_macro_mismatch_neg.hb'] + ['t1202_pp_list_escape_neg.hb'] + ['t1195_pp_normal_stringify_quotes_neg.hb','t1196_pp_normal_stringify_list_neg.hb'] + ['t1189_pp_fixed_translate_recursive_neg.hb'] + ['t1177_pp_stringify_mixed_quotes_neg.hb', 't1178_pp_stringify_escape_neg.hb', 't1179_pp_stringify_list_neg.hb', 't1180_pp_stringify_other_form_neg.hb'] + ['t1167_pp_atoms_spaced_assign_neg.hb', 't1168_pp_atoms_spaced_logical_neg.hb'] + ['t1156_pp_call_unknown_neg.hb', 't1157_pp_call_case_neg.hb', 't1158_pp_call_recursive_neg.hb', 't1159_pp_call_removed_neg.hb'] + ['t1139_pp_generated_unknown_neg.hb', 't1140_pp_generated_case_neg.hb', 't1141_pp_generated_exact_neg.hb', 't1142_pp_generated_recursive_neg.hb', 't1143_pp_generated_unsupported_neg.hb', 't1144_pp_generated_unescaped_neg.hb'] + ['t1127_pp_null_unknown_neg.hb', 't1128_pp_null_case_neg.hb', 't1129_pp_null_malformed_neg.hb', 't1130_pp_null_nonmatch_neg.hb'] + ['t1117_pp_logical_unknown_neg.hb', 't1118_pp_logical_case_neg.hb', 't1119_pp_logical_malformed_neg.hb', 't1120_pp_logical_nonmatch_neg.hb'] + ['t1105_pp_restricted_exact_neg.hb', 't1106_pp_restricted_unknown_neg.hb', 't1107_pp_restricted_prefix_neg.hb', 't1108_pp_restricted_quote_neg.hb', 't1109_pp_restricted_empty_neg.hb', 't1110_pp_restricted_macro_neg.hb'] + ['t1091_pp_identifier_literal_neg.hb','t1092_pp_identifier_expr_neg.hb','t1093_pp_wildcard_follow_neg.hb','t1094_pp_marker_remove.hb','t1096_pp_marker_malformed_neg.hb','t1097_pp_identifier_optional.hb']:
++for case in ['t1239_pp_smart_macro_neg.hb','t1240_pp_smart_escape_neg.hb'] + ['t1218_bracket_macro_quotes_neg.hb'] + ['t1216_bracket_unterminated_neg.hb'] + ['t1209_pp_macro_bracket_comma_neg.hb'] + ['t1208_pp_macro_mismatch_neg.hb'] + ['t1202_pp_list_escape_neg.hb'] + ['t1195_pp_normal_stringify_quotes_neg.hb','t1196_pp_normal_stringify_list_neg.hb'] + ['t1189_pp_fixed_translate_recursive_neg.hb'] + ['t1177_pp_stringify_mixed_quotes_neg.hb', 't1178_pp_stringify_escape_neg.hb', 't1179_pp_stringify_list_neg.hb', 't1180_pp_stringify_other_form_neg.hb'] + ['t1167_pp_atoms_spaced_assign_neg.hb', 't1168_pp_atoms_spaced_logical_neg.hb'] + ['t1156_pp_call_unknown_neg.hb', 't1157_pp_call_case_neg.hb', 't1158_pp_call_recursive_neg.hb', 't1159_pp_call_removed_neg.hb'] + ['t1139_pp_generated_unknown_neg.hb', 't1140_pp_generated_case_neg.hb', 't1141_pp_generated_exact_neg.hb', 't1142_pp_generated_recursive_neg.hb', 't1143_pp_generated_unsupported_neg.hb', 't1144_pp_generated_unescaped_neg.hb'] + ['t1127_pp_null_unknown_neg.hb', 't1128_pp_null_case_neg.hb', 't1129_pp_null_malformed_neg.hb', 't1130_pp_null_nonmatch_neg.hb'] + ['t1117_pp_logical_unknown_neg.hb', 't1118_pp_logical_case_neg.hb', 't1119_pp_logical_malformed_neg.hb', 't1120_pp_logical_nonmatch_neg.hb'] + ['t1105_pp_restricted_exact_neg.hb', 't1106_pp_restricted_unknown_neg.hb', 't1107_pp_restricted_prefix_neg.hb', 't1108_pp_restricted_quote_neg.hb', 't1109_pp_restricted_empty_neg.hb', 't1110_pp_restricted_macro_neg.hb'] + ['t1091_pp_identifier_literal_neg.hb','t1092_pp_identifier_expr_neg.hb','t1093_pp_wildcard_follow_neg.hb','t1094_pp_marker_remove.hb','t1096_pp_marker_malformed_neg.hb','t1097_pp_identifier_optional.hb']:
+  for target in ['linux','windows']:
+   errors=[]
+   for flag in [[],['--experimental-llvm']]:
+diff --git a/experiments/llvm-scalar/check_regressions.py b/experiments/llvm-scalar/check_regressions.py
+index 2f9f755..841f860 100644
+--- a/experiments/llvm-scalar/check_regressions.py
++++ b/experiments/llvm-scalar/check_regressions.py
+@@ -10,7 +10,7 @@ work = pathlib.Path('experiments/llvm-scalar/run')
+ base = pathlib.Path('experiments/llvm-scalar')
+ hbc = str(work / 'hbc')
+ env = os.environ
+-selected = ['t1228_pp_identifier_stringify.hb', 't1229_pp_restricted_stringify.hb', 't1230_pp_wildcard_stringify.hb', 't1231_pp_wildcard_normal.hb', 't1232_pp_optional_marker_stringify.hb'] + ['t1227_pp_template_continuation.hb'] + ['t1224_pp_list_index.hb','t1225_pp_list_index_whole.hb','t1226_pp_list_index_literal.hb'] + ['t1220_escape_protection.hb','t1221_escape_stringify.hb','t1222_escape_call_macro.hb'] + ['t1210_bracket_literals.hb','t1211_bracket_index_context.hb','t1212_bracket_macro.hb','t1213_bracket_semicolon.hb','t1215_bracket_translate.hb'] + ['t1203_pp_macro_nested_array.hb','t1204_pp_macro_nested_pair.hb','t1205_pp_macro_simultaneous.hb','t1206_pp_macro_strings.hb','t1207_pp_macro_nested_calls.hb'] + ['t1197_pp_list_stringify.hb','t1198_pp_list_normal.hb','t1199_pp_list_quotes.hb','t1200_pp_list_absent.hb','t1201_pp_list_empty.hb'] + ['t1190_pp_normal_stringify.hb','t1191_pp_normal_stringify_absent.hb','t1192_pp_normal_stringify_mix.hb','t1193_pp_normal_stringify_marker.hb','t1194_pp_normal_stringify_call.hb'] + ['t1182_pp_fixed_translate_inline.hb','t1183_pp_fixed_translate_order.hb','t1184_pp_fixed_translate_specific.hb','t1185_pp_fixed_translate_remove.hb','t1186_pp_fixed_translate_temporal.hb','t1187_pp_fixed_translate_command.hb','t1188_pp_fixed_xtranslate.hb'] + ['t1181_pp_stringify_quoted_result.hb'] + ['t1169_pp_stringify_spaces.hb', 't1170_pp_stringify_quotes.hb', 't1171_pp_stringify_absent.hb', 't1172_pp_stringify_optional.hb', 't1173_pp_stringify_repeat_text.hb', 't1174_pp_stringify_call.hb', 't1175_pp_stringify_dotted.hb', 't1176_pp_stringify_literal_marker.hb'] + ['t1160_pp_atoms_logical.hb', 't1161_pp_atoms_compare.hb', 't1162_pp_atoms_assign.hb', 't1163_pp_atoms_increment.hb', 't1165_pp_atoms_call.hb', 't1166_pp_atoms_quoted.hb'] + ['t1148_pp_call_optional.hb', 't1149_pp_call_overload.hb', 't1150_pp_call_order.hb', 't1151_pp_call_case.hb', 't1152_pp_call_remove.hb', 't1153_pp_call_quoted.hb', 't1154_pp_call_chain.hb', 't1155_pp_call_nested.hb'] + ['t1145_pp_nonmatch_procedure.hb','t1146_pp_nonmatch_assignment.hb','t1147_pp_nonmatch_call.hb'] + ['t1131_pp_generated_factory.hb', 't1132_pp_generated_collision.hb', 't1133_pp_generated_optional.hb', 't1134_pp_generated_ordinary.hb', 't1135_pp_generated_ordered.hb', 't1136_pp_generated_unused.hb', 't1137_pp_generated_multi.hb', 't1138_pp_generated_local_scope.hb'] + ['t1121_pp_null_erase.hb', 't1122_pp_null_group.hb', 't1123_pp_null_payload.hb', 't1124_pp_null_mixed.hb', 't1125_pp_null_translate.hb', 't1126_pp_null_name.hb'] + ['t1111_pp_logical_presence.hb', 't1112_pp_logical_false_payload.hb', 't1113_pp_logical_group.hb', 't1114_pp_logical_mixed.hb', 't1115_pp_logical_translate.hb', 't1116_pp_logical_required.hb'] + ['t1099_pp_restricted_choice.hb', 't1100_pp_restricted_case.hb', 't1101_pp_restricted_phrase.hb', 't1102_pp_restricted_abbrev.hb', 't1103_pp_restricted_optional.hb', 't1104_pp_restricted_translate.hb'] + ['t1087_pp_identifier_marker.hb','t1088_pp_identifier_pair.hb','t1089_pp_wildcard_marker.hb','t1090_pp_wildcard_optional.hb','t1095_pp_identifier_translate.hb','t1098_pp_identifier_result_optional.hb','t28_exit_loop.hb', 't42_for_exit_loop.hb', 't48_nested_exit.hb',
++selected = ['t1233_pp_smart_bare.hb', 't1234_pp_smart_parentheses.hb', 't1235_pp_smart_quotes.hb', 't1236_pp_smart_list.hb', 't1237_pp_smart_optional.hb', 't1238_pp_smart_identifier.hb'] + ['t1228_pp_identifier_stringify.hb', 't1229_pp_restricted_stringify.hb', 't1230_pp_wildcard_stringify.hb', 't1231_pp_wildcard_normal.hb', 't1232_pp_optional_marker_stringify.hb'] + ['t1227_pp_template_continuation.hb'] + ['t1224_pp_list_index.hb','t1225_pp_list_index_whole.hb','t1226_pp_list_index_literal.hb'] + ['t1220_escape_protection.hb','t1221_escape_stringify.hb','t1222_escape_call_macro.hb'] + ['t1210_bracket_literals.hb','t1211_bracket_index_context.hb','t1212_bracket_macro.hb','t1213_bracket_semicolon.hb','t1215_bracket_translate.hb'] + ['t1203_pp_macro_nested_array.hb','t1204_pp_macro_nested_pair.hb','t1205_pp_macro_simultaneous.hb','t1206_pp_macro_strings.hb','t1207_pp_macro_nested_calls.hb'] + ['t1197_pp_list_stringify.hb','t1198_pp_list_normal.hb','t1199_pp_list_quotes.hb','t1200_pp_list_absent.hb','t1201_pp_list_empty.hb'] + ['t1190_pp_normal_stringify.hb','t1191_pp_normal_stringify_absent.hb','t1192_pp_normal_stringify_mix.hb','t1193_pp_normal_stringify_marker.hb','t1194_pp_normal_stringify_call.hb'] + ['t1182_pp_fixed_translate_inline.hb','t1183_pp_fixed_translate_order.hb','t1184_pp_fixed_translate_specific.hb','t1185_pp_fixed_translate_remove.hb','t1186_pp_fixed_translate_temporal.hb','t1187_pp_fixed_translate_command.hb','t1188_pp_fixed_xtranslate.hb'] + ['t1181_pp_stringify_quoted_result.hb'] + ['t1169_pp_stringify_spaces.hb', 't1170_pp_stringify_quotes.hb', 't1171_pp_stringify_absent.hb', 't1172_pp_stringify_optional.hb', 't1173_pp_stringify_repeat_text.hb', 't1174_pp_stringify_call.hb', 't1175_pp_stringify_dotted.hb', 't1176_pp_stringify_literal_marker.hb'] + ['t1160_pp_atoms_logical.hb', 't1161_pp_atoms_compare.hb', 't1162_pp_atoms_assign.hb', 't1163_pp_atoms_increment.hb', 't1165_pp_atoms_call.hb', 't1166_pp_atoms_quoted.hb'] + ['t1148_pp_call_optional.hb', 't1149_pp_call_overload.hb', 't1150_pp_call_order.hb', 't1151_pp_call_case.hb', 't1152_pp_call_remove.hb', 't1153_pp_call_quoted.hb', 't1154_pp_call_chain.hb', 't1155_pp_call_nested.hb'] + ['t1145_pp_nonmatch_procedure.hb','t1146_pp_nonmatch_assignment.hb','t1147_pp_nonmatch_call.hb'] + ['t1131_pp_generated_factory.hb', 't1132_pp_generated_collision.hb', 't1133_pp_generated_optional.hb', 't1134_pp_generated_ordinary.hb', 't1135_pp_generated_ordered.hb', 't1136_pp_generated_unused.hb', 't1137_pp_generated_multi.hb', 't1138_pp_generated_local_scope.hb'] + ['t1121_pp_null_erase.hb', 't1122_pp_null_group.hb', 't1123_pp_null_payload.hb', 't1124_pp_null_mixed.hb', 't1125_pp_null_translate.hb', 't1126_pp_null_name.hb'] + ['t1111_pp_logical_presence.hb', 't1112_pp_logical_false_payload.hb', 't1113_pp_logical_group.hb', 't1114_pp_logical_mixed.hb', 't1115_pp_logical_translate.hb', 't1116_pp_logical_required.hb'] + ['t1099_pp_restricted_choice.hb', 't1100_pp_restricted_case.hb', 't1101_pp_restricted_phrase.hb', 't1102_pp_restricted_abbrev.hb', 't1103_pp_restricted_optional.hb', 't1104_pp_restricted_translate.hb'] + ['t1087_pp_identifier_marker.hb','t1088_pp_identifier_pair.hb','t1089_pp_wildcard_marker.hb','t1090_pp_wildcard_optional.hb','t1095_pp_identifier_translate.hb','t1098_pp_identifier_result_optional.hb','t28_exit_loop.hb', 't42_for_exit_loop.hb', 't48_nested_exit.hb',
+             't49_nested_loop.hb', 't129_arr_loop.hb',
+             't980_inline_if_qout.hb','t982_original_ifinline.hb','t792_barelocal_for.hb','t601_shortcircuit.hb','t602_log_fn.hb','t606_dotted_forms.hb','t722_qq_logical.hb', 't907_original_while.hb', 't997_original_recursiv.hb']
+ manifest = {}
+diff --git a/src/pp.rs b/src/pp.rs
+index 6b1bd77..206b55e 100644
+--- a/src/pp.rs
++++ b/src/pp.rs
+@@ -750,7 +750,44 @@ fn stringify_capture(capture: &Capture, source: &str, spans: &HashMap<usize, (us
+     Ok(quote_literal(&text))
+ }
+ 
+-fn stringify_list(capture: &Capture, source: &str, spans: &HashMap<usize,(usize,usize)>) -> Result<String,String> {
++// Result-side smart stringify uses source syntax, not the match marker spelling.
++fn smart_stringify_capture(capture: &Capture, source: &str, spans: &HashMap<usize,(usize,usize)>) -> Result<String,String> {
++    if capture.parts.is_empty() { return Ok(String::new()); }
++    let mut text=String::new(); let mut previous=None;
++    for &(id,_) in &capture.parts {
++        let &(start,end)=spans.get(&id).ok_or("capture source span unavailable")?;
++        if let Some(prev)=previous {
++            if prev>start || !source[prev..start].chars().all(char::is_whitespace) {
++                return Err("smart stringify of repeated/disjoint captures is outside this increment".into());
++            }
++            text.push_str(&source[prev..start]);
++        }
++        text.push_str(&source[start..end]);previous=Some(end);
++    }
++    // Runtime macro evaluation is a separate contract. Never silently quote it.
++    if text.starts_with('&') { return Err("smart stringify of macro captures is outside this increment".into()); }
++    if text.contains('\\') && (text.starts_with('e') || text.starts_with('E')) { return Err("smart stringify of escape captures is outside this increment".into()); }
++    let preserve=text.starts_with('(') || text.starts_with('\"') || text.starts_with('\'') || escape_literal_end(&text,0).is_some();
++    if !preserve { return Ok(quote_literal(&text)); }
++    // Source quotes are data. Normalize ordinary single-quoted and escape strings
++    // while leaving surrounding expression bytes and parentheses untouched.
++    let mut out=String::new();let mut i=0;
++    while i<text.len() {
++        if let Some(end)=escape_literal_end(&text,i) { out.push_str(&quote_literal(&decode_escape_literal(&text[i..end])?));i=end;continue; }
++        let c=text.as_bytes()[i];
++        if c==b'[' && bracket_literal_start(&text,i) {
++            let end=i+1+text[i+1..].find(']').ok_or("unterminated smart stringify bracket data")?+1;
++            out.push_str(&text[i..end]);i=end;continue;
++        }
++        if c==b'\'' || c==b'\"' {
++            let end=i+1+text[i+1..].find(c as char).ok_or("unterminated smart stringify source string")?+1;
++            out.push_str(&quote_literal(&text[i+1..end-1]));i=end;continue;
++        }
++        let ch=text[i..].chars().next().unwrap();out.push(ch);i+=ch.len_utf8();
++    }
++    Ok(out)
++}
++fn stringify_list_mode(capture: &Capture, source: &str, spans: &HashMap<usize,(usize,usize)>,smart:bool) -> Result<String,String> {
+     if capture.parts.is_empty() { return Ok(String::new()); }
+     let mut chunks = Vec::new(); let mut start = 0; let mut stack = Vec::new();
+     for (i,&(id,_)) in capture.parts.iter().enumerate() {
+@@ -771,11 +808,15 @@ fn stringify_list(capture: &Capture, source: &str, spans: &HashMap<usize,(usize,
+         let first=spans[&capture.parts[a].0].0; let last=spans[&capture.parts[b-1].0].1;
+         out.push_str(&source[cursor..first]);
+         let part=Capture{text:String::new(),parts:capture.parts[a..b].to_vec()};
+-        out.push_str(&stringify_capture(&part,source,spans)?); cursor=last;
++        out.push_str(&if smart {smart_stringify_capture(&part,source,spans)?}else{stringify_capture(&part,source,spans)?}); cursor=last;
+     }
+     out.push_str(&source[cursor..end]); Ok(out)
+ }
+ 
++fn stringify_list(capture: &Capture, source: &str, spans: &HashMap<usize,(usize,usize)>) -> Result<String,String> {
++    stringify_list_mode(capture,source,spans,false)
++}
++
+ fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool) -> Option<Vec<Capture>> {
+     // First literal token at or after pat[i], looking through markers and
+     // group brackets; used as the terminator for captures.
+@@ -1143,6 +1184,22 @@ fn render_command(c: &Cmd, caps: &[Capture], source: &str, tokens: &[String], li
+                     let is_paren = name.starts_with('(') && name.ends_with(')');
+                     let inner = if is_paren { &name[1..name.len() - 1] } else { name };
+                     let base = marker_name(inner);
++                    if !is_paren {
++                        let smart=format!("<({})>",base.to_lowercase());
++                        let positions=stringify_positions(&out,&smart);
++                        if !positions.is_empty() {
++                            let spans=source_spans(source,tokens).map_err(|e|format!("line {}: {}",line_no,e))?;
++                            let value=if inner.contains(",...") || inner.starts_with('*') {
++                                stringify_list_mode(&caps[pi],source,&spans,true)
++                            } else {smart_stringify_capture(&caps[pi],source,&spans)}.map_err(|e|format!("line {}: {}",line_no,e))?;
++                            let token=(0xe000..=0xf8ff).filter_map(char::from_u32).find(|ch|
++                                !out.contains(*ch) && !source.contains(*ch) && !saved.iter().any(|(used,_)|used==ch))
++                                .ok_or_else(||format!("line {}: too many staged tokens",line_no))?;
++                            saved.push((token,value));let mut rebuilt=String::new();let mut at=0;
++                            for k in positions {rebuilt.push_str(&out[at..k]);rebuilt.push(token);at=k+smart.len();}
++                            rebuilt.push_str(&out[at..]);out=rebuilt;
++                        }
++                    }
+                     // Stringify must run before plain substitution and retain
+                     // source bytes,not the matcher's whitespace-normalized view.
+                     for (stringify, normal) in [(format!("#<{}>", base.to_lowercase()), false), (format!("<\"{}\">", base), true)] {
+diff --git a/tests/manifest.txt b/tests/manifest.txt
+index 5b34ea2..a270d28 100644
+--- a/tests/manifest.txt
++++ b/tests/manifest.txt
+@@ -1228,3 +1228,11 @@ pos tests/t1229_pp_restricted_stringify.hb \nBETA BETA
+ pos tests/t1230_pp_wildcard_stringify.hb \nf(1,2), "a  b"
+ pos tests/t1231_pp_wildcard_normal.hb \nf(1,2) "a  b"
+ pos tests/t1232_pp_optional_marker_stringify.hb \nalpha alpha
++pos tests/t1233_pp_smart_bare.hb \nalpha\nfile.prg
++pos tests/t1234_pp_smart_parentheses.hb \n         3
++pos tests/t1235_pp_smart_quotes.hb \na  b\nc  d
++pos tests/t1236_pp_smart_list.hb \nalpha          3 a  b
++pos tests/t1237_pp_smart_optional.hb \n\nalpha
++pos tests/t1238_pp_smart_identifier.hb \nalpha
++neg tests/t1239_pp_smart_macro_neg.hb smart stringify of macro captures
++neg tests/t1240_pp_smart_escape_neg.hb smart stringify of escape captures

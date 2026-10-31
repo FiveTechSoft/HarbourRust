@@ -1,0 +1,203 @@
+[
+  {
+    "file": "tests/classch.prg",
+    "before": {
+      "file": "tests/classch.prg",
+      "sha256": "e26e134ee7547069ec676fd44ee9825615d70c675ec0adba85d18f441fdce6b1",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 330: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 330: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 330: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 330: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    "candidate": {
+      "file": "tests/classch.prg",
+      "sha256": "e26e134ee7547069ec676fd44ee9825615d70c675ec0adba85d18f441fdce6b1",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 21: smart stringify of repeated/disjoint captures is outside this increment"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 21: smart stringify of repeated/disjoint captures is outside this increment"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 21: smart stringify of repeated/disjoint captures is outside this increment"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 21: smart stringify of repeated/disjoint captures is outside this increment"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/hbpp/_pp_test.prg",
+    "before": {
+      "file": "tests/hbpp/_pp_test.prg",
+      "sha256": "dd7a5d8eca9e5bb481a57c13301715f20166e856068d446b60f0a7fde20d82ce",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 248: bad match marker <x:&> in #command/#translate (Harbour: E0010)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 248: bad match marker <x:&> in #command/#translate (Harbour: E0010)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 248: bad match marker <x:&> in #command/#translate (Harbour: E0010)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 248: bad match marker <x:&> in #command/#translate (Harbour: E0010)"
+        ]
+      }
+    },
+    "candidate": {
+      "file": "tests/hbpp/_pp_test.prg",
+      "sha256": "dd7a5d8eca9e5bb481a57c13301715f20166e856068d446b60f0a7fde20d82ce",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 136: smart stringify of macro captures is outside this increment"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 136: smart stringify of macro captures is outside this increment"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 136: smart stringify of macro captures is outside this increment"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 136: smart stringify of macro captures is outside this increment"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/pp.prg",
+    "before": {
+      "file": "tests/pp.prg",
+      "sha256": "1cd0dcd3efc0d36d9d0488074cae9ad051525ced0456a0654e23e59021292863",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 11: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 11: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 11: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 11: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+        ]
+      }
+    },
+    "candidate": {
+      "file": "tests/pp.prg",
+      "sha256": "1cd0dcd3efc0d36d9d0488074cae9ad051525ced0456a0654e23e59021292863",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 54: smart stringify of macro captures is outside this increment"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 54: smart stringify of macro captures is outside this increment"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 54: smart stringify of macro captures is outside this increment"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 54: smart stringify of macro captures is outside this increment"
+        ]
+      }
+    }
+  }
+]
