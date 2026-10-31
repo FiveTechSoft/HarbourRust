@@ -1,0 +1,303 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next10afterclasses",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/cls.prg",
+      "sha256": "3cfbcfbf21df2de77906bdd5b12564e3d761e4e2ff71d4764bc0766f4399f2f0",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+Test/MyErrorManager",
+      "build_unit": "single-source-executable",
+      "profile": "GT-object-error",
+      "dependencies": "hbclass.ch;ONERROR;CLS;Alert;PCount;__GetMessage",
+      "boundary": "GT alert input+objectdynamicdispatch/error;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 347: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 347: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/clsccast.prg",
+      "sha256": "2af7d754dbfe40a5aaf24e9cff6ac4fdc608a347774869ed121a146e81a1d6c7",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+myclass1..4",
+      "build_unit": "single-source-executable",
+      "profile": "object-clock-environment",
+      "dependencies": "hbclass.ch;classvarmultipleinheritancecasts;ErrorBlock/BREAK;DATE/TIME/VERSION/OS",
+      "boundary": "Clock/platform fixture+objectlifetime/unwind;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 645: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 645: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/clsdata.prg",
+      "sha256": "c71b10f0b755a9c8bbeb39d8cfad8d261117379f07e12fd7892b4efcf438b13c",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TBaseObject/HBObject+methods",
+      "build_unit": "single-source-executable",
+      "profile": "objects-console",
+      "dependencies": "HBClassbuilder;STATICclass;QSelf;functionpointermethods;inheritance",
+      "boundary": "Safe console reference;objectdispatch/lifetime not supported",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 204,
+        "stdout_sha256": "6d8c4fc9e8558a2a3f3edb2779e8fd3b52dc65d5e9540d78a21c1093a971ac92",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 15: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 15: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/clsicast.prg",
+      "sha256": "a5a3ba4260600c531b4338bf6180e084bca121835f990e512d704f05bfb555e2",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+myclass1..4",
+      "build_unit": "single-source-executable",
+      "profile": "object-clock-environment",
+      "dependencies": "instancevarmultipleinheritancecasts;ErrorBlock/BREAK;DATE/TIME/VERSION/OS",
+      "boundary": "Clock/platformfixture+objectlifetime/unwind;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 477: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 477: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/clsnv.prg",
+      "sha256": "863291f832d78259a55fe2f8372c56321f7b6a3c32ca2bd805c364c8fa8ed6c2",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+myclass1..3+methods",
+      "build_unit": "single-source-executable",
+      "profile": "object-clock-environment",
+      "dependencies": "hiddennonvirtualvsprotected/exported;classvars;DATE/TIME/VERSION/OS",
+      "boundary": "Clock/platformfixture+scopedmessagedispatch;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 376: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 376: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/clsscast.prg",
+      "sha256": "8b384fe38a511faa6bc93908eba6f3849811970669bff00d37535db80de0c689",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+myclass1..4",
+      "build_unit": "single-source-executable",
+      "profile": "object-clock-environment",
+      "dependencies": "sharedclassvars;multipleinheritancecasts;ErrorBlock/BREAK;DATE/TIME/VERSION/OS",
+      "boundary": "Clock/platformfixture+persistentsharedclassdata;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 679: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 679: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/clsscope.prg",
+      "sha256": "cf0a255f142ac3bf5c16ad861aa56f178b6a261f8de03c625416bcab8ba58cbf",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+CLS0/1/2/X+methods+EXTEVALchain",
+      "build_unit": "single-source-executable",
+      "profile": "object-clock-environment",
+      "dependencies": "hidden/protected/exported/READONLY;inlineblocks;scopeerrorunwind;DATE/TIME/VERSION/OS",
+      "boundary": "Clock/platformfixture+lexicalmethodscope;historicalcommentoutputsnotcurrentoracle;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 635: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 635: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/cmphello.prg",
+      "sha256": "bdb7b8daad90353977d0c051e1cf06d82ca330efe8c6389a980a6b44ade12871",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "childprocess-compiler",
+      "dependencies": "hb_run invokesrelativebin/harbour hello.prg-gh;hb_ps",
+      "boundary": "Spawnscompiler,writesoutput;needdisposablepinnedcompilerfixture;not run",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 15: unknown function `hb_run` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 15: unknown function `hb_run` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/codebl.prg",
+      "sha256": "03b4e25eed362a18c922722cc7a62d98fa3970e9a00127030a1a67896c76c6ba",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TestBlocks/others",
+      "build_unit": "single-source-executable",
+      "profile": "escaping-shared-closures",
+      "dependencies": "pairedread/writeescapingclosures,s_cbStatic,arrays100,@forwarding,blockparameterreferences",
+      "boundary": "Safe console reference;sharedmutablecapture/persistentlifetime frontier;not runbyHarbourRust",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 2299,
+        "stdout_sha256": "e9c0d78fdbb48772ca0d935a8cd53503bf57d066a0bc09f1b648ab9e82cc741b",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/codebl2.prg",
+      "sha256": "7154a2227674912000df7c0d9eafeefe429bb8a04a20fdaf92d9379c6a97900f",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "macro-closures",
+      "dependencies": "PRIVATE/MEMVAR;arrayofblocks;early/simplevscomplexmacrocapture;lateparenthesizedmacro",
+      "boundary": "Safe console reference;macroruntimeandcapturingclosures unsupported",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 107,
+        "stdout_sha256": "ffa3f22f91752a35d72ba39e647a552f3c5c9341743100e6a157cd269ad1a2d0",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 14: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 14: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,290 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next10afterget",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/getblock.prg",
+      "sha256": "51f4fe2b20ecc697937ee5dd91f62005dc777f24bffcdb4136d7e40909660a26",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "GT-RDD-macro-GET",
+      "dependencies": "creates_tst1/_tst2DBF;GETaliasedearly/latemacros;PRIVATEindex;READ",
+      "boundary": "NeedsisolatedDBF+GTinputscreenfixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 34: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 34: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/gfx.prg",
+      "sha256": "05288ea72c9f034337b71f004e45763620e0bd07b00b9e9e2677e96444f6901f",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+PutFrame",
+      "build_unit": "single-source-executable",
+      "profile": "graphics-random-clock",
+      "dependencies": "hbgtinfo.ch/hbgfx.ch;graphicalGT;randomshapes;Seconds;Inkey",
+      "boundary": "GTstdquitpathnotgraphicscoverage;needsgraphicalharness;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 227: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 227: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/gfx2.prg",
+      "sha256": "9c64dfe1e7e781fff1b6709b6c0a291f05d29b5600a13579d41a6c57cbcccf68",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "graphics-driver",
+      "dependencies": "hbgtinfo.ch/hbgfx.ch;UnixREQUESTGTXWC;shapeprimitives;WAIT",
+      "boundary": "Needgraphicaldriver+pixels/keyscript;buildfailureenvironmentiflibabsent;notrun",
+      "reference_build_exit": 7,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 228: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 228: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "reference_diagnostic": "/usr/bin/ld: /tmp/hbmk_ph4vdf.dir/gfx2.o:(.data.rel+0xf0): undefined reference to `HB_FUN_HB_GT_XWC_DEFAULT'\ncollect2: error: ld returned 1 exit status\nhbmk2: Error: Running linker. 1\ngcc '/tmp/hbmk_ph4vdf.dir/gfx2.o' '/tmp/hbmk_ph4vdf.dir/hbmk_r2zn7n.o'   -Wl,--start-group -lhbextern -lhbdebug -lhbvm -lhbrtl -lhblang -lhbcpage -lgtcgi -lgtpca -lgtstd -lgttrm -lhbrdd -lhbuddall -lhbusrrdd -lrddntx -lrddcdx -lrddnsx -lrddfpt -lhbrdd -lhbhsx -lhbsix -lhbmacro -lhbcplr -lhbpp -lhbcommon -lm -ldl -lrt -lz -lhbpcre   -Wl,--end-group -o'/downloads/original-by-one/gfx2/reference' -L'/tmp/harbour-reference/lib/linux/gcc'\nHarbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n\nhbmk2: Error: Referenced, missing, but unknown function(s): HB_GT_XWC_DEFAULT()\n"
+    },
+    {
+      "file": "tests/gtchars.prg",
+      "sha256": "7b0a305805346f595c959dc075ffd0e8d06ae31340a861900a848213d59feba3",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+dspboxch",
+      "build_unit": "single-source-executable",
+      "profile": "GT-codepage-screen",
+      "dependencies": "hbgtinfo.ch;REQUESTPL/UTF8CP;boxglyphs;SetTermCP;Alert",
+      "boundary": "Pinnedfont/codepages+screenpixels+input;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 129: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 129: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/gtcolors.prg",
+      "sha256": "4400142813906b40584442aa223af9534bda30a37bd3fca4044359989b5de934",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "GT-colors",
+      "dependencies": "blink/color256grid;OSVersionDateTime;Inkey",
+      "boundary": "Pixelattributesandclock/inputfixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 12: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 12: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/gtkeys.prg",
+      "sha256": "e27a5da51cc022ee900ef907e1f21749eb7389270edbbfc4ff1de7f7ff865c2f",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "GT-keyboard-mouse-clipboard",
+      "dependencies": "inkey.ch/hbgtinfo.ch;keytable;extendedunicodekeys/mouse/resize;clipboardreadwriteconditional",
+      "boundary": "Inputscriptandprivateclipboardfixture;neverliveclipboardblindly;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 409: missing )",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 409: missing )",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/gtstd.prg",
+      "sha256": "f2a9e5aac10ace5b4db8c6d9e2806b556c6fe29d0d8e064ecd71669f4a144b23",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+PosNow",
+      "build_unit": "single-source-executable",
+      "profile": "GT-stdout-cursor-audio",
+      "dependencies": "Row/Col;SAYposition;Inkey;Tone;CLS;scroll",
+      "boundary": "Inputscreen/audiofixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 16: statement not in the subset (At)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 16: statement not in the subset (At)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/gtwin.prg",
+      "sha256": "9706101fb82a0b52ef891def715c58986d266c406f31a898a98e3e3932d129ea",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "GT-multiple-windows",
+      "dependencies": "box.ch;hb_gtCreate/Select;UnixXWCWindowsWVT;destroyonNIL",
+      "boundary": "Multiplewindowlifetimeanddriver/pixelfixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 78: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 78: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/gtxfnt.prg",
+      "sha256": "3ce460ee0996fc2578530538d91f8e0fb5213b552e463f5165ac06949b4a8183",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+xfontsel",
+      "build_unit": "single-source-executable",
+      "profile": "GT-font-childprocess",
+      "dependencies": "UnixXWC;hb_gtInfofont;Alert;hb_processRunxfontsel-print",
+      "boundary": "SpawnsUIprocessandchangesfont;needisolatedXdriverfixture;notrun",
+      "reference_build_exit": 7,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 122: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 122: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "reference_diagnostic": "/usr/bin/ld: /tmp/hbmk_vfkgi0.dir/gtxfnt.o:(.data.rel+0x150): undefined reference to `HB_FUN_HB_GT_XWC_DEFAULT'\ncollect2: error: ld returned 1 exit status\nhbmk2: Error: Running linker. 1\ngcc '/tmp/hbmk_vfkgi0.dir/gtxfnt.o' '/tmp/hbmk_vfkgi0.dir/hbmk_jwtdc4.o'   -Wl,--start-group -lhbextern -lhbdebug -lhbvm -lhbrtl -lhblang -lhbcpage -lgtcgi -lgtpca -lgtstd -lgttrm -lhbrdd -lhbuddall -lhbusrrdd -lrddntx -lrddcdx -lrddnsx -lrddfpt -lhbrdd -lhbhsx -lhbsix -lhbmacro -lhbcplr -lhbpp -lhbcommon -lm -ldl -lrt -lz -lhbpcre   -Wl,--end-group -o'/downloads/original-by-one/gtxfnt/reference' -L'/tmp/harbour-reference/lib/linux/gcc'\nHarbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n\nhbmk2: Error: Referenced, missing, but unknown function(s): HB_GT_XWC_DEFAULT()\n"
+    },
+    {
+      "file": "tests/guestbk.prg",
+      "sha256": "fa0fd5391bf24396d37deb7c3592eb632afe7c386f774316a3c863985f9d9443",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+cgi.prg+inifile.prg",
+      "build_unit": "project:guestbk.prg+cgi.prg+inifile.prg",
+      "profile": "CGI-project-readwrite",
+      "dependencies": "THtml/TIniFile;CGIenv;absolute/www/rootguestbk.ini/html;updatefile;clock",
+      "boundary": "CompanionbuildPRGsnotstandalone;donotrunliveCGIfilesystem",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 66: classes are not in this increment yet (parser landed; runtime representation pending)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 66: classes are not in this increment yet (parser landed; runtime representation pending)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}

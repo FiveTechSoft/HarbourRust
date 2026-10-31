@@ -36,6 +36,7 @@ fn effect_uses(e:&Expr,discard:bool,voids:&std::collections::BTreeSet<String>)->
   Expr::Seq(es)=>for(i,a)in es.iter().enumerate(){effect_uses(a,discard||i+1<es.len(),voids)?;},
   Expr::Bin(_,a,b)|Expr::Cmp(_,a,b)|Expr::LAnd(a,b)|Expr::LOr(a,b)=>{effect_uses(a,false,voids)?;effect_uses(b,false,voids)?;},
   Expr::LNot(a)|Expr::Index(_,a)=>effect_uses(a,false,voids)?,
+  Expr::IdxCompound(_,a,_,b)=>{effect_uses(a,false,voids)?;effect_uses(b,false,voids)?;},
   Expr::ArrLit(es)|Expr::BlockLit(_,_,es)=>for a in es{effect_uses(a,false,voids)?;},
   Expr::Index2(_,a,b)=>{effect_uses(a,false,voids)?;effect_uses(b,false,voids)?;},
   Expr::Index3(_,a,b,c)=>for e in [a,b,c]{effect_uses(e,false,voids)?;},
@@ -161,6 +162,7 @@ impl Ir {
    Expr::Call(n,args) if is_builtin(n,"iif") && args.len()==3=>{let c=self.cond(&args[0])?;let t=self.lab();let f=self.lab();let end=self.lab();let slot=self.tmp();self.allocas.push(format!("  {} = alloca i64\n",slot));self.line(format!("br i1 {}, label %{}, label %{}",c,t,f));self.block(&t);let a=self.expr(&args[1])?;self.line(format!("store i64 {}, ptr {}",a,slot));self.line(format!("br label %{}",end));self.block(&f);let b=self.expr(&args[2])?;self.line(format!("store i64 {}, ptr {}",b,slot));self.line(format!("br label %{}",end));self.block(&end);let r=self.tmp();self.line(format!("{} = load i64, ptr {}",r,slot));r},
    Expr::Call(n,_) if self.voids.contains(n)=>return Err(format!("LLVM scalar: NIL-only effect call `{}` cannot be used as a value",n)),
    Expr::Call(n,args) if self.sig_names.contains(n)=>{let mut aa=Vec::new();for a in args {aa.push(format!("i64 {}",self.expr(a)?));}let r=self.tmp();self.line(format!("{} = call i64 @ll_{}({})",r,n,aa.join(", ")));r},
+   Expr::IdxCompound(..)=>return Err("LLVM scalar: indexed compound assignment `a[i] op= e` is not in this subset (default-backend feature added with the arrayidx piece; the LLVM subset never accepted this form, so nothing previously supported is lost)".into()),
    _=>return Err(format!("LLVM scalar: expression unsupported: {:?}",e))
   })
  }

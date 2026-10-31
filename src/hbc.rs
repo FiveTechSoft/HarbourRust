@@ -752,6 +752,7 @@ enum Expr {
     Index2(String, Box<Expr>, Box<Expr>),
     Index3(String, Box<Expr>, Box<Expr>, Box<Expr>), // a[i][j] / a[i,j] on a DArr2 (probe m1/m2)
     Index4(String, Box<Expr>, Box<Expr>, Box<Expr>, Box<Expr>), // a[i,j,k,l] / a[i][j][k][l] on a DArr4 (hk103-hk107)
+    IdxCompound(String, Box<Expr>, char, Box<Expr>), // a[i] op= e as a value (op +,-,*; tests/arrayidx.prg): the index runs once and first, the right side once and second, the expression yields the NEW cell
     BlockLit(usize, Vec<String>, Vec<Expr>), // {|p1, p2| e1, e2} -> last (probes c1-c5)
     DArrNew,                     // {} : empty DYNAMIC array (probes d1, e4)
     SelfObj,                     // Self (oracle cl2: return Self chains)
@@ -1286,6 +1287,122 @@ impl P {
         }
         Ok(lhs)
     }
+    // Indexed compound assignment as an expression (tests/arrayidx.prg,
+    // original-contract 20261031): `a[i] op= e` with op in +, -, *. The
+    // index is evaluated ONCE and BEFORE the right side (order oracle:
+    // a[++index] += Bump(@index) stores into the original cell), the
+    // right side once, and the value of the expression is the NEW cell
+    // content. Integer cells and an integer right side only: `/=`, `^=`
+    // and `%=` yield decimals in Harbour and stay parked with the
+    // numeric-cell decision (proposal recorded, not approved).
+    fn assign_expr(&mut self) -> Result<Expr, String> {
+        let save = self.pos;
+        match self.try_index_compound()? {
+            Some(e) => Ok(e),
+            None => {
+                self.pos = save;
+                self.or_expr()
+            }
+        }
+    }
+    fn try_index_compound(&mut self) -> Result<Option<Expr>, String> {
+        if !matches!(self.peek(), Some(Tok::Ident(_))) || self.toks.get(self.pos + 1) != Some(&Tok::LBracket) {
+            return Ok(None);
+        }
+        // Find the bracket that closes this first index and note whether
+        // the index itself uses the multi-dimension comma form.
+        let mut depth = 0i32;
+        let mut close = None;
+        let mut comma_form = false;
+        for k in self.pos + 1..self.toks.len() {
+            match &self.toks[k] {
+                Tok::LBracket | Tok::LParen | Tok::LBrace => depth += 1,
+                Tok::RBracket | Tok::RParen | Tok::RBrace => {
+                    depth -= 1;
+                    if depth == 0 {
+                        close = Some(k);
+                        break;
+                    }
+                }
+                Tok::Comma if depth == 1 => comma_form = true,
+                _ => {}
+            }
+        }
+        let close = match close {
+            Some(c) => c,
+            None => return Ok(None),
+        };
+        if self.toks.get(close + 1) == Some(&Tok::LBracket) {
+            // a[i][j] op= e and deeper: name the limit rather than
+            // failing later with a generic expression error.
+            let mut c = close;
+            loop {
+                let mut d = 0i32;
+                let mut nxt = None;
+                for k in c + 1..self.toks.len() {
+                    match &self.toks[k] {
+                        Tok::LBracket | Tok::LParen | Tok::LBrace => d += 1,
+                        Tok::RBracket | Tok::RParen | Tok::RBrace => {
+                            d -= 1;
+                            if d == 0 {
+                                nxt = Some(k);
+                                break;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                match nxt {
+                    Some(k) if self.toks.get(k + 1) == Some(&Tok::LBracket) => c = k,
+                    Some(k) => {
+                        if matches!(self.toks.get(k + 1), Some(Tok::Plus | Tok::Minus | Tok::Star | Tok::Slash | Tok::Caret | Tok::Pct))
+                            && self.toks.get(k + 2) == Some(&Tok::Eq)
+                        {
+                            return Err(format!("line {}: compound assignment on a multi-level index (`a[i][j] op= e`) is not in this increment; the covered lvalue is the one-level a[i]", self.n));
+                        }
+                        return Ok(None);
+                    }
+                    None => return Ok(None),
+                }
+            }
+        }
+        let is_eq = self.toks.get(close + 2) == Some(&Tok::Eq);
+        let op = match self.toks.get(close + 1) {
+            Some(Tok::Plus) => '+',
+            Some(Tok::Minus) => '-',
+            Some(Tok::Star) => '*',
+            Some(Tok::Slash) | Some(Tok::Caret) | Some(Tok::Pct) if is_eq => {
+                let sym = match self.toks.get(close + 1) {
+                    Some(Tok::Slash) => "/",
+                    Some(Tok::Caret) => "^",
+                    _ => "%",
+                };
+                return Err(format!("line {}: `a[i] {}= e` is parked: Harbour `{}` always yields decimals (0.80 for 4/5) and the integer array cell cannot hold them until the numeric-cell decision (proposal recorded, not approved)", self.n, sym, sym));
+            }
+            _ => return Ok(None),
+        };
+        if !is_eq {
+            return Ok(None);
+        }
+        if comma_form {
+            return Err(format!("line {}: `a[i,j] {}= e` (the comma index form) is not in this increment; the covered lvalue is the one-level a[i]", self.n, op));
+        }
+        let id = match &self.toks[self.pos] {
+            Tok::Ident(id) => id.clone(),
+            _ => unreachable!("checked"),
+        };
+        self.pos += 2; // Ident and LBracket
+        let idx = self.or_expr()?;
+        if self.peek() != Some(&Tok::RBracket) {
+            return Err(format!("line {}: expected `]` after the array index", self.n));
+        }
+        self.pos += 3; // `]`, the operator and `=`
+        if self.pos >= self.toks.len() {
+            return Err(format!("line {}: missing the right-hand side after `{}=`", self.n, op));
+        }
+        let rhs = self.assign_expr()?;
+        Ok(Some(Expr::IdxCompound(id, Box::new(idx), op, Box::new(rhs))))
+    }
     fn done(&self) -> Result<(), String> {
         if self.pos != self.toks.len() {
             Err(format!("line {}: trailing tokens after expression", self.n))
@@ -1326,7 +1443,7 @@ fn parse_expr_tokens(toks: Vec<Tok>, n: usize) -> Result<Expr, String> {
         return Err(format!("line {}: missing expression", n));
     }
     let mut p = P { toks, pos: 0, n };
-    let e = p.or_expr()?;
+    let e = p.assign_expr()?;
     p.done()?;
     Ok(e)
 }
@@ -1800,6 +1917,20 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     }
                     if rb == 0 {
                         return Err(format!("line {}: expected `name[idx] := expr`", n));
+                    }
+                    if commas.is_empty()
+                        && matches!(toks.get(rb + 1), Some(Tok::Plus | Tok::Minus | Tok::Star | Tok::Slash | Tok::Caret | Tok::Pct))
+                        && toks.get(rb + 2) == Some(&Tok::Eq)
+                    {
+                        // `a[i] op= e` as a statement (arrayidx family):
+                        // the same indexed compound assignment with its
+                        // value discarded, like a bare call statement
+                        // (hk216). `/=`, `^=`, `%=` keep their parked
+                        // error from the expression parser.
+                        let e = parse_expr_tokens(toks.clone(), n)?;
+                        out.push(Stmt::CallStmt(n, e));
+                        *i += 1;
+                        continue;
                     }
                     if !commas.is_empty() {
                         // a[i, j] := v, a[i, j, k] := v, a[i, j, k, l] := v
@@ -2813,6 +2944,15 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             Expr::SelfObj | Expr::SelfGet(_) => Ok(()),
             Expr::Send(_, _, _) => Ok(()), // like a call: nothing pins through the message syntax
             Expr::ArrLit(es) => { for e in es { pin_vars(f, e, Ty::I64, pin, n)?; } Ok(()) }
+            Expr::IdxCompound(id, ie, _, re) => {
+                if is_param(f, id).is_some() {
+                    // Fixed arrays cannot be parameters here, so an
+                    // indexed compound assignment never pins one.
+                    return Err(format!("line {}: `a[i] op= e` through a parameter is not in this increment (fixed arrays cannot be parameters)", n));
+                }
+                pin_vars(f, ie, Ty::I64, pin, n)?;
+                pin_vars(f, re, Ty::I64, pin, n)
+            }
             Expr::Index(id, ie) => {
                 if is_param(f, id).is_some() {
                     // p["key"]: a literal string key pins a hash parameter
@@ -3005,6 +3145,15 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             Expr::ArrLit(es) => {
                 for e in es { pin_vars(f, e, Ty::I64, pin, n)?; walk(f, e, sigs, lit, pin, printed, n)?; }
                 Ok(())
+            }
+            Expr::IdxCompound(id, ie, _, re) => {
+                if is_param(f, id).is_some() {
+                    return Err(format!("line {}: `a[i] op= e` through a parameter is not in this increment (fixed arrays cannot be parameters)", n));
+                }
+                pin_vars(f, ie, Ty::I64, pin, n)?;
+                pin_vars(f, re, Ty::I64, pin, n)?;
+                walk(f, ie, sigs, lit, pin, printed, n)?;
+                walk(f, re, sigs, lit, pin, printed, n)
             }
             Expr::Index(id, ie) => {
                 if is_param(f, id).is_some() {
@@ -3416,6 +3565,7 @@ fn expr_has_call(e: &Expr) -> bool {
         Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => expr_has_call(a) || expr_has_call(b),
         Expr::Var(_) | Expr::Str(_) | Expr::Int(_) | Expr::Log(_) => false,
         Expr::LNot(a) | Expr::Index(_, a) => expr_has_call(a),
+        Expr::IdxCompound(_, a, _, b) => expr_has_call(a) || expr_has_call(b),
         Expr::LAnd(a, b) | Expr::LOr(a, b) => expr_has_call(a) || expr_has_call(b),
         _ => true, // any other shape: not justified - exclude
     }
@@ -3430,6 +3580,7 @@ fn expr_mentions(e: &Expr, name: &str) -> bool {
         Expr::LNot(a) => expr_mentions(a, name),
         Expr::Call(_, args) => args.iter().any(|a| expr_mentions(a, name)),
         Expr::Index(id, i) => id == name || expr_mentions(i, name),
+        Expr::IdxCompound(id, i, _, r) => id == name || expr_mentions(i, name) || expr_mentions(r, name),
         Expr::Index2(id, i, j) => id == name || expr_mentions(i, name) || expr_mentions(j, name),
         Expr::Index3(id, i, j, k) => id == name || expr_mentions(i, name) || expr_mentions(j, name) || expr_mentions(k, name),
         Expr::Index4(id, i, j, k, l) => id == name || expr_mentions(i, name) || expr_mentions(j, name) || expr_mentions(k, name) || expr_mentions(l, name),
@@ -3452,6 +3603,9 @@ fn expr_mentions(e: &Expr, name: &str) -> bool {
 fn borrow_expr_ok(e: &Expr, pname: &str) -> bool {
     match e {
         Expr::Seq(es) => es.iter().all(|e| borrow_expr_ok(e, pname)),
+        // a[i] op= e on a local fixed array: no borrow escapes through an
+        // i64 cell; the index and right side must still be borrow-clean.
+        Expr::IdxCompound(_, ie, _, re) => borrow_expr_ok(ie, pname) && borrow_expr_ok(re, pname),
         Expr::Var(v) => v != pname,
         Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => borrow_expr_ok(a, pname) && borrow_expr_ok(b, pname),
         Expr::Call(id, args) => {
@@ -4727,6 +4881,42 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             if has_log { Ok(Ty::DArr) } else { Ok(Ty::Arr(es.len())) }
         }
+        Expr::IdxCompound(id, ie, _, re) => {
+            // a[i] op= e: fixed integer arrays only in this increment
+            // (arrayidx contract). The index types as i64; the right
+            // side as i64 or Dyn (runtime tag check, like Bin); a float
+            // right side cannot be stored in an integer cell until the
+            // numeric-cell decision (proposal recorded, not approved).
+            let it = type_expr(ie, env, sigs, n)?;
+            if it != Ty::I64 {
+                return Err(format!("line {}: array index must be an integer", n));
+            }
+            let rt = type_expr(re, env, sigs, n)?;
+            if rt != Ty::I64 && rt != Ty::Dyn {
+                return Err(format!("line {}: `a[i] op= e` on an integer array cell takes an integer right side in this increment; a float result cannot be stored until the numeric-cell decision (proposal recorded, not approved)", n));
+            }
+            match env.iter().find(|v| v.name == *id) {
+                None => Err(format!("line {}: undefined variable `{}`", n, id)),
+                Some(v) if v.ty == Ty::DArr || v.ty == Ty::DArrU || v.ty == Ty::DArrS || v.ty == Ty::Hash => {
+                    Err(format!("line {}: `a[i] op= e` covers fixed integer arrays in this increment; dynamic cells and hashes keep their own update paths", n))
+                }
+                Some(v) if v.ty == Ty::DArr2 || v.ty == Ty::DArr3 || v.ty == Ty::DArr4 => {
+                    Err(format!("line {}: `a[i] op= e` covers fixed integer arrays in this increment; nested dynamic arrays stay a named limit", n))
+                }
+                Some(v) => match v.ty {
+                    Ty::Arr(k) => {
+                        if let Expr::Int(lit) = ie.as_ref() {
+                            let bad = lit.parse::<i64>().map(|x| x < 1 || x > k as i64).unwrap_or(true);
+                            if bad {
+                                return Err(format!("line {}: array index {} out of bounds (`{}` has {} element(s), base 1)", n, lit, id, k));
+                            }
+                        }
+                        Ok(Ty::I64)
+                    }
+                    _ => Err(format!("line {}: `a[i] op= e` applies to fixed integer arrays in this increment; `{}` is not one", n, id)),
+                },
+            }
+        }
         Expr::Index(id, ie) => {
             // Arrays are [i64; N] in the Rust model: Copy elements, no
             // moves, no ownership involvement (rustc-verified semantics).
@@ -4930,6 +5120,7 @@ fn free_vars(e: &Expr, out: &mut Vec<String>) {
         Expr::Call(_, args) => { for a in args { free_vars(a, out); } }
         Expr::ArrLit(es) => { for e in es { free_vars(e, out); } }
         Expr::Index(_, ie) => free_vars(ie, out),
+        Expr::IdxCompound(_, ie, _, re) => { free_vars(ie, out); free_vars(re, out); }
         Expr::Index2(_, ie, ie2) => { free_vars(ie, out); free_vars(ie2, out); }
         Expr::Index3(_, ie, ie2, ie3) => { free_vars(ie, out); free_vars(ie2, out); free_vars(ie3, out); }
         Expr::Index4(_, ie, ie2, ie3, ie4) => { free_vars(ie, out); free_vars(ie2, out); free_vars(ie3, out); free_vars(ie4, out); }
@@ -5071,6 +5262,7 @@ fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
                 args.iter().all(|a| expr_ok(a, name))
             }
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => expr_ok(a, name) && expr_ok(b, name),
+            Expr::IdxCompound(id, ie, _, re) => id != name && expr_ok(ie, name) && expr_ok(re, name),
             _ => true,
         }
     }
@@ -5112,6 +5304,7 @@ fn foreach_barr_lv_ok(stmts: &[Stmt], name: &str) -> bool {
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => mentions(a, name) || mentions(b, name),
             Expr::Call(_, args) => args.iter().any(|a| mentions(a, name)),
             Expr::Index(id, i) | Expr::Index2(id, i, _) | Expr::Index3(id, i, _, _) | Expr::Index4(id, i, ..) => id == name || mentions(i, name),
+            Expr::IdxCompound(id, i, _, r) => id == name || mentions(i, name) || mentions(r, name),
             _ => false,
         }
     }
@@ -5159,6 +5352,7 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => mentions(a, name) || mentions(b, name),
             Expr::Call(_, args) => args.iter().any(|a| mentions(a, name)),
             Expr::Index(id, i) | Expr::Index2(id, i, _) | Expr::Index3(id, i, _, _) | Expr::Index4(id, i, ..) => id == name || mentions(i, name),
+            Expr::IdxCompound(id, i, _, r) => id == name || mentions(i, name) || mentions(r, name),
             _ => false,
         }
     }
@@ -6624,6 +6818,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
         }
         Expr::ArrLit(es) => { for e in es { apply_moves(e, env, sigs, false); } }
         Expr::Index(_, ie) => apply_moves(ie, env, sigs, false),
+        Expr::IdxCompound(_, ie, _, re) => { apply_moves(ie, env, sigs, false); apply_moves(re, env, sigs, false); }
         Expr::Index2(_, ie, ie2) => { apply_moves(ie, env, sigs, false); apply_moves(ie2, env, sigs, false); }
         Expr::Index3(_, ie, ie2, ie3) => { apply_moves(ie, env, sigs, false); apply_moves(ie2, env, sigs, false); apply_moves(ie3, env, sigs, false); }
         Expr::Index4(_, ie, ie2, ie3, ie4) => { apply_moves(ie, env, sigs, false); apply_moves(ie2, env, sigs, false); apply_moves(ie3, env, sigs, false); apply_moves(ie4, env, sigs, false); }
@@ -7804,6 +7999,43 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             }
         }
         Expr::ArrLit(_) => unreachable!("array literals are emitted via cg_array_value"),
+        Expr::IdxCompound(id, ie, op, re) => {
+            // a[i] op= e on a fixed integer array (arrayidx contract):
+            // the index is evaluated once and FIRST, the right side once
+            // and SECOND, then the bounds check, load, operation and
+            // store together - the order Harbour's reference-then-
+            // operate sequence gives a[++i] += Bump(@i) (stores into the
+            // original cell). The cell is Copy i64, so no ownership is
+            // involved; the expression yields the NEW cell value in rax.
+            // Wrapping arithmetic, exactly like the scalar `x op= e`
+            // desugar into Bin (hk246); Harbour's integer promotion to
+            // double on overflow is the parked numeric decision.
+            let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
+            let k = match v.ty { Ty::Arr(k) => k, _ => unreachable!("checked") };
+            cg_expr(ie, env, sigs, strs, out, target);
+            match target {
+                Target::Linux => out.push_str("    push %rax\n"),
+                Target::Windows => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"),
+            }
+            cg_expr(re, env, sigs, strs, out, target);
+            if expr_ty(re, env, sigs) == Ty::Dyn {
+                out.push_str("    call hbc_dyn_to_i64\n");
+            }
+            match target {
+                Target::Linux => out.push_str("    mov %rax, %rcx\n    pop %r10\n"),
+                Target::Windows => out.push_str("    mov %rax, %rcx\n    mov (%rsp), %r10\n    add $16, %rsp\n"),
+            }
+            // %r10 = index (evaluated once), %rcx = right side (once)
+            out.push_str(&format!("    cmp $1, %r10\n    jl 81f\n    cmp ${}, %r10\n    jg 81f\n", k));
+            out.push_str(&format!("    lea -{}(%rbp), %r11\n    mov -8(%r11,%r10,8), %rax\n", v.off));
+            match op {
+                '+' => out.push_str("    add %rcx, %rax\n"),
+                '-' => out.push_str("    sub %rcx, %rax\n"),
+                '*' => out.push_str("    imul %rcx, %rax\n"),
+                _ => unreachable!("checked"),
+            }
+            out.push_str("    mov %rax, -8(%r11,%r10,8)\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
+        }
         Expr::Index(id, ie) => {
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
             if v.ty == Ty::Hash {
@@ -8267,7 +8499,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
     match e {
         Expr::Seq(es) => expr_ty(es.last().expect("nonempty"), env, sigs),
         Expr::Float(..) | Expr::FloatV(..) => Ty::F64,
-        Expr::Int(_) | Expr::Inc(..) => Ty::I64,
+        Expr::Int(_) | Expr::Inc(..) | Expr::IdxCompound(..) => Ty::I64,
         Expr::Bin(op, a, b) => {
             if matches!(expr_ty(a, env, sigs), Ty::Str | Ty::StrOwn) || matches!(expr_ty(b, env, sigs), Ty::Str | Ty::StrOwn) {
                 Ty::StrOwn
@@ -8374,6 +8606,7 @@ fn byref_names_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => { ex(a, out); ex(b, out); }
             Expr::LNot(a) => ex(a, out),
             Expr::Index(_, a) => ex(a, out),
+            Expr::IdxCompound(_, a, _, b) => { ex(a, out); ex(b, out); }
             Expr::Index2(_, a, b) => { ex(a, out); ex(b, out); }
             Expr::Index3(_, a, b, c) => { ex(a, out); ex(b, out); ex(c, out); }
             Expr::Index4(_, a, b, c, d) => { ex(a, out); ex(b, out); ex(c, out); ex(d, out); }
@@ -8417,6 +8650,7 @@ fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String,
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => { ex(a, out); ex(b, out); }
             Expr::LNot(a) => ex(a, out),
             Expr::Index(_, a) => ex(a, out),
+            Expr::IdxCompound(_, a, _, b) => { ex(a, out); ex(b, out); }
             Expr::Index2(_, a, b) => { ex(a, out); ex(b, out); }
             Expr::Index3(_, a, b, c) => { ex(a, out); ex(b, out); ex(c, out); }
             Expr::Index4(_, a, b, c, d) => { ex(a, out); ex(b, out); ex(c, out); ex(d, out); }

@@ -4,7 +4,7 @@
 `pos <file> <escaped expected stdout>` or `neg <file> <error substring>`.
 Positive expectations are derived per category, not assumed:
 
-- **HB-EXACT** (65 tests): bytes captured from the Harbour 3.2.1dev
+- **HB-EXACT** (67 tests): bytes captured from the Harbour 3.2.1dev
   reference compiled with `-gtstd` (clean stdio, no ANSI console codes).
   The earlier quick oracle (`hbmk2 file.hb` script mode) runs ONLY the
   first function in the file, not `main` - it was never valid for
@@ -3974,3 +3974,18 @@ the full Linux/Wine battery to 1081 manifest cases plus five harness checks.
 The frozen 175-original sweep stays at 20 COMPILES, including errsys's separately
 registered different failure mode; no new original execution success is claimed.
 The hk455 no-feature assembly is unchanged; no new timing claim is made.
+
+Indexed compound assignment (t1354-t1356, 2026-10-31, arrayidx piece):
+`a[i] op= e` for +, -, * on fixed integer arrays, in statement and
+expression form. t1354 and t1355 are HB-EXACT (oracle: Harbour 3.2.1dev
+r2610242111 @694428e1c12f, `hbmk2 -quiet -gtstd -w0`, byte-exact on the
+first capture). t1355 pins the evaluation-order contract: the index
+expression evaluates ONCE, FIRST; the rhs evaluates once, second; the
+store targets the cell the first index evaluation named, even when the
+rhs mutates the index variable. t1356 pins the parked rejection of `/=`
+(the same path rejects `^=` and `%=`): Harbour `/` always yields
+decimals and the integer array cell cannot hold them until the
+numeric-cell decision (proposal recorded, not approved). The LLVM
+subset rejects the new form with an explicit named error; support is
+default-backend only and the LLVM subset never accepted this form, so
+no previously supported program is lost.

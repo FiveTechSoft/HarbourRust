@@ -1,0 +1,313 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next10aftercodebl2",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/codebloc.prg",
+      "sha256": "46b7a923ec6ddf7a0ca166863643168ea9f9f3275e1bf9656a5f8326c8600091",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+MyEval/OtherTest/AnotherTest/DetachLocal/RetBlock",
+      "build_unit": "single-source-executable",
+      "profile": "escaping-closures-console",
+      "dependencies": "nestedblocks,captures,optionalparameters,detachedlocals,arraypostincrement",
+      "boundary": "Safeconsole;escapingcapturelifetimeandEvalsemantics",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 956,
+        "stdout_sha256": "42b6d08eeb9dea7204275786557ff4295c5d2e964539b5637274484dbaeb96f3",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 48: expression ++/-- requires a variable lvalue in this increment",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 48: expression ++/-- requires a variable lvalue in this increment",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/color.prg",
+      "sha256": "44567d0b0c40157538c5b1ea8d2cd016be8c367ef7411a5ad1e301b004e32335",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "GT-colorstate",
+      "dependencies": "color.ch;Set/SetColor/ColorSelect",
+      "boundary": "OutputstringsandactualscreenattributesneedGTpixels;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 68: unknown function `set` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 68: unknown function `set` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/com.prg",
+      "sha256": "27f928cb237f45138cc8a1dbcba07ab4e1bec0ec8b30ca3139b44c2942d18fa5",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "serial-port-device",
+      "dependencies": "hbcom.ch;hb_comOpen/Init/Send/Recv;WAIT;optionalport",
+      "boundary": "DeviceIOcouldtouchhardware;neverrunwithoutserialfixture",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 94: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 94: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/comments.prg",
+      "sha256": "6d6e0744f7beeec597f35dffbdb4aec2faa1da7b12b0c0c778b56db647adb615",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "console-existing",
+      "dependencies": "star/NOTE/block/oldfashioncomments;QOut",
+      "boundary": "Safeconsole;existingacceptedcontrolnotnew",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 4,
+        "stdout_sha256": "9a36f7126969e5257d0f65a08b7cd78a5be93fa78ede0fac7eba087c058bb9a2",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 4,
+            "stdout_sha256": "9a36f7126969e5257d0f65a08b7cd78a5be93fa78ede0fac7eba087c058bb9a2",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 4,
+            "stdout_sha256": "9a36f7126969e5257d0f65a08b7cd78a5be93fa78ede0fac7eba087c058bb9a2",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        }
+      }
+    },
+    {
+      "file": "tests/commouse.prg",
+      "sha256": "2a320f72ab6375b761804071a8baece992fef7ae6ffd2224bb63d7221d4d4c2b",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "serial-mouse-device",
+      "dependencies": "hbcom.ch;binaryserialprotocols;Inkey;undeclarednIin3buttonbranch",
+      "boundary": "Noargsusagepathnotcompletehardwaretest;needdevicefixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 98: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 98: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/cpinfo.prg",
+      "sha256": "0ec512dab9fbb2abf9e99f8f0291e54e3b0f685abe2991917c4b490e4baec169",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+pad_letters/charval/charis/charinfo/write_file/genCP/genCPfile/a2def",
+      "build_unit": "single-source-executable",
+      "profile": "codepage-generator-files",
+      "dependencies": "fileio.ch/hbextcdp.ch;ALTERNATEappendcpinfo.txt;optionalwritecp*.c;sortblocks;codepage/date",
+      "boundary": "Needdisposableoutputandlocale/clockfixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 96: unterminated dotted word `.txt` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 96: unterminated dotted word `.txt` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/curdirt.prg",
+      "sha256": "eb45e59b5a57d26657d606809e51dc1273980956a7b1cf62a12e1e36d19d8e57",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "environment-directory",
+      "dependencies": "CurDir/CurDirC/C:/D:/A",
+      "boundary": "Environmentdependentdrivecontract;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown function `curdir` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown function `curdir` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/cursor.prg",
+      "sha256": "4f4668b440f83dbffe271334b80e2d12581af22b59ccc1d30c5e0d18e28a2c15",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+CursTest",
+      "build_unit": "single-source-executable",
+      "profile": "GT-cursor-shape-input",
+      "dependencies": "SetCursor;arraystrings;PadR;Inkey0",
+      "boundary": "Needvisualcursorcomparisonandkeyscript;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 13: unknown function `setcursor` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 13: unknown function `setcursor` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/dates.prg",
+      "sha256": "d5580150a72a789f2df4e0931311488f733c102d0603408cb0b8a68ec945d010",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TestCentury",
+      "build_unit": "single-source-executable",
+      "profile": "clock-dateformat",
+      "dependencies": "Date;CTOD;DTOS;epoch/dateformat/century;datearithmetic",
+      "boundary": "Clockheaderfixturebeforeexactcomparison;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 12: trailing tokens after expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 12: trailing tokens after expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/dates2.prg",
+      "sha256": "1cd5d90a5a828c969fa0eb959e620bcf912c406539c38cc050048a99cb5caf32",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "dateformat-console",
+      "dependencies": "hb_SToD19990430;Setdateformat;__SetCentury",
+      "boundary": "Safeconsolefixeddate;calendar/formatruntimeunsupported",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 354,
+        "stdout_sha256": "e4348793e2c777a9673902be465e6e9308b077d5261214af276510fdaeab362e",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown function `hb_stod` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown function `hb_stod` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}

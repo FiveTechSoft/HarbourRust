@@ -1,0 +1,319 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next10afterdeclare",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/define.prg",
+      "sha256": "5f474e3a31544a0c390dda8f0bf461e6e59bfa9593b36310bbf078c31ca23869",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "console-conditional-compiler-flag",
+      "dependencies": "FIRSTSECONDTHIRDdefines;TESTexternal-D;#warningdefault",
+      "boundary": "Defaultprofileexistingexact;TESTflagprofiledistinctnotclaimed",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 221,
+        "stdout_sha256": "0c263443b3c31ca451081dec336a0908f00b089b7cade388a582b0902f2234d6",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 221,
+            "stdout_sha256": "0c263443b3c31ca451081dec336a0908f00b089b7cade388a582b0902f2234d6",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 221,
+            "stdout_sha256": "0c263443b3c31ca451081dec336a0908f00b089b7cade388a582b0902f2234d6",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        }
+      }
+    },
+    {
+      "file": "tests/delim.prg",
+      "sha256": "9cbc288ce4e249a1316a251abad34bc7f5fd8f6b18fc3bc25bad10e68ac9cb82",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "negative-RDD-files",
+      "dependencies": "NOTEST;USEtest;COPYDELIMITEDfiltered/scoped;DELETEFILEtest8;APPENDmissing",
+      "boundary": "Filesystem/RDDdisposablefixtureandexpectederror;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 45: unterminated dotted word `.txt` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 45: unterminated dotted word `.txt` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/destruct.prg",
+      "sha256": "0cbd3f91c66b115dc25e1e14db7a01782d40b61e50662f592a59f08b364809c0",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+SIMPLETEST/GCFREETEST/errorhandler/myClassINIT/DTOR",
+      "build_unit": "single-source-executable",
+      "profile": "object-cycles-destructors",
+      "dependencies": "PUBLICP;ErrorBlock/BREAK;cycleselfarray;hb_gcAll;destructorresurrectiontoself/class/public",
+      "boundary": "GCcycle/destructorlifetimeexplicitdifferentownership;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 94: command expansion too deep (recursive command?)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 94: command expansion too deep (recursive command?)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/dev.prg",
+      "sha256": "a6341d626b70885dea56b314e9c2ef236dfeff02e1d7da735c1c3d608702bce9",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "printer-file",
+      "dependencies": "SETPRINTERTOdev_hb;DEVICETOPRINTER;DevPos/Out;PRow/PCol",
+      "boundary": "Writesprnoutput;needsdisposablefixturebyteoracle;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 10: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 10: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/directry.prg",
+      "sha256": "d989546b67bb6af337326cfed4dd2c20f6cdbd9f79c8da7b9eef7c3c5533576d",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "filesystem-environment",
+      "dependencies": "directry.ch;Directoryoptionalargs;attributes/date/time/Transform",
+      "boundary": "Pinnedtreeandtimestampsfixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 62: `==` against NIL is measured only for numbers, strings, NIL and dynamic casillas (hk128/hk129)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 62: `==` against NIL is measured only for numbers, strings, NIL and dynamic casillas (hk128/hk129)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/diskspac.prg",
+      "sha256": "f922decdb282320f4293baefbe000220784ffbe30ed53ca3052153a5fdfaf425",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "filesystem-capacity-environment",
+      "dependencies": "fileio.ch;hb_DiskSpaceFREEAVAILUSEDTOTAL;hb_DirBase",
+      "boundary": "Livecapacitychanges;needscontrolledsyscallfixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 101: unknown function `hb_dirbase` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 101: unknown function `hb_dirbase` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/disp.prg",
+      "sha256": "e87e1e1a29dff1d86743768aa3cfcad9b886f8584ecfea8055a039ac33789557",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "GT-position-audio-input",
+      "dependencies": "SetPos/DispOut/Row/Col/CLS;Tone;Inkey0;clipping/scroll",
+      "boundary": "GTpixel/audio+keyscript;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/docase.prg",
+      "sha256": "fcb9869eb4407d2bc312d97277809380c2dc8414eb237afef1036dcc12c74d88",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "console-existing",
+      "dependencies": "DOCASEstringoutput",
+      "boundary": "Safeexistingcontrolnotnew",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 47,
+        "stdout_sha256": "8945ffd22ee651310548509edba14fc4f25dfa770821273723faff2e43ca721d",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 47,
+            "stdout_sha256": "8945ffd22ee651310548509edba14fc4f25dfa770821273723faff2e43ca721d",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 47,
+            "stdout_sha256": "8945ffd22ee651310548509edba14fc4f25dfa770821273723faff2e43ca721d",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        }
+      }
+    },
+    {
+      "file": "tests/dupvars.prg",
+      "sha256": "5fa9448a53e9e2314ac10a5ae02d578be8450d4eb3c16d3061698d0267ab58a1",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "compile-negative",
+      "dependencies": "NOTEST;duplicateLOCALa,a",
+      "boundary": "Referenceexpectedcompilefailure;notexecutable/noexecution",
+      "reference_build_exit": 6,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 7: duplicate local `a`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 7: duplicate local `a`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "reference_diagnostic": "\n/tmp/harbour-reference/tests/dupvars.prg(7) Error E0003  Duplicate variable declaration 'A'\nhbmk2: Error: Running Harbour compiler (built-in). 1\n('/tmp/harbour-reference/bin/linux/gcc/harbour') -n2 /tmp/harbour-reference/tests/dupvars.prg -q -o/tmp/hbmk_u8r0vz.dir/ -i/tmp/harbour-reference/include\nHarbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n\n1 error\n\nNo code generated.\n"
+    },
+    {
+      "file": "tests/dyn.prg",
+      "sha256": "4ed4b8891d1a390d0beb3351cc7630b74b7d8f6dea6627c8a74a7152ec0a47cd",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "dynamic-native-DLL",
+      "dependencies": "simpleio.ch/hbdyn.ch;test_x64/x86DLL;hb_DynCalltypedFFIallintwidthsfloatdoubleptr",
+      "boundary": "RequiresDLLfixtureandexternalABIplatform;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 125: expected `,` or `)` in call arguments, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 125: expected `,` or `)` in call arguments, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}

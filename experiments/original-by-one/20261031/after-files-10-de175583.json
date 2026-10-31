@@ -1,0 +1,313 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next10afterfiles",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/flink.prg",
+      "sha256": "c05fc38a41adf191c08d54d6d061c3d9503a065443d61cb8009e6a9418aa8f66",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "filesystem-links",
+      "dependencies": "simpleio.ch;MemoWrit;hardlink/symlink/readlink/DirCreate;FError",
+      "boundary": "Privatefreshfilesystemfixtureplatformrights;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 59: unknown function `hb_memowrit` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 59: unknown function `hb_memowrit` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/flock.prg",
+      "sha256": "d7295d343586df9db3e20cf4edc45b5a8e816606a89abc7b59e2642c1f2a44f7",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+ShowStatus",
+      "build_unit": "single-source-executable",
+      "profile": "filesystem-locks-GT",
+      "dependencies": "STATICstate;emphasis.6lo;shared/exclusiveblockinglocks;Inkey/CLS",
+      "boundary": "Needsisolatedmultiprocesslockfixture+GTscript;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 194: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 194: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/for.prg",
+      "sha256": "4121ef9c9234adb725772c48674d72b2e6a04ce402a751a42d6bf79291ce6aff",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+ValFrom/To/Step",
+      "build_unit": "single-source-executable",
+      "profile": "loop-evaluation-static-closures",
+      "dependencies": "fileSTATIC;arrayoftriples;EvaleffectfulFORlimitsstep",
+      "boundary": "Safeconsole;STATIC+closuresblockcompiler",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 1322,
+        "stdout_sha256": "22de5b1c8713e1cab23791ea1865b9746828288a2b384d162f5c6008aa96016d",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 8: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 8: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/for2.prg",
+      "sha256": "3c9651e0d969a32b4a75eaca3aec110704627e182aa1340e877f366ed38c603a",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "GT-loop-mutation",
+      "dependencies": "mutatesloopindex;Inkey0twice",
+      "boundary": "Keyscriptneeded;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 10: unknown function `inkey` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 10: unknown function `inkey` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/foreach.prg",
+      "sha256": "b1e07e8de9ffc86abdf3d61a621b27fd0a25323287ae891e80a3f2b3ce649106",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TESTbreak/BYREF",
+      "build_unit": "single-source-executable",
+      "profile": "enumerators-byref-GT",
+      "dependencies": "mutableenumerationarray/string/multiDESCEND;__enumrefs;Breakrecover;Inkey",
+      "boundary": "Needsenumeratorborrowrestore/unwind+GTscript;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 48: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 48: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/foreach2.prg",
+      "sha256": "f25d79223ff72af7b348338b2570aed47c5968e54a5dd8b80a8c7e7929abd4e1",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+myclass1/2methods",
+      "build_unit": "single-source-executable",
+      "profile": "object-enumerator-console",
+      "dependencies": "hbclass.ch;FOR EACHobjectoverloads;@enumBase/Value/Index;F64",
+      "boundary": "Safeconsole;objectenumeratorABI/borrowfrontier",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 632,
+        "stdout_sha256": "88a749601f415c846df97f737464d9a08b3c5d344982ad7ca6477f42bcd52200",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 366: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 366: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/fornext.prg",
+      "sha256": "7df8bbea5c9daacfe9d8a439ab2d4ebce3417ce4b15628276819b451cc6aa585",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "console-existing",
+      "dependencies": "positive/negativeFORstepandemptyrange",
+      "boundary": "Existingcontrolnotnew",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 337,
+        "stdout_sha256": "3be9b43c08371420ded21a3401e3ba59cf4f4c54460c7645a3d36b51ee734f4f",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 337,
+            "stdout_sha256": "3be9b43c08371420ded21a3401e3ba59cf4f4c54460c7645a3d36b51ee734f4f",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 337,
+            "stdout_sha256": "3be9b43c08371420ded21a3401e3ba59cf4f4c54460c7645a3d36b51ee734f4f",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        }
+      }
+    },
+    {
+      "file": "tests/funcarr.prg",
+      "sha256": "c330161d6959cd1447b91977fa7aaf187325f29fe13e11a0178969a7b3def2a1",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+aFunc",
+      "build_unit": "single-source-executable",
+      "profile": "persistent-array-return-debug",
+      "dependencies": "procedureSTATICsharedheterogeneousarrayreturn;functioncalllvalueinccompound;F64;VMdebug",
+      "boundary": "Sharedpersistentalias/layout+debuggernotauthorized;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 13: trailing tokens after expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 13: trailing tokens after expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/fwdref.prg",
+      "sha256": "4b863a32824e9754b1e6fe86180dc1d351ee7a62132e5973e360423e0955301f",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "compiler-forward-capture",
+      "dependencies": "TOFIXcomment;blockcaptureslaterdeclarednSpan",
+      "boundary": "Buildresultiscurrentevidence,notoldcomment;noEvalsoemptyruntimeonly",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: codeblock captures are not in this increment (`nspan` is not a codeblock parameter)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: codeblock captures are not in this increment (`nspan` is not a codeblock parameter)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/get.prg",
+      "sha256": "c70585bfc2801c7e28299c0a8292295256e9c7a44ab4f2ecd17b3b743ab32346",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "GT-GET-runtime-macro",
+      "dependencies": "GETREAD/GetListobjects;PRIVATE;early/latecomplexmacro;@PICTURE",
+      "boundary": "Inputscreenandmacro/GETobjectlifetimefrontier;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 13: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 13: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}

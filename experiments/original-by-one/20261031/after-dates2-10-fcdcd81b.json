@@ -1,0 +1,294 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next10afterdates2",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/dates3.prg",
+      "sha256": "f1b18d3117e12df21381d93c9a011216858bc3848e175a19225ea86930b48784",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+LastMonday",
+      "build_unit": "single-source-executable",
+      "profile": "clock-calendar",
+      "dependencies": "Setdateformat;hb_SToD;DoW;Date;dateincrement",
+      "boundary": "Clocktailrequirespinnedclockfixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 7: unknown function `set` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 7: unknown function `set` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/datetime.prg",
+      "sha256": "c9afd31bf994f336d5bf49810723eb2f369141cf28195020fdbf3662e7820476",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "clock-timestamp",
+      "dependencies": "simpleio.ch;hb_DateTime;timestampcomponents;millisecondformat",
+      "boundary": "Currenttimestampcallsnondeterministic;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 59: unknown function `hb_datetime` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 59: unknown function `hb_datetime` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/db_brows.prg",
+      "sha256": "bd9f614e6d4c313039850ecd48aa6df65fe0712fe5cfb8bb45c3514f7f39845f",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+DBFLIST/FLDCOUNT/VIVNAMES/WNDVIVOD/VIVSTR/FLDSTR/InitList/Defpict/NUM_STR",
+      "build_unit": "single-source-executable",
+      "profile": "GT-RDD-editor",
+      "dependencies": "fileio.ch/inkey.ch;USEargument;42heterogeneousstatecells;capturedblocks;macroType;GETREAD;fieldwrite",
+      "boundary": "Usageonlynotcomplete;needsdisposableDBF+GTinputscreenfixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 379: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 379: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/dbeval.prg",
+      "sha256": "99aafb5ace82a04c3dbcaea8ca263fc44f5bc4865617f1002c1f504849a5ffdb",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "RDD-readonly",
+      "dependencies": "USEtest;dbGoto;RecNo;COUNTscopeNEXT10",
+      "boundary": "Needpinnedtest.dbfandRDDcursorfixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/dbf.prg",
+      "sha256": "372b54f876d155e9dcb9f551103199c0677af2411c9c1213aded69ca65c95466",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "RDD-mutating-GT",
+      "dependencies": "DBFCDX;create/append/memos/commit/ZAP/delete/filter/PACK;testDBF;Inkey",
+      "boundary": "NeedisolatedDBF/FPT/DBTfixtureandkeyscript;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/dbgcls.prg",
+      "sha256": "40cb46701426c49d2b2abad55bf33302b00e3c8aa41a0a862a80f40670fb4d44",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+Some/Test",
+      "build_unit": "single-source-executable",
+      "profile": "debugger-object",
+      "dependencies": "pragma-b+;hbclass.ch;AltD;ACCESS/ASSIGN",
+      "boundary": "Debuggeronlyroadmap,noimplementation;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1: unknown directive #pragma in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1: unknown directive #pragma in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/dbi.prg",
+      "sha256": "735c9623a4dddf8cada23b2080cee6ba59f4fd5e6cc3815e9046a3687a5ddc19",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+xToStr",
+      "build_unit": "single-source-executable",
+      "profile": "RDD-outputfile",
+      "dependencies": "USEtest;dbInfo/RecordInfo/FieldInfo;MemoWritdbi_hb.txt",
+      "boundary": "NeedpinnedDBFanddisposableoutfile;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 7: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/ddate.prg",
+      "sha256": "d4bd5c1ffffda2ad4edb0cba9acd8ce978d96a0bf481d249ac9b45e1a0cf367a",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "date-macro-clock",
+      "dependencies": "0ddateliterals;leapdatearithmetic;runtime&a;Date",
+      "boundary": "Clocktail+macroevaluator;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 27: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 27: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/debug.prg",
+      "sha256": "70d80bd37aa11229614ecd493a1a1b57d9ee7c657b1d224af7fcc56550c8eb18",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+FuncSecond/TForm/New/Show/Transfer",
+      "build_unit": "single-source-executable",
+      "profile": "debugger-VM-object",
+      "dependencies": "__dbgVMVarSList/StkGList/StkLList/ParLList;objectintrospection;Inkey;varargs",
+      "boundary": "VMstack/debuggernotnativeequivalence;roadmaponly;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 205: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 205: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/declare.prg",
+      "sha256": "9666020c3377730c2eefc37815ec6c402fe19e0fc6912eeff23aeb05d9bbaca0",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "INITMain+nMyFun+MyClass/New",
+      "build_unit": "single-source-executable",
+      "profile": "declared-types-macros-object",
+      "dependencies": "hbclass.ch;DECLAREsignatures/arrays/macronames;MEMVAR;typedobject",
+      "boundary": "INITprocedure/declarations/object/macrocontract;oneoriginalreferenceexecutiontimedout10seconds,notclaimednormalexit;needsGTerrorhandlingfixturebeforefurtherexecution",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "status": "timed-out-after-10seconds",
+        "exit": "not-observed",
+        "stdout_bytes": "not-retained",
+        "stderr_bytes": "not-retained",
+        "attempts": 1
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 348: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 348: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}

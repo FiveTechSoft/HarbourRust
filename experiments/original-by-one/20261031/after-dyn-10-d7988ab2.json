@@ -1,0 +1,343 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next10afterdyn",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/dynobj.prg",
+      "sha256": "da035b1c2a9fa6f5a07eeddbf7d6bfdeeb2378c83090cf29e1f1c769be0bba50",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TForm/New/Smile/BigSmile/Pause",
+      "build_unit": "single-source-executable",
+      "profile": "object-dynamic-GT",
+      "dependencies": "objectaddmoddelruntimeinline/method/data;WAIT",
+      "boundary": "Persistentdynamicobjectlayout+interactiveinput;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 22: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 22: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/dynsym.prg",
+      "sha256": "4aea779f46f46985eb1b1353c3c2cec6d65b959fa5e883e693fd339971a86a53",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "runtime-symboltable",
+      "dependencies": "__dynsCount/GetName/GetIndex",
+      "boundary": "Symbolsetdependslinkedruntime;notstableindependentoracle;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown function `__dynscount` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown function `__dynscount` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/dynwin.prg",
+      "sha256": "1f17ddc29f2cf07f5c9faae435833478a8c8a0536760e5a597ce7d9425d139b2",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "platform-excluded-Linux",
+      "dependencies": "simpleio.ch/hbdyn.ch;WindowsbodycallsDLL/MessageBox/systemsettings",
+      "boundary": "Linuxbodyexcludedempty;NOTWindowsFFI/GUIcoverage",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        }
+      }
+    },
+    {
+      "file": "tests/errsys.prg",
+      "sha256": "1061bef9a0d5ea39694f7d2b25928faa44d3d78a5f05cc6aee3bdb28dc56bb73",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "runtime-error-negative",
+      "dependencies": "uninitializedNILincrement;expecterror",
+      "boundary": "Defaulterrorhandlerinteractive;needunwind/errorharness;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: LLVM scalar: expression unsupported: Nil",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/exit.prg",
+      "sha256": "a14961def1156ec029d6c93bfbda7ce05b9ee5900f842e42843046bff1a9163d",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "console-existing",
+      "dependencies": "DO/FORloopEXIT;iif",
+      "boundary": "Safeexistingcontrolnotnew",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 41,
+        "stdout_sha256": "9fa3922b9d25ffba8b047e42f04276cf09ef8ba0b976321dd0234993ec0d7f1c",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 41,
+            "stdout_sha256": "9fa3922b9d25ffba8b047e42f04276cf09ef8ba0b976321dd0234993ec0d7f1c",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 41,
+            "stdout_sha256": "9fa3922b9d25ffba8b047e42f04276cf09ef8ba0b976321dd0234993ec0d7f1c",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        }
+      }
+    },
+    {
+      "file": "tests/extend1.prg",
+      "sha256": "f23f9ad81fced160612f33249426e9bc874fbcef3d1c6eefbebf4b38ee7cd0f4",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+extend2.cCexports",
+      "build_unit": "project:tests/extend1.hbp+extend1.prg+extend2.c",
+      "profile": "project-C-extend-interactive",
+      "dependencies": "extend1.hbp;extend2.c;par/ret/storCABI;arraysstringsfloatdates;WAIT",
+      "boundary": "ProjectbuildnotstandalonePRG;CABIfrontier+GTkeyscript;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 39: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 39: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/fib.prg",
+      "sha256": "93732a58377061fcb844f00b11f61c39a41f084477effcc8c46164107e04ae81",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+FibR/FibI",
+      "build_unit": "single-source-executable",
+      "profile": "console-recursion",
+      "dependencies": "recursive/iterativefib1..20;NILinitializedreturnlocals",
+      "boundary": "Safeconsole;numericinferenceNILjoinmustverifybeforecompatclaim",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 440,
+        "stdout_sha256": "dde2f3876d1501d57e27ac249a2749444beaf1b3dbf0cf63edcf33660c00183f",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: `fibr` never returns a value; its result cannot be used in an expression in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: `fibr` never returns a value; its result cannot be used in an expression in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/fileio.prg",
+      "sha256": "b9bc1b8b5bd65473b145044a4cf885a1a508bd5955638da59da96da24518829f",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "isolated-fileIO",
+      "dependencies": "FCreate/FWrite/FClose/FOpen/FReadbyte@",
+      "boundary": "Safeonlyinprivatefreshrundir;compareoutputfilebytesseparatelyhandleids",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 86,
+        "stdout_sha256": "b3452a5ea3aa5331bfa1c1e92bf424480f932176eb4d86c8d0c6791efd257e23",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: unknown function `fcreate` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: unknown function `fcreate` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "reference_file_effect": {
+        "name": "test.txt",
+        "bytes": 36,
+        "sha256": "822f161ae4c11011e9f093e57962fb82eb93300f1640cacfc07b100e6e5c0e02"
+      }
+    },
+    {
+      "file": "tests/fileio2.prg",
+      "sha256": "0a2ec8f9852ddb51af707286e832b5ea2c150c73c08ebd8df8f8b7743d16b52a",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "isolated-fileIO",
+      "dependencies": "FCreate/FWrite/FClose/FOpen/FReadStrbyte",
+      "boundary": "Safeonlyinprivatefreshrundir;compareoutputfilebytesseparatelyhandleids",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 85,
+        "stdout_sha256": "fde47cb25868cd32698855e27351d0e497044320fa580b34a4e0e9790b03b290",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: unknown function `fcreate` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: unknown function `fcreate` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "reference_file_effect": {
+        "name": "test.txt",
+        "bytes": 36,
+        "sha256": "822f161ae4c11011e9f093e57962fb82eb93300f1640cacfc07b100e6e5c0e02"
+      }
+    },
+    {
+      "file": "tests/files.prg",
+      "sha256": "0ad31202b1c6af09cd8403e174dc6204d89fb8eb6dbe2bb2f7eb77b6b1eee165",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "RDD-stress-1000files",
+      "dependencies": "DBFCDX1000create/open/drop;GTprogress;ADSconditionalinactive",
+      "boundary": "Largefilesystem+FDstressneedsboundedisolatedfixture;notrun",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 19: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 19: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}
