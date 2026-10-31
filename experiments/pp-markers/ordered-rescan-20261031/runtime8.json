@@ -1,0 +1,173 @@
+{
+  "scope": "8own queue runtime oracle checks,not original corpus growth",
+  "rows": [
+    {
+      "file": "t1282_pp_queue_siblings.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1\n         2",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1\n         2",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1\n         2",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1283_pp_queue_nested.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1\n         2\n         1\n         2",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1\n         2\n         1\n         2",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1\n         2\n         1\n         2",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1284_pp_queue_quoted.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\na;b\nc;d",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\na;b\nc;d",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\na;b\nc;d",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1285_pp_queue_factory.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         7\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         7\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         7\n         7",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1286_pp_queue_define.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1287_pp_queue_define_order.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1\n         2\n         2",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1\n         2\n         2",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1\n         2\n         2",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1288_pp_queue_function_define.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         3\n         4",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         3\n         4",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         3\n         4",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1289_pp_queue_undef.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1\n         9",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1\n         9",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1\n         9",
+          "stderr": ""
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,940 @@
+{
+  "rows": [
+    {
+      "source": "#xcommand FACTORY => #define X 7\nFACTORY\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n7\n",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X ; #define X 7 ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\nX ; 7\n7\n",
+      "own_exit": 0,
+      "own_output": "X\n7\n7\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X 7\n#xcommand BOTH => X ; FACTORY ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX ; 7\n7\n",
+      "own_exit": 0,
+      "own_output": "X\n7\n7\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X 9\n#xcommand BOTH => X ; #undef X ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X\nX\n",
+      "own_exit": 0,
+      "own_output": "9\nX\nX\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X alpha\nFACTORY\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nalpha\n",
+      "own_exit": 0,
+      "own_output": "alpha\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X ; #define X alpha ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\nX ; alpha\nalpha\n",
+      "own_exit": 0,
+      "own_output": "X\nalpha\nalpha\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X alpha\n#xcommand BOTH => X ; FACTORY ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX ; alpha\nalpha\n",
+      "own_exit": 0,
+      "own_output": "X\nalpha\nalpha\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X 9\n#xcommand BOTH => X ; #undef X ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X\nX\n",
+      "own_exit": 0,
+      "own_output": "9\nX\nX\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X alpha+1\nFACTORY\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nalpha+1\n",
+      "own_exit": 0,
+      "own_output": "alpha+1\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X ; #define X alpha+1 ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\nX ; alpha+1\nalpha+1\n",
+      "own_exit": 0,
+      "own_output": "X\nalpha+1\nalpha+1\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X alpha+1\n#xcommand BOTH => X ; FACTORY ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX ; alpha+1\nalpha+1\n",
+      "own_exit": 0,
+      "own_output": "X\nalpha+1\nalpha+1\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X 9\n#xcommand BOTH => X ; #undef X ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X\nX\n",
+      "own_exit": 0,
+      "own_output": "9\nX\nX\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X \"a;b\"\nFACTORY\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X ; #define X \"a;b\" ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\nX ; \"a;b\"\n\"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "X\n\"a;b\"\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X \"a;b\"\n#xcommand BOTH => X ; FACTORY ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX ; \"a;b\"\n\"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "X\n\"a;b\"\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X 9\n#xcommand BOTH => X ; #undef X ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X\nX\n",
+      "own_exit": 0,
+      "own_output": "9\nX\nX\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X e\"a\\nb\"\nFACTORY\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\ne\"a\\nb\"\n",
+      "own_exit": 0,
+      "own_output": "e\"a\\nb\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X ; #define X e\"a\\nb\" ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\nX ; e\"a\\nb\"\ne\"a\\nb\"\n",
+      "own_exit": 0,
+      "own_output": "X\ne\"a\\nb\"\ne\"a\\nb\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X e\"a\\nb\"\n#xcommand BOTH => X ; FACTORY ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX ; e\"a\\nb\"\ne\"a\\nb\"\n",
+      "own_exit": 0,
+      "own_output": "X\ne\"a\\nb\"\ne\"a\\nb\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X 9\n#xcommand BOTH => X ; #undef X ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X\nX\n",
+      "own_exit": 0,
+      "own_output": "9\nX\nX\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X F(1)\nFACTORY\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nF(1)\n",
+      "own_exit": 0,
+      "own_output": "F(1)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X ; #define X F(1) ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\nX ; F(1)\nF(1)\n",
+      "own_exit": 0,
+      "own_output": "X\nF(1)\nF(1)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X F(1)\n#xcommand BOTH => X ; FACTORY ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX ; F(1)\nF(1)\n",
+      "own_exit": 0,
+      "own_output": "X\nF(1)\nF(1)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X 9\n#xcommand BOTH => X ; #undef X ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X\nX\n",
+      "own_exit": 0,
+      "own_output": "9\nX\nX\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X x+1\nFACTORY\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nx+1\n",
+      "own_exit": 0,
+      "own_output": "x+1\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X ; #define X x+1 ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\nX ; x+1\nx+1\n",
+      "own_exit": 0,
+      "own_output": "X\nx+1\nx+1\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X x+1\n#xcommand BOTH => X ; FACTORY ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX ; x+1\nx+1\n",
+      "own_exit": 0,
+      "own_output": "X\nx+1\nx+1\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X 9\n#xcommand BOTH => X ; #undef X ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X\nX\n",
+      "own_exit": 0,
+      "own_output": "9\nX\nX\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X (1+2)\nFACTORY\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n(1+2)\n",
+      "own_exit": 0,
+      "own_output": "(1+2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X ; #define X (1+2) ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\nX ; (1+2)\n(1+2)\n",
+      "own_exit": 0,
+      "own_output": "X\n(1+2)\n(1+2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X (1+2)\n#xcommand BOTH => X ; FACTORY ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX ; (1+2)\n(1+2)\n",
+      "own_exit": 0,
+      "own_output": "X\n(1+2)\n(1+2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X 9\n#xcommand BOTH => X ; #undef X ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X\nX\n",
+      "own_exit": 0,
+      "own_output": "9\nX\nX\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X 1,2\nFACTORY\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n1,2\n",
+      "own_exit": 0,
+      "own_output": "1,2\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X ; #define X 1,2 ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\nX ; 1,2\n1,2\n",
+      "own_exit": 0,
+      "own_output": "X\n1,2\n1,2\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X 1,2\n#xcommand BOTH => X ; FACTORY ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX ; 1,2\n1,2\n",
+      "own_exit": 0,
+      "own_output": "X\n1,2\n1,2\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X 9\n#xcommand BOTH => X ; #undef X ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X\nX\n",
+      "own_exit": 0,
+      "own_output": "9\nX\nX\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X [a;b]\nFACTORY\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n",
+      "own_exit": 0,
+      "own_output": "\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X ; #define X [a;b] ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\nX ;\n\n",
+      "own_exit": 0,
+      "own_output": "X\n\n\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X [a;b]\n#xcommand BOTH => X ; FACTORY ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX ;\n\n",
+      "own_exit": 0,
+      "own_output": "X\n\n\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X 9\n#xcommand BOTH => X ; #undef X ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X\nX\n",
+      "own_exit": 0,
+      "own_output": "9\nX\nX\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X \nFACTORY\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n",
+      "own_exit": 0,
+      "own_output": "\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X ; #define X  ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\nX ;\n\n",
+      "own_exit": 0,
+      "own_output": "X\n\n\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X \n#xcommand BOTH => X ; FACTORY ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX ;\n\n",
+      "own_exit": 0,
+      "own_output": "X\n\n\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X 9\n#xcommand BOTH => X ; #undef X ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X\nX\n",
+      "own_exit": 0,
+      "own_output": "9\nX\nX\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X X\nFACTORY\nX\n",
+      "reference_exit": 1,
+      "reference_output": "\n\nX\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 3: macro expansion too deep (recursive define?)\n",
+      "token_match": false
+    },
+    {
+      "source": "#xcommand BOTH => X ; #define X X ; X\nBOTH\nX\n",
+      "reference_exit": 1,
+      "reference_output": "\nX ; X\nX\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: macro expansion too deep (recursive define?)\n",
+      "token_match": false
+    },
+    {
+      "source": "#xcommand FACTORY => #define X X\n#xcommand BOTH => X ; FACTORY ; X\nBOTH\nX\n",
+      "reference_exit": 1,
+      "reference_output": "\n\nX ; X\nX\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 3: macro expansion too deep (recursive define?)\n",
+      "token_match": false
+    },
+    {
+      "source": "#define X 9\n#xcommand BOTH => X ; #undef X ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X\nX\n",
+      "own_exit": 0,
+      "own_output": "9\nX\nX\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X Y\nFACTORY\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nY\n",
+      "own_exit": 0,
+      "own_output": "Y\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X ; #define X Y ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\nX ; Y\nY\n",
+      "own_exit": 0,
+      "own_output": "X\nY\nY\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X Y\n#xcommand BOTH => X ; FACTORY ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX ; Y\nY\n",
+      "own_exit": 0,
+      "own_output": "X\nY\nY\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X 9\n#xcommand BOTH => X ; #undef X ; X\nBOTH\nX\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X\nX\n",
+      "own_exit": 0,
+      "own_output": "9\nX\nX\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) 7\nFACTORY\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n7\n",
+      "own_exit": 0,
+      "own_output": "7\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X(2) ; #define X(x) 7 ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nX(2) ; 7\n7\n",
+      "own_exit": 0,
+      "own_output": "X(2)\n7\n7\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) 7\n#xcommand BOTH => X(2) ; FACTORY ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX(2) ; 7\n7\n",
+      "own_exit": 0,
+      "own_output": "X(2)\n7\n7\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X(x) 9\n#xcommand BOTH => X(2) ; #undef X ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X(2)\nX(2)\n",
+      "own_exit": 0,
+      "own_output": "9\nX(2)\nX(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) alpha\nFACTORY\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nalpha\n",
+      "own_exit": 0,
+      "own_output": "alpha\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X(2) ; #define X(x) alpha ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nX(2) ; alpha\nalpha\n",
+      "own_exit": 0,
+      "own_output": "X(2)\nalpha\nalpha\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) alpha\n#xcommand BOTH => X(2) ; FACTORY ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX(2) ; alpha\nalpha\n",
+      "own_exit": 0,
+      "own_output": "X(2)\nalpha\nalpha\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X(x) 9\n#xcommand BOTH => X(2) ; #undef X ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X(2)\nX(2)\n",
+      "own_exit": 0,
+      "own_output": "9\nX(2)\nX(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) alpha+1\nFACTORY\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nalpha+1\n",
+      "own_exit": 0,
+      "own_output": "alpha+1\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X(2) ; #define X(x) alpha+1 ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nX(2) ; alpha+1\nalpha+1\n",
+      "own_exit": 0,
+      "own_output": "X(2)\nalpha+1\nalpha+1\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) alpha+1\n#xcommand BOTH => X(2) ; FACTORY ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX(2) ; alpha+1\nalpha+1\n",
+      "own_exit": 0,
+      "own_output": "X(2)\nalpha+1\nalpha+1\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X(x) 9\n#xcommand BOTH => X(2) ; #undef X ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X(2)\nX(2)\n",
+      "own_exit": 0,
+      "own_output": "9\nX(2)\nX(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) \"a;b\"\nFACTORY\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X(2) ; #define X(x) \"a;b\" ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nX(2) ; \"a;b\"\n\"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "X(2)\n\"a;b\"\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) \"a;b\"\n#xcommand BOTH => X(2) ; FACTORY ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX(2) ; \"a;b\"\n\"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "X(2)\n\"a;b\"\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X(x) 9\n#xcommand BOTH => X(2) ; #undef X ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X(2)\nX(2)\n",
+      "own_exit": 0,
+      "own_output": "9\nX(2)\nX(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) e\"a\\nb\"\nFACTORY\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\ne\"a\\nb\"\n",
+      "own_exit": 0,
+      "own_output": "e\"a\\nb\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X(2) ; #define X(x) e\"a\\nb\" ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nX(2) ; e\"a\\nb\"\ne\"a\\nb\"\n",
+      "own_exit": 0,
+      "own_output": "X(2)\ne\"a\\nb\"\ne\"a\\nb\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) e\"a\\nb\"\n#xcommand BOTH => X(2) ; FACTORY ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX(2) ; e\"a\\nb\"\ne\"a\\nb\"\n",
+      "own_exit": 0,
+      "own_output": "X(2)\ne\"a\\nb\"\ne\"a\\nb\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X(x) 9\n#xcommand BOTH => X(2) ; #undef X ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X(2)\nX(2)\n",
+      "own_exit": 0,
+      "own_output": "9\nX(2)\nX(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) F(1)\nFACTORY\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nF(1)\n",
+      "own_exit": 0,
+      "own_output": "F(1)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X(2) ; #define X(x) F(1) ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nX(2) ; F(1)\nF(1)\n",
+      "own_exit": 0,
+      "own_output": "X(2)\nF(1)\nF(1)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) F(1)\n#xcommand BOTH => X(2) ; FACTORY ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX(2) ; F(1)\nF(1)\n",
+      "own_exit": 0,
+      "own_output": "X(2)\nF(1)\nF(1)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X(x) 9\n#xcommand BOTH => X(2) ; #undef X ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X(2)\nX(2)\n",
+      "own_exit": 0,
+      "own_output": "9\nX(2)\nX(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) x+1\nFACTORY\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n2+1\n",
+      "own_exit": 0,
+      "own_output": "2+1\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X(2) ; #define X(x) x+1 ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nX(2) ; 2+1\n2+1\n",
+      "own_exit": 0,
+      "own_output": "X(2)\n2+1\n2+1\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) x+1\n#xcommand BOTH => X(2) ; FACTORY ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX(2) ; 2+1\n2+1\n",
+      "own_exit": 0,
+      "own_output": "X(2)\n2+1\n2+1\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X(x) 9\n#xcommand BOTH => X(2) ; #undef X ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X(2)\nX(2)\n",
+      "own_exit": 0,
+      "own_output": "9\nX(2)\nX(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) (1+2)\nFACTORY\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n(1+2)\n",
+      "own_exit": 0,
+      "own_output": "(1+2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X(2) ; #define X(x) (1+2) ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nX(2) ; (1+2)\n(1+2)\n",
+      "own_exit": 0,
+      "own_output": "X(2)\n(1+2)\n(1+2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) (1+2)\n#xcommand BOTH => X(2) ; FACTORY ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX(2) ; (1+2)\n(1+2)\n",
+      "own_exit": 0,
+      "own_output": "X(2)\n(1+2)\n(1+2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X(x) 9\n#xcommand BOTH => X(2) ; #undef X ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X(2)\nX(2)\n",
+      "own_exit": 0,
+      "own_output": "9\nX(2)\nX(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) 1,2\nFACTORY\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n1,2\n",
+      "own_exit": 0,
+      "own_output": "1,2\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X(2) ; #define X(x) 1,2 ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nX(2) ; 1,2\n1,2\n",
+      "own_exit": 0,
+      "own_output": "X(2)\n1,2\n1,2\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) 1,2\n#xcommand BOTH => X(2) ; FACTORY ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX(2) ; 1,2\n1,2\n",
+      "own_exit": 0,
+      "own_output": "X(2)\n1,2\n1,2\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X(x) 9\n#xcommand BOTH => X(2) ; #undef X ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X(2)\nX(2)\n",
+      "own_exit": 0,
+      "own_output": "9\nX(2)\nX(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) [a;b]\nFACTORY\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n",
+      "own_exit": 0,
+      "own_output": "\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X(2) ; #define X(x) [a;b] ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nX(2) ;\n\n",
+      "own_exit": 0,
+      "own_output": "X(2)\n\n\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) [a;b]\n#xcommand BOTH => X(2) ; FACTORY ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX(2) ;\n\n",
+      "own_exit": 0,
+      "own_output": "X(2)\n\n\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X(x) 9\n#xcommand BOTH => X(2) ; #undef X ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X(2)\nX(2)\n",
+      "own_exit": 0,
+      "own_output": "9\nX(2)\nX(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) \nFACTORY\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n",
+      "own_exit": 0,
+      "own_output": "\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X(2) ; #define X(x)  ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nX(2) ;\n\n",
+      "own_exit": 0,
+      "own_output": "X(2)\n\n\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) \n#xcommand BOTH => X(2) ; FACTORY ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX(2) ;\n\n",
+      "own_exit": 0,
+      "own_output": "X(2)\n\n\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X(x) 9\n#xcommand BOTH => X(2) ; #undef X ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X(2)\nX(2)\n",
+      "own_exit": 0,
+      "own_output": "9\nX(2)\nX(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) X\nFACTORY\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX\n",
+      "own_exit": 0,
+      "own_output": "X\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X(2) ; #define X(x) X ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nX(2) ; X\nX\n",
+      "own_exit": 0,
+      "own_output": "X(2)\nX\nX\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) X\n#xcommand BOTH => X(2) ; FACTORY ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX(2) ; X\nX\n",
+      "own_exit": 0,
+      "own_output": "X(2)\nX\nX\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X(x) 9\n#xcommand BOTH => X(2) ; #undef X ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X(2)\nX(2)\n",
+      "own_exit": 0,
+      "own_output": "9\nX(2)\nX(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) Y\nFACTORY\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nY\n",
+      "own_exit": 0,
+      "own_output": "Y\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X(2) ; #define X(x) Y ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nX(2) ; Y\nY\n",
+      "own_exit": 0,
+      "own_output": "X(2)\nY\nY\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X(x) Y\n#xcommand BOTH => X(2) ; FACTORY ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nX(2) ; Y\nY\n",
+      "own_exit": 0,
+      "own_output": "X(2)\nY\nY\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#define X(x) 9\n#xcommand BOTH => X(2) ; #undef X ; X(2)\nBOTH\nX(2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n9 ; X(2)\nX(2)\n",
+      "own_exit": 0,
+      "own_output": "9\nX(2)\nX(2)\n",
+      "own_error": "",
+      "token_match": true
+    }
+  ]
+}

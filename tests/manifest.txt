@@ -1138,7 +1138,7 @@ neg tests/t1139_pp_generated_unknown_neg.hb unknown result marker
 neg tests/t1140_pp_generated_case_neg.hb unknown result marker
 neg tests/t1141_pp_generated_exact_neg.hb statement not in the subset
 neg tests/t1142_pp_generated_recursive_neg.hb command expansion too deep
-neg tests/t1143_pp_generated_unsupported_neg.hb generated directive outside
+neg tests/t1143_pp_generated_unsupported_neg.hb no functions found
 neg tests/t1144_pp_generated_unescaped_neg.hb unknown result marker
 pos tests/t1145_pp_nonmatch_procedure.hb \n         7
 pos tests/t1146_pp_nonmatch_assignment.hb \n         7
@@ -1277,3 +1277,14 @@ pos tests/t1278_pp_var_flags_operand.hb \nalpha\n         5\n.F.\n.F.\n.F.\n.T.\
 pos tests/t1279_pp_var_flags_capture.hb \nVISIBLE\nEXPORTED\nRO\nPROPERTY
 neg tests/t1280_pp_var_flags_macro_neg.hb reduced VAR expression atom outside bounded contract
 neg tests/t1281_pp_var_flags_incomplete_neg.hb reduced VAR expression shape outside bounded contract
+pos tests/t1282_pp_queue_siblings.hb \n         1\n         2
+pos tests/t1283_pp_queue_nested.hb \n         1\n         2\n         1\n         2
+pos tests/t1284_pp_queue_quoted.hb \na;b\nc;d
+pos tests/t1285_pp_queue_factory.hb \n         7\n         7
+pos tests/t1286_pp_queue_define.hb \n         7
+pos tests/t1287_pp_queue_define_order.hb \n         1\n         2\n         2
+pos tests/t1288_pp_queue_function_define.hb \n         3\n         4
+pos tests/t1289_pp_queue_undef.hb \n         1\n         9
+neg tests/t1290_pp_queue_cycle_neg.hb command expansion too deep
+neg tests/t1291_pp_queue_include_neg.hb generated directive outside command/xcommand scope
+neg tests/t1292_pp_queue_uncommand_neg.hb generated directive outside command/xcommand scope
