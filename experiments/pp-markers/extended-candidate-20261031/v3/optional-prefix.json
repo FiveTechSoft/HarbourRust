@@ -1,0 +1,290 @@
+[
+  {
+    "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE alpha beta\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE alpha TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE alpha TAIL\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE KEY alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE KEY alpha beta\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE KEY alpha TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE KEY alpha TAIL\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE (a + b) TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE (a + b) TAIL\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE alpha END 2 rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE alpha END 2 rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE TAIL rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE TAIL rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE KEY alpha TAIL rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE KEY alpha TAIL rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT() alpha beta\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE alpha TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT() alpha TAIL\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE KEY alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT(alpha) beta\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE KEY alpha TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT(alpha) TAIL\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE (a + b) TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT() (a + b) TAIL\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE alpha END 2 rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT() alpha END 2 rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE TAIL rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT() TAIL rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE KEY alpha TAIL rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT(alpha) TAIL rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE alpha beta\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE alpha TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE alpha TAIL\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE KEY alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE KEY alpha beta\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE KEY alpha TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE KEY alpha TAIL\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE (a + b) TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE (a + b) TAIL\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE alpha END 2 rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE alpha END 2 rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE TAIL rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE TAIL rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE KEY alpha TAIL rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE KEY alpha TAIL rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [KEY <(x)>] TAIL => HIT(<x>)\nPROBE alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE alpha beta\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [KEY <(x)>] TAIL => HIT(<x>)\nPROBE alpha TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE alpha TAIL\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [KEY <(x)>] TAIL => HIT(<x>)\nPROBE KEY alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE KEY alpha beta\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [KEY <(x)>] TAIL => HIT(<x>)\nPROBE KEY alpha TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT(alpha)\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [KEY <(x)>] TAIL => HIT(<x>)\nPROBE (a + b) TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE (a + b) TAIL\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [KEY <(x)>] TAIL => HIT(<x>)\nPROBE alpha END 2 rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE alpha END 2 rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [KEY <(x)>] TAIL => HIT(<x>)\nPROBE TAIL rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT() rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [KEY <(x)>] TAIL => HIT(<x>)\nPROBE KEY alpha TAIL rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT(alpha) rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE <(x)> [TAIL] => HIT(<x>)\nPROBE alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT(alpha) beta\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE <(x)> [TAIL] => HIT(<x>)\nPROBE alpha TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT(alpha)\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE <(x)> [TAIL] => HIT(<x>)\nPROBE KEY alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT(KEY) alpha beta\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE <(x)> [TAIL] => HIT(<x>)\nPROBE KEY alpha TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT(KEY) alpha TAIL\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE <(x)> [TAIL] => HIT(<x>)\nPROBE (a + b) TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT((a + b))\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE <(x)> [TAIL] => HIT(<x>)\nPROBE alpha END 2 rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT(alpha) END 2 rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE <(x)> [TAIL] => HIT(<x>)\nPROBE TAIL rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT(TAIL) rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE <(x)> [TAIL] => HIT(<x>)\nPROBE KEY alpha TAIL rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nHIT(KEY) alpha TAIL rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] END <y> => HIT(<x>)\nPROBE alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE alpha beta\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] END <y> => HIT(<x>)\nPROBE alpha TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE alpha TAIL\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] END <y> => HIT(<x>)\nPROBE KEY alpha beta\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE KEY alpha beta\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] END <y> => HIT(<x>)\nPROBE KEY alpha TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE KEY alpha TAIL\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] END <y> => HIT(<x>)\nPROBE (a + b) TAIL\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE (a + b) TAIL\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] END <y> => HIT(<x>)\nPROBE alpha END 2 rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE alpha END 2 rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] END <y> => HIT(<x>)\nPROBE TAIL rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE TAIL rest\n",
+    "error": ""
+  },
+  {
+    "source": "#translate PROBE [<(x)>] END <y> => HIT(<x>)\nPROBE KEY alpha TAIL rest\n",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE KEY alpha TAIL rest\n",
+    "error": ""
+  }
+]
