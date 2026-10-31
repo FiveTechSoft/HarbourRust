@@ -39,11 +39,15 @@ RUSTC=$(command -v rustc || echo "$HOME/.cargo/bin/rustc")
   echo "$MANIFEST_FILE sha256: $(sha256sum "$MANIFEST_FILE" | awk '{print $1}')"
   echo "tests/run_battery.sh sha256: $(sha256sum tests/run_battery.sh | awk '{print $1}')"
 } | tee gen/run-$RUNID.header
-preserve_failure() { # base - per-case snapshot dir inside the exclusive run dir
+preserve_failure() { # base - EXCLUSIVE per-case dir inside the exclusive run dir;
+                     # a duplicate case basename in the same run is REJECTED, never overwritten
   local b=$1
   local d="gen/failures/$RUNID/$b"
   local x
-  mkdir -p "$d"
+  if ! mkdir "$d" 2>/dev/null; then
+    echo "  [duplicate case basename '$b' in run $RUNID: existing snapshot at $d preserved, NOT overwritten]" >&2
+    return 1
+  fi
   for x in expected linux.stdout linux.stderr linux.rc wine.stdout wine.stderr wine.rc hbc-linux.err hbc-win.err neg-linux.out neg-linux.rc neg-win.out neg-win.rc; do
     [ -e "gen/$b.$x" ] && cp "gen/$b.$x" "$d/"
   done
