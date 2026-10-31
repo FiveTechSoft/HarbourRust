@@ -14,6 +14,34 @@
 #                                       on both targets
 cd "$(dirname "$0")/.." || exit 2
 fail=0
+# Run identity + tool/source hash capture (31Oct, t528 + binary-anchor
+# lessons): the run log anchors the compiler binary, toolchain and source
+# blobs AT RUN TIME, start and end. Failure snapshots under
+# gen/failures/<runID>/<case>/ are immutable: later passes never delete or
+# overwrite them. No retries, ever.
+RUNID=${RUNID:-$(date +%Y%m%d-%H%M%S)-$$}
+MANIFEST_FILE=${MANIFEST_FILE:-tests/manifest.txt}
+mkdir -p gen/failures
+RUSTC=$(command -v rustc || echo "$HOME/.cargo/bin/rustc")
+{
+  echo "runID: $RUNID"
+  echo "started: $(date -Is)"
+  echo "hbc sha256: $(sha256sum ./hbc | awk '{print $1}')"
+  echo "rustc: $("$RUSTC" --version 2>/dev/null || echo unknown)"
+  echo "src/hbc.rs sha256: $(sha256sum src/hbc.rs | awk '{print $1}')"
+  echo "$MANIFEST_FILE sha256: $(sha256sum "$MANIFEST_FILE" | awk '{print $1}')"
+  echo "tests/run_battery.sh sha256: $(sha256sum tests/run_battery.sh | awk '{print $1}')"
+} | tee gen/run-$RUNID.header
+preserve_failure() { # base - immutable per-run snapshot of raw artifacts
+  local b=$1 d=gen/failures/$RUNID/$b x
+  mkdir -p "$d"
+  for x in expected linux.stdout linux.stderr linux.rc wine.stdout wine.stderr wine.rc hbc-linux.err hbc-win.err neg-linux.out neg-linux.rc neg-win.out neg-win.rc; do
+    [ -e "gen/$b.$x" ] && cp "gen/$b.$x" "$d/"
+  done
+  [ -e "gen/$b.s" ] && cp "gen/$b.s" "$d/"
+  [ -e "gen/$b"_w.s ] && cp "gen/$b"_w.s "$d/"
+  cp gen/run-$RUNID.header "$d/run.header"
+}
 build_linux() { ./hbc "$1" gen/"$base".s --target=linux --instrument -I tests >/dev/null 2>gen/"$base".hbc-linux.err && as -o gen/"$base".o gen/"$base".s && ld -o gen/"$base" gen/"$base".o; }
 build_win() { ./hbc "$1" gen/"$base"_w.s --target=windows --instrument -I tests >/dev/null 2>gen/"$base".hbc-win.err && "$M"/x86_64-w64-mingw32-as -o gen/"$base"_w.o gen/"$base"_w.s && "$M"/x86_64-w64-mingw32-ld -o gen/"$base".exe gen/"$base"_w.o -e _start --subsystem console -L"$MLIB" -lkernel32; }
 # Failure preservation (t528 incident, 31Oct): every failing case keeps
@@ -25,22 +53,33 @@ build_win() { ./hbc "$1" gen/"$base"_w.s --target=windows --instrument -I tests 
 run_pos_kind() { # file expected [exit]
   local f=$1 exp=$2 want_rc=$3 base
   base=$(basename "$f" .hb)
-  if ! build_linux "$f"; then echo "FAIL $f (linux build; stderr at gen/$base.hbc-linux.err)"; fail=1; return; fi
+  printf '%b' "$exp" > gen/"$base".expected
+  if ! build_linux "$f"; then preserve_failure "$base"; echo "FAIL $f (linux build; snapshot gen/failures/$RUNID/$base)"; fail=1; return; fi
   local out_lin rc_lin
-  out_lin=$(timeout 15 "./gen/$base" 2>gen/"$base".linux.stderr); rc_lin=$?
-  printf '%s' "$out_lin" > gen/"$base".linux.stdout; echo "$rc_lin" > gen/"$base".linux.rc
-  if ! build_win "$f"; then echo "FAIL $f (windows build; stderr at gen/$base.hbc-win.err)"; fail=1; return; fi
+  timeout 15 "./gen/$base" > gen/"$base".linux.stdout 2> gen/"$base".linux.stderr; rc_lin=$?
+  echo "$rc_lin" > gen/"$base".linux.rc
+  out_lin=$(cat gen/"$base".linux.stdout)
+  if ! build_win "$f"; then preserve_failure "$base"; echo "FAIL $f (windows build; snapshot gen/failures/$RUNID/$base)"; fail=1; return; fi
   local out_win rc_win
-  out_win=$(timeout 20 "$WINE" gen/"$base".exe 2>gen/"$base".wine.stderr); rc_win=$?
-  printf '%s' "$out_win" > gen/"$base".wine.stdout; echo "$rc_win" > gen/"$base".wine.rc
+  timeout 20 "$WINE" gen/"$base".exe > gen/"$base".wine.stdout 2> gen/"$base".wine.stderr; rc_win=$?
+  echo "$rc_win" > gen/"$base".wine.rc
+  out_win=$(cat gen/"$base".wine.stdout)
   if [ -n "$want_rc" ] && { [ "$rc_lin" != "$want_rc" ] || [ "$rc_win" != "$want_rc" ]; }; then
-    echo "FAIL $f (exit codes linux=$rc_lin wine=$rc_win want=$want_rc; case diagnostics under gen/$base.*)"; fail=1; return
+    preserve_failure "$base"
+    echo "FAIL $f (exit codes linux=$rc_lin wine=$rc_win want=$want_rc; snapshot gen/failures/$RUNID/$base)"; fail=1; return
   fi
+  # Acceptance identical to the historical runner: $( )-captured stdout
+  # (trailing newlines stripped) must equal the expectation on BOTH
+  # targets, and a non-empty LINUX stderr fails (it used to break the
+  # merged-capture byte match). Wine stderr is RECORDED but was never part
+  # of acceptance (the old runner discarded it) - documented, not
+  # strengthened.
   if [ "$out_lin" == "$exp" ] && [ "$out_win" == "$exp" ] && [ ! -s gen/"$base".linux.stderr ]; then
     echo "PASS $f"
-    rm -f gen/"$base".linux.{stdout,stderr,rc} gen/"$base".wine.{stdout,stderr,rc} gen/"$base".hbc-linux.err gen/"$base".hbc-win.err
+    rm -f gen/"$base".expected gen/"$base".linux.{stdout,stderr,rc} gen/"$base".wine.{stdout,stderr,rc} gen/"$base".hbc-linux.err gen/"$base".hbc-win.err
   else
-    echo "FAIL $f (case diagnostics preserved under gen/$base.*)"
+    preserve_failure "$base"
+    echo "FAIL $f (snapshot gen/failures/$RUNID/$base)"
     echo "  exp: $(echo "$exp"|head -3|tr '\n' '|')"
     echo "  lin: $(echo "$out_lin"|head -3|tr '\n' '|')"
     echo "  win: $(echo "$out_win"|head -3|tr '\n' '|')"
@@ -51,12 +90,16 @@ run_pos_kind() { # file expected [exit]
 run_neg() { # file expected_error_substr
   local f=$1 exp=$2 l w le we base
   base=$(basename "$f" .hb)
-  l=$(./hbc "$f" gen/neg.s --target=linux 2>&1); le=$?
-  w=$(./hbc "$f" gen/neg_w.s --target=windows 2>&1); we=$?
-  if [ $le -eq 1 ] && [ $we -eq 1 ] && [[ "$l" == *"$exp"* ]] && [[ "$w" == *"$exp"* ]]; then echo "PASS $f"; else
-    printf '%s\n' "$l" > gen/"$base".neg-linux.err; echo "$le" > gen/"$base".neg-linux.rc
-    printf '%s\n' "$w" > gen/"$base".neg-win.err; echo "$we" > gen/"$base".neg-win.rc
-    echo "FAIL $f le=$le we=$we (diagnostics under gen/$base.neg-*)"; echo "  lin: $l"; echo "  win: $w"; fail=1
+  ./hbc "$f" gen/neg.s --target=linux > gen/"$base".neg-linux.out 2>&1; le=$?
+  echo "$le" > gen/"$base".neg-linux.rc
+  ./hbc "$f" gen/neg_w.s --target=windows > gen/"$base".neg-win.out 2>&1; we=$?
+  echo "$we" > gen/"$base".neg-win.rc
+  l=$(cat gen/"$base".neg-linux.out); w=$(cat gen/"$base".neg-win.out)
+  if [ $le -eq 1 ] && [ $we -eq 1 ] && [[ "$l" == *"$exp"* ]] && [[ "$w" == *"$exp"* ]]; then
+    echo "PASS $f"; rm -f gen/"$base".neg-linux.out gen/"$base".neg-linux.rc gen/"$base".neg-win.out gen/"$base".neg-win.rc
+  else
+    preserve_failure "$base"
+    echo "FAIL $f le=$le we=$we (snapshot gen/failures/$RUNID/$base)"; echo "  lin: $l"; echo "  win: $w"; fail=1
   fi
 }
 while IFS= read -r line; do
@@ -86,7 +129,7 @@ while IFS= read -r line; do
     '') ;;
     *) echo "FAIL unknown manifest kind: $line"; fail=1;;
   esac
-done < tests/manifest.txt
+done < "$MANIFEST_FILE"
 if ! bash tests/abi_harness.sh > gen/abi_harness.log 2>&1; then
   echo "FAIL tests/abi_harness.sh (see gen/abi_harness.log)"; fail=1
 else
@@ -112,4 +155,10 @@ if ! python3 tests/parser_matrix.py > gen/parser_matrix.log 2>&1; then
 else
   echo "PASS tests/parser_matrix.py"
 fi
+{
+  echo "finished: $(date -Is)"
+  echo "hbc sha256 at end: $(sha256sum ./hbc | awk '{print $1}')"
+  echo "src/hbc.rs sha256 at end: $(sha256sum src/hbc.rs | awk '{print $1}')"
+  echo "$MANIFEST_FILE sha256 at end: $(sha256sum "$MANIFEST_FILE" | awk '{print $1}')"
+} >> gen/run-$RUNID.header
 if [ $fail -eq 0 ]; then echo "ALL GREEN"; else echo "BATTERY FAILURES"; exit 1; fi
