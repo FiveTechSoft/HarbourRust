@@ -1,0 +1,806 @@
+{
+  "scope": "25direct hbclass users in268original compile audit;0default accepted;not execution coverage",
+  "compiler": "6ceb09e8eb68edcaa148b9f6e622cf08419418e9",
+  "rows": [
+    {
+      "file": "tests/cgi.prg",
+      "sha256": "dd0f973c72e14e96865ecca921af6e4fa86b676877ffb1403a9e5e39c4220ec1",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 506: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 506: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 506: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 506: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/clasinh.prg",
+      "sha256": "2692fde017dc9ef2422e7114b2299474570020ecf63e8a991930bde5179ea9c6",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 332: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 332: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 332: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 332: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/classch.prg",
+      "sha256": "e26e134ee7547069ec676fd44ee9825615d70c675ec0adba85d18f441fdce6b1",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 21: smart stringify with literal-bearing optional groups is outside this increment"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 21: smart stringify with literal-bearing optional groups is outside this increment"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 21: smart stringify with literal-bearing optional groups is outside this increment"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 21: smart stringify with literal-bearing optional groups is outside this increment"
+        ]
+      }
+    },
+    {
+      "file": "tests/cls.prg",
+      "sha256": "3cfbcfbf21df2de77906bdd5b12564e3d761e4e2ff71d4764bc0766f4399f2f0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 339: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 339: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 339: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 339: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/clsccast.prg",
+      "sha256": "2af7d754dbfe40a5aaf24e9cff6ac4fdc608a347774869ed121a146e81a1d6c7",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 632: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 632: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 632: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 632: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/clsicast.prg",
+      "sha256": "a5a3ba4260600c531b4338bf6180e084bca121835f990e512d704f05bfb555e2",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 467: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/clsnv.prg",
+      "sha256": "863291f832d78259a55fe2f8372c56321f7b6a3c32ca2bd805c364c8fa8ed6c2",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 356: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 356: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 356: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 356: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/clsscast.prg",
+      "sha256": "8b384fe38a511faa6bc93908eba6f3849811970669bff00d37535db80de0c689",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 666: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 666: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 666: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 666: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/clsscope.prg",
+      "sha256": "cf0a255f142ac3bf5c16ad861aa56f178b6a261f8de03c625416bcab8ba58cbf",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 488: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 488: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 488: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 488: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/dbgcls.prg",
+      "sha256": "40cb46701426c49d2b2abad55bf33302b00e3c8aa41a0a862a80f40670fb4d44",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 1: unknown directive #pragma in this PoC"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 1: unknown directive #pragma in this PoC"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 1: unknown directive #pragma in this PoC"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 1: unknown directive #pragma in this PoC"
+        ]
+      }
+    },
+    {
+      "file": "tests/declare.prg",
+      "sha256": "9666020c3377730c2eefc37815ec6c402fe19e0fc6912eeff23aeb05d9bbaca0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 337: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 337: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 337: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 337: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/destruct.prg",
+      "sha256": "0cbd3f91c66b115dc25e1e14db7a01782d40b61e50662f592a59f08b364809c0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 94: command expansion too deep (recursive command?)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 94: command expansion too deep (recursive command?)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 94: command expansion too deep (recursive command?)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 94: command expansion too deep (recursive command?)"
+        ]
+      }
+    },
+    {
+      "file": "tests/foreach2.prg",
+      "sha256": "f25d79223ff72af7b348338b2570aed47c5968e54a5dd8b80a8c7e7929abd4e1",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 358: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 358: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 358: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 358: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/html.prg",
+      "sha256": "a0df9acf65d7642dc2797caaec7cf158817769a2a172add757370f84689d4b79",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/inhprob.prg",
+      "sha256": "892d09516432c8e8c21ae130985571d3dfa4f1346c579c28dcf13d74d5bac640",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 329: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 329: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 329: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 329: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/inifile.prg",
+      "sha256": "b16e9d4d8ad0e85d5edf50465c62b00e092bf3fbdd1b0383e52408164ddf46f0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 458: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 458: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 458: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 458: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/inifiles.prg",
+      "sha256": "53f69a4e01dabebb118fe1903947e4347dde88cc47af6684e30518bd3c79d900",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 487: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 487: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 487: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 487: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/macro.prg",
+      "sha256": "19dfc8e201b797e25d3cf0e4eab8ebb8fed3b529c91bc15b1fb92566622ce9fb",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 327: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 327: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 327: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 327: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+        ]
+      }
+    },
+    {
+      "file": "tests/money.prg",
+      "sha256": "84dde9ea38403e2f3b5637eb19514b9b08fb10cbcf1d966a1e44039405b9793e",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 439: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 439: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 439: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 439: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/op.prg",
+      "sha256": "2c66dcb218480bbe5c09c171f1225274845d6dc8bf71abc03af368e4f9dd19b4",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 391: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 391: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 391: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 391: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/overload.prg",
+      "sha256": "25c77b47a72f63b19f406479066aa6ca0a78f223ea08501942b0868cbf84b2a6",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 336: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 336: character not allowed `#` (U+0023)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 336: character not allowed `#` (U+0023)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 336: character not allowed `#` (U+0023)"
+        ]
+      }
+    },
+    {
+      "file": "tests/persist.prg",
+      "sha256": "a9595803493de7a1ef9b58f3b0b57c049c0cb6c57df2d5ab69008bd1cdb5ab85",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 334: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 334: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 334: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 334: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    },
+    {
+      "file": "tests/speedstr.prg",
+      "sha256": "6a02d478d646112d6bf6387c85c3fab3950e0b0c854d2538300f9394402e6bb3",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 359: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 359: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 359: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 359: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error"
+        ]
+      }
+    },
+    {
+      "file": "tests/speedtst.prg",
+      "sha256": "4156453df514985308eaa576a3f84d4dcc36df237dc7f46345484def1a11e38a",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 1020: unknown directive #cinline in this PoC"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 1020: unknown directive #cinline in this PoC"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 1020: unknown directive #cinline in this PoC"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 1020: unknown directive #cinline in this PoC"
+        ]
+      }
+    },
+    {
+      "file": "tests/stripem.prg",
+      "sha256": "ba52b8c5eaac822f347e54f4008dfbc0a53825d17107e52aa4b64d3aeedcbe97",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 459: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 459: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 459: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 459: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)"
+        ]
+      }
+    }
+  ]
+}
