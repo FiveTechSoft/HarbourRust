@@ -20,3 +20,6 @@ Six own runtime programs exact full Harbour/default/LLVM Linux. Local full
 268x4audit changes11rows,only output-line number of same lexer diagnostic;
 accepted21/15Linux20/14Windows unchanged. No original unlock,wholeclassheader,
 classruntime,ABI/ownership,main,debugger or speed/byte claim. Remote pending.
+
+Independentremote688b580fullgates1325/666,14originalsexact,268x4with11line-only
+changesverified. No original acceptance growth.
