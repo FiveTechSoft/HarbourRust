@@ -1,0 +1,52 @@
+[
+  {
+    "case": 0,
+    "source": "? a[1]",
+    "baseline_identical": true
+  },
+  {
+    "case": 1,
+    "source": "? a [1]",
+    "baseline_identical": true
+  },
+  {
+    "case": 2,
+    "source": "? a[b[1]]",
+    "baseline_identical": true
+  },
+  {
+    "case": 3,
+    "source": "? f(a[1],b[2])",
+    "baseline_identical": true
+  },
+  {
+    "case": 4,
+    "source": "? \"a[1]; // x\"",
+    "baseline_identical": true
+  },
+  {
+    "case": 5,
+    "source": "? 'a[1]; && x'",
+    "baseline_identical": true
+  },
+  {
+    "case": 6,
+    "source": "#define X 7\n? a[X]",
+    "baseline_identical": true
+  },
+  {
+    "case": 7,
+    "source": "#define ID(x) x\n? ID(a[1,2])",
+    "baseline_identical": true
+  },
+  {
+    "case": 8,
+    "source": "#command SHOW <x> => ? <x>\nSHOW a[1]",
+    "baseline_identical": true
+  },
+  {
+    "case": 9,
+    "source": "#translate WORD TOKEN => 7\n? \"WORD TOKEN\",WORD TOKEN",
+    "baseline_identical": true
+  }
+]

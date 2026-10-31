@@ -1,0 +1,30 @@
+[
+  {
+    "case": 0,
+    "source": "#define LITERAL(x) [x]\n? LITERAL(7)",
+    "reference_output": "\n? [7]\n",
+    "own_output": "? [7]\n",
+    "own_error": ""
+  },
+  {
+    "case": 1,
+    "source": "#define LITERAL(x) ? [x]\nLITERAL(7)",
+    "reference_output": "\n? [7]\n",
+    "own_output": "? [x]\n",
+    "own_error": ""
+  },
+  {
+    "case": 2,
+    "source": "#define LITERAL(x) f([x])\nLITERAL(7)",
+    "reference_output": "\nf([7])\n",
+    "own_output": "f([x])\n",
+    "own_error": ""
+  },
+  {
+    "case": 3,
+    "source": "#define LITERAL(x) [x] + [x]\n? LITERAL(7)",
+    "reference_output": "\n? [7] + [7]\n",
+    "own_output": "? [7] + [x]\n",
+    "own_error": ""
+  }
+]

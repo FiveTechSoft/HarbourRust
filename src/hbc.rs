@@ -674,7 +674,16 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             '@' => { toks.push(Tok::At); it.next(); }
             '{' => { toks.push(Tok::LBrace); it.next(); }
             '}' => { toks.push(Tok::RBrace); it.next(); }
-            '[' => { toks.push(Tok::LBracket); it.next(); }
+            '[' => {
+                let expression_end=matches!(toks.last(),Some(Tok::Ident(_)|Tok::Int(_)|Tok::Float(_,_)|Tok::Str(_)|Tok::KwNil|Tok::LogT|Tok::LogF|Tok::KwSelfTok|Tok::RParen|Tok::RBracket|Tok::RBrace|Tok::IncTok|Tok::DecTok));
+                if expression_end {toks.push(Tok::LBracket);it.next();}
+                else {
+                    it.next();let mut value=String::new();let mut closed=false;
+                    while let Some((_,c))=it.next() {if c==']' {closed=true;break;}value.push(c);}
+                    if !closed {return Err(format!("line {}: unterminated bracket string",n));}
+                    toks.push(Tok::Str(value));
+                }
+            }
             '|' => { toks.push(Tok::Pipe); it.next(); }
             ']' => { toks.push(Tok::RBracket); it.next(); }
             '.' => {

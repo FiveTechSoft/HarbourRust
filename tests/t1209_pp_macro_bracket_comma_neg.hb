@@ -1,2 +1,2 @@
 #define TAKE(x) ? x
-TAKE([a,b])
+TAKE([a,b)

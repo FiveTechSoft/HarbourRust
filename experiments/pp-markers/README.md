@@ -688,3 +688,30 @@ bracket delimiter. Therefore bracket-string source support does not by itself
 prove every previously blocked stringify result is representable. Keep escape
 results explicitly outside the bracket-only slice rather than silently dropping
 a bracket layer or changing the string contents.
+
+## Bracket source literals, coherent lexical slice
+
+Raw bracket strings now produce the existing Str representation,ending at the
+first ]. Source phases protect literals from comment/semicolon processing,
+macro lookup and translation matching. PP source tokens are distinct from
+pattern tokens,so optional-pattern/result brackets keep their existing meaning.
+The reader uses lexical context (an identifier before [ retains indexing);the
+compiler token context distinguishes an expression end from a keyword expecting
+an expression. Existing index brackets with/without whitespace are preserved.
+
+Macro provenance matters:source bracket arguments protect contents,but bracket
+text in a stored macro body still permits parameter and macro substitution as
+measured. Representable bracket arguments normalize to ordinary quoted literals
+before insertion;arguments requiring BOTH quote kinds reject explicitly pending
+separate escape-result support. e"..." remains outside. Stringify of a bracket
+capture remains an explicit separate escape-result limit. Thus _pp_test's line120
+is NOT claimed fixed or its whole file accepted by this increment.
+
+Seven own console programs are freshly byte-exact with Harbour/default. Five
+run in both backends/targets;array-of-strings and string concatenation fixtures
+are default-only due to existing LLVM scope.13phase checks and10baseline pp
+index/string controls pass.1218default/464LLVM checks pass locally;14reviewed
+originals are freshly exact,and268x4acceptance stays21/15Linux20/14Windows.
+Test1209 formerly rejected all bracket-comma macro arguments;it now checks an
+unterminated bracket,with positive1212covering the supported argument form.
+No runtime/ABI representation change or new size/speed claim.

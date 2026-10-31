@@ -1204,4 +1204,13 @@ pos tests/t1205_pp_macro_simultaneous.hb \n         8
 pos tests/t1206_pp_macro_strings.hb \na,b y c,d
 pos tests/t1207_pp_macro_nested_calls.hb \n         6
 neg tests/t1208_pp_macro_mismatch_neg.hb mismatched delimiters in macro call
-neg tests/t1209_pp_macro_bracket_comma_neg.hb macro argument bracket literal with commas
+neg tests/t1209_pp_macro_bracket_comma_neg.hb unterminated bracket string
+pos tests/t1210_bracket_literals.hb \nabc  a'"b a[b\na//b a&&b a;b a\\b
+pos tests/t1211_bracket_index_context.hb \n         7          8 abc
+pos tests/t1212_bracket_macro.hb \nX a,b a'b
+pos tests/t1213_bracket_semicolon.hb \na;b\nc//d
+pos tests/t1214_bracket_array.hb \na,b c;d
+pos tests/t1215_bracket_translate.hb \nWORD TOKEN          7\na(,);b
+neg tests/t1216_bracket_unterminated_neg.hb unterminated bracket string
+pos tests/t1217_bracket_continuation.hb \na;b\n7\na;b
+neg tests/t1218_bracket_macro_quotes_neg.hb macro bracket argument requiring both quotes

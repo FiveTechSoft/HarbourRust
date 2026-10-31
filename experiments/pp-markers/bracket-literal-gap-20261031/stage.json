@@ -1,0 +1,110 @@
+[
+  {
+    "case": 0,
+    "source": "PROCEDURE Main()\n#define X 7\n? [X]\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n\n? \"X\"\nRETURN\n"
+  },
+  {
+    "case": 1,
+    "source": "PROCEDURE Main()\n#define X 7\n? a[X]\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n\n? a[7]\nRETURN\n"
+  },
+  {
+    "case": 2,
+    "source": "PROCEDURE Main()\n#define X 7\n? a [X]\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n\n? a [7]\nRETURN\n"
+  },
+  {
+    "case": 3,
+    "source": "PROCEDURE Main()\n#define X 7\n#command SHOW <x> => ? <x>\nSHOW [X]\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n\n\n? [7]\nRETURN\n"
+  },
+  {
+    "case": 4,
+    "source": "PROCEDURE Main()\n#define X 7\n#command SHOW <x> => ? <x>\nSHOW [a//X]\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n\n\nSHOW [a\nRETURN\n"
+  },
+  {
+    "case": 5,
+    "source": "PROCEDURE Main()\n#define X 7\nRETURN [X]\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n\nRETURN [7]\nRETURN\n"
+  },
+  {
+    "case": 6,
+    "source": "PROCEDURE Main()\n#define X 7\nRETURN [a//X]\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n\nRETURN [a\nRETURN\n"
+  },
+  {
+    "case": 7,
+    "source": "PROCEDURE Main()\n? [a;b] ; ? 7\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? \"a;b\" ; ? 7\nRETURN\n"
+  },
+  {
+    "case": 8,
+    "source": "PROCEDURE Main()\n#define STR [a//b]\n? STR\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n\n? [a\nRETURN\n"
+  },
+  {
+    "case": 9,
+    "source": "PROCEDURE Main()\n#define ID(x) x\n? ID([a//b])\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n\n? \"a//b\"\nRETURN\n"
+  },
+  {
+    "case": 10,
+    "source": "PROCEDURE Main()\nLOCAL a := {1,2}\n? a [1]\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\nLOCAL a := {1,2}\n? a [1]\nRETURN\n"
+  },
+  {
+    "case": 11,
+    "source": "PROCEDURE Main()\nx := (a)[X]\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\nx := (a)[X]\nRETURN\n"
+  },
+  {
+    "case": 12,
+    "source": "PROCEDURE Main()\nIF [x]\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\nIF [x]\nRETURN\n"
+  },
+  {
+    "case": 13,
+    "source": "PROCEDURE Main()\nFOO [x]\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\nFOO [x]\nRETURN\n"
+  },
+  {
+    "case": 14,
+    "source": "PROCEDURE Main()\nFOO([x])\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\nFOO(\"x\")\nRETURN\n"
+  },
+  {
+    "case": 15,
+    "source": "PROCEDURE Main()\n? a + [x]\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? a + \"x\"\nRETURN\n"
+  },
+  {
+    "case": 16,
+    "source": "PROCEDURE Main()\n? a .AND. [x]\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? a .AND. \"x\"\nRETURN\n"
+  },
+  {
+    "case": 17,
+    "source": "PROCEDURE Main()\n? a := [x]\nRETURN\n",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? a := \"x\"\nRETURN\n"
+  }
+]

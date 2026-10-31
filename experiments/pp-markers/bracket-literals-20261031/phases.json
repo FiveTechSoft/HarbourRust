@@ -1,0 +1,80 @@
+[
+  {
+    "case": 0,
+    "source": "? [a;b]",
+    "output": "? [a;b]\n",
+    "verified": true
+  },
+  {
+    "case": 1,
+    "source": "? [a//b]",
+    "output": "? [a//b]\n",
+    "verified": true
+  },
+  {
+    "case": 2,
+    "source": "? [a&&b]",
+    "output": "? [a&&b]\n",
+    "verified": true
+  },
+  {
+    "case": 3,
+    "source": "? [a'\"b]",
+    "output": "? [a'\"b]\n",
+    "verified": true
+  },
+  {
+    "case": 4,
+    "source": "#define X 7\n? [X]",
+    "output": "? [X]\n",
+    "verified": true
+  },
+  {
+    "case": 5,
+    "source": "#define X 7\n? a [X]",
+    "output": "? a [7]\n",
+    "verified": true
+  },
+  {
+    "case": 6,
+    "source": "#define X 7\n#define BODY ? [X]\nBODY",
+    "output": "? [7]\n",
+    "verified": true
+  },
+  {
+    "case": 7,
+    "source": "#define F(x) [x]\n? F(7)",
+    "output": "? [7]\n",
+    "verified": true
+  },
+  {
+    "case": 8,
+    "source": "#define F(x) ? [x]\nF(7)",
+    "output": "? [7]\n",
+    "verified": true
+  },
+  {
+    "case": 9,
+    "source": "#define ID(x) x\n? ID([a,b])",
+    "output": "? \"a,b\"\n",
+    "verified": true
+  },
+  {
+    "case": 10,
+    "source": "#define ID(x) x\n? ID([a'b])",
+    "output": "? \"a'b\"\n",
+    "verified": true
+  },
+  {
+    "case": 11,
+    "source": "#xtranslate ID(<x>) => <x>\n? ID([a(,);b])",
+    "output": "? [a(,);b]\n",
+    "verified": true
+  },
+  {
+    "case": 12,
+    "source": "#translate WORD TOKEN => 7\n? [WORD TOKEN], WORD TOKEN",
+    "output": "? [WORD TOKEN], 7\n",
+    "verified": true
+  }
+]

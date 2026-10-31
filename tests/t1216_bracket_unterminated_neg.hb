@@ -1,0 +1,3 @@
+procedure main()
+? [abc
+return

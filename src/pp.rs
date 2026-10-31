@@ -292,10 +292,10 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
 // literals. Function-like defines expand only in call form NAME(args...);
 // expansion recurses (nested calls like F(F(2))) with a depth cap.
 pub fn expand(line: &str, defs: &HashMap<String, Def>, line_no: usize) -> Result<String, String> {
-    expand_depth(line, defs, line_no, 0)
+    expand_depth(line, defs, line_no, 0, true)
 }
 
-fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: usize) -> Result<String, String> {
+fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: usize, source_brackets: bool) -> Result<String, String> {
     if depth > 16 { return Err(format!("line {}: macro expansion too deep (recursive define?)", line_no)); }
     let b = line.as_bytes();
     let mut outb: Vec<u8> = Vec::with_capacity(line.len());
@@ -308,6 +308,10 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
             outb.push(c);
             i += 1;
             continue;
+        }
+        if source_brackets && in_str.is_none() && c==b'[' && bracket_literal_start(line,i) {
+            let end=line[i+1..].find(']').map(|n|i+2+n).ok_or_else(||format!("line {}: unterminated bracket string",line_no))?;
+            outb.extend_from_slice(&b[i..end]);i=end;continue;
         }
         if in_str.is_none() && (c == b'"' || c == b'\'') {
             in_str = Some(c);
@@ -323,7 +327,7 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
             match defs.get(word) {
                 Some(d) if !d.funclike => {
                     // object-like: the body itself may contain macro calls
-                    outb.extend_from_slice(expand_depth(&d.body.clone(), defs, line_no, depth + 1)?.as_bytes());
+                    outb.extend_from_slice(expand_depth(&d.body.clone(), defs, line_no, depth + 1, false)?.as_bytes());
                 }
                 Some(d) => {
                     // function-like: only expands in call form
@@ -345,16 +349,13 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
                         curb.push(ch);
                         if q.is_none() && (ch == b'"' || ch == b'\'') { q = Some(ch); m += 1; continue; }
                         if q == Some(ch) { q = None; m += 1; continue; }
-                        if q.is_none() && (ch == b'(' || ch == b'{' || ch == b'[') {
-                            if ch == b'[' {
-                                let previous = curb[..curb.len()-1].iter().rev().find(|c| !c.is_ascii_whitespace()).copied();
-                                let index = previous.map(|c|c.is_ascii_alphanumeric() || c==b'_' || c==b')' || c==b']').unwrap_or(false);
-                                if !index && b[m+1..].iter().take_while(|&&c|c!=b']').any(|&c|c==b',') {
-                                    return Err(format!("line {}: macro argument bracket literal with commas is outside this increment",line_no));
-                                }
-                            }
-                            delimiters.push(ch); m += 1; continue;
+                        if q.is_none() && ch==b'[' && bracket_literal_start(line,m) {
+                            let end=line[m+1..].find(']').map(|n|m+1+n).ok_or_else(||format!("line {}: unterminated bracket string",line_no))?;
+                            let inner=&line[m+1..end];
+                            let quote=if !inner.contains('"') {'"'}else if !inner.contains('\'') {'\''}else{return Err(format!("line {}: macro bracket argument requiring both quotes is outside this increment",line_no));};
+                            curb.pop();curb.push(quote as u8);curb.extend_from_slice(inner.as_bytes());curb.push(quote as u8);m=end+1;continue;
                         }
+                        if q.is_none() && (ch == b'(' || ch == b'{' || ch == b'[') {delimiters.push(ch);m+=1;continue;}
                         if q.is_none() && ch == b')' {
                             if delimiters.is_empty() { curb.pop(); break; }
                             if delimiters.pop() != Some(b'(') { return Err(format!("line {}: mismatched delimiters in macro call {}",line_no,word)); }
@@ -381,7 +382,7 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
                     }
                     // substitute params (word-boundary, outside strings) in the body
                     let body = subst_params(&d.body, &d.params, &args);
-                    outb.extend_from_slice(expand_depth(&body, defs, line_no, depth + 1)?.as_bytes());
+                    outb.extend_from_slice(expand_depth(&body, defs, line_no, depth + 1, false)?.as_bytes());
                     i = m + 1;
                     continue;
                 }
@@ -414,16 +415,34 @@ fn subst_params(text: &str, names: &[String], values: &[String]) -> String {
     String::from_utf8_lossy(&out).into_owned()
 }
 
+// The pp reader recognizes raw bracket strings only where a token expression
+// can start. An identifier (even RETURN/IF before grammar parsing) keeps [ as
+// indexing. The compiler lexer can later use its keyword tokens as context.
+pub fn bracket_literal_start(text: &str, at: usize) -> bool {
+    let before=text[..at].trim_end().to_ascii_uppercase();
+    if [".AND.",".OR.",".NOT."].iter().any(|op|before.ends_with(op)) {return true;}
+    match text[..at].bytes().rev().find(|c|!c.is_ascii_whitespace()) {
+        None => true,
+        Some(c) => !(!c.is_ascii() || c.is_ascii_alphanumeric() || c==b'_' || c==b')' || c==b']' || c==b'}' || c==b'"' || c==b'\'' || c==b'.'),
+    }
+}
+fn source_tokens(text: &str) -> Vec<String> { cmd_tokens_mode(text,true) }
+
 // Tokenize a command pattern or source line: words, <param> markers, and
 // single non-word characters (parens, commas) as separate tokens. Keywords
 // match case-insensitively (probe c05); captures keep their original text.
-fn cmd_tokens(text: &str) -> Vec<String> {
+fn cmd_tokens(text: &str) -> Vec<String> { cmd_tokens_mode(text,false) }
+fn cmd_tokens_mode(text: &str, source: bool) -> Vec<String> {
     let b = text.as_bytes();
     let mut out: Vec<String> = Vec::new();
     let mut i = 0usize;
     while i < b.len() {
         let c = b[i] as char;
         if c.is_whitespace() { i += 1; continue; }
+        if source && c=='[' && bracket_literal_start(text,i) {
+            let end=text[i+1..].find(']').map(|n|i+2+n).unwrap_or(text.len());
+            out.push(text[i..end].to_string());i=end;continue;
+        }
         // Preserve only compound atoms already recognized by the source
         // lexer. Whitespace-separated punctuation must never be fused.
         if c == '.' {
@@ -685,6 +704,7 @@ fn stringify_capture(capture: &Capture, source: &str, spans: &HashMap<usize, (us
             text.push_str(&source[prev..start]);
         }
         let token = &source[start..end];
+        if token.starts_with('[') { return Err("stringify of bracket literal requires separate escape-result support".into()); }
         if (token.starts_with('"') || token.starts_with('\'')) && start > 0
             && source.as_bytes()[start-1].eq_ignore_ascii_case(&b'e') {
             return Err("stringify of escape literals is outside this increment".to_string());
@@ -981,12 +1001,12 @@ fn expand_fixed_translations(text: &str, rules: &[Cmd], calls: &[Cmd], line: usi
     let mut current = text.to_string(); let mut replacements = 0usize;
     for _ in 0..16 {
         if current.len() > 1_048_576 { return Err(format!("line {}: fixed translation output limit exceeded",line)); }
-        let tokens = cmd_tokens(&current);
+        let tokens = source_tokens(&current);
         let spans = source_spans(&current, &tokens).map_err(|e|format!("line {}: {}",line,e))?;
         let mut out = String::new(); let mut at = 0; let mut i = 0; let mut changed = false;
         while i < tokens.len() {
             let token = &tokens[i];
-            if token.starts_with('"') || token.starts_with('\'') { i += 1; continue; }
+            if token.starts_with('"') || token.starts_with('\'') || (token.starts_with('[') && token.ends_with(']')) { i += 1; continue; }
             let found = rules.iter().rev().find(|c| active_fixed_translation(c,rules,calls)
                 && i+c.pattern.len()<=tokens.len()
                 && c.pattern.iter().zip(&tokens[i..]).all(|(p,t)|
@@ -1008,7 +1028,7 @@ fn expand_fixed_translations(text: &str, rules: &[Cmd], calls: &[Cmd], line: usi
 }
 
 fn apply_commands(line: &str, cmds: &[Cmd], calls: &[Cmd], fixed_enabled: bool, line_no: usize) -> Result<Option<String>, String> {
-    let src = cmd_tokens(line);
+    let src = source_tokens(line);
     if src.is_empty() { return Ok(None); }
     // Harbour picks the MOST SPECIFIC matching rule (most literal words),
     // regardless of definition order (probes b31/b31b); ties keep the
@@ -1212,8 +1232,8 @@ fn expand_call_rules(text: &str, pp: &Pp, line: usize, depth: usize) -> Result<S
     let mut out = String::new();
     let mut i = 0;
     while i < b.len() {
-        if b[i] == b'"' || b[i] == b'\'' {
-            let q = b[i]; let start = i; i += 1;
+        if b[i] == b'"' || b[i] == b'\'' || (b[i]==b'[' && bracket_literal_start(text,i)) {
+            let q = if b[i]==b'[' {b']'}else{b[i]}; let start = i; i += 1;
             while i < b.len() && b[i] != q { i += 1; }
             if i < b.len() { i += 1; }
             out.push_str(&text[start..i]); continue;
@@ -1230,13 +1250,14 @@ fn expand_call_rules(text: &str, pp: &Pp, line: usize, depth: usize) -> Result<S
                     if q == Some(c) { q = None; }
                     else if q.is_none() {
                         if c == b'"' || c == b'\'' { q = Some(c); }
+                        else if c==b'[' && bracket_literal_start(text,end) {q=Some(b']');}
                         else if c == b'(' { level += 1; }
                         else if c == b')' { level -= 1; }
                     }
                     end += 1;
                 }
                 if level == 0 {
-                    let call = &text[start..end]; let tokens = cmd_tokens(call);
+                    let call = &text[start..end]; let tokens = source_tokens(call);
                     let mut replacement = None;
                     for rule in pp.call_rules.iter().rev() {
                         if !rule.pattern.first().map(|p| p.eq_ignore_ascii_case(name)).unwrap_or(false) { continue; }
@@ -1245,7 +1266,7 @@ fn expand_call_rules(text: &str, pp: &Pp, line: usize, depth: usize) -> Result<S
                             let valid = markers.iter().zip(caps.iter()).all(|(marker, cap)| {
                                 if marker.contains(",...") { return true; }
                                 let mut nesting = 0;
-                                for t in cmd_tokens(&cap.text) {
+                                for t in source_tokens(&cap.text) {
                                     if t == "(" || t == "[" || t == "{" { nesting += 1; }
                                     if t == ")" || t == "]" || t == "}" { nesting -= 1; }
                                     if t == "," && nesting == 0 { return false; }
@@ -1331,6 +1352,7 @@ fn strip_line(raw: &str, in_block: &mut bool, block_line: &mut usize, line: usiz
                 }
             }
             None => match c {
+                '[' if bracket_literal_start(&out,out.len()) => {in_str=Some(']');out.push(c);}
                 '"' | '\'' => {
                     in_str = Some(c);
                     out.push(c);
@@ -1369,6 +1391,7 @@ fn split_statements(text: &str) -> Vec<&str> {
     for (i,c) in text.char_indices() {
         if let Some(v) = q { if c == v { q = None; } }
         else if c == '\'' || c == '"' { q = Some(c); }
+        else if c=='[' && bracket_literal_start(text,i) {q=Some(']');}
         else if c == ';' { parts.push(&text[start..i]); start = i+1; }
     }
     parts.push(&text[start..]);
@@ -1417,11 +1440,11 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
             let mut in_str = false;
             let mut q = '"';
             let mut last_non_ws: Option<char> = None;
-            for ch in joined.chars() {
+            for (at,ch) in joined.char_indices() {
                 if in_str {
                     if ch == q { in_str = false; }
-                } else if ch == '"' || ch == '\'' {
-                    in_str = true; q = ch;
+                } else if ch == '"' || ch == '\'' || (ch=='[' && bracket_literal_start(&joined,at)) {
+                    in_str = true; q = if ch=='[' {']'}else{ch};
                 }
                 if !ch.is_whitespace() { last_non_ws = Some(ch); }
             }
