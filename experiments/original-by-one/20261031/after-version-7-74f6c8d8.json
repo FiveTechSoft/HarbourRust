@@ -1,0 +1,219 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,last7afterversion",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/video.prg",
+      "sha256": "2b6a28d3f46d50890366038708b21e93d9215b4f5a130bed1513f040736766c2",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+static helpers",
+      "build_unit": "single-source-executable",
+      "profile": "GT-screen-performance-demo",
+      "dependencies": "box.ch/hbgtinfo.ch;GTbuffer;codepage;Save/RestScreen;5000framesCPUtimers;Inkey",
+      "boundary": "Not run: graphical screen/timing test with final Inkey0;requires GT visual fixture;no FPS claim",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 188: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 188: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/vmasort.prg",
+      "sha256": "c424b47654d1ff4ae007b94a57f2a9e6127380724b10af85a997468e5f348343",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+aMkArray/aDump/xToStr",
+      "build_unit": "single-source-executable",
+      "profile": "heterogeneous-array-sorting",
+      "dependencies": "ASort/AClone;Date-relative;1600 mixed values;blocks/arrays/ErrorNew",
+      "boundary": "Not run: fixed-date oracle required for byte comparison;resource and sorting order need separate profile",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 10: unknown function `val` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 10: unknown function `val` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/warnings.prg",
+      "sha256": "b1e4e23f7865eb01c21898d5e0ebff1c81932d2010d6561d0580db9c15494575",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+typed functions",
+      "build_unit": "single-source-executable",
+      "profile": "compiler-diagnostic-types",
+      "dependencies": "pragma-es0;DECLARE class/signature;AS types;intentional type mismatches;TEMP DBF;macros",
+      "boundary": "Not run: compiler-warning fixture, not successful runtime oracle;diagnostic build with hbmk2 default options",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #pragma in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #pragma in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/wcecon.prg",
+      "sha256": "7e52ea83c84e882eafe9cc053a363e416fcb673c503390a56ad9b97af0738eae",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "main",
+      "build_unit": "single-source-executable",
+      "profile": "WinCE-GT-RDD-demo",
+      "dependencies": "GT fonts/screen/codepages;DBFCDX/index/memo;filesystem data dir;Alert/Browse;keys",
+      "boundary": "Not run: WinCE target semantics and GT interaction;creates DBF/CDX/memo and data folder",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 102: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 102: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/while.prg",
+      "sha256": "81542a0a84c8ce27b7205a6c475ed811847b0dd913eac4a19e0f3dc62c40bf57",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "postincrement-while",
+      "dependencies": "postincrement condition;QOut1000integerlines",
+      "boundary": "Safe bounded deterministic console run",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 11000,
+        "stdout_sha256": "b7ffa74f2f7e6a965603bea55cf7d29eaead10122f7d45fde8dd8ad7ee6e8527",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 11000,
+            "stdout_sha256": "b7ffa74f2f7e6a965603bea55cf7d29eaead10122f7d45fde8dd8ad7ee6e8527",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 11000,
+            "stdout_sha256": "b7ffa74f2f7e6a965603bea55cf7d29eaead10122f7d45fde8dd8ad7ee6e8527",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        }
+      }
+    },
+    {
+      "file": "tests/wvt_fs.prg",
+      "sha256": "5ddf11b7194d30a9ef590373eedff6d2ca98f1739530919efbb9ccd688785b6f",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "graphical-GT-fullscreen",
+      "dependencies": "hbgtinfo.ch/inkey.ch;graphical guard;fullscreen/AltEnter;WAIT/ESC;hbshellconditional",
+      "boundary": "Not run: STD would only exercise negative non-graphical guard, not intended graphical test",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 205: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 205: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/wvtext.prg",
+      "sha256": "abd48481e59d22631ec5a7f462854cbeb6260b1dc2f8725cab669c7c5b020ab7",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+GT/palette/thread/TBrowse helpers",
+      "build_unit": "single-source-executable",
+      "profile": "GT-window-font-palette-thread-browser",
+      "dependencies": "GTeventkeys;READ/GET;THREAD STATIC;hb_threadStart;multiwindow;test.dbf;TBrowse;focuspalette",
+      "boundary": "Not run: graphical interactive default build only, MT variant not tested;needs keyboard/window/screenshot and DBF fixtures",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 254: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 254: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}
