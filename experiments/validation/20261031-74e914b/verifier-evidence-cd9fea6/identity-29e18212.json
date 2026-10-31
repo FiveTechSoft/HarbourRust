@@ -1,0 +1,11 @@
+{
+  "commit": "cd9fea684332314950543f92b2cd5e57b97c7dab",
+  "tag": "cd9fea684332314950543f92b2cd5e57b97c7dab",
+  "remote_observed": "cd9fea684332314950543f92b2cd5e57b97c7dab",
+  "tree": "be25fc05ed38140262a174cba2195dae77283ad3",
+  "base": "439b7bcf00a9f0623233dbe97623d09cf2505b38",
+  "reference_pin": "694428e1c12f726675b19324d62167fa77d68185",
+  "reference_pin_provenance": "pinned reference source previously validated; /tmp/harbour-reference is exported source, no .git",
+  "build": "rustc --edition=2021 -O src/hbc.rs -o hbc",
+  "wine_executions": 0
+}

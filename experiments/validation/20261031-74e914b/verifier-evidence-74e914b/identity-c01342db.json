@@ -1,0 +1,9 @@
+{
+  "snapshot": "74e914ba462e9d260e4a89a03f3ef06d751f0442",
+  "tag": "74e914ba462e9d260e4a89a03f3ef06d751f0442",
+  "remote_observed": "74e914ba462e9d260e4a89a03f3ef06d751f0442",
+  "tree": "29d8b629d00a50f25ccfb7b6c3ea245058d7dee0",
+  "base": "cd9fea684332314950543f92b2cd5e57b97c7dab",
+  "diff_files": "M\texperiments/validation/20261031-3e60659/README.md\nM\tsrc/hbc.rs\nM\ttests/manifest.txt\nA\ttests/t1403_padr_neg_noargs.hb\nA\ttests/t1404_str_neg_noargs.hb\nA\ttests/t1405_hb_ntos_neg_noargs.hb",
+  "wine_executions": 0
+}

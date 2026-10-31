@@ -1,0 +1,288 @@
+[
+  {
+    "name": "closure",
+    "source": "function main()\nlocal b := {|| PadR() }\n? Eval(b)\nreturn nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "nested",
+    "source": "function main()\n? Str(Len(PadR()))\nreturn nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "unused_fn",
+    "source": "function main()\nreturn nil\nfunction bad()\nreturn PadR()\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 4: `padr` takes 2 arguments in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 4: `padr` takes 2 arguments in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 4: `padr` takes 2 arguments in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 4: `padr` takes 2 arguments in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "one_arg",
+    "source": "function main()\n? PadR(\"x\")\nreturn nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "t1399_str_neg_float",
+    "source": "function main()\n    ? Str(4.5)\n    return nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `str` expects integer argument(s) in this increment (no decimal formatting yet)\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `str` expects integer argument(s) in this increment (no decimal formatting yet)\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `str` expects integer argument(s) in this increment (no decimal formatting yet)\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `str` expects integer argument(s) in this increment (no decimal formatting yet)\n"
+      }
+    }
+  },
+  {
+    "name": "t1400_str_neg_string",
+    "source": "function main()\n    ? Str(\"abc\")\n    return nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `str` expects integer argument(s) in this increment (no decimal formatting yet)\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `str` expects integer argument(s) in this increment (no decimal formatting yet)\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `str` expects integer argument(s) in this increment (no decimal formatting yet)\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `str` expects integer argument(s) in this increment (no decimal formatting yet)\n"
+      }
+    }
+  },
+  {
+    "name": "t1401_padr_neg_arity",
+    "source": "function main()\n    ? PadR(\"ab\")\n    return nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "t1402_hb_ntos_neg_arity",
+    "source": "function main()\n    ? hb_ntos(1,2)\n    return nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `hb_ntos` takes one argument in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `hb_ntos` takes one argument in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `hb_ntos` takes one argument in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `hb_ntos` takes one argument in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "t1403_padr_neg_noargs",
+    "source": "function main()\n    ? PadR()\n    return nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `padr` takes 2 arguments in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "t1404_str_neg_noargs",
+    "source": "function main()\n    ? Str()\n    return nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `str` takes 1 or 2 arguments in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `str` takes 1 or 2 arguments in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `str` takes 1 or 2 arguments in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `str` takes 1 or 2 arguments in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "t1405_hb_ntos_neg_noargs",
+    "source": "function main()\n    ? hb_ntos()\n    return nil\n",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `hb_ntos` takes one argument in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `hb_ntos` takes one argument in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `hb_ntos` takes one argument in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `hb_ntos` takes one argument in this increment\n"
+      }
+    }
+  }
+]

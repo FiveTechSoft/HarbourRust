@@ -1,0 +1,218 @@
+[
+  {
+    "name": "boundaries",
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/boundaries.prg -> /downloads/verify-strings-contracts/boundaries-w.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "param_infer",
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/param_infer.prg -> /downloads/verify-strings-contracts/param_infer-w.s (3 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "pad_nul_outstd",
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/pad_nul_outstd.prg -> /downloads/verify-strings-contracts/pad_nul_outstd-w.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "call_order_typed",
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/call_order_typed.prg -> /downloads/verify-strings-contracts/call_order_typed-w.s (3 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "owned_reuse",
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/owned_reuse.prg -> /downloads/verify-strings-contracts/owned_reuse-w.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "t1392_str_default",
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/t1392_str_default.prg -> /downloads/verify-strings-contracts/t1392_str_default-w.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "t1393_str_width",
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/t1393_str_width.prg -> /downloads/verify-strings-contracts/t1393_str_width-w.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "t1394_str_asterisk",
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/t1394_str_asterisk.prg -> /downloads/verify-strings-contracts/t1394_str_asterisk-w.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "t1395_str_big",
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/t1395_str_big.prg -> /downloads/verify-strings-contracts/t1395_str_big-w.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "t1396_hb_ntos",
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/t1396_hb_ntos.prg -> /downloads/verify-strings-contracts/t1396_hb_ntos-w.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "t1397_padr",
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/t1397_padr.prg -> /downloads/verify-strings-contracts/t1397_padr-w.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "t1398_str_temp",
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/t1398_str_temp.prg -> /downloads/verify-strings-contracts/t1398_str_temp-w.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  }
+]

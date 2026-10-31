@@ -1,0 +1,18 @@
+Diagnostic (observations only, NOT acceptance): 10 sequential reruns of the
+exact gate-built exe experiments/llvm-scalar/run/reg-t1246_pp_smart_escape_marker-windows-current.exe
+(tree cd9fea6, gate run started 14:56, aborted 15:23), same WINEPREFIX,
+immediately after the abort. The aborting run: rc=0, stdout "\n#<x>" (exact
+manifest expectation), stderr one line:
+wine: Unhandled page fault on read access to 0000000000000008 at address 00000002279B2B41 (thread 0090), starting debugger...
+Identical fault address / thread / read address as the T1 t49 incident
+(14:40, different executable). No cause and no flake rate inferred.
+run1  rc=0 stdout="\n#<x>" stderr=0 bytes
+run2  rc=0 stdout="\n#<x>" stderr=0 bytes
+run3  rc=0 stdout="\n#<x>" stderr=0 bytes
+run4  rc=0 stdout="\n#<x>" stderr=0 bytes
+run5  rc=0 stdout="\n#<x>" stderr=0 bytes
+run6  rc=0 stdout="\n#<x>" stderr=0 bytes
+run7  rc=0 stdout="\n#<x>" stderr=0 bytes
+run8  rc=0 stdout="\n#<x>" stderr=0 bytes
+run9  rc=0 stdout="\n#<x>" stderr=0 bytes
+run10 rc=0 stdout="\n#<x>" stderr=0 bytes

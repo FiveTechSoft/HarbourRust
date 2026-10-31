@@ -1,0 +1,175 @@
+{
+  "commit": "74e914ba462e9d260e4a89a03f3ef06d751f0442",
+  "prefix": "/downloads/deps/wineprefix-parexpr-independent",
+  "retries": 0,
+  "rows": [
+    {
+      "name": "boundaries",
+      "execution": {
+        "exit": 0,
+        "stdout": "\n[-9223372036854775808]\n[-9223372036854775808]\n[*******************]\n[ -9223372036854775808]\n[-999999999]\n[         -1000000000]\n[ 1000000000]",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n[-9223372036854775808]\n[-9223372036854775808]\n[*******************]\n[ -9223372036854775808]\n[-999999999]\n[         -1000000000]\n[ 1000000000]",
+        "stderr": ""
+      },
+      "exact": true
+    },
+    {
+      "name": "param_infer",
+      "execution": {
+        "exit": 0,
+        "stdout": "\n  12\nx",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n  12\nx",
+        "stderr": ""
+      },
+      "exact": true
+    },
+    {
+      "name": "pad_nul_outstd",
+      "execution": {
+        "exit": 0,
+        "stdout": "a\u0000b  a\u0000",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "a\u0000b  a\u0000",
+        "stderr": ""
+      },
+      "exact": true
+    },
+    {
+      "name": "call_order_typed",
+      "execution": {
+        "exit": 0,
+        "stdout": "\n        42\n         4\n[  42]\nTXT\n         4\n[xy  ]",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        42\n         4\n[  42]\nTXT\n         4\n[xy  ]",
+        "stderr": ""
+      },
+      "exact": true
+    },
+    {
+      "name": "owned_reuse",
+      "execution": {
+        "exit": 0,
+        "stdout": "\n[123][123  ]\n[-7  ]\n[ 42]",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n[123][123  ]\n[-7  ]\n[ 42]",
+        "stderr": ""
+      },
+      "exact": true
+    },
+    {
+      "name": "t1392_str_default",
+      "execution": {
+        "exit": 0,
+        "stdout": "\n[        42]\n[        -7]\n[         0]\n[ 123456789]",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n[        42]\n[        -7]\n[         0]\n[ 123456789]",
+        "stderr": ""
+      },
+      "exact": true
+    },
+    {
+      "name": "t1393_str_width",
+      "execution": {
+        "exit": 0,
+        "stdout": "\n[ 42]\n[        42]\n[  -7]\n[        42]\n[        42]\n[5]",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n[ 42]\n[        42]\n[  -7]\n[        42]\n[        42]\n[5]",
+        "stderr": ""
+      },
+      "exact": true
+    },
+    {
+      "name": "t1394_str_asterisk",
+      "execution": {
+        "exit": 0,
+        "stdout": "\n[***]\n[****]\n[*********]",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n[***]\n[****]\n[*********]",
+        "stderr": ""
+      },
+      "exact": true
+    },
+    {
+      "name": "t1395_str_big",
+      "execution": {
+        "exit": 0,
+        "stdout": "\n[ 1234567890]\n[ 99999999999]\n[ 9223372036854775807]\n[         -1234567890]\n[        -99999999999]\n[-9223372036854775807]",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n[ 1234567890]\n[ 99999999999]\n[ 9223372036854775807]\n[         -1234567890]\n[        -99999999999]\n[-9223372036854775807]",
+        "stderr": ""
+      },
+      "exact": true
+    },
+    {
+      "name": "t1396_hb_ntos",
+      "execution": {
+        "exit": 0,
+        "stdout": "\n[42]\n[-7]\n[0]\n[123456789012345]",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n[42]\n[-7]\n[0]\n[123456789012345]",
+        "stderr": ""
+      },
+      "exact": true
+    },
+    {
+      "name": "t1397_padr",
+      "execution": {
+        "exit": 0,
+        "stdout": "\n[ab   ]\n[abc]\n[    ]\n[]\n[]\n      1000",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n[ab   ]\n[abc]\n[    ]\n[]\n[]\n      1000",
+        "stderr": ""
+      },
+      "exact": true
+    },
+    {
+      "name": "t1398_str_temp",
+      "execution": {
+        "exit": 0,
+        "stdout": "\n[ab   ]\n[         4]\n[4]\n[xy    ]",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n[ab   ]\n[         4]\n[4]\n[xy    ]",
+        "stderr": ""
+      },
+      "exact": true
+    }
+  ]
+}

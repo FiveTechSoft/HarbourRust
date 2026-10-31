@@ -1,0 +1,6 @@
+repro_padr_noargs linux rc=1
+repro_padr_noargs windows rc=1
+repro_padr_noargs llvm rc=1
+repro_padr_wrap linux rc=1
+repro_padr_wrap windows rc=1
+repro_padr_wrap llvm rc=1

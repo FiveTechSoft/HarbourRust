@@ -1,0 +1,11 @@
+function main()
+    ? Len(Str(1234567890))
+    ? Len(Str(12345678901))
+    ? Len(Str(-1234567890))
+    ? Len(Str(-123456789))
+    ? Len(Str(123456789))
+    ? Len(Str(999999999))
+    ? Len(Str(-999999999))
+    ? Len(Str(1))
+    ? Len(Str(-1))
+    return nil

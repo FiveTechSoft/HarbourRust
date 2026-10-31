@@ -1,0 +1,610 @@
+[
+  {
+    "name": "boundaries",
+    "source": "function main()\nlocal m := -9223372036854775807 - 1\n? \"[\" + hb_ntos(m) + \"]\"\n? \"[\" + Str(m) + \"]\"\n? \"[\" + Str(m,19) + \"]\"\n? \"[\" + Str(m,21) + \"]\"\n? \"[\" + Str(-999999999) + \"]\"\n? \"[\" + Str(-1000000000) + \"]\"\n? \"[\" + Str(1000000000) + \"]\"\nreturn nil\n",
+    "sha256": "338697fcbd087e9d9ef4e4c81b8e2a03efcc88a329ef50e29eeb6bd1a8644c5a",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n[-9223372036854775808]\n[-9223372036854775808]\n[*******************]\n[ -9223372036854775808]\n[-999999999]\n[         -1000000000]\n[ 1000000000]",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/boundaries.prg -> /downloads/verify-strings-contracts/boundaries.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n[-9223372036854775808]\n[-9223372036854775808]\n[*******************]\n[ -9223372036854775808]\n[-999999999]\n[         -1000000000]\n[ 1000000000]",
+      "stderr": ""
+    },
+    "exact": true,
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Str(\"[\")\n"
+    }
+  },
+  {
+    "name": "pad_bytes",
+    "source": "function main()\n? \"[\" + PadR(\"ab\",2) + \"]\"\n? \"[\" + PadR(\"ab\",1) + \"]\"\n? \"[\" + PadR(\"\",0) + \"]\"\n? \"[\" + PadR(\"a\"+Chr(0)+\"b\",5) + \"]\"\n? \"[\" + PadR(\"a\"+Chr(0)+\"b\",2) + \"]\"\nreturn nil\n",
+    "sha256": "e0bf0b1a2d600d99430a5f521fd08bc6d4826d0f269cbc1274f46b4e2ce1b005",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n[ab]\n[a]\n[]\n[a.b  ]\n[a.]",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/pad_bytes.prg -> /downloads/verify-strings-contracts/pad_bytes.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n[ab]\n[a]\n[]\n[a\u0000b  ]\n[a\u0000]",
+      "stderr": ""
+    },
+    "exact": false,
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Str(\"[\")\n"
+    }
+  },
+  {
+    "name": "owned_alias",
+    "source": "function main()\nlocal a := hb_ntos(123)\nlocal c := a\nlocal d := PadR(a,5)\n? \"[\" + a + \"][\" + c + \"][\" + d + \"]\"\n? \"[\" + PadR(PadR(hb_ntos(-7),8),4) + \"]\"\n? \"[\" + Str(42,Len(PadR(\"x\",3))) + \"]\"\nreturn nil\n",
+    "sha256": "33b5dab89b70b66e3fee32c38f22f25ac4cced4b6e7fb0955df328090818aaf3",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n[123][123][123  ]\n[-7  ]\n[ 42]",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: line 4: use of moved value `a` (heap values - strings and dynamic arrays - move on assignment, call or return; they do not copy)\n"
+    },
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: line 4: use of moved value `a` (heap values - strings and dynamic arrays - move on assignment, call or return; they do not copy)\n"
+    }
+  },
+  {
+    "name": "call_order",
+    "source": "function main()\n? \"[\" + Str(mark(42),mark(4)) + \"]\"\n? \"[\" + PadR(txt(),mark(4)) + \"]\"\nreturn nil\nfunction mark(n)\n? n\nreturn n\nfunction txt()\n? \"TXT\"\nreturn \"xy\"\n",
+    "sha256": "c8de6d444815356ca9d709c99aaf1dc00f9b07b938ea730b7fc5bfe5768dec52",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n        42\n         4\n[  42]\nTXT\n         4\n[xy  ]",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: line 2: `str` expects integer argument(s) in this increment (no decimal formatting yet)\n"
+    },
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: line 2: `str` expects integer argument(s) in this increment (no decimal formatting yet)\n"
+    }
+  },
+  {
+    "name": "param_infer",
+    "source": "function main()\n? fmt(12,4)\n? pad(\"x\",3)\nreturn nil\nfunction fmt(n,w)\nreturn Str(n,w)\nfunction pad(s,w)\nreturn PadR(s,w)\n",
+    "sha256": "32c8ceb0a13209dbf9820c4fe8fe61681dbe6cf4f4412a81afb6b94c2c6671ff",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n  12\nx",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/param_infer.prg -> /downloads/verify-strings-contracts/param_infer.s (3 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n  12\nx",
+      "stderr": ""
+    },
+    "exact": true,
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: only I64/logical scalar signatures supported\n"
+    }
+  },
+  {
+    "name": "pad_nul_outstd",
+    "source": "function main()\nOutStd(PadR(\"a\"+Chr(0)+\"b\",5))\nOutStd(PadR(\"a\"+Chr(0)+\"b\",2))\nreturn nil\n",
+    "sha256": "2e70cccffc695f9ed57faed6210e58520ee5c72d42d65c54507420b73d406e12",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "a\u0000b  a\u0000",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/pad_nul_outstd.prg -> /downloads/verify-strings-contracts/pad_nul_outstd.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "a\u0000b  a\u0000",
+      "stderr": ""
+    },
+    "exact": true,
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Call(\"padr\", [Bin('+', Bin('+', Str(\"a\"), Call(\"chr\", [Int(\"0\")])), Str(\"b\")), Int(\"5\")])\n"
+    }
+  },
+  {
+    "name": "call_order_typed",
+    "source": "function main()\n? \"[\" + Str(mark(42),mark(4)) + \"]\"\n? \"[\" + PadR(txt(),mark(4)) + \"]\"\nreturn nil\nfunction mark(n)\n? n\nreturn n + 0\nfunction txt()\n? \"TXT\"\nreturn \"xy\"\n",
+    "sha256": "e24898585ebdc5a40d730946da3e15bbf8728cf1a8f5b468059bceb72c44fdc0",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n        42\n         4\n[  42]\nTXT\n         4\n[xy  ]",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/call_order_typed.prg -> /downloads/verify-strings-contracts/call_order_typed.s (3 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n        42\n         4\n[  42]\nTXT\n         4\n[xy  ]",
+      "stderr": ""
+    },
+    "exact": true,
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: only I64/logical scalar signatures supported\n"
+    }
+  },
+  {
+    "name": "owned_reuse",
+    "source": "function main()\nlocal a := hb_ntos(123)\nlocal d := PadR(a,5)\n? \"[\"+a+\"][\"+d+\"]\"\n? \"[\"+PadR(PadR(hb_ntos(-7),8),4)+\"]\"\n? \"[\"+Str(42,Len(PadR(\"x\",3)))+\"]\"\nreturn nil\n",
+    "sha256": "b8bd4122ef50d19c63fa00f74df552dd049ff2caee16fc762a0614d55c5d4b3b",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n[123][123  ]\n[-7  ]\n[ 42]",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/owned_reuse.prg -> /downloads/verify-strings-contracts/owned_reuse.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n[123][123  ]\n[-7  ]\n[ 42]",
+      "stderr": ""
+    },
+    "exact": true,
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Call(\"hb_ntos\", [Int(\"123\")])\n"
+    }
+  },
+  {
+    "name": "pad_nul_asc",
+    "source": "function main()\nlocal a := PadR(\"a\"+Chr(0)+\"b\",5)\n? Len(a)\n? Asc(SubStr(a,2,1))\nreturn nil\n",
+    "sha256": "22d21c73c6948c352b624c9c568f19d1dc98014bcf08f13033f08299a648d938",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n         5\n         0",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: line 4: unknown function `substr` (must be defined before use)\n"
+    },
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: line 4: unknown function `substr` (must be defined before use)\n"
+    }
+  },
+  {
+    "name": "t1392_str_default",
+    "source": "function main()\n    ? \"[\" + Str(42) + \"]\"\n    ? \"[\" + Str(-7) + \"]\"\n    ? \"[\" + Str(0) + \"]\"\n    ? \"[\" + Str(123456789) + \"]\"\n    return nil\n",
+    "sha256": "96d04a951e610341543ef8e4f34de431b3a8e31b154cbc59b3a7c5331af3d558",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n[        42]\n[        -7]\n[         0]\n[ 123456789]",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/t1392_str_default.prg -> /downloads/verify-strings-contracts/t1392_str_default.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n[        42]\n[        -7]\n[         0]\n[ 123456789]",
+      "stderr": ""
+    },
+    "exact": true,
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Str(\"[\")\n"
+    }
+  },
+  {
+    "name": "t1393_str_width",
+    "source": "function main()\n    ? \"[\" + Str(42,3) + \"]\"\n    ? \"[\" + Str(42,10) + \"]\"\n    ? \"[\" + Str(-7,4) + \"]\"\n    ? \"[\" + Str(42,0) + \"]\"\n    ? \"[\" + Str(42,-3) + \"]\"\n    ? \"[\" + Str(5,1) + \"]\"\n    return nil\n",
+    "sha256": "b843165f0d853bf1362c1c635f772f879110f8475a6322e78dc4877df870aa70",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n[ 42]\n[        42]\n[  -7]\n[        42]\n[        42]\n[5]",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/t1393_str_width.prg -> /downloads/verify-strings-contracts/t1393_str_width.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n[ 42]\n[        42]\n[  -7]\n[        42]\n[        42]\n[5]",
+      "stderr": ""
+    },
+    "exact": true,
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Str(\"[\")\n"
+    }
+  },
+  {
+    "name": "t1394_str_asterisk",
+    "source": "function main()\n    ? \"[\" + Str(12345,3) + \"]\"\n    ? \"[\" + Str(-12345,4) + \"]\"\n    ? \"[\" + Str(-123456789,9) + \"]\"\n    return nil\n",
+    "sha256": "08fa311e5f1e341d873cd23a35a7412cdef396b41b74bdda3eb37f93a6d89571",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n[***]\n[****]\n[*********]",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/t1394_str_asterisk.prg -> /downloads/verify-strings-contracts/t1394_str_asterisk.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n[***]\n[****]\n[*********]",
+      "stderr": ""
+    },
+    "exact": true,
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Str(\"[\")\n"
+    }
+  },
+  {
+    "name": "t1395_str_big",
+    "source": "function main()\n    ? \"[\" + Str(1234567890) + \"]\"\n    ? \"[\" + Str(99999999999) + \"]\"\n    ? \"[\" + Str(9223372036854775807) + \"]\"\n    ? \"[\" + Str(-1234567890) + \"]\"\n    ? \"[\" + Str(-99999999999) + \"]\"\n    ? \"[\" + Str(-9223372036854775807) + \"]\"\n    return nil\n",
+    "sha256": "3c4a294bd00649865d1dc0638dbf4bb76b13ef4c53b79a88b1677636d0150d0f",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n[ 1234567890]\n[ 99999999999]\n[ 9223372036854775807]\n[         -1234567890]\n[        -99999999999]\n[-9223372036854775807]",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/t1395_str_big.prg -> /downloads/verify-strings-contracts/t1395_str_big.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n[ 1234567890]\n[ 99999999999]\n[ 9223372036854775807]\n[         -1234567890]\n[        -99999999999]\n[-9223372036854775807]",
+      "stderr": ""
+    },
+    "exact": true,
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Str(\"[\")\n"
+    }
+  },
+  {
+    "name": "t1396_hb_ntos",
+    "source": "function main()\n    ? \"[\" + hb_ntos(42) + \"]\"\n    ? \"[\" + hb_ntos(-7) + \"]\"\n    ? \"[\" + hb_ntos(0) + \"]\"\n    ? \"[\" + hb_ntos(123456789012345) + \"]\"\n    return nil\n",
+    "sha256": "569f177e2b23b6d4d383fc45be0bdcaf2c128fbe925d6c811ebb75a467ea93ab",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n[42]\n[-7]\n[0]\n[123456789012345]",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/t1396_hb_ntos.prg -> /downloads/verify-strings-contracts/t1396_hb_ntos.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n[42]\n[-7]\n[0]\n[123456789012345]",
+      "stderr": ""
+    },
+    "exact": true,
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Str(\"[\")\n"
+    }
+  },
+  {
+    "name": "t1397_padr",
+    "source": "function main()\n    ? \"[\" + PadR(\"ab\",5) + \"]\"\n    ? \"[\" + PadR(\"abcdef\",3) + \"]\"\n    ? \"[\" + PadR(\"\",4) + \"]\"\n    ? \"[\" + PadR(\"ab\",0) + \"]\"\n    ? \"[\" + PadR(\"ab\",-1) + \"]\"\n    ? Len(PadR(\"x\",1000))\n    return nil\n",
+    "sha256": "d5916cd064a4fe5d54952dec3ff66a983422d83e3e1b884a1f88f3402815034b",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n[ab   ]\n[abc]\n[    ]\n[]\n[]\n      1000",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/t1397_padr.prg -> /downloads/verify-strings-contracts/t1397_padr.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n[ab   ]\n[abc]\n[    ]\n[]\n[]\n      1000",
+      "stderr": ""
+    },
+    "exact": true,
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Str(\"[\")\n"
+    }
+  },
+  {
+    "name": "t1398_str_temp",
+    "source": "function main()\n    ? \"[\" + PadR(LTrim(\"  ab\"),5) + \"]\"\n    ? \"[\" + Str(Len(\"abcd\")) + \"]\"\n    ? \"[\" + hb_ntos(Len(\"abc\") + 1) + \"]\"\n    ? \"[\" + PadR(AllTrim(\"  xy  \"),6) + \"]\"\n    return nil\n",
+    "sha256": "956aec4b9252ce199a1b64633eb1372a4e4025ebda99bb4f8fabb721bba3e9bf",
+    "ref_build": {
+      "exit": 0,
+      "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+      "stderr": ""
+    },
+    "reference": {
+      "exit": 0,
+      "stdout": "\n[ab   ]\n[         4]\n[4]\n[xy    ]",
+      "stderr": ""
+    },
+    "compile": {
+      "exit": 0,
+      "stdout": "/downloads/verify-strings-contracts/t1398_str_temp.prg -> /downloads/verify-strings-contracts/t1398_str_temp.s (1 functions)\n",
+      "stderr": ""
+    },
+    "assemble": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "link": {
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "execution": {
+      "exit": 0,
+      "stdout": "\n[ab   ]\n[         4]\n[4]\n[xy    ]",
+      "stderr": ""
+    },
+    "exact": true,
+    "llvm": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "error: LLVM scalar: expression unsupported: Str(\"[\")\n"
+    }
+  }
+]
