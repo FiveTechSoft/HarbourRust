@@ -20,7 +20,7 @@ Historical xcommand/uncommand mismatch is unchanged. Existing command-queue
 identity/provenance and resource bounds remain. No general suppression heuristic.
 
 Six own runtime witnesses exact Harbour/default/LLVM Linux exit/stdout/stderr.
-Sixpositive/twonegative manifest rows added. Local full1300PASS=1295manifest+5aux,
+Sixpositive/twonegative manifest rows added. Local+independent remote full1300PASS=1295manifest+5aux,
 622LLVM PASS.14reviewed unchanged Linux originals exact freshly built Harbour
 in both backends.268x4diagnostic audit changes only classch:first old line21pp
 scope guard moves to later parser line330unknown dotted word. Accepted totals
@@ -31,4 +31,5 @@ METHOD/helper output remains wrong. Do not call the whole header correct.
 Full Harbour compiler -p preprocessing classch succeeded; standalone hbpp on its
 header reported an #if expression error,so its partial output is not a whole-file
 oracle. No whole-header equality claim is made. No class runtime,ABI/ownership,
-main,globalpriority,debugger,size/speed changes. Independent remote gates pending.
+main,globalpriority,debugger,size/speed changes. Independent remote full gates,7811replay,268x4phase audit and14original
+exact runtime checks verified.
