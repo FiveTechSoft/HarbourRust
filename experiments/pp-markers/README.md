@@ -957,3 +957,27 @@ Evidence: `evidence/smart-escape-ascii-140.json` and
 `evidence/smart-escape-console4.json`. Reproduce the140cases with
 `check_smart_escape_implemented.py --hbpp /path/hbpp --hpp /path/hpp
 --output-dir /tmp/smart-escape` after building the probe frontend.
+
+## Extended boundary follow-up: lexical versus parenthesized mode
+
+532additional own black-box observations, not supported-case counts, are in
+`extended-boundaries-20261031/`. No implementation change follows from them.
+The480-case grid is reproducible with `probe_extended_boundaries.py`;the52
+parenthesized observations retain complete source and reference outputs.
+
+- For an unparenthesized start, Harbour consumes adjacent bytes until whitespace
+  or comma in these probes, even inside a later call/index/brace. Thus f(x)
+  matches a whole command, f(x,y) does not, and a translate can yield
+  HIT(f(x),y). This is preprocessor matching, not expression validation.
+- Initial parentheses switch to a different boundary: spaces and nested commas
+  may be consumed through an operator tail. An extra bare word ends the capture;
+  a following pattern literal can match there. Incomplete syntax can still be
+  captured, so reusing the compiler expression parser would over-restrict it.
+- Source delimiters remain part of the capture. Fixing just the outer matching
+  would leave the historical result-side re-parenthesization wrong. Source-span
+  identity and smart/plain/normal result semantics must be changed together.
+- Prefix translation still needs a consumed-span result rather than the current
+  all-source match gate. Whole-command results do not establish prefix support.
+
+The negative t93 spaced arithmetic expectation stays valid. Its old comment
+was broader than the actual contract. No runtime,ABI,debugger or main change.
