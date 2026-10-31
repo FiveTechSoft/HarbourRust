@@ -916,3 +916,15 @@ pp checks plus3scope rejections,and14reviewed original programs fresh exact
 versus Harbour/default/LLVM.268x4audit matches local exactly. Earlier506LLVM
 wording was a counting mistake;the final logs contain508PASS lines. This
 correction changes evidence text only,not the compiler or its admitted scope.
+
+## Extended matching boundary recheck after smart-result separation
+
+200additional own observations distinguish extended match boundaries from plain
+expression capture. With <(x)>,unspaced a+b and file paths match,while a + b,
+f(1,2),a[1,2],and braces do not match a whole command in these measured forms.
+An initial parenthesized expression retains its parentheses and can include a
+following arithmetic tail with spaces. Quoted initial data has a different
+boundary. Captured translate can consume only a prefix. The historical t93
+negative is correct for spaced1+2without parentheses but its comment claiming
+that the marker always REQUIRES parentheses is too broad. No extended matcher
+change is included:implementing it as ordinary expression capture would be wrong.
