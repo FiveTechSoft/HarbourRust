@@ -1440,7 +1440,6 @@ neg tests/t1443_isx_movedowner_neg.hb use of moved value `a`
 neg tests/t1444_isx_zeroargs_neg.hb takes one argument
 neg tests/t1445_isx_dynvar_neg.hb over a Dyn variable is not measured
 
-# ains 1b step (b), read-only array views
 pos tests/t1446_aview_mixed.hb NCUL\n\n         4
 pos tests/t1447_aview_empty.hb \n         0\n         0
 pos tests/t1448_aview_recur.hb ANNANN\n         2
