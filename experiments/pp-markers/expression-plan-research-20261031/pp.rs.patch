@@ -9,6 +9,15 @@
      if !plan.nodes.iter().any(|n|matches!(n,group_plan::Node::Optional{..})){return None;}
      if !tokens.first().map(|t|lit_match(t,&c.pattern[0])).unwrap_or(false){return None;}
      // Nested result groups stay wholly on the historical path.
+@@ -1239,7 +1239,7 @@
+         let mut out=String::new();
+         for (group,part) in pieces{
+             let marker_ids:Vec<usize>=plan.markers.iter().enumerate().filter(|(_, (name,_))|[format!("<{}>",name),format!("#<{}>",name),format!("<({})>",name),format!("<\"{}\">",name),format!("<.{}.>",name),format!("<-{}->",name)].iter().any(|needle|!stringify_positions(part,needle).is_empty())).map(|(id,_)|id).collect();
+-            let iterations=match plan.result_iterations(&matched,&marker_ids,group){Ok(it)=>it,Err("repeated result marker outside associated group")=>return Ok(None),Err(e)=>return Err(e.into())};
++            let iterations=match plan.result_iterations(&matched,&marker_ids,group){Ok(it)=>it,Err("repeated result marker outside associated group")=>return Ok(None),Err("multiple repeated result owners outside bounded plan")if plan.expression_root()=>return Ok(None),Err(e)=>return Err(e.into())};
+             let flat=Cmd{rule_id:c.rule_id,group_plan:None,pattern:atom_pattern.clone(),result:part.into(),translation:false,restricted_exact:c.restricted_exact};
+             for it in iterations{
+                 let mut caps=vec![Capture::empty();plan.markers.len()];
 @@ -1279,7 +1279,7 @@
                  if !safe_atom||!safe_tail{return Err(format!("line {}: overlapping VAR type expression outside bounded contract",line_no));}
              }

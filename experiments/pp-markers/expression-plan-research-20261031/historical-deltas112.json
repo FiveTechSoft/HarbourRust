@@ -1,0 +1,2133 @@
+{
+  "total": 30903,
+  "changes": [
+    {
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE WORD alpha\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "PROBE WORD alpha\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nPROBE WORD alpha\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE WORD alpha WORD beta\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "PROBE WORD alpha WORD beta\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nPROBE WORD alpha WORD beta\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE alpha TAIL beta\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "OUT( \"alpha\" )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT( \"alpha\" )\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE WORD alpha\n",
+      "baseline": [
+        0,
+        "OUT( WORD alpha )\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "PROBE WORD alpha\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nPROBE WORD alpha\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE WORD alpha WORD beta\n",
+      "baseline": [
+        0,
+        "OUT( WORD alpha WORD beta )\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "PROBE WORD alpha WORD beta\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nPROBE WORD alpha WORD beta\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE WORD alpha\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "PROBE WORD alpha\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nPROBE WORD alpha\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE WORD alpha WORD beta\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "PROBE WORD alpha WORD beta\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nPROBE WORD alpha WORD beta\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE alpha TAIL beta\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "OUT( \"alpha\" )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT( \"alpha\" )\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE WORD alpha\n",
+      "baseline": [
+        0,
+        "OUT( WORD alpha )\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "PROBE WORD alpha\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nPROBE WORD alpha\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#command PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE WORD alpha WORD beta\n",
+      "baseline": [
+        0,
+        "OUT( WORD alpha WORD beta )\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "PROBE WORD alpha WORD beta\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nPROBE WORD alpha WORD beta\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\nMETHOD New() DECL\n",
+      "baseline": [
+        0,
+        "BROAD(New ( ) DECL)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "BROAD(New ( ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nBROAD(New())\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\nMETHOD New(1,2) CLASS Test\n",
+      "baseline": [
+        0,
+        "BROAD(New ( 1 , 2 ) CLASS Test)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "IMPL(New ( 1 , 2 ),Test)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nIMPL(New(1,2),Test)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\nMETHOD Test() INLINE OUT(\"hi\")\n",
+      "baseline": [
+        0,
+        "BROAD(Test ( ) INLINE OUT ( \"hi\" ))\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "INLINE(Test ( ),OUT ( \"hi\" ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nINLINE(Test(),OUT(\"hi\"))\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\nMETHOD New() DECL\n",
+      "baseline": [
+        0,
+        "BROAD(New ( ) DECL)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "BROAD(New ( ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nBROAD(New())\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\nMETHOD New(1,2) CLASS Test\n",
+      "baseline": [
+        0,
+        "BROAD(New ( 1 , 2 ) CLASS Test)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "IMPL(New ( 1 , 2 ),Test)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nIMPL(New(1,2),Test)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\nMETHOD Test() INLINE OUT(\"hi\")\n",
+      "baseline": [
+        0,
+        "BROAD(Test ( ) INLINE OUT ( \"hi\" ))\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "INLINE(Test ( ),OUT ( \"hi\" ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nINLINE(Test(),OUT(\"hi\"))\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\nMETHOD New() DECL\n",
+      "baseline": [
+        0,
+        "BROAD(New ( ) DECL)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "BROAD(New ( ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nBROAD(New())\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\nMETHOD New(1,2) CLASS Test\n",
+      "baseline": [
+        0,
+        "BROAD(New ( 1 , 2 ) CLASS Test)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "IMPL(New ( 1 , 2 ),Test)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nIMPL(New(1,2),Test)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\nMETHOD Test() INLINE OUT(\"hi\")\n",
+      "baseline": [
+        0,
+        "BROAD(Test ( ) INLINE OUT ( \"hi\" ))\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "INLINE(Test ( ),OUT ( \"hi\" ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nINLINE(Test(),OUT(\"hi\"))\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\nMETHOD New() DECL\n",
+      "baseline": [
+        0,
+        "BROAD(New ( ) DECL)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "BROAD(New ( ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nBROAD(New())\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\nMETHOD New(1,2) CLASS Test\n",
+      "baseline": [
+        0,
+        "BROAD(New ( 1 , 2 ) CLASS Test)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "IMPL(New ( 1 , 2 ),Test)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nIMPL(New(1,2),Test)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\nMETHOD Test() INLINE OUT(\"hi\")\n",
+      "baseline": [
+        0,
+        "BROAD(Test ( ) INLINE OUT ( \"hi\" ))\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "INLINE(Test ( ),OUT ( \"hi\" ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nINLINE(Test(),OUT(\"hi\"))\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\nMETHOD New() DECL\n",
+      "baseline": [
+        0,
+        "BROAD(New ( ) DECL)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "BROAD(New ( ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nBROAD(New())\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\nMETHOD New(1,2) CLASS Test\n",
+      "baseline": [
+        0,
+        "BROAD(New ( 1 , 2 ) CLASS Test)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "IMPL(New ( 1 , 2 ),Test)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nIMPL(New(1,2),Test)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\nMETHOD Test() INLINE OUT(\"hi\")\n",
+      "baseline": [
+        0,
+        "BROAD(Test ( ) INLINE OUT ( \"hi\" ))\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "INLINE(Test ( ),OUT ( \"hi\" ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nINLINE(Test(),OUT(\"hi\"))\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\nMETHOD New() DECL\n",
+      "baseline": [
+        0,
+        "BROAD(New ( ) DECL)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "BROAD(New ( ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nBROAD(New())\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\nMETHOD New(1,2) CLASS Test\n",
+      "baseline": [
+        0,
+        "BROAD(New ( 1 , 2 ) CLASS Test)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "IMPL(New ( 1 , 2 ),Test)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nIMPL(New(1,2),Test)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\nMETHOD Test() INLINE OUT(\"hi\")\n",
+      "baseline": [
+        0,
+        "BROAD(Test ( ) INLINE OUT ( \"hi\" ))\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "INLINE(Test ( ),OUT ( \"hi\" ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n\n\nINLINE(Test(),OUT(\"hi\"))\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD \"New\"\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "OUT('\"New\"',)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT('\"New\"',)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD (New)\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "OUT(\"(New)\",)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"(New)\",)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "OUT(\"New\",)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"New\",)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New + 7\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "OUT(\"New + 7\",)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"New + 7\",)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New Other\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "METHOD New Other\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New Other\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New()\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "OUT(\"New()\",)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"New()\",)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() AS Number\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "OUT(\"New()\",\"Number\")\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"New()\",\"Number\")\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() AS Number + Other\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "OUT(\"New()\",\"Number + Other\")\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"New()\",\"Number + Other\")\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() AS Number CLASS Test\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "METHOD New() AS Number CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New() AS Number CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() AS Number DECL\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "OUT(\"New()\",\"Number\")\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"New()\",\"Number\")\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() AS Number INLINE OUT(7)\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "METHOD New() AS Number INLINE OUT(7)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New() AS Number INLINE OUT(7)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() CLASS Test\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "METHOD New() CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New() CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() DECL\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "OUT(\"New()\",)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"New()\",)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() INLINE OUT(7)\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "METHOD New() INLINE OUT(7)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New() INLINE OUT(7)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New() UNKNOWN\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "METHOD New() UNKNOWN\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New() UNKNOWN\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New(a,b)\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "OUT(\"New(a,b)\",)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"New(a,b)\",)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD New[1]\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "OUT(\"New[1]\",)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"New[1]\",)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD \"New\" AS Number CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(\"New\",Number CLASS Test)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD \"New\" AS Number CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD \"New\" AS Number CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD \"New\" AS Number DECL\n",
+      "baseline": [
+        0,
+        "OUT(\"New\",Number DECL)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(\"New\",Number)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"New\",Number)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD \"New\" CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(\"New\" CLASS Test,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD \"New\" CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD \"New\" CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD \"New\" DECL\n",
+      "baseline": [
+        0,
+        "OUT(\"New\" DECL,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(\"New\",)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"New\",)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD \"New\" DECL AS Number\n",
+      "baseline": [
+        0,
+        "OUT(\"New\" DECL,Number)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(\"New\",Number)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"New\",Number)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD \"New\" INLINE OUT(7)\n",
+      "baseline": [
+        0,
+        "OUT(\"New\" INLINE OUT ( 7 ),)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD \"New\" INLINE OUT(7)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD \"New\" INLINE OUT(7)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD (New) AS Number CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(( New ),Number CLASS Test)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD (New) AS Number CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD (New) AS Number CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD (New) AS Number DECL\n",
+      "baseline": [
+        0,
+        "OUT(( New ),Number DECL)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(( New ),Number)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT((New),Number)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD (New) CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(( New ) CLASS Test,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD (New) CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD (New) CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD (New) DECL\n",
+      "baseline": [
+        0,
+        "OUT(( New ) DECL,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(( New ),)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT((New),)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD (New) DECL AS Number\n",
+      "baseline": [
+        0,
+        "OUT(( New ) DECL,Number)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(( New ),Number)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT((New),Number)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD (New) INLINE OUT(7)\n",
+      "baseline": [
+        0,
+        "OUT(( New ) INLINE OUT ( 7 ),)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD (New) INLINE OUT(7)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD (New) INLINE OUT(7)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New + AS Number\n",
+      "baseline": [
+        0,
+        "OUT(New +,Number)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New + AS Number\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New + AS Number\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New + AS Number CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(New +,Number CLASS Test)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New + AS Number CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New + AS Number CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New + AS Number DECL\n",
+      "baseline": [
+        0,
+        "OUT(New +,Number DECL)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New + AS Number DECL\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New + AS Number DECL\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New + AS Number+Other\n",
+      "baseline": [
+        0,
+        "OUT(New +,Number + Other)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New + AS Number+Other\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New + AS Number+Other\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New + CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(New + CLASS Test,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New + CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New + CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New + INLINE OUT(7)\n",
+      "baseline": [
+        0,
+        "OUT(New + INLINE OUT ( 7 ),)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New + INLINE OUT(7)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New + INLINE OUT(7)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New AS Number CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(New,Number CLASS Test)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New AS Number CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New AS Number CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New AS Number DECL\n",
+      "baseline": [
+        0,
+        "OUT(New,Number DECL)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(New,Number)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(New,Number)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(New CLASS Test,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New DECL\n",
+      "baseline": [
+        0,
+        "OUT(New DECL,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(New,)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(New,)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New DECL AS Number\n",
+      "baseline": [
+        0,
+        "OUT(New DECL,Number)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(New,Number)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(New,Number)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New INLINE OUT(7)\n",
+      "baseline": [
+        0,
+        "OUT(New INLINE OUT ( 7 ),)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New INLINE OUT(7)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New INLINE OUT(7)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New Other\n",
+      "baseline": [
+        0,
+        "OUT(New Other,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New Other\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New Other\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New Other AS Number\n",
+      "baseline": [
+        0,
+        "OUT(New Other,Number)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New Other AS Number\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New Other AS Number\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New Other AS Number CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(New Other,Number CLASS Test)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New Other AS Number CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New Other AS Number CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New Other AS Number DECL\n",
+      "baseline": [
+        0,
+        "OUT(New Other,Number DECL)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New Other AS Number DECL\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New Other AS Number DECL\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New Other AS Number+Other\n",
+      "baseline": [
+        0,
+        "OUT(New Other,Number + Other)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New Other AS Number+Other\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New Other AS Number+Other\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New Other CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(New Other CLASS Test,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New Other CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New Other CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New Other DECL\n",
+      "baseline": [
+        0,
+        "OUT(New Other DECL,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New Other DECL\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New Other DECL\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New Other DECL AS Number\n",
+      "baseline": [
+        0,
+        "OUT(New Other DECL,Number)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New Other DECL AS Number\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New Other DECL AS Number\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New Other INLINE OUT(7)\n",
+      "baseline": [
+        0,
+        "OUT(New Other INLINE OUT ( 7 ),)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New Other INLINE OUT(7)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New Other INLINE OUT(7)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New() AS Number CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(New ( ),Number CLASS Test)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New() AS Number CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New() AS Number CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New() AS Number DECL\n",
+      "baseline": [
+        0,
+        "OUT(New ( ),Number DECL)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(New ( ),Number)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(New(),Number)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New() CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(New ( ) CLASS Test,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New() CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New() CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New() DECL\n",
+      "baseline": [
+        0,
+        "OUT(New ( ) DECL,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(New ( ),)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(New(),)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New() DECL AS Number\n",
+      "baseline": [
+        0,
+        "OUT(New ( ) DECL,Number)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(New ( ),Number)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(New(),Number)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New() INLINE OUT(7)\n",
+      "baseline": [
+        0,
+        "OUT(New ( ) INLINE OUT ( 7 ),)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New() INLINE OUT(7)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New() INLINE OUT(7)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New(a,b) AS Number CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(New ( a , b ),Number CLASS Test)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New(a,b) AS Number CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New(a,b) AS Number CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New(a,b) AS Number DECL\n",
+      "baseline": [
+        0,
+        "OUT(New ( a , b ),Number DECL)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(New ( a , b ),Number)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(New(a,b),Number)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New(a,b) CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(New ( a , b ) CLASS Test,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New(a,b) CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New(a,b) CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New(a,b) DECL\n",
+      "baseline": [
+        0,
+        "OUT(New ( a , b ) DECL,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(New ( a , b ),)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(New(a,b),)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New(a,b) DECL AS Number\n",
+      "baseline": [
+        0,
+        "OUT(New ( a , b ) DECL,Number)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(New ( a , b ),Number)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(New(a,b),Number)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New(a,b) INLINE OUT(7)\n",
+      "baseline": [
+        0,
+        "OUT(New ( a , b ) INLINE OUT ( 7 ),)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New(a,b) INLINE OUT(7)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New(a,b) INLINE OUT(7)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New+7 AS Number CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(New + 7,Number CLASS Test)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New+7 AS Number CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New+7 AS Number CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New+7 AS Number DECL\n",
+      "baseline": [
+        0,
+        "OUT(New + 7,Number DECL)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(New + 7,Number)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(New+7,Number)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New+7 CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(New + 7 CLASS Test,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New+7 CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New+7 CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New+7 DECL\n",
+      "baseline": [
+        0,
+        "OUT(New + 7 DECL,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(New + 7,)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(New+7,)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New+7 DECL AS Number\n",
+      "baseline": [
+        0,
+        "OUT(New + 7 DECL,Number)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(New + 7,Number)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(New+7,Number)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New+7 INLINE OUT(7)\n",
+      "baseline": [
+        0,
+        "OUT(New + 7 INLINE OUT ( 7 ),)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New+7 INLINE OUT(7)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New+7 INLINE OUT(7)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New[1] AS Number CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(New [ 1 ],Number CLASS Test)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New[1] AS Number CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New[1] AS Number CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New[1] AS Number DECL\n",
+      "baseline": [
+        0,
+        "OUT(New [ 1 ],Number DECL)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(New [ 1 ],Number)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(New[1],Number)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New[1] CLASS Test\n",
+      "baseline": [
+        0,
+        "OUT(New [ 1 ] CLASS Test,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New[1] CLASS Test\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New[1] CLASS Test\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New[1] DECL\n",
+      "baseline": [
+        0,
+        "OUT(New [ 1 ] DECL,)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(New [ 1 ],)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(New[1],)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New[1] DECL AS Number\n",
+      "baseline": [
+        0,
+        "OUT(New [ 1 ] DECL,Number)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(New [ 1 ],Number)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(New[1],Number)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New[1] INLINE OUT(7)\n",
+      "baseline": [
+        0,
+        "OUT(New [ 1 ] INLINE OUT ( 7 ),)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "METHOD New[1] INLINE OUT(7)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMETHOD New[1] INLINE OUT(7)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE WORD alpha\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "PROBE WORD alpha\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nPROBE WORD alpha\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE WORD alpha WORD beta\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "PROBE WORD alpha WORD beta\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nPROBE WORD alpha WORD beta\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( #<x> )\nPROBE alpha TAIL beta\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "OUT( \"alpha\" )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT( \"alpha\" )\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE WORD alpha\n",
+      "baseline": [
+        0,
+        "OUT( WORD alpha )\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "PROBE WORD alpha\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nPROBE WORD alpha\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( <x> )\nPROBE WORD alpha WORD beta\n",
+      "baseline": [
+        0,
+        "OUT( WORD alpha WORD beta )\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "PROBE WORD alpha WORD beta\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nPROBE WORD alpha WORD beta\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE WORD alpha\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "PROBE WORD alpha\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nPROBE WORD alpha\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE WORD alpha WORD beta\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "PROBE WORD alpha WORD beta\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nPROBE WORD alpha WORD beta\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( [#<x>] )\nPROBE alpha TAIL beta\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: stringify with literal-bearing optional groups is outside this increment\n"
+      ],
+      "candidate": [
+        0,
+        "OUT( \"alpha\" )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT( \"alpha\" )\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE WORD alpha\n",
+      "baseline": [
+        0,
+        "OUT( WORD alpha )\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "PROBE WORD alpha\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nPROBE WORD alpha\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xcommand PROBE <x> [TAIL <y>] => OUT( [<x>] )\nPROBE WORD alpha WORD beta\n",
+      "baseline": [
+        0,
+        "OUT( WORD alpha WORD beta )\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "PROBE WORD alpha WORD beta\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nPROBE WORD alpha WORD beta\n",
+        ""
+      ],
+      "match": true
+    }
+  ]
+}

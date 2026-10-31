@@ -9,7 +9,7 @@
                  nodes.push(Node::Optional{id,atoms});i+=1;
              }else{nodes.push(Node::Atom(atom(&tokens[i],None,&mut markers)?));i+=1;}
          }
-@@ -57,6 +57,43 @@
+@@ -57,6 +57,58 @@
              true
          }
          let mut at=0;expr(tokens,&mut at,0)&&at==tokens.len()
@@ -27,7 +27,22 @@
 +    fn expression_root_matches(&self,source:&[String],exact:bool)->Result<Option<Matched>,&'static str>{
 +        fn prefix(t:&[String])->Option<usize>{
 +            // First complete expression followed by an adjacent word or end.
-+            for n in 1..=t.len(){if Plan::expression_in_scope(&t[..n])&&(n==t.len()||identifier(&t[n])){return Some(n);}}
++            fn supported(t:&[String],terminal:bool)->bool{
++                // This command capture boundary is lexical, not the compiler's
++                // expression validator: Harbour also captures a trailing operator.
++                let mut normalized=Vec::new();let mut at=0;
++                while at<t.len(){
++                    if t[at]=="["&&at>0{
++                        let mut end=at+1;let mut depth=1;
++                        while end<t.len()&&depth>0{if t[end]=="["{depth+=1;}if t[end]=="]"{depth-=1;}end+=1;}
++                        if depth!=0||!supported(&t[at+1..end-1],true){return false;}at=end;continue;
++                    }
++                    normalized.push(t[at].clone());at+=1;
++                }
++                if terminal&&normalized.last().map(|s|matches!(s.as_str(),"+"|"-"|"*"|"/"|"%"|"^")).unwrap_or(false){normalized.push("0".into());}
++                Plan::expression_in_scope(&normalized)
++            }
++            for n in 1..=t.len(){if supported(&t[..n],n==t.len())&&(n==t.len()||identifier(&t[n])){return Some(n);}}
 +            None
 +        }
 +        let lit=|s:&str,p:&str|s.eq_ignore_ascii_case(p)||(!exact&&s.is_ascii()&&p.is_ascii()&&s.len()>=4&&p.len()>s.len()&&p[..s.len()].eq_ignore_ascii_case(s));
@@ -53,7 +68,7 @@
      }
      pub fn reduced_var(&self)->bool{
          if self.nodes.len()<5||self.nodes.len()>11{return false;}
-@@ -131,6 +168,7 @@
+@@ -131,6 +183,7 @@
          seq(&self.nodes,source,0,exact,prefix,Matched{roots:Vec::new(),iterations:Vec::new(),consumed:0},&mut 10000)
      }
      pub fn matches(&self,source:&[String],exact:bool,prefix:bool)->Result<Option<Matched>,&'static str>{

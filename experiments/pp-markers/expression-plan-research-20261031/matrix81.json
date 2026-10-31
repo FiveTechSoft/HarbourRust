@@ -410,36 +410,36 @@
       "reference_exit": 0,
       "reference_output": "\nOUT(New[1],)\n",
       "own_exit": 0,
-      "own_output": "METHOD New[1]\n",
+      "own_output": "OUT(New [ 1 ],)\n",
       "own_error": "",
-      "match": false
+      "match": true
     },
     {
       "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New[1] DECL\n",
       "reference_exit": 0,
       "reference_output": "\nOUT(New[1],)\n",
       "own_exit": 0,
-      "own_output": "METHOD New[1] DECL\n",
+      "own_output": "OUT(New [ 1 ],)\n",
       "own_error": "",
-      "match": false
+      "match": true
     },
     {
       "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New[1] AS Number\n",
       "reference_exit": 0,
       "reference_output": "\nOUT(New[1],Number)\n",
       "own_exit": 0,
-      "own_output": "METHOD New[1] AS Number\n",
+      "own_output": "OUT(New [ 1 ],Number)\n",
       "own_error": "",
-      "match": false
+      "match": true
     },
     {
       "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New[1] AS Number DECL\n",
       "reference_exit": 0,
       "reference_output": "\nOUT(New[1],Number)\n",
       "own_exit": 0,
-      "own_output": "METHOD New[1] AS Number DECL\n",
+      "own_output": "OUT(New [ 1 ],Number)\n",
       "own_error": "",
-      "match": false
+      "match": true
     },
     {
       "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New[1] CLASS Test\n",
@@ -473,27 +473,27 @@
       "reference_exit": 0,
       "reference_output": "\nOUT(New[1],Number+Other)\n",
       "own_exit": 0,
-      "own_output": "METHOD New[1] AS Number+Other\n",
+      "own_output": "OUT(New [ 1 ],Number + Other)\n",
       "own_error": "",
-      "match": false
+      "match": true
     },
     {
       "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New[1] DECL AS Number\n",
       "reference_exit": 0,
       "reference_output": "\nOUT(New[1],Number)\n",
       "own_exit": 0,
-      "own_output": "METHOD New[1] DECL AS Number\n",
+      "own_output": "OUT(New [ 1 ],Number)\n",
       "own_error": "",
-      "match": false
+      "match": true
     },
     {
       "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New +\n",
       "reference_exit": 0,
       "reference_output": "\nOUT(New +,)\n",
       "own_exit": 0,
-      "own_output": "METHOD New +\n",
+      "own_output": "OUT(New +,)\n",
       "own_error": "",
-      "match": false
+      "match": true
     },
     {
       "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<name>,<type>)\nMETHOD New + DECL\n",
