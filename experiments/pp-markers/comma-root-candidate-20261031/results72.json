@@ -1,0 +1,725 @@
+{
+  "scope": "72own comma identifier cases;candidate only",
+  "rows": [
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<(a)> [,<(b)>])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\" )\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<(a)> [,<(b)>])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"beta\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\" ,\"beta\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<(a)> [,<(b)>])\nPROBE alpha,beta,gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"beta\",\"gamma\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\" ,\"beta\",\"gamma\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<(a)> [,<(b)>])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<(a)> [,<(b)>])\nPROBE alpha,,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,,beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,,beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<(a)> [,<(b)>])\nPROBE alpha,123\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,123\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,123\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([<(b)>])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT()\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT()\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([<(b)>])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"beta\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"beta\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([<(b)>])\nPROBE alpha,beta,gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"beta\"\"gamma\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"beta\"\"gamma\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([<(b)>])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([<(b)>])\nPROBE alpha,,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,,beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,,beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([<(b)>])\nPROBE alpha,123\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,123\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,123\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<(a)>,<(b)>)\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<(a)>,<(b)>)\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"beta\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\"beta\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<(a)>,<(b)>)\nPROBE alpha,beta,gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,beta,gamma\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,beta,gamma\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<(a)>,<(b)>)\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<(a)>,<(b)>)\nPROBE alpha,,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,,beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,,beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<(a)>,<(b)>)\nPROBE alpha,123\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,123\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,123\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([<(a)>,<(b)>;])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",;)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\n)\n",
+      "own_error": "",
+      "token_match": false
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([<(a)>,<(b)>;])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"beta\";)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\"beta\"\n)\n",
+      "own_error": "",
+      "token_match": false
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([<(a)>,<(b)>;])\nPROBE alpha,beta,gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"beta\";\"alpha\",\"gamma\";)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\"beta\"\n\"alpha\",\"gamma\"\n)\n",
+      "own_error": "",
+      "token_match": false
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([<(a)>,<(b)>;])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([<(a)>,<(b)>;])\nPROBE alpha,,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,,beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,,beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([<(a)>,<(b)>;])\nPROBE alpha,123\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,123\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,123\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<a>[,<b>])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(alpha)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(alpha)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<a>[,<b>])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(alpha,beta)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(alpha,beta)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<a>[,<b>])\nPROBE alpha,beta,gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(alpha,beta,gamma)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(alpha,beta,gamma)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<a>[,<b>])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<a>[,<b>])\nPROBE alpha,,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,,beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,,beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT(<a>[,<b>])\nPROBE alpha,123\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,123\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,123\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([#<b>,])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT()\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT()\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([#<b>,])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"beta\",)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"beta\",)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([#<b>,])\nPROBE alpha,beta,gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"beta\",\"gamma\",)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"beta\",\"gamma\",)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([#<b>,])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([#<b>,])\nPROBE alpha,,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,,beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,,beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([#<b>,])\nPROBE alpha,123\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,123\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,123\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<(a)> [,<(b)>])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\" )\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<(a)> [,<(b)>])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"beta\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\" ,\"beta\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<(a)> [,<(b)>])\nPROBE alpha,beta,gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"beta\",\"gamma\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\" ,\"beta\",\"gamma\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<(a)> [,<(b)>])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\") beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\" ) beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<(a)> [,<(b)>])\nPROBE alpha,,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\"),,beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\" ),,beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<(a)> [,<(b)>])\nPROBE alpha,123\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\"),123\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\" ),123\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([<(b)>])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT()\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT()\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([<(b)>])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"beta\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"beta\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([<(b)>])\nPROBE alpha,beta,gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"beta\"\"gamma\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"beta\"\"gamma\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([<(b)>])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT() beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT() beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([<(b)>])\nPROBE alpha,,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(),,beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(),,beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([<(b)>])\nPROBE alpha,123\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(),123\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(),123\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<(a)>,<(b)>)\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<(a)>,<(b)>)\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"beta\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\"beta\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<(a)>,<(b)>)\nPROBE alpha,beta,gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,beta,gamma\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,beta,gamma\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<(a)>,<(b)>)\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",) beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",) beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<(a)>,<(b)>)\nPROBE alpha,,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",),,beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",),,beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<(a)>,<(b)>)\nPROBE alpha,123\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",),123\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",),123\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([<(a)>,<(b)>;])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",;)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\n)\n",
+      "own_error": "",
+      "token_match": false
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([<(a)>,<(b)>;])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"beta\";)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\"beta\"\n)\n",
+      "own_error": "",
+      "token_match": false
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([<(a)>,<(b)>;])\nPROBE alpha,beta,gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"beta\";\"alpha\",\"gamma\";)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\"beta\"\n\"alpha\",\"gamma\"\n)\n",
+      "own_error": "",
+      "token_match": false
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([<(a)>,<(b)>;])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",;) beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\n) beta\n",
+      "own_error": "",
+      "token_match": false
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([<(a)>,<(b)>;])\nPROBE alpha,,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",;),,beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\n),,beta\n",
+      "own_error": "",
+      "token_match": false
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([<(a)>,<(b)>;])\nPROBE alpha,123\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",;),123\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\n),123\n",
+      "own_error": "",
+      "token_match": false
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<a>[,<b>])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(alpha)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(alpha)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<a>[,<b>])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(alpha,beta)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(alpha,beta)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<a>[,<b>])\nPROBE alpha,beta,gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(alpha,beta,gamma)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(alpha,beta,gamma)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<a>[,<b>])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(alpha) beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(alpha) beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<a>[,<b>])\nPROBE alpha,,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(alpha),,beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(alpha),,beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT(<a>[,<b>])\nPROBE alpha,123\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(alpha),123\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(alpha),123\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([#<b>,])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT()\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT()\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([#<b>,])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"beta\",)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"beta\",)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([#<b>,])\nPROBE alpha,beta,gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"beta\",\"gamma\",)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"beta\",\"gamma\",)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([#<b>,])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT() beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT() beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([#<b>,])\nPROBE alpha,,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(),,beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(),,beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([#<b>,])\nPROBE alpha,123\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(),123\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(),123\n",
+      "own_error": "",
+      "token_match": true
+    }
+  ]
+}
