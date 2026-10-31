@@ -22,4 +22,5 @@ fresh Harbour/default/LLVM Linux. In classch,the CLASS_NAME macro no longer
 absorbs a following #undef,but METHOD helpers and other output remain wrong.
 This is neither whole-header correctness nor class/original execution support.
 No main,runtime/ABI/ownership,debugger or speed/byte measurements change.
-Independent remote validation remains required before closeout.
+Independent remote97305b0 verifies1314/646fullgates,72boundarychecks,
+14originalsexact,and20line-onlyoriginaldiagnosticchanges.

@@ -10,5 +10,13 @@
   "all_changes_line_number_only": true,
   "original_runtime_exact_linux": 14,
   "own_runtime_exact_linux": 6,
-  "no_original_compile_growth": true
+  "no_original_compile_growth": true,
+  "remote_verification": {
+    "compiler": "97305b0",
+    "default_pass": 1314,
+    "llvm_pass": 646,
+    "focused_pass": 72,
+    "original_exact": 14,
+    "diagnostic_line_only_changes": 20
+  }
 }
