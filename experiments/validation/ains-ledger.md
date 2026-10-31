@@ -13,6 +13,32 @@ Repro (probes/ains-preblockers01/trim-sep.prg):
   carry trailing spaces, so aDump cannot be byte-exact until this is
   resolved. Blocks piece (d) acceptance, not compilation.
 
+INVESTIGATION 31Oct (oracle matrix q1-q10, probes/ains-preblockers01;
+candidate untouched): Harbour's rule is trim-at-FLUSH, not per-statement:
+trailing spaces are dropped only when a newline (a later `?`'s leading
+newline) or program exit flushes the line; mid-line they survive across
+any number of `??` statements (q6: `?? "ab  "` `?? "y"` `? ""` ->
+`ab  y\n`; aDump's `": "`/`]= "`/`, `"` survive the same way; q9/q10:
+a line still open at EOF IS trimmed). One-space separators exist between
+items in BOTH `?` and `??` (q1/q3); numbers print in their field (q2/q8,
+already pinned by hk327/hk328). OUR implementation right-trims the last
+visible item of EVERY statement (? and ?? alike), which coincides with
+Harbour only when the statement end is the line end. Divergences:
+P1a `??` last item trimmed although more `??` output follows (the aDump
+blocker); P1b `? "ab  "` followed by `?? "x"` trims early (`abx` vs
+`ab  x`); EOF behaviour matches by accident. The cg comment claiming
+"?? trailing right-trim identical to ? (hk274-hk276)" has NO hk274-276
+fixtures in tests/ - provenance of that pin unresolved, verify before
+the fix design. Fix sketch (separate increment, NOT started): hold the
+last string item's trailing spaces as a pending count in the runtime;
+every print-helper entry re-emits held spaces first, except the newline
+flush and program exit, which drop them. Must cover ALL render sites in
+cg_print_items (string, darrs_elem, darr2_child, the new iif raw-cell
+arms) and prints from inside called functions (t1494's side() case), so
+the mechanism belongs in the runtime helpers, not in cg. Open question
+for the design: OutStd/OutErr interleaving (raw, no trim today - probe
+`?? "ab  "` + outstd("x") + newline against the oracle first).
+
 ### P2. `LOCAL x` separated from a mixed-literal assignment is rejected
 Repro (probes/ains-preblockers01/local-then-assign.prg):
 `LOCAL x` / `x := { 1, "a" }` / `? valtype(x[2])`
