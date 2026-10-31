@@ -1,0 +1,247 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next8afterticktime",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/transfrm.prg",
+      "sha256": "542bd86940af56218c45e717ec0b963d5f89424a8632526f86ffee1c408206cb",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main/test/transtest/tofix/stop",
+      "build_unit": "single-source-executable",
+      "profile": "transform-picture-contract",
+      "dependencies": "staticfailureflag;Transform picture flags;dates;SET FIXED/DECIMAL;conditional Harbour/Clipper output",
+      "boundary": "Not run: failed expectations call Inkey(0);requires failure-safe keyboard/error fixture",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 8: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 8: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/uc16_gen.prg",
+      "sha256": "da7900afbae1c4a422837d5c9bc2b32df44bc9926802d3677fc0b024f7e768fa",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "main+compression/conversion helpers",
+      "build_unit": "single-source-executable",
+      "profile": "unicode-table-generator",
+      "dependencies": "UnicodeData.txt;arrays65536;hashes;byref;hex/bitops;uc16def.c writer",
+      "boundary": "Not run: requires pinned UnicodeData input and disposable generated-C output;not compiler implementation source",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 34: trailing tokens after expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 34: trailing tokens after expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/use.prg",
+      "sha256": "239aefefb501bf06e9eeb76ec9d4a17b3daf1124fc2a8a2de767e9347265f07d",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+mkTest",
+      "build_unit": "single-source-executable",
+      "profile": "RDD-open-error-recovery",
+      "dependencies": "simpleio.ch;dbCreate/dbUseArea;ErrorBlock/RECOVER;DBF create/drop;OS/version",
+      "boundary": "Not run: requires disposable DBF directory and explicit RDD/error-state oracle",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 62: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 62: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/utf8at.prg",
+      "sha256": "23c62196c873c5781c489ec62c76ae20cff315dca3f590d79528c4cbf2408708",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "utf8-byte-codepage-search",
+      "dependencies": "simpleio.ch;REQUEST FR850/FRISO;binary strings;hb_Translate;At/RAt bounded UTF8/nonUTF8",
+      "boundary": "Safe deterministic binary stdout capture;requested codepages linked",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 1007,
+        "stdout_sha256": "11e5fb80d98dc6421b082c7a4465bd53cd0debaa8eff57759d6fcc82b05eba68",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 86: unexpected token Comma in expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 86: unexpected token Comma in expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/varparam.prg",
+      "sha256": "87df026f32c3bc00d286ccd063e18ad3f8a44aefcb8a1cf983d5df51a0616e2c",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TEST helpers",
+      "build_unit": "single-source-executable",
+      "profile": "variadic-parameter-reference-introspection",
+      "dependencies": "MEMVAR PRIVATE;...;PCount/hb_PValue;hb_AParams;FOR EACH;references;Inkey0",
+      "boundary": "Not run: many unconditional Inkey(0) calls;requires scripted keyboard protocol",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 203: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 203: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/vars.prg",
+      "sha256": "631c56be9a003b2219c8c9d8cab6fefbe0ec7807965b630c1f3b5f9e71a637dd",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main/Sub/arrvar",
+      "build_unit": "single-source-executable",
+      "profile": "memvar-byref-and-uninvoked-function",
+      "dependencies": "MEMVAR i without PRIVATE initialization;m->i write;byref;j mutation;uninvoked array memvar",
+      "boundary": "Not run: undeclared runtime memvar write needs ErrorBlock/GT-error oracle",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 23: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 23: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/vec1.prg",
+      "sha256": "4261a61f3ef870ea3413b81f317c64b97e0308ce93373e5915579eb0daea16c9",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "quoted-bracket-text-command",
+      "dependencies": "bracket string containing quotes/comments;TEXT ENDTEXT preprocessor;star comment",
+      "boundary": "Safe deterministic console capture",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 38,
+        "stdout_sha256": "08633b50d4efe218a807d9b9bd41efcfc76b946328db306667c8e395ce35afbb",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 8: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 8: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/version.prg",
+      "sha256": "7153fca71ec28416b60154c4afbe05fe0c601f030b8cbbdde8ff5876a91cd898",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "runtime-version-identification",
+      "dependencies": "Version;hb_Compiler;OS;quoted runtime-dependent identification",
+      "boundary": "Safe reference run;environment-dependent output not portable compatibility oracle",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 79,
+        "stdout_sha256": "3be8664387d8f59ef73a100576a0b2e14934a5a60498e228f5929a867acc2be8",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 8: unknown function `version` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 8: unknown function `version` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}
