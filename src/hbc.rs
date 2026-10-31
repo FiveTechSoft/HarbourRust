@@ -1463,6 +1463,35 @@ const ASM_RESERVED: &[&str] = &[
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
 
 // Output calls share NIL result and existing value/ownership checks.
+
+// ains piece 1b step (c)-next (bounded; main 31Oct): iif(cond, ownedStr,
+// rawCell) consumed IMMEDIATELY by an output verb (?/??/QOut/QQOut/
+// OutStd/OutErr). One arm produces an OWNED string (e.g. hb_ntos(cell));
+// the other is a raw borrowed Dyn cell READ (index of an array view or a
+// DArrDyn). The print dispatches per tag at runtime: the owned arm
+// (marker tag 7) is freed after printing; the borrowed cell is NEVER
+// freed - DArrDyn string cells are tag 4 owned by the array itself.
+// A tag-6 (array) cell is the registered type error; tag 5 stays
+// reserved. Store/return/argument positions keep the generic iif
+// rejection.
+fn check_iif_out_rawdyn(a: &Expr, env: &mut Vec<Local>, sigs: &mut Vec<Sig>, n: usize) -> Result<bool, String> {
+    let Expr::Call(id, args) = a else { return Ok(false) };
+    if !is_builtin(id, "iif") || args.len() != 3 { return Ok(false); }
+    let cell_arm = |e: &Expr| matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::AView | Ty::DArrDyn)));
+    let (owned, cell) = if cell_arm(&args[2]) && !cell_arm(&args[1]) { (&args[1], &args[2]) }
+        else if cell_arm(&args[1]) && !cell_arm(&args[2]) { (&args[2], &args[1]) }
+        else { return Ok(false) };
+    if matches!(owned, Expr::Var(_)) { return Ok(false); }
+    let tc = type_expr(cell, env, sigs, n)?;
+    if tc != Ty::Dyn { return Ok(false); }
+    let to = type_expr(owned, env, sigs, n)?;
+    if to != Ty::StrOwn { return Ok(false); }
+    if type_expr(&args[0], env, sigs, n)? != Ty::Bool {
+        return Err(format!("line {}: `iif` condition must be logical", n));
+    }
+    Ok(true)
+}
+
 fn is_output_call(id: &str) -> bool { ["qout", "qqout", "outstd", "outerr"].iter().any(|v| is_builtin(id, v)) }
 
 fn is_bitop(id: &str) -> bool { ["hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot"].iter().any(|v| is_builtin(id,v)) }
@@ -3985,10 +4014,17 @@ fn aview_expr_safe(e: &Expr, p: &str, sigs: &[Sig], strict: bool, whole: bool, c
                 return cell && args.len() == 3 && args.iter().all(|a| aview_expr_safe(a, p, sigs, strict, false, true));
             }
             if is_output_call(id) {
-                // A direct borrowed cell could be tag 6 or borrowed tag 4.
-                // Keep it out of the generic Dyn output/free path until the
-                // immediate-output union consumer has its own cleanup rule.
-                return args.iter().all(|a| aview_expr_safe(a, p, sigs, strict, false, false));
+                // The immediate-output union consumer now HAS its own
+                // cleanup rule (ains 1b step (c)-next: owned arm freed
+                // after print, raw borrowed cell never freed, tag 6 the
+                // registered error - see check_iif_out_rawdyn), so the
+                // bounded iif shape is admitted in cell context. Any
+                // other arg keeps the old cell=false rule.
+                return args.iter().all(|a| {
+                    let bounded_iif = matches!(a, Expr::Call(iid, ia) if is_builtin(iid, "iif") && ia.len() == 3
+                        && ia.iter().any(|x| matches!(x, Expr::Index(v, _) if v == p)));
+                    aview_expr_safe(a, p, sigs, strict, false, bounded_iif)
+                });
             }
             match sigs.iter().find(|s| s.name == *id) {
                 Some(s) => args.iter().enumerate().all(|(i,a)| {
@@ -4808,6 +4844,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             if is_output_call(id) {
                 let mut item_env = env.to_vec();
                 for a in args {
+                    // ains 1b step (c)-next: same bounded raw-cell iif arm
+                    // as the Print statement path (common output consumer).
+                    if check_iif_out_rawdyn(a, &mut item_env, sigs, n)? {
+                        apply_moves(a, &mut item_env, sigs, false);
+                        continue;
+                    }
                     let t = type_expr(a, &mut item_env, sigs, n)?;
                     if matches!(t, Ty::Block(..)) { return Err(format!("line {}: cannot print a codeblock in this increment", n)); }
                     if matches!(t, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash) && !matches!(a, Expr::Var(_)) {
@@ -6353,6 +6395,12 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                             continue;
                         }
                     }
+                    // ains 1b step (c)-next: bounded raw-cell iif arm in
+                    // immediate output consumption (see check_iif_out_rawdyn).
+                    if check_iif_out_rawdyn(e, env, sigs, *n)? {
+                        apply_moves(e, env, sigs, false);
+                        continue;
+                    }
                     let t = type_expr(e, env, sigs, *n)?;
                     if let Ty::Block(..) = t {
                         return Err(format!("line {}: cannot print a codeblock in this increment", n));
@@ -7711,6 +7759,13 @@ thread_local! {
     // intentionally not reused in this first implementation.
     static AVIEW_FRAME_END: std::cell::Cell<usize> = std::cell::Cell::new(0);
 }
+thread_local! {
+    // Unique label ids for the raw-cell iif print emission (cg_print_items
+    // has no label counter of its own).
+    static PRINT_LBL: std::cell::Cell<usize> = std::cell::Cell::new(0);
+}
+fn print_lbl() -> usize { PRINT_LBL.with(|c| { let v = c.get(); c.set(v + 1); v }) }
+
 fn aview_scratch() -> usize {
     AVIEW_FRAME_END.with(|c| { let end = (c.get() + 15) & !15; c.set(end+32); end+32 })
 }
@@ -10409,6 +10464,24 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
     }
 }
 
+// ains piece 1b step (c)-next (bounded; see check_iif_out_rawdyn):
+// iif(cond, ownedStrTemp, rawDynCell) as an output item. Returns
+// (cond, owned arm, cell arm). Mirrors the checker exactly.
+fn cg_iif_out_rawdyn<'a>(e: &'a Expr, env: &[CgLocal], sigs: &[Sig]) -> Option<(&'a Expr, &'a Expr, &'a Expr)> {
+    if let Expr::Call(id, args) = e {
+        if is_builtin(id, "iif") && args.len() == 3 {
+            let cell_arm = |x: &Expr| matches!(x, Expr::Index(v, _) if env.iter().any(|l| l.name == *v && matches!(l.ty, Ty::AView | Ty::DArrDyn)));
+            let (owned, cell) = if cell_arm(&args[2]) && !cell_arm(&args[1]) { (&args[1], &args[2]) }
+                else if cell_arm(&args[1]) && !cell_arm(&args[2]) { (&args[2], &args[1]) }
+                else { return None };
+            if !matches!(owned, Expr::Var(_)) && expr_ty(cell, env, sigs) == Ty::Dyn && expr_ty(owned, env, sigs) == Ty::StrOwn {
+                return Some((&args[0], owned, cell));
+            }
+        }
+    }
+    None
+}
+
 fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
                 // Harbour `?` is a QOut( <items> ) call (probes b51-b59,
                 // t12 vs -gtstd binary): ALL items are evaluated FIRST
@@ -10422,6 +10495,30 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                 // (hk16/hk20/hk24): only borrowed, never consumed.
                 let renders_empty = |e: &Expr| matches!(expr_ty(e, env, sigs), Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash | Ty::DArrRef | Ty::DArrRef2);
                 for e in es {
+                    if let Some((cond, owned, cell)) = cg_iif_out_rawdyn(e, env, sigs) {
+                        // Evaluate the condition ONCE, then only the chosen
+                        // arm (iif laziness, hk321). Both arms push a
+                        // uniform {tag, payload} pair: the owned string arm
+                        // as marker tag 7 (freed after printing), the raw
+                        // cell as its own borrowed tag (never freed -
+                        // DArrDyn string cells are tag 4 owned by the
+                        // array itself).
+                        let id = print_lbl();
+                        cg_value(cond, env, sigs, strs, out, target);
+                        out.push_str(&format!("    test %rax, %rax\n    jz .Lprdraw{}\n", id));
+                        cg_value(owned, env, sigs, strs, out, target);
+                        // Tag 7 marks the OWNED arm (print + free): real
+                        // cells never carry it (0-4 in use, 5 reserved,
+                        // 6 array), and DArrDyn string cells are tag 4
+                        // OWNED BY THE ARRAY (hk254 layout) - borrowed
+                        // here, never freed.
+                        out.push_str(&format!("    mov %rax, %rcx\n    mov $7, %eax\n    push %rcx\n    push %rax\n    jmp .Lprdone{}\n", id));
+                        out.push_str(&format!(".Lprdraw{}:\n", id));
+                        cg_expr(cell, env, sigs, strs, out, target);
+                        out.push_str(&format!("    push %rdx\n    push %rax\n"));
+                        out.push_str(&format!(".Lprdone{}:\n", id));
+                        continue;
+                    }
                     if let Expr::Index(v, ie) = e {
                         if darr2_child(e, env) {
                             // Push the child pointer (0 marks a NIL
@@ -10500,6 +10597,25 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                     if i > 0 { out.push_str("    call hbc_print_sep\n"); }
                     if renders_empty(e) { continue; }
                     let is_last = !raw && last_vis == Some(i);
+                    if cg_iif_out_rawdyn(e, env, sigs).is_some() {
+                        // {tag, payload} from the eval step: tags 2/4 =
+                        // raw borrowed string cell (never freed - the
+                        // array owns the copy), tag 7 = owned string arm
+                        // (freed after printing), anything else dispatches
+                        // in hbc_print_dyncell (0 int, 1 NIL, 3 logical,
+                        // 6/unknown = registered error).
+                        let id = print_lbl();
+                        out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
+                        out.push_str(&format!("    cmp $2, %rax\n    je .Lprs{}\n    cmp $4, %rax\n    je .Lprs{}\n    cmp $7, %rax\n    je .Lprf{}\n    call hbc_print_dyncell\n    jmp .Lpre{}\n", id, id, id, id));
+                        out.push_str(&format!(".Lprs{}:\n    mov %rdx, %rax\n    mov -8(%rax), %rdx\n", id));
+                        if is_last { out.push_str(rtrim); }
+                        out.push_str(&format!("    call hbc_print_str\n    jmp .Lpre{}\n", id));
+                        out.push_str(&format!(".Lprf{}:\n    mov %rdx, %rax\n    mov -8(%rax), %rdx\n", id));
+                        if is_last { out.push_str(rtrim); }
+                        out.push_str(&format!("    call hbc_print_str\n    mov {}(%rsp), %rdi\n    call hbc_freestr\n", off + 8));
+                        out.push_str(&format!(".Lpre{}:\n", id));
+                        continue;
+                    }
                     if darrs_elem(e, env) {
                         // A grown NIL casilla prints NIL (hk13); a string
                         // element prints its bytes, borrowed (no copy).
@@ -14733,6 +14849,47 @@ hbc_print_dyn:
     mov -8(%rax), %rdx
     jmp hbc_print_str
 
+# hbc_print_dyncell (ains piece 1b step (c)-next): %rax = tag, %rdx =
+# payload of a RAW BORROWED Dyn cell consumed by an output verb (the iif
+# raw-cell arm). tag 0 prints the computed-width integer (defensive: a
+# numeric normally takes the owned hb_ntos arm), 1 prints NIL, 3 prints
+# .T./.F., 2/4 print the string bytes (reached only from nested Out*
+# renderings - the caller's inline path handles them); tag 6 (array) and
+# every other tag (5 is reserved) raise the clean registered type error.
+# The cell is BORROWED: nothing is ever freed here.
+hbc_print_dyncell:
+    test %rax, %rax
+    jz 8f
+    cmp $1, %rax
+    je 13f
+    cmp $2, %rax
+    je 9f
+    cmp $4, %rax
+    je 9f
+    cmp $3, %rax
+    je 11f
+    jmp hbc_type_error
+8:  mov %rdx, %rax
+    jmp hbc_print_i64c
+13: lea .Lnilmsg(%rip), %rsi
+    mov $3, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    ret
+11: lea .Lfmsg(%rip), %rsi
+    test %rdx, %rdx
+    jz 12f
+    lea .Ltmsg(%rip), %rsi
+12: mov $3, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    ret
+9:  mov %rdx, %rax
+    mov -8(%rax), %rdx
+    jmp hbc_print_str
+
 # hbc_print_dynlit: hbc_print_dyn variant for DArrDyn LITERAL cell reads
 # (piece 1a): every cell is born from a literal, and Harbour stamps the
 # literal display length (oracle v_w/width_variable, 31Oct), so tag 0
@@ -15823,7 +15980,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if out.contains("call hbc_eprint_") {
         let original = out.clone();
         out.push_str("\n    .text\n");
-        for name in ["str", "sep", "i64", "i64c", "dyn", "dynlit", "f64"] {
+        for name in ["str", "sep", "i64", "i64c", "dyn", "dynlit", "dyncell", "f64"] {
             let label = format!("\nhbc_print_{}:", name);
             let start = original.find(&label).expect("print helper exists") + 1;
             let rest = &original[start..];
@@ -16611,6 +16768,50 @@ hbc_print_dyn:
     jz 12f
     lea .Ltmsg(%rip), %rax
 12: mov $3, %edx
+    call hbc_print_str
+    jmp 9f
+9:  leave
+    ret
+
+# hbc_print_dyncell (ains piece 1b step (c)-next): %rax = tag, %rdx =
+# payload of a RAW BORROWED Dyn cell consumed by an output verb (the iif
+# raw-cell arm). tag 0 prints the computed-width integer (defensive: a
+# numeric normally takes the owned hb_ntos arm), 1 prints NIL, 3 prints
+# .T./.F., 2/4 print the string bytes (reached only from nested Out*
+# renderings - the caller's inline path handles them); tag 6 (array) and
+# every other tag (5 is reserved) raise the clean registered type error.
+# The cell is BORROWED: nothing is ever freed here.
+hbc_print_dyncell:
+    push %rbp
+    mov %rsp, %rbp
+    sub $48, %rsp
+    test %rax, %rax
+    jz 8f
+    cmp $1, %rax
+    je 13f
+    cmp $2, %rax
+    je 10f
+    cmp $4, %rax
+    je 10f
+    cmp $3, %rax
+    je 11f
+    call hbc_type_error
+8:  mov %rdx, %rax
+    call hbc_print_i64c
+    jmp 9f
+13: lea .Lnilmsg(%rip), %rax
+    mov $3, %edx
+    call hbc_print_str
+    jmp 9f
+11: lea .Lfmsg(%rip), %rax
+    test %rdx, %rdx
+    jz 12f
+    lea .Ltmsg(%rip), %rax
+12: mov $3, %edx
+    call hbc_print_str
+    jmp 9f
+10: mov %rdx, %rax
+    mov -8(%rax), %rdx
     call hbc_print_str
     jmp 9f
 9:  leave
