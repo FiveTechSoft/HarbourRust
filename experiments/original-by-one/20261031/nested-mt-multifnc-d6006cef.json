@@ -1,0 +1,519 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "sources_unchanged": true,
+  "source_count": 15,
+  "build_unit_count": 13,
+  "rows": [
+    {
+      "files": [
+        {
+          "file": "tests/mt/mttest01.prg",
+          "sha256": "43bb88e0929e41ee9b4d935491866c1bdcb6c59b0f893949c2332f8444ab60ef"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-MT",
+      "profile": "thread-return-detached-capture",
+      "reference_options": [
+        "-mt",
+        "-gtstd",
+        "-q"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 143,
+        "stdout_sha256": "613fcbe81d6a876410dd137f93a6a053e4f4468936874237b82861a9ad89e22a",
+        "stderr_bytes": 0
+      },
+      "boundary": "Safe bounded process-local reference run;concurrency output not byte-stable",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 11: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 11: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/mt/mttest02.prg",
+          "sha256": "b3cd29c2bc0687435cd0ec1c0209bfe88a9485d02f086d02ffccaefac46b4e56"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-MT",
+      "profile": "child-QUIT-ALWAYS-EXIT",
+      "reference_options": [
+        "-mt",
+        "-gtstd",
+        "-q"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 245,
+        "stdout_sha256": "aee0be6da6db27475ed6a2d0328114a9bb87afa4945fa53f679cb1fa8a5dddab",
+        "stderr_bytes": 0
+      },
+      "boundary": "Safe bounded process-local reference run;concurrency output not byte-stable",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 33: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 33: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/mt/mttest03.prg",
+          "sha256": "5ca7b95c3dacd2fb0bd4a678cd3cd7dbb316fb7b3454b6225ca95cfc0704a99e"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-MT",
+      "profile": "main-QUIT-ALWAYS-EXIT",
+      "reference_options": [
+        "-mt",
+        "-gtstd",
+        "-q"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 211,
+        "stdout_sha256": "474e8de48ccbc91e5dee6923bc382e69f81b8618aa707f6cd5447c1886df5930",
+        "stderr_bytes": 0
+      },
+      "boundary": "Safe bounded process-local reference run;concurrency output not byte-stable",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 35: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 35: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/mt/mttest04.prg",
+          "sha256": "81d14605847bc641fa9e9d0c9d69f0c904a14ff3cd6af682771b5dd685c09130"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-MT",
+      "profile": "mutex-protected-vs-racy-counters",
+      "reference_options": [
+        "-mt",
+        "-gtstd",
+        "-q"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "boundary": "Not run:5second racy benchmark, no speed claim",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 14: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 14: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/mt/mttest05.prg",
+          "sha256": "d168e6d2e8e8a754e0c826fd90f9db79445cff72f462dbb54823a67f6d5ac2a9"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-MT",
+      "profile": "thread-static-million-increments",
+      "reference_options": [
+        "-mt",
+        "-gtstd",
+        "-q"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 160,
+        "stdout_sha256": "9f7d281c267cf07e12fe895e12e7af329a31f6bc3908dba06c7b99e85e559a7e",
+        "stderr_bytes": 0
+      },
+      "boundary": "Safe bounded process-local reference run;concurrency output not byte-stable",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/mt/mttest06.prg",
+          "sha256": "46f57ff71a1ca13411c598ab1fbe818e4439e59b23a180b6e21aeb6ee8aea282"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-MT",
+      "profile": "private-memvar-thread-isolation",
+      "reference_options": [
+        "-mt",
+        "-gtstd",
+        "-q"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 160,
+        "stdout_sha256": "9f7d281c267cf07e12fe895e12e7af329a31f6bc3908dba06c7b99e85e559a7e",
+        "stderr_bytes": 0
+      },
+      "boundary": "Safe bounded process-local reference run;concurrency output not byte-stable",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 15: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 15: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/mt/mttest07.prg",
+          "sha256": "dec36b29b98b2a0f4590c8bc3d651ea64c86d1618e5c2e63db7167bfaf7575f4"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-MT",
+      "profile": "mutex-job-queue",
+      "reference_options": [
+        "-mt",
+        "-gtstd",
+        "-q"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 234,
+        "stdout_sha256": "5dc94c2dd2a12158dd8d1175d38f1cbd989766e0d6deb7b07c335be42d5e59c7",
+        "stderr_bytes": 0
+      },
+      "boundary": "Safe bounded process-local reference run;concurrency output not byte-stable",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 11: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 11: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/mt/mttest08.prg",
+          "sha256": "849d6e41a3dfa003ff62dd1a636e9bbcf749c0907e23650169edaee488c8b12c"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-MT",
+      "profile": "memvar-inherit-copy-share",
+      "reference_options": [
+        "-mt",
+        "-gtstd",
+        "-q"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "boundary": "Not run:multiple WAIT key gates",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 160: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 160: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/mt/mttest09.prg",
+          "sha256": "350a27c47b136641f8626ce10d1bd190e1f86e39dfaa3d7c68ac7c07dc84430b"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-MT",
+      "profile": "RDD-workarea-detach-request",
+      "reference_options": [
+        "-mt",
+        "-gtstd",
+        "-q"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "boundary": "Not run:DBF10000records and WAIT requires disposable RDD fixture",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 10: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 10: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/mt/mttest10.prg",
+          "sha256": "37f96a2d543747562031292fb4d3de3b0ca61ef1cec8216b4a0773da54cf1eb7"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-MT",
+      "profile": "per-thread-GT-window",
+      "reference_options": [
+        "-mt",
+        "-gtstd",
+        "-q"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "boundary": "Not run:graphical GT,XWC,test DBF,keyboard",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 159: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 159: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/mt/mttest11.prg",
+          "sha256": "80baa3a5bcc795461d6a7b6a66dc27016cc934f3df859fbf589e9d4dbe525090"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-MT",
+      "profile": "background-clock-foreground-GET",
+      "reference_options": [
+        "-mt",
+        "-gtstd",
+        "-q"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "boundary": "Not run:infinite background clock,GET/READ,WAIT",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 13: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 13: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/mt/mttest12.prg",
+          "sha256": "dd1de6f0bc6623ed2fed0932fcaadcc2cfbe52170f696db0a7e4d4ee0c1ea676"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "single-source-executable-MT",
+      "profile": "thread-static-array-hash-copy",
+      "reference_options": [
+        "-mt",
+        "-gtstd",
+        "-q"
+      ],
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "boundary": "Not run:WAIT key gates and thread-specific compound-value oracle",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 8: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 8: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/multifnc/t0.prg",
+          "sha256": "b524dcefba716e2069a1a1c184f9409512a85d830915658b2b68732a7511717f"
+        },
+        {
+          "file": "tests/multifnc/t1.prg",
+          "sha256": "4475fc638e93a674cb9676eea291f523889b4040106721e5ea225282c77eea51"
+        },
+        {
+          "file": "tests/multifnc/t2.prg",
+          "sha256": "b0ca9b228f464cf4ccc178df33b22b3c0d30c278733157ca58954571224fd114"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "project-tests/multifnc/multifnc.hbp-three-source-executable",
+      "profile": "intentional-multiple-definition-linker-order",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "boundary": "Not run:date/time/compiler/procfile path output;intentional link-order winner checks and embedded C;not3standaloneexecutables",
+      "backends": {
+        "t0.prg": {
+          "default": {
+            "compile_exit": 1,
+            "diagnostic": "error: line 19: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+            "unit_note": "source diagnostic only, not project build or standalone acceptance"
+          },
+          "llvm": {
+            "compile_exit": 1,
+            "diagnostic": "error: line 19: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+            "unit_note": "source diagnostic only, not project build or standalone acceptance"
+          }
+        },
+        "t1.prg": {
+          "default": {
+            "compile_exit": 1,
+            "diagnostic": "error: line 24: unknown directive #pragma in this PoC",
+            "unit_note": "source diagnostic only, not project build or standalone acceptance"
+          },
+          "llvm": {
+            "compile_exit": 1,
+            "diagnostic": "error: line 24: unknown directive #pragma in this PoC",
+            "unit_note": "source diagnostic only, not project build or standalone acceptance"
+          }
+        },
+        "t2.prg": {
+          "default": {
+            "compile_exit": 1,
+            "diagnostic": "error: line 2: expected `,` or `)` in call arguments, got Some(LParen)",
+            "unit_note": "source diagnostic only, not project build or standalone acceptance"
+          },
+          "llvm": {
+            "compile_exit": 1,
+            "diagnostic": "error: line 2: expected `,` or `)` in call arguments, got Some(LParen)",
+            "unit_note": "source diagnostic only, not project build or standalone acceptance"
+          }
+        }
+      }
+    }
+  ]
+}
