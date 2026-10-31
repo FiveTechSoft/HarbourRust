@@ -1,0 +1,676 @@
+{
+  "rows": [
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha\n",
+      "value": "alpha",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"    .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha,beta\n",
+      "value": "alpha,beta",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\",\"beta\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\" ,\"beta\"   .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha,beta,gamma\n",
+      "value": "alpha,beta,gamma",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\",\"beta\",\"gamma\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\" ,\"beta\",\"gamma\"   .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha AS number\n",
+      "value": "alpha AS number",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" TYPE \"number\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"  TYPE \"number\"  .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha INIT 1\n",
+      "value": "alpha INIT 1",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" INIT \"1\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"   INIT \"1\" .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha INIT 1 AS number\n",
+      "value": "alpha INIT 1 AS number",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" TYPE \"number\" INIT \"1\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"  TYPE \"number\" INIT \"1\" .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha EXPORTED\n",
+      "value": "alpha EXPORTED",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" .T.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"    .T.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha IN parent\n",
+      "value": "alpha IN parent",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"in\",\"alpha\",\"parent\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"in\",\"alpha\",\"parent\" )\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha AS number IN parent\n",
+      "value": "alpha AS number IN parent",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"in\",\"alpha\",\"parent\" TYPE \"number\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"in\",\"alpha\",\"parent\" TYPE \"number\")\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha IS beta\n",
+      "value": "alpha IS beta",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"is\",\"alpha\",\"beta\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"is\",\"alpha\",\"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha IS beta IN parent\n",
+      "value": "alpha IS beta IN parent",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"isin\",\"alpha\",\"beta\",\"parent\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"isin\",\"alpha\",\"beta\",\"parent\" )\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha IS beta TO obj\n",
+      "value": "alpha IS beta TO obj",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"isto\",\"alpha\",\"beta\",\"obj\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"isto\",\"alpha\",\"beta\",\"obj\" )\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha,beta IN parent\n",
+      "value": "alpha,beta IN parent",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nVAR alpha,beta IN parent\n",
+      "own_exit": 0,
+      "own_output": "VAR alpha,beta IN parent\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha INIT 1 IN parent\n",
+      "value": "alpha INIT 1 IN parent",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nVAR alpha INIT 1 IN parent\n",
+      "own_exit": 0,
+      "own_output": "VAR alpha INIT 1 IN parent\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha AS IN\n",
+      "value": "alpha AS IN",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" TYPE \"IN\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"  TYPE \"IN\"  .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha INIT IN\n",
+      "value": "alpha INIT IN",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" INIT \"IN\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"   INIT \"IN\" .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha IN\n",
+      "value": "alpha IN",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nVAR alpha IN\n",
+      "own_exit": 0,
+      "own_output": "VAR alpha IN\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha IS\n",
+      "value": "alpha IS",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nVAR alpha IS\n",
+      "own_exit": 0,
+      "own_output": "VAR alpha IS\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha AS a+IN\n",
+      "value": "alpha AS a+IN",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" TYPE \"a+IN\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"  TYPE \"a+IN\"  .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha AS (IN)\n",
+      "value": "alpha AS (IN)",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" TYPE (IN) .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"  TYPE (IN)  .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "general",
+        "in",
+        "is",
+        "isin",
+        "isto"
+      ],
+      "source": "#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\nVAR alpha AS f(IN)\n",
+      "value": "alpha AS f(IN)",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" TYPE \"f(IN)\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"  TYPE \"f(IN)\"  .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha\n",
+      "value": "alpha",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"    .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha,beta\n",
+      "value": "alpha,beta",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\",\"beta\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\" ,\"beta\"   .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha,beta,gamma\n",
+      "value": "alpha,beta,gamma",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\",\"beta\",\"gamma\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\" ,\"beta\",\"gamma\"   .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha AS number\n",
+      "value": "alpha AS number",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" TYPE \"number\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"  TYPE \"number\"  .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha INIT 1\n",
+      "value": "alpha INIT 1",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" INIT \"1\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"   INIT \"1\" .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha INIT 1 AS number\n",
+      "value": "alpha INIT 1 AS number",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" TYPE \"number\" INIT \"1\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"  TYPE \"number\" INIT \"1\" .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha EXPORTED\n",
+      "value": "alpha EXPORTED",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" .T.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"    .T.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha IN parent\n",
+      "value": "alpha IN parent",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"in\",\"alpha\",\"parent\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"in\",\"alpha\",\"parent\" )\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha AS number IN parent\n",
+      "value": "alpha AS number IN parent",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"in\",\"alpha\",\"parent\" TYPE \"number\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"in\",\"alpha\",\"parent\" TYPE \"number\")\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha IS beta\n",
+      "value": "alpha IS beta",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"is\",\"alpha\",\"beta\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"is\",\"alpha\",\"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha IS beta IN parent\n",
+      "value": "alpha IS beta IN parent",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"isin\",\"alpha\",\"beta\",\"parent\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"isin\",\"alpha\",\"beta\",\"parent\" )\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha IS beta TO obj\n",
+      "value": "alpha IS beta TO obj",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"isto\",\"alpha\",\"beta\",\"obj\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"isto\",\"alpha\",\"beta\",\"obj\" )\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha,beta IN parent\n",
+      "value": "alpha,beta IN parent",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nVAR alpha,beta IN parent\n",
+      "own_exit": 0,
+      "own_output": "VAR alpha,beta IN parent\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha INIT 1 IN parent\n",
+      "value": "alpha INIT 1 IN parent",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nVAR alpha INIT 1 IN parent\n",
+      "own_exit": 0,
+      "own_output": "VAR alpha INIT 1 IN parent\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha AS IN\n",
+      "value": "alpha AS IN",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" TYPE \"IN\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"  TYPE \"IN\"  .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha INIT IN\n",
+      "value": "alpha INIT IN",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" INIT \"IN\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"   INIT \"IN\" .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha IN\n",
+      "value": "alpha IN",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nVAR alpha IN\n",
+      "own_exit": 0,
+      "own_output": "VAR alpha IN\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha IS\n",
+      "value": "alpha IS",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nVAR alpha IS\n",
+      "own_exit": 0,
+      "own_output": "VAR alpha IS\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha AS a+IN\n",
+      "value": "alpha AS a+IN",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" TYPE \"a+IN\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"  TYPE \"a+IN\"  .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha AS (IN)\n",
+      "value": "alpha AS (IN)",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" TYPE (IN) .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"  TYPE (IN)  .F.)\n",
+      "own_error": ""
+    },
+    {
+      "order": [
+        "isto",
+        "isin",
+        "is",
+        "in",
+        "general"
+      ],
+      "source": "#xcommand VAR <!a!> [AS <t>] IS <!other!> TO <!obj!> => OUT(\"isto\",<(a)>,<(other)>,<(obj)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> IN <!sup!> => OUT(\"isin\",<(a)>,<(other)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IS <!other!> => OUT(\"is\",<(a)>,<(other)> [TYPE <(t)>])\n#xcommand VAR <!a!> [AS <t>] IN <!sup!> => OUT(\"in\",<(a)>,<(sup)> [TYPE <(t)>])\n#xcommand VAR <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(\"general\",<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nVAR alpha AS f(IN)\n",
+      "value": "alpha AS f(IN)",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\n\nOUT(\"general\",\"alpha\" TYPE \"f(IN)\" .F.)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\"  TYPE \"f(IN)\"  .F.)\n",
+      "own_error": ""
+    }
+  ]
+}
