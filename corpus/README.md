@@ -597,3 +597,46 @@ explicit-root branch normalizes cDir rather than cRoot,a source finding requirin
 an oracle,not a measured bug. TODO HTML/PDF generators are not implemented by
 this program. Both require tiny disposable fixtures and bounded writes/reads;
 review does not authorize arbitrary binary parsing or repository-wide scanning.
+
+## D1 · Native source debugger (planned,not implemented)
+
+Added to the roadmap on2026-10-31 at the user's request. This records a separate
+phase;it does not advance implementation ahead of syntax/original-corpus work.
+Current origins(path,line),ProcLine and error call traces are partial foundations,
+not debugger support. Neither emitter currently provides full source debug info.
+
+1. Preserve SourceSpan(file,line,column,statement and expansion origin) from the
+   preprocessor through AST and machine code. Includes retain original files;
+   macro/command stepping defaults to the invocation site. Keep expansion data
+   for diagnostics and an optional expanded view,not false source locations.
+2. Initial milestone:Linux plus the broader habitual backend. Emit DWARF source
+   lines,scopes,types and variable locations,plus correct unwind information.
+   Support line/function breakpoints,step-in/next/out,call stack and scalar
+   locals/parameters. Line tables alone do not provide variable inspection.
+3. LLVM equivalent:DICompileUnit/DIFile/DISubprogram/DILocation and variable
+   declaration/value records. Replace the fixed O3 path with a separate debug
+   profile;retain semantic checks. Mark unavailable/optimized-out variables
+   honestly. Keep release optimization and performance comparisons separate.
+4. Read-only formatters for strings(ptr,length),arrays,hashes,references and
+   tagged dynamic values must follow existing layouts without changing ABI.
+   Optional editor integration uses LLDB-DAP,not a new IDE. Arbitrary Harbour
+   expression evaluation,ownership-sensitive mutation and reverse execution
+   are outside the first milestone and require separate work.
+5. Validate Windows natively before claiming support. Current MinGW/PE may use
+   a validated DWARF debugger path;CodeView/PDB with LLVM/LLD is an alternative
+   pipeline to evaluate,not something already available. Wine is insufficient.
+
+Exit gate:a small original-source program with include,macro,loop and calls;
+correct source breakpoint/stepping,stack and values before/after assignments;
+identical stdout/stderr/exit to release. Repeat per backend/target. Debug builds
+may be larger/slower;no percentage or schedule is promised. No new ABI,VSCode
+permission,account change or runtime evaluator is authorized by this phase.
+
+Official references:
+- https://llvm.org/docs/SourceLevelDebugging.html
+- https://llvm.org/docs/HowToUpdateDebugInfo.html
+- https://sourceware.org/binutils/docs/as/Loc.html
+- https://sourceware.org/binutils/docs/as/CFI-directives.html
+- https://sourceware.org/gdb/current/onlinedocs/gdb.html/Optimized-Code.html
+- https://lldb.llvm.org/use/lldbdap.html
+- https://lld.llvm.org/windows_support.html
