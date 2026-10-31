@@ -1,0 +1,127 @@
+--- a/src/pp.rs
++++ b/src/pp.rs
+@@ -821,7 +821,7 @@
+     stringify_list_mode(capture,source,spans,false)
+ }
+ 
+-fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool) -> Option<Vec<Capture>> {
++fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool, source: &str) -> Option<Vec<Capture>> {
+     // First literal token at or after pat[i], looking through markers and
+     // group brackets; used as the terminator for captures.
+     fn next_lit(pat: &[String], i: usize) -> Option<&str> {
+@@ -852,7 +852,7 @@
+     }
+     // Match a pattern slice (with balanced groups) against src, returning
+     // tokens consumed. Captures are pushed in pattern order.
+-    fn match_seq(pat: &[String], src: &[String], caps: &mut Vec<Capture>, restricted_exact: bool) -> Option<usize> {
++    fn match_seq(pat: &[String], src: &[String], caps: &mut Vec<Capture>, restricted_exact: bool, source: &str) -> Option<usize> {
+         let mut si = 0usize;
+         let mut pi = 0usize;
+         while pi < pat.len() {
+@@ -875,7 +875,7 @@
+                     caps.push(Capture::from_tokens(&src[start..si]));pi=j;continue;
+                 }
+                 let mut gcaps: Vec<Capture> = Vec::new();
+-                match match_seq(inner, &src[si..], &mut gcaps, restricted_exact) {
++                match match_seq(inner, &src[si..], &mut gcaps, restricted_exact, source) {
+                     Some(consumed) => {
+                         si += consumed;
+                         // Optional groups containing identifier/restricted markers
+@@ -883,7 +883,7 @@
+                         if consumed>0 && inner.iter().any(|t|repeated_single_marker(t)) {
+                             loop {
+                                 let mut more=Vec::new();
+-                                match match_seq(inner,&src[si..],&mut more, restricted_exact) {
++                                match match_seq(inner,&src[si..],&mut more, restricted_exact, source) {
+                                     Some(n) if n>0 && more.len()==gcaps.len()=>{
+                                         for (dst,value) in gcaps.iter_mut().zip(more) {
+                                             if !value.is_empty(){if !dst.is_empty(){dst.text.push(' ');}dst.text.push_str(&value.text);dst.parts.extend(value.parts);}
+@@ -924,20 +924,39 @@
+                 if si>=src.len(){return None;}
+                 caps.push(Capture::from_tokens(&src[si..]));si=src.len();pi+=1;
+             } else if p.starts_with("<(") && p.ends_with(")>") {
+-                // <(x)> match marker: source must be a parenthesized
+-                // expression (probes b14/b16); capture the inner tokens
+-                if si >= src.len() || src[si] != "(" { return None; }
+-                let mut depth = 0i32;
+-                let mut k = si;
+-                while k < src.len() {
+-                    if src[k] == "(" { depth += 1; } else if src[k] == ")" { depth -= 1; if depth == 0 { break; } }
+-                    k += 1;
++                if si >= src.len() {return None;}
++                // Experimental command-only lexical slice. Parenthesized tails
++                // remain deliberately out of this first candidate.
++                let spans=source_spans(source,src).ok()?;
++                let start=spans.get(&(src[si].as_ptr() as usize))?.0;
++                let mut end=start; let bytes=source.as_bytes();
++                if src[si]=="(" {
++                    let mut depth=0i32;
++                    let mut k=si;
++                    while k<src.len(){
++                        if src[k]=="(" {depth+=1;} else if src[k]==")" {depth-=1;}
++                        if depth==0 {break;} k+=1;
++                    }
++                    if k>=src.len(){return None;}
++                    end=spans.get(&(src[k].as_ptr() as usize))?.1;
++                } else {
++                    let mut q=None;
++                    while end<bytes.len(){
++                        let b=bytes[end];
++                        if q==Some(b){q=None;end+=1;continue;}
++                        if q.is_none(){
++                            if b==b'"'||b==b'\''{q=Some(b);}
++                            else if b.is_ascii_whitespace()||b==b','{break;}
++                        }
++                        end+=1;
++                    }
+                 }
+-                if k >= src.len() { return None; } // unbalanced
+-                caps.push(Capture::from_tokens(&src[si+1..k]));
+-                if caps.last().map(|c| c.is_empty()).unwrap_or(true) { return None; }
+-                si = k + 1;
+-                pi += 1;
++                let mut k=si;
++                while k<src.len() && spans.get(&(src[k].as_ptr() as usize))?.1<=end{k+=1;}
++                if k==si{return None;}
++                let mut capture=Capture::from_tokens(&src[si..k]);
++                capture.text=source[start..end].to_string();
++                caps.push(capture);si=k;pi+=1;
+             } else if p.starts_with('<') && p.ends_with('>') {
+                 // <x> or <x,...>: capture up to the next literal anywhere
+                 // ahead in the pattern (group brackets included)
+@@ -956,7 +975,7 @@
+         Some(si)
+     }
+     let mut caps: Vec<Capture> = Vec::new();
+-    let consumed = match_seq(pat, src, &mut caps, restricted_exact)?;
++    let consumed = match_seq(pat, src, &mut caps, restricted_exact, source)?;
+     if consumed != src.len() { return None; } // trailing tokens: no match
+     Some(caps)
+ }
+@@ -1113,7 +1132,7 @@
+         let first = match c.pattern.first() { Some(f) => f, None => continue };
+         if first.starts_with('<') { continue; }
+         if !lit_match(&src[0], first) { continue; }
+-        if let Some(caps) = cmd_match(&c.pattern, &src, c.restricted_exact) {
++        if let Some(caps) = cmd_match(&c.pattern, &src, c.restricted_exact, line) {
+             let lits = c.pattern.iter().filter(|t| !(t.starts_with('<') && t.ends_with('>')) && t.as_str() != "[" && t.as_str() != "]").count();
+             // probes b47/b47b/b47c: equal literal counts keep the LATEST
+             // definition (>= replaces the current winner with a later tie).
+@@ -1188,7 +1207,7 @@
+                     let is_paren = name.starts_with('(') && name.ends_with(')');
+                     let inner = if is_paren { &name[1..name.len() - 1] } else { name };
+                     let base = marker_name(inner);
+-                    if !is_paren {
++                    if true {
+                         let smart=format!("<({})>",base.to_lowercase());
+                         let positions=stringify_positions(&out,&smart);
+                         if !positions.is_empty() {
+@@ -1234,7 +1253,7 @@
+                         // Identifier, literal-restricted and rest-of-line captures retain
+                         // source identities just like plain captures. Disjoint captures
+                         // remain checked by stringify_capture below.
+-                        if inner.starts_with('(') {
++                        if false {
+                             return Err(format!("line {}: stringify of non-plain capture is outside this increment", line_no));
+                         }
+                         let spans = source_spans(source, tokens).map_err(|e| format!("line {}: {}", line_no, e))?;
