@@ -1,0 +1,78 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "sources_unchanged": true,
+  "source_count": 2,
+  "build_unit_count": 2,
+  "rows": [
+    {
+      "files": [
+        {
+          "file": "tests/hbpp/hbpptest.prg",
+          "sha256": "4fca2251b3614e7c75787623acb5d7e9e2a48fb80c1a3ee4d6e7f7b299797f5c"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "project-tests/hbpp/hbpptest.hbp-runtime-executable",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 44: generated directive outside command/xcommand scope",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 44: generated directive outside command/xcommand scope",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 9678,
+        "stdout_sha256": "8ea75870d726f17f1df877b21059d82c3330416f59719af217db67e7d2487df4",
+        "stderr_bytes": 0,
+        "total_cases": 226,
+        "valid_cases": 194,
+        "failed_cases": 32,
+        "semantic_status": "reference-fixture-not-green"
+      },
+      "boundary": "Runtime preprocessor test;exit0 does not mean semantic pass;32failures retained;no expectation patch"
+    },
+    {
+      "files": [
+        {
+          "file": "tests/hbpp/_pp_test.prg",
+          "sha256": "dd7a5d8eca9e5bb481a57c13301715f20166e856068d446b60f0a7fde20d82ce"
+        }
+      ],
+      "review": "full source manually read2026-10-31",
+      "build_unit": "preprocessor-fixture-not-executable",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 248: bad match marker <x:&> in #command/#translate (Harbour: E0010)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 248: bad match marker <x:&> in #command/#translate (Harbour: E0010)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "reference_compile_exit": 1,
+      "reference_build_exit": null,
+      "reference_run": "not-applicable",
+      "reference_mode": "preprocess+syntax-check,no-link",
+      "boundary": "Fixture explicitly says ignore most compile errors;Clipper32/diff comparison not run;preprocessed artifact retained"
+    }
+  ]
+}
