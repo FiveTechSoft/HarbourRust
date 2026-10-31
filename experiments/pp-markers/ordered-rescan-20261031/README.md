@@ -21,7 +21,11 @@ not vector position, so removal does not recycle provenance IDs. No once-used
 suppression heuristic is introduced. Previously rejected naive priority and
 immutable-child prototypes remain inactive research history.
 
-1200seeded own sequence cases all token-match Harbour (deduplicated replay file).
+1200seeded own sequence cases all token-match Harbour after semicolon/newline
+statement-separator normalization (850deduplicated replay cases). Use
+check_reduced_var.py --statement-separators --corpus ordered-rescan-20261031/cases.json.gz.
+Quoted semicolons remain data. This normalization is only for the pp probe grid;
+runtime outputs above are compared byte-exact.
 104DEFINE cases:101tokenmatches,3self-definition cases rejected by both with
 different error presentation. Eight own runtime witnesses match Harbour/default/
 LLVM Linux exact exit/stdout/stderr, including generated DEFINE/UNDEF/function
