@@ -1,0 +1,189 @@
+QOUT(b[2],bb[3]) 
+QOUT(b,b[b][3]) 
+ => FAILED in LINE:          24 
+[2],bb[3]) 
+,b[b][3]) 
+rm(["'a'"])
+ 
+rm(["'a'"]) 
+ => FAILED in LINE:         123 
+
+ 
+ 
+rm("['']")
+ 
+rm("['']") 
+ => FAILED in LINE:         155 
+
+ 
+ 
+nm([["'a'"]])
+ 
+nm(e"[\"'a'\"]") 
+ => FAILED in LINE:         180 
+[["'a'"]])
+ 
+e"[\"'a'\"]") 
+nm(["['']"])
+ 
+nm(e"\"['']\"") 
+ => FAILED in LINE:         212 
+["['']"])
+ 
+e"\"['']\"") 
+sm(["'a'"])
+ 
+sm(["'a'"]) 
+ => FAILED in LINE:         237 
+
+ 
+ 
+sm("['']")
+ 
+sm("['']") 
+ => FAILED in LINE:         269 
+
+ 
+ 
+dm([["'a'"]])
+ 
+dm(e"[\"'a'\"]") 
+ => FAILED in LINE:         295 
+[["'a'"]])
+ 
+e"[\"'a'\"]") 
+dm(["['']"])
+ 
+dm(e"\"['']\"") 
+ => FAILED in LINE:         327 
+["['']"])
+ 
+e"\"['']\"") 
+rl(a,"a","a",["'a'"],"['a']",'["a"]',&a.1,&a,&a.,&a.,&(a),&a[1],&a.[1],&a.[2],&a&a,&a.a,a,a)
+ 
+rl(a,"a","a",["'a'"],"['a']",'["a"]',&a.1,&a,&a.,&a.,&(a),&a[1],&a.[1],&a.[2],&a&a,&a.a,a,a) 
+ => FAILED in LINE:         338 
+
+ 
+ 
+nl("n",'"n"','"a"',[["'a'"]],["['a']"],['["a"]'],"&a.1",a,a,a,(a),"&a[1]","&a.[1]","&a.[2]","&a&a","&.a","&a.a","a","a")
+ 
+nl("n",'"n"','"a"',e"[\"'a'\"]",e"\"['a']\"",e"'[\"a\"]'","&a.1",a,a,a,(a),"&a[1]","&a.[1]","&a.[2]","&a&a","&.a","&a.a","a","a") 
+ => FAILED in LINE:         348 
+[["'a'"]],["['a']"],['["a"]'],"&a.1",a,a,a,(a),"&a[1]","&a.[1]","&a.[2]","&a&a","&.a","&a.a","a","a")
+ 
+e"[\"'a'\"]",e"\"['a']\"",e"'[\"a\"]'","&a.1",a,a,a,(a),"&a[1]","&a.[1]","&a.[2]","&a&a","&.a","&a.a","a","a") 
+sl("a","a","a",["'a'"],"['a']",'["a"]',"&a.1",a,a,a,(a),"&a[1]","&a.[1]","&a.[2]","&a&a","&.a","&a.a","a","a")
+ 
+sl("a","a","a",["'a'"],"['a']",'["a"]',"&a.1",a,a,a,(a),"&a[1]","&a.[1]","&a.[2]","&a&a","&.a","&a.a","a","a") 
+ => FAILED in LINE:         358 
+
+ 
+ 
+dl([a,"a","a",["'a'"],"['a']",'["a"]',&a.1,&a,&a.,&a.,&(a),&a[1],&a.[1],&a.[2],&a&a,&.a,&a.a,a,a])
+ 
+dl(e"a,\"a\",\"a\",[\"'a'\"],\"['a']\",'[\"a\"]',&a.1,&a,&a.,&a.,&(a),&a[1],&a.[1],&a.[2],&a&a,&.a,&a.a,a,a") 
+ => FAILED in LINE:         368 
+[a,"a","a",["'a'"],"['a']",'["a"]',&a.1,&a,&a.,&a.,&(a),&a[1],&a.[1],&a.[2],&a&a,&.a,&a.a,a,a])
+ 
+e"a,\"a\",\"a\",[\"'a'\"],\"['a']\",'[\"a\"]',&a.1,&a,&a.,&a.,&(a),&a[1],&a.[1],&a.[2],&a&a,&.a,&a.a,a,a") 
+dbCreateIndex("_tst","LEFT(f1,10)",{||LEFT(f1,10)},if(.F.,.T.,NIL))
+ 
+indexonLEFT(f1,10)to_tst 
+ => FAILED in LINE:         374 
+dbCreateIndex("_tst","LEFT(f1,10)",{||LEFT(f1,10)},if(.F.,.T.,NIL))
+ 
+indexonLEFT(f1,10)to_tst 
+if(Empty(cVar));dbClearFilter();else;dbSetFilter({||&cVar.},cVar);end 
+SETFILTERTO&cVar. 
+ => FAILED in LINE:         495 
+if(Empty(cVar));dbClearFilter();else;dbSetFilter({||&cVar.},cVar);end 
+SETFILTERTO&cVar. 
+if(Empty((cVar.AND.&cVar)));dbClearFilter();else;dbSetFilter({||&(cVar.AND.&cVar)},(cVar.AND.&cVar));end 
+SETFILTERTO&(cVar.AND.&cVar) 
+ => FAILED in LINE:         499 
+if(Empty((cVar.AND.&cVar)));dbClearFilter();else;dbSetFilter({||&(cVar.AND.&cVar)},(cVar.AND.&cVar));end 
+SETFILTERTO&(cVar.AND.&cVar) 
+dbSetFilter({||&cVar..AND.cVar},"&cVar..AND.cVar") 
+SETFILTERTO&cVar..AND.cVar 
+ => FAILED in LINE:         503 
+dbSetFilter({||&cVar..AND.cVar},"&cVar..AND.cVar") 
+SETFILTERTO&cVar..AND.cVar 
+v1:=0 
+v1:=0;:=0 
+ => FAILED in LINE:         926 
+ 
+;:=0 
+__dbCopyXStruct("teststru") 
+COPYSTRUCTUREEXTENDEDTOteststru 
+ => FAILED in LINE:         960 
+__dbCopyXStruct("teststru") 
+COPYSTRUCTUREEXTENDEDTOteststru 
+SetPos(1,1);AAdd(GetList,_GET_(a,"a",,{|_1|RangeCheck(_1,,0,100)},));ATail(GetList):Display() 
+@1,1GETaRANGE0,100 
+ => FAILED in LINE:        1016 
+SetPos(1,1);AAdd(GetList,_GET_(a,"a",,{|_1|RangeCheck(_1,,0,100)},));ATail(GetList):Display() 
+@1,1GETaRANGE0,100 
+SetPos(1,2);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},));ATail(GetList):Display() 
+@1,2GETaPICTURE"X"RANGE0,100 
+ => FAILED in LINE:        1020 
+SetPos(1,2);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},));ATail(GetList):Display() 
+@1,2GETaPICTURE"X"RANGE0,100 
+SetPos(1,3);AAdd(GetList,_GET_(a,"a","X",{||.T.},));ATail(GetList):Display() 
+@1,3GETaPICTURE"X"VALID.T.RANGE0,100 
+ => FAILED in LINE:        1025 
+SetPos(1,3);AAdd(GetList,_GET_(a,"a","X",{||.T.},));ATail(GetList):Display() 
+@1,3GETaPICTURE"X"VALID.T.RANGE0,100 
+SetPos(1,4);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},{||.T.}));ATail(GetList):Display() 
+@1,4GETaPICTURE"X"WHEN.T.RANGE0,100 
+ => FAILED in LINE:        1029 
+SetPos(1,4);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},{||.T.}));ATail(GetList):Display() 
+@1,4GETaPICTURE"X"WHEN.T.RANGE0,100 
+SetPos(1,5);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},{||.T.}));ATail(GetList):Caption:="myget";ATail(GetList):CapRow:=ATail(Getlist):row;ATail(GetList):CapCol:=ATail(Getlist):col-__CapLength("myget")-1;ATail(GetList):Display() 
+@1,5GETaPICTURE"X"WHEN.T.CAPTION"myget"RANGE0,100 
+ => FAILED in LINE:        1033 
+SetPos(1,5);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},{||.T.}));ATail(GetList):Caption:="myget";ATail(GetList):CapRow:=ATail(Getlist):row;ATail(GetList):CapCol:=ATail(Getlist):col-__CapLength("myget")-1;ATail(GetList):Display() 
+@1,5GETaPICTURE"X"WHEN.T.CAPTION"myget"RANGE0,100 
+SetPos(1,6);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},{||.T.}));ATail(GetList):Caption:="myget";ATail(GetList):CapRow:=ATail(Getlist):row;ATail(GetList):CapCol:=ATail(Getlist):col-__CapLength("myget")-1;ATail(GetList):message:="mymess";ATail(GetList):Display() 
+@1,6GETaPICTURE"X"WHEN.T.CAPTION"myget"MESSAGE"mymess"RANGE0,100 
+ => FAILED in LINE:        1037 
+SetPos(1,6);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},{||.T.}));ATail(GetList):Caption:="myget";ATail(GetList):CapRow:=ATail(Getlist):row;ATail(GetList):CapCol:=ATail(Getlist):col-__CapLength("myget")-1;ATail(GetList):message:="mymess";ATail(GetList):Display() 
+@1,6GETaPICTURE"X"WHEN.T.CAPTION"myget"MESSAGE"mymess"RANGE0,100 
+SetPos(1,7);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},{||.T.}));ATail(GetList):Caption:="myget";ATail(GetList):CapRow:=ATail(Getlist):row;ATail(GetList):CapCol:=ATail(Getlist):col-__CapLength("myget")-1;ATail(GetList):message:="mymess";ATail(GetList):send();ATail(GetList):Display() 
+@1,7GETaPICTURE"X"WHEN.T.CAPTION"myget"MESSAGE"mymess"SENDsend()RANGE0,100 
+ => FAILED in LINE:        1041 
+SetPos(1,7);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},{||.T.}));ATail(GetList):Caption:="myget";ATail(GetList):CapRow:=ATail(Getlist):row;ATail(GetList):CapCol:=ATail(Getlist):col-__CapLength("myget")-1;ATail(GetList):message:="mymess";ATail(GetList):send();ATail(GetList):Display() 
+@1,7GETaPICTURE"X"WHEN.T.CAPTION"myget"MESSAGE"mymess"SENDsend()RANGE0,100 
+SetPos(2,2);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},));ATail(GetList):Display() 
+@2,2GETaRANGE0,100PICTURE"X" 
+ => FAILED in LINE:        1049 
+SetPos(2,2);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},));ATail(GetList):Display() 
+@2,2GETaRANGE0,100PICTURE"X" 
+SetPos(2,3);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},));ATail(GetList):Display() 
+@2,3GETaPICTURE"X"RANGE0,100 
+ => FAILED in LINE:        1053 
+SetPos(2,3);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},));ATail(GetList):Display() 
+@2,3GETaPICTURE"X"RANGE0,100 
+SetPos(2,4);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},{||.T.}));ATail(GetList):Display() 
+@2,4GETaPICTURE"X"RANGE0,100WHEN.T. 
+ => FAILED in LINE:        1057 
+SetPos(2,4);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},{||.T.}));ATail(GetList):Display() 
+@2,4GETaPICTURE"X"RANGE0,100WHEN.T. 
+SetPos(2,5);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},{||.T.}));ATail(GetList):Caption:="myget";ATail(GetList):CapRow:=ATail(Getlist):row;ATail(GetList):CapCol:=ATail(Getlist):col-__CapLength("myget")-1;ATail(GetList):Display() 
+@2,5GETaPICTURE"X"RANGE0,100WHEN.T.CAPTION"myget" 
+ => FAILED in LINE:        1061 
+SetPos(2,5);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},{||.T.}));ATail(GetList):Caption:="myget";ATail(GetList):CapRow:=ATail(Getlist):row;ATail(GetList):CapCol:=ATail(Getlist):col-__CapLength("myget")-1;ATail(GetList):Display() 
+@2,5GETaPICTURE"X"RANGE0,100WHEN.T.CAPTION"myget" 
+SetPos(2,6);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},{||.T.}));ATail(GetList):Caption:="myget";ATail(GetList):CapRow:=ATail(Getlist):row;ATail(GetList):CapCol:=ATail(Getlist):col-__CapLength("myget")-1;ATail(GetList):message:="mymess";ATail(GetList):Display() 
+@2,6GETaPICTURE"X"RANGE0,100WHEN.T.CAPTION"myget"MESSAGE"mymess" 
+ => FAILED in LINE:        1065 
+SetPos(2,6);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},{||.T.}));ATail(GetList):Caption:="myget";ATail(GetList):CapRow:=ATail(Getlist):row;ATail(GetList):CapCol:=ATail(Getlist):col-__CapLength("myget")-1;ATail(GetList):message:="mymess";ATail(GetList):Display() 
+@2,6GETaPICTURE"X"RANGE0,100WHEN.T.CAPTION"myget"MESSAGE"mymess" 
+SetPos(2,7);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},{||.T.}));ATail(GetList):Caption:="myget";ATail(GetList):CapRow:=ATail(Getlist):row;ATail(GetList):CapCol:=ATail(Getlist):col-__CapLength("myget")-1;ATail(GetList):message:="mymess";ATail(GetList):send();ATail(GetList):Display() 
+@2,7GETaPICTURE"X"RANGE0,100WHEN.T.CAPTION"myget"MESSAGE"mymess"SENDsend() 
+ => FAILED in LINE:        1069 
+SetPos(2,7);AAdd(GetList,_GET_(a,"a","X",{|_1|RangeCheck(_1,,0,100)},{||.T.}));ATail(GetList):Caption:="myget";ATail(GetList):CapRow:=ATail(Getlist):row;ATail(GetList):CapCol:=ATail(Getlist):col-__CapLength("myget")-1;ATail(GetList):message:="mymess";ATail(GetList):send();ATail(GetList):Display() 
+@2,7GETaPICTURE"X"RANGE0,100WHEN.T.CAPTION"myget"MESSAGE"mymess"SENDsend() 
+Total count   =        226 
+Valid results =        194 
+Failed results=         32 
