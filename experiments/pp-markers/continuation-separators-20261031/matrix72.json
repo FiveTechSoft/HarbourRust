@@ -1,0 +1,652 @@
+{
+  "rows": [
+    {
+      "source": "#xcommand FIRST => OUT(1) ;\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  OUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  \"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ; // comment\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  OUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ; // comment\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  \"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ; /* comment */\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  OUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ; /* comment */\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  \"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ; \n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  OUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ; \n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  \"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;  // comment\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  OUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;  // comment\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  \"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;  /* comment */\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  OUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;  /* comment */\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  \"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;\t\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  OUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;\t\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  \"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;\t // comment\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  OUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;\t // comment\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  \"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;\t /* comment */\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  OUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;\t /* comment */\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  \"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;; // comment\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;; // comment\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;; /* comment */\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;; /* comment */\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;; \n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;; \n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;  // comment\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;  // comment\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;  /* comment */\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;  /* comment */\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;\t\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;\t\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;\t // comment\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;\t // comment\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;\t /* comment */\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;\t /* comment */\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;; // comment\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;; // comment\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;; /* comment */\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;; /* comment */\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;; \n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;; \n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;  // comment\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;  // comment\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;  /* comment */\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;  /* comment */\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;\t\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;\t\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;\t // comment\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;\t // comment\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;\t /* comment */\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;\t /* comment */\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;;\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;;\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;; // comment\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;; // comment\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;; /* comment */\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;; /* comment */\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;; \n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;; \n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;;  // comment\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;;  // comment\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;;  /* comment */\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;;  /* comment */\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;;\t\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;;\t\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;;\t // comment\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;;\t // comment\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;;\t /* comment */\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\nOUT(2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;;\t /* comment */\n \"a;b\"\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;;; \"a;b\"\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\n\n\"a;b\"\n",
+      "own_error": "",
+      "token_match": true
+    }
+  ]
+}

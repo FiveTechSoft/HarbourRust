@@ -1304,3 +1304,9 @@ pos tests/t1305_pp_alias_generated_define.hb \n         7
 pos tests/t1306_pp_alias_chain.hb \n         7
 neg tests/t1307_pp_alias_command_cycle.hb command expansion too deep
 neg tests/t1308_pp_alias_define_cycle.hb macro expansion too deep
+pos tests/t1309_pp_continuation_separator.hb \n         1\n         2
+pos tests/t1310_pp_continuation_separator.hb \n         1\n         2
+pos tests/t1311_pp_continuation_separator.hb \n         1\n         2
+pos tests/t1312_pp_continuation_separator.hb \n         1\n         2
+pos tests/t1313_pp_continuation_separator.hb \n         1
+pos tests/t1314_pp_continuation_separator.hb \na;b\nc;d

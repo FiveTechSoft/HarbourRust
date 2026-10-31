@@ -1,0 +1,44 @@
+{
+  "rows": [
+    {
+      "source": "#xcommand FIRST => OUT(1) ;\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)  OUT(2)\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\nOUT(2)\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;;\n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\nOUT(2)\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;; \n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\nOUT(2)\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand FIRST => OUT(1) ;;; \n OUT(2)\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ;; OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(1)\n\nOUT(2)\n",
+      "own_error": ""
+    }
+  ]
+}

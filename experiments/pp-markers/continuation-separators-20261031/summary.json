@@ -1,0 +1,14 @@
+{
+  "historical_replay": 29941,
+  "historical_changes": 0,
+  "focused_matrix": 72,
+  "full_default_pass": 1314,
+  "full_default_manifest": 1309,
+  "full_default_aux": 5,
+  "llvm_pass": 646,
+  "original_diagnostic_rows_changed": 20,
+  "all_changes_line_number_only": true,
+  "original_runtime_exact_linux": 14,
+  "own_runtime_exact_linux": 6,
+  "no_original_compile_growth": true
+}

@@ -1694,9 +1694,10 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
             }
             if in_str || last_non_ws != Some(';') { break; }
             if li + 1 >= raws.len() { break; } // Harbour accepts a final separator at EOF (hk482).
-            joined.pop(); // the ';' itself (it is the last char only if no trailing ws)
+            // Consume exactly the final continuation marker, after whitespace.
+            // Earlier semicolons remain statement separators in the result.
             while joined.ends_with(|c: char| c.is_whitespace()) { joined.pop(); }
-            if joined.ends_with(';') { joined.pop(); }
+            joined.pop();
             joined.push(' ');
             li += 1;
             joined.push_str(stripped[li].trim_start());

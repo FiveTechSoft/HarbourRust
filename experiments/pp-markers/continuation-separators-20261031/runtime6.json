@@ -1,0 +1,130 @@
+{
+  "rows": [
+    {
+      "file": "t1309_pp_continuation_separator.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1\n         2",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1\n         2",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1\n         2",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1310_pp_continuation_separator.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1\n         2",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1\n         2",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1\n         2",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1311_pp_continuation_separator.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1\n         2",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1\n         2",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1\n         2",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1312_pp_continuation_separator.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1\n         2",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1\n         2",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1\n         2",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1313_pp_continuation_separator.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1314_pp_continuation_separator.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\na;b\nc;d",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\na;b\nc;d",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\na;b\nc;d",
+          "stderr": ""
+        }
+      }
+    }
+  ]
+}
