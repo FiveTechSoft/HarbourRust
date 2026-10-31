@@ -18,3 +18,7 @@ Five own runtime programs exact full Harbour/default/LLVM Linux. Local full
 diagnosticdeltas,accepted21/15Linux20/14Windowsunchanged. RealMTHNAME has a
 plain-expression tail and remains unsupported inline. No header/classruntime,
 main,ABI/ownership or speed/byte change. Remote validation pending.
+
+Independentremote1dc2dd0fullgates1331/676,14originalsexact,268x4zero
+diagnosticdeltasverified. Runtime5.jsoncontains5ownprograms;temporarygenerator
+printed inherited6label,not a sixth runtime witness.
