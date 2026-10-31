@@ -1,0 +1,197 @@
+{
+ "phase": "extras/utils/contrib build units (after tests phase CLOSED 268/268 at 4a2da426)",
+ "order": "inventory path lexicographic: extras first, then utils, then contrib",
+ "unit_note": "httpsrv directory COMPLETE (9 files: 5 modules + 4 core). Next: extras/rddado.",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "extras/httpsrv/_cgifunc.prg",
+   "sha256": "cf29d94c735b394915f3bbfeb7ec99f10edddcf206d1e532cd9796f95c3c210a",
+   "review": "full source manually read 2026-11-01 (735 lines)",
+   "entrypoint": "none (library of uhttpd_* helper functions)",
+   "build_unit": "httpsrv core unit uhttpd.hbp (uhttpd.prg + _cgifunc.prg + _cookie.prg + _session.prg, -mt -gui -gtwvt, hbwin.hbc + hbnf.hbc) - COMPLETE with this batch; httpsrv directory COMPLETE",
+   "profile": "B-extras uHTTPD multithreaded web server, GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "hashes + FOR EACH; #xtranslate Throw; __defaultNIL; URL/HTML encode-decode; Date/Time GMT helpers; ErrorNew/Throw; fileio",
+   "boundary": "CGI helper library: GetVars/SplitUrl/SplitString/URLEncode/URLDecode/DateToGMT/HtmlSpecialChars/SplitFileName/CStrToVal/GetField",
+   "reference_build_exit": 7,
+   "reference_build_note": "hbmk2 uhttpd.hbp compiles but LINK FAILS rc7: -lgtwvt and -lhbnf not present in this Linux reference build (missing optional libraries, environment/dependency class, same class as hbusb libusb - not a language error)",
+   "reference_run": "not-run (no executable; server must not be run anyway - no ports per instruction)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: /home/sandbox/work/harbour-ref/extras/httpsrv/_cgifunc.prg: unterminated #if/#ifdef",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: /home/sandbox/work/harbour-ref/extras/httpsrv/_cgifunc.prg: unterminated #if/#ifdef",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: /home/sandbox/work/harbour-ref/extras/httpsrv/_cgifunc.prg: unterminated #if/#ifdef",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: /home/sandbox/work/harbour-ref/extras/httpsrv/_cgifunc.prg: unterminated #if/#ifdef",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/httpsrv/_cookie.prg",
+   "sha256": "7d07efa01daf5ce852f3ceb046ec79ac5997b70458cf1331c34359f4350cde9a",
+   "review": "full source manually read 2026-11-01 (187 lines)",
+   "entrypoint": "none (uhttpd_Cookie CLASS library)",
+   "build_unit": "httpsrv core unit uhttpd.hbp (uhttpd.prg + _cgifunc.prg + _cookie.prg + _session.prg, -mt -gui -gtwvt, hbwin.hbc + hbnf.hbc) - COMPLETE with this batch; httpsrv directory COMPLETE",
+   "profile": "B-extras uHTTPD multithreaded web server, GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "CLASS/VAR INIT; AScan/AEval codeblocks; hb_ADel; _COOKIE memvar; uhttpd_SetHeader/GetHeader; Date/Time in expiry",
+   "boundary": "cookie class: SetCookie/DeleteCookie/DeleteAllCookies/GetCookie",
+   "reference_build_exit": 7,
+   "reference_build_note": "hbmk2 uhttpd.hbp compiles but LINK FAILS rc7: -lgtwvt and -lhbnf not present in this Linux reference build (missing optional libraries, environment/dependency class, same class as hbusb libusb - not a language error)",
+   "reference_run": "not-run (no executable; server must not be run anyway - no ports per instruction)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 57: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 57: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 57: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 57: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/httpsrv/_session.prg",
+   "sha256": "34f904b57335b49125fcb664d4c43617e840ce87d2903a2d6ead2b24cb267a61",
+   "review": "full source manually read 2026-11-01 (884 lines)",
+   "entrypoint": "none (uhttpd_Session CLASS library)",
+   "build_unit": "httpsrv core unit uhttpd.hbp (uhttpd.prg + _cgifunc.prg + _cookie.prg + _session.prg, -mt -gui -gtwvt, hbwin.hbc + hbnf.hbc) - COMPLETE with this batch; httpsrv directory COMPLETE",
+   "profile": "B-extras uHTTPD multithreaded web server, GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "CLASS with HIDDEN section + INLINE methods; #xtranslate SetNewValueReturnOld/Default macros; codeblock save-handlers; hb_Serialize/Deserialize; hb_regexSplit; ft_Elapsed (hbnf); Directory/F_DATE/F_TIME; hb_RandomInt",
+   "boundary": "session class: file-backed sessions with SID+CRC, cache limiters, GC",
+   "reference_build_exit": 7,
+   "reference_build_note": "hbmk2 uhttpd.hbp compiles but LINK FAILS rc7: -lgtwvt and -lhbnf not present in this Linux reference build (missing optional libraries, environment/dependency class, same class as hbusb libusb - not a language error)",
+   "reference_run": "not-run (no executable; server must not be run anyway - no ports per instruction)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 66: command expansion too deep (recursive command?)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 66: command expansion too deep (recursive command?)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 66: command expansion too deep (recursive command?)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 66: command expansion too deep (recursive command?)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/httpsrv/uhttpd.prg",
+   "sha256": "4ab2f068e7ac23dd176132369a437795f8463d1884e86f0a936a277394088851",
+   "review": "full source manually read 2026-11-01 (2876 lines)",
+   "entrypoint": "Main (server; never run - no ports)",
+   "build_unit": "httpsrv core unit uhttpd.hbp (uhttpd.prg + _cgifunc.prg + _cookie.prg + _session.prg, -mt -gui -gtwvt, hbwin.hbc + hbnf.hbc) - COMPLETE with this batch; httpsrv directory COMPLETE",
+   "profile": "B-extras uHTTPD multithreaded web server, GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "#require hbnf/hbwin/hbgd; THREAD STATIC; sockets (hb_socket*); threads/mutexes; hb_hrbLoad/hb_hrbDo; hb_processOpen CGI; hb_iniRead; GT console (hb_DispOutAt/Scroll/SetMode); Alert; hb_AParams variadic; hb_ExecFromArray; mime hash",
+   "boundary": "multithreaded HTTP server: accept loop, fixed worker threads, HRB/CGI handlers, ini config, logging",
+   "reference_build_exit": 7,
+   "reference_build_note": "hbmk2 uhttpd.hbp compiles but LINK FAILS rc7: -lgtwvt and -lhbnf not present in this Linux reference build (missing optional libraries, environment/dependency class, same class as hbusb libusb - not a language error)",
+   "reference_run": "not-run (no executable; server must not be run anyway - no ports per instruction)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 75: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 75: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 75: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 75: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ]
+}
