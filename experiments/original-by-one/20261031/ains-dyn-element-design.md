@@ -1,10 +1,27 @@
 # Dyn-element array design for ains (internal design record, 2026-10-31)
 
-Scope approved by main 16:16: heterogeneous/nested arrays with EXCLUSIVE
-OWNERSHIP for ains, under the standing commission. No RC/alias/cycles/
-captures/float. Preserve homogeneous paths; reserve the float tag (5).
-Named rejections for unsupported forms; never a silent copy where
-Harbour shares (shared assignment/ACopy/param-mutation stay OUT).
+AUTHORITY: Anto's WhatsApp originals only - 25Oct 11:43:50 "los arrays
+tienen que ser dinamicos y multidimensionales", 25Oct 12:46:55 "Ve
+comparando con comportamiento con Harbour", 25Oct 13:14:36 "hay que
+conseguir resolver esas diferencias", 31Oct 07:35:54 build the
+originals one by one + 07:44:46 dedicated fixing agent (recoverable
+wamids in the task record). The 16:16 main-agent message is INTERNAL
+COORDINATION delimiting implementation within that commission - it is
+not, and does not cite itself as, a new authenticated user approval of
+any layout. No RC/alias/cycles/captures/float authorization exists.
+
+STATUS SEPARATION: sections "Oracle-pinned Harbour contract" and
+"Existing runtime model" are verified facts (probes/code reads dated
+2026-10-31). Everything under "New piece" and "Sequence" is a CHOSEN
+DESIGN, not yet accredited: the Ty::DArrDyn scaffolding compiles but
+proves nothing about semantics or memory; oracle byte-exactness,
+memcheck balance and the named rejections are PENDING validation per
+step.
+
+Design boundaries: heterogeneous/nested arrays with EXCLUSIVE OWNERSHIP
+for ains. Preserve homogeneous paths; reserve the float tag (5). Named
+rejections for unsupported forms; never a silent copy where Harbour
+shares (shared assignment/ACopy/param-mutation stay OUT).
 
 ## Oracle-pinned Harbour contract (probes acl1-acl4, 2026-10-31)
 
