@@ -1,0 +1,132 @@
+[
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD d\"2026-01-01\" DECL\n",
+    "exit": 0,
+    "output": "\nOUT('d\"2026-01-01\"',)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD d \"2026-01-01\" DECL\n",
+    "exit": 0,
+    "output": "\nMETHOD d \"2026-01-01\" DECL\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD &x. DECL\n",
+    "exit": 0,
+    "output": "\nOUT(x,)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD & x . DECL\n",
+    "exit": 0,
+    "output": "\nOUT(\"& x . DECL\",)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD pre&x. DECL\n",
+    "exit": 0,
+    "output": "\nOUT(\"pre&x.\",)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD pre &x. DECL\n",
+    "exit": 0,
+    "output": "\nMETHOD pre &x. DECL\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD a&x. DECL\n",
+    "exit": 0,
+    "output": "\nOUT(\"a&x.\",)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD a &x. DECL\n",
+    "exit": 0,
+    "output": "\nMETHOD a &x. DECL\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD a + &x. DECL\n",
+    "exit": 0,
+    "output": "\nOUT(\"a + &x.\",)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD a+&x. DECL\n",
+    "exit": 0,
+    "output": "\nOUT(\"a+&x.\",)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD &x.suffix DECL\n",
+    "exit": 0,
+    "output": "\nOUT(\"&x.suffix\",)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD &x. suffix DECL\n",
+    "exit": 0,
+    "output": "\nMETHOD &x. suffix DECL\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD a.b DECL\n",
+    "exit": 0,
+    "output": "\nOUT(\"a.b\",)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD a . b DECL\n",
+    "exit": 0,
+    "output": "\nOUT(\"a . b\",)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD a->b DECL\n",
+    "exit": 0,
+    "output": "\nOUT(\"a->b\",)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD a -> b DECL\n",
+    "exit": 0,
+    "output": "\nOUT(\"a -> b\",)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD 1.2 DECL\n",
+    "exit": 0,
+    "output": "\nOUT(\"1.2\",)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD 1 . 2 DECL\n",
+    "exit": 0,
+    "output": "\nOUT(\"1 . 2\",)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD 1e2 DECL\n",
+    "exit": 0,
+    "output": "\nMETHOD 1e2 DECL\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD 1e 2 DECL\n",
+    "exit": 0,
+    "output": "\nMETHOD 1e 2 DECL\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD a[1] DECL\n",
+    "exit": 0,
+    "output": "\nOUT(\"a[1]\",)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD a [1] DECL\n",
+    "exit": 0,
+    "output": "\nOUT(\"a [1]\",)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD a(1) DECL\n",
+    "exit": 0,
+    "output": "\nOUT(\"a(1)\",)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD a (1) DECL\n",
+    "exit": 0,
+    "output": "\nOUT(\"a (1)\",)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD e\"line\" DECL\n",
+    "exit": 0,
+    "output": "\nOUT('\"line\"',)\n"
+  },
+  {
+    "source": "#xcommand METHOD <name> [AS <type>] [DECL] => OUT(<\"name\">,<\"type\">)\nMETHOD e \"line\" DECL\n",
+    "exit": 0,
+    "output": "\nMETHOD e \"line\" DECL\n"
+  }
+]

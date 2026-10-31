@@ -28,3 +28,17 @@ Rejected broader lexical scanner is retained separately, never active:
 Generalization needs a source-aware lexical capture contract, numeric validation,
 macro terminating-dot semantics and distinction between unsupported/no-match.
 No global priority, class runtime, ABI, ownership, main, byte/speed claim.
+
+## Refined scanner v2, still inactive and not current candidate
+
+Numeric atoms and macro terminator are now explicit. Seeds4197/3000 and
+4198/5000 have no capture mismatch after separately excluding historical
+.NOT.=>! and **=>^ normalization differences (exact matches2760/3000 and
+4532/5000 respectively). These are NOT exact compatibility passes.
+Expanded seed4199/5000 has4236 exact matches; remaining differences include
+normalizations and false translations because whitespace/adjacency was lost.
+Source-adjacency-oracle26.json demonstrates d"date" vs d "date", and pre&x.
+vs pre &x. A token-only contract cannot safely decide these boundaries.
+Restore conservative candidate; next prototype must carry source spans and
+adjacency into expression capture. Do not patch global source tokenizer merely
+to admit this plan. Production still unchanged; no closure gates rerun.
