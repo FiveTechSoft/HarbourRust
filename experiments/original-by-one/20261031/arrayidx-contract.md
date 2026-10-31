@@ -1,6 +1,6 @@
 # tests/arrayidx.prg concrete blockers
 
-Original SHA256 e0see individual next15 row; source unchanged, reference built,
+Original SHA256 a41ffeeb22586851ef340d28ca92de31ae038d71910c83b47a3e2f59041a5ba5; source unchanged, reference built,
 linked and ranexit0,150stdoutbytes. Default/LLVM stop at compound-expression
 assignment. The complete source exercises+=,-=,*=,/=,^=,%=,each value both returned
 and stored. Reference prints0.80 for4/5,3125.00 for5^5,1.00 for6%5.
