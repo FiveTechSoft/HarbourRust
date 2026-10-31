@@ -1,0 +1,63 @@
+--- production/group_plan.rs
++++ inactive/group_plan.rs
+@@ -31,7 +31,7 @@
+             if tokens[i]=="["{
+                 let id=i;let mut atoms=Vec::new();i+=1;
+                 while i<tokens.len()&&tokens[i]!="]"{atoms.push(atom(&tokens[i],Some(id),&mut markers)?);i+=1;}
+-                if i==tokens.len()||atoms.is_empty()||!atoms.iter().any(|a|matches!(a,Atom::Identifier(_)|Atom::Restricted(_,_)|Atom::Expression(_))){return None;}
++                if i==tokens.len()||atoms.is_empty(){return None;}
+                 nodes.push(Node::Optional{id,atoms});i+=1;
+             }else{nodes.push(Node::Atom(atom(&tokens[i],None,&mut markers)?));i+=1;}
+         }
+@@ -57,6 +57,43 @@
+             true
+         }
+         let mut at=0;expr(tokens,&mut at,0)&&at==tokens.len()
++    }
++    pub fn expression_root(&self)->bool{
++        if self.nodes.len()<3 || self.nodes.len()>8 || !matches!(self.nodes.first(),Some(Node::Atom(Atom::Literal(t)))if identifier(t)) || !matches!(self.nodes.get(1),Some(Node::Atom(Atom::Expression(_)))){return false;}
++        let mut anchors=Vec::new();
++        for node in &self.nodes[2..]{
++            let atoms=match node{Node::Optional{atoms,..}=>atoms,_=>return false};
++            match atoms.as_slice(){[Atom::Literal(t)]|[Atom::Literal(t),Atom::Expression(_)] if identifier(t)=>{
++                if anchors.iter().any(|a:&String|a.eq_ignore_ascii_case(t)){return false;}anchors.push(t.clone());
++            },_=>return false}
++        }true
++    }
++    fn expression_root_matches(&self,source:&[String],exact:bool)->Result<Option<Matched>,&'static str>{
++        fn prefix(t:&[String])->Option<usize>{
++            // First complete expression followed by an adjacent word or end.
++            for n in 1..=t.len(){if Plan::expression_in_scope(&t[..n])&&(n==t.len()||identifier(&t[n])){return Some(n);}}
++            None
++        }
++        let lit=|s:&str,p:&str|s.eq_ignore_ascii_case(p)||(!exact&&s.is_ascii()&&p.is_ascii()&&s.len()>=4&&p.len()>s.len()&&p[..s.len()].eq_ignore_ascii_case(s));
++        if source.is_empty()||!matches!(&self.nodes[0],Node::Atom(Atom::Literal(t))if lit(&source[0],t)){return Ok(None);}
++        let root=match self.nodes[1]{Node::Atom(Atom::Expression(id))=>id,_=>return Ok(None)};
++        let n=match prefix(&source[1..]){Some(n)=>n,None=>return Ok(None)};let mut at=1+n;
++        let mut out=Matched{roots:vec![(root,(1,at))],iterations:Vec::new(),consumed:0};
++        let mut budget=1024;
++        while at<source.len(){
++            let mut next=None;
++            for node in &self.nodes[2..]{if let Node::Optional{id,atoms}=node{
++                let word=match &atoms[0]{Atom::Literal(t)=>t,_=>return Ok(None)};
++                if !lit(&source[at],word){continue;}let start=at;let mut end=at+1;let mut captures=Vec::new();
++                if let Some(Atom::Expression(marker))=atoms.get(1){let n=match prefix(&source[end..]){Some(n)=>n,None=>return Ok(None)};captures.push((*marker,(end,end+n)));end+=n;}
++                next=Some((*id,start,end,captures));break;
++            }}
++            match next{None=>return Ok(None),Some((id,start,end,captures))=>{
++                if budget==0{return Err("expression root optional iteration limit exceeded");}budget-=1;
++                let ordinal=out.iterations.iter().filter(|i|i.group_id==id).count();out.iterations.push(Iteration{group_id:id,ordinal,tokens:(start,end),captures});at=end;
++            }}
++        }
++        out.consumed=at;Ok(Some(out))
+     }
+     pub fn reduced_var(&self)->bool{
+         if self.nodes.len()<5||self.nodes.len()>11{return false;}
+@@ -131,6 +168,7 @@
+         seq(&self.nodes,source,0,exact,prefix,Matched{roots:Vec::new(),iterations:Vec::new(),consumed:0},&mut 10000)
+     }
+     pub fn matches(&self,source:&[String],exact:bool,prefix:bool)->Result<Option<Matched>,&'static str>{
++        if self.expression_root(){return self.expression_root_matches(source,exact);}
+         if self.var_variant(){return self.variant_matches(source,exact);}
+         if !self.reduced_var(){return self.identifier_matches(source,exact,prefix);}
+         if prefix{return Err("reduced VAR prefix translation outside bounded contract");}

@@ -1,0 +1,20 @@
+--- production/pp.rs
++++ inactive/pp.rs
+@@ -1183,7 +1183,7 @@
+ fn single_identifier_group(c:&Cmd,source:&str,tokens:&[String],line:usize)->Option<Result<Option<String>,String>> {
+     let plan=c.group_plan.as_ref()?;
+     let identifier_only=c.pattern.len()==4&&c.pattern[1]=="["&&c.pattern[3]=="]"&&c.pattern[2].starts_with("<!");
+-    if !identifier_only&&(!(plan.reduced_var()||plan.var_variant())||c.translation){return None;}
++    if !identifier_only&&(!(plan.reduced_var()||plan.var_variant()||plan.expression_root())||c.translation){return None;}
+     if !plan.nodes.iter().any(|n|matches!(n,group_plan::Node::Optional{..})){return None;}
+     if !tokens.first().map(|t|lit_match(t,&c.pattern[0])).unwrap_or(false){return None;}
+     // Nested result groups stay wholly on the historical path.
+@@ -1279,7 +1279,7 @@
+                 if !safe_atom||!safe_tail{return Err(format!("line {}: overlapping VAR type expression outside bounded contract",line_no));}
+             }
+         }
+-        if let Some(result)=if isolated||family{single_identifier_group(c,line,&src,line_no)}else{None}{
++        if let Some(result)=if isolated||family||c.group_plan.as_ref().map(|p|p.expression_root()).unwrap_or(false){single_identifier_group(c,line,&src,line_no)}else{None}{
+             match result {Ok(None)=>continue,other=>{
+                 let lits=c.pattern.iter().filter(|t| !(t.starts_with('<')&&t.ends_with('>'))&&t.as_str()!="["&&t.as_str()!="]").count();
+                 if best.map(|(bl,_)|lits>=bl).unwrap_or(true){best=Some((lits,ci));best_group=Some(other);best_caps.clear();}
