@@ -764,3 +764,15 @@ Sixteen new observations give14exact outputs and2outside-slice boundaries,not
 <x:&> match marker,NOT complete acceptance.1179now checks numeric escape and1196
 unbalanced list delimiters;1224positively covers newly supported index lists.
 No runtime/ABI/new lexer semantics or size/speed claim.
+
+## Restricted macro marker boundary
+
+128own-source observations for <x:&>,not implementation or runtime evaluation.
+Whole-command matches include &name,optional dot and concatenated macro-name
+segments,balanced &(expression),and measured bare &/&() forms. Plain identifiers,
+&123,index postfix and extra arithmetic do not match the entire command.
+Translate may replace a prefix and leave remaining source;that still belongs
+to the separately unresolved captured-translation prefix contract. The original
+_pp_test uses an intentionally incomplete XTRANS(<x:&>( pattern,so accepting
+its definition alone does not establish call matching or complete acceptance.
+Any emitted runtime macro operator remains the existing named native limit.

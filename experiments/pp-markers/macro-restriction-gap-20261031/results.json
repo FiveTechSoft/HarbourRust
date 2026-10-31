@@ -1,0 +1,1285 @@
+{
+  "scope": "128own restricted macro-marker observations,not runtime support",
+  "rows": [
+    {
+      "case": 0,
+      "source": "#command PROBE <x:&> => OUT(#<x>)\nPROBE &var\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&>",
+      "input": "&var",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 1,
+      "source": "#command PROBE <x:&> => OUT(#<x>)\nPROBE &var.\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&>",
+      "input": "&var.",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 2,
+      "source": "#command PROBE <x:&> => OUT(#<x>)\nPROBE &(var)\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&>",
+      "input": "&(var)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&(var)\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 3,
+      "source": "#command PROBE <x:&> => OUT(#<x>)\nPROBE &(a+1)\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&>",
+      "input": "&(a+1)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&(a+1)\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 4,
+      "source": "#command PROBE <x:&> => OUT(#<x>)\nPROBE &var+1\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&>",
+      "input": "&var+1",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var+1\n",
+      "reference_error": ""
+    },
+    {
+      "case": 5,
+      "source": "#command PROBE <x:&> => OUT(#<x>)\nPROBE &var .AND. other\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&>",
+      "input": "&var .AND. other",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var .AND. other\n",
+      "reference_error": ""
+    },
+    {
+      "case": 6,
+      "source": "#command PROBE <x:&> => OUT(#<x>)\nPROBE var\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&>",
+      "input": "var",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE var\n",
+      "reference_error": ""
+    },
+    {
+      "case": 7,
+      "source": "#command PROBE <x:&> => OUT(#<x>)\nPROBE (&var)\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&>",
+      "input": "(&var)",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (&var)\n",
+      "reference_error": ""
+    },
+    {
+      "case": 8,
+      "source": "#command PROBE <x:&> => OUT(#<x>)\nPROBE &var[1]\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&>",
+      "input": "&var[1]",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var[1]\n",
+      "reference_error": ""
+    },
+    {
+      "case": 9,
+      "source": "#command PROBE <x:&> => OUT(#<x>)\nPROBE &var. [1]\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&>",
+      "input": "&var. [1]",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var. [1]\n",
+      "reference_error": ""
+    },
+    {
+      "case": 10,
+      "source": "#command PROBE <x:&> => OUT(#<x>)\nPROBE &var&other\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&>",
+      "input": "&var&other",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var&other\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 11,
+      "source": "#command PROBE <x:&> => OUT(#<x>)\nPROBE &var.name\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&>",
+      "input": "&var.name",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.name\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 12,
+      "source": "#command PROBE <x:&> => OUT(#<x>)\nPROBE &var.1\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&>",
+      "input": "&var.1",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.1\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 13,
+      "source": "#command PROBE <x:&> => OUT(#<x>)\nPROBE &\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&>",
+      "input": "&",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 14,
+      "source": "#command PROBE <x:&> => OUT(#<x>)\nPROBE &123\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&>",
+      "input": "&123",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &123\n",
+      "reference_error": ""
+    },
+    {
+      "case": 15,
+      "source": "#command PROBE <x:&> => OUT(#<x>)\nPROBE &()\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&>",
+      "input": "&()",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&()\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 16,
+      "source": "#command PROBE <x:&> END => OUT(#<x>)\nPROBE &var END\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 17,
+      "source": "#command PROBE <x:&> END => OUT(#<x>)\nPROBE &var. END\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var.",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 18,
+      "source": "#command PROBE <x:&> END => OUT(#<x>)\nPROBE &(var) END\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&> END",
+      "input": "&(var)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&(var)\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 19,
+      "source": "#command PROBE <x:&> END => OUT(#<x>)\nPROBE &(a+1) END\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&> END",
+      "input": "&(a+1)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&(a+1)\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 20,
+      "source": "#command PROBE <x:&> END => OUT(#<x>)\nPROBE &var+1 END\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var+1",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var+1 END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 21,
+      "source": "#command PROBE <x:&> END => OUT(#<x>)\nPROBE &var .AND. other END\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var .AND. other",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var .AND. other END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 22,
+      "source": "#command PROBE <x:&> END => OUT(#<x>)\nPROBE var END\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&> END",
+      "input": "var",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE var END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 23,
+      "source": "#command PROBE <x:&> END => OUT(#<x>)\nPROBE (&var) END\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&> END",
+      "input": "(&var)",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (&var) END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 24,
+      "source": "#command PROBE <x:&> END => OUT(#<x>)\nPROBE &var[1] END\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var[1]",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var[1] END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 25,
+      "source": "#command PROBE <x:&> END => OUT(#<x>)\nPROBE &var. [1] END\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var. [1]",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var. [1] END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 26,
+      "source": "#command PROBE <x:&> END => OUT(#<x>)\nPROBE &var&other END\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var&other",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var&other\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 27,
+      "source": "#command PROBE <x:&> END => OUT(#<x>)\nPROBE &var.name END\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var.name",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.name\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 28,
+      "source": "#command PROBE <x:&> END => OUT(#<x>)\nPROBE &var.1 END\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var.1",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.1\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 29,
+      "source": "#command PROBE <x:&> END => OUT(#<x>)\nPROBE & END\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&> END",
+      "input": "&",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 30,
+      "source": "#command PROBE <x:&> END => OUT(#<x>)\nPROBE &123 END\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&> END",
+      "input": "&123",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &123 END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 31,
+      "source": "#command PROBE <x:&> END => OUT(#<x>)\nPROBE &() END\n",
+      "directive": "command",
+      "pattern": "PROBE <x:&> END",
+      "input": "&()",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&()\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 32,
+      "source": "#xcommand PROBE <x:&> => OUT(#<x>)\nPROBE &var\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&>",
+      "input": "&var",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 33,
+      "source": "#xcommand PROBE <x:&> => OUT(#<x>)\nPROBE &var.\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&>",
+      "input": "&var.",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 34,
+      "source": "#xcommand PROBE <x:&> => OUT(#<x>)\nPROBE &(var)\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&>",
+      "input": "&(var)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&(var)\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 35,
+      "source": "#xcommand PROBE <x:&> => OUT(#<x>)\nPROBE &(a+1)\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&>",
+      "input": "&(a+1)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&(a+1)\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 36,
+      "source": "#xcommand PROBE <x:&> => OUT(#<x>)\nPROBE &var+1\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&>",
+      "input": "&var+1",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var+1\n",
+      "reference_error": ""
+    },
+    {
+      "case": 37,
+      "source": "#xcommand PROBE <x:&> => OUT(#<x>)\nPROBE &var .AND. other\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&>",
+      "input": "&var .AND. other",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var .AND. other\n",
+      "reference_error": ""
+    },
+    {
+      "case": 38,
+      "source": "#xcommand PROBE <x:&> => OUT(#<x>)\nPROBE var\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&>",
+      "input": "var",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE var\n",
+      "reference_error": ""
+    },
+    {
+      "case": 39,
+      "source": "#xcommand PROBE <x:&> => OUT(#<x>)\nPROBE (&var)\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&>",
+      "input": "(&var)",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (&var)\n",
+      "reference_error": ""
+    },
+    {
+      "case": 40,
+      "source": "#xcommand PROBE <x:&> => OUT(#<x>)\nPROBE &var[1]\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&>",
+      "input": "&var[1]",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var[1]\n",
+      "reference_error": ""
+    },
+    {
+      "case": 41,
+      "source": "#xcommand PROBE <x:&> => OUT(#<x>)\nPROBE &var. [1]\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&>",
+      "input": "&var. [1]",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var. [1]\n",
+      "reference_error": ""
+    },
+    {
+      "case": 42,
+      "source": "#xcommand PROBE <x:&> => OUT(#<x>)\nPROBE &var&other\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&>",
+      "input": "&var&other",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var&other\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 43,
+      "source": "#xcommand PROBE <x:&> => OUT(#<x>)\nPROBE &var.name\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&>",
+      "input": "&var.name",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.name\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 44,
+      "source": "#xcommand PROBE <x:&> => OUT(#<x>)\nPROBE &var.1\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&>",
+      "input": "&var.1",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.1\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 45,
+      "source": "#xcommand PROBE <x:&> => OUT(#<x>)\nPROBE &\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&>",
+      "input": "&",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 46,
+      "source": "#xcommand PROBE <x:&> => OUT(#<x>)\nPROBE &123\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&>",
+      "input": "&123",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &123\n",
+      "reference_error": ""
+    },
+    {
+      "case": 47,
+      "source": "#xcommand PROBE <x:&> => OUT(#<x>)\nPROBE &()\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&>",
+      "input": "&()",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&()\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 48,
+      "source": "#xcommand PROBE <x:&> END => OUT(#<x>)\nPROBE &var END\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 49,
+      "source": "#xcommand PROBE <x:&> END => OUT(#<x>)\nPROBE &var. END\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var.",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 50,
+      "source": "#xcommand PROBE <x:&> END => OUT(#<x>)\nPROBE &(var) END\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&> END",
+      "input": "&(var)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&(var)\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 51,
+      "source": "#xcommand PROBE <x:&> END => OUT(#<x>)\nPROBE &(a+1) END\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&> END",
+      "input": "&(a+1)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&(a+1)\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 52,
+      "source": "#xcommand PROBE <x:&> END => OUT(#<x>)\nPROBE &var+1 END\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var+1",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var+1 END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 53,
+      "source": "#xcommand PROBE <x:&> END => OUT(#<x>)\nPROBE &var .AND. other END\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var .AND. other",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var .AND. other END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 54,
+      "source": "#xcommand PROBE <x:&> END => OUT(#<x>)\nPROBE var END\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&> END",
+      "input": "var",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE var END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 55,
+      "source": "#xcommand PROBE <x:&> END => OUT(#<x>)\nPROBE (&var) END\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&> END",
+      "input": "(&var)",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (&var) END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 56,
+      "source": "#xcommand PROBE <x:&> END => OUT(#<x>)\nPROBE &var[1] END\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var[1]",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var[1] END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 57,
+      "source": "#xcommand PROBE <x:&> END => OUT(#<x>)\nPROBE &var. [1] END\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var. [1]",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var. [1] END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 58,
+      "source": "#xcommand PROBE <x:&> END => OUT(#<x>)\nPROBE &var&other END\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var&other",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var&other\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 59,
+      "source": "#xcommand PROBE <x:&> END => OUT(#<x>)\nPROBE &var.name END\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var.name",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.name\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 60,
+      "source": "#xcommand PROBE <x:&> END => OUT(#<x>)\nPROBE &var.1 END\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var.1",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.1\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 61,
+      "source": "#xcommand PROBE <x:&> END => OUT(#<x>)\nPROBE & END\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&> END",
+      "input": "&",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 62,
+      "source": "#xcommand PROBE <x:&> END => OUT(#<x>)\nPROBE &123 END\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&> END",
+      "input": "&123",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &123 END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 63,
+      "source": "#xcommand PROBE <x:&> END => OUT(#<x>)\nPROBE &() END\n",
+      "directive": "xcommand",
+      "pattern": "PROBE <x:&> END",
+      "input": "&()",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&()\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 64,
+      "source": "#translate PROBE <x:&> => OUT(#<x>)\nPROBE &var\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 65,
+      "source": "#translate PROBE <x:&> => OUT(#<x>)\nPROBE &var.\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var.",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 66,
+      "source": "#translate PROBE <x:&> => OUT(#<x>)\nPROBE &(var)\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&>",
+      "input": "&(var)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&(var)\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 67,
+      "source": "#translate PROBE <x:&> => OUT(#<x>)\nPROBE &(a+1)\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&>",
+      "input": "&(a+1)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&(a+1)\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 68,
+      "source": "#translate PROBE <x:&> => OUT(#<x>)\nPROBE &var+1\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var+1",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var\")+1\n",
+      "reference_error": ""
+    },
+    {
+      "case": 69,
+      "source": "#translate PROBE <x:&> => OUT(#<x>)\nPROBE &var .AND. other\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var .AND. other",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var\") .AND. other\n",
+      "reference_error": ""
+    },
+    {
+      "case": 70,
+      "source": "#translate PROBE <x:&> => OUT(#<x>)\nPROBE var\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&>",
+      "input": "var",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE var\n",
+      "reference_error": ""
+    },
+    {
+      "case": 71,
+      "source": "#translate PROBE <x:&> => OUT(#<x>)\nPROBE (&var)\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&>",
+      "input": "(&var)",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (&var)\n",
+      "reference_error": ""
+    },
+    {
+      "case": 72,
+      "source": "#translate PROBE <x:&> => OUT(#<x>)\nPROBE &var[1]\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var[1]",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var\")[1]\n",
+      "reference_error": ""
+    },
+    {
+      "case": 73,
+      "source": "#translate PROBE <x:&> => OUT(#<x>)\nPROBE &var. [1]\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var. [1]",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.\") [1]\n",
+      "reference_error": ""
+    },
+    {
+      "case": 74,
+      "source": "#translate PROBE <x:&> => OUT(#<x>)\nPROBE &var&other\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var&other",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var&other\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 75,
+      "source": "#translate PROBE <x:&> => OUT(#<x>)\nPROBE &var.name\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var.name",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.name\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 76,
+      "source": "#translate PROBE <x:&> => OUT(#<x>)\nPROBE &var.1\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var.1",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.1\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 77,
+      "source": "#translate PROBE <x:&> => OUT(#<x>)\nPROBE &\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&>",
+      "input": "&",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 78,
+      "source": "#translate PROBE <x:&> => OUT(#<x>)\nPROBE &123\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&>",
+      "input": "&123",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")123\n",
+      "reference_error": ""
+    },
+    {
+      "case": 79,
+      "source": "#translate PROBE <x:&> => OUT(#<x>)\nPROBE &()\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&>",
+      "input": "&()",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&()\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 80,
+      "source": "#translate PROBE <x:&> END => OUT(#<x>)\nPROBE &var END\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 81,
+      "source": "#translate PROBE <x:&> END => OUT(#<x>)\nPROBE &var. END\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var.",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 82,
+      "source": "#translate PROBE <x:&> END => OUT(#<x>)\nPROBE &(var) END\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&(var)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&(var)\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 83,
+      "source": "#translate PROBE <x:&> END => OUT(#<x>)\nPROBE &(a+1) END\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&(a+1)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&(a+1)\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 84,
+      "source": "#translate PROBE <x:&> END => OUT(#<x>)\nPROBE &var+1 END\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var+1",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var+1 END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 85,
+      "source": "#translate PROBE <x:&> END => OUT(#<x>)\nPROBE &var .AND. other END\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var .AND. other",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var .AND. other END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 86,
+      "source": "#translate PROBE <x:&> END => OUT(#<x>)\nPROBE var END\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&> END",
+      "input": "var",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE var END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 87,
+      "source": "#translate PROBE <x:&> END => OUT(#<x>)\nPROBE (&var) END\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&> END",
+      "input": "(&var)",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (&var) END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 88,
+      "source": "#translate PROBE <x:&> END => OUT(#<x>)\nPROBE &var[1] END\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var[1]",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var[1] END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 89,
+      "source": "#translate PROBE <x:&> END => OUT(#<x>)\nPROBE &var. [1] END\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var. [1]",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var. [1] END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 90,
+      "source": "#translate PROBE <x:&> END => OUT(#<x>)\nPROBE &var&other END\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var&other",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var&other\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 91,
+      "source": "#translate PROBE <x:&> END => OUT(#<x>)\nPROBE &var.name END\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var.name",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.name\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 92,
+      "source": "#translate PROBE <x:&> END => OUT(#<x>)\nPROBE &var.1 END\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var.1",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.1\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 93,
+      "source": "#translate PROBE <x:&> END => OUT(#<x>)\nPROBE & END\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 94,
+      "source": "#translate PROBE <x:&> END => OUT(#<x>)\nPROBE &123 END\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&123",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &123 END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 95,
+      "source": "#translate PROBE <x:&> END => OUT(#<x>)\nPROBE &() END\n",
+      "directive": "translate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&()",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&()\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 96,
+      "source": "#xtranslate PROBE <x:&> => OUT(#<x>)\nPROBE &var\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 97,
+      "source": "#xtranslate PROBE <x:&> => OUT(#<x>)\nPROBE &var.\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var.",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 98,
+      "source": "#xtranslate PROBE <x:&> => OUT(#<x>)\nPROBE &(var)\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&>",
+      "input": "&(var)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&(var)\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 99,
+      "source": "#xtranslate PROBE <x:&> => OUT(#<x>)\nPROBE &(a+1)\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&>",
+      "input": "&(a+1)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&(a+1)\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 100,
+      "source": "#xtranslate PROBE <x:&> => OUT(#<x>)\nPROBE &var+1\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var+1",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var\")+1\n",
+      "reference_error": ""
+    },
+    {
+      "case": 101,
+      "source": "#xtranslate PROBE <x:&> => OUT(#<x>)\nPROBE &var .AND. other\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var .AND. other",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var\") .AND. other\n",
+      "reference_error": ""
+    },
+    {
+      "case": 102,
+      "source": "#xtranslate PROBE <x:&> => OUT(#<x>)\nPROBE var\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&>",
+      "input": "var",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE var\n",
+      "reference_error": ""
+    },
+    {
+      "case": 103,
+      "source": "#xtranslate PROBE <x:&> => OUT(#<x>)\nPROBE (&var)\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&>",
+      "input": "(&var)",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (&var)\n",
+      "reference_error": ""
+    },
+    {
+      "case": 104,
+      "source": "#xtranslate PROBE <x:&> => OUT(#<x>)\nPROBE &var[1]\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var[1]",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var\")[1]\n",
+      "reference_error": ""
+    },
+    {
+      "case": 105,
+      "source": "#xtranslate PROBE <x:&> => OUT(#<x>)\nPROBE &var. [1]\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var. [1]",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.\") [1]\n",
+      "reference_error": ""
+    },
+    {
+      "case": 106,
+      "source": "#xtranslate PROBE <x:&> => OUT(#<x>)\nPROBE &var&other\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var&other",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var&other\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 107,
+      "source": "#xtranslate PROBE <x:&> => OUT(#<x>)\nPROBE &var.name\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var.name",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.name\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 108,
+      "source": "#xtranslate PROBE <x:&> => OUT(#<x>)\nPROBE &var.1\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&>",
+      "input": "&var.1",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.1\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 109,
+      "source": "#xtranslate PROBE <x:&> => OUT(#<x>)\nPROBE &\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&>",
+      "input": "&",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 110,
+      "source": "#xtranslate PROBE <x:&> => OUT(#<x>)\nPROBE &123\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&>",
+      "input": "&123",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")123\n",
+      "reference_error": ""
+    },
+    {
+      "case": 111,
+      "source": "#xtranslate PROBE <x:&> => OUT(#<x>)\nPROBE &()\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&>",
+      "input": "&()",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&()\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 112,
+      "source": "#xtranslate PROBE <x:&> END => OUT(#<x>)\nPROBE &var END\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 113,
+      "source": "#xtranslate PROBE <x:&> END => OUT(#<x>)\nPROBE &var. END\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var.",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 114,
+      "source": "#xtranslate PROBE <x:&> END => OUT(#<x>)\nPROBE &(var) END\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&(var)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&(var)\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 115,
+      "source": "#xtranslate PROBE <x:&> END => OUT(#<x>)\nPROBE &(a+1) END\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&(a+1)",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&(a+1)\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 116,
+      "source": "#xtranslate PROBE <x:&> END => OUT(#<x>)\nPROBE &var+1 END\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var+1",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var+1 END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 117,
+      "source": "#xtranslate PROBE <x:&> END => OUT(#<x>)\nPROBE &var .AND. other END\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var .AND. other",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var .AND. other END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 118,
+      "source": "#xtranslate PROBE <x:&> END => OUT(#<x>)\nPROBE var END\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&> END",
+      "input": "var",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE var END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 119,
+      "source": "#xtranslate PROBE <x:&> END => OUT(#<x>)\nPROBE (&var) END\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&> END",
+      "input": "(&var)",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (&var) END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 120,
+      "source": "#xtranslate PROBE <x:&> END => OUT(#<x>)\nPROBE &var[1] END\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var[1]",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var[1] END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 121,
+      "source": "#xtranslate PROBE <x:&> END => OUT(#<x>)\nPROBE &var. [1] END\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var. [1]",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &var. [1] END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 122,
+      "source": "#xtranslate PROBE <x:&> END => OUT(#<x>)\nPROBE &var&other END\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var&other",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var&other\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 123,
+      "source": "#xtranslate PROBE <x:&> END => OUT(#<x>)\nPROBE &var.name END\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var.name",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.name\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 124,
+      "source": "#xtranslate PROBE <x:&> END => OUT(#<x>)\nPROBE &var.1 END\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&var.1",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&var.1\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 125,
+      "source": "#xtranslate PROBE <x:&> END => OUT(#<x>)\nPROBE & END\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": ""
+    },
+    {
+      "case": 126,
+      "source": "#xtranslate PROBE <x:&> END => OUT(#<x>)\nPROBE &123 END\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&123",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &123 END\n",
+      "reference_error": ""
+    },
+    {
+      "case": 127,
+      "source": "#xtranslate PROBE <x:&> END => OUT(#<x>)\nPROBE &() END\n",
+      "directive": "xtranslate",
+      "pattern": "PROBE <x:&> END",
+      "input": "&()",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&()\")\n",
+      "reference_error": ""
+    }
+  ]
+}
