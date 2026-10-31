@@ -1,3 +1,5 @@
+#[path="group_plan.rs"]
+mod group_plan;
 // pp - HarbourRust preprocessor engine (PoC, MIT, written from scratch).
 // Shared module: hbc runs it automatically on every compile; the hpp
 // binary is a thin standalone frontend over this same code.
@@ -44,6 +46,7 @@ pub struct Cmd {
     pattern: Vec<String>, // tokens; "<name>" marks a capture
     result: String,
     translation: bool, // non-call translate retains identity/order alongside commands
+    group_plan: Option<group_plan::Plan>,
     restricted_exact: bool, // X directives disallow abbreviation in new lists
 }
 
@@ -653,7 +656,7 @@ fn register_command(text: &str, pp: &mut Pp, line: usize) -> Result<bool, String
     validate_markers(&pattern, line)?;
     let result = arg[arrow+2..].trim().to_string();
     validate_result_markers(&pattern, &result, line, true)?;
-    pp.cmds.push(Cmd { pattern, result, translation: false, restricted_exact: dir.starts_with('X') });
+    pp.cmds.push(Cmd { group_plan:group_plan::Plan::parse(&pattern), pattern, result, translation: false, restricted_exact: dir.starts_with('X') });
     Ok(true)
 }
 
@@ -1101,12 +1104,11 @@ fn expand_fixed_translations(text: &str, rules: &[Cmd], calls: &[Cmd], line: usi
 }
 
 
-// Scoped group/iteration path:one optional identifier group, no pattern literals/nesting.
-#[derive(Clone)]
-struct GroupIteration { group_id: usize, ordinal: usize, span: (usize,usize), captures: Vec<Capture> }
-struct GroupMatch { group_id: usize, iterations: Vec<GroupIteration>, consumed: usize }
+// Scoped identifier group through the precompiled ownership plan.
 fn single_identifier_group(c:&Cmd,source:&str,tokens:&[String],line:usize)->Option<Result<Option<String>,String>> {
-    if c.pattern.len()!=4 || c.pattern[1]!="[" || c.pattern[3]!="]" || !c.pattern[2].starts_with("<!") {return None;}
+    if c.pattern.len()!=4||c.pattern[1]!="["||c.pattern[3]!="]"||!c.pattern[2].starts_with("<!"){return None;}
+    let plan=c.group_plan.as_ref()?;
+    if !plan.nodes.iter().any(|n|matches!(n,group_plan::Node::Optional{..})){return None;}
     if !tokens.first().map(|t|lit_match(t,&c.pattern[0])).unwrap_or(false){return None;}
     // Nested result groups stay wholly on the historical path.
     let mut depth=0;let mut q=None;let mut at=0;
@@ -1123,12 +1125,7 @@ fn single_identifier_group(c:&Cmd,source:&str,tokens:&[String],line:usize)->Opti
 
     let work=|| -> Result<Option<String>,String> {
         let spans=source_spans(source,tokens)?;
-        let mut matched=GroupMatch{group_id:1,iterations:Vec::new(),consumed:1};
-        for (i,t) in tokens.iter().enumerate().skip(1){
-            if !marker_ident(t){break;}
-            matched.iterations.push(GroupIteration{group_id:1,ordinal:i-1,span:spans[&(t.as_ptr()as usize)],captures:vec![Capture::from_tokens(&tokens[i..i+1])]});matched.consumed=i+1;
-        }
-        if !c.translation && matched.consumed!=tokens.len(){return Ok(None);}
+        let matched=match plan.matches(tokens,c.restricted_exact,c.translation)?{Some(m)=>m,None=>return Ok(None)};
         let (staged,mut saved)=staged_result(&c.result,source)?;
         // The historical renderer substitutes inside quotes. Shield only this
         // new iteration path's source-result literals before delegating atoms.
@@ -1144,9 +1141,6 @@ fn single_identifier_group(c:&Cmd,source:&str,tokens:&[String],line:usize)->Opti
             }else{let ch=staged[at..].chars().next().unwrap();text.push(ch);at+=ch.len_utf8();}
         }
         // One-level result plan: strings and staged escaped brackets are data.
-        let base=marker_name(&c.pattern[2][1..c.pattern[2].len()-1]);
-        let needles=[format!("<{}>",base),format!("#<{}>",base),format!("<({})>",base),format!("<\"{}\">",base),format!("<.{}.>",base),format!("<-{}->",base)];
-        let owns=|part:&str|needles.iter().any(|needle|!stringify_positions(part,needle).is_empty());
         let mut pieces:Vec<(bool,&str)>=Vec::new();let bytes=text.as_bytes();let mut cursor=0;let mut start=0;let mut group_start=None;let mut q=None;
         while cursor<bytes.len(){
             if q.is_none(){if let Some(end)=escape_literal_end(&text,cursor){cursor=end;continue;}}
@@ -1165,19 +1159,16 @@ fn single_identifier_group(c:&Cmd,source:&str,tokens:&[String],line:usize)->Opti
         }
         if group_start.is_some(){return Err("unbalanced result group".into());}
         pieces.push((false,&text[start..]));
-        if matched.iterations.len()>1 && pieces.iter().any(|(group,part)|!group&&owns(part)){return Ok(None);}
+        let atom_pattern:Vec<String>=std::iter::once(c.pattern[0].clone()).chain(plan.markers.iter().map(|(name,_)|format!("<!{}!>",name))).collect();
         let mut out=String::new();
         for (group,part) in pieces{
-            if group&&!owns(part){continue;}
-            let flat=Cmd{pattern:vec![c.pattern[0].clone(),c.pattern[2].clone()],result:part.into(),translation:false,restricted_exact:c.restricted_exact};
-            if group{
-                for it in &matched.iterations{
-                    debug_assert_eq!(it.group_id,matched.group_id);debug_assert!(it.ordinal<matched.iterations.len());debug_assert!(it.span.0<=it.span.1);
-                    out.push_str(&render_command(&flat,&it.captures,source,tokens,line)?);
-                }
-            }else{
-                let cap=matched.iterations.first().map(|it|it.captures[0].clone()).unwrap_or_else(Capture::empty);
-                out.push_str(&render_command(&flat,&[cap],source,tokens,line)?);
+            let marker_ids:Vec<usize>=plan.markers.iter().enumerate().filter(|(_, (name,_))|[format!("<{}>",name),format!("#<{}>",name),format!("<({})>",name),format!("<\"{}\">",name),format!("<.{}.>",name),format!("<-{}->",name)].iter().any(|needle|!stringify_positions(part,needle).is_empty())).map(|(id,_)|id).collect();
+            let iterations=match plan.result_iterations(&matched,&marker_ids,group){Ok(it)=>it,Err("repeated result marker outside associated group")=>return Ok(None),Err(e)=>return Err(e.into())};
+            let flat=Cmd{group_plan:None,pattern:atom_pattern.clone(),result:part.into(),translation:false,restricted_exact:c.restricted_exact};
+            for it in iterations{
+                let mut caps=vec![Capture::empty();plan.markers.len()];
+                for (id,(start,end)) in it.captures{caps[id]=Capture::from_tokens(&tokens[start..end]);}
+                out.push_str(&render_command(&flat,&caps,source,tokens,line)?);
             }
         }
         if matched.consumed<tokens.len(){let end=spans[&(tokens[matched.consumed-1].as_ptr()as usize)].1;out.push_str(&source[end..]);}
@@ -1760,7 +1751,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     validate_markers(&pattern, line)?;
                     let result = arg[arrow + 2..].trim().to_string();
                     validate_result_markers(&pattern, &result, line, false)?;
-                    pp.cmds.push(Cmd { pattern, result, translation: false, restricted_exact: dir.starts_with('X') });
+                    pp.cmds.push(Cmd { group_plan:group_plan::Plan::parse(&pattern), pattern, result, translation: false, restricted_exact: dir.starts_with('X') });
                 }
             }
             "TRANSLATE" | "XTRANSLATE" => {
@@ -1775,7 +1766,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                             let pattern = cmd_tokens(pat);
                             validate_markers(&pattern, line)?;
                             validate_result_markers(&pattern, &result, line, true)?;
-                            pp.call_rules.push(Cmd { pattern, result, translation: false, restricted_exact: dir.starts_with('X') });
+                            pp.call_rules.push(Cmd { group_plan:group_plan::Plan::parse(&pattern), pattern, result, translation: false, restricted_exact: dir.starts_with('X') });
                         }
                         // Non-call form: statement-start rule, same machinery
                         // as #command (probes b19-b21: Harbour applies it at
@@ -1790,7 +1781,7 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                             }
                             validate_markers(&pattern, line)?;
                             validate_result_markers(&pattern, &result, line, false)?;
-                            pp.cmds.push(Cmd { pattern, result, translation: true, restricted_exact: dir.starts_with('X') });
+                            pp.cmds.push(Cmd { group_plan:group_plan::Plan::parse(&pattern), pattern, result, translation: true, restricted_exact: dir.starts_with('X') });
                         }
                     }
                 }

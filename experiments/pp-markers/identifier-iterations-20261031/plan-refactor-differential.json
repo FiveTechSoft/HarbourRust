@@ -1,0 +1,5 @@
+{
+  "scope": "deduplicated existing own-source evidence,exact exit/stdout/stderr differential",
+  "count": 5797,
+  "changed": []
+}

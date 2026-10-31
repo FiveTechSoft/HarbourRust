@@ -1027,3 +1027,19 @@ Evidence in `identifier-iterations-20261031/`;replay80cases with
 `check_identifier_iterations.py --hbpp /path/hbpp --hpp /path/hpp
 --output-dir /tmp/identifier-iterations`. Inactive extended candidates remain
 inactive and are not prerequisites of this implementation.
+
+## Identifier path plan refactor, no new syntax
+
+The existing isolated optionalidentifier path now uses a plan compiled when the
+rule is defined. Marker ownership and root/group/iteration token spans replace
+its one-off capture container. Eligibility remains EXACTLY the6ceb09e shape
+and the whole-family overlap/nested-result guards remain. Comma groups,tails,
+restricted/plain-expression markers and generic optional plans are NOT enabled.
+Global priority and historical fallbacks are unchanged.
+
+Fresh local checks:1252default/526LLVM-suite PASS rows,80identifier+16guard,
+410smart+3scope rejections and168nonplain checks.5797deduplicated existing own
+sources compare exact exit/stdout/stderr against the prior pp with zero changes.
+All268x4original diagnostics are identical;14reviewed console originals freshly
+exact Harbour/default/LLVM. These are preservation gates,not coverage growth.
+No timing/size,classruntime,ABI,ownership or debugger implementation claim.
