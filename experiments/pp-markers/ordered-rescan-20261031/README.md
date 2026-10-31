@@ -35,9 +35,10 @@ Three new rejection rows preserve cycle/unsupported INCLUDE/UNCOMMAND boundaries
 22classified exact prior pp deltas are in the preceding research directory:
 mostly correct sequence changes/spacing; old comma-fusion gap remains a gap.
 
-Full local gates:1287manifest+5aux=1292defaultPASS;606LLVM PASS. 268originals x4
+Full local+independent remote gates:1287manifest+5aux=1292defaultPASS;606LLVM PASS. 268originals x4
 compile profiles retain exact exits/first diagnostics21/15Linux20/14Windows.
 14unchanged reviewed Linux originals exact freshly built Harbour/default/LLVM.
 Prior6134/6148/2778replay categories unchanged;410smart+3rejections,80identifier,
 16family controls pass. No original unlock,size/speed,main,ownership/debugger or
-global-priority claim. Independent remote gates follow publication.
+global-priority claim. Independent remote full gates,850case pp replay,268x4diagnostic audit and
+14original exact-runtime checks verified.
