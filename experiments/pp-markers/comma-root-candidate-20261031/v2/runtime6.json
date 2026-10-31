@@ -1,0 +1,53 @@
+[
+  {
+    "source": "#command SHOW <!a!> [,<!b!>] => ? <(a)> ; [? <(b)> ;]\nprocedure main()\nlocal alpha := 11,beta := 22,gamma := 33\nSHOW alpha,beta,gamma\nreturn\n",
+    "reference_compile_exit": 0,
+    "own_compile_exit": 0,
+    "own_error": "",
+    "exact": true,
+    "reference_stdout": "\nalpha\nbeta\ngamma",
+    "own_stdout": "\nalpha\nbeta\ngamma"
+  },
+  {
+    "source": "#command SHOW <!a!> [,<!b!>] => ? <a> ; [? <b> ;]\nprocedure main()\nlocal alpha := 11,beta := 22,gamma := 33\nSHOW alpha,beta,gamma\nreturn\n",
+    "reference_compile_exit": 0,
+    "own_compile_exit": 0,
+    "own_error": "",
+    "exact": true,
+    "reference_stdout": "\n        11\n        22\n        33",
+    "own_stdout": "\n        11\n        22\n        33"
+  },
+  {
+    "source": "#command SHOW <!a!> [,<!b!>] => [? <(a)>,<(b)> ;]\nprocedure main()\nlocal alpha := 11,beta := 22,gamma := 33\nSHOW alpha,beta,gamma\nreturn\n",
+    "reference_compile_exit": 0,
+    "own_compile_exit": 0,
+    "own_error": "",
+    "exact": true,
+    "reference_stdout": "\nalpha beta\nalpha gamma",
+    "own_stdout": "\nalpha beta\nalpha gamma"
+  },
+  {
+    "source": "#command SHOW <!a!> [,<!b!>] => [? #<b> ;]\nprocedure main()\nlocal alpha := 11,beta := 22,gamma := 33\nSHOW alpha,beta,gamma\nreturn\n",
+    "reference_compile_exit": 0,
+    "own_compile_exit": 0,
+    "own_error": "",
+    "exact": true,
+    "reference_stdout": "\nbeta\ngamma",
+    "own_stdout": "\nbeta\ngamma"
+  },
+  {
+    "source": "#command SHOW <!a!> [,<!b!>] => [? <\"b\"> ;]\nprocedure main()\nlocal alpha := 11,beta := 22,gamma := 33\nSHOW alpha,beta\nreturn\n",
+    "reference_compile_exit": 0,
+    "own_compile_exit": 0,
+    "own_error": "",
+    "exact": true,
+    "reference_stdout": "\nbeta",
+    "own_stdout": "\nbeta"
+  },
+  {
+    "source": "#command SHOW <!a!> [,<!b!>] => [? <(a)>,<(b)> ;]\nprocedure main()\nlocal alpha := 11,beta := 22,gamma := 33\nSHOW alpha\nreturn\n",
+    "reference_compile_exit": 0,
+    "own_compile_exit": 1,
+    "own_error": "error: line 3: missing expression\n"
+  }
+]
