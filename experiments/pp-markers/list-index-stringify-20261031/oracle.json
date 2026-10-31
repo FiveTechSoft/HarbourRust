@@ -1,0 +1,146 @@
+[
+  {
+    "case": 0,
+    "source": "#xcommand SHOW <x,...> => OUT(#<x>)\nSHOW a[1], b\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[1], b\")\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"a[1], b\")\n",
+    "own_error": ""
+  },
+  {
+    "case": 1,
+    "source": "#xcommand SHOW <x,...> => OUT(#<x>)\nSHOW a[1,2], b\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[1,2], b\")\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"a[1,2], b\")\n",
+    "own_error": ""
+  },
+  {
+    "case": 2,
+    "source": "#xcommand SHOW <x,...> => OUT(#<x>)\nSHOW a [ f(1,2) ], b\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a [ f(1,2) ], b\")\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"a [ f(1,2) ], b\")\n",
+    "own_error": ""
+  },
+  {
+    "case": 3,
+    "source": "#xcommand SHOW <x,...> => OUT(#<x>)\nSHOW a[b[1,2]], c\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[b[1,2]], c\")\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"a[b[1,2]], c\")\n",
+    "own_error": ""
+  },
+  {
+    "case": 4,
+    "source": "#xcommand SHOW <x,...> => OUT(#<x>)\nSHOW [a,b], c\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"[a,b], c\")\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"[a,b], c\")\n",
+    "own_error": ""
+  },
+  {
+    "case": 5,
+    "source": "#xcommand SHOW <x,...> => OUT(#<x>)\nSHOW [a'\"b], c\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(e\"[a'\\\"b], c\")\n",
+    "own_exit": 0,
+    "own_output": "OUT(e\"[a'\\\"b], c\")\n",
+    "own_error": ""
+  },
+  {
+    "case": 6,
+    "source": "#xcommand SHOW <x,...> => OUT(#<x>)\nSHOW a[1], [b;c]\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT('a[1], \"b;c\"')\n",
+    "own_exit": 0,
+    "own_output": "OUT('a[1], \"b;c\"')\n",
+    "own_error": ""
+  },
+  {
+    "case": 7,
+    "source": "#xcommand SHOW <x,...> => OUT(#<x>)\nSHOW a[1}, b\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[1}, b\")\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"a[1}, b\")\n",
+    "own_error": ""
+  },
+  {
+    "case": 8,
+    "source": "#xcommand SHOW <x,...> => OUT(<\"x\">)\nSHOW a[1], b\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[1]\", \"b\")\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"a[1]\", \"b\")\n",
+    "own_error": ""
+  },
+  {
+    "case": 9,
+    "source": "#xcommand SHOW <x,...> => OUT(<\"x\">)\nSHOW a[1,2], b\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[1,2]\", \"b\")\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"a[1,2]\", \"b\")\n",
+    "own_error": ""
+  },
+  {
+    "case": 10,
+    "source": "#xcommand SHOW <x,...> => OUT(<\"x\">)\nSHOW a [ f(1,2) ], b\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a [ f(1,2) ]\", \"b\")\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"a [ f(1,2) ]\", \"b\")\n",
+    "own_error": ""
+  },
+  {
+    "case": 11,
+    "source": "#xcommand SHOW <x,...> => OUT(<\"x\">)\nSHOW a[b[1,2]], c\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[b[1,2]]\", \"c\")\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"a[b[1,2]]\", \"c\")\n",
+    "own_error": ""
+  },
+  {
+    "case": 12,
+    "source": "#xcommand SHOW <x,...> => OUT(<\"x\">)\nSHOW [a,b], c\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"[a,b]\", \"c\")\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"[a,b]\", \"c\")\n",
+    "own_error": ""
+  },
+  {
+    "case": 13,
+    "source": "#xcommand SHOW <x,...> => OUT(<\"x\">)\nSHOW [a'\"b], c\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(e\"[a'\\\"b]\", \"c\")\n",
+    "own_exit": 1,
+    "own_output": "",
+    "own_error": "error: line 2: list stringify with unbalanced delimiters is outside this increment\n"
+  },
+  {
+    "case": 14,
+    "source": "#xcommand SHOW <x,...> => OUT(<\"x\">)\nSHOW a[1], [b;c]\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[1]\", '\"b;c\"')\n",
+    "own_exit": 0,
+    "own_output": "OUT(\"a[1]\", '\"b;c\"')\n",
+    "own_error": ""
+  },
+  {
+    "case": 15,
+    "source": "#xcommand SHOW <x,...> => OUT(<\"x\">)\nSHOW a[1}, b\n",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[1}, b\")\n",
+    "own_exit": 1,
+    "own_output": "",
+    "own_error": "error: line 2: list stringify with unbalanced delimiters is outside this increment\n"
+  }
+]

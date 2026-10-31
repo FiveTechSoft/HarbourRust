@@ -734,7 +734,7 @@ fn stringify_capture(capture: &Capture, source: &str, spans: &HashMap<usize, (us
             text.push_str(&source[prev..start]);
         }
         let token = &source[start..end];
-        if token.starts_with('[') && token.ends_with(']') {text.push_str(&quote_literal(&token[1..token.len()-1]));previous=Some(end);continue;}
+        if token.len()>1 && token.starts_with('[') && token.ends_with(']') {text.push_str(&quote_literal(&token[1..token.len()-1]));previous=Some(end);continue;}
         if escape_literal_end(token,0)==Some(token.len()) {let decoded=decode_escape_literal(token)?;
             if decoded.chars().any(|c|c.is_control()) {text.push('[');text.push_str(&decoded);text.push(']');}
             else {text.push_str(&quote_literal(&decoded));}
@@ -754,10 +754,9 @@ fn stringify_list(capture: &Capture, source: &str, spans: &HashMap<usize,(usize,
     for (i,&(id,_)) in capture.parts.iter().enumerate() {
         let &(a,b) = spans.get(&id).ok_or("capture source span unavailable")?;
         let token = &source[a..b];
-        if token == "[" || token == "]" { return Err("list stringify with bracket tokens is outside this increment".into()); }
-        if token == "(" || token == "{" { stack.push(token); }
-        if token == ")" || token == "}" {
-            if stack.pop() != Some(if token == ")" {"("}else{"{"}) { return Err("list stringify with unbalanced delimiters is outside this increment".into()); }
+        if token == "(" || token == "{" || token == "[" { stack.push(token); }
+        if token == ")" || token == "}" || token == "]" {
+            if stack.pop() != Some(if token == ")" {"("}else if token == "}" {"{"}else{"["}) { return Err("list stringify with unbalanced delimiters is outside this increment".into()); }
         }
         if token == "," && stack.is_empty() { chunks.push((start,i)); start=i+1; }
     }
@@ -1158,7 +1157,6 @@ fn render_command(c: &Cmd, caps: &[Capture], source: &str, tokens: &[String], li
                             return Err(format!("line {}: stringify of non-plain capture is outside this increment", line_no));
                         }
                         let spans = source_spans(source, tokens).map_err(|e| format!("line {}: {}", line_no, e))?;
-                        if inner.contains(",...") && caps[pi].parts.iter().any(|(id,_)| {let(a,b)=spans[id]; &source[a..b]=="[" || &source[a..b]=="]"}) { return Err(format!("line {}: list stringify with bracket tokens is outside this increment",line_no)); }
                         let value = if normal && inner.contains(",...") { stringify_list(&caps[pi],source,&spans).map_err(|e|format!("line {}: {}",line_no,e))? } else if normal && caps[pi].is_empty() { String::new() } else { stringify_capture(&caps[pi], source, &spans).map_err(|e| format!("line {}: {}", line_no, e))? };
                         // A resulting literal is data;later marker substitutions
                         // must not inspect marker-like text inside it.

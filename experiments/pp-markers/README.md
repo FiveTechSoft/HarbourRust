@@ -749,3 +749,18 @@ are observations until individually verified,not silently counted as passes.
 1223default/470LLVM local checks pass. Fourteen originals are freshly exact;
 268x4acceptance stays21/15Linux20/14Windows. _pp_test advances120to168list index
 stringify,but is NOT fully accepted. No runtime/ABI change or size/speed claim.
+
+## List index stringify follow-up
+
+Source tokenization now distinguishes a bracket literal atom from index brackets,
+so normal-list stringify can balance [] along with ()/{} while locating top-level
+commas. The earlier blanket bracket-token guard is removed;no matcher changes.
+Whole-capture # stringify preserves source even when its text is not a valid
+expression,as measured;normal-list mismatched delimiters still reject explicitly.
+Sixteen new observations give14exact outputs and2outside-slice boundaries,not
+16compatibility passes. Three own runtime programs are byte-exact with Harbour.
+1226default/476LLVM checks pass fresh locally.14originals are freshly exact;
+268x4acceptance stays21/15Linux20/14Windows. _pp_test advances168to248unsupported
+<x:&> match marker,NOT complete acceptance.1179now checks numeric escape and1196
+unbalanced list delimiters;1224positively covers newly supported index lists.
+No runtime/ABI/new lexer semantics or size/speed claim.

@@ -1,0 +1,17 @@
+[
+  {
+    "file": "t1224_pp_list_index.hb",
+    "exact": true,
+    "stdout_hex": "0a615b312c325d20620a615b625b312c325d5d2063"
+  },
+  {
+    "file": "t1225_pp_list_index_whole.hb",
+    "exact": true,
+    "stdout_hex": "0a61205b206628312c3229205d2c2062"
+  },
+  {
+    "file": "t1226_pp_list_index_literal.hb",
+    "exact": true,
+    "stdout_hex": "0a615b315d2022623b6322"
+  }
+]

@@ -1174,7 +1174,7 @@ pos tests/t1175_pp_stringify_dotted.hb \n.T. .AND. .F.\na:=1
 pos tests/t1176_pp_stringify_literal_marker.hb \n"<y>"          7
 neg tests/t1177_pp_stringify_mixed_quotes_neg.hb numeric string escapes
 neg tests/t1178_pp_stringify_escape_neg.hb numeric string escapes
-neg tests/t1179_pp_stringify_list_neg.hb list stringify with bracket tokens
+neg tests/t1179_pp_stringify_list_neg.hb numeric string escapes
 neg tests/t1180_pp_stringify_other_form_neg.hb unknown result marker
 pos tests/t1181_pp_stringify_quoted_result.hb \n#42\nA#42Z\n#42\n42
 pos tests/t1182_pp_fixed_translate_inline.hb \n         8\nVALUE TOKEN          7
@@ -1191,7 +1191,7 @@ pos tests/t1192_pp_normal_stringify_mix.hb \n42 42         42
 pos tests/t1193_pp_normal_stringify_marker.hb \n"<y>"          7
 pos tests/t1194_pp_normal_stringify_call.hb \nalpha(1, 2)
 neg tests/t1195_pp_normal_stringify_quotes_neg.hb numeric string escapes
-neg tests/t1196_pp_normal_stringify_list_neg.hb list stringify with bracket tokens
+neg tests/t1196_pp_normal_stringify_list_neg.hb list stringify with unbalanced delimiters
 pos tests/t1197_pp_list_stringify.hb \nalpha  ,   beta\na(1,{2,3}), b
 pos tests/t1198_pp_list_normal.hb \nalpha beta\na(1,{2,3}) b
 pos tests/t1199_pp_list_quotes.hb \n"a,b" "c,d"
@@ -1219,3 +1219,6 @@ pos tests/t1220_escape_protection.hb \nX; // && "WORD TOKEN"          8
 pos tests/t1221_escape_stringify.hb \n[a'"b]\n'a"b'
 pos tests/t1222_escape_call_macro.hb \na,"b x);"y
 pos tests/t1223_escape_continuation.hb \na";b
+pos tests/t1224_pp_list_index.hb \na[1,2] b\na[b[1,2]] c
+pos tests/t1225_pp_list_index_whole.hb \na [ f(1,2) ], b
+pos tests/t1226_pp_list_index_literal.hb \na[1] "b;c"
