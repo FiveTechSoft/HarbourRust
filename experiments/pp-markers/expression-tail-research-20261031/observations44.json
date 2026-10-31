@@ -1,0 +1,312 @@
+{
+  "rows": [
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New + 7\n",
+      "result": "<a>_<b>",
+      "value": "New + 7",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + 7\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New(1,2)\n",
+      "result": "<a>_<b>",
+      "value": "New(1,2)",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New(1,2)\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New + JOIN Other Last\n",
+      "result": "<a>_<b>",
+      "value": "New + JOIN Other Last",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + Other_Last\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New Other\n",
+      "result": "<a>_<b>",
+      "value": "New Other",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New Other\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_ <b>\n? JOIN Test New + 7\n",
+      "result": "<a>_ <b>",
+      "value": "New + 7",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ New + 7\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_ <b>\n? JOIN Test New(1,2)\n",
+      "result": "<a>_ <b>",
+      "value": "New(1,2)",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ New(1,2)\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_ <b>\n? JOIN Test New + JOIN Other Last\n",
+      "result": "<a>_ <b>",
+      "value": "New + JOIN Other Last",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ New + Other_ Last\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_ <b>\n? JOIN Test New Other\n",
+      "result": "<a>_ <b>",
+      "value": "New Other",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ New Other\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a> _<b>\n? JOIN Test New + 7\n",
+      "result": "<a> _<b>",
+      "value": "New + 7",
+      "reference_exit": 0,
+      "reference_output": "\n? Test _New + 7\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a> _<b>\n? JOIN Test New(1,2)\n",
+      "result": "<a> _<b>",
+      "value": "New(1,2)",
+      "reference_exit": 0,
+      "reference_output": "\n? Test _New(1,2)\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a> _<b>\n? JOIN Test New + JOIN Other Last\n",
+      "result": "<a> _<b>",
+      "value": "New + JOIN Other Last",
+      "reference_exit": 0,
+      "reference_output": "\n? Test _New + Other _Last\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a> _<b>\n? JOIN Test New Other\n",
+      "result": "<a> _<b>",
+      "value": "New Other",
+      "reference_exit": 0,
+      "reference_output": "\n? Test _New Other\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => PREFIX<b>\n? JOIN Test New + 7\n",
+      "result": "PREFIX<b>",
+      "value": "New + 7",
+      "reference_exit": 0,
+      "reference_output": "\n? PREFIXNew + 7\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => PREFIX<b>\n? JOIN Test New(1,2)\n",
+      "result": "PREFIX<b>",
+      "value": "New(1,2)",
+      "reference_exit": 0,
+      "reference_output": "\n? PREFIXNew(1,2)\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => PREFIX<b>\n? JOIN Test New + JOIN Other Last\n",
+      "result": "PREFIX<b>",
+      "value": "New + JOIN Other Last",
+      "reference_exit": 0,
+      "reference_output": "\n? PREFIXNew + PREFIXLast\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => PREFIX<b>\n? JOIN Test New Other\n",
+      "result": "PREFIX<b>",
+      "value": "New Other",
+      "reference_exit": 0,
+      "reference_output": "\n? PREFIXNew Other\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <b>SUFFIX\n? JOIN Test New + 7\n",
+      "result": "<b>SUFFIX",
+      "value": "New + 7",
+      "reference_exit": 0,
+      "reference_output": "\n? New + 7SUFFIX\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <b>SUFFIX\n? JOIN Test New(1,2)\n",
+      "result": "<b>SUFFIX",
+      "value": "New(1,2)",
+      "reference_exit": 0,
+      "reference_output": "\n? New(1,2)SUFFIX\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <b>SUFFIX\n? JOIN Test New + JOIN Other Last\n",
+      "result": "<b>SUFFIX",
+      "value": "New + JOIN Other Last",
+      "reference_exit": 0,
+      "reference_output": "\n? New + OtherSUFFIX Last\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <b>SUFFIX\n? JOIN Test New Other\n",
+      "result": "<b>SUFFIX",
+      "value": "New Other",
+      "reference_exit": 0,
+      "reference_output": "\n? NewSUFFIX Other\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <b>_<a>\n? JOIN Test New + 7\n",
+      "result": "<b>_<a>",
+      "value": "New + 7",
+      "reference_exit": 0,
+      "reference_output": "\n? New + 7_Test\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <b>_<a>\n? JOIN Test New(1,2)\n",
+      "result": "<b>_<a>",
+      "value": "New(1,2)",
+      "reference_exit": 0,
+      "reference_output": "\n? New(1,2)_Test\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <b>_<a>\n? JOIN Test New + JOIN Other Last\n",
+      "result": "<b>_<a>",
+      "value": "New + JOIN Other Last",
+      "reference_exit": 0,
+      "reference_output": "\n? New + Test__ Other Last\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <b>_<a>\n? JOIN Test New Other\n",
+      "result": "<b>_<a>",
+      "value": "New Other",
+      "reference_exit": 0,
+      "reference_output": "\n? New_Test Other\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b> + <b>\n? JOIN Test New + 7\n",
+      "result": "<a>_<b> + <b>",
+      "value": "New + 7",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + 7 + New + 7\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b> + <b>\n? JOIN Test New(1,2)\n",
+      "result": "<a>_<b> + <b>",
+      "value": "New(1,2)",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New(1,2) + New(1,2)\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b> + <b>\n? JOIN Test New + JOIN Other Last\n",
+      "result": "<a>_<b> + <b>",
+      "value": "New + JOIN Other Last",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + JOIN + New + Other_Last + Last\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b> + <b>\n? JOIN Test New Other\n",
+      "result": "<a>_<b> + <b>",
+      "value": "New Other",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + New Other\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<b>),<a>_<b>\n? JOIN Test New + 7\n",
+      "result": "OUT(<b>),<a>_<b>",
+      "value": "New + 7",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(New + 7),Test_New + 7\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<b>),<a>_<b>\n? JOIN Test New(1,2)\n",
+      "result": "OUT(<b>),<a>_<b>",
+      "value": "New(1,2)",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(New(1,2)),Test_New(1,2)\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<b>),<a>_<b>\n? JOIN Test New + JOIN Other Last\n",
+      "result": "OUT(<b>),<a>_<b>",
+      "value": "New + JOIN Other Last",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(New + JOIN),Test_New + OUT(Last),Other_Last\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => OUT(<b>),<a>_<b>\n? JOIN Test New Other\n",
+      "result": "OUT(<b>),<a>_<b>",
+      "value": "New Other",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(New),Test_New Other\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>()\n? JOIN Test New + 7\n",
+      "result": "<a>_<b>()",
+      "value": "New + 7",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + 7()\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>()\n? JOIN Test New(1,2)\n",
+      "result": "<a>_<b>()",
+      "value": "New(1,2)",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New(1,2)()\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>()\n? JOIN Test New + JOIN Other Last\n",
+      "result": "<a>_<b>()",
+      "value": "New + JOIN Other Last",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + JOIN() Other Last\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>()\n? JOIN Test New Other\n",
+      "result": "<a>_<b>()",
+      "value": "New Other",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New() Other\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b> TAIL\n? JOIN Test New + 7\n",
+      "result": "<a>_<b> TAIL",
+      "value": "New + 7",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + 7 TAIL\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b> TAIL\n? JOIN Test New(1,2)\n",
+      "result": "<a>_<b> TAIL",
+      "value": "New(1,2)",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New(1,2) TAIL\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b> TAIL\n? JOIN Test New + JOIN Other Last\n",
+      "result": "<a>_<b> TAIL",
+      "value": "New + JOIN Other Last",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New + TAIL_Other TAIL Last\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b> TAIL\n? JOIN Test New Other\n",
+      "result": "<a>_<b> TAIL",
+      "value": "New Other",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New TAIL Other\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<\"b\">\n? JOIN Test New + 7\n",
+      "result": "<a>_<\"b\">",
+      "value": "New + 7",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_\"New + 7\"\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<\"b\">\n? JOIN Test New(1,2)\n",
+      "result": "<a>_<\"b\">",
+      "value": "New(1,2)",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_\"New(1,2)\"\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<\"b\">\n? JOIN Test New + JOIN Other Last\n",
+      "result": "<a>_<\"b\">",
+      "value": "New + JOIN Other Last",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_\"New + JOIN\" Other Last\n"
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<\"b\">\n? JOIN Test New Other\n",
+      "result": "<a>_<\"b\">",
+      "value": "New Other",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_\"New\" Other\n"
+    }
+  ]
+}
