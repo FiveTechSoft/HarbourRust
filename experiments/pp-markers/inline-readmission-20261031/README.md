@@ -10,3 +10,6 @@ Local full1340PASSdefault=1335manifest+5aux,690LLVM.14unchangedreviewedoriginals
 exact,268x4zero diagnostic deltas,accepted21/15Linux20/14Windows unchanged.
 RealclasschMTHNAMEstillunexpanded,so this is not whole-helper/header support.
 No runtime/class/ABI/ownership/main or size/speed change. Remote pending.
+
+Independentremote57a7361fresh1340/690fullgates,14originalexact,268x4zero
+diagnosticdeltas. Runtime3.jsoncontains3sources,not inheritedgenerator6label.
