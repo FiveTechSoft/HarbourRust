@@ -1,0 +1,144 @@
+{
+  "rows": [
+    {
+      "name": "self",
+      "source": "#xcommand PROBE <x> => PROBE <x>\nPROBE alpha\n",
+      "reference_exit": 1,
+      "reference_output": "\nPROBE alpha\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: command expansion too deep (recursive command?)\n"
+    },
+    {
+      "name": "self_grow",
+      "source": "#xcommand PROBE <x> => PROBE <x> + 1\nPROBE alpha\n",
+      "reference_exit": 1,
+      "reference_output": "\nPROBE alpha + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: command expansion too deep (recursive command?)\n"
+    },
+    {
+      "name": "cycle",
+      "source": "#xcommand FIRST <x> => SECOND <x>\n#xcommand SECOND <x> => FIRST <x>\nFIRST alpha\n",
+      "reference_exit": 1,
+      "reference_output": "\n\nSECOND alpha\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 3: command expansion too deep (recursive command?)\n"
+    },
+    {
+      "name": "self_fallback",
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand PROBE <x> => PROBE <x>\nPROBE alpha\n",
+      "reference_exit": 1,
+      "reference_output": "\n\nPROBE alpha\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 3: command expansion too deep (recursive command?)\n"
+    },
+    {
+      "name": "self_specific",
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand PROBE SPECIAL <x> => PROBE <x>\nPROBE SPECIAL alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(alpha)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(alpha)\n",
+      "own_error": ""
+    },
+    {
+      "name": "rewrite_specific",
+      "source": "#xcommand PROBE SPECIAL <x> => OUT(\"specific\",<x>)\n#xcommand PROBE <x> => OUT(\"general\",<x>)\nPROBE SPECIAL alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(\"specific\",alpha)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"specific\",alpha)\n",
+      "own_error": ""
+    },
+    {
+      "name": "rewrite_specific_reverse",
+      "source": "#xcommand PROBE <x> => OUT(\"general\",<x>)\n#xcommand PROBE SPECIAL <x> => OUT(\"specific\",<x>)\nPROBE SPECIAL alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(\"specific\",alpha)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"specific\",alpha)\n",
+      "own_error": ""
+    },
+    {
+      "name": "first_second_fallback",
+      "source": "#xcommand FIRST <x> => OUT(<x>)\n#xcommand FIRST <x> => SECOND <x>\n#xcommand SECOND <x> => FIRST <x>\nFIRST alpha\n",
+      "reference_exit": 1,
+      "reference_output": "\n\n\nFIRST alpha\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 4: command expansion too deep (recursive command?)\n"
+    },
+    {
+      "name": "fixed_self",
+      "source": "#xcommand PROBE => PROBE\nPROBE\n",
+      "reference_exit": 1,
+      "reference_output": "\nPROBE\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: command expansion too deep (recursive command?)\n"
+    },
+    {
+      "name": "double_stmt",
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH <x> => PROBE <x> ; PROBE <x>\nBOTH alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(alpha) ; OUT(alpha)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(alpha \n PROBE alpha)\n",
+      "own_error": ""
+    },
+    {
+      "name": "macro_result",
+      "source": "#define ALIAS PROBE\n#xcommand PROBE <x> => ALIAS <x>\nPROBE alpha\n",
+      "reference_exit": 1,
+      "reference_output": "\n\nALIAS alpha\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha\n",
+      "own_error": ""
+    },
+    {
+      "name": "multi_input",
+      "source": "#xcommand PROBE <x> => PROBE <x>\nPROBE alpha\nPROBE beta\n",
+      "reference_exit": 1,
+      "reference_output": "\nPROBE alpha\nPROBE beta\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: command expansion too deep (recursive command?)\n"
+    },
+    {
+      "name": "changed_keyword",
+      "source": "#xcommand PROBE SPECIAL <x> => PROBE SPECIAL <x>\n#xcommand PROBE <x> => OUT(<x>)\nPROBE SPECIAL alpha\n",
+      "reference_exit": 1,
+      "reference_output": "\n\nPROBE SPECIAL alpha\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 3: command expansion too deep (recursive command?)\n"
+    },
+    {
+      "name": "optional_specific",
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [AS <t>] => OUT(\"general\",<(a)> [,<(b)>] [<(t)>])\n#xcommand PROBE <!a!> [AS <t>] IN <!sup!> => OUT(\"special\",<(a)>,<(sup)>)\nPROBE alpha,beta\nPROBE alpha IN parent\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(\"general\",\"alpha\",\"beta\")\nOUT(\"special\",\"alpha\",\"parent\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"general\",\"alpha\" ,\"beta\" )\nOUT(\"special\",\"alpha\",\"parent\")\n",
+      "own_error": ""
+    }
+  ]
+}

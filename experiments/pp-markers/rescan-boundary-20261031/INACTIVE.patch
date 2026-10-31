@@ -1,0 +1,24 @@
+--- a/src/pp.rs
++++ b/src/pp.rs
+@@ -1677,6 +1677,21 @@
+                     loop {
+                         if cur.trim_start().starts_with('#') { break; }
+                         if fixed_enabled { cur = expand_fixed_translations(&cur,&pp.cmds,&pp.call_rules,line)?; }
++                        if split_statements(&cur).len()>1 && !cur.trim_start().starts_with('#'){
++                            fn children(text:&str,pp:&Pp,fixed:bool,line:usize,depth:usize,budget:&mut usize)->Result<String,String>{
++                                if depth>16{return Err(format!("line {}: command expansion too deep (recursive command?)",line));}
++                                if *budget==0{return Err(format!("line {}: command rescan budget exceeded",line));}*budget-=1;
++                                let parts=split_statements(text);
++                                if parts.len()>1{
++                                    let mut out=Vec::new();for part in parts{out.push(children(part,pp,fixed,line,depth,budget)?);}return Ok(out.join(" ; "));
++                                }
++                                let mut current=text.to_string();if current.trim_start().starts_with('#'){return Err(format!("line {}: directive within generated command sequence outside bounded rescan",line));}
++                                if fixed{current=expand_fixed_translations(&current,&pp.cmds,&pp.call_rules,line)?;}
++                                match apply_commands(&current,&pp.cmds,&pp.call_rules,fixed,line)?{Some(next)=>children(&next,pp,fixed,line,depth+1,budget),None=>Ok(current)}
++                            }
++                            cur=children(&cur,pp,fixed_enabled,line,depth,&mut 10000)?;
++                            break;
++                        }
+                         match apply_commands(&cur, &pp.cmds, &pp.call_rules, fixed_enabled, line)? {
+                             Some(x) => {
+                                 depth += 1;

@@ -1,0 +1,279 @@
+{
+  "scope": "existing own pp source fixtures,excluding reduced VAR candidate/history;exact exit/stdout/stderr",
+  "total": 5807,
+  "changes": [
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([<(a)>,<(b)>;])\nPROBE alpha\n",
+      "old": [
+        0,
+        "OUT(\"alpha\",\n)\n",
+        ""
+      ],
+      "new": [
+        0,
+        "OUT(\"alpha\", \n )\n",
+        ""
+      ]
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] => OUT([<(a)>,<(b)>;])\nPROBE alpha,beta\n",
+      "old": [
+        0,
+        "OUT(\"alpha\",\"beta\"\n)\n",
+        ""
+      ],
+      "new": [
+        0,
+        "OUT(\"alpha\",\"beta\" \n )\n",
+        ""
+      ]
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>])\n#uncommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] => WRONG\nPROBE alpha INIT 1 AS number\n",
+      "old": [
+        0,
+        "OUT(\"alpha\"   INIT \"1 AS number\")\n",
+        ""
+      ],
+      "new": [
+        0,
+        "OUT(\"alpha\"  TYPE \"number\" INIT \"1\")\n",
+        ""
+      ]
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>])\nPROBE alpha INIT 1 AS number\n#uncommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>])\nPROBE alpha INIT 1 AS number\n",
+      "old": [
+        0,
+        "OUT(\"alpha\"   INIT \"1 AS number\")\nPROBE alpha INIT 1 AS number\n",
+        ""
+      ],
+      "new": [
+        0,
+        "OUT(\"alpha\"  TYPE \"number\" INIT \"1\")\nPROBE alpha INIT 1 AS number\n",
+        ""
+      ]
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#uncommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => WRONG\nPROBE alpha INIT 1 AS number EXPORTED\n",
+      "old": [
+        0,
+        "OUT(\"alpha\"   INIT \"1 AS number EXPORTED\" .F.)\n",
+        ""
+      ],
+      "new": [
+        0,
+        "OUT(\"alpha\"  TYPE \"number\" INIT \"1\" .T.)\n",
+        ""
+      ]
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nPROBE alpha INIT 1 AS number EXPORTED\n#uncommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nPROBE alpha INIT 1 AS number EXPORTED\n",
+      "old": [
+        0,
+        "OUT(\"alpha\"   INIT \"1 AS number EXPORTED\" .F.)\nPROBE alpha INIT 1 AS number EXPORTED\n",
+        ""
+      ],
+      "new": [
+        0,
+        "OUT(\"alpha\"  TYPE \"number\" INIT \"1\" .T.)\nPROBE alpha INIT 1 AS number EXPORTED\n",
+        ""
+      ]
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] [AS <!t!>] => OUT([<(a)>,<(b)>,<(t)>;])\nPROBE alpha\n",
+      "old": [
+        0,
+        "OUT(\"alpha\",,\n)\n",
+        ""
+      ],
+      "new": [
+        0,
+        "OUT(\"alpha\",, \n )\n",
+        ""
+      ]
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] [AS <!t!>] => OUT([<(a)>,<(b)>,<(t)>;])\nPROBE alpha AS numeric\n",
+      "old": [
+        0,
+        "OUT(\"alpha\",,\"numeric\"\n)\n",
+        ""
+      ],
+      "new": [
+        0,
+        "OUT(\"alpha\",,\"numeric\" \n )\n",
+        ""
+      ]
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] [AS <!t!>] => OUT([<(a)>,<(b)>,<(t)>;])\nPROBE alpha,beta\n",
+      "old": [
+        0,
+        "OUT(\"alpha\",\"beta\",\n)\n",
+        ""
+      ],
+      "new": [
+        0,
+        "OUT(\"alpha\",\"beta\", \n )\n",
+        ""
+      ]
+    },
+    {
+      "source": "#command PROBE <!a!> [,<!b!>] [AS <!t!>] => OUT([<(a)>,<(b)>,<(t)>;])\nPROBE alpha,beta AS numeric\n",
+      "old": [
+        0,
+        "OUT(\"alpha\",\"beta\",\"numeric\"\n)\n",
+        ""
+      ],
+      "new": [
+        0,
+        "OUT(\"alpha\",\"beta\",\"numeric\" \n )\n",
+        ""
+      ]
+    },
+    {
+      "source": "#command SHOW <!a!> [,<!b!>] => ? <a> ; [? <b> ;]\nprocedure main()\nlocal alpha := 11,beta := 22,gamma := 33\nSHOW alpha,beta,gamma\nreturn\n",
+      "old": [
+        0,
+        "procedure main()\nlocal alpha := 11,beta := 22,gamma := 33\n? alpha \n ? beta gamma \n\nreturn\n",
+        ""
+      ],
+      "new": [
+        0,
+        "procedure main()\nlocal alpha := 11,beta := 22,gamma := 33\n? alpha  \n  ? beta gamma  \n \nreturn\n",
+        ""
+      ]
+    },
+    {
+      "source": "#command SHOW <!a!> [,<!b!>] => [? <(a)>,<(b)> ;]\nprocedure main()\nlocal alpha := 11,beta := 22,gamma := 33\nSHOW alpha\nreturn\n",
+      "old": [
+        0,
+        "procedure main()\nlocal alpha := 11,beta := 22,gamma := 33\n? \"alpha\", \n\nreturn\n",
+        ""
+      ],
+      "new": [
+        0,
+        "procedure main()\nlocal alpha := 11,beta := 22,gamma := 33\n? \"alpha\",  \n \nreturn\n",
+        ""
+      ]
+    },
+    {
+      "source": "#command SHOW [<!x!>] => [? #<x> ;]\nprocedure main()\nlocal alpha := 11, beta := 22\nSHOW alpha beta gamma\nreturn\n",
+      "old": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? \"alpha\" \n? \"beta\" \n? \"gamma\" \n\nreturn\n",
+        ""
+      ],
+      "new": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? \"alpha\"  \n ? \"beta\"  \n ? \"gamma\"  \n \nreturn\n",
+        ""
+      ]
+    },
+    {
+      "source": "#command SHOW [<!x!>] => [? <\"x\"> ;]\nprocedure main()\nlocal alpha := 11, beta := 22\nSHOW alpha beta\nreturn\n",
+      "old": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? \"alpha\" \n? \"beta\" \n\nreturn\n",
+        ""
+      ],
+      "new": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? \"alpha\"  \n ? \"beta\"  \n \nreturn\n",
+        ""
+      ]
+    },
+    {
+      "source": "#command SHOW [<!x!>] => [? <(x)> ;]\nprocedure main()\nlocal alpha := 11, beta := 22\nSHOW alpha beta\nreturn\n",
+      "old": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? \"alpha\" \n? \"beta\" \n\nreturn\n",
+        ""
+      ],
+      "new": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? \"alpha\"  \n ? \"beta\"  \n \nreturn\n",
+        ""
+      ]
+    },
+    {
+      "source": "#command SHOW [<!x!>] => [? <.x.> ;]\nprocedure main()\nlocal alpha := 11, beta := 22\nSHOW alpha beta\nreturn\n",
+      "old": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? .T. \n? .T. \n\nreturn\n",
+        ""
+      ],
+      "new": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? .T.  \n ? .T.  \n \nreturn\n",
+        ""
+      ]
+    },
+    {
+      "source": "#command SHOW [<!x!>] => [? <x> ;]\nprocedure main()\nlocal alpha := 11, beta := 22\nSHOW alpha beta\nreturn\n",
+      "old": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? alpha \n? beta \n\nreturn\n",
+        ""
+      ],
+      "new": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? alpha  \n ? beta  \n \nreturn\n",
+        ""
+      ]
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([<(a)>,<(b)>;])\nPROBE alpha\n",
+      "old": [
+        0,
+        "OUT(\"alpha\",\n)\n",
+        ""
+      ],
+      "new": [
+        0,
+        "OUT(\"alpha\", \n )\n",
+        ""
+      ]
+    },
+    {
+      "source": "#translate PROBE <!a!> [,<!b!>] => OUT([<(a)>,<(b)>;])\nPROBE alpha,beta\n",
+      "old": [
+        0,
+        "OUT(\"alpha\",\"beta\"\n)\n",
+        ""
+      ],
+      "new": [
+        0,
+        "OUT(\"alpha\",\"beta\" \n )\n",
+        ""
+      ]
+    },
+    {
+      "source": "PROBE alpha INIT 1 AS number\n#command PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>])\nPROBE alpha INIT 1 AS number\n",
+      "old": [
+        0,
+        "PROBE alpha INIT 1 AS number\nOUT(\"alpha\"   INIT \"1 AS number\")\n",
+        ""
+      ],
+      "new": [
+        0,
+        "PROBE alpha INIT 1 AS number\nOUT(\"alpha\"  TYPE \"number\" INIT \"1\")\n",
+        ""
+      ]
+    },
+    {
+      "source": "PROBE alpha INIT 1 AS number EXPORTED\n#command PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nPROBE alpha INIT 1 AS number EXPORTED\n",
+      "old": [
+        0,
+        "PROBE alpha INIT 1 AS number EXPORTED\nOUT(\"alpha\"   INIT \"1 AS number EXPORTED\" .F.)\n",
+        ""
+      ],
+      "new": [
+        0,
+        "PROBE alpha INIT 1 AS number EXPORTED\nOUT(\"alpha\"  TYPE \"number\" INIT \"1\" .T.)\n",
+        ""
+      ]
+    }
+  ]
+}
