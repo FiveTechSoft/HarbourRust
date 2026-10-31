@@ -1,0 +1,247 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next8afterset_num",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/setkeys.prg",
+      "sha256": "4aa5e4e0f38447d689f1ab1fe2b20038b3f3ae2ef2ce224168fb0154c8135e85",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+SubMain",
+      "build_unit": "single-source-executable",
+      "profile": "GT-hotkeys-GET",
+      "dependencies": "SetKey predicates;save/restore;array keys;GET/READ;Alert;closure captures",
+      "boundary": "Not run: scripted hotkeys and GET/screen fixture",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 165: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 165: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/setmode.prg",
+      "sha256": "f0c5d121e0d73cbce872baaaead415be7f41bbab6c0ecae95335188155de82ab",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TESTBOX",
+      "build_unit": "single-source-executable",
+      "profile": "GT-video-mode-menu",
+      "dependencies": "SetMode ten dimensions;PROMPT/MENU;screen bounds;Inkey",
+      "boundary": "Not run: actual terminal resizing/menu and screenshot verification needed",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 13: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 13: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/sha1.prg",
+      "sha256": "5e33d8c65a9266ad548b7d4bc619b9d9f375764a950b780bb16597f31a9646c8",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "hash-library-binary-output",
+      "dependencies": "hb_SHA1/HMAC_SHA1 hex/default/raw outputs",
+      "boundary": "Safe deterministic console capture;binary bytes retained",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 218,
+        "stdout_sha256": "d262c364705d89e2859c6d751ab724b2b31dbb9e907d94fee95e5fbcd1aeafbe",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 8: unknown function `hb_sha1` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 8: unknown function `hb_sha1` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/sha2.prg",
+      "sha256": "36d879e2e197482b07ea66799645a75b9dd1db4eb1b377aae9b83ba84488c4d2",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+Test_SHA2+Test_SHA2_HMAC+StrToHex",
+      "build_unit": "single-source-executable",
+      "profile": "hash-library-validation-vectors",
+      "dependencies": "SHA224/256/384/512;HMAC;1MB bounded message;known vectors;string indexed+=",
+      "boundary": "Safe bounded reference vectors;capture logical results, no implementation copying",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 211,
+        "stdout_sha256": "7748f88a60fa9fad163e9b2e395745c0dc0e1940b262809bf92c2d8f9822278e",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 53: expected `name[idx] := expr`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 53: expected `name[idx] := expr`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/sortbug.prg",
+      "sha256": "273eafeacd0e205df4f1131623f9029f9858d5e8b3da5d254cfc82461a240551",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "RDD-sort-regression-file",
+      "dependencies": "create testsort;five decimal records;descending sort tempsort;drop files",
+      "boundary": "Disposable directory only;reference actual order not stale TOFIX comment",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 55,
+        "stdout_sha256": "c7a2f4d0d96d17c9a901da39b3f8704d7f17b9d78abceb3a93d71fc93a92f698",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/sound.prg",
+      "sha256": "17d192637574ff5fb23ccc745fff1b12eadedb0bb662e3b56ce9b835b6d7e4e8",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "audio-clock-hardware",
+      "dependencies": "Tone440/880;duration9.1 ticks;Seconds",
+      "boundary": "Not run: audible hardware effect and timing require dedicated fixture",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown function `seconds` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown function `seconds` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/speed.prg",
+      "sha256": "30981588d7ab4834048880dc44d5357adf56c44bdab38aaeb33d0ea96aeb9b1e",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "closure-loop-benchmark",
+      "dependencies": "million capturedCounter increments;array codeblocks;Second clock",
+      "boundary": "Not run: benchmark/closure fixture not ordinary correctness output;no speed claim",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unexpected token Comma in expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unexpected token Comma in expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/speedstr.prg",
+      "sha256": "6a02d478d646112d6bf6387c85c3fab3950e0b0c854d2538300f9394402e6bb3",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+mycls",
+      "build_unit": "single-source-executable",
+      "profile": "string-concat-runtime-benchmark",
+      "dependencies": "200000loops local/static/array/private/macro/object concat;CPU clock;WAIT",
+      "boundary": "Not run: heavy benchmark and interactive wait;no timing or speed claim",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 359: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 359: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}

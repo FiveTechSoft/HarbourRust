@@ -70,3 +70,29 @@ HB_SYMBOL_UNUSED (pp macro path), and stops only at:
 "hb_PValue in shoutarg would expose parameter #3 as Dyn, but Dyn has
 no float payload tag in this increment (the representation decision is
 pending)" - identical on Linux and Windows targets.
+
+## t1369 follow-up (commit pending in this push)
+
+The independent verifier found a compiler PANIC (exit 101, hbc.rs apply_moves
+`expect("checked")`) on `take(Replicate("ab", 3))` - an unknown function nested
+in a user-call argument. Verifier confirmed the panic reproduces on 42cbe67
+(pre-multiarg): PREEXISTING hole in the placeholder-parameter skip, not a
+multiarg regression and not attributable to the new hb_PValue. The CUR_FN
+hypothesis was discarded by the verifier. The owned-copy string path
+(AllTrim) was verified byte-exact on Linux/Wine - there is no copy bug.
+
+Fix: the placeholder-parameter branch now still type-checks the argument
+expression itself (without a type comparison against the placeholder), so an
+unknown nested call surfaces as a clean named rejection
+("unknown function `replicate`") in the converged round instead of panicking
+apply_moves. t1369 pins the regression.
+
+- battery-t1369.log: battery ALL GREEN, 1368 tests, on the fixed source.
+- llvm-gate-t1369.log: full LLVM gate, single clean run (714 PASS lines,
+  10218 + 10130 comparison lines, zero FAIL) on the immutable binary built
+  from the fixed source. No source edits during the run.
+- verifier/: the verifier's three evidence payloads
+  (results-63f29286, panic-minimized-afc00014, owned-results-21a61a88).
+
+Still open (unchanged): t1003 diagnostic precision loss (not parity); Dyn
+float payload tag (Anto's decision pending); GT question pending.

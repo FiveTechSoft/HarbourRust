@@ -1,0 +1,66 @@
+[
+  {
+    "name": "copy_literal",
+    "source": "function take(s)\nlocal copy := hb_PValue(1)\n? copy\n? hb_PValue(1)\n? s\nreturn nil\nfunction main()\ntake(\"ababab\")\nreturn nil\n",
+    "targets": {
+      "linux": {
+        "exit": 0,
+        "stdout": "/downloads/verify-multiarg10074c6-scope/copy_literal.prg -> /downloads/verify-multiarg10074c6-scope/copy_literal-linux.s (2 functions)\n",
+        "stderr": ""
+      },
+      "windows": {
+        "exit": 0,
+        "stdout": "/downloads/verify-multiarg10074c6-scope/copy_literal.prg -> /downloads/verify-multiarg10074c6-scope/copy_literal-windows.s (2 functions)\n",
+        "stderr": ""
+      }
+    }
+  },
+  {
+    "name": "print_owned_no_copy",
+    "source": "function take(s)\n? hb_PValue(1)\n? s\nreturn nil\nfunction main()\ntake(Replicate(\"ab\",3))\nreturn nil\n",
+    "targets": {
+      "linux": {
+        "exit": 101,
+        "stdout": "",
+        "stderr": "\nthread 'main' (2133945) panicked at src/hbc.rs:6952:59:\nchecked\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+      },
+      "windows": {
+        "exit": 101,
+        "stdout": "",
+        "stderr": "\nthread 'main' (2133946) panicked at src/hbc.rs:6952:59:\nchecked\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+      }
+    }
+  },
+  {
+    "name": "copy_scalar",
+    "source": "function take(s)\nlocal copy := hb_PValue(1)\n? copy\n? hb_PValue(1)\n? s\nreturn nil\nfunction main()\ntake(42)\nreturn nil\n",
+    "targets": {
+      "linux": {
+        "exit": 0,
+        "stdout": "/downloads/verify-multiarg10074c6-scope/copy_scalar.prg -> /downloads/verify-multiarg10074c6-scope/copy_scalar-linux.s (2 functions)\n",
+        "stderr": ""
+      },
+      "windows": {
+        "exit": 0,
+        "stdout": "/downloads/verify-multiarg10074c6-scope/copy_scalar.prg -> /downloads/verify-multiarg10074c6-scope/copy_scalar-windows.s (2 functions)\n",
+        "stderr": ""
+      }
+    }
+  },
+  {
+    "name": "replicate_only",
+    "source": "function main()\n? Replicate(\"ab\",3)\nreturn nil\n",
+    "targets": {
+      "linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: unknown function `replicate` (must be defined before use)\n"
+      },
+      "windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: unknown function `replicate` (must be defined before use)\n"
+      }
+    }
+  }
+]

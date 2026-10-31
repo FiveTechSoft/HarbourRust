@@ -1,0 +1,938 @@
+{
+  "commit": "10074c6998c5d495ada6dfa6da5a550c3316ba3f",
+  "scope": "fresh compiler; bounded multiarg partial scope only; no full batteries rerun",
+  "rows": [
+    {
+      "name": "t1361_omitted_args_nil_fill",
+      "source": "// Harbour fills omitted trailing parameters with NIL (multiarg family):\n// b arrives as a NIL casilla and prints NIL; a provided call is exact.\nfunction show(a, b)\n    ? a, b\n    return nil\nfunction main()\n    show(7)\n    show(8, 9)\n    return nil\n",
+      "source_sha256": "95d5674274d014c2d67bcee07973c058cd97925c3dc72cb65af0744c2cb6fd49",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t1361_omitted_args_nil_fill.hb -> /downloads/verify-multiarg10074c6-scope/t1361_omitted_args_nil_fill-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         7 NIL\n         8          9",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t1361_omitted_args_nil_fill.hb -> /downloads/verify-multiarg10074c6-scope/t1361_omitted_args_nil_fill-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         7 NIL\n         8          9",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n         7 NIL\n         8          9",
+        "stderr": ""
+      },
+      "exact": {
+        "linux": true,
+        "windows": true
+      }
+    },
+    {
+      "name": "t1362_hb_pvalue_scalars",
+      "source": "// hb_PValue(n): the n-th declared parameter as a Dyn casilla (integer,\n// string, logical); an out-of-range index is NIL (multiarg family).\nfunction p(k, s, l)\n    ? hb_PValue(1), hb_PValue(2), hb_PValue(3), hb_PValue(4)\n    return nil\nfunction main()\n    p(5, \"abc\", .t.)\n    return nil\n",
+      "source_sha256": "fc40735b36ac121014f781b267fb0d5809f99d91ad6ca85adbad95ab255e68d7",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t1362_hb_pvalue_scalars.hb -> /downloads/verify-multiarg10074c6-scope/t1362_hb_pvalue_scalars-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         5 abc .T. NIL",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t1362_hb_pvalue_scalars.hb -> /downloads/verify-multiarg10074c6-scope/t1362_hb_pvalue_scalars-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         5 abc .T. NIL",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n         5 abc .T. NIL",
+        "stderr": ""
+      },
+      "exact": {
+        "linux": true,
+        "windows": true
+      }
+    },
+    {
+      "name": "t1363_hb_pvalue_dyn",
+      "source": "// Varying argument types across call sites merge the parameter to the\n// tagged union; hb_PValue exposes each call's own value (multiarg family).\nfunction q(x)\n    ? hb_PValue(1)\n    return nil\nfunction main()\n    q(11)\n    q(\"xy\")\n    q(.f.)\n    return nil\n",
+      "source_sha256": "baa8ce0c085deae9b07a79a066e84232e2d5416fce0739bd247d08ccadc7e4df",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t1363_hb_pvalue_dyn.hb -> /downloads/verify-multiarg10074c6-scope/t1363_hb_pvalue_dyn-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        11\nxy\n.F.",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t1363_hb_pvalue_dyn.hb -> /downloads/verify-multiarg10074c6-scope/t1363_hb_pvalue_dyn-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        11\nxy\n.F.",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        11\nxy\n.F.",
+        "stderr": ""
+      },
+      "exact": {
+        "linux": true,
+        "windows": true
+      }
+    },
+    {
+      "name": "t1364_hb_pvalue_byref",
+      "source": "// hb_PValue over a @-received parameter reads through the owner's slot.\nfunction r(a)\n    ? a + 0\n    ? hb_PValue(1)\n    return nil\nfunction main()\n    local v := 42\n    r(@v)\n    return nil\n",
+      "source_sha256": "ec443597509c85b7ad88f67c3d4f3c1b200269f5b7ab35ec3ec3d60f154c6a4f",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t1364_hb_pvalue_byref.hb -> /downloads/verify-multiarg10074c6-scope/t1364_hb_pvalue_byref-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        42\n        42",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t1364_hb_pvalue_byref.hb -> /downloads/verify-multiarg10074c6-scope/t1364_hb_pvalue_byref-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        42\n        42",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        42\n        42",
+        "stderr": ""
+      },
+      "exact": {
+        "linux": true,
+        "windows": true
+      }
+    },
+    {
+      "name": "t64_params_strarg",
+      "source": "// A string literal argument pins the parameter (multiarg literal\n// evidence): Harbour retypes parameters per call; the old \"parameters\n// are integers\" rejection is superseded by real evidence.\nfunction id(x)\n    return x\n\nfunction main()\n    ? id(\"hola\")\n    return nil\n",
+      "source_sha256": "e6440156aa1e87a15ad2abab6e04c4ec7789923912b6eaff6cabe8256942f426",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t64_params_strarg.hb -> /downloads/verify-multiarg10074c6-scope/t64_params_strarg-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nhola",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t64_params_strarg.hb -> /downloads/verify-multiarg10074c6-scope/t64_params_strarg-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nhola",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nhola",
+        "stderr": ""
+      },
+      "exact": {
+        "linux": true,
+        "windows": true
+      }
+    },
+    {
+      "name": "t667_param_literal_infer",
+      "source": "// Call-site literal evidence pins a parameter the body never uses in a\n// type-revealing way (multiarg family): num pins from the literal 42.\n// The 63k partial-pin contract stands: a genuinely uninferable parameter\n// is still named by the pin error (no literal at any call site).\nfunction greet( msg, num )\n   if msg == \"hi\"\n      ? \"hello\"\n   endif\n   return\n\nfunction main()\n   greet( \"hi\", 42 )\n   return\n",
+      "source_sha256": "578d6e90d4388594912dcae523066932a720efc417b9488f90a8d4acd4d33db3",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t667_param_literal_infer.hb -> /downloads/verify-multiarg10074c6-scope/t667_param_literal_infer-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nhello",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t667_param_literal_infer.hb -> /downloads/verify-multiarg10074c6-scope/t667_param_literal_infer-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nhello",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nhello",
+        "stderr": ""
+      },
+      "exact": {
+        "linux": true,
+        "windows": true
+      }
+    },
+    {
+      "name": "t702_return_only_param",
+      "source": "// A parameter the body only RETURNS pins from call-site literal\n// evidence (multiarg family): x pins Str from the \"ab\" literal. The 63r\n// contract stands for calls without literal evidence.\nprocedure main()\n   ? q( \"ab\" )\n   return\nfunction q( x )\n   return x\n",
+      "source_sha256": "628b44eae1dc758bcb54fe95f122d4020e85c69bc9ca1c5d531b189d1a5678ed",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t702_return_only_param.hb -> /downloads/verify-multiarg10074c6-scope/t702_return_only_param-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nab",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t702_return_only_param.hb -> /downloads/verify-multiarg10074c6-scope/t702_return_only_param-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nab",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nab",
+        "stderr": ""
+      },
+      "exact": {
+        "linux": true,
+        "windows": true
+      }
+    },
+    {
+      "name": "t881_qout_param_copy_only",
+      "source": "// A parameter the body only copies pins from call-site literal\n// evidence (multiarg family): x pins I64 from the literal 1.\nfunction take(x)\nlocal y := x\nreturn QQOut(y)\nfunction main()\ntake(1)\nreturn\n",
+      "source_sha256": "b211ace733c294a62e5ea79635067240a1108644fd0e3ef9d493e7f2f5900781",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t881_qout_param_copy_only.hb -> /downloads/verify-multiarg10074c6-scope/t881_qout_param_copy_only-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "         1",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t881_qout_param_copy_only.hb -> /downloads/verify-multiarg10074c6-scope/t881_qout_param_copy_only-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "         1",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "         1",
+        "stderr": ""
+      },
+      "exact": {
+        "linux": true,
+        "windows": true
+      }
+    },
+    {
+      "name": "t914_unary_plus_literal",
+      "source": "// A parameter under a no-op unary plus pins from call-site literal\n// evidence (multiarg family): x pins I64 from the literal 1.\nfunction echo(x)\nreturn +x\nfunction main()\n? echo(1)\nreturn\n",
+      "source_sha256": "11415cc698d2ca6906097a6cbf44afd05929a7a4b823b74af1a137c31949e27c",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t914_unary_plus_literal.hb -> /downloads/verify-multiarg10074c6-scope/t914_unary_plus_literal-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         1",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t914_unary_plus_literal.hb -> /downloads/verify-multiarg10074c6-scope/t914_unary_plus_literal-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         1",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n         1",
+        "stderr": ""
+      },
+      "exact": {
+        "linux": true,
+        "windows": true
+      }
+    },
+    {
+      "name": "t944_sequence_literal",
+      "source": "// A parameter inside a comma sequence pins from call-site literal\n// evidence (multiarg family): x pins I64 from the literal 1.\nfunction only(x)\nreturn (1,x)\nfunction main()\n? only(1)\nreturn\n",
+      "source_sha256": "57489b43328cb43c7dced32f11f10b580e9437d4ec821affc8261bb6620690b7",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t944_sequence_literal.hb -> /downloads/verify-multiarg10074c6-scope/t944_sequence_literal-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         1",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t944_sequence_literal.hb -> /downloads/verify-multiarg10074c6-scope/t944_sequence_literal-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         1",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n         1",
+        "stderr": ""
+      },
+      "exact": {
+        "linux": true,
+        "windows": true
+      }
+    },
+    {
+      "name": "pvalue_index_once",
+      "source": "function take(a,b)\nlocal i := 0\n? hb_PValue(++i), i\n? hb_PValue(++i), i\n? hb_PValue(0), hb_PValue(-1), hb_PValue(3)\nreturn nil\nfunction main()\ntake(11,22)\nreturn nil\n",
+      "source_sha256": "d97dd77e3a9188348c400f4ec46b3423a4a9f9c22a70a49b7c7520ce2ca7ed4d",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6-scope/pvalue_index_once.prg -> /downloads/verify-multiarg10074c6-scope/pvalue_index_once-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        11          1\n        22          2\nNIL NIL NIL",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6-scope/pvalue_index_once.prg -> /downloads/verify-multiarg10074c6-scope/pvalue_index_once-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        11          1\n        22          2\nNIL NIL NIL",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        11          1\n        22          2\nNIL NIL NIL",
+        "stderr": ""
+      },
+      "exact": {
+        "linux": true,
+        "windows": true
+      }
+    },
+    {
+      "name": "pvalue_byref_mutated",
+      "source": "function take(a)\na := a + 1\n? hb_PValue(1)\nreturn nil\nfunction main()\nlocal x := 41\ntake(@x)\n? x\nreturn nil\n",
+      "source_sha256": "6d4cdbcc88eabb80f671838cb2fe5644cce115ca0817ee37329704bc501c7ded",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6-scope/pvalue_byref_mutated.prg -> /downloads/verify-multiarg10074c6-scope/pvalue_byref_mutated-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        42\n        42",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-multiarg10074c6-scope/pvalue_byref_mutated.prg -> /downloads/verify-multiarg10074c6-scope/pvalue_byref_mutated-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        42\n        42",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        42\n        42",
+        "stderr": ""
+      },
+      "exact": {
+        "linux": true,
+        "windows": true
+      }
+    },
+    {
+      "name": "pvalue_owned_string_copy",
+      "source": "function take(s)\nlocal copy := hb_PValue(1)\n? copy\n? hb_PValue(1)\n? s\nreturn nil\nfunction main()\ntake(Replicate(\"ab\",3))\nreturn nil\n",
+      "source_sha256": "886b1818e5c97f282a8388cca83b07b3add3dec26734335b6a6e8b1d33125883",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 101,
+            "stdout": "",
+            "stderr": "\nthread 'main' (2133908) panicked at src/hbc.rs:6952:59:\nchecked\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 101,
+            "stdout": "",
+            "stderr": "\nthread 'main' (2133909) panicked at src/hbc.rs:6952:59:\nchecked\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nababab\nababab\nababab",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1365_hb_pvalue_block_neg",
+      "targets": {
+        "linux": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 4: `hb_PValue` inside a codeblock is not in this increment (it would expose the codeblock's own parameters)\n"
+        },
+        "windows": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 4: `hb_PValue` inside a codeblock is not in this increment (it would expose the codeblock's own parameters)\n"
+        }
+      }
+    },
+    {
+      "name": "t1366_omitted_float_pin_neg",
+      "targets": {
+        "linux": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: parameter `x` of function `g` is a float by its body but a call site omits it; Harbour fills it with NIL and this increment's Dyn casilla cannot carry a float\n"
+        },
+        "windows": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: parameter `x` of function `g` is a float by its body but a call site omits it; Harbour fills it with NIL and this increment's Dyn casilla cannot carry a float\n"
+        }
+      }
+    },
+    {
+      "name": "t1367_hb_pvalue_float_neg",
+      "targets": {
+        "linux": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 4: `hb_PValue` in `p` would expose parameter #3 as Dyn, but Dyn has no float payload tag in this increment (the representation decision is pending)\n"
+        },
+        "windows": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 4: `hb_PValue` in `p` would expose parameter #3 as Dyn, but Dyn has no float payload tag in this increment (the representation decision is pending)\n"
+        }
+      }
+    },
+    {
+      "name": "t1368_pcount_neg",
+      "targets": {
+        "linux": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 5: `PCount` is not in this increment (the calling convention carries no argument count; `hb_PValue` over the declared parameters is the supported introspection)\n"
+        },
+        "windows": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 5: `PCount` is not in this increment (the calling convention carries no argument count; `hb_PValue` over the declared parameters is the supported introspection)\n"
+        }
+      }
+    },
+    {
+      "name": "t63_params_arity",
+      "targets": {
+        "linux": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 6: `add` takes 2 argument(s), got 3\n"
+        },
+        "windows": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 6: `add` takes 2 argument(s), got 3\n"
+        }
+      }
+    },
+    {
+      "name": "t1003_recursive_inline_wrongarg",
+      "targets": {
+        "linux": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 7: `f` never returns a value; its result cannot be used in an expression in this PoC\n"
+        },
+        "windows": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 7: `f` never returns a value; its result cannot be used in an expression in this PoC\n"
+        }
+      }
+    },
+    {
+      "name": "t1026_default_unused_undef_neg",
+      "targets": {
+        "linux": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 3: unknown function `hb_symbol_unused` (must be defined before use)\n"
+        },
+        "windows": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 3: unknown function `hb_symbol_unused` (must be defined before use)\n"
+        }
+      }
+    },
+    {
+      "name": "original_multiarg",
+      "source_sha256": "6b370115396072c1ec50894822274bf8103b425d606245b572796bf5f1e51bf7",
+      "targets": {
+        "linux": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 31: `hb_PValue` in `shoutarg` would expose parameter #3 as Dyn, but Dyn has no float payload tag in this increment (the representation decision is pending)\n"
+        },
+        "windows": {
+          "exit": 1,
+          "stdout": "",
+          "stderr": "error: line 31: `hb_PValue` in `shoutarg` would expose parameter #3 as Dyn, but Dyn has no float payload tag in this increment (the representation decision is pending)\n"
+        }
+      }
+    }
+  ]
+}
