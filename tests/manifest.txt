@@ -1340,3 +1340,11 @@ pos tests/t1342_pp_independent_ident.hb \n         1          7
 pos tests/t1343_pp_independent_plain.hb \n         1          7
 pos tests/t1344_pp_independent_temporal.hb \n         1          7\n         1          8
 pos tests/t1345_pp_independent_call.hb \n         1          7
+pos tests/t1346_pp_root_expression.hb \n         6\nnumber
+pos tests/t1347_pp_root_reorder.hb \n         7\nnumber
+pos tests/t1348_pp_root_iterations.hb \n         7\nalpha\nbeta
+pos tests/t1349_pp_root_index.hb \ndata[1,2]
+pos tests/t1350_pp_root_macro_normal.hb \n         7
+pos tests/t1351_pp_root_macro_expr.hb \n         8
+pos tests/t1352_pp_root_comparisons.hb \n.T.\n.T.
+pos tests/t1353_pp_root_overlap.hb \n         8\n         9\n         7

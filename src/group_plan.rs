@@ -31,7 +31,7 @@ impl Plan {
             if tokens[i]=="["{
                 let id=i;let mut atoms=Vec::new();i+=1;
                 while i<tokens.len()&&tokens[i]!="]"{atoms.push(atom(&tokens[i],Some(id),&mut markers)?);i+=1;}
-                if i==tokens.len()||atoms.is_empty()||!atoms.iter().any(|a|matches!(a,Atom::Identifier(_)|Atom::Restricted(_,_)|Atom::Expression(_))){return None;}
+                if i==tokens.len()||atoms.is_empty(){return None;}
                 nodes.push(Node::Optional{id,atoms});i+=1;
             }else{nodes.push(Node::Atom(atom(&tokens[i],None,&mut markers)?));i+=1;}
         }
@@ -57,6 +57,57 @@ impl Plan {
             true
         }
         let mut at=0;expr(tokens,&mut at,0)&&at==tokens.len()
+    }
+    pub fn expression_root(&self)->bool{
+        if self.nodes.len()<3 || self.nodes.len()>8 || !matches!(self.nodes.first(),Some(Node::Atom(Atom::Literal(t)))if identifier(t)) || !matches!(self.nodes.get(1),Some(Node::Atom(Atom::Expression(_)))){return false;}
+        let mut anchors=Vec::new();
+        for node in &self.nodes[2..]{
+            let atoms=match node{Node::Optional{atoms,..}=>atoms,_=>return false};
+            match atoms.as_slice(){[Atom::Literal(t)]|[Atom::Literal(t),Atom::Expression(_)] if identifier(t)=>{
+                if anchors.iter().any(|a:&String|a.eq_ignore_ascii_case(t)){return false;}anchors.push(t.clone());
+            },_=>return false}
+        }true
+    }
+    fn expression_root_matches(&self,source:&[String],exact:bool,adjacent:&[bool])->Result<Option<Matched>,&'static str>{
+        fn prefix(t:&[String],adjacent:&[bool])->Option<usize>{
+            let mut at=0;let mut stack=Vec::new();let mut previous=false;
+            while at<t.len(){let word=t[at].as_str();
+                if word.as_bytes().first().map(u8::is_ascii_digit).unwrap_or(false)&&!word.bytes().all(|b|b.is_ascii_digit())&&!word.strip_prefix("0x").or_else(||word.strip_prefix("0X")).map(|n|!n.is_empty()&&n.bytes().all(|b|b.is_ascii_hexdigit())).unwrap_or(false)&&!word.strip_prefix("0d").or_else(||word.strip_prefix("0D")).map(|n|!n.is_empty()&&n.bytes().all(|b|b.is_ascii_digit())).unwrap_or(false){return None;}
+                if stack.is_empty()&&word=="."&&at>=2&&t[at-2]=="&"&&identifier(&t[at-1])&&adjacent[at]&&adjacent[at-1]{previous=true;at+=1;
+                    if at<t.len()&&adjacent[at]&&identifier(&t[at]){at+=1;}
+                    continue;}
+                if stack.is_empty()&&at>0&&t[at-1].eq_ignore_ascii_case("d")&&adjacent[at]&&(word.starts_with('"')||word.starts_with('\'')){previous=true;at+=1;continue;}
+                let operator=["+","-","*","/","%","^","**","=","==","!=","<>","<",">","<=",">=",":=",":","::",".",".AND.",".OR.",".NOT.","!","$","&","++","--","@","~","|","\\","?","=>","->"].iter().any(|o|word.eq_ignore_ascii_case(o));
+                if stack.is_empty(){
+                    if previous&&word=="&"&&t.get(at+1).map(|s|identifier(s)).unwrap_or(false)&&!adjacent[at]{break;}
+                    if previous&&!operator&&!matches!(word,"("|"["|"{"|")"|"]"|"}"){break;}
+                    if operator{if word!="++"&&word!="--"{previous=false;}}else{previous=true;}
+                }
+                match word{"("=>stack.push(")"),"["=>stack.push("]"),"{"=>stack.push("}"),")"|"]"|"}"=>if stack.pop()!=Some(word){return None},_=>{}}
+                at+=1;
+            }
+            if at==0||!stack.is_empty(){None}else{Some(at)}
+        }
+        let lit=|s:&str,p:&str|s.eq_ignore_ascii_case(p)||(!exact&&s.is_ascii()&&p.is_ascii()&&s.len()>=4&&p.len()>s.len()&&p[..s.len()].eq_ignore_ascii_case(s));
+        if source.is_empty()||!matches!(&self.nodes[0],Node::Atom(Atom::Literal(t))if lit(&source[0],t)){return Ok(None);}
+        let root=match self.nodes[1]{Node::Atom(Atom::Expression(id))=>id,_=>return Ok(None)};
+        let n=match prefix(&source[1..],&adjacent[1..]){Some(n)=>n,None=>return Ok(None)};let mut at=1+n;
+        let mut out=Matched{roots:vec![(root,(1,at))],iterations:Vec::new(),consumed:0};
+        let mut budget=1024;
+        while at<source.len(){
+            let mut next=None;
+            for node in &self.nodes[2..]{if let Node::Optional{id,atoms}=node{
+                let word=match &atoms[0]{Atom::Literal(t)=>t,_=>return Ok(None)};
+                if !lit(&source[at],word){continue;}let start=at;let mut end=at+1;let mut captures=Vec::new();
+                if let Some(Atom::Expression(marker))=atoms.get(1){let n=match prefix(&source[end..],&adjacent[end..]){Some(n)=>n,None=>return Ok(None)};captures.push((*marker,(end,end+n)));end+=n;}
+                next=Some((*id,start,end,captures));break;
+            }}
+            match next{None=>return Ok(None),Some((id,start,end,captures))=>{
+                if budget==0{return Err("expression root optional iteration limit exceeded");}budget-=1;
+                let ordinal=out.iterations.iter().filter(|i|i.group_id==id).count();out.iterations.push(Iteration{group_id:id,ordinal,tokens:(start,end),captures});at=end;
+            }}
+        }
+        out.consumed=at;Ok(Some(out))
     }
     pub fn reduced_var(&self)->bool{
         if self.nodes.len()<5||self.nodes.len()>11{return false;}
@@ -130,7 +181,13 @@ impl Plan {
         }
         seq(&self.nodes,source,0,exact,prefix,Matched{roots:Vec::new(),iterations:Vec::new(),consumed:0},&mut 10000)
     }
+    pub fn matches_source(&self,source:&[String],exact:bool,prefix:bool,adjacent:&[bool])->Result<Option<Matched>,&'static str>{
+        if adjacent.len()!=source.len(){return Err("invalid expression adjacency spans");}
+        if self.expression_root(){return self.expression_root_matches(source,exact,adjacent);}
+        self.matches(source,exact,prefix)
+    }
     pub fn matches(&self,source:&[String],exact:bool,prefix:bool)->Result<Option<Matched>,&'static str>{
+        if self.expression_root(){return self.expression_root_matches(source,exact,&vec![true;source.len()]);}
         if self.var_variant(){return self.variant_matches(source,exact);}
         if !self.reduced_var(){return self.identifier_matches(source,exact,prefix);}
         if prefix{return Err("reduced VAR prefix translation outside bounded contract");}
@@ -273,4 +330,15 @@ use super::*;fn w(t:&[&str])->Vec<String>{t.iter().map(|s|s.to_string()).collect
 #[cfg(test)]mod flag_tests{
  use super::*;
  #[test]fn flag_anchors_are_disjoint(){let mut t=["PROBE","<!a!>","[",",","<!b!>","]","[","<tp:TYPE,AS>","<t>","]","[","<ini:INIT,ASSIGN>","<v>","]","[","<ex:EXPORTED,VISIBLE>","]"].iter().map(|s|s.to_string()).collect::<Vec<_>>();assert!(Plan::parse(&t).unwrap().reduced_var());t[15]="<ex:ASSIGNED>".into();assert!(!Plan::parse(&t).unwrap().reduced_var());}
+}
+
+#[cfg(test)] mod expression_root_tests {
+ use super::*;
+ fn w(s:&[&str])->Vec<String>{s.iter().map(|s|s.to_string()).collect()}
+ fn plan()->Plan{Plan::parse(&w(&["SHOW","<x>","[","AS","<t>","]","[","DECL","]"])).unwrap()}
+ #[test] fn root_clause_order_and_owner(){let p=plan();assert!(p.expression_root());let s=w(&["SHOW","f","(","1",",","2",")","DECL","AS","T","DECL"]);let m=p.matches_source(&s,true,false,&vec![false;s.len()]).unwrap().unwrap();assert_eq!(m.roots,vec![(0,(1,7))]);assert_eq!(m.iterations.iter().map(|i|i.group_id).collect::<Vec<_>>(),vec![6,2,6]);}
+ #[test] fn source_adjacency_is_not_optional(){let p=plan();let s=w(&["SHOW","d","\"date\"","DECL"]);assert!(p.matches_source(&s,true,false,&[false,false,false,false]).unwrap().is_none());assert!(p.matches_source(&s,true,false,&[false,false,true,false]).unwrap().is_some());assert!(p.matches_source(&s,true,false,&[]).is_err());}
+ #[test] fn invalid_numeric_atom_does_not_match(){let p=plan();for n in ["1e2","1abc","0xFG"]{let s=w(&["SHOW",n,"DECL"]);assert!(p.matches_source(&s,true,false,&vec![false;s.len()]).unwrap().is_none());}}
+ #[test] fn iteration_limit_is_bounded(){let p=plan();let mut s=w(&["SHOW","7"]);s.extend(std::iter::repeat("DECL".to_string()).take(1025));assert!(p.matches_source(&s,true,false,&vec![false;s.len()]).is_err());}
+ #[test] fn anchors_are_distinct(){assert!(!Plan::parse(&w(&["SHOW","<x>","[","AS","<t>","]","[","as","]"])).unwrap().expression_root());}
 }

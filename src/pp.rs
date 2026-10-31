@@ -521,7 +521,7 @@ fn cmd_tokens_mode(text: &str, source: bool) -> Vec<String> {
                 out.push(text[i..i+2].to_string()); i += 2; continue;
             }
         }
-        if c == '<' {
+        if c == '<' && !source {
             let mut j = i;
             while j < b.len() && b[j] != b'>' { j += 1; }
             if j < b.len() { out.push(text[i..=j].to_string()); i = j + 1; } else { out.push("<".to_string()); i += 1; }
@@ -779,6 +779,16 @@ fn stringify_capture(capture: &Capture, source: &str, spans: &HashMap<usize, (us
     Ok(quote_literal(&text))
 }
 
+// Normal stringify leaves a single macro expression unquoted; dumb #<x>
+// still quotes it. Source adjacency is part of the macro spelling.
+fn normal_stringify_macro(capture:&Capture,source:&str,spans:&HashMap<usize,(usize,usize)>)->Option<String>{
+    let start=spans.get(&capture.parts.first()?.0)?.0;
+    let end=spans.get(&capture.parts.last()?.0)?.1;
+    let text=&source[start..end];let tail=text.strip_prefix('&')?;
+    if marker_ident(tail.strip_suffix('.').unwrap_or(tail)){return Some(tail.strip_suffix('.').unwrap_or(tail).into());}
+    if tail.trim_start().starts_with('('){return Some(tail.trim_start().into());}
+    None
+}
 // Result-side smart stringify uses source syntax, not the match marker spelling.
 fn smart_stringify_capture(capture: &Capture, source: &str, spans: &HashMap<usize,(usize,usize)>) -> Result<String,String> {
     if capture.parts.is_empty() { return Ok(String::new()); }
@@ -795,7 +805,7 @@ fn smart_stringify_capture(capture: &Capture, source: &str, spans: &HashMap<usiz
     }
     // This is textual smart-result substitution,not runtime evaluation.
     if let Some(tail)=text.strip_prefix('&') {
-        if tail.starts_with('(') { return Ok(tail.to_string()); }
+        if tail.trim_start().starts_with('(') { return Ok(tail.trim_start().to_string()); }
         let ident=tail.strip_suffix('.').unwrap_or(tail);
         if marker_ident(ident) { return Ok(ident.to_string()); }
         return Ok(quote_literal(&text));
@@ -1183,7 +1193,7 @@ fn expand_fixed_translations(text: &str, rules: &[Cmd], calls: &[Cmd], defs:&Has
 fn single_identifier_group(c:&Cmd,source:&str,tokens:&[String],line:usize)->Option<Result<Option<String>,String>> {
     let plan=c.group_plan.as_ref()?;
     let identifier_only=c.pattern.len()==4&&c.pattern[1]=="["&&c.pattern[3]=="]"&&c.pattern[2].starts_with("<!");
-    if !identifier_only&&(!(plan.reduced_var()||plan.var_variant())||c.translation){return None;}
+    if !identifier_only&&(!(plan.reduced_var()||plan.var_variant()||plan.expression_root())||c.translation){return None;}
     if !plan.nodes.iter().any(|n|matches!(n,group_plan::Node::Optional{..})){return None;}
     if !tokens.first().map(|t|lit_match(t,&c.pattern[0])).unwrap_or(false){return None;}
     // Nested result groups stay wholly on the historical path.
@@ -1201,7 +1211,8 @@ fn single_identifier_group(c:&Cmd,source:&str,tokens:&[String],line:usize)->Opti
 
     let work=|| -> Result<Option<String>,String> {
         let spans=source_spans(source,tokens)?;
-        let matched=match plan.matches(tokens,c.restricted_exact,c.translation)?{Some(m)=>m,None=>return Ok(None)};
+        let adjacent:Vec<bool>=tokens.iter().enumerate().map(|(i,t)|i>0&&spans[&(tokens[i-1].as_ptr()as usize)].1==spans[&(t.as_ptr()as usize)].0).collect();
+        let matched=match plan.matches_source(tokens,c.restricted_exact,c.translation,&adjacent)?{Some(m)=>m,None=>return Ok(None)};
         let (staged,mut saved)=staged_result(&c.result,source)?;
         // The historical renderer substitutes inside quotes. Shield only this
         // new iteration path's source-result literals before delegating atoms.
@@ -1239,7 +1250,7 @@ fn single_identifier_group(c:&Cmd,source:&str,tokens:&[String],line:usize)->Opti
         let mut out=String::new();
         for (group,part) in pieces{
             let marker_ids:Vec<usize>=plan.markers.iter().enumerate().filter(|(_, (name,_))|[format!("<{}>",name),format!("#<{}>",name),format!("<({})>",name),format!("<\"{}\">",name),format!("<.{}.>",name),format!("<-{}->",name)].iter().any(|needle|!stringify_positions(part,needle).is_empty())).map(|(id,_)|id).collect();
-            let iterations=match plan.result_iterations(&matched,&marker_ids,group){Ok(it)=>it,Err("repeated result marker outside associated group")=>return Ok(None),Err(e)=>return Err(e.into())};
+            let iterations=match plan.result_iterations(&matched,&marker_ids,group){Ok(it)=>it,Err("repeated result marker outside associated group")=>return Ok(None),Err("multiple repeated result owners outside bounded plan")if plan.expression_root()=>return Ok(None),Err(e)=>return Err(e.into())};
             let flat=Cmd{rule_id:c.rule_id,group_plan:None,pattern:atom_pattern.clone(),result:part.into(),translation:false,restricted_exact:c.restricted_exact};
             for it in iterations{
                 let mut caps=vec![Capture::empty();plan.markers.len()];
@@ -1279,7 +1290,7 @@ fn apply_commands(line: &str, cmds: &[Cmd], calls: &[Cmd], fixed_enabled: bool, 
                 if !safe_atom||!safe_tail{return Err(format!("line {}: overlapping VAR type expression outside bounded contract",line_no));}
             }
         }
-        if let Some(result)=if isolated||family{single_identifier_group(c,line,&src,line_no)}else{None}{
+        if let Some(result)=if isolated||family||c.group_plan.as_ref().map(|p|p.expression_root()).unwrap_or(false){single_identifier_group(c,line,&src,line_no)}else{None}{
             match result {Ok(None)=>continue,other=>{
                 let lits=c.pattern.iter().filter(|t| !(t.starts_with('<')&&t.ends_with('>'))&&t.as_str()!="["&&t.as_str()!="]").count();
                 if best.map(|(bl,_)|lits>=bl).unwrap_or(true){best=Some((lits,ci));best_group=Some(other);best_caps.clear();}
@@ -1412,7 +1423,7 @@ fn render_command(c: &Cmd, caps: &[Capture], source: &str, tokens: &[String], li
                             return Err(format!("line {}: stringify of non-plain capture is outside this increment", line_no));
                         }
                         let spans = source_spans(source, tokens).map_err(|e| format!("line {}: {}", line_no, e))?;
-                        let value = if normal && (inner.contains(",...") || inner.starts_with('*')) { stringify_list(&caps[pi],source,&spans).map_err(|e|format!("line {}: {}",line_no,e))? } else if normal && caps[pi].is_empty() { String::new() } else { stringify_capture(&caps[pi], source, &spans).map_err(|e| format!("line {}: {}", line_no, e))? };
+                        let value = if normal && (inner.contains(",...") || inner.starts_with('*')) { stringify_list(&caps[pi],source,&spans).map_err(|e|format!("line {}: {}",line_no,e))? } else if normal && normal_stringify_macro(&caps[pi],source,&spans).is_some() { normal_stringify_macro(&caps[pi],source,&spans).unwrap() } else if normal && caps[pi].is_empty() { String::new() } else { stringify_capture(&caps[pi], source, &spans).map_err(|e| format!("line {}: {}", line_no, e))? };
                         // A resulting literal is data;later marker substitutions
                         // must not inspect marker-like text inside it.
                         let token = (0xe000..=0xf8ff).filter_map(char::from_u32).find(|ch|
