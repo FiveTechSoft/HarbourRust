@@ -4487,11 +4487,21 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !sig_inferred.get(i).copied().unwrap_or(false) {
                     // Placeholder parameter (order-independent fixpoint,
                     // pre-convergence or genuinely uninferable): no
-                    // per-argument check is meaningful against it, and
+                    // per-argument TYPE check is meaningful against it, and
                     // flags flipped on a placeholder could persist into
                     // the converged table. The callee's pin error is
                     // the diagnostic; when the parameter gains evidence
                     // in a later round, this call site is re-checked.
+                    // The argument expression itself must still be VALID:
+                    // an unknown function nested here otherwise escaped
+                    // every check and panicked apply_moves' expect (t1369;
+                    // preexisting since the placeholder skip, verifier
+                    // results-63f29286/panic-minimized-afc00014). Mid-round
+                    // errors are dropped like any other; the converged
+                    // round reports them by name.
+                    if !matches!(a, Expr::ByRef(_)) {
+                        type_expr(a, env, sigs, n)?;
+                    }
                     continue;
                 }
                 if let Expr::ByRef(vn) = a {

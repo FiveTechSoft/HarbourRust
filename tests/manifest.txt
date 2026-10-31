@@ -1363,3 +1363,4 @@ neg tests/t1365_hb_pvalue_block_neg.hb `hb_PValue` inside a codeblock is not in 
 neg tests/t1366_omitted_float_pin_neg.hb but a call site omits it
 neg tests/t1367_hb_pvalue_float_neg.hb Dyn has no float payload tag
 neg tests/t1368_pcount_neg.hb `PCount` is not in this increment
+neg tests/t1369_unknown_nested_arg_neg.hb unknown function `replicate`
