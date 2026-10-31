@@ -1,0 +1,28 @@
+--- production/pp.rs
++++ inactive/pp.rs
+@@ -1252,6 +1252,16 @@
+     };
+     Some(work().map_err(|e|format!("line {}: {}",line,e)))
+ }
++// Inactive reduced probe topology only,not the full METHOD family.
++fn reduced_expression_root(c:&Cmd,src:&[String])->Option<Option<Vec<Capture>>>{
++ let p=&c.pattern;
++ if c.translation||p.len()!=9||!marker_ident(&p[0])||!p[1].starts_with('<')||!p[1].ends_with('>')||!marker_ident(&p[1][1..p[1].len()-1])||p[2]!="["||p[3]!="AS"||!p[4].starts_with('<')||p[5]!="]"||p[6]!="["||p[7]!="DECL"||p[8]!="]"{return None;}
++ let work=||{let n=plain_tail_prefix(&src[1..])?;let mut at=1+n;let mut caps=vec![Capture::from_tokens(&src[1..at]),Capture::empty()];
++  if src.get(at).map(|t|t.eq_ignore_ascii_case("AS")).unwrap_or(false){at+=1;let n=plain_tail_prefix(&src[at..])?;caps[1]=Capture::from_tokens(&src[at..at+n]);at+=n;}
++  if src.get(at).map(|t|t.eq_ignore_ascii_case("DECL")).unwrap_or(false){at+=1;}
++  if at==src.len(){Some(caps)}else{None}
++ };Some(work())
++}
+ fn apply_commands(line: &str, cmds: &[Cmd], calls: &[Cmd], fixed_enabled: bool, line_no: usize) -> Result<Option<(String,u64)>, String> {
+     let src = source_tokens(line);
+     if src.is_empty() { return Ok(None); }
+@@ -1286,7 +1296,7 @@
+             }}
+             continue;
+         }
+-        if let Some(caps) = cmd_match(&c.pattern, &src, c.restricted_exact) {
++        if let Some(caps) = reduced_expression_root(c,&src).unwrap_or_else(||cmd_match(&c.pattern, &src, c.restricted_exact)) {
+             let lits = c.pattern.iter().filter(|t| !(t.starts_with('<') && t.ends_with('>')) && t.as_str() != "[" && t.as_str() != "]").count();
+             // probes b47/b47b/b47c: equal literal counts keep the LATEST
+             // definition (>= replaces the current winner with a later tie).

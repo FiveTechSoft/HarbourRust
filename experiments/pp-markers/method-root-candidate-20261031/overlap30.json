@@ -1,0 +1,244 @@
+{
+  "rows": [
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\nMETHOD New()\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\nMETHOD Test() INLINE OUT(\"hi\")\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nINLINE(Test(),OUT(\"hi\"))\n",
+      "own_exit": 0,
+      "own_output": "INLINE(Test ( ),OUT ( \"hi\" ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\nMETHOD New(1,2) CLASS Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nIMPL(New(1,2),Test)\n",
+      "own_exit": 0,
+      "own_output": "IMPL(New ( 1 , 2 ),Test)\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\nMETHOD New() AS Numeric\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\nMETHOD New() DECL\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\nMETHOD New()\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\nMETHOD Test() INLINE OUT(\"hi\")\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nINLINE(Test(),OUT(\"hi\"))\n",
+      "own_exit": 0,
+      "own_output": "INLINE(Test ( ),OUT ( \"hi\" ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\nMETHOD New(1,2) CLASS Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nIMPL(New(1,2),Test)\n",
+      "own_exit": 0,
+      "own_output": "IMPL(New ( 1 , 2 ),Test)\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\nMETHOD New() AS Numeric\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\nMETHOD New() DECL\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\nMETHOD New()\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\nMETHOD Test() INLINE OUT(\"hi\")\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nINLINE(Test(),OUT(\"hi\"))\n",
+      "own_exit": 0,
+      "own_output": "INLINE(Test ( ),OUT ( \"hi\" ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\nMETHOD New(1,2) CLASS Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nIMPL(New(1,2),Test)\n",
+      "own_exit": 0,
+      "own_output": "IMPL(New ( 1 , 2 ),Test)\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\nMETHOD New() AS Numeric\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\nMETHOD New() DECL\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\nMETHOD New()\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\nMETHOD Test() INLINE OUT(\"hi\")\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nINLINE(Test(),OUT(\"hi\"))\n",
+      "own_exit": 0,
+      "own_output": "INLINE(Test ( ),OUT ( \"hi\" ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\nMETHOD New(1,2) CLASS Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nIMPL(New(1,2),Test)\n",
+      "own_exit": 0,
+      "own_output": "IMPL(New ( 1 , 2 ),Test)\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\nMETHOD New() AS Numeric\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\nMETHOD New() DECL\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\nMETHOD New()\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\nMETHOD Test() INLINE OUT(\"hi\")\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nINLINE(Test(),OUT(\"hi\"))\n",
+      "own_exit": 0,
+      "own_output": "INLINE(Test ( ),OUT ( \"hi\" ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\nMETHOD New(1,2) CLASS Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nIMPL(New(1,2),Test)\n",
+      "own_exit": 0,
+      "own_output": "IMPL(New ( 1 , 2 ),Test)\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\nMETHOD New() AS Numeric\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\nMETHOD New() DECL\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\nMETHOD New()\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\nMETHOD Test() INLINE OUT(\"hi\")\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nINLINE(Test(),OUT(\"hi\"))\n",
+      "own_exit": 0,
+      "own_output": "INLINE(Test ( ),OUT ( \"hi\" ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\nMETHOD New(1,2) CLASS Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nIMPL(New(1,2),Test)\n",
+      "own_exit": 0,
+      "own_output": "IMPL(New ( 1 , 2 ),Test)\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\nMETHOD New() AS Numeric\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand METHOD <name> CLASS <!cls!> => IMPL(<name>,<cls>)\n#xcommand METHOD <name> INLINE <*body*> => INLINE(<name>,<body>)\n#xcommand METHOD <name> [AS <type>] [DECL] => BROAD(<name>)\nMETHOD New() DECL\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nBROAD(New())\n",
+      "own_exit": 0,
+      "own_output": "BROAD(New ( ))\n",
+      "own_error": ""
+    }
+  ]
+}
