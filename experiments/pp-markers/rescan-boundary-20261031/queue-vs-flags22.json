@@ -1,0 +1,356 @@
+{
+  "changes": [
+    {
+      "source": "#command SHOW <!a!> [,<!b!>] => ? <a> ; [? <b> ;]\nprocedure main()\nlocal alpha := 11,beta := 22,gamma := 33\nSHOW alpha,beta,gamma\nreturn\n",
+      "baseline": [
+        0,
+        "procedure main()\nlocal alpha := 11,beta := 22,gamma := 33\n? alpha \n ? beta gamma \n\nreturn\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "procedure main()\nlocal alpha := 11,beta := 22,gamma := 33\n? alpha\n? beta gamma\n\nreturn\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\nprocedure main()\nlocal alpha := 11,beta := 22,gamma := 33\n? alpha ; ? beta ; ? gamma ;\nreturn\n",
+      "candidate_token_match": false
+    },
+    {
+      "source": "#command SHOW <!a!> [,<!b!>] => [? <(a)>,<(b)> ;]\nprocedure main()\nlocal alpha := 11,beta := 22,gamma := 33\nSHOW alpha\nreturn\n",
+      "baseline": [
+        0,
+        "procedure main()\nlocal alpha := 11,beta := 22,gamma := 33\n? \"alpha\", \n\nreturn\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "procedure main()\nlocal alpha := 11,beta := 22,gamma := 33\n? \"alpha\",\n\nreturn\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\nprocedure main()\nlocal alpha := 11,beta := 22,gamma := 33\n? \"alpha\", ;\nreturn\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#command SHOW [<!x!>] => [? #<x> ;]\nprocedure main()\nlocal alpha := 11, beta := 22\nSHOW alpha beta gamma\nreturn\n",
+      "baseline": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? \"alpha\" \n? \"beta\" \n? \"gamma\" \n\nreturn\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? \"alpha\"\n? \"beta\"\n? \"gamma\"\n\nreturn\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\nprocedure main()\nlocal alpha := 11, beta := 22\n? \"alpha\" ; ? \"beta\" ; ? \"gamma\" ;\nreturn\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#command SHOW [<!x!>] => [? <\"x\"> ;]\nprocedure main()\nlocal alpha := 11, beta := 22\nSHOW alpha beta\nreturn\n",
+      "baseline": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? \"alpha\" \n? \"beta\" \n\nreturn\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? \"alpha\"\n? \"beta\"\n\nreturn\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\nprocedure main()\nlocal alpha := 11, beta := 22\n? \"alpha\" ; ? \"beta\" ;\nreturn\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#command SHOW [<!x!>] => [? <(x)> ;]\nprocedure main()\nlocal alpha := 11, beta := 22\nSHOW alpha beta\nreturn\n",
+      "baseline": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? \"alpha\" \n? \"beta\" \n\nreturn\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? \"alpha\"\n? \"beta\"\n\nreturn\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\nprocedure main()\nlocal alpha := 11, beta := 22\n? \"alpha\" ; ? \"beta\" ;\nreturn\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#command SHOW [<!x!>] => [? <.x.> ;]\nprocedure main()\nlocal alpha := 11, beta := 22\nSHOW alpha beta\nreturn\n",
+      "baseline": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? .T. \n? .T. \n\nreturn\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? .T.\n? .T.\n\nreturn\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\nprocedure main()\nlocal alpha := 11, beta := 22\n? .T. ; ? .T. ;\nreturn\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#command SHOW [<!x!>] => [? <x> ;]\nprocedure main()\nlocal alpha := 11, beta := 22\nSHOW alpha beta\nreturn\n",
+      "baseline": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? alpha \n? beta \n\nreturn\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "procedure main()\nlocal alpha := 11, beta := 22\n? alpha\n? beta\n\nreturn\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\nprocedure main()\nlocal alpha := 11, beta := 22\n? alpha ; ? beta ;\nreturn\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#define TEXT alpha;beta\n#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH => PROBE TEXT ; PROBE gamma\nBOTH\n",
+      "baseline": [
+        0,
+        "OUT(alpha\nbeta \n PROBE gamma)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(alpha\nbeta)\nOUT(gamma)\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(alpha;beta) ; OUT(gamma)\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#define X 1\n#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH => PROBE X ; #undef X ; #define X 2 ; PROBE X\nBOTH\n",
+      "baseline": [
+        0,
+        "OUT(1 \n # undef 1 \n # define 1 2 \n PROBE 1)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(1)\nOUT(2)\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(1) ; OUT(2)\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#define X 7\n#xcommand BOTH => X ; #undef X ; X\nBOTH\nX\n",
+      "baseline": [
+        0,
+        "7 \n #undef 7 \n 7\n7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "7\nX\nX\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\n\n7 ; X\nX\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => #define F(x) x+1 ; F(2)\nBOTH\nF(3)\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: generated directive outside command/xcommand scope\n"
+      ],
+      "candidate": [
+        0,
+        "2+1\n3+1\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\n 2+1\n3+1\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#xcommand BOTH => X ; #define X 7 ; X\nBOTH\nX\n",
+      "baseline": [
+        0,
+        "X \n #define X 7 \n X\nX\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X\n7\n7\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\nX ; 7\n7\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X 7\n#xcommand BOTH => X ; FACTORY ; X\nBOTH\nX\n",
+      "baseline": [
+        0,
+        "X \n FACTORY \n X\nX\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X\n7\n7\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\n\nX ; 7\n7\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #define X 7\nFACTORY\nX\n",
+      "baseline": [
+        1,
+        "",
+        "error: line 2: generated directive outside command/xcommand scope\n"
+      ],
+      "candidate": [
+        0,
+        "7\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\n\n7\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#xcommand FACTORY => #xcommand INNER => OUT(1)\n#xcommand BOTH => INNER ; FACTORY ; INNER\nBOTH\nINNER\n",
+      "baseline": [
+        0,
+        "INNER \n FACTORY \n INNER\nINNER\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "INNER\nOUT(1)\nOUT(1)\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\n\nINNER ; OUT(1)\nOUT(1)\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#xcommand INNER => OUT(1)\n#xcommand BOTH => INNER ; #uncommand INNER => OUT(1) ; INNER\nBOTH\nINNER\n",
+      "baseline": [
+        0,
+        "INNER \n #uncommand INNER => OUT(1) \n INNER\nOUT(1)\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 3: generated directive outside command/xcommand scope\n"
+      ],
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(1) ; OUT(1)\nOUT(1)\n",
+      "candidate_token_match": false
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH <x> => PROBE <x> ; PROBE <x>\n#xcommand FOUR <x> => BOTH <x> ; BOTH <x>\nFOUR alpha\n",
+      "baseline": [
+        0,
+        "OUT(alpha \n BOTH alpha \n PROBE alpha \n BOTH alpha)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(alpha)\nOUT(alpha)\nOUT(alpha)\nOUT(alpha)\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(alpha) ; OUT(alpha) ; OUT(alpha) ; OUT(alpha)\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH <x> => PROBE <x> ; PROBE <x>\nBOTH alpha\n",
+      "baseline": [
+        0,
+        "OUT(alpha \n PROBE alpha)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(alpha)\nOUT(alpha)\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(alpha) ; OUT(alpha)\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH <x> => PROBE <x> ; UNKNOWN <x>\nBOTH alpha\n",
+      "baseline": [
+        0,
+        "OUT(alpha \n UNKNOWN alpha)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(alpha)\nUNKNOWN alpha\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(alpha) ; UNKNOWN alpha\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH <x> => UNKNOWN <x> ; PROBE <x>\nBOTH alpha\n",
+      "baseline": [
+        0,
+        "UNKNOWN alpha \n PROBE alpha\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "UNKNOWN alpha\nOUT(alpha)\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\n\nUNKNOWN alpha ; OUT(alpha)\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand BOTH => PROBE \"a;b\" ; PROBE \"c;d\"\nBOTH\n",
+      "baseline": [
+        0,
+        "OUT(\"a;b\" \n PROBE \"c;d\")\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(\"a;b\")\nOUT(\"c;d\")\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(\"a;b\") ; OUT(\"c;d\")\n",
+      "candidate_token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<x>)\n#xcommand FACTORY => #xcommand INNER => OUT(1)\n#xcommand BOTH => FACTORY ; INNER\nBOTH\nINNER\n",
+      "baseline": [
+        0,
+        "FACTORY \n INNER\nINNER\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(1)\nOUT(1)\n",
+        ""
+      ],
+      "reference_exit": 0,
+      "reference_output": "\n\n\n OUT(1)\nOUT(1)\n",
+      "candidate_token_match": true
+    }
+  ]
+}

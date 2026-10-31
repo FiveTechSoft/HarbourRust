@@ -1,0 +1,154 @@
+--- a/src/pp.rs
++++ b/src/pp.rs
+@@ -34,7 +34,8 @@
+ pub struct Pp {
+     pub defs: HashMap<String, Def>, // key: exact name (macro names are case-sensitive)
+     pub cmds: Vec<Cmd>,             // #command / #xcommand / #translate rules, in order
+-    call_rules: Vec<Cmd>, // call-form translations, distinct from #define
++    call_rules: Vec<Cmd>,
++    next_rule_id:u64, // call-form translations, distinct from #define
+     pub incdirs: Vec<String>,
+     pub end_lines: Vec<usize>, // emitted statement -> final source line (ProcLine)
+     pub origins: Vec<(String, usize)>, // emitted line -> original path/line (diagnostics)
+@@ -43,6 +44,7 @@
+ // A command rule: pattern tokens (literal words or <param>) => result template.
+ // Scoped F3a: no optional [...] clauses, no <x,...> lists, no match markers.
+ pub struct Cmd {
++    rule_id:u64,
+     pattern: Vec<String>, // tokens; "<name>" marks a capture
+     result: String,
+     translation: bool, // non-call translate retains identity/order alongside commands
+@@ -81,7 +83,7 @@
+             params: vec!["symbol".to_string()], funclike: true,
+             body: "( ( symbol ) )".to_string(), dup: 1,
+         });
+-        Pp { defs, cmds: Vec::new(), call_rules: Vec::new(), incdirs, origins: Vec::new(), end_lines: Vec::new() }
++        Pp { defs, cmds: Vec::new(), call_rules: Vec::new(), next_rule_id:1, incdirs, origins: Vec::new(), end_lines: Vec::new() }
+     }
+ }
+
+@@ -656,7 +658,7 @@
+     validate_markers(&pattern, line)?;
+     let result = arg[arrow+2..].trim().to_string();
+     validate_result_markers(&pattern, &result, line, true)?;
+-    pp.cmds.push(Cmd { group_plan:group_plan::Plan::parse(&pattern), pattern, result, translation: false, restricted_exact: dir.starts_with('X') });
++    let rule_id=pp.next_rule_id;pp.next_rule_id+=1;pp.cmds.push(Cmd {rule_id, group_plan:group_plan::Plan::parse(&pattern), pattern, result, translation: false, restricted_exact: dir.starts_with('X') });
+     Ok(true)
+ }
+
+@@ -1165,7 +1167,7 @@
+         for (group,part) in pieces{
+             let marker_ids:Vec<usize>=plan.markers.iter().enumerate().filter(|(_, (name,_))|[format!("<{}>",name),format!("#<{}>",name),format!("<({})>",name),format!("<\"{}\">",name),format!("<.{}.>",name),format!("<-{}->",name)].iter().any(|needle|!stringify_positions(part,needle).is_empty())).map(|(id,_)|id).collect();
+             let iterations=match plan.result_iterations(&matched,&marker_ids,group){Ok(it)=>it,Err("repeated result marker outside associated group")=>return Ok(None),Err(e)=>return Err(e.into())};
+-            let flat=Cmd{group_plan:None,pattern:atom_pattern.clone(),result:part.into(),translation:false,restricted_exact:c.restricted_exact};
++            let flat=Cmd{rule_id:c.rule_id,group_plan:None,pattern:atom_pattern.clone(),result:part.into(),translation:false,restricted_exact:c.restricted_exact};
+             for it in iterations{
+                 let mut caps=vec![Capture::empty();plan.markers.len()];
+                 for (id,(start,end)) in it.captures{caps[id]=Capture::from_tokens(&tokens[start..end]);}
+@@ -1177,7 +1179,7 @@
+     };
+     Some(work().map_err(|e|format!("line {}: {}",line,e)))
+ }
+-fn apply_commands(line: &str, cmds: &[Cmd], calls: &[Cmd], fixed_enabled: bool, line_no: usize) -> Result<Option<String>, String> {
++fn apply_commands(line: &str, cmds: &[Cmd], calls: &[Cmd], fixed_enabled: bool, line_no: usize) -> Result<Option<(String,u64)>, String> {
+     let src = source_tokens(line);
+     if src.is_empty() { return Ok(None); }
+     // Harbour picks the MOST SPECIFIC matching rule (most literal words),
+@@ -1211,10 +1213,10 @@
+         }
+     }
+     if let Some((_, ci)) = best {
+-        if let Some(result)=best_group{return result;}
++        if let Some(result)=best_group{return result.map(|value|value.map(|text|(text,cmds[ci].rule_id)));}
+         let c = &cmds[ci];
+         let caps = best_caps;
+-        return render_command(c, &caps, line, &src, line_no).map(Some);
++        return render_command(c, &caps, line, &src, line_no).map(|text|Some((text,c.rule_id)));
+     }
+     // A shared first keyword is not a rule match. Harbour leaves the
+     // original statement for the parser when no complete pattern matches.
+@@ -1668,17 +1670,30 @@
+         let t = raw.trim_start();
+         if !t.starts_with('#') {
+             if emitting {
+-                for statement in split_statements(t) {
++                let mut pending:std::collections::VecDeque<(String,usize,Vec<u64>)>=split_statements(t).into_iter().map(|s|(s.to_string(),0,Vec::new())).collect();
++                let mut rescan_budget=10000usize;let mut emitted_bytes=0usize;
++                'work: while let Some((statement,inherited_depth,mut provenance))=pending.pop_front() {
++                    if rescan_budget==0{return Err(format!("line {}: command rescan budget exceeded",line));}rescan_budget-=1;
+                     // Match each source statement separately. Expansion can
+                     // itself emit separators; split again only after expansion.
+                     let mut cur = statement.trim().to_string();
+                     let fixed_enabled = expand(&cur,&pp.defs,line).map(|expanded|expanded == cur).unwrap_or(false);
+-                    let mut depth = 0usize;
++                    let mut depth = inherited_depth;
+                     loop {
+-                        if cur.trim_start().starts_with('#') { break; }
++                        let directive=cur.trim_start().to_ascii_uppercase();
++                        if directive.starts_with("#COMMAND ")||directive.starts_with("#XCOMMAND "){break;}
++                        let parts=split_statements(&cur);
++                        if parts.len()>1{
++                            if pending.len()+parts.len()>10000{return Err(format!("line {}: command rescan queue exceeded",line));}
++                            for part in parts.into_iter().rev(){pending.push_front((part.to_string(),depth,provenance.clone()));}
++                            continue 'work;
++                        }
++                        if cur.trim_start().starts_with('#'){break;}
+                         if fixed_enabled { cur = expand_fixed_translations(&cur,&pp.cmds,&pp.call_rules,line)?; }
+                         match apply_commands(&cur, &pp.cmds, &pp.call_rules, fixed_enabled, line)? {
+-                            Some(x) => {
++                            Some((x,rule_id)) => {
++                                provenance.push(rule_id);
++                                if x.len()>1_048_576{return Err(format!("line {}: command output limit exceeded",line));}
+                                 depth += 1;
+                                 if depth > 16 { return Err(format!("line {}: command expansion too deep (recursive command?)", line)); }
+                                 cur = x;
+@@ -1709,7 +1724,12 @@
+                                 None => (pending, None),
+                             };
+                             if !register_command(part, pp, line)? {
+-                                return Err(format!("line {}: generated directive outside command/xcommand scope", line));
++                                let rest=part.trim().strip_prefix('#').unwrap_or("").trim_start();
++                                let end=rest.find(char::is_whitespace).unwrap_or(rest.len());
++                                let (directive,arg)=(&rest[..end].to_ascii_uppercase(),rest[end..].trim());
++                                if directive=="UNDEF"{pp.defs.remove(arg);}
++                                else if directive=="DEFINE"{let(name,params,body,funclike)=parse_define(arg,line)?;pp.defs.insert(name,Def{params,funclike,body,dup:1});}
++                                else{return Err(format!("line {}: generated directive outside command/xcommand scope", line));}
+                             }
+                             if let Some(next) = rest { pending = next; } else { break; }
+                         }
+@@ -1722,6 +1742,8 @@
+                             pp.origins.push((path.to_string(), line));
+                             pp.end_lines.push(li + 1);
+                         }
++                        emitted_bytes=emitted_bytes.checked_add(part.len()).ok_or_else(||format!("line {}: command output limit exceeded",line))?;
++                        if emitted_bytes>1_048_576{return Err(format!("line {}: command output limit exceeded",line));}
+                         out.push_str(part);
+                         out.push('\n');
+                     }
+@@ -1752,7 +1774,7 @@
+                     validate_markers(&pattern, line)?;
+                     let result = arg[arrow + 2..].trim().to_string();
+                     validate_result_markers(&pattern, &result, line, false)?;
+-                    pp.cmds.push(Cmd { group_plan:group_plan::Plan::parse(&pattern), pattern, result, translation: false, restricted_exact: dir.starts_with('X') });
++                    let rule_id=pp.next_rule_id;pp.next_rule_id+=1;pp.cmds.push(Cmd {rule_id, group_plan:group_plan::Plan::parse(&pattern), pattern, result, translation: false, restricted_exact: dir.starts_with('X') });
+                 }
+             }
+             "TRANSLATE" | "XTRANSLATE" => {
+@@ -1767,7 +1789,7 @@
+                             let pattern = cmd_tokens(pat);
+                             validate_markers(&pattern, line)?;
+                             validate_result_markers(&pattern, &result, line, true)?;
+-                            pp.call_rules.push(Cmd { group_plan:group_plan::Plan::parse(&pattern), pattern, result, translation: false, restricted_exact: dir.starts_with('X') });
++                            let rule_id=pp.next_rule_id;pp.next_rule_id+=1;pp.call_rules.push(Cmd {rule_id, group_plan:group_plan::Plan::parse(&pattern), pattern, result, translation: false, restricted_exact: dir.starts_with('X') });
+                         }
+                         // Non-call form: statement-start rule, same machinery
+                         // as #command (probes b19-b21: Harbour applies it at
+@@ -1782,7 +1804,7 @@
+                             }
+                             validate_markers(&pattern, line)?;
+                             validate_result_markers(&pattern, &result, line, false)?;
+-                            pp.cmds.push(Cmd { group_plan:group_plan::Plan::parse(&pattern), pattern, result, translation: true, restricted_exact: dir.starts_with('X') });
++                            let rule_id=pp.next_rule_id;pp.next_rule_id+=1;pp.cmds.push(Cmd {rule_id, group_plan:group_plan::Plan::parse(&pattern), pattern, result, translation: true, restricted_exact: dir.starts_with('X') });
+                         }
+                     }
+                 }

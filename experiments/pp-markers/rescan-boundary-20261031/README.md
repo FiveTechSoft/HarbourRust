@@ -74,3 +74,27 @@ rejection without phase/runtime evidence and a clearly admitted new contract.
 
 No queue variant is installed in src/. Provenance, stable rule identity,
 output-size budget, all directive scope guards and full gates remain open.
+
+## Identity/provenance experiment, still inactive
+
+QUEUE-IDENTITY-INACTIVE.patch adds monotonic IDs allocated on registration (not
+vector positions), with per-work-item rule provenance carried to child items.
+It does not use those IDs as a suppression set. Queue10000, depth16 and per-
+replacement/per-source-statement emitted output1MiB limits are explicit. Latest
+rebuilt candidate again has0first-diagnostic/exit deltas across268x4originals.
+No real-header compatibility is inferred from unchanged diagnostics.
+
+Full default battery was run against this temporary compiler: every expectation
+passes except old t1143 generated-DEFINE scope rejection. It now passes pp and
+fails at no-functions parser phase instead. This intentional boundary change is
+not called green, and the test expectation is not changed. LLVM suite and original
+runtime checks have not been run on this queue candidate. Production source and
+published full-gate counts remain the flags closure.
+
+22 exact pp output/exit deltas against the current flags compiler are preserved.
+Most are oracle-correct sequence changes or whitespace normalization. One old
+comma-list fused-capture result remains wrong in both versions, though its spaces
+change; do not label that token match. Generated UNCOMMAND still becomes an
+explicit unsupported-directive error despite Harbour accepting the probe. Its
+scope and phase need an admission contract before enabling this queue, together
+with generated-DEFINE runtime/temporal witnesses and old rejection migration.
