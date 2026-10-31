@@ -1,0 +1,1325 @@
+{
+  "scope": "132own optional-prefix cases;match presence is not output equivalence",
+  "rows": [
+    {
+      "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE \n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT()\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT()\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha)\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha) beta\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha),beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha),beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha KEY beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha) KEY beta\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE KEY alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(KEY) alpha beta\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE alpha TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha) TAIL rest\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE alpha END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha) END rest\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE alpha beta TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha) beta TAIL\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (a + b) TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT((a + b)) TAIL\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE TAIL rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(TAIL) rest\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT(<x>)\nPROBE alpha beta END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha) beta END rest\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<x>] => HIT(<x>)\nPROBE \n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT()\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT()\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<x>] => HIT(<x>)\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha)\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<x>] => HIT(<x>)\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha beta)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<x>] => HIT(<x>)\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha),beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha , beta)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<x>] => HIT(<x>)\nPROBE alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha KEY beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha KEY beta)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<x>] => HIT(<x>)\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE KEY alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(KEY alpha beta)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<x>] => HIT(<x>)\nPROBE alpha TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha TAIL rest)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<x>] => HIT(<x>)\nPROBE alpha END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha END rest)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<x>] => HIT(<x>)\nPROBE alpha beta TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha beta TAIL)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<x>] => HIT(<x>)\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (a + b) TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(( a + b ) TAIL)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<x>] => HIT(<x>)\nPROBE TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE TAIL rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(TAIL rest)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<x>] => HIT(<x>)\nPROBE alpha beta END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha beta END rest)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<!x!>] => HIT(<x>)\nPROBE \n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT()\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT()\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<!x!>] => HIT(<x>)\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha)\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<!x!>] => HIT(<x>)\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha beta)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<!x!>] => HIT(<x>)\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha),beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,beta\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<!x!>] => HIT(<x>)\nPROBE alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha KEY beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha KEY beta)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<!x!>] => HIT(<x>)\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE KEY alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(KEY alpha beta)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<!x!>] => HIT(<x>)\nPROBE alpha TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha TAIL rest)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<!x!>] => HIT(<x>)\nPROBE alpha END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha END rest)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<!x!>] => HIT(<x>)\nPROBE alpha beta TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha beta TAIL)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<!x!>] => HIT(<x>)\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() (a + b) TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (a + b) TAIL\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<!x!>] => HIT(<x>)\nPROBE TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE TAIL rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(TAIL rest)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<!x!>] => HIT(<x>)\nPROBE alpha beta END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha beta END rest)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE \n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha KEY beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha KEY beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE KEY alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE KEY alpha beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE alpha TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha) rest\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE alpha END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha END rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE alpha beta TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha beta TAIL\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (a + b) TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT((a + b))\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE TAIL rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE TAIL rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] TAIL => HIT(<x>)\nPROBE alpha beta END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha beta END rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<x>] TAIL => HIT(<x>)\nPROBE \n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<x>] TAIL => HIT(<x>)\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<x>] TAIL => HIT(<x>)\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<x>] TAIL => HIT(<x>)\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<x>] TAIL => HIT(<x>)\nPROBE alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha KEY beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha KEY beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<x>] TAIL => HIT(<x>)\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE KEY alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE KEY alpha beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<x>] TAIL => HIT(<x>)\nPROBE alpha TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha) rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL rest\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<x>] TAIL => HIT(<x>)\nPROBE alpha END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha END rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<x>] TAIL => HIT(<x>)\nPROBE alpha beta TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha beta TAIL\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<x>] TAIL => HIT(<x>)\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((a + b))\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (a + b) TAIL\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<x>] TAIL => HIT(<x>)\nPROBE TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE TAIL rest\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<x>] TAIL => HIT(<x>)\nPROBE alpha beta END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha beta END rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE \n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT()\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT()\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() alpha\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() alpha beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha,beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() alpha,beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha KEY beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() alpha KEY beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha) beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha) beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE alpha TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha TAIL rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() alpha TAIL rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE alpha END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() alpha END rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE alpha beta TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha beta TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() alpha beta TAIL\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() (a + b) TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() (a + b) TAIL\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() TAIL rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() TAIL rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT(<x>)\nPROBE alpha beta END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha beta END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() alpha beta END rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> KEY] => HIT(<x>)\nPROBE \n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT()\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT()\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> KEY] => HIT(<x>)\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() alpha\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> KEY] => HIT(<x>)\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() alpha beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> KEY] => HIT(<x>)\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha,beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() alpha,beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> KEY] => HIT(<x>)\nPROBE alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha) beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha) beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> KEY] => HIT(<x>)\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() KEY alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() KEY alpha beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> KEY] => HIT(<x>)\nPROBE alpha TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha TAIL rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() alpha TAIL rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> KEY] => HIT(<x>)\nPROBE alpha END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() alpha END rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> KEY] => HIT(<x>)\nPROBE alpha beta TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha beta TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() alpha beta TAIL\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> KEY] => HIT(<x>)\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() (a + b) TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() (a + b) TAIL\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> KEY] => HIT(<x>)\nPROBE TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() TAIL rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() TAIL rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> KEY] => HIT(<x>)\nPROBE alpha beta END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha beta END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() alpha beta END rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT(<x>)\nPROBE \n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT()\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT()\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT(<x>)\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT() alpha\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT(<x>)\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha)\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT(<x>)\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha,beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT(<x>)\nPROBE alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha) beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT(<x>)\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(KEY) beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(KEY)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT(<x>)\nPROBE alpha TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha) rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT(<x>)\nPROBE alpha END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha) rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT(<x>)\nPROBE alpha beta TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha) TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT(<x>)\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((a + b))\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT((a + b))\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT(<x>)\nPROBE TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(TAIL)\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(TAIL)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT(<x>)\nPROBE alpha beta END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] [TAIL] => HIT(<x>)\nPROBE \n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT()\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT()\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] [TAIL] => HIT(<x>)\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha)\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] [TAIL] => HIT(<x>)\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha) beta\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] [TAIL] => HIT(<x>)\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha),beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha),beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] [TAIL] => HIT(<x>)\nPROBE alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha KEY beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha) KEY beta\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] [TAIL] => HIT(<x>)\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE KEY alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(KEY) alpha beta\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] [TAIL] => HIT(<x>)\nPROBE alpha TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha) rest\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] [TAIL] => HIT(<x>)\nPROBE alpha END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha) END rest\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] [TAIL] => HIT(<x>)\nPROBE alpha beta TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha) beta TAIL\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] [TAIL] => HIT(<x>)\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((a + b))\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT((a + b))\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] [TAIL] => HIT(<x>)\nPROBE TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(rest)\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(TAIL) rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] [TAIL] => HIT(<x>)\nPROBE alpha beta END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha) beta END rest\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] END => HIT(<x>)\nPROBE \n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] END => HIT(<x>)\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] END => HIT(<x>)\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] END => HIT(<x>)\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] END => HIT(<x>)\nPROBE alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha KEY beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha KEY beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] END => HIT(<x>)\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE KEY alpha beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE KEY alpha beta\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] END => HIT(<x>)\nPROBE alpha TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha TAIL rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha TAIL rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] END => HIT(<x>)\nPROBE alpha END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha) rest\n",
+      "own_error": "",
+      "same_match_presence": false
+    },
+    {
+      "source": "#translate PROBE [<(x)>] END => HIT(<x>)\nPROBE alpha beta TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha beta TAIL\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] END => HIT(<x>)\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (a + b) TAIL\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE (a + b) TAIL\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] END => HIT(<x>)\nPROBE TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE TAIL rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE TAIL rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE [<(x)>] END => HIT(<x>)\nPROBE alpha beta END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta END rest\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha beta END rest\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE <(x)> [<y>] => HIT(<x>)\nPROBE \n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE <(x)> [<y>] => HIT(<x>)\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha)\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE <(x)> [<y>] => HIT(<x>)\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha)\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE <(x)> [<y>] => HIT(<x>)\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha),beta\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE <(x)> [<y>] => HIT(<x>)\nPROBE alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha)\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE <(x)> [<y>] => HIT(<x>)\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(KEY)\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(KEY)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE <(x)> [<y>] => HIT(<x>)\nPROBE alpha TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha)\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE <(x)> [<y>] => HIT(<x>)\nPROBE alpha END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha)\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE <(x)> [<y>] => HIT(<x>)\nPROBE alpha beta TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha)\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE <(x)> [<y>] => HIT(<x>)\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((a + b))\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT((a + b))\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE <(x)> [<y>] => HIT(<x>)\nPROBE TAIL rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(TAIL)\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(TAIL)\n",
+      "own_error": "",
+      "same_match_presence": true
+    },
+    {
+      "source": "#translate PROBE <(x)> [<y>] => HIT(<x>)\nPROBE alpha beta END rest\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(alpha)\n",
+      "error": "",
+      "own_exit": 0,
+      "own_output": "HIT(alpha)\n",
+      "own_error": "",
+      "same_match_presence": true
+    }
+  ]
+}

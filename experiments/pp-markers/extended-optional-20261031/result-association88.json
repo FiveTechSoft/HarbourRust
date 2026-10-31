@@ -1,0 +1,533 @@
+{
+  "scope": "88own optional repeat observations;not implementation passes",
+  "rows": [
+    {
+      "source": "#command PROBE [<(x)>] => HIT([(<x>)])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha))\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([(<x>)])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha)(beta))\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([(<x>)])\nPROBE alpha beta gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha)(beta)(gamma))\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([(<x>)])\nPROBE alpha beta gamma delta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha)(beta)(gamma)(delta))\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([(<x>)])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,beta\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([(<x>)])\nPROBE KEY alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((KEY)(alpha)(KEY)(beta))\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([(<x>)])\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((KEY)(alpha)(beta))\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([(<x>)])\nPROBE (a + b) (c + d)\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(((a + b) (c + d)))\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([(<x>)])\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(((a + b))(TAIL))\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([(<x>)])\nPROBE 1 2\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((1)(2))\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([(<x>)])\nPROBE 1+2 3+4\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((1+2)(3+4))\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([#<x>])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"alpha\")\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([#<x>])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"alpha\"\"beta\")\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([#<x>])\nPROBE alpha beta gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"alpha\"\"beta\"\"gamma\")\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([#<x>])\nPROBE alpha beta gamma delta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"alpha\"\"beta\"\"gamma\"\"delta\")\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([#<x>])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,beta\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([#<x>])\nPROBE KEY alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"KEY\"\"alpha\"\"KEY\"\"beta\")\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([#<x>])\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"KEY\"\"alpha\"\"beta\")\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([#<x>])\nPROBE (a + b) (c + d)\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"(a + b) (c + d)\")\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([#<x>])\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"(a + b)\"\"TAIL\")\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([#<x>])\nPROBE 1 2\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"1\"\"2\")\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)>] => HIT([#<x>])\nPROBE 1+2 3+4\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"1+2\"\"3+4\")\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE alpha beta gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta gamma\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE alpha beta gamma delta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta gamma delta\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,beta\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE KEY alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha)(beta))\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE KEY alpha beta\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE (a + b) (c + d)\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (a + b) (c + d)\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (a + b) TAIL\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE 1 2\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE 1 2\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE 1+2 3+4\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE 1+2 3+4\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha,beta))\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE alpha beta gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta gamma\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE alpha beta gamma delta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha,beta)(gamma,delta))\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,beta\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE KEY alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((KEY,alpha)(KEY,beta))\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE KEY alpha beta\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE (a + b) (c + d)\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE (a + b) (c + d)\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(((a + b),TAIL))\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE 1 2\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((1,2))\n",
+      "error": ""
+    },
+    {
+      "source": "#command PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE 1+2 3+4\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((1+2,3+4))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([(<x>)])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([(<x>)])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha)(beta))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([(<x>)])\nPROBE alpha beta gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha)(beta)(gamma))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([(<x>)])\nPROBE alpha beta gamma delta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha)(beta)(gamma)(delta))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([(<x>)])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha)),beta\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([(<x>)])\nPROBE KEY alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((KEY)(alpha)(KEY)(beta))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([(<x>)])\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((KEY)(alpha)(beta))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([(<x>)])\nPROBE (a + b) (c + d)\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(((a + b) (c + d)))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([(<x>)])\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(((a + b))(TAIL))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([(<x>)])\nPROBE 1 2\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((1)(2))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([(<x>)])\nPROBE 1+2 3+4\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((1+2)(3+4))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([#<x>])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"alpha\")\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([#<x>])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"alpha\"\"beta\")\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([#<x>])\nPROBE alpha beta gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"alpha\"\"beta\"\"gamma\")\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([#<x>])\nPROBE alpha beta gamma delta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"alpha\"\"beta\"\"gamma\"\"delta\")\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([#<x>])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"alpha\"),beta\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([#<x>])\nPROBE KEY alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"KEY\"\"alpha\"\"KEY\"\"beta\")\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([#<x>])\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"KEY\"\"alpha\"\"beta\")\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([#<x>])\nPROBE (a + b) (c + d)\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"(a + b) (c + d)\")\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([#<x>])\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"(a + b)\"\"TAIL\")\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([#<x>])\nPROBE 1 2\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"1\"\"2\")\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)>] => HIT([#<x>])\nPROBE 1+2 3+4\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(\"1+2\"\"3+4\")\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha beta\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE alpha beta gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha beta gamma\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE alpha beta gamma delta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha beta gamma delta\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha,beta\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE KEY alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha)(beta))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha)) beta\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE (a + b) (c + d)\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() (a + b) (c + d)\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() (a + b) TAIL\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE 1 2\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() 1 2\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [KEY <(x)>] => HIT([(<x>)])\nPROBE 1+2 3+4\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() 1+2 3+4\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha,beta))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE alpha beta gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha,beta)) gamma\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE alpha beta gamma delta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((alpha,beta)(gamma,delta))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE alpha,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() alpha,beta\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE KEY alpha KEY beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((KEY,alpha)(KEY,beta))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE KEY alpha beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((KEY,alpha)) beta\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE (a + b) (c + d)\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT() (a + b) (c + d)\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE (a + b) TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT(((a + b),TAIL))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE 1 2\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((1,2))\n",
+      "error": ""
+    },
+    {
+      "source": "#translate PROBE [<(x)> <y>] => HIT([(<x>,<y>)])\nPROBE 1+2 3+4\n",
+      "reference_exit": 0,
+      "reference_output": "\nHIT((1+2,3+4))\n",
+      "error": ""
+    }
+  ]
+}

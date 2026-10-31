@@ -981,3 +981,12 @@ parenthesized observations retain complete source and reference outputs.
 
 The negative t93 spaced arithmetic expectation stays valid. Its old comment
 was broader than the actual contract. No runtime,ABI,debugger or main change.
+
+## Optional result association is part of matching
+
+220more own observations in `extended-optional-20261031/` show the result group
+changes whether repeated optional captures match. [<(x)>]with a single<x>result
+does not match alpha beta,while result[(<x>)]emits(alpha)(beta). This rules out
+a blanket full-input gate as a fix for v3optional false accepts. Per-group,
+per-iteration source captures and result association are required. Evidence is
+replayed exactly against pinned hbpp;these are not new production support cases.
