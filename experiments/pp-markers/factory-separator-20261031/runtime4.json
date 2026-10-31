@@ -1,0 +1,88 @@
+{
+  "rows": [
+    {
+      "file": "t1315_pp_factory_separator.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1\n         7",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1316_pp_factory_separator.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1\n         7",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1317_pp_factory_separator.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1\n         7",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1318_pp_factory_separator.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         1\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         1\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         1\n         7",
+          "stderr": ""
+        }
+      }
+    }
+  ]
+}

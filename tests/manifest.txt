@@ -1310,3 +1310,7 @@ pos tests/t1311_pp_continuation_separator.hb \n         1\n         2
 pos tests/t1312_pp_continuation_separator.hb \n         1\n         2
 pos tests/t1313_pp_continuation_separator.hb \n         1
 pos tests/t1314_pp_continuation_separator.hb \na;b\nc;d
+pos tests/t1315_pp_factory_separator.hb \n         1\n         7
+pos tests/t1316_pp_factory_separator.hb \n         1\n         7
+pos tests/t1317_pp_factory_separator.hb \n         1\n         7
+pos tests/t1318_pp_factory_separator.hb \n         1\n         7

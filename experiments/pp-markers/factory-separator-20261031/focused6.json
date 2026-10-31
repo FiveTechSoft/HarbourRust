@@ -1,0 +1,64 @@
+{
+  "rows": [
+    {
+      "semis": ";",
+      "multiline": false,
+      "source": "#xcommand MAKE => #xcommand FIRST \\<x: FUNCTION,PROCEDURE> => OUT(\\<x>) ; #xcommand SECOND \\<x> => OUT(\\<x>)\nMAKE\nFIRST FUNCTION\nSECOND 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(FUNCTION)\nOUT(7)\n",
+      "own_exit": 0,
+      "own_output": "OUT(FUNCTION)\nOUT(7)\n",
+      "own_error": ""
+    },
+    {
+      "semis": ";",
+      "multiline": true,
+      "source": "#xcommand MAKE => #xcommand FIRST \\<x: FUNCTION,PROCEDURE> => OUT(\\<x>) ;\n #xcommand SECOND \\<x> => OUT(\\<x>)\nMAKE\nFIRST FUNCTION\nSECOND 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(FUNCTION) #xcommand SECOND FUNCTION => OUT(FUNCTION)\nSECOND 7\n",
+      "own_exit": 0,
+      "own_output": "OUT(FUNCTION)  #xcommand SECOND FUNCTION => OUT(FUNCTION)\nSECOND 7\n",
+      "own_error": ""
+    },
+    {
+      "semis": ";;",
+      "multiline": false,
+      "source": "#xcommand MAKE => #xcommand FIRST \\<x: FUNCTION,PROCEDURE> => OUT(\\<x>) ;; #xcommand SECOND \\<x> => OUT(\\<x>)\nMAKE\nFIRST FUNCTION\nSECOND 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n;\nOUT(FUNCTION)\nOUT(7)\n",
+      "own_exit": 0,
+      "own_output": "OUT(FUNCTION)\n\nOUT(7)\n",
+      "own_error": ""
+    },
+    {
+      "semis": ";;",
+      "multiline": true,
+      "source": "#xcommand MAKE => #xcommand FIRST \\<x: FUNCTION,PROCEDURE> => OUT(\\<x>) ;;\n #xcommand SECOND \\<x> => OUT(\\<x>)\nMAKE\nFIRST FUNCTION\nSECOND 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(FUNCTION)\nOUT(7)\n",
+      "own_exit": 0,
+      "own_output": "OUT(FUNCTION)\nOUT(7)\n",
+      "own_error": ""
+    },
+    {
+      "semis": ";;;",
+      "multiline": false,
+      "source": "#xcommand MAKE => #xcommand FIRST \\<x: FUNCTION,PROCEDURE> => OUT(\\<x>) ;;; #xcommand SECOND \\<x> => OUT(\\<x>)\nMAKE\nFIRST FUNCTION\nSECOND 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n;;\nOUT(FUNCTION)\nOUT(7)\n",
+      "own_exit": 0,
+      "own_output": "OUT(FUNCTION)\n\n\nOUT(7)\n",
+      "own_error": ""
+    },
+    {
+      "semis": ";;;",
+      "multiline": true,
+      "source": "#xcommand MAKE => #xcommand FIRST \\<x: FUNCTION,PROCEDURE> => OUT(\\<x>) ;;;\n #xcommand SECOND \\<x> => OUT(\\<x>)\nMAKE\nFIRST FUNCTION\nSECOND 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n;\nOUT(FUNCTION)\nOUT(7)\n",
+      "own_exit": 0,
+      "own_output": "OUT(FUNCTION)\n\nOUT(7)\n",
+      "own_error": ""
+    }
+  ]
+}

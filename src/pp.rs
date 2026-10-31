@@ -1745,8 +1745,8 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                         }
                     }
                     // Generated command factories can emit several definitions.
-                    // Only a doubled separator followed by another command
-                    // directive ends this definition; ordinary body semicolons
+                    // A separator followed by another command directive ends
+                    // this definition; ordinary body semicolons
                     // belong to the newly registered rule.
                     if cur.trim_start().starts_with('#') {
                         let mut pending = cur.as_str();
@@ -1758,12 +1758,12 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                                     return None;
                                 }
                                 if ch == '\'' || ch == '"' { quote = Some(ch); return None; }
-                                if !pending[i..].starts_with(";;") { return None; }
-                                let tail = pending[i+2..].trim_start().to_ascii_uppercase();
+                                if ch != ';' { return None; }
+                                let tail = pending[i+1..].trim_start().to_ascii_uppercase();
                                 if tail.starts_with("#COMMAND ") || tail.starts_with("#XCOMMAND ") { Some(i) } else { None }
                             });
                             let (part, rest) = match split {
-                                Some(i) => (&pending[..i], Some(&pending[i+2..])),
+                                Some(i) => (&pending[..i], Some(&pending[i+1..])),
                                 None => (pending, None),
                             };
                             if !register_command(part, pp, line)? {
