@@ -1155,11 +1155,14 @@ fn render_command(c: &Cmd, caps: &[Capture], source: &str, tokens: &[String], li
                             else if group > 0 && !(token.starts_with('<') && token.ends_with('>')) { grouped_literal = true; }
                         }
                         if grouped_literal { return Err(format!("line {}: stringify with literal-bearing optional groups is outside this increment", line_no)); }
-                        if inner.starts_with('!') || inner.starts_with('*') || inner.starts_with('(') || inner.contains(':') {
+                        // Identifier, literal-restricted and rest-of-line captures retain
+                        // source identities just like plain captures. Disjoint captures
+                        // remain checked by stringify_capture below.
+                        if inner.starts_with('(') {
                             return Err(format!("line {}: stringify of non-plain capture is outside this increment", line_no));
                         }
                         let spans = source_spans(source, tokens).map_err(|e| format!("line {}: {}", line_no, e))?;
-                        let value = if normal && inner.contains(",...") { stringify_list(&caps[pi],source,&spans).map_err(|e|format!("line {}: {}",line_no,e))? } else if normal && caps[pi].is_empty() { String::new() } else { stringify_capture(&caps[pi], source, &spans).map_err(|e| format!("line {}: {}", line_no, e))? };
+                        let value = if normal && (inner.contains(",...") || inner.starts_with('*')) { stringify_list(&caps[pi],source,&spans).map_err(|e|format!("line {}: {}",line_no,e))? } else if normal && caps[pi].is_empty() { String::new() } else { stringify_capture(&caps[pi], source, &spans).map_err(|e| format!("line {}: {}", line_no, e))? };
                         // A resulting literal is data;later marker substitutions
                         // must not inspect marker-like text inside it.
                         let token = (0xe000..=0xf8ff).filter_map(char::from_u32).find(|ch|

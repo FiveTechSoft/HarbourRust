@@ -1,0 +1,270 @@
+[
+  {
+    "file": "tests/rddtest/cdxcl52.prg",
+    "before": {
+      "file": "tests/rddtest/cdxcl52.prg",
+      "sha256": "3c109e79cafd415b17ad7206f0883bf05298c0d4d67f62efc6712a63039b496a",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rddtest/cdxcl52.prg",
+      "sha256": "3c109e79cafd415b17ad7206f0883bf05298c0d4d67f62efc6712a63039b496a",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/rddtest/cdxcl53.prg",
+    "before": {
+      "file": "tests/rddtest/cdxcl53.prg",
+      "sha256": "ccbd108afa3bd29837265c2c10aa3fcf248805bb7f20e7b26e831c41982ec81d",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rddtest/cdxcl53.prg",
+      "sha256": "ccbd108afa3bd29837265c2c10aa3fcf248805bb7f20e7b26e831c41982ec81d",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/rddtest/ntxcl52.prg",
+    "before": {
+      "file": "tests/rddtest/ntxcl52.prg",
+      "sha256": "6dc1db2b584edddbfb257e6a79e0de93d643f5a77ff4dd2f022801d4d3c24c22",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rddtest/ntxcl52.prg",
+      "sha256": "6dc1db2b584edddbfb257e6a79e0de93d643f5a77ff4dd2f022801d4d3c24c22",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      }
+    }
+  },
+  {
+    "file": "tests/rddtest/ntxcl53.prg",
+    "before": {
+      "file": "tests/rddtest/ntxcl53.prg",
+      "sha256": "38d8aaab15ecddd3f146db9bd7ff653d1bbf268dc8047a1367bf4c57ff8a68a0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 14: stringify of non-plain capture is outside this increment"
+        ]
+      }
+    },
+    "after": {
+      "file": "tests/rddtest/ntxcl53.prg",
+      "sha256": "38d8aaab15ecddd3f146db9bd7ff653d1bbf268dc8047a1367bf4c57ff8a68a0",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)"
+        ]
+      }
+    }
+  }
+]

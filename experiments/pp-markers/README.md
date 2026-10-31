@@ -791,3 +791,27 @@ Harbour output.23of23affected first diagnostics are restored exactly versus
 checks and12escape stringify checks still pass.1227default/478LLVM checks pass
 fresh locally;14reviewed originals remain freshly exact. This corrects a real
 regression;earlier baed678must not be described as regression-free.
+
+## Stringify of existing identifier/restricted/wildcard captures
+
+The existing source-span stringify path now admits <!x!>, literal-restricted
+<x:alpha,beta>, and rest-of-line <*x*> captures. Normal <"x"> on a wildcard
+quotes comma-separated top-level elements, like the existing list marker path;
+#<x> still quotes the whole capture. Source spacing and quoted data are retained.
+168own probes check matched and preserved nonmatching inputs, optional capture
+presence/absence, command/Xcommand/translate/Xtranslate, and wildcard lists with
+nested delimiters and empty elements. These are token/content checks, not runtime
+programs. Five additional console programs have fresh byte-exact Harbour output.
+
+Original audit changes only four RDD wrappers: their first diagnostic moves from
+wildcard stringify to line300 unterminated dotted word. They are NOT accepted;
+RDD, static storage and native runtime contracts remain pending. Full acceptance
+stays21/15Linux20/14Windows.1232default/488LLVM checks pass freshly locally;
+14reviewed originals are freshly exact versus rebuilt Harbour.
+
+Separately recorded96characterization observations expose historical <(x)> gaps:
+it is treated as parenthesis-required and strips delimiters, unlike the measured
+Harbour captures. Those observations are not compatibility passes, and this
+increment does not change that marker or captured translation prefix matching.
+Literal-bearing optional stringify and repeated/disjoint captures remain outside
+the admitted contract. No classes/runtime/ABI/main change and no speed/size claim.

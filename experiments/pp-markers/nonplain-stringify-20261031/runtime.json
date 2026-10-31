@@ -1,0 +1,27 @@
+[
+  {
+    "file": "tests/t1228_pp_identifier_stringify.hb",
+    "stdout": "\nalpha_2 alpha_2",
+    "exact": true
+  },
+  {
+    "file": "tests/t1229_pp_restricted_stringify.hb",
+    "stdout": "\nBETA BETA",
+    "exact": true
+  },
+  {
+    "file": "tests/t1230_pp_wildcard_stringify.hb",
+    "stdout": "\nf(1,2), \"a  b\"",
+    "exact": true
+  },
+  {
+    "file": "tests/t1231_pp_wildcard_normal.hb",
+    "stdout": "\nf(1,2) \"a  b\"",
+    "exact": true
+  },
+  {
+    "file": "tests/t1232_pp_optional_marker_stringify.hb",
+    "stdout": "\nalpha alpha",
+    "exact": true
+  }
+]

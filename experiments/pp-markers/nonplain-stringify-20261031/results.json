@@ -1,0 +1,1013 @@
+{
+  "scope": "existing identifier/restricted/wildcard stringify;no parenthesis or repeated/disjoint claim",
+  "rows": [
+    {
+      "source": "#command PROBE <!x!> => OUT(#<x>)\nPROBE alpha\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#command PROBE <!x!> => OUT(#<x>)\nPROBE alpha_2\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha_2\")\n",
+      "own_output": "OUT(\"alpha_2\")\n"
+    },
+    {
+      "source": "#command PROBE <!x!> => OUT(#<x>)\nPROBE 123\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE 123\n",
+      "own_output": "PROBE 123\n"
+    },
+    {
+      "source": "#command PROBE <!x!> => OUT(<\"x\">)\nPROBE alpha\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#command PROBE <!x!> => OUT(<\"x\">)\nPROBE alpha_2\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha_2\")\n",
+      "own_output": "OUT(\"alpha_2\")\n"
+    },
+    {
+      "source": "#command PROBE <!x!> => OUT(<\"x\">)\nPROBE 123\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE 123\n",
+      "own_output": "PROBE 123\n"
+    },
+    {
+      "source": "#command PROBE <x:alpha,beta> => OUT(#<x>)\nPROBE alpha\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#command PROBE <x:alpha,beta> => OUT(#<x>)\nPROBE BETA\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"BETA\")\n",
+      "own_output": "OUT(\"BETA\")\n"
+    },
+    {
+      "source": "#command PROBE <x:alpha,beta> => OUT(#<x>)\nPROBE gamma\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE gamma\n",
+      "own_output": "PROBE gamma\n"
+    },
+    {
+      "source": "#command PROBE <x:alpha,beta> => OUT(<\"x\">)\nPROBE alpha\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#command PROBE <x:alpha,beta> => OUT(<\"x\">)\nPROBE BETA\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"BETA\")\n",
+      "own_output": "OUT(\"BETA\")\n"
+    },
+    {
+      "source": "#command PROBE <x:alpha,beta> => OUT(<\"x\">)\nPROBE gamma\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE gamma\n",
+      "own_output": "PROBE gamma\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(#<x>)\nPROBE alpha + beta\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha + beta\")\n",
+      "own_output": "OUT(\"alpha + beta\")\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(#<x>)\nPROBE \"a  b\"\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT('\"a  b\"')\n",
+      "own_output": "OUT('\"a  b\"')\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(#<x>)\nPROBE \n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE\n",
+      "own_output": "PROBE\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<\"x\">)\nPROBE alpha + beta\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha + beta\")\n",
+      "own_output": "OUT(\"alpha + beta\")\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<\"x\">)\nPROBE \"a  b\"\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT('\"a  b\"')\n",
+      "own_output": "OUT('\"a  b\"')\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<\"x\">)\nPROBE \n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE\n",
+      "own_output": "PROBE\n"
+    },
+    {
+      "source": "#command PROBE [<!x!>] => OUT(#<x>)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"\")\n",
+      "own_output": "OUT(\"\")\n"
+    },
+    {
+      "source": "#command PROBE [<!x!>] => OUT(#<x>)\nPROBE alpha\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#command PROBE [<!x!>] => OUT(<\"x\">)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT()\n",
+      "own_output": "OUT()\n"
+    },
+    {
+      "source": "#command PROBE [<!x!>] => OUT(<\"x\">)\nPROBE alpha\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#command PROBE [<x:alpha,beta>] => OUT(#<x>)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"\")\n",
+      "own_output": "OUT(\"\")\n"
+    },
+    {
+      "source": "#command PROBE [<x:alpha,beta>] => OUT(#<x>)\nPROBE BETA\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"BETA\")\n",
+      "own_output": "OUT(\"BETA\")\n"
+    },
+    {
+      "source": "#command PROBE [<x:alpha,beta>] => OUT(<\"x\">)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT()\n",
+      "own_output": "OUT()\n"
+    },
+    {
+      "source": "#command PROBE [<x:alpha,beta>] => OUT(<\"x\">)\nPROBE BETA\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"BETA\")\n",
+      "own_output": "OUT(\"BETA\")\n"
+    },
+    {
+      "source": "#command PROBE [<*x*>] => OUT(#<x>)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"\")\n",
+      "own_output": "OUT(\"\")\n"
+    },
+    {
+      "source": "#command PROBE [<*x*>] => OUT(#<x>)\nPROBE alpha+beta\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"alpha+beta\")\n",
+      "own_output": "OUT(\"alpha+beta\")\n"
+    },
+    {
+      "source": "#command PROBE [<*x*>] => OUT(<\"x\">)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT()\n",
+      "own_output": "OUT()\n"
+    },
+    {
+      "source": "#command PROBE [<*x*>] => OUT(<\"x\">)\nPROBE alpha+beta\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"alpha+beta\")\n",
+      "own_output": "OUT(\"alpha+beta\")\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(#<x>)\nPROBE alpha  +  beta\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"alpha  +  beta\")\n",
+      "own_output": "OUT(\"alpha  +  beta\")\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<\"x\">)\nPROBE alpha  +  beta\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"alpha  +  beta\")\n",
+      "own_output": "OUT(\"alpha  +  beta\")\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(#<x>)\nPROBE a[1,2] + b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a[1,2] + b\")\n",
+      "own_output": "OUT(\"a[1,2] + b\")\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<\"x\">)\nPROBE a[1,2] + b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a[1,2] + b\")\n",
+      "own_output": "OUT(\"a[1,2] + b\")\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(#<x>)\nPROBE f(1,2), \"a  b\"\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT('f(1,2), \"a  b\"')\n",
+      "own_output": "OUT('f(1,2), \"a  b\"')\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<\"x\">)\nPROBE f(1,2), \"a  b\"\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"f(1,2)\", '\"a  b\"')\n",
+      "own_output": "OUT(\"f(1,2)\", '\"a  b\"')\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(#<x>)\nPROBE a[1,2], b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a[1,2], b\")\n",
+      "own_output": "OUT(\"a[1,2], b\")\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<\"x\">)\nPROBE a[1,2], b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a[1,2]\", \"b\")\n",
+      "own_output": "OUT(\"a[1,2]\", \"b\")\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(#<x>)\nPROBE a,,b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a,,b\")\n",
+      "own_output": "OUT(\"a,,b\")\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<\"x\">)\nPROBE a,,b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a\",,\"b\")\n",
+      "own_output": "OUT(\"a\",,\"b\")\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(#<x>)\nPROBE ,a,\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\",a,\")\n",
+      "own_output": "OUT(\",a,\")\n"
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<\"x\">)\nPROBE ,a,\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(,\"a\",)\n",
+      "own_output": "OUT(,\"a\",)\n"
+    },
+    {
+      "source": "#xcommand PROBE <!x!> => OUT(#<x>)\nPROBE alpha\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <!x!> => OUT(#<x>)\nPROBE alpha_2\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha_2\")\n",
+      "own_output": "OUT(\"alpha_2\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <!x!> => OUT(#<x>)\nPROBE 123\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE 123\n",
+      "own_output": "PROBE 123\n"
+    },
+    {
+      "source": "#xcommand PROBE <!x!> => OUT(<\"x\">)\nPROBE alpha\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <!x!> => OUT(<\"x\">)\nPROBE alpha_2\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha_2\")\n",
+      "own_output": "OUT(\"alpha_2\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <!x!> => OUT(<\"x\">)\nPROBE 123\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE 123\n",
+      "own_output": "PROBE 123\n"
+    },
+    {
+      "source": "#xcommand PROBE <x:alpha,beta> => OUT(#<x>)\nPROBE alpha\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <x:alpha,beta> => OUT(#<x>)\nPROBE BETA\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"BETA\")\n",
+      "own_output": "OUT(\"BETA\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <x:alpha,beta> => OUT(#<x>)\nPROBE gamma\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE gamma\n",
+      "own_output": "PROBE gamma\n"
+    },
+    {
+      "source": "#xcommand PROBE <x:alpha,beta> => OUT(<\"x\">)\nPROBE alpha\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <x:alpha,beta> => OUT(<\"x\">)\nPROBE BETA\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"BETA\")\n",
+      "own_output": "OUT(\"BETA\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <x:alpha,beta> => OUT(<\"x\">)\nPROBE gamma\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE gamma\n",
+      "own_output": "PROBE gamma\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(#<x>)\nPROBE alpha + beta\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha + beta\")\n",
+      "own_output": "OUT(\"alpha + beta\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(#<x>)\nPROBE \"a  b\"\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT('\"a  b\"')\n",
+      "own_output": "OUT('\"a  b\"')\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(#<x>)\nPROBE \n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE\n",
+      "own_output": "PROBE\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<\"x\">)\nPROBE alpha + beta\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha + beta\")\n",
+      "own_output": "OUT(\"alpha + beta\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<\"x\">)\nPROBE \"a  b\"\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT('\"a  b\"')\n",
+      "own_output": "OUT('\"a  b\"')\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<\"x\">)\nPROBE \n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE\n",
+      "own_output": "PROBE\n"
+    },
+    {
+      "source": "#xcommand PROBE [<!x!>] => OUT(#<x>)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"\")\n",
+      "own_output": "OUT(\"\")\n"
+    },
+    {
+      "source": "#xcommand PROBE [<!x!>] => OUT(#<x>)\nPROBE alpha\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#xcommand PROBE [<!x!>] => OUT(<\"x\">)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT()\n",
+      "own_output": "OUT()\n"
+    },
+    {
+      "source": "#xcommand PROBE [<!x!>] => OUT(<\"x\">)\nPROBE alpha\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#xcommand PROBE [<x:alpha,beta>] => OUT(#<x>)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"\")\n",
+      "own_output": "OUT(\"\")\n"
+    },
+    {
+      "source": "#xcommand PROBE [<x:alpha,beta>] => OUT(#<x>)\nPROBE BETA\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"BETA\")\n",
+      "own_output": "OUT(\"BETA\")\n"
+    },
+    {
+      "source": "#xcommand PROBE [<x:alpha,beta>] => OUT(<\"x\">)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT()\n",
+      "own_output": "OUT()\n"
+    },
+    {
+      "source": "#xcommand PROBE [<x:alpha,beta>] => OUT(<\"x\">)\nPROBE BETA\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"BETA\")\n",
+      "own_output": "OUT(\"BETA\")\n"
+    },
+    {
+      "source": "#xcommand PROBE [<*x*>] => OUT(#<x>)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"\")\n",
+      "own_output": "OUT(\"\")\n"
+    },
+    {
+      "source": "#xcommand PROBE [<*x*>] => OUT(#<x>)\nPROBE alpha+beta\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"alpha+beta\")\n",
+      "own_output": "OUT(\"alpha+beta\")\n"
+    },
+    {
+      "source": "#xcommand PROBE [<*x*>] => OUT(<\"x\">)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT()\n",
+      "own_output": "OUT()\n"
+    },
+    {
+      "source": "#xcommand PROBE [<*x*>] => OUT(<\"x\">)\nPROBE alpha+beta\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"alpha+beta\")\n",
+      "own_output": "OUT(\"alpha+beta\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(#<x>)\nPROBE alpha  +  beta\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"alpha  +  beta\")\n",
+      "own_output": "OUT(\"alpha  +  beta\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<\"x\">)\nPROBE alpha  +  beta\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"alpha  +  beta\")\n",
+      "own_output": "OUT(\"alpha  +  beta\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(#<x>)\nPROBE a[1,2] + b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a[1,2] + b\")\n",
+      "own_output": "OUT(\"a[1,2] + b\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<\"x\">)\nPROBE a[1,2] + b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a[1,2] + b\")\n",
+      "own_output": "OUT(\"a[1,2] + b\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(#<x>)\nPROBE f(1,2), \"a  b\"\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT('f(1,2), \"a  b\"')\n",
+      "own_output": "OUT('f(1,2), \"a  b\"')\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<\"x\">)\nPROBE f(1,2), \"a  b\"\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"f(1,2)\", '\"a  b\"')\n",
+      "own_output": "OUT(\"f(1,2)\", '\"a  b\"')\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(#<x>)\nPROBE a[1,2], b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a[1,2], b\")\n",
+      "own_output": "OUT(\"a[1,2], b\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<\"x\">)\nPROBE a[1,2], b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a[1,2]\", \"b\")\n",
+      "own_output": "OUT(\"a[1,2]\", \"b\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(#<x>)\nPROBE a,,b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a,,b\")\n",
+      "own_output": "OUT(\"a,,b\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<\"x\">)\nPROBE a,,b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a\",,\"b\")\n",
+      "own_output": "OUT(\"a\",,\"b\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(#<x>)\nPROBE ,a,\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\",a,\")\n",
+      "own_output": "OUT(\",a,\")\n"
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<\"x\">)\nPROBE ,a,\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(,\"a\",)\n",
+      "own_output": "OUT(,\"a\",)\n"
+    },
+    {
+      "source": "#translate PROBE <!x!> => OUT(#<x>)\nPROBE alpha\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#translate PROBE <!x!> => OUT(#<x>)\nPROBE alpha_2\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha_2\")\n",
+      "own_output": "OUT(\"alpha_2\")\n"
+    },
+    {
+      "source": "#translate PROBE <!x!> => OUT(#<x>)\nPROBE 123\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE 123\n",
+      "own_output": "PROBE 123\n"
+    },
+    {
+      "source": "#translate PROBE <!x!> => OUT(<\"x\">)\nPROBE alpha\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#translate PROBE <!x!> => OUT(<\"x\">)\nPROBE alpha_2\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha_2\")\n",
+      "own_output": "OUT(\"alpha_2\")\n"
+    },
+    {
+      "source": "#translate PROBE <!x!> => OUT(<\"x\">)\nPROBE 123\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE 123\n",
+      "own_output": "PROBE 123\n"
+    },
+    {
+      "source": "#translate PROBE <x:alpha,beta> => OUT(#<x>)\nPROBE alpha\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#translate PROBE <x:alpha,beta> => OUT(#<x>)\nPROBE BETA\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"BETA\")\n",
+      "own_output": "OUT(\"BETA\")\n"
+    },
+    {
+      "source": "#translate PROBE <x:alpha,beta> => OUT(#<x>)\nPROBE gamma\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE gamma\n",
+      "own_output": "PROBE gamma\n"
+    },
+    {
+      "source": "#translate PROBE <x:alpha,beta> => OUT(<\"x\">)\nPROBE alpha\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#translate PROBE <x:alpha,beta> => OUT(<\"x\">)\nPROBE BETA\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"BETA\")\n",
+      "own_output": "OUT(\"BETA\")\n"
+    },
+    {
+      "source": "#translate PROBE <x:alpha,beta> => OUT(<\"x\">)\nPROBE gamma\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE gamma\n",
+      "own_output": "PROBE gamma\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(#<x>)\nPROBE alpha + beta\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha + beta\")\n",
+      "own_output": "OUT(\"alpha + beta\")\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(#<x>)\nPROBE \"a  b\"\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT('\"a  b\"')\n",
+      "own_output": "OUT('\"a  b\"')\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(#<x>)\nPROBE \n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE\n",
+      "own_output": "PROBE\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<\"x\">)\nPROBE alpha + beta\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha + beta\")\n",
+      "own_output": "OUT(\"alpha + beta\")\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<\"x\">)\nPROBE \"a  b\"\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT('\"a  b\"')\n",
+      "own_output": "OUT('\"a  b\"')\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<\"x\">)\nPROBE \n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE\n",
+      "own_output": "PROBE\n"
+    },
+    {
+      "source": "#translate PROBE [<!x!>] => OUT(#<x>)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"\")\n",
+      "own_output": "OUT(\"\")\n"
+    },
+    {
+      "source": "#translate PROBE [<!x!>] => OUT(#<x>)\nPROBE alpha\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#translate PROBE [<!x!>] => OUT(<\"x\">)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT()\n",
+      "own_output": "OUT()\n"
+    },
+    {
+      "source": "#translate PROBE [<!x!>] => OUT(<\"x\">)\nPROBE alpha\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#translate PROBE [<x:alpha,beta>] => OUT(#<x>)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"\")\n",
+      "own_output": "OUT(\"\")\n"
+    },
+    {
+      "source": "#translate PROBE [<x:alpha,beta>] => OUT(#<x>)\nPROBE BETA\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"BETA\")\n",
+      "own_output": "OUT(\"BETA\")\n"
+    },
+    {
+      "source": "#translate PROBE [<x:alpha,beta>] => OUT(<\"x\">)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT()\n",
+      "own_output": "OUT()\n"
+    },
+    {
+      "source": "#translate PROBE [<x:alpha,beta>] => OUT(<\"x\">)\nPROBE BETA\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"BETA\")\n",
+      "own_output": "OUT(\"BETA\")\n"
+    },
+    {
+      "source": "#translate PROBE [<*x*>] => OUT(#<x>)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"\")\n",
+      "own_output": "OUT(\"\")\n"
+    },
+    {
+      "source": "#translate PROBE [<*x*>] => OUT(#<x>)\nPROBE alpha+beta\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"alpha+beta\")\n",
+      "own_output": "OUT(\"alpha+beta\")\n"
+    },
+    {
+      "source": "#translate PROBE [<*x*>] => OUT(<\"x\">)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT()\n",
+      "own_output": "OUT()\n"
+    },
+    {
+      "source": "#translate PROBE [<*x*>] => OUT(<\"x\">)\nPROBE alpha+beta\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"alpha+beta\")\n",
+      "own_output": "OUT(\"alpha+beta\")\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(#<x>)\nPROBE alpha  +  beta\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"alpha  +  beta\")\n",
+      "own_output": "OUT(\"alpha  +  beta\")\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<\"x\">)\nPROBE alpha  +  beta\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"alpha  +  beta\")\n",
+      "own_output": "OUT(\"alpha  +  beta\")\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(#<x>)\nPROBE a[1,2] + b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a[1,2] + b\")\n",
+      "own_output": "OUT(\"a[1,2] + b\")\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<\"x\">)\nPROBE a[1,2] + b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a[1,2] + b\")\n",
+      "own_output": "OUT(\"a[1,2] + b\")\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(#<x>)\nPROBE f(1,2), \"a  b\"\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT('f(1,2), \"a  b\"')\n",
+      "own_output": "OUT('f(1,2), \"a  b\"')\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<\"x\">)\nPROBE f(1,2), \"a  b\"\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"f(1,2)\", '\"a  b\"')\n",
+      "own_output": "OUT(\"f(1,2)\", '\"a  b\"')\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(#<x>)\nPROBE a[1,2], b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a[1,2], b\")\n",
+      "own_output": "OUT(\"a[1,2], b\")\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<\"x\">)\nPROBE a[1,2], b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a[1,2]\", \"b\")\n",
+      "own_output": "OUT(\"a[1,2]\", \"b\")\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(#<x>)\nPROBE a,,b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a,,b\")\n",
+      "own_output": "OUT(\"a,,b\")\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<\"x\">)\nPROBE a,,b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a\",,\"b\")\n",
+      "own_output": "OUT(\"a\",,\"b\")\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(#<x>)\nPROBE ,a,\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\",a,\")\n",
+      "own_output": "OUT(\",a,\")\n"
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<\"x\">)\nPROBE ,a,\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(,\"a\",)\n",
+      "own_output": "OUT(,\"a\",)\n"
+    },
+    {
+      "source": "#xtranslate PROBE <!x!> => OUT(#<x>)\nPROBE alpha\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <!x!> => OUT(#<x>)\nPROBE alpha_2\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha_2\")\n",
+      "own_output": "OUT(\"alpha_2\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <!x!> => OUT(#<x>)\nPROBE 123\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE 123\n",
+      "own_output": "PROBE 123\n"
+    },
+    {
+      "source": "#xtranslate PROBE <!x!> => OUT(<\"x\">)\nPROBE alpha\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <!x!> => OUT(<\"x\">)\nPROBE alpha_2\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha_2\")\n",
+      "own_output": "OUT(\"alpha_2\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <!x!> => OUT(<\"x\">)\nPROBE 123\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE 123\n",
+      "own_output": "PROBE 123\n"
+    },
+    {
+      "source": "#xtranslate PROBE <x:alpha,beta> => OUT(#<x>)\nPROBE alpha\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <x:alpha,beta> => OUT(#<x>)\nPROBE BETA\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"BETA\")\n",
+      "own_output": "OUT(\"BETA\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <x:alpha,beta> => OUT(#<x>)\nPROBE gamma\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE gamma\n",
+      "own_output": "PROBE gamma\n"
+    },
+    {
+      "source": "#xtranslate PROBE <x:alpha,beta> => OUT(<\"x\">)\nPROBE alpha\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <x:alpha,beta> => OUT(<\"x\">)\nPROBE BETA\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"BETA\")\n",
+      "own_output": "OUT(\"BETA\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <x:alpha,beta> => OUT(<\"x\">)\nPROBE gamma\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE gamma\n",
+      "own_output": "PROBE gamma\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(#<x>)\nPROBE alpha + beta\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha + beta\")\n",
+      "own_output": "OUT(\"alpha + beta\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(#<x>)\nPROBE \"a  b\"\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT('\"a  b\"')\n",
+      "own_output": "OUT('\"a  b\"')\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(#<x>)\nPROBE \n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE\n",
+      "own_output": "PROBE\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<\"x\">)\nPROBE alpha + beta\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT(\"alpha + beta\")\n",
+      "own_output": "OUT(\"alpha + beta\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<\"x\">)\nPROBE \"a  b\"\n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nOUT('\"a  b\"')\n",
+      "own_output": "OUT('\"a  b\"')\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<\"x\">)\nPROBE \n",
+      "kind": "matched or preserved nonmatch",
+      "reference_output": "\nPROBE\n",
+      "own_output": "PROBE\n"
+    },
+    {
+      "source": "#xtranslate PROBE [<!x!>] => OUT(#<x>)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"\")\n",
+      "own_output": "OUT(\"\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE [<!x!>] => OUT(#<x>)\nPROBE alpha\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE [<!x!>] => OUT(<\"x\">)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT()\n",
+      "own_output": "OUT()\n"
+    },
+    {
+      "source": "#xtranslate PROBE [<!x!>] => OUT(<\"x\">)\nPROBE alpha\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_output": "OUT(\"alpha\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE [<x:alpha,beta>] => OUT(#<x>)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"\")\n",
+      "own_output": "OUT(\"\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE [<x:alpha,beta>] => OUT(#<x>)\nPROBE BETA\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"BETA\")\n",
+      "own_output": "OUT(\"BETA\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE [<x:alpha,beta>] => OUT(<\"x\">)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT()\n",
+      "own_output": "OUT()\n"
+    },
+    {
+      "source": "#xtranslate PROBE [<x:alpha,beta>] => OUT(<\"x\">)\nPROBE BETA\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"BETA\")\n",
+      "own_output": "OUT(\"BETA\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE [<*x*>] => OUT(#<x>)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"\")\n",
+      "own_output": "OUT(\"\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE [<*x*>] => OUT(#<x>)\nPROBE alpha+beta\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"alpha+beta\")\n",
+      "own_output": "OUT(\"alpha+beta\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE [<*x*>] => OUT(<\"x\">)\nPROBE\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT()\n",
+      "own_output": "OUT()\n"
+    },
+    {
+      "source": "#xtranslate PROBE [<*x*>] => OUT(<\"x\">)\nPROBE alpha+beta\n",
+      "kind": "optional capture present or absent",
+      "reference_output": "\nOUT(\"alpha+beta\")\n",
+      "own_output": "OUT(\"alpha+beta\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(#<x>)\nPROBE alpha  +  beta\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"alpha  +  beta\")\n",
+      "own_output": "OUT(\"alpha  +  beta\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<\"x\">)\nPROBE alpha  +  beta\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"alpha  +  beta\")\n",
+      "own_output": "OUT(\"alpha  +  beta\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(#<x>)\nPROBE a[1,2] + b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a[1,2] + b\")\n",
+      "own_output": "OUT(\"a[1,2] + b\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<\"x\">)\nPROBE a[1,2] + b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a[1,2] + b\")\n",
+      "own_output": "OUT(\"a[1,2] + b\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(#<x>)\nPROBE f(1,2), \"a  b\"\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT('f(1,2), \"a  b\"')\n",
+      "own_output": "OUT('f(1,2), \"a  b\"')\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<\"x\">)\nPROBE f(1,2), \"a  b\"\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"f(1,2)\", '\"a  b\"')\n",
+      "own_output": "OUT(\"f(1,2)\", '\"a  b\"')\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(#<x>)\nPROBE a[1,2], b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a[1,2], b\")\n",
+      "own_output": "OUT(\"a[1,2], b\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<\"x\">)\nPROBE a[1,2], b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a[1,2]\", \"b\")\n",
+      "own_output": "OUT(\"a[1,2]\", \"b\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(#<x>)\nPROBE a,,b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a,,b\")\n",
+      "own_output": "OUT(\"a,,b\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<\"x\">)\nPROBE a,,b\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\"a\",,\"b\")\n",
+      "own_output": "OUT(\"a\",,\"b\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(#<x>)\nPROBE ,a,\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(\",a,\")\n",
+      "own_output": "OUT(\",a,\")\n"
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<\"x\">)\nPROBE ,a,\n",
+      "kind": "wildcard exact interior spacing",
+      "reference_output": "\nOUT(,\"a\",)\n",
+      "own_output": "OUT(,\"a\",)\n"
+    }
+  ]
+}
