@@ -1385,3 +1385,14 @@ neg tests/t1388_cb_neg_param_kind.hb must be an integer-returning codeblock, got
 neg tests/t1389_cb_neg_iif_blocks.hb `iif` branches must share a scalar type
 posx tests/t1390_eval_nil_arith.hb 1 \ntestType error: NIL used as a number\nCallstack:\n  at main (tests/t1390_eval_nil_arith.hb:3)
 pos tests/t1391_block_reassign_samekind.hb \n        22\nB\nNIL\nC\nNIL
+pos tests/t1392_str_default.hb \n[        42]\n[        -7]\n[         0]\n[ 123456789]
+pos tests/t1393_str_width.hb \n[ 42]\n[        42]\n[  -7]\n[        42]\n[        42]\n[5]
+pos tests/t1394_str_asterisk.hb \n[***]\n[****]\n[*********]
+pos tests/t1395_str_big.hb \n[ 1234567890]\n[ 99999999999]\n[ 9223372036854775807]\n[         -1234567890]\n[        -99999999999]\n[-9223372036854775807]
+pos tests/t1396_hb_ntos.hb \n[42]\n[-7]\n[0]\n[123456789012345]
+pos tests/t1397_padr.hb \n[ab   ]\n[abc]\n[    ]\n[]\n[]\n      1000
+pos tests/t1398_str_temp.hb \n[ab   ]\n[         4]\n[4]\n[xy    ]
+neg tests/t1399_str_neg_float.hb expects integer argument(s) in this increment
+neg tests/t1400_str_neg_string.hb expects integer argument(s) in this increment
+neg tests/t1401_padr_neg_arity.hb `padr` takes 2 arguments in this increment
+neg tests/t1402_hb_ntos_neg_arity.hb `hb_ntos` takes one argument in this increment

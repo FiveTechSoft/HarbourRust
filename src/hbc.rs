@@ -1457,7 +1457,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -3180,6 +3180,15 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
+                if is_builtin(id,"str") || is_builtin(id,"hb_ntos") {
+                    for a in args { pin_vars(f,a,Ty::I64,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
+                    return Ok(());
+                }
+                if is_builtin(id,"padr") {
+                    if !args.is_empty() { pin_vars(f,&args[0],Ty::Str,pin,n)?; walk(f,&args[0],sigs,lit,pin,printed,n)?; }
+                    for a in &args[1..] { pin_vars(f,a,Ty::I64,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
+                    return Ok(());
+                }
                 if is_builtin(id, "chr") {
                     for a in args { pin_vars(f, a, Ty::I64, pin, n)?; walk(f, a, sigs, lit, pin, printed, n)?; }
                     return Ok(());
@@ -4451,6 +4460,36 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.len()!=1 { return Err(format!("line {}: `{}` takes one argument in this increment",n,id)); }
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
                     return Err(format!("line {}: `{}` expects a string",n,id));
+                }
+                return Ok(Ty::StrOwn);
+            }
+            // Str/hb_ntos (achoice piece; oracles str-probes s1-s5): integer
+            // to decimal text. Width/default/asterisk rules are oracle-pinned
+            // in the runtime helpers; decimals stay out (no float formatting
+            // semantics assumed - a float argument keeps a named rejection).
+            if is_builtin(id,"str") {
+                if args.len()<1 || args.len()>2 { return Err(format!("line {}: `str` takes 1 or 2 arguments in this increment",n)); }
+                for a in args {
+                    if type_expr(a,env,sigs,n)? != Ty::I64 {
+                        return Err(format!("line {}: `str` expects integer argument(s) in this increment (no decimal formatting yet)",n));
+                    }
+                }
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_ntos") {
+                if args.len()!=1 { return Err(format!("line {}: `hb_ntos` takes one argument in this increment",n)); }
+                if type_expr(&args[0],env,sigs,n)? != Ty::I64 {
+                    return Err(format!("line {}: `hb_ntos` expects an integer argument in this increment (no decimal formatting yet)",n));
+                }
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"padr") {
+                if args.len()!=2 { return Err(format!("line {}: `padr` takes 2 arguments in this increment",n)); }
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
+                    return Err(format!("line {}: `padr` expects a string as its first argument",n));
+                }
+                if type_expr(&args[1],env,sigs,n)? != Ty::I64 {
+                    return Err(format!("line {}: `padr` expects an integer width",n));
                 }
                 return Ok(Ty::StrOwn);
             }
@@ -6988,6 +7027,15 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 apply_moves(&args[0],env,sigs,false);
                 return;
             }
+            if is_builtin(id,"padr") {
+                apply_moves(&args[0],env,sigs,false);
+                apply_moves(&args[1],env,sigs,false);
+                return;
+            }
+            if is_builtin(id,"str") || is_builtin(id,"hb_ntos") {
+                for a in args { apply_moves(a,env,sigs,false); }
+                return;
+            }
             if is_output_call(id) {
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
@@ -7543,6 +7591,33 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 }
                 _ => unreachable!("checked"),
             }
+        }
+        Expr::Call(id,args) if is_builtin(id,"str") || is_builtin(id,"hb_ntos") => {
+            cg_expr(&args[0],env,sigs,strs,out,target);
+            if is_builtin(id,"hb_ntos") {
+                out.push_str("    mov %rax, %rdi\n    call hbc_str_int_plain\n");
+            } else {
+                out.push_str("    mov %rax, %rdi\n");
+                if args.len()==2 {
+                    out.push_str("    sub $16, %rsp\n    mov %rdi, (%rsp)\n");
+                    cg_expr(&args[1],env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, %rsi\n    mov (%rsp), %rdi\n    add $16, %rsp\n");
+                } else {
+                    out.push_str("    xor %esi, %esi\n");
+                }
+                out.push_str("    call hbc_str_int_field\n");
+            }
+        }
+        Expr::Call(id,args) if is_builtin(id,"padr") => {
+            let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            cg_expr(&args[1],env,sigs,strs,out,target);
+            out.push_str("    mov %rax, %rdx\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_padr\n");
+            if temp {
+                out.push_str("    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n");
+            }
+            out.push_str("    add $32, %rsp\n");
         }
         Expr::Call(id,args) if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) => {
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
@@ -8957,7 +9032,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "asc") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
             if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
-            if is_builtin(id, "chr") { return Ty::StrOwn; }
+            if is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
                 // Branch unification mirrors the checker (oracle hk321).
@@ -13339,6 +13414,202 @@ hbc_sfree:
     pop %rbx
     pop %rbp
     ret
+# hbc_itoa_buf: rdi = signed i64, rsi = dest scratch (>= 25 bytes).
+# Writes the decimal representation (optional '-' + digits) at dest.
+# Returns rdx = byte length. Clobbers rax, rcx, r8-r11 only.
+# i64 MIN works: neg keeps 2^63 as unsigned and div handles it.
+hbc_itoa_buf:
+    mov %rdi, %rax
+    xor %r9d, %r9d
+    test %rax, %rax
+    jns 1f
+    mov $1, %r9d
+    neg %rax
+1:  lea 24(%rsi), %r11
+    mov %r11, %r10
+    mov $10, %r8
+2:  xor %edx, %edx
+    div %r8
+    add $48, %dl
+    dec %r10
+    mov %dl, (%r10)
+    test %rax, %rax
+    jnz 2b
+    test %r9d, %r9d
+    jz 3f
+    dec %r10
+    movb $45, (%r10)
+3:  mov %r11, %rdx
+    sub %r10, %rdx
+    xor %ecx, %ecx
+4:  cmp %rdx, %rcx
+    jae 5f
+    movzbl (%r10,%rcx), %eax
+    mov %al, (%rsi,%rcx)
+    inc %rcx
+    jmp 4b
+5:  ret
+
+# hbc_str_int_plain: rdi = i64 -> rax/rdx owned string of plain decimal
+# digits (hb_ntos; oracle str-probes s4: LTrim(Str(n)) shape).
+hbc_str_int_plain:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    lea -32(%rbp), %rsi
+    call hbc_itoa_buf
+    lea -32(%rbp), %rdi
+    mov %rdx, %rsi
+    call hbc_strcpy
+    leave
+    ret
+
+# hbc_str_int_field: rdi = i64 value, rsi = explicit width (<=0 means no
+# explicit width) -> rax/rdx owned string, Harbour Str(n[,w]) integer
+# semantics (oracles str-probes s1-s5):
+#   explicit w>0: out is w bytes; digits right-aligned, space-padded;
+#     when digits(+sign) exceed w the field is w asterisks.
+#   no/invalid width (w<=0): non-negative -> max(10, digits+1);
+#     negative -> 10 when digits+sign fit in 10, else 20.
+# Decimals are out of scope (checker rejects non-integer arguments).
+hbc_str_int_field:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    sub $40, %rsp
+    mov %rdi, %r12
+    mov %rsi, %r13
+    lea -56(%rbp), %rsi
+    call hbc_itoa_buf
+    mov %rdx, %rbx
+    test %r13, %r13
+    jg .Lsif_explicit
+    test %r12, %r12
+    js .Lsif_negdef
+    lea 1(%rbx), %rax
+    cmp $10, %rax
+    jge .Lsif_have
+    mov $10, %eax
+    jmp .Lsif_have
+.Lsif_negdef:
+    mov $10, %eax
+    cmp $10, %rbx
+    jle .Lsif_have
+    mov $20, %eax
+.Lsif_have:
+    jmp .Lsif_havew
+.Lsif_explicit:
+    mov %r13, %rax
+.Lsif_havew:
+    mov %rax, -32(%rbp)
+    test %r13, %r13
+    jle .Lsif_norm
+    cmp %r13, %rbx
+    jle .Lsif_norm
+    lea 16(%r13), %rdi
+    call hbc_alloc
+    mov %r13, (%rax)
+    mov %r13, 8(%rax)
+    lea 16(%rax), %rcx
+    xor %r8d, %r8d
+.Lsif_ast:
+    cmp %r13, %r8
+    jae .Lsif_astd
+    movb $42, (%rcx,%r8)
+    inc %r8
+    jmp .Lsif_ast
+.Lsif_astd:
+    mov %rcx, %rax
+    mov %r13, %rdx
+    jmp .Lsif_done
+.Lsif_norm:
+    mov -32(%rbp), %rdi
+    add $16, %rdi
+    call hbc_alloc
+    mov -32(%rbp), %r13
+    mov %r13, (%rax)
+    mov %r13, 8(%rax)
+    lea 16(%rax), %rcx
+    mov %r13, %r9
+    sub %rbx, %r9
+    xor %r8d, %r8d
+.Lsif_sp:
+    cmp %r9, %r8
+    jae .Lsif_cp
+    movb $32, (%rcx,%r8)
+    inc %r8
+    jmp .Lsif_sp
+.Lsif_cp:
+    lea (%rcx,%r9), %rdi
+    xor %r8d, %r8d
+.Lsif_cp1:
+    cmp %rbx, %r8
+    jae .Lsif_cpd
+    movzbl -56(%rbp,%r8), %eax
+    mov %al, (%rdi,%r8)
+    inc %r8
+    jmp .Lsif_cp1
+.Lsif_cpd:
+    mov %rcx, %rax
+    mov %r13, %rdx
+.Lsif_done:
+    add $40, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_padr: rdi/rsi = source bytes/len, rdx = width -> rax/rdx owned.
+# Harbour PadR (oracle str-probes s3): width<=0 -> empty string;
+# len>width -> truncated to width; len<width -> space-padded on the
+# right to width; len==width -> plain copy.
+hbc_padr:
+    test %rdx, %rdx
+    jg 1f
+    xor %esi, %esi
+    jmp hbc_strcpy
+1:  cmp %rdx, %rsi
+    jl 2f
+    mov %rdx, %rsi
+    jmp hbc_strcpy
+2:  push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    sub $8, %rsp
+    mov %rdi, %r12
+    mov %rsi, %r13
+    mov %rdx, %rbx
+    lea 16(%rdx), %rdi
+    call hbc_alloc
+    mov %rbx, (%rax)
+    mov %rbx, 8(%rax)
+    lea 16(%rax), %rcx
+    xor %r8d, %r8d
+3:  cmp %r13, %r8
+    jae 5f
+    movzbl (%r12,%r8), %r9d
+    mov %r9b, (%rcx,%r8)
+    inc %r8
+    jmp 3b
+5:  cmp %rbx, %r8
+    jae 6f
+    movb $32, (%rcx,%r8)
+    inc %r8
+    jmp 5b
+6:  mov %rcx, %rax
+    mov %rbx, %rdx
+    add $8, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
 ";
 
 fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> String {
