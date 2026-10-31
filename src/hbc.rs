@@ -2421,7 +2421,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     *i += 1;
                     continue;
                 }
-                if toks.len() >= 4 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen && is_builtin(&id, "aeval") {
+                if toks.len() >= 3 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen && is_builtin(&id, "aeval") {
                     // AEval(a, b [, nStart [, nCount]]) as a STATEMENT
                     // (original arreval; oracle ae1-ae4): ascending loop
                     // over the array, block evaluated with (element,
@@ -2456,19 +2456,35 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     let aname = if let Expr::Var(v) = &args[0] { v.clone() } else {
                         return Err(format!("line {}: `aeval` expects an array variable as its first argument in this increment", n));
                     };
-                    let sname = format!("__aeval_s_{}", n);
-                    let iname = format!("__aeval_i_{}", n);
-                    let bname = format!("__aeval_b_{}", n);
+                    let sname = format!("__aeval#s#{}", n);
+                    let srname = format!("__aeval#sr#{}", n);
+                    let crname = format!("__aeval#cr#{}", n);
+                    let iname = format!("__aeval#i#{}", n);
+                    let bname = format!("__aeval#b#{}", n);
                     let len_e = Expr::Call("len".to_string(), vec![Expr::Var(aname.clone())]);
+                    // Verifier blocker on 573d572: start/count with side
+                    // effects must evaluate EXACTLY ONCE and in argument
+                    // order (Harbour: mark(1), mark(2), then elements) -
+                    // raw args go into temporaries first; the iif
+                    // condition/branch and the end expression only read
+                    // the temporaries (guardrail t1417).
                     let start_e = if args.len() >= 3 {
-                        Expr::Call("iif".to_string(), vec![Expr::Cmp(CmpOp::EqEq, Box::new(args[2].clone()), Box::new(Expr::Int("0".to_string()))), Expr::Int("1".to_string()), args[2].clone()])
+                        Expr::Call("iif".to_string(), vec![Expr::Cmp(CmpOp::EqEq, Box::new(Expr::Var(srname.clone())), Box::new(Expr::Int("0".to_string()))), Expr::Int("1".to_string()), Expr::Var(srname.clone())])
                     } else { Expr::Int("1".to_string()) };
                     let end_e = if args.len() >= 4 {
-                        let cnt = args[3].clone();
+                        let cnt = Expr::Var(crname.clone());
+                        let s_v = Expr::Var(sname.clone());
+                        // Overflow-safe end (verifier: start 2 + count
+                        // i64::MAX must visit to the end, not wrap):
+                        // never compute s+count-1 unclamped; clamp the
+                        // count against len-s+1 FIRST, then add.
+                        let remaining = Expr::Bin('+', Box::new(Expr::Bin('-', Box::new(len_e.clone()), Box::new(s_v.clone()))), Box::new(Expr::Int("1".to_string())));
+                        let clamped = Expr::Call("min".to_string(), vec![cnt.clone(), remaining]);
+                        let summed = Expr::Bin('-', Box::new(Expr::Bin('+', Box::new(s_v.clone()), Box::new(clamped))), Box::new(Expr::Int("1".to_string())));
                         Expr::Call("iif".to_string(), vec![
                             Expr::Cmp(CmpOp::Lt, Box::new(cnt.clone()), Box::new(Expr::Int("0".to_string()))),
                             len_e.clone(),
-                            Expr::Call("min".to_string(), vec![len_e.clone(), Expr::Bin('-', Box::new(Expr::Bin('+', Box::new(Expr::Var(sname.clone())), Box::new(cnt))), Box::new(Expr::Int("1".to_string())))]),
+                            Expr::Call("min".to_string(), vec![len_e.clone(), summed]),
                         ])
                     } else { len_e };
                     let loop_body = vec![Stmt::CallStmt(n, Expr::Call("eval".to_string(), vec![
@@ -2477,7 +2493,13 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         Expr::Var(iname.clone()),
                     ]))];
                     out.push(Stmt::Local(n, bname.clone(), args[1].clone()));
+                    if args.len() >= 3 {
+                        out.push(Stmt::Local(n, srname.clone(), args[2].clone()));
+                    }
                     out.push(Stmt::Local(n, sname.clone(), start_e));
+                    if args.len() >= 4 {
+                        out.push(Stmt::Local(n, crname.clone(), args[3].clone()));
+                    }
                     out.push(Stmt::If(n, Expr::Cmp(CmpOp::Ge, Box::new(Expr::Var(sname.clone())), Box::new(Expr::Int("1".to_string()))),
                         vec![Stmt::For(n, iname.clone(), Expr::Var(sname.clone()), end_e, 1, loop_body)], vec![]));
                     *i += 1;

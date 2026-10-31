@@ -1410,3 +1410,8 @@ pos tests/t1413_aeval_bounds.hb \nstart3:\n        30          3\n        40    
 neg tests/t1414_aeval_neg_onearg.hb `aeval` takes 2 to 4 arguments
 neg tests/t1415_aeval_neg_nonvar.hb `aeval` expects an array variable
 neg tests/t1416_aeval_neg_expr.hb unknown function `aeval`
+pos tests/t1417_aeval_single_eval.hb \n         1\n         2\n        10          1\n        20          2
+pos tests/t1418_aeval_args_even_when_empty.hb \n        -1\n         2\ndone
+pos tests/t1419_aeval_end_overflow.hb \n        20          2\n        30          3
+pos tests/t1420_aeval_hygienic_temps.hb \n        10          1\n        20          2\n        99
+neg tests/t1421_aeval_neg_zeroarg.hb `aeval` takes 2 to 4 arguments
