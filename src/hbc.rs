@@ -1457,7 +1457,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -2418,6 +2418,68 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         exprs.push(parse_expr_tokens(inner[start..].to_vec(), n)?);
                     }
                     out.push(Stmt::Print(n, exprs, false));
+                    *i += 1;
+                    continue;
+                }
+                if toks.len() >= 4 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen && is_builtin(&id, "aeval") {
+                    // AEval(a, b [, nStart [, nCount]]) as a STATEMENT
+                    // (original arreval; oracle ae1-ae4): ascending loop
+                    // over the array, block evaluated with (element,
+                    // index); the array it returns is discarded at
+                    // statement level. Bounds pinned by oracle runs:
+                    // nStart absent or 0 -> 1; nStart < 0 -> no
+                    // iterations; nCount absent or negative -> to the
+                    // end; nCount 0 -> none. Element-typed block args
+                    // keep the existing increment limit ("codeblock
+                    // arguments must be integers").
+                    let inner = &toks[2..toks.len() - 1];
+                    let mut args: Vec<Expr> = Vec::new();
+                    if !inner.is_empty() {
+                        let mut depth = 0i32;
+                        let mut start = 0usize;
+                        for (k, t) in inner.iter().enumerate() {
+                            match t {
+                                Tok::LParen | Tok::LBracket | Tok::LBrace => depth += 1,
+                                Tok::RParen | Tok::RBracket | Tok::RBrace => depth -= 1,
+                                Tok::Comma if depth == 0 => {
+                                    args.push(parse_expr_tokens(inner[start..k].to_vec(), n)?);
+                                    start = k + 1;
+                                }
+                                _ => {}
+                            }
+                        }
+                        args.push(parse_expr_tokens(inner[start..].to_vec(), n)?);
+                    }
+                    if args.len() < 2 || args.len() > 4 {
+                        return Err(format!("line {}: `aeval` takes 2 to 4 arguments (array, block [, start [, count]])", n));
+                    }
+                    let aname = if let Expr::Var(v) = &args[0] { v.clone() } else {
+                        return Err(format!("line {}: `aeval` expects an array variable as its first argument in this increment", n));
+                    };
+                    let sname = format!("__aeval_s_{}", n);
+                    let iname = format!("__aeval_i_{}", n);
+                    let bname = format!("__aeval_b_{}", n);
+                    let len_e = Expr::Call("len".to_string(), vec![Expr::Var(aname.clone())]);
+                    let start_e = if args.len() >= 3 {
+                        Expr::Call("iif".to_string(), vec![Expr::Cmp(CmpOp::EqEq, Box::new(args[2].clone()), Box::new(Expr::Int("0".to_string()))), Expr::Int("1".to_string()), args[2].clone()])
+                    } else { Expr::Int("1".to_string()) };
+                    let end_e = if args.len() >= 4 {
+                        let cnt = args[3].clone();
+                        Expr::Call("iif".to_string(), vec![
+                            Expr::Cmp(CmpOp::Lt, Box::new(cnt.clone()), Box::new(Expr::Int("0".to_string()))),
+                            len_e.clone(),
+                            Expr::Call("min".to_string(), vec![len_e.clone(), Expr::Bin('-', Box::new(Expr::Bin('+', Box::new(Expr::Var(sname.clone())), Box::new(cnt))), Box::new(Expr::Int("1".to_string())))]),
+                        ])
+                    } else { len_e };
+                    let loop_body = vec![Stmt::CallStmt(n, Expr::Call("eval".to_string(), vec![
+                        Expr::Var(bname.clone()),
+                        Expr::Index(aname.clone(), Box::new(Expr::Var(iname.clone()))),
+                        Expr::Var(iname.clone()),
+                    ]))];
+                    out.push(Stmt::Local(n, bname.clone(), args[1].clone()));
+                    out.push(Stmt::Local(n, sname.clone(), start_e));
+                    out.push(Stmt::If(n, Expr::Cmp(CmpOp::Ge, Box::new(Expr::Var(sname.clone())), Box::new(Expr::Int("1".to_string()))),
+                        vec![Stmt::For(n, iname.clone(), Expr::Var(sname.clone()), end_e, 1, loop_body)], vec![]));
                     *i += 1;
                     continue;
                 }

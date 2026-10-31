@@ -1405,3 +1405,8 @@ neg tests/t1408_replicate_neg_onearg.hb `replicate` takes 2 arguments in this in
 neg tests/t1409_replicate_neg_intfirst.hb `replicate` expects a string as its first argument
 neg tests/t1410_replicate_neg_strcount.hb `replicate` expects an integer count
 pos tests/t1411_replicate_userfn_arg.hb \nababab
+pos tests/t1412_aeval_basic.hb \n       100          1\n       200          2\n       300          3
+pos tests/t1413_aeval_bounds.hb \nstart3:\n        30          3\n        40          4\n        50          5\nstart2count2:\n        20          2\n        30          3\nstart9:\nstart0:\n        10          1\n        20          2\n        30          3\n        40          4\n        50          5\ncount0:\nnegstart:\nnegcount:\n        20          2\n        30          3\n        40          4\n        50          5\nend
+neg tests/t1414_aeval_neg_onearg.hb `aeval` takes 2 to 4 arguments
+neg tests/t1415_aeval_neg_nonvar.hb `aeval` expects an array variable
+neg tests/t1416_aeval_neg_expr.hb unknown function `aeval`
