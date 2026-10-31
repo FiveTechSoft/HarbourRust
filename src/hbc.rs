@@ -4311,6 +4311,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         match env.iter().rev().find(|x| x.name == *v) {
                             Some(x) if x.moved => return Err(format!("line {}: use of moved value `{}`", n, v)),
                             Some(x) => match x.ty {
+                                // ains P2 stage 1: hb_isarray over a Dyn
+                                // variable dispatches on the runtime tag
+                                // (6 or 8). hb_isnumeric stays unmeasured.
+                                Ty::Dyn if is_builtin(id, "hb_isarray") => {}
                                 Ty::Dyn => return Err(format!("line {}: `{}` over a Dyn variable is not measured in this PoC (cell reads stay in place: `{}`(a[i]))", n, id, id)),
                                 Ty::I64 | Ty::F64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn | Ty::AView | Ty::Arr(_) => {}
                                 _ => return Err(format!("line {}: `{}` over this variable type is not measured in this PoC", n, id)),
@@ -4359,6 +4363,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         // "A" (hk114, byte-measured via hk117 markers).
                         match env.iter().rev().find(|x| x.name == *v).map(|x| x.ty.clone()) {
                             Some(Ty::AView) | Some(Ty::DArr) | Some(Ty::DArrDyn) | Some(Ty::DArr2) | Some(Ty::DArrRef) | Some(Ty::DArrS) | Some(Ty::DArr4) | Some(Ty::Hash) => {}
+                            // ains P2 stage 1: ValType(a[i]) on a Dyn-held
+                            // array reads the cell tag at runtime (tag-8
+                            // guard in codegen).
+                            Some(Ty::Dyn) => {}
                             _ => return Err(format!("line {}: `ValType` over this array depth is not measured in this PoC", n)),
                         }
                     }
@@ -4496,6 +4504,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     // predates string len and Harbour's len is
                     // polymorphic) - named limitation, not silent.
                     Ty::Str | Ty::StrOwn => Ok(Ty::I64),
+                    // ains P2 stage 1: len of a Dyn VARIABLE dispatches on
+                    // the runtime tag (string or tag-8 array: length/count
+                    // at payload-8; anything else is hbc_len_error).
+                    Ty::Dyn if matches!(&args[0], Expr::Var(_)) => Ok(Ty::I64),
                     _ => return Err(format!("line {}: `len` expects an array", n)),
                 };
             }
@@ -5033,7 +5045,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     let vroot: &String = match a {
                         Expr::Var(v) => {
                             match env.iter().find(|x| x.name == *v).map(|x| x.ty) {
-                                Some(t) if matches!(t, Ty::Arr(_) | Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrDyn | Ty::AView) => v,
+                                Some(t) if matches!(t, Ty::Arr(_) | Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrDyn | Ty::AView | Ty::Dyn) => v,
                                 Some(Ty::DArrU) => v,
                                 Some(t) => return Err(format!("line {}: argument {} of `{}` must be an array variable or element for the array-view parameter, got {}", n, i + 1, id, ty_name(t))),
                                 None => return Err(format!("line {}: undefined variable `{}`", n, v)),
@@ -5728,12 +5740,14 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             match env.iter().find(|v| v.name == *id) {
                 None => Err(format!("line {}: undefined variable `{}`", n, id)),
-                Some(v) if v.ty == Ty::DArr || v.ty == Ty::DArrDyn || v.ty == Ty::AView => {
+                Some(v) if v.ty == Ty::DArr || v.ty == Ty::DArrDyn || v.ty == Ty::AView || v.ty == Ty::Dyn => {
                     if v.moved {
                         return Err(format!("line {}: use of moved value `{}`", n, id));
                     }
                     // Elements are {tag, payload}: a read is a Dyn value
                     // (probes n1/n2: a grown or NIL-stored slot reads NIL).
+                    // ains P2 stage 1: a Dyn root is admitted - codegen
+                    // guards tag 8 at runtime before dereferencing.
                     Ok(Ty::Dyn)
                 }
                 Some(v) if v.ty == Ty::DArrU => {
@@ -6342,7 +6356,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 // exit (double free). Consuming positions only:
                 // printing, ValType, HB_ISNUMERIC/HB_ISARRAY.
                 if let Expr::Index(v, _) = e {
-                    if env.iter().any(|x| x.name == *v && x.ty == Ty::DArrDyn) {
+                    if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArrDyn | Ty::Dyn)) {
                         return Err(format!("line {}: storing a cell of the mixed array `{}` into a variable is not in this increment (the cell owns its payload; use it in place: printing, ValType, HB_ISNUMERIC/HB_ISARRAY)", n, v));
                     }
                 }
@@ -7340,6 +7354,29 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         // next piece. Named rejection, never a silent copy.
                         return Err(format!("line {}: storing into a cell of the mixed array `{}` is not in this increment", n, id));
                     }
+                    Ty::Dyn => {
+                        // ains P2 stage 1: a[i] := scalar on a Dyn-held
+                        // array. RHS is an integer, logical, string or
+                        // NIL (strings are CLONED at the boundary; an
+                        // owned temporary has no free point here - named
+                        // rejection). Array-ness of the slot is a runtime
+                        // tag-8 guard in codegen; RHS before the free of
+                        // the old cell payload (parent rule).
+                        let vt = type_expr(e, env, sigs, *n)?;
+                        if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Str) && !matches!(e, Expr::Nil) {
+                            return Err(format!("line {}: storing into a cell of a dynamic array takes an integer, logical, string or NIL value in this stage", n));
+                        }
+                        if let Expr::Var(vv) = e {
+                            if vv == id {
+                                return Err(format!("line {}: cannot assign `{}` into its own element", n, id));
+                            }
+                        }
+                        if type_expr(ie, env, sigs, *n)? != Ty::I64 {
+                            return Err(format!("line {}: array index must be an integer", n));
+                        }
+                        apply_moves(e, env, sigs, false);
+                        apply_moves(ie, env, sigs, false);
+                    }
                     _ => return Err(format!("line {}: indexed assignment applies to arrays; `{}` is not an array", n, id)),
                 }
                 // The parent must not move while the indexed borrow exists
@@ -7442,7 +7479,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 // ains piece 1a: same guard as `local` - a DArrDyn cell
                 // read cannot be stored (the cell owns its payload).
                 if let Expr::Index(v, _) = e {
-                    if env.iter().any(|x| x.name == *v && x.ty == Ty::DArrDyn) {
+                    if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArrDyn | Ty::Dyn)) {
                         return Err(format!("line {}: storing a cell of the mixed array `{}` into a variable is not in this increment (the cell owns its payload; use it in place: printing, ValType, HB_ISNUMERIC/HB_ISARRAY)", n, v));
                     }
                 }
@@ -7471,6 +7508,15 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     // n2: reassignment re-tags a live variable), a string
                     // becomes an OWNED tag-4 casilla (hk242): a literal is
                     // cloned at the boundary, an owned value moves in.
+                } else if env[idx].ty == Ty::Dyn && matches!(e, Expr::ArrLit(es) if !es.is_empty() && es.iter().all(|x| matches!(x, Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Log(_)))) {
+                    // ains P2 stage 1 (contract 31Oct): a bare LOCAL (Dyn
+                    // slot) receives an all-scalar-LITERAL array literal.
+                    // Dedicated shape-based acceptance - type_expr must not
+                    // widen it into a generic family; the slot keeps
+                    // Ty::Dyn and the value installs as an OWNED tag-8
+                    // Dyn-cell array (8-byte count header, DATA pointer).
+                } else if env[idx].ty == Ty::Dyn && matches!(e, Expr::ArrLit(_)) {
+                    return Err(format!("line {}: an array assigned to a bare local holds scalar literals only in this stage (no nested arrays, computed items or calls)", n));
                 } else if env[idx].ty == Ty::I64 && t == Ty::Dyn {
                     // i64 slot receiving a Dyn: the tag is checked at
                     // runtime (NIL payload -> clean type error).
@@ -7774,9 +7820,13 @@ fn cg_aview_whole(v: &CgLocal, slot: usize, out: &mut String) {
         out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
         return;
     }
-    let kind = match v.ty { Ty::Arr(_) => 0, Ty::DArr|Ty::DArrDyn|Ty::DArrS|Ty::DArrU=>1,Ty::DArr2=>2,Ty::DArr3=>3,Ty::DArr4=>4,_=>unreachable!("checked view root") };
+    let kind = match v.ty { Ty::Arr(_) => 0, Ty::DArr|Ty::DArrDyn|Ty::DArrS|Ty::DArrU=>1,Ty::DArr2=>2,Ty::DArr3=>3,Ty::DArr4=>4,Ty::Dyn=>1,_=>unreachable!("checked view root") };
     if let Ty::Arr(n) = v.ty {
         out.push_str(&format!("    lea -{}(%rbp), %rax\n    mov ${}, %edx\n",v.off,n));
+    } else if v.ty == Ty::Dyn {
+        // ains P2 stage 1: the ONLY Dyn bridge - tag-8 guard BEFORE the
+        // count word at -8(DATA) is read; ptr = DATA, len = count.
+        out.push_str(&format!("    mov -{}(%rbp), %rax\n    cmpq $8, -{}(%rbp)\n    jne hbc_type_error\n    mov -8(%rax), %rdx\n",v.off-8,v.off));
     } else { out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -{}(%rbp), %rdx\n",v.off,v.off-8)); }
     out.push_str(&format!("    movq ${}, -{}(%rbp)\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n    lea -{}(%rbp), %rax\n",kind,slot,slot-8,slot-16,slot));
 }
@@ -7992,6 +8042,10 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     out.push_str("    xor %eax, %eax
     cmp $6, %r10
     sete %al
+    cmp $8, %r10
+    sete %ah
+    or %ah, %al
+    movzbq %al, %rax
 ");
                 }
             };
@@ -8004,6 +8058,13 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                         Ty::I64 | Ty::F64 => konst(out, want_num),
                         Ty::Bool | Ty::Str | Ty::StrOwn => konst(out, false),
                         Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn | Ty::AView | Ty::Arr(_) => konst(out, !want_num),
+                        // ains P2 stage 1: a Dyn variable dispatches on
+                        // its runtime tag word (the checker admits
+                        // hb_isarray only, so want_num is false here).
+                        Ty::Dyn => {
+                            out.push_str(&format!("    mov -{}(%rbp), %r10\n", var.off));
+                            classify_tag(out, want_num);
+                        }
                         _ => unreachable!("checked"),
                     }
                 }
@@ -8084,7 +8145,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             }
             // %r10 = scalar Dyn tag: 0 i64 -> "N", 1 NIL -> "U", 2 str -> "C"
             fn vt_classify_scalar(strs: &mut Vec<String>, out: &mut String) {
-                out.push_str("    cmp $6, %r10\n    je 99f\n    cmp $1, %r10\n    je 95f\n    cmp $2, %r10\n    je 96f\n    cmp $4, %r10\n    je 96f\n    cmp $3, %r10\n    je 98f\n");
+                out.push_str("    cmp $6, %r10\n    je 99f\n    cmp $8, %r10\n    je 99f\n    cmp $1, %r10\n    je 95f\n    cmp $2, %r10\n    je 96f\n    cmp $4, %r10\n    je 96f\n    cmp $3, %r10\n    je 98f\n");
                 vt_letter(strs, out, "N");
                 out.push_str("    jmp 97f\n95:\n");
                 vt_letter(strs, out, "U");
@@ -8177,6 +8238,13 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                             out.push_str("    jmp 88f\n86:\n");
                             vt_letter(strs, out, "A");
                             out.push_str("88:\n");
+                        }
+                        Ty::Dyn => {
+                            // ains P2 stage 1: cell tag of a Dyn-held
+                            // array (tag-8 guard before the count deref).
+                            out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, -{}(%rbp)\n    jne hbc_type_error\n    cmp $1, %rax\n    jl 87f\n    cmp -8(%r11), %rax\n    jg 87f\n", var.off - 8, var.off));
+                            out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
+                            vt_classify_scalar(strs, out);
                         }
                         _ => unreachable!("checked"),
                     }
@@ -8367,6 +8435,15 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                         Ty::AView => out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov 16(%rax), %rax\n", var.off)),
                         Ty::DArrRef | Ty::DArrRef2 => out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov 8(%rax), %rax\n", var.off)),
                         Ty::Arr(k) => out.push_str(&format!("    mov ${}, %rax\n", k)),
+                        Ty::Dyn => {
+                            // ains P2 stage 1: runtime dispatch. Strings
+                            // (tags 2/4) keep the length at payload-8; a
+                            // tag-8 array keeps the count at payload-8
+                            // (same 8-byte header convention). A null
+                            // payload or any other tag: registered error.
+                            let k9 = fresh_lbl();
+                            out.push_str(&format!("    mov -{}(%rbp), %r10\n    mov -{}(%rbp), %rdx\n    cmp $2, %r10\n    je .Llend{}\n    cmp $4, %r10\n    je .Llend{}\n    cmp $8, %r10\n    je .Llend{}\n    jmp hbc_len_error\n.Llend{}:\n    test %rdx, %rdx\n    jz hbc_len_error\n    mov -8(%rdx), %rax\n", var.off, var.off - 8, k9, k9, k9, k9));
+                        }
                         _ => unreachable!("checked"),
                     }
                 }
@@ -9265,6 +9342,24 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str("81:\n    call hbc_bound_error\n82:\n");
                 return;
             }
+            if v.ty == Ty::Dyn {
+                // ains P2 stage 1: a[i] on a Dyn-held array. The tag-8
+                // guard runs BEFORE the count word at -8(DATA) is
+                // dereferenced; bounds 1..=count; the cell pair is
+                // BORROWED (print/ValType/HB_IS* consume it in place;
+                // storing it is a checker rejection). Numeric labels
+                // follow the self-contained sibling-arm pattern.
+                if expr_ty(ie, env, sigs) == Ty::Dyn {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                } else {
+                    cg_expr(ie, env, sigs, strs, out, target);
+                }
+                out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, -{}(%rbp)\n    jne hbc_type_error\n    cmp $1, %rax\n    jl 81f\n    cmp -8(%r11), %rax\n    jg 81f\n", v.off - 8, v.off));
+                out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r11\n    mov 8(%rax), %rdx\n    mov %r11, %rax\n    jmp 82f\n");
+                out.push_str("81:\n    call hbc_bound_error\n82:\n");
+                return;
+            }
             if v.ty == Ty::DArrRef {
                 // Borrowed middle array (a[i] passed to this function):
                 // the slot holds the child cell's ADDRESS; bounds and the
@@ -9919,7 +10014,14 @@ fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String,
 // exactly one owner (slot overwrite, epilogue, or a print/compare temp).
 // Every store into a Dyn slot first releases a live tag-4 payload.
 fn cg_dyn_free_old(out: &mut String, off: usize) {
-    out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne 87f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 87f\n    call hbc_freestr\n87:\n", off, off - 8));
+    // ains P2 stage 1: a live tag-8 payload (OWNED scalar-cell array,
+    // 8-byte count header, DATA pointer) is released with hbc_dfree
+    // verbatim; -8(DATA) is the live count (equal to capacity in this
+    // no-resize stage). Tag 4 keeps the owned-string path; tag 2
+    // (borrowed) and scalar tags own nothing. .L labels only: a numeric
+    // local label could hijack an enclosing snippet's reference.
+    let k = fresh_lbl();
+    out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne .Ld8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Ld8z{}\n    call hbc_freestr\n    jmp .Ld8z{}\n.Ld8a{}:\n    cmpq $8, -{}(%rbp)\n    jne .Ld8z{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Ld8z{}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n.Ld8z{}:\n", off, k, off - 8, k, k, k, off, k, off - 8, k, k));
 }
 
 // rax=tag, rdx=payload -> the pair with any string (tag 2 or 4) cloned
@@ -10767,7 +10869,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             // owned by its slot, and a DArrDyn cell read stays
                             // owned by its CELL (ains piece 1a - the cell is
                             // borrowed, never moved out).
-                            let cell_borrow = matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArrDyn));
+                            let cell_borrow = matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArrDyn | Ty::Dyn)));
                             if !matches!(e, Expr::Var(_)) && !cell_borrow {
                                 out.push_str(&format!("    cmpq $4, {}(%rsp)\n    jne 95f\n    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je 95f\n    call hbc_freestr\n95:\n", off, off + 8));
                             }
@@ -10922,6 +11024,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // rule as Dyn-to-Dyn assignment).
                                 if t == Ty::Dyn && matches!(e, Expr::Var(_)) {
                                     cg_dyn_clone_if_str(out);
+                                    // ains P2 stage 1: a tag-8 (array) copy
+                                    // would alias the owner - clean error.
+                                    out.push_str("    cmp $8, %rax\n    je hbc_type_error\n");
                                 }
                                 // The slot can hold a live value when a
                                 // `local` re-declares inside a loop body:
@@ -10945,7 +11050,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 } else if class == 8 {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_dfree\n85:\n", off, off - 8));
                                 } else if class == 7 {
-                                    out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne 85f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n85:\n", off, off - 8));
+                                    // ains P2 stage 1: tag-8 payload freed
+                                    // with hbc_dfree verbatim (as the
+                                    // epilogue); .L labels (numeric locals
+                                    // could hijack a neighboring snippet).
+                                    let k8 = fresh_lbl();
+                                    out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne .Ll8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n    jmp 85f\n.Ll8a{}:\n    cmpq $8, -{}(%rbp)\n    jne 85f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n85:\n", off, k8, off - 8, k8, off, off - 8));
                                 } else {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov $16, %esi\n    call hbc_free\n85:\n", off));
                                 }
@@ -11494,6 +11604,21 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         continue;
                     }
                 }
+                // ains P2 stage 1: an all-scalar-literal array literal
+                // into a Dyn slot (bare LOCAL) builds an OWNED Dyn-cell
+                // array (checker guarantees the literal-only shape) and
+                // installs it under tag 8; the old slot value is released
+                // only after the new buffer fully exists.
+                if lty == Ty::Dyn {
+                    if let Expr::ArrLit(es) = e {
+                        cg_darrdyn_literal(es, strs, out);
+                        out.push_str("    mov %rax, %rdx\n    mov $8, %eax\n");
+                        out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                        cg_dyn_free_old(out, off);
+                        out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
+                        continue;
+                    }
+                }
                 match t {
                     Ty::F64 => {
                         // Two dynamic slots: value + decimal metadata
@@ -11546,8 +11671,18 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // its own copy (Harbour value semantics). A
                                 // non-Var (a call result) is already an
                                 // owned temporary: it moves in as-is.
+                                // ains P2 stage 1: literal self-assignment
+                                // `x := x` on a Dyn slot is an explicit
+                                // no-op (a tag-8 payload would otherwise be
+                                // freed before the store).
+                                if let Expr::Var(src) = e { if src == id { continue; } }
                                 if matches!(e, Expr::Var(_)) {
                                     cg_dyn_clone_if_str(out);
+                                    // ains P2 stage 1: copying a Dyn var
+                                    // holding an ARRAY (tag 8) would alias
+                                    // the single owner - registered clean
+                                    // error until a later stage adds AClone.
+                                    out.push_str("    cmp $8, %rax\n    je hbc_type_error\n");
                                 }
                                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                                 cg_dyn_free_old(out, off);
@@ -12172,6 +12307,34 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // skipped here and RETAGGED to a string below - hk14)
                     out.push_str("    mov 8(%r10), %rdi\n    test %rdi, %rdi\n    je 85f\n    sub $16, %rsp\n    mov %r10, (%rsp)\n    call hbc_freestr\n    mov (%rsp), %r10\n    add $16, %rsp\n85:\n");
                     out.push_str("    mov (%rsp), %rax\n    movq $2, (%r10)\n    mov %rax, 8(%r10)\n    add $16, %rsp\n    jmp 86f\n89:\n    call hbc_bound_error\n86:\n");
+                } else if v.ty == Ty::Dyn {
+                    // ains P2 stage 1: a[i] := scalar on a Dyn-held array
+                    // (checker: I64/Bool/Str/NIL RHS). The RHS is tagged
+                    // FIRST (rodata strings cloned to owned tag-4 cells),
+                    // then the tag-8 guard BEFORE dereferencing the count
+                    // word, bounds, the old tag-4 cell payload is freed
+                    // once, and the new pair is stored. .L labels only.
+                    let kw = fresh_lbl();
+                    let rt = expr_ty(e, env, sigs);
+                    cg_value(e, env, sigs, strs, out, target);
+                    match rt {
+                        Ty::I64 => out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n"),
+                        Ty::Bool => out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"),
+                        Ty::Str => out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"),
+                        Ty::Dyn => {} // NIL literal: already the {1, 0} pair
+                        _ => unreachable!("checked"),
+                    }
+                    out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    if expr_ty(ie, env, sigs) == Ty::Dyn {
+                        cg_expr(ie, env, sigs, strs, out, target);
+                        out.push_str("    call hbc_dyn_to_i64\n");
+                    } else {
+                        cg_expr(ie, env, sigs, strs, out, target);
+                    }
+                    out.push_str("    mov %rax, %rcx\n");
+                    out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, -{}(%rbp)\n    jne hbc_type_error\n    cmp $1, %rcx\n    jl .Lwbnd{}\n    cmp -8(%r11), %rcx\n    jg .Lwbnd{}\n", v.off - 8, v.off, kw, kw));
+                    out.push_str("    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
+                    out.push_str(&format!("    mov %r10, 16(%rsp)\n    cmpq $4, (%r10)\n    jne .Lwnf{}\n    mov 8(%r10), %rdi\n    test %rdi, %rdi\n    jz .Lwnf{}\n    call hbc_freestr\n.Lwnf{}:\n    mov 16(%rsp), %r10\n    mov (%rsp), %rax\n    mov %rax, (%r10)\n    mov 8(%rsp), %rax\n    mov %rax, 8(%r10)\n    add $32, %rsp\n    jmp .Lwdone{}\n.Lwbnd{}:\n    call hbc_bound_error\n.Lwdone{}:\n", kw, kw, kw, kw, kw, kw));
                 } else if v.ty == Ty::Hash {
                     // h[k] := v: value FIRST, then the key (probe h4).
                     // Both wait on the stack across hbc_hput, which copies
@@ -12639,10 +12802,13 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov -{}(%rbp), %rsi\n    call hbc_dfree\n91{}:\n", off, i, off - 8, i));
             }
             7 => {
-                // Dyn slot: free the payload only for an OWNED string
-                // (tag 4). Borrowed tag-2 views (FOR EACH over hash keys)
-                // and scalar tags (0/1/3) own nothing.
-                out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne 91{}f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hbc_freestr\n91{}:\n", off, i, off - 8, i, i));
+                // Dyn slot: free the payload for an OWNED string (tag 4)
+                // or an OWNED scalar-cell array (tag 8, ains P2 stage 1:
+                // hbc_dfree verbatim, live count at -8(DATA)). Borrowed
+                // tag-2 views (FOR EACH over hash keys) and scalar tags
+                // (0/1/3) own nothing.
+                let k7 = fresh_lbl();
+                out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne .Le8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hbc_freestr\n    jmp 91{}f\n.Le8a{}:\n    cmpq $8, -{}(%rbp)\n    jne 91{}f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n91{}:\n", off, k7, off - 8, i, i, k7, off, i, off - 8, i, i));
             }
             _ => {
                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov $16, %esi\n    call hbc_free\n91{}:\n", off, i, i));
@@ -14967,7 +15133,9 @@ hbc_print_i64c:
 # hbc_print_dyn: %rax = tag, %rdx = payload. Prints NIL (no field width,
 # probe n1) for tag 1, the raw string bytes for tag 2 (payload points at
 # the bytes, length header at payload-8 - same layout as a hash key
-# copy); otherwise the numeric payload via hbc_print_i64.
+# copy); tag 8 (Dyn-held array) prints NOTHING (Harbour oracle: a whole
+# array prints as an empty line); otherwise the numeric payload via
+# hbc_print_i64.
 hbc_print_dyn:
     test %rax, %rax
     jz 8f
@@ -14977,12 +15145,15 @@ hbc_print_dyn:
     je 9f
     cmp $3, %rax
     je 11f
+    cmp $8, %rax
+    je 13f
     lea .Lnilmsg(%rip), %rsi
     mov $3, %edx
     mov $1, %eax
     mov $1, %edi
     syscall
     ret
+13: ret
 8:  mov %rdx, %rax
     jmp hbc_print_i64c
 11: lea .Lfmsg(%rip), %rsi
@@ -16948,7 +17119,9 @@ hbc_print_i64c:
 # hbc_print_dyn: %rax = tag, %rdx = payload. Prints NIL (no field width,
 # probe n1) for tag 1, the raw string bytes for tag 2 (payload points at
 # the bytes, length header at payload-8 - same layout as a hash key
-# copy); otherwise the numeric payload via hbc_print_i64.
+# copy); tag 8 (Dyn-held array) prints NOTHING (Harbour oracle: a whole
+# array prints as an empty line); otherwise the numeric payload via
+# hbc_print_i64.
 hbc_print_dyn:
     push %rbp
     mov %rsp, %rbp
@@ -16961,6 +17134,8 @@ hbc_print_dyn:
     je 10f
     cmp $3, %rax
     je 11f
+    cmp $8, %rax
+    je 9f
     lea .Lnilmsg(%rip), %rax
     mov $3, %edx
     call hbc_print_str
