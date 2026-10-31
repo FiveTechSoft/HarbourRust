@@ -1,0 +1,130 @@
+[
+  {
+    "case": 0,
+    "source": "PROCEDURE Main()\n? [abc]\nRETURN\n",
+    "expression": "[abc]",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? \"abc\"\nRETURN\n",
+    "reference_error": ""
+  },
+  {
+    "case": 1,
+    "source": "PROCEDURE Main()\n? [a'\"b]\nRETURN\n",
+    "expression": "[a'\"b]",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? [a'\"b]\nRETURN\n",
+    "reference_error": ""
+  },
+  {
+    "case": 2,
+    "source": "PROCEDURE Main()\n? [a,b]\nRETURN\n",
+    "expression": "[a,b]",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? \"a,b\"\nRETURN\n",
+    "reference_error": ""
+  },
+  {
+    "case": 3,
+    "source": "PROCEDURE Main()\n? [a[b]\nRETURN\n",
+    "expression": "[a[b]",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? \"a[b\"\nRETURN\n",
+    "reference_error": ""
+  },
+  {
+    "case": 4,
+    "source": "PROCEDURE Main()\n? []\nRETURN\n",
+    "expression": "[]",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? \"\"\nRETURN\n",
+    "reference_error": ""
+  },
+  {
+    "case": 5,
+    "source": "PROCEDURE Main()\n? [a//b]\nRETURN\n",
+    "expression": "[a//b]",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? \"a//b\"\nRETURN\n",
+    "reference_error": ""
+  },
+  {
+    "case": 6,
+    "source": "PROCEDURE Main()\n? [a&&b]\nRETURN\n",
+    "expression": "[a&&b]",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? \"a&&b\"\nRETURN\n",
+    "reference_error": ""
+  },
+  {
+    "case": 7,
+    "source": "PROCEDURE Main()\n? [a;b]\nRETURN\n",
+    "expression": "[a;b]",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? \"a;b\"\nRETURN\n",
+    "reference_error": ""
+  },
+  {
+    "case": 8,
+    "source": "PROCEDURE Main()\n? [a\\b]\nRETURN\n",
+    "expression": "[a\\b]",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? \"a\\b\"\nRETURN\n",
+    "reference_error": ""
+  },
+  {
+    "case": 9,
+    "source": "PROCEDURE Main()\n? [a] + [b]\nRETURN\n",
+    "expression": "[a] + [b]",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? \"a\" + \"b\"\nRETURN\n",
+    "reference_error": ""
+  },
+  {
+    "case": 10,
+    "source": "PROCEDURE Main()\n? {[a],[b]}\nRETURN\n",
+    "expression": "{[a],[b]}",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? {\"a\",\"b\"}\nRETURN\n",
+    "reference_error": ""
+  },
+  {
+    "case": 11,
+    "source": "PROCEDURE Main()\n? a[1]\nRETURN\n",
+    "expression": "a[1]",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? a[1]\nRETURN\n",
+    "reference_error": ""
+  },
+  {
+    "case": 12,
+    "source": "PROCEDURE Main()\n? a [1]\nRETURN\n",
+    "expression": "a [1]",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? a [1]\nRETURN\n",
+    "reference_error": ""
+  },
+  {
+    "case": 13,
+    "source": "PROCEDURE Main()\n? Len([a,b])\nRETURN\n",
+    "expression": "Len([a,b])",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? Len(\"a,b\")\nRETURN\n",
+    "reference_error": ""
+  },
+  {
+    "case": 14,
+    "source": "PROCEDURE Main()\n? e\"a\\nb\"\nRETURN\n",
+    "expression": "e\"a\\nb\"",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? e\"a\\nb\"\nRETURN\n",
+    "reference_error": ""
+  },
+  {
+    "case": 15,
+    "source": "PROCEDURE Main()\n? e\"a\\\"b\"\nRETURN\n",
+    "expression": "e\"a\\\"b\"",
+    "reference_exit": 0,
+    "reference_output": "PROCEDURE Main()\n? 'a\"b'\nRETURN\n",
+    "reference_error": ""
+  }
+]

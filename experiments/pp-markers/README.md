@@ -664,3 +664,17 @@ it is NOT accepted as a whole.268x4audit acceptance stays21/15Linux20/14Windows;
 14reviewed originals are freshly exact. No runtime/ABI/lexer expansion or new
 size/speed claim. Existing tests for array temporary Len remain unchanged;
 new console fixtures assign arrays to locals rather than changing that limit.
+
+## Bracket literal boundary, decision pending
+
+16own lexical observations,not implementation. Bracket strings are raw until
+the first closing bracket,not nested. Both quote characters,commas,semicolons
+and comment-looking // or && are data inside the literal. Brackets after an
+expression such as a[1] or a [1] remain indexing. Output can normalize to ordinary
+quotes where representable;both quote kinds can require a bracket literal.
+The existing compiler only protects single/double quotes through comment
+stripping,statement splitting,macro expansion,pp tokenization and source lexing.
+Adding a lexer arm alone would therefore corrupt content earlier in the pipeline.
+A coherent bracket-literal slice needs context-sensitive literal/index handling
+across those stages,using existing Str values and no new runtime representation.
+Escape strings are a separate contract. No production change here.
