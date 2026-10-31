@@ -1,5 +1,5 @@
---- production/group_plan.rs
-+++ inactive-source-aware-v4/group_plan.rs
+--- a/src/group_plan.rs
++++ b/src/group_plan.rs
 @@ -31,7 +31,7 @@
              if tokens[i]=="["{
                  let id=i;let mut atoms=Vec::new();i+=1;
@@ -81,3 +81,18 @@
          if self.var_variant(){return self.variant_matches(source,exact);}
          if !self.reduced_var(){return self.identifier_matches(source,exact,prefix);}
          if prefix{return Err("reduced VAR prefix translation outside bounded contract");}
+@@ -274,3 +331,14 @@
+  use super::*;
+  #[test]fn flag_anchors_are_disjoint(){let mut t=["PROBE","<!a!>","[",",","<!b!>","]","[","<tp:TYPE,AS>","<t>","]","[","<ini:INIT,ASSIGN>","<v>","]","[","<ex:EXPORTED,VISIBLE>","]"].iter().map(|s|s.to_string()).collect::<Vec<_>>();assert!(Plan::parse(&t).unwrap().reduced_var());t[15]="<ex:ASSIGNED>".into();assert!(!Plan::parse(&t).unwrap().reduced_var());}
+ }
++
++#[cfg(test)] mod expression_root_tests {
++ use super::*;
++ fn w(s:&[&str])->Vec<String>{s.iter().map(|s|s.to_string()).collect()}
++ fn plan()->Plan{Plan::parse(&w(&["SHOW","<x>","[","AS","<t>","]","[","DECL","]"])).unwrap()}
++ #[test] fn root_clause_order_and_owner(){let p=plan();assert!(p.expression_root());let s=w(&["SHOW","f","(","1",",","2",")","DECL","AS","T","DECL"]);let m=p.matches_source(&s,true,false,&vec![false;s.len()]).unwrap().unwrap();assert_eq!(m.roots,vec![(0,(1,7))]);assert_eq!(m.iterations.iter().map(|i|i.group_id).collect::<Vec<_>>(),vec![6,2,6]);}
++ #[test] fn source_adjacency_is_not_optional(){let p=plan();let s=w(&["SHOW","d","\"date\"","DECL"]);assert!(p.matches_source(&s,true,false,&[false,false,false,false]).unwrap().is_none());assert!(p.matches_source(&s,true,false,&[false,false,true,false]).unwrap().is_some());assert!(p.matches_source(&s,true,false,&[]).is_err());}
++ #[test] fn invalid_numeric_atom_does_not_match(){let p=plan();for n in ["1e2","1abc","0xFG"]{let s=w(&["SHOW",n,"DECL"]);assert!(p.matches_source(&s,true,false,&vec![false;s.len()]).unwrap().is_none());}}
++ #[test] fn iteration_limit_is_bounded(){let p=plan();let mut s=w(&["SHOW","7"]);s.extend(std::iter::repeat("DECL".to_string()).take(1025));assert!(p.matches_source(&s,true,false,&vec![false;s.len()]).is_err());}
++ #[test] fn anchors_are_distinct(){assert!(!Plan::parse(&w(&["SHOW","<x>","[","AS","<t>","]","[","as","]"])).unwrap().expression_root());}
++}

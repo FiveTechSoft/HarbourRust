@@ -71,3 +71,5 @@ no permanent integration tests, no bytes/speed measurements, no activation.
 Latest replay details in v4-replay-deltas.json. Next add regression fixtures,
 repeat local full gates and independent remote closure before considering
 production. These patches remain research, production src unchanged.
+
+V4 fixtures8 now staged as research only. Full isolated local1352default=1347manifest+5aux,714LLVM;22unitplan tests;8ownnewfixtures exact freshly rebuiltHarbour/default/LLVM. Source implementation remains inactive;independentremotevalidationpending.
