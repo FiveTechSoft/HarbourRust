@@ -1,0 +1,172 @@
+{
+  "rows": [
+    {
+      "file": "t1346_pp_root_expression.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         6\nnumber",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         6\nnumber",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         6\nnumber",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1347_pp_root_reorder.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         7\nnumber",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         7\nnumber",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         7\nnumber",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1348_pp_root_iterations.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         7\nalpha\nbeta",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         7\nalpha\nbeta",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         7\nalpha\nbeta",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1349_pp_root_index.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\ndata[1,2]",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\ndata[1,2]",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\ndata[1,2]",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1350_pp_root_macro_normal.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1351_pp_root_macro_expr.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         8",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         8",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         8",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1352_pp_root_comparisons.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n.T.\n.T.",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n.T.\n.T.",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n.T.\n.T.",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1353_pp_root_overlap.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         8\n         9\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         8\n         9\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         8\n         9\n         7",
+          "stderr": ""
+        }
+      }
+    }
+  ]
+}

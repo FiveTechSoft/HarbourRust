@@ -26,3 +26,5 @@ Not a general expression parser, not full METHOD/hbclass support. Historical
 .NOT./**/!= and plain literal normalizations are not claimed exact. Large seed
 comparisons report exact and normalization-excluded results separately.
 No class runtime, ownership, ABI, debugger, main, byte-size or speed changes.
+
+Published implementation d999a4647edec96260d65627763fcf7e65c46971. Fresh independent checkout from that remote commit repeated1352default/714LLVM,14originalexact,268x4zero diagnostic changes. Remote main977d69222d02f399a3903208beaf768fbaf3ea19 untouched. Attached logs are source of counts, no timing samples.
