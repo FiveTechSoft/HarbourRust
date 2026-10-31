@@ -1236,3 +1236,5 @@ pos tests/t1237_pp_smart_optional.hb \n\nalpha
 pos tests/t1238_pp_smart_identifier.hb \nalpha
 neg tests/t1239_pp_smart_repeat_neg.hb smart stringify of repeated/disjoint captures
 neg tests/t1240_pp_smart_escape_neg.hb smart stringify of escape captures
+neg tests/t1241_pp_smart_restricted_repeat_neg.hb smart stringify of repeated/disjoint captures
+neg tests/t1242_pp_smart_optional_literal_neg.hb smart stringify with literal-bearing optional groups

@@ -14,3 +14,11 @@ for directive in ['command','xcommand','translate','xtranslate']:
 for value in ['e"a\\tb"']:
  f=out/f'case{len(rows)}.prg';text=f'#command PROBE <x> => OUT(<(x)>)\nPROBE {value}\n';f.write_text(text);own=subprocess.run([a.hpp,str(f)],capture_output=True,text=True);assert own.returncode!=0 and 'smart stringify of' in own.stderr,(text,own.stdout,own.stderr);rows.append(dict(source=text,kind='explicit scope rejection',own_error=own.stderr))
 (out/'results.json').write_text(json.dumps({'scope':'scoped smart result;not extended matching or macro runtime','rows':rows},indent=2)+'\n');print(len(rows),'checks PASS,including1explicit rejection')
+
+for pattern,value,message in [('PROBE [<x:alpha,beta>]','alpha beta','repeated/disjoint'),('PROBE [KEY <!x!> VALUE <y>]','KEY alpha VALUE 1 KEY beta VALUE 2','literal-bearing')]:
+ f=out/('guard'+str(len(rows))+'.prg');f.write_text(f'#command {pattern} => OUT([<(x)>])\nPROBE {value}\n');own=subprocess.run([a.hpp,str(f)],capture_output=True,text=True);assert own.returncode!=0 and message in own.stderr,(own.stdout,own.stderr);rows.append(dict(source=f.read_text(),kind='scope guard',own_error=own.stderr))
+(out/'results.json').write_text(json.dumps({'scope':'404exact+3explicitrejections;not repeated matching','rows':rows},indent=2)+'\n');print('Additional2scopeguardsPASS')
+
+for pattern,value in [('PROBE [KEY <!x!> VALUE <y>]','KEY alpha VALUE 1'),('PROBE <!x!> [AS <y>]','alpha AS beta'),('PROBE <x:alpha beta,gamma>','alpha beta'),('PROBE [<x:alpha,beta>]','alpha'),('PROBE [<x:alpha,beta>]',''),('PROBE <x> [TAIL <y>]','123 TAIL 2')]:
+ f=out/('positiveguard'+str(len(rows))+'.prg');text=f'#command {pattern} => OUT(<(x)>)\nPROBE {value}\n';f.write_text(text);ref=subprocess.run([a.hbpp,str(f),'-q2'],capture_output=True,text=True);own=subprocess.run([a.hpp,str(f)],capture_output=True,text=True);expected=f.with_suffix('.ppo').read_text();assert ref.returncode==own.returncode==0 and tok(expected)==tok(own.stdout),(text,expected,own.stdout,own.stderr);rows.append(dict(source=text,reference_output=expected,own_output=own.stdout,kind='positive guard boundary'))
+(out/'results.json').write_text(json.dumps({'scope':'410exact+3explicitrejections;not repeated matching','rows':rows},indent=2)+'\n');print('Additional6positiveguardboundariesPASS')

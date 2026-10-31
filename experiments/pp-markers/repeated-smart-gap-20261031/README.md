@@ -16,9 +16,9 @@ is only a fail-closed guard for the admitted identifier smart-result slice,
 not a general representation of repeated values.
 
 A literal-bearing optional group [KEY <!x!> VALUE <y>] can also currently consume
-too much into its final plain capture. The measured repeated sentence is left
-unchanged by Harbour in the tested forms but translated by both the historical
-and current engine. This is a pre-existing matching gap,not fixed by smart
+too much into its final plain capture. Without a result group,the measured repeated sentence is left unchanged by
+Harbour but translated by the engine. With a result group,Harbour repeats both
+items while the engine emits only the first. This is a pre-existing matching gap,not fixed by smart
 stringify. previous-comparison.json preserves all three outcomes.
 
 A correct next representation must retain each pattern group's identity, its

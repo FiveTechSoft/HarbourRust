@@ -1,0 +1,69 @@
+[
+  {
+    "file": "tests/classch.prg",
+    "previous": {
+      "file": "tests/classch.prg",
+      "sha256": "e26e134ee7547069ec676fd44ee9825615d70c675ec0adba85d18f441fdce6b1",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 21: smart stringify of repeated/disjoint captures is outside this increment"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 21: smart stringify of repeated/disjoint captures is outside this increment"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 21: smart stringify of repeated/disjoint captures is outside this increment"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 21: smart stringify of repeated/disjoint captures is outside this increment"
+        ]
+      }
+    },
+    "current": {
+      "file": "tests/classch.prg",
+      "sha256": "e26e134ee7547069ec676fd44ee9825615d70c675ec0adba85d18f441fdce6b1",
+      "current": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 21: smart stringify with literal-bearing optional groups is outside this increment"
+        ]
+      },
+      "llvm": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 21: smart stringify with literal-bearing optional groups is outside this increment"
+        ]
+      },
+      "current_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 21: smart stringify with literal-bearing optional groups is outside this increment"
+        ]
+      },
+      "llvm_windows": {
+        "compiled": false,
+        "exit": 1,
+        "diagnostic": [
+          "error: line 21: smart stringify with literal-bearing optional groups is outside this increment"
+        ]
+      }
+    }
+  }
+]

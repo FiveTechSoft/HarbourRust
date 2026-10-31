@@ -884,3 +884,28 @@ matching. Current capture concatenation erases this information. Literal-bearing
 optional groups also have a historical tail-overcapture gap,documented with
 Harbour/previous/current outputs. This evidence commit does not implement or
 claim repeated compatibility;production compiler remains284d009.
+
+## Smart-result guard correction after repeated-case audit
+
+284d009did NOT correctly cover repeated smart results. Repeated restricted
+captures could still be fused and literal-bearing optional groups could swallow
+a later iteration into a plain tail. New fail-closed guards apply only while
+rendering smart <(x)>: a restricted capture longer than any literal alternative
+is rejected; a captured marker inside an optional group whose literal occurs
+again in the source is rejected conservatively. This is NOT a repeated matcher
+implementation or a complete detection of every overcapture form. A repeated
+literal can cause a deliberate conservative rejection in this slice.
+
+Six boundary controls retain correct single iterations,multiword restricted
+choices,absent optionals and unrelated literal optionals.410pp outputs match
+Harbour and3scope rejections pass.1242default/506LLVM checks pass locally.
+Full268x4audit differs from284d009only in classch error text at the SAME line21;
+there is no new phase regression or acceptance change.14original exact checks
+were freshly run before the final guard narrowing;remote final checks follow.
+
+Plain # and normal stringify share the pre-existing matcher debt;they have NOT
+been advertised as repeated compatibility. Their scoped regressions were rerun:
+168identifier/restricted/wildcard checks,plain50checks plus measured additions,
+and104normal checks pass. These guards do not change their execution paths.
+Raw/plain matching may still fuse or overcapture repeated groups,as preserved in
+the repeated characterization evidence. No general preprocessor-complete claim.

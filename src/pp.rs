@@ -1193,7 +1193,19 @@ fn render_command(c: &Cmd, caps: &[Capture], source: &str, tokens: &[String], li
                         let smart=format!("<({})>",base.to_lowercase());
                         let positions=stringify_positions(&out,&smart);
                         if !positions.is_empty() {
-                            if inner.starts_with('!') && caps[pi].parts.len()>1 {
+                            let mut groups:Vec<(bool,bool)>=Vec::new();let mut literal_optional=false;
+                            for part in &c.pattern {
+                                if part=="[" {groups.push((false,false));}
+                                else if part=="]" {if let Some((literal,owns))=groups.pop(){literal_optional|=literal&&owns;}}
+                                else {for (literal,owns) in &mut groups {
+                                    if part==t {*owns=true;}
+                                    if !(part.starts_with('<') && part.ends_with('>')) && tokens.iter().filter(|word|word.eq_ignore_ascii_case(part)).count()>1 {*literal=true;}
+                                }}
+                            }
+                            if literal_optional {return Err(format!("line {}: smart stringify with literal-bearing optional groups is outside this increment",line_no));}
+                            let fused_restricted=inner.contains(':') && !caps[pi].is_empty() && !restricted_alternatives(inner).map(|choices|
+                                choices.iter().any(|choice|choice.len()==caps[pi].parts.len())).unwrap_or(false);
+                            if (inner.starts_with('!') && caps[pi].parts.len()>1) || fused_restricted {
                                 return Err(format!("line {}: smart stringify of repeated/disjoint captures is outside this increment",line_no));
                             }
                             let spans=source_spans(source,tokens).map_err(|e|format!("line {}: {}",line_no,e))?;
