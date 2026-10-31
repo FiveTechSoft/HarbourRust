@@ -1,0 +1,2489 @@
+{
+  "scope": "276own observations of textual smart macro results;no runtime evaluation",
+  "rows": [
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &name.\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &Name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(Name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & Name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &_name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(_name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & _name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &a1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(a1)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & a1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &()\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(())\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &(x)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &(x+y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x+y))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &(x)+y\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x)+y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) + y ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &( x + y )\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(( x + y ))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &name.suffix\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.suffix\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . suffix ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &name..\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &name[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &name[1,2]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1,2]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 , 2 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &name.1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &name..x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &name&other\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name&other\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name & other ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &(x), &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &(x), &name\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) , & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &name , beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &name , beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name , beta ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &name + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &name. + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name. + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &name.\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &Name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(Name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & Name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &_name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(_name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & _name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &a1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(a1)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & a1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &()\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(())\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &(x)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &(x+y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x+y))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &(x)+y\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x)+y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) + y ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &( x + y )\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(( x + y ))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &name.suffix\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.suffix\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . suffix ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &name..\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &name[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &name[1,2]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1,2]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 , 2 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &name.1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &name..x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &name&other\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name&other\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name & other ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &(x), &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x), name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) , & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &name , beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name , \"beta\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name , beta ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &name + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE &name. + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name. + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &name.\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &Name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(Name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & Name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &_name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(_name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & _name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &a1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(a1)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & a1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &()\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(())\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &(x)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &(x+y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x+y))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &(x)+y\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x)+y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) + y ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &( x + y )\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(( x + y ))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &name.suffix\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.suffix\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . suffix ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &name..\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &name[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &name[1,2]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1,2]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 , 2 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &name.1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &name..x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &name&other\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name&other\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name & other ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &(x), &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x), name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) , & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &name , beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name , \"beta\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name , beta ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &name + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE &name. + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name. + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &name.\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &Name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(Name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & Name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &_name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(_name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & _name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &a1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(a1)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & a1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &()\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(())\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &(x)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &(x+y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x+y))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &(x)+y\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x)+y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) + y ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &( x + y )\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(( x + y ))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &name.suffix\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.suffix\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . suffix ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &name..\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &name[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &name[1,2]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1,2]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 , 2 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &name.1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &name..x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &name&other\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name&other\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name & other ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &(x), &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &(x), &name\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) , & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &name , beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE &name , beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name , beta ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &name + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE &name. + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name. + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &name.\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &Name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(Name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & Name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &_name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(_name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & _name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &a1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(a1)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & a1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &()\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(())\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &(x)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &(x+y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x+y))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &(x)+y\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x)+y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) + y ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &( x + y )\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(( x + y ))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &name.suffix\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.suffix\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . suffix ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &name..\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &name[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &name[1,2]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1,2]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 , 2 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &name.1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &name..x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &name&other\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name&other\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name & other ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &(x), &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x), name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) , & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &name , beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name , \"beta\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name , beta ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &name + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE &name. + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name. + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &name.\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &Name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(Name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & Name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &_name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(_name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & _name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &a1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(a1)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & a1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &()\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(())\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &(x)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &(x+y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x+y))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &(x)+y\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x)+y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) + y ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &( x + y )\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(( x + y ))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &name.suffix\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.suffix\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . suffix ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &name..\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &name[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &name[1,2]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1,2]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 , 2 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &name.1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &name..x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &name&other\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name&other\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name & other ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &(x), &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x), name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) , & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &name , beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name , \"beta\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name , beta ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &name + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE &name. + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name. + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &name.\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &Name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(Name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & Name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &_name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(_name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & _name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &a1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(a1)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & a1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &()\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(())\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &(x)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &(x+y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x+y))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &(x)+y\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x)+y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) + y ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &( x + y )\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(( x + y ))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &name.suffix\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.suffix\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . suffix ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &name..\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &name[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &name[1,2]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1,2]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 , 2 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &name.1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &name..x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &name&other\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name&other\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name & other ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &(x), &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x)), &name\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) , & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &name , beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name) , beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name , beta ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &name + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE &name. + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name. + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &name.\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &Name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(Name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & Name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &_name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(_name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & _name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &a1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(a1)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & a1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &()\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(())\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &(x)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &(x+y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x+y))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &(x)+y\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x)+y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) + y ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &( x + y )\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(( x + y ))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &name.suffix\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.suffix\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . suffix ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &name..\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &name[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &name[1,2]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1,2]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 , 2 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &name.1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &name..x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &name&other\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name&other\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name & other ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &(x), &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x), name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) , & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &name , beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name , \"beta\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name , beta ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &name + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE &name. + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name. + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &name.\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &Name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(Name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & Name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &_name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(_name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & _name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &a1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(a1)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & a1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &()\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(())\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &(x)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &(x+y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x+y))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &(x)+y\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x)+y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) + y ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &( x + y )\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(( x + y ))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &name.suffix\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.suffix\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . suffix ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &name..\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &name[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &name[1,2]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1,2]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 , 2 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &name.1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &name..x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &name&other\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name&other\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name & other ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &(x), &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x), name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) , & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &name , beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name , \"beta\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name , beta ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &name + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE &name. + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name. + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &name.\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &Name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(Name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & Name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &_name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(_name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & _name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &a1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(a1)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & a1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &()\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(())\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &(x)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &(x+y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x+y))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &(x)+y\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x)+y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) + y ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &( x + y )\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(( x + y ))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &name.suffix\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.suffix\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . suffix ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &name..\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &name[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &name[1,2]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1,2]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 , 2 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &name.1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &name..x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &name&other\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name&other\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name & other ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &(x), &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x)), &name\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) , & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &name , beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name) , beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name , beta ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &name + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE &name. + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name. + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &name.\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &Name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(Name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & Name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &_name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(_name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & _name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &a1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(a1)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & a1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &()\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(())\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &(x)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &(x+y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x+y))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &(x)+y\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x)+y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) + y ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &( x + y )\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(( x + y ))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &name.suffix\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.suffix\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . suffix ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &name..\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &name[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &name[1,2]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1,2]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 , 2 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &name.1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &name..x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &name&other\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name&other\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name & other ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &(x), &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x), name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) , & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &name , beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name , \"beta\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name , beta ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &name + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE &name. + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name. + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &name.\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &Name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(Name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & Name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &_name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(_name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & _name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &a1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(a1)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & a1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &()\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(())\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &(x)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &(x+y)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x+y))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &(x)+y\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x)+y)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) + y ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &( x + y )\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(( x + y ))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x + y ) ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &name.suffix\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.suffix\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . suffix ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &name..\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &name[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &name[1,2]\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name[1,2]\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name [ 1 , 2 ] ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &name.1\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name.1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . 1 ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &name..x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name..x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . . x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &name&other\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name&other\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name & other ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &(x), &name\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((x), name)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & ( x ) , & name ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &name , beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(name , \"beta\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name , beta ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &name + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name + x ))\n",
+      "own_error": ""
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE &name. + x\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"&name. + x\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(( & name . + x ))\n",
+      "own_error": ""
+    }
+  ]
+}

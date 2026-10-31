@@ -1,0 +1,32 @@
+[
+  {
+    "file": "tests/t1233_pp_smart_bare.hb",
+    "stdout": "\nalpha\nfile.prg",
+    "exact": true
+  },
+  {
+    "file": "tests/t1234_pp_smart_parentheses.hb",
+    "stdout": "\n         3",
+    "exact": true
+  },
+  {
+    "file": "tests/t1235_pp_smart_quotes.hb",
+    "stdout": "\na  b\nc  d",
+    "exact": true
+  },
+  {
+    "file": "tests/t1236_pp_smart_list.hb",
+    "stdout": "\nalpha          3 a  b",
+    "exact": true
+  },
+  {
+    "file": "tests/t1237_pp_smart_optional.hb",
+    "stdout": "\n\nalpha",
+    "exact": true
+  },
+  {
+    "file": "tests/t1238_pp_smart_identifier.hb",
+    "stdout": "\nalpha",
+    "exact": true
+  }
+]

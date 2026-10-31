@@ -1,0 +1,20 @@
+[
+  {
+    "source": "#command SHOW <x> => ? <(x)>\nprocedure main()\nSHOW 123\nreturn\n",
+    "reference_stdout": "\n123",
+    "production_stdout": "\n       123",
+    "exact": false
+  },
+  {
+    "source": "#command SHOW <x> => ? <(x)>\nprocedure main()\nSHOW \"literal\"\nreturn\n",
+    "reference_stdout": "\nliteral",
+    "production_stdout": "\nliteral",
+    "exact": true
+  },
+  {
+    "source": "#command SHOW <x> => ? <(x)>\nprocedure main()\nSHOW (1+2)\nreturn\n",
+    "reference_stdout": "\n         3",
+    "production_stdout": "\n         3",
+    "exact": true
+  }
+]

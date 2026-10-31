@@ -842,3 +842,35 @@ Production remains1232default/488LLVM from5a7223e; this evidence commit does not
 change compiler semantics. Candidate fixtures, results and exact diagnostic deltas
 are under smart-result-candidate-20261031. Resolving preprocessing macro smart
 results does not authorize or require a native runtime macro evaluator.
+
+## Scoped smart result corrected after contract classification
+
+Result-side <(x)> on existing plain/list/identifier/restricted/wildcard captures
+now quotes bare source, preserves quoted/parenthesized expressions, handles list
+items separately, and emits no bytes for an absent capture. It stages generated
+data before other marker substitution. Textual smart macro forms &name[.] and
+&(expression) lose their leading ampersand as measured; this is preprocessing,
+NOT a new runtime evaluator. Macro-name concatenations and postfixes are quoted
+as measured. Escape smart captures stay explicitly outside this slice.
+
+The previous implementation emitted false source:123became(123)instead of"123";
+&namebecame(&name)instead ofname. Six console fixtures have fresh exact Harbour
+output.404scoped pp checks are exact plus1explicit escape rejection. Existing
+extended <(x)> match-marker behavior is NOT corrected here; its historical
+parenthesis-only branch remains separately documented.
+
+The initial inactive candidate's two macro diagnostic regressions are resolved.
+The final268x4audit changes only classch:330to21. This is a deliberate earlier
+rejection of previously incorrect repeated smart-result output, NOT a regression
+on a correctly translated program. Own minimal comma-repeat Harbour output is
+OUT("alpha","beta","gamma");previous output wasOUT((alpha),(beta gamma));new
+output is an explicit repeated/disjoint-capture error. A whitespace repeat also
+previously fused values incorrectly. Contract comparison is preserved in
+smart-result-20261031/contract-classification.json. The classch original is still
+NOT accepted. A correct repeated result needs per-iteration capture groups and
+result expansion,not a concatenated capture vector;that representation/matcher
+change is not included. No fallback preserves known-false output.
+
+Fresh local batteries1240default/504LLVM and14originals exact. Acceptance stays
+21/15Linux20/14Windows. No classes/runtime/ABI/main change, no speed/size claim.
+The earlier candidate patch/results are historical, not the final implementation.

@@ -750,7 +750,49 @@ fn stringify_capture(capture: &Capture, source: &str, spans: &HashMap<usize, (us
     Ok(quote_literal(&text))
 }
 
-fn stringify_list(capture: &Capture, source: &str, spans: &HashMap<usize,(usize,usize)>) -> Result<String,String> {
+// Result-side smart stringify uses source syntax, not the match marker spelling.
+fn smart_stringify_capture(capture: &Capture, source: &str, spans: &HashMap<usize,(usize,usize)>) -> Result<String,String> {
+    if capture.parts.is_empty() { return Ok(String::new()); }
+    let mut text=String::new(); let mut previous=None;
+    for &(id,_) in &capture.parts {
+        let &(start,end)=spans.get(&id).ok_or("capture source span unavailable")?;
+        if let Some(prev)=previous {
+            if prev>start || !source[prev..start].chars().all(char::is_whitespace) {
+                return Err("smart stringify of repeated/disjoint captures is outside this increment".into());
+            }
+            text.push_str(&source[prev..start]);
+        }
+        text.push_str(&source[start..end]);previous=Some(end);
+    }
+    // This is textual smart-result substitution,not runtime evaluation.
+    if let Some(tail)=text.strip_prefix('&') {
+        if tail.starts_with('(') { return Ok(tail.to_string()); }
+        let ident=tail.strip_suffix('.').unwrap_or(tail);
+        if marker_ident(ident) { return Ok(ident.to_string()); }
+        return Ok(quote_literal(&text));
+    }
+    if escape_literal_end(&text,0).is_some() { return Err("smart stringify of escape captures is outside this increment".into()); }
+    let preserve=text.starts_with('(') || text.starts_with('\"') || text.starts_with('\'') || escape_literal_end(&text,0).is_some();
+    if !preserve { return Ok(quote_literal(&text)); }
+    // Source quotes are data. Normalize ordinary single-quoted and escape strings
+    // while leaving surrounding expression bytes and parentheses untouched.
+    let mut out=String::new();let mut i=0;
+    while i<text.len() {
+        if let Some(end)=escape_literal_end(&text,i) { out.push_str(&quote_literal(&decode_escape_literal(&text[i..end])?));i=end;continue; }
+        let c=text.as_bytes()[i];
+        if c==b'[' && bracket_literal_start(&text,i) {
+            let end=i+1+text[i+1..].find(']').ok_or("unterminated smart stringify bracket data")?+1;
+            out.push_str(&text[i..end]);i=end;continue;
+        }
+        if c==b'\'' || c==b'\"' {
+            let end=i+1+text[i+1..].find(c as char).ok_or("unterminated smart stringify source string")?+1;
+            out.push_str(&quote_literal(&text[i+1..end-1]));i=end;continue;
+        }
+        let ch=text[i..].chars().next().unwrap();out.push(ch);i+=ch.len_utf8();
+    }
+    Ok(out)
+}
+fn stringify_list_mode(capture: &Capture, source: &str, spans: &HashMap<usize,(usize,usize)>,smart:bool) -> Result<String,String> {
     if capture.parts.is_empty() { return Ok(String::new()); }
     let mut chunks = Vec::new(); let mut start = 0; let mut stack = Vec::new();
     for (i,&(id,_)) in capture.parts.iter().enumerate() {
@@ -771,9 +813,13 @@ fn stringify_list(capture: &Capture, source: &str, spans: &HashMap<usize,(usize,
         let first=spans[&capture.parts[a].0].0; let last=spans[&capture.parts[b-1].0].1;
         out.push_str(&source[cursor..first]);
         let part=Capture{text:String::new(),parts:capture.parts[a..b].to_vec()};
-        out.push_str(&stringify_capture(&part,source,spans)?); cursor=last;
+        out.push_str(&if smart {smart_stringify_capture(&part,source,spans)?}else{stringify_capture(&part,source,spans)?}); cursor=last;
     }
     out.push_str(&source[cursor..end]); Ok(out)
+}
+
+fn stringify_list(capture: &Capture, source: &str, spans: &HashMap<usize,(usize,usize)>) -> Result<String,String> {
+    stringify_list_mode(capture,source,spans,false)
 }
 
 fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool) -> Option<Vec<Capture>> {
@@ -1143,6 +1189,25 @@ fn render_command(c: &Cmd, caps: &[Capture], source: &str, tokens: &[String], li
                     let is_paren = name.starts_with('(') && name.ends_with(')');
                     let inner = if is_paren { &name[1..name.len() - 1] } else { name };
                     let base = marker_name(inner);
+                    if !is_paren {
+                        let smart=format!("<({})>",base.to_lowercase());
+                        let positions=stringify_positions(&out,&smart);
+                        if !positions.is_empty() {
+                            if inner.starts_with('!') && caps[pi].parts.len()>1 {
+                                return Err(format!("line {}: smart stringify of repeated/disjoint captures is outside this increment",line_no));
+                            }
+                            let spans=source_spans(source,tokens).map_err(|e|format!("line {}: {}",line_no,e))?;
+                            let value=if inner.contains(",...") || inner.starts_with('*') {
+                                stringify_list_mode(&caps[pi],source,&spans,true)
+                            } else {smart_stringify_capture(&caps[pi],source,&spans)}.map_err(|e|format!("line {}: {}",line_no,e))?;
+                            let token=(0xe000..=0xf8ff).filter_map(char::from_u32).find(|ch|
+                                !out.contains(*ch) && !source.contains(*ch) && !saved.iter().any(|(used,_)|used==ch))
+                                .ok_or_else(||format!("line {}: too many staged tokens",line_no))?;
+                            saved.push((token,value));let mut rebuilt=String::new();let mut at=0;
+                            for k in positions {rebuilt.push_str(&out[at..k]);rebuilt.push(token);at=k+smart.len();}
+                            rebuilt.push_str(&out[at..]);out=rebuilt;
+                        }
+                    }
                     // Stringify must run before plain substitution and retain
                     // source bytes,not the matcher's whitespace-normalized view.
                     for (stringify, normal) in [(format!("#<{}>", base.to_lowercase()), false), (format!("<\"{}\">", base), true)] {

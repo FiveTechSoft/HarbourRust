@@ -1,0 +1,47 @@
+[
+  {
+    "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE 123\n",
+    "reference_output": "\nOUT(\"123\")\n",
+    "previous_output": "OUT(( 123 ))\n",
+    "previous_error": "",
+    "new_output": "OUT(\"123\")\n",
+    "new_error": "",
+    "new_exit": 0
+  },
+  {
+    "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &name\n",
+    "reference_output": "\nOUT(name)\n",
+    "previous_output": "OUT(( & name ))\n",
+    "previous_error": "",
+    "new_output": "OUT(name)\n",
+    "new_error": "",
+    "new_exit": 0
+  },
+  {
+    "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &(x)\n",
+    "reference_output": "\nOUT((x))\n",
+    "previous_output": "OUT(( & ( x ) ))\n",
+    "previous_error": "",
+    "new_output": "OUT((x))\n",
+    "new_error": "",
+    "new_exit": 0
+  },
+  {
+    "source": "#command PROBE [<!x!>] => OUT([<(x)>])\nPROBE alpha beta\n",
+    "reference_output": "\nOUT(\"alpha\"\"beta\")\n",
+    "previous_output": "OUT(( alpha beta ))\n",
+    "previous_error": "",
+    "new_output": "",
+    "new_error": "error: line 2: smart stringify of repeated/disjoint captures is outside this increment\n",
+    "new_exit": 1
+  },
+  {
+    "source": "#command PROBE <!x!> [,<!y!>] => OUT(<(x)> [,<(y)>])\nPROBE alpha,beta,gamma\n",
+    "reference_output": "\nOUT(\"alpha\",\"beta\",\"gamma\")\n",
+    "previous_output": "OUT(( alpha ) ,( beta gamma ))\n",
+    "previous_error": "",
+    "new_output": "",
+    "new_error": "error: line 2: smart stringify of repeated/disjoint captures is outside this increment\n",
+    "new_exit": 1
+  }
+]

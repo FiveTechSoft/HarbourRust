@@ -1,0 +1,62 @@
+[
+  {
+    "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &name\n",
+    "ref": "\nOUT(name)\n",
+    "own": "OUT(( & name ))\n",
+    "own_error": ""
+  },
+  {
+    "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &(x)\n",
+    "ref": "\nOUT((x))\n",
+    "own": "OUT(( & ( x ) ))\n",
+    "own_error": ""
+  },
+  {
+    "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE (1+2)\n",
+    "ref": "\nOUT((1+2))\n",
+    "own": "OUT(( ( 1 + 2 ) ))\n",
+    "own_error": ""
+  },
+  {
+    "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE 123\n",
+    "ref": "\nOUT(\"123\")\n",
+    "own": "OUT(( 123 ))\n",
+    "own_error": ""
+  },
+  {
+    "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE \"literal\"\n",
+    "ref": "\nOUT(\"literal\")\n",
+    "own": "OUT(( \"literal\" ))\n",
+    "own_error": ""
+  },
+  {
+    "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE &name.suffix\n",
+    "ref": "\nOUT(\"&name.suffix\")\n",
+    "own": "OUT(( & name . suffix ))\n",
+    "own_error": ""
+  },
+  {
+    "source": "#command PROBE [<!x!>] => OUT(<(x)>)\nPROBE alpha beta\n",
+    "ref": "\nPROBE alpha beta\n",
+    "own": "OUT(( alpha beta ))\n",
+    "own_error": ""
+  },
+  {
+    "source": "#command PROBE [<!x!>] => OUT(<(x)>)\nPROBE alpha\n",
+    "ref": "\nOUT(\"alpha\")\n",
+    "own": "OUT(( alpha ))\n",
+    "own_error": ""
+  },
+  {
+    "source": "#command PROBE [<!x!>] => OUT([<(x)>])\nPROBE alpha beta\n",
+    "ref": "\nOUT(\"alpha\"\"beta\")\n",
+    "own": "OUT(( alpha beta ))\n",
+    "own_error": ""
+  },
+  {
+    "source": "#command PROBE [<!x!>] => OUT([<(x)>])\nPROBE alpha\n",
+    "ref": "\nOUT(\"alpha\")\n",
+    "own": "OUT(( alpha ))\n",
+    "own_error": ""
+  }
+]
