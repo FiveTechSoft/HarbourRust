@@ -1,0 +1,150 @@
+{
+ "phase": "extras/utils/contrib build units (after tests phase CLOSED 268/268 at 4a2da426)",
+ "order": "inventory path lexicographic: extras first, then utils, then contrib",
+ "unit_note": "httpsrv split into sub-units: modules/ (this batch, 3 of 5 read) before the 4682-line core (uhttpd/_cgifunc/_cookie/_session); showcounter.prg and tableservletdb.prg pending read",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "extras/httpsrv/modules/testajax.prg",
+   "sha256": "d5b8e3d504f75a1db18c339499e52be557ce4f3736ff4b8ddfaf59a680662237",
+   "review": "full source manually read 2026-11-01 (60 lines)",
+   "entrypoint": "HRBMAIN (uHTTPD CGI module, -gh .hrb)",
+   "build_unit": "httpsrv modules unit (5 .prg -> .hrb); core uhttpd lib unit pending",
+   "profile": "B-extras uHTTPD server module, GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "MEMVAR _REQUEST; hb_HHasKey; assignment-in-expression inside Empty(); string +=",
+   "boundary": "AJAX responder module; hash access on _REQUEST",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 modules.hbp (-gh) compiles all modules to .hrb OK at pin 694428e1; not run standalone (require the uHTTPD server and an HTTP request context)",
+   "reference_run": "not-run (requires running uHTTPD server + HTTP request)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 55: expected `,` or `)` in call arguments, got Some(Assign)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 55: expected `,` or `)` in call arguments, got Some(Assign)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 55: expected `,` or `)` in call arguments, got Some(Assign)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 55: expected `,` or `)` in call arguments, got Some(Assign)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/httpsrv/modules/cookie.prg",
+   "sha256": "e9a68f01073d428565bf5f6fd9e4df7c3e2a5fa7bd71cddd756a799381260ae4",
+   "review": "full source manually read 2026-11-01 (105 lines)",
+   "entrypoint": "HRBMAIN (uHTTPD CGI module, -gh .hrb)",
+   "build_unit": "httpsrv modules unit; core uhttpd lib unit pending",
+   "profile": "B-extras uHTTPD server module, GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "MEMVAR _REQUEST; #pragma __cstream embedded HTML; uhttpd_GetField/uhttpd_CookieNew/SetHeader; hb_default; StrTran; OOP cookie object",
+   "boundary": "cookie demo module with embedded HTML template",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 modules.hbp (-gh) compiles all modules to .hrb OK at pin 694428e1; not run standalone (require the uHTTPD server and an HTTP request context)",
+   "reference_run": "not-run (requires running uHTTPD server + HTTP request)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `__cstream | cHtml += %s` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `__cstream | cHtml += %s` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/httpsrv/modules/info.prg",
+   "sha256": "cf88116d1e4ad1c6eaccc846e0653a16be030bc29150d7afc9dc06d3b79907fe",
+   "review": "full source manually read 2026-11-01 (136 lines)",
+   "entrypoint": "HRBMAIN (uHTTPD CGI module, -gh .hrb)",
+   "build_unit": "httpsrv modules unit; core uhttpd lib unit pending",
+   "profile": "B-extras uHTTPD server module, GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "server/session memvars (_Server, _Get, _Post, _Session...); hashes; FOR EACH over hash :Keys; HB_ISHASH; nested hash display; static functions",
+   "boundary": "server-info page module; writes SESSION vars",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 modules.hbp (-gh) compiles all modules to .hrb OK at pin 694428e1; not run standalone (require the uHTTPD server and an HTTP request context)",
+   "reference_run": "not-run (requires running uHTTPD server + HTTP request)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 53: `showserverinfo` never returns a value; its result cannot be used in an expression in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 53: `showserverinfo` never returns a value; its result cannot be used in an expression in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 53: `showserverinfo` never returns a value; its result cannot be used in an expression in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 53: `showserverinfo` never returns a value; its result cannot be used in an expression in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ]
+}
