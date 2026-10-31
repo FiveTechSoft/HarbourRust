@@ -1,0 +1,81 @@
+{
+  "rows": [
+    {
+      "name": "factory",
+      "source": "#define VALUE 7\n#xcommand MAKE => #xcommand SHOW VALUE => OUT(\"ok\")\nMAKE\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW 7\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"ok\")\n",
+      "own_error": "",
+      "match": false,
+      "baseline_output": "OUT(\"ok\")\n"
+    },
+    {
+      "name": "define_temporal",
+      "source": "#define VALUE 7\n#xcommand SHOW <x> => OUT(<\"x\">)\n#xcommand BOTH => SHOW VALUE;#define VALUE 8;SHOW VALUE\nBOTH\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"VALUE\");OUT(\"8\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"VALUE\")\nOUT(\"VALUE\")\n",
+      "own_error": "",
+      "match": false,
+      "baseline_output": "OUT(\"VALUE\")\nOUT(\"VALUE\")\n"
+    },
+    {
+      "name": "undef_temporal",
+      "source": "#define VALUE 7\n#xcommand SHOW <x> => OUT(<\"x\">)\n#xcommand BOTH => SHOW VALUE;#undef VALUE;SHOW VALUE\nBOTH\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"VALUE\");OUT(\"VALUE\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"VALUE\")\nOUT(\"VALUE\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_output": "OUT(\"VALUE\")\nOUT(\"VALUE\")\n"
+    },
+    {
+      "name": "chain",
+      "source": "#define VALUE ALIAS\n#define ALIAS 7\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"7\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"VALUE\")\n",
+      "own_error": "",
+      "match": false,
+      "baseline_output": "OUT(\"VALUE\")\n"
+    },
+    {
+      "name": "function_end",
+      "source": "#define VALUE ALIAS\n#define ALIAS(x) x\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE(7)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"7\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"VALUE(7)\")\n",
+      "own_error": "",
+      "match": false,
+      "baseline_output": "OUT(\"VALUE(7)\")\n"
+    },
+    {
+      "name": "expression_end",
+      "source": "#define VALUE ALIAS\n#define ALIAS 7+1\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"7+1\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"VALUE\")\n",
+      "own_error": "",
+      "match": false,
+      "baseline_output": "OUT(\"VALUE\")\n"
+    },
+    {
+      "name": "negative_end",
+      "source": "#define VALUE -7\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(\"-7\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"VALUE\")\n",
+      "own_error": "",
+      "match": false,
+      "baseline_output": "OUT(\"VALUE\")\n"
+    }
+  ]
+}

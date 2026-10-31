@@ -1,0 +1,58 @@
+{
+  "rows": [
+    {
+      "name": "alias",
+      "source": "#define CLASS Test\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN CLASS New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_New\n",
+      "own_exit": 0,
+      "own_output": "? Test_New\n",
+      "own_error": ""
+    },
+    {
+      "name": "numeric",
+      "source": "#define VALUE 7\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New + VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_New + 7\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test New + 7\n",
+      "own_error": ""
+    },
+    {
+      "name": "call_result",
+      "source": "#define CLASS Test\n#xtranslate ID(<x>) => <x>\n#xtranslate JOIN <!a!> <b> => <a>_<b>\n? ID(JOIN CLASS New)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? Test_New\n",
+      "own_exit": 0,
+      "own_output": "? Test_New\n",
+      "own_error": ""
+    },
+    {
+      "name": "generated",
+      "source": "#define CLASS Test\n#xcommand FIRST => ? JOIN CLASS New\n#xtranslate JOIN <!a!> <b> => <a>_<b>\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? Test_New\n",
+      "own_exit": 0,
+      "own_output": "? Test_New\n",
+      "own_error": ""
+    },
+    {
+      "name": "fixed_alias",
+      "source": "#define CLASS Test\n#xtranslate JOIN Test New => DONE\n? JOIN CLASS New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? DONE\n",
+      "own_exit": 0,
+      "own_output": "? DONE\n",
+      "own_error": ""
+    },
+    {
+      "name": "fixed_numeric",
+      "source": "#define VALUE 7\n#xtranslate WORD TOKEN => DONE\n? WORD TOKEN + VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? DONE + 7\n",
+      "own_exit": 0,
+      "own_output": "? WORD TOKEN + 7\n",
+      "own_error": ""
+    }
+  ]
+}
