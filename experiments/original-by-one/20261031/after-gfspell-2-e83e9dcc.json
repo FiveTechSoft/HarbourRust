@@ -1,0 +1,103 @@
+{
+ "phase": "extras/utils/contrib build units (after tests phase CLOSED 268/268 at 4a2da426)",
+ "order": "inventory path lexicographic: extras first, then utils, then contrib",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "extras/gfspell/spell.prg",
+   "sha256": "3cb9c8a3746ead381d6f51072cd1a4fa554cfd0006c5b49f1b10fccfbc53b1c3",
+   "review": "full source manually read 2026-11-01 (1467 lines, 21 functions)",
+   "entrypoint": "none (library): Sp_Add/Sp_Cache/Sp_Check/Sp_Clear/Sp_Init/Sp_GetSet/Sp_LoadAux/Sp_Suggest/Sp_Quick/Sp_WildCard/DBF2Dic/Dic2DBF/WildCard/AWords + statics",
+   "build_unit": "static library per gfspell.hbp (-hblib: spell.prg + spellc.c, hbx export list)",
+   "profile": "B-extras spell-check library",
+   "dependencies": "fileio.ch; C companion spellc.c (XForm/XUnForm/Sp_Rate/C_Metafone/bit/Sp_Line); DBF RDD (USE/INDEX/dbSkip/dbCreate/field->) in DBF2Dic/Dic2DBF; GT screen calls on lTalk paths only; THREAD STATICs; code blocks; byref FRead buffers; words.dbf data file",
+   "boundary": "Not run: library, no Main; runtime use needs dict.dic/words.dbf data and DBF RDD; lTalk UI paths need GT screen",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 gfspell.hbp -> libgfspell.a OK at pin 694428e1 (upstream C warnings only)",
+   "reference_run": "not-run (library)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 105: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 105: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 105: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 105: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "first_rejection_note": "first rejected statement sits inside Sp_Add (statement-level calls such as FSeek(...)/Sp_Cache(...)); post-preprocessor line numbering differs from raw source lines"
+  },
+  {
+   "file": "extras/hbusb/tests/test.prg",
+   "sha256": "4679423ae51ae2c7f69eb3c9cd3c030cc184bd8131229400b410ac8405387a80",
+   "review": "full source manually read 2026-11-01 (120 lines)",
+   "entrypoint": "Main",
+   "build_unit": "single-source executable against the hbusb library (hbusb.hbp: core.c + system libusb-1.0)",
+   "profile": "B-extras USB hardware probe",
+   "dependencies": "#require hbusb (C library core.c, itself requiring system libusb-1.0 dev package); byref output params throughout; SWITCH; hb_B* binary-string calls; USB hardware (opens VID:PID 1523:255 pedal device, bulk transfers, kernel-driver detach/attach)",
+   "boundary": "Not run: enumerates USB devices and opens a specific VID:PID device - hardware fixture required, not a safe deterministic console case; reference library build itself fails on missing system libusb (environment dependency, not a language error)",
+   "reference_build_exit": 10,
+   "reference_build_note": "hbmk2 hbusb.hbp fails: 'Error: Missing dependency: libusb' - system libusb-1.0 absent in this environment; not a language rejection (same class as traversal rddads record)",
+   "reference_run": "not-run",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ]
+}

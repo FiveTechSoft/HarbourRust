@@ -49,3 +49,14 @@ calling exactdefault121bytes;0newcompleteHarbourRustcompatibleoriginals.
 Newreferenceoutputs:byref677,classch34,classes37bytes(allnormalexit0).
 Nextlexicographiccls.prg. Fullinventoryremainsnotcompletedbythese39units.
 Numeric-cellproposal/oracles10preparedforarrayidx;noABI/storageimplementation.
+
+Extrasphase2026-11-01:testsrecursiveinventoryCLOSED268/268(commit4a2da426)=
+reviewed+inventoried,NOT compatible,walk notfinished.Nextorder:extras(35B)then
+utils(20B)thencontribunitsfrominventory.Batch1after-gfspell-2:extras/gfspell
+(spelllibrary,reference libgfspell.a builds OKat pin,noMain sorun notapplicable)
+andextras/hbusb/tests(test.prg exe;referencelib build fails rc10 missing SYSTEM
+libusb-1.0=environment dependency not language error;USB hardware boundary,not
+run).HarbourRustcolumns split:bbackends_baseline=BASELINEpin d999a46 historical
+comparabilityonly,NOT current state;backends_head=published HEAD c212a9a6.All4
+attemptscompile-reject(gfspell:statement subset line105;hbusstest:#require line1)
+-identical baseline/HEAD,no current compiler claim derived from baseline rows.
