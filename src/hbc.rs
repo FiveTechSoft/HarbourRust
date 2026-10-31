@@ -2967,6 +2967,15 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     let mut pin: Vec<Option<Ty>> = vec![None; n];
     let mut lit: Vec<(String, Ty)> = Vec::new(); // literal-initialized locals
     let mut printed: Vec<bool> = vec![false; n]; // params printed as a whole-variable item
+    // ains piece 1b (spec v3): a parameter the call-site fixpoint already
+    // flipped to an array view keeps that pin across rounds. Its body uses
+    // are validated under the read-only view rules by the body check, so
+    // pinning only absorbs the evidence (setpin) - never conflicts with it.
+    if let Some(prior) = sigs.iter().find(|s| s.name == f.name) {
+        for (i, av) in prior.aview.iter().enumerate() {
+            if *av && i < n { pin[i] = Some(Ty::AView); }
+        }
+    }
     fn is_param(f: &Func, id: &str) -> Option<usize> {
         f.params.iter().position(|p| p == id)
     }
@@ -3022,6 +3031,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             }
         }
         match pin[idx] {
+            // ains piece 1b: a view parameter absorbs pin evidence; the
+            // body check validates its uses under the view rules.
+            Some(Ty::AView) => Ok(()),
             None => { pin[idx] = Some(ty); Ok(()) }
             Some(t) if t == ty => Ok(()),
             // A parameter used numerically in one place and as NIL in
@@ -3110,6 +3122,13 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             Expr::Send(_, _, _) => Ok(()), // like a call: nothing pins through the message syntax
             Expr::ArrLit(es) => { for e in es { pin_vars(f, e, Ty::I64, pin, n)?; } Ok(()) }
             Expr::IdxCompound(id, ie, _, re) => {
+                if is_param(f, id).map(|pi| pin[pi] == Some(Ty::AView)).unwrap_or(false) {
+                    // ains piece 1b: a compound write THROUGH a view is a
+                    // mutation attempt - the body check rejects it by name;
+                    // pinning only types the operands.
+                    pin_vars(f, ie, Ty::I64, pin, n)?;
+                    return pin_vars(f, re, Ty::I64, pin, n);
+                }
                 if is_param(f, id).is_some() {
                     // Fixed arrays cannot be parameters here, so an
                     // indexed compound assignment never pins one.
@@ -3119,6 +3138,11 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 pin_vars(f, re, Ty::I64, pin, n)
             }
             Expr::Index(id, ie) => {
+                if is_param(f, id).map(|pi| pin[pi] == Some(Ty::AView)).unwrap_or(false) {
+                    // ains piece 1b: indexing a view parameter is a read;
+                    // pinning only types the index expression.
+                    return pin_vars(f, ie, Ty::I64, pin, n);
+                }
                 if is_param(f, id).is_some() {
                     // p["key"]: a literal string key pins a hash parameter
                     // (oracles hk11/hk12).
@@ -3926,6 +3950,116 @@ fn borrow_stmts_ok(stmts: &[Stmt], pname: &str) -> Option<usize> {
     None
 }
 
+// Read-only view safety is checked structurally, before emission. The table
+// is complete and dependency elimination is iterated to a fixed point, so
+// forward calls and recursive SCCs never depend on definition order.
+fn aview_expr_safe(e: &Expr, p: &str, sigs: &[Sig], whole: bool, cell: bool) -> bool {
+    match e {
+        Expr::Var(v) if v == p => whole,
+        Expr::ByRef(v) | Expr::Inc(v, ..) if v == p => false,
+        Expr::Index(v, i) if v == p => cell && !expr_mentions(i, p),
+        Expr::Index2(v, ..) | Expr::Index3(v, ..) | Expr::Index4(v, ..) | Expr::IdxCompound(v, ..) if v == p => false,
+        Expr::Set(v, r) => v != p && aview_expr_safe(r, p, sigs, false, false),
+        Expr::Call(id, args) => {
+            if !args.iter().any(|a| aview_mentions(a, p)) { return true; }
+            if ["len", "valtype", "hb_isarray", "hb_isnumeric"].iter().any(|b| is_builtin(id, b)) {
+                return args.len() == 1 && aview_expr_safe(&args[0], p, sigs, true, true);
+            }
+            if is_builtin(id, "hb_ntos") {
+                return args.len() == 1 && aview_expr_safe(&args[0], p, sigs, false, true);
+            }
+            if is_builtin(id, "iif") {
+                return cell && args.len() == 3 && args.iter().all(|a| aview_expr_safe(a, p, sigs, false, true));
+            }
+            if is_output_call(id) {
+                // A direct borrowed cell could be tag 6 or borrowed tag 4.
+                // Keep it out of the generic Dyn output/free path until the
+                // immediate-output union consumer has its own cleanup rule.
+                return args.iter().all(|a| aview_expr_safe(a, p, sigs, false, false));
+            }
+            match sigs.iter().find(|s| s.name == *id) {
+                Some(s) => args.iter().enumerate().all(|(i,a)| {
+                    if !aview_mentions(a,p) { return true; }
+                    let value_is_view=matches!(a,Expr::Var(v)|Expr::Index(v,_) if v==p);
+                    if value_is_view { s.aview.get(i).copied().unwrap_or(false) && aview_expr_safe(a,p,sigs,true,true) }
+                    else { aview_expr_safe(a,p,sigs,false,false) }
+                }),
+                None => false, // unknown routes cannot consume a view
+            }
+        }
+        Expr::Bin(_, a,b) | Expr::Cmp(_,a,b) | Expr::LAnd(a,b) | Expr::LOr(a,b) =>
+            aview_expr_safe(a,p,sigs,false,false) && aview_expr_safe(b,p,sigs,false,false),
+        Expr::LNot(a) => aview_expr_safe(a,p,sigs,false,false),
+        Expr::Seq(es) => es.iter().all(|a| aview_expr_safe(a,p,sigs,false,false)),
+        Expr::ArrLit(es) => !es.iter().any(|a| aview_mentions(a,p)),
+        Expr::HashLit(es) => !es.iter().any(|(a,b)| aview_mentions(a,p) || aview_mentions(b,p)),
+        Expr::BlockLit(_,_,es) => !es.iter().any(|a| aview_mentions(a,p)),
+        Expr::Send(a,_,es) => !aview_mentions(a,p) && !es.iter().any(|a| aview_mentions(a,p)),
+        _ => !aview_mentions(e,p),
+    }
+}
+fn aview_mentions(e: &Expr, p: &str) -> bool {
+    match e {
+        Expr::BlockLit(_,_,es) | Expr::ArrLit(es) | Expr::Seq(es) => es.iter().any(|a| aview_mentions(a,p)),
+        Expr::HashLit(es) => es.iter().any(|(a,b)| aview_mentions(a,p) || aview_mentions(b,p)),
+        Expr::Send(a,_,es) => aview_mentions(a,p) || es.iter().any(|a| aview_mentions(a,p)),
+        Expr::Call(_,es) => es.iter().any(|a|aview_mentions(a,p)),
+        Expr::Bin(_,a,b)|Expr::Cmp(_,a,b)|Expr::LAnd(a,b)|Expr::LOr(a,b) => aview_mentions(a,p)||aview_mentions(b,p),
+        Expr::LNot(a)|Expr::Set(_,a) => expr_mentions(e,p)||aview_mentions(a,p),
+        _ => expr_mentions(e,p),
+    }
+}
+fn aview_stmts_safe(ss: &[Stmt], p: &str, sigs: &[Sig]) -> bool {
+    ss.iter().all(|s| match s {
+        Stmt::Local(_,v,e) | Stmt::Assign(_,v,e) => v != p && aview_expr_safe(e,p,sigs,false,false),
+        Stmt::Print(_,es,_) => es.iter().all(|e| aview_expr_safe(e,p,sigs,false,true)),
+        Stmt::Ret(_,Some(e)) => aview_expr_safe(e,p,sigs,false,false),
+        Stmt::Ret(_,None) | Stmt::Exit(_) | Stmt::Loop(_) => true,
+        Stmt::CallStmt(_,e) => aview_expr_safe(e,p,sigs,false,false),
+        Stmt::If(_,c,a,b) => aview_expr_safe(c,p,sigs,false,false) && aview_stmts_safe(a,p,sigs) && aview_stmts_safe(b,p,sigs),
+        Stmt::While(_,c,b) => aview_expr_safe(c,p,sigs,false,false) && aview_stmts_safe(b,p,sigs),
+        Stmt::For(_,v,a,b,_,ss) => v != p && aview_expr_safe(a,p,sigs,false,false) && aview_expr_safe(b,p,sigs,false,false) && aview_stmts_safe(ss,p,sigs),
+        // Unhandled operations reject the candidate conservatively. This
+        // whitelist does not modify the existing mutable-borrow contract.
+        _ => false,
+    })
+}
+fn aview_array_evidence(ss: &[Stmt], p: &str) -> bool {
+    fn ex(e: &Expr,p: &str) -> bool { match e {
+        Expr::Index(_,i) => ex(i,p),
+        Expr::Call(id,aa) => (["valtype","hb_isnumeric","hb_isarray","hb_ntos"].iter().any(|b|is_builtin(id,b)) && matches!(aa.first(),Some(Expr::Index(v,_)) if v == p)) || aa.iter().any(|a|ex(a,p)),
+        Expr::Seq(aa) | Expr::ArrLit(aa) => aa.iter().any(|a|ex(a,p)),
+        Expr::Bin(_,a,b) | Expr::Cmp(_,a,b) | Expr::LAnd(a,b) | Expr::LOr(a,b) => ex(a,p)||ex(b,p),
+        Expr::LNot(a) | Expr::Set(_,a) => ex(a,p),
+        _ => false,
+    }}
+    ss.iter().any(|st| match st {
+        Stmt::Local(_,_,e)|Stmt::Assign(_,_,e)|Stmt::CallStmt(_,e)|Stmt::Ret(_,Some(e)) => ex(e,p),
+        Stmt::Print(_,es,_) => es.iter().any(|a|ex(a,p)),
+        Stmt::If(_,c,a,b) => ex(c,p)||aview_array_evidence(a,p)||aview_array_evidence(b,p),
+        Stmt::While(_,c,b) => ex(c,p)||aview_array_evidence(b,p),
+        Stmt::For(_,_,a,b,_,ss) => ex(a,p)||ex(b,p)||aview_array_evidence(ss,p),
+        _ => false,
+    })
+}
+fn aview_candidates(funcs: &[Func], base: &[Sig]) -> Vec<Vec<bool>> {
+    let mut tab = base.to_vec();
+    // Greatest fixed point for safety of read-only forwarding, including
+    // mutually recursive SCCs. Only body array evidence activates a view
+    // below; these provisional bits are not execution flags.
+    for s in &mut tab { s.aview.fill(true); }
+    loop {
+        let old: Vec<Vec<bool>> = tab.iter().map(|s| s.aview.clone()).collect();
+        for (fi,f) in funcs.iter().enumerate() {
+            for (pi,p) in f.params.iter().enumerate() {
+                if old[fi][pi] && !aview_stmts_safe(&f.stmts,p,&tab) { tab[fi].aview[pi] = false; }
+            }
+        }
+        if tab.iter().zip(&old).all(|(s,b)| s.aview == *b) { break; }
+    }
+    tab.into_iter().map(|s| s.aview).collect()
+}
+
 fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Result<Ty, String> {
     match e {
         Expr::Seq(es) => {
@@ -4129,7 +4263,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                             Some(x) if x.moved => return Err(format!("line {}: use of moved value `{}`", n, v)),
                             Some(x) => match x.ty {
                                 Ty::Dyn => return Err(format!("line {}: `{}` over a Dyn variable is not measured in this PoC (cell reads stay in place: `{}`(a[i]))", n, id, id)),
-                                Ty::I64 | Ty::F64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn | Ty::Arr(_) => {}
+                                Ty::I64 | Ty::F64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn | Ty::AView | Ty::Arr(_) => {}
                                 _ => return Err(format!("line {}: `{}` over this variable type is not measured in this PoC", n, id)),
                             },
                             None => return Err(format!("line {}: `{}` names no visible variable", n, v)),
@@ -4145,7 +4279,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         match env.iter().rev().find(|x| x.name == *v) {
                             Some(x) if x.moved => return Err(format!("line {}: use of moved value `{}`", n, v)),
                             Some(x) => match x.ty {
-                                Ty::DArr | Ty::DArrDyn | Ty::DArr2 | Ty::DArrS | Ty::DArr4 => {}
+                                Ty::AView | Ty::DArr | Ty::DArrDyn | Ty::DArr2 | Ty::DArrS | Ty::DArr4 => {}
                                 _ => return Err(format!("line {}: `{}` over this array depth is not measured in this PoC", n, id)),
                             },
                             None => return Err(format!("line {}: `{}` names no visible variable", n, v)),
@@ -4175,7 +4309,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         // DArr4 first level: child-array casilla -
                         // "A" (hk114, byte-measured via hk117 markers).
                         match env.iter().rev().find(|x| x.name == *v).map(|x| x.ty.clone()) {
-                            Some(Ty::DArr) | Some(Ty::DArrDyn) | Some(Ty::DArr2) | Some(Ty::DArrRef) | Some(Ty::DArrS) | Some(Ty::DArr4) | Some(Ty::Hash) => {}
+                            Some(Ty::AView) | Some(Ty::DArr) | Some(Ty::DArrDyn) | Some(Ty::DArr2) | Some(Ty::DArrRef) | Some(Ty::DArrS) | Some(Ty::DArr4) | Some(Ty::Hash) => {}
                             _ => return Err(format!("line {}: `ValType` over this array depth is not measured in this PoC", n)),
                         }
                     }
@@ -4295,7 +4429,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     _ => {}
                 }
                 return match type_expr(&args[0], env, sigs, n)? {
-                    Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Arr(_) | Ty::Hash => {
+                    Ty::AView | Ty::DArrDyn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Arr(_) | Ty::Hash => {
                         // Only variables: an array TEMPORARY in expression
                         // position has no free point in this increment
                         // (the FOR EACH temp machinery does not apply
@@ -4752,9 +4886,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             let si = sigs.iter().position(|v| v.name == *id)
                 .ok_or_else(|| format!("line {}: unknown function `{}` (must be defined before use)", n, id))?;
-            let (sig_params, sig_borrowed, sig_arr_moved, sig_ret, sig_inferred) = {
+            let (sig_params, sig_borrowed, sig_arr_moved, sig_aview, sig_ret, sig_inferred) = {
                 let s = &sigs[si];
-                (s.params.clone(), s.borrowed.clone(), s.arr_moved.clone(), s.ret, s.inferred.clone())
+                (s.params.clone(), s.borrowed.clone(), s.arr_moved.clone(), s.aview.clone(), s.ret, s.inferred.clone())
             };
             if args.len() > sig_params.len() {
                 // EXTRA arguments stay rejected (multiarg registered limit):
@@ -4802,7 +4936,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         };
                     }
                 }
-                if !sig_inferred.get(i).copied().unwrap_or(false) {
+                if !sig_inferred.get(i).copied().unwrap_or(false) && !sig_aview[i] {
                     // Placeholder parameter (order-independent fixpoint,
                     // pre-convergence or genuinely uninferable): no
                     // per-argument TYPE check is meaningful against it, and
@@ -4820,6 +4954,56 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     if !matches!(a, Expr::ByRef(_)) {
                         type_expr(a, env, sigs, n)?;
                     }
+                    continue;
+                }
+                // ains piece 1b (spec v3): an array-view parameter receives a
+                // caller-frame header {kind, ptr, len}; the argument LENDS its
+                // array for the call, read-only. Sources: an array variable
+                // (boundary whole-array view - the owner is FROZEN for the
+                // whole call, not moved), an element of an array of arrays
+                // (sub-view via the accessor), or another view parameter
+                // (pass-through). `@` on a view and every other shape are
+                // named rejections - never a silent fallback to the owned
+                // move contract.
+                if sig_aview[i] {
+                    if let Expr::ByRef(vn) = a {
+                        return Err(format!("line {}: `@{}` on an array-view parameter would alias the view - array views are read-only and non-owning (ains piece 1b)", n, vn));
+                    }
+                    let vroot: &String = match a {
+                        Expr::Var(v) => {
+                            match env.iter().find(|x| x.name == *v).map(|x| x.ty) {
+                                Some(t) if matches!(t, Ty::Arr(_) | Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrDyn | Ty::AView) => v,
+                                Some(Ty::DArrU) => v,
+                                Some(t) => return Err(format!("line {}: argument {} of `{}` must be an array variable or element for the array-view parameter, got {}", n, i + 1, id, ty_name(t))),
+                                None => return Err(format!("line {}: undefined variable `{}`", n, v)),
+                            }
+                        }
+                        Expr::Index(rid, ie) => {
+                            match env.iter().find(|x| x.name == *rid).map(|x| x.ty) {
+                                Some(t) if matches!(t, Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::AView) => {}
+                                Some(t) => return Err(format!("line {}: argument {} of `{}`: a sub-view element comes from an array of arrays or another view, got {}", n, i + 1, id, ty_name(t))),
+                                None => return Err(format!("line {}: undefined variable `{}`", n, rid)),
+                            }
+                            if type_expr(ie, env, sigs, n)? != Ty::I64 {
+                                return Err(format!("line {}: array index must be an integer", n));
+                            }
+                            rid
+                        }
+                        _ => return Err(format!("line {}: argument {} of `{}` must be an array variable or element for the array-view parameter (ains piece 1b)", n, i + 1, id)),
+                    };
+                    // The owner is frozen for the whole call: not moved (this
+                    // runs after any index expression of THIS argument), and
+                    // no other argument may mention the same root (mirrors
+                    // the borrow clash check).
+                    if env.iter().find(|x| x.name == *vroot).map(|x| x.moved).unwrap_or(true) {
+                        return Err(format!("line {}: use of moved value `{}`", n, vroot));
+                    }
+                    for (j, b) in args.iter().enumerate() {
+                        if j != i && aview_mentions(b, vroot) {
+                            return Err(format!("line {}: `{}` is viewed by argument {}; no other argument of the same call may mention it", n, vroot, i + 1));
+                        }
+                    }
+                    sigs[si].aview[i] = true;
                     continue;
                 }
                 if let Expr::ByRef(vn) = a {
@@ -4878,6 +5062,25 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         // array borrows a middle whose cells are child
                         // arrays {ptr, len} - the callee pins DArr2
                         // (oracles hk93-hk96). Same walk, same rules.
+                        if v.ty == Ty::AView {
+                            // ains piece 1b: f(a[k]) where `a` is itself a
+                            // view parameter - a sub-view. The callee
+                            // position joins the view contract (transitive
+                            // fixpoint); the owner stays frozen for the call.
+                            sigs[si].aview[i] = true;
+                            if v.moved {
+                                return Err(format!("line {}: use of moved value `{}`", n, rid));
+                            }
+                            if type_expr(ie, env, sigs, n)? != Ty::I64 {
+                                return Err(format!("line {}: array index must be an integer", n));
+                            }
+                            for (j, b) in args.iter().enumerate() {
+                                if j != i && aview_mentions(b, rid) {
+                                    return Err(format!("line {}: `{}` is viewed by argument {}; no other argument of the same call may mention it", n, rid, i + 1));
+                                }
+                            }
+                            continue;
+                        }
                         let borrow_match = (v.ty == Ty::DArr2 && sig_params[i] == Ty::DArr)
                             || (v.ty == Ty::DArr3 && sig_params[i] == Ty::DArr2);
                         if borrow_match {
@@ -4904,12 +5107,31 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                                     return Err(format!("line {}: `{}` is borrowed by argument {}; no other argument of the same call may mention it", n, rid, i + 1));
                                 }
                             }
-                            sigs[si].borrowed[i] = true;
+                            if !sigs[si].aview[i] {
+                                sigs[si].borrowed[i] = true;
+                            }
                             continue;
                         }
                     }
                 }
                 let ta = type_expr(a, env, sigs, n)?;
+                if ta == Ty::AView && !sig_aview[i] {
+                    // ains piece 1b (transitive fixpoint): passing a view
+                    // parameter whole forces the callee position into the
+                    // view contract too; the owner stays frozen for the call.
+                    if let Expr::Var(v) = a {
+                        sigs[si].aview[i] = true;
+                        if env.iter().find(|x| x.name == *v).map(|x| x.moved).unwrap_or(true) {
+                            return Err(format!("line {}: use of moved value `{}`", n, v));
+                        }
+                        for (j, b) in args.iter().enumerate() {
+                            if j != i && aview_mentions(b, v) {
+                                return Err(format!("line {}: `{}` is viewed by argument {}; no other argument of the same call may mention it", n, v, i + 1));
+                            }
+                        }
+                        continue;
+                    }
+                }
                 if let Ty::Arr(_) = ta {
                     // A static root array argument is COPIED at the
                     // boundary into a flat dynamic array the callee owns
@@ -5409,7 +5631,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             match env.iter().find(|v| v.name == *id) {
                 None => Err(format!("line {}: undefined variable `{}`", n, id)),
-                Some(v) if v.ty == Ty::DArr || v.ty == Ty::DArrDyn => {
+                Some(v) if v.ty == Ty::DArr || v.ty == Ty::DArrDyn || v.ty == Ty::AView => {
                     if v.moved {
                         return Err(format!("line {}: use of moved value `{}`", n, id));
                     }
@@ -6058,6 +6280,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 env.push(Local { name: id.clone(), ty: t, moved: false, ro: false, byref: false });
             }
             Stmt::Print(n, es, _) => {
+                if es.iter().any(|e| matches!(e,Expr::Index(v,_) if env.iter().any(|x|x.name==*v && x.ty==Ty::AView))) {
+                    return Err(format!("line {}: direct print of an array-view cell may expose an array (tag 6); classify and consume a scalar in place (ains piece 1b)",n));
+                }
                 // Printing borrows the value; it never moves it.
                 for e in es {
                     // `? a[i]` on an array of arrays is allowed: a
@@ -7359,7 +7584,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 // A static array argument is COPIED at the boundary (33l):
                 // the source variable keeps its value.
                 let copy = matches!(a, Expr::Var(v) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::Arr(_))));
-                let m = !copy && i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::StrOwn || sig.params[i] == Ty::DArr || sig.params[i] == Ty::DArr2 || sig.params[i] == Ty::DArr3 || sig.params[i] == Ty::DArr4 || sig.params[i] == Ty::DArrS || sig.params[i] == Ty::Hash);
+                let m = !copy && !sig.aview.get(i).copied().unwrap_or(false) && i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::StrOwn || sig.params[i] == Ty::DArr || sig.params[i] == Ty::DArr2 || sig.params[i] == Ty::DArr3 || sig.params[i] == Ty::DArr4 || sig.params[i] == Ty::DArrS || sig.params[i] == Ty::Hash);
                 apply_moves(a, env, sigs, m);
             }
         }
@@ -7423,6 +7648,39 @@ struct CgLocal {
     name: String,
     ty: Ty,
     off: usize, // offset below rbp of the FIRST slot (ptr for Str, value for i64)
+}
+
+thread_local! {
+    // Monotone allocation during emission: each materialized header receives
+    // its own 32-byte slot, including nested/lateral evaluations. Slots are
+    // intentionally not reused in this first implementation.
+    static AVIEW_FRAME_END: std::cell::Cell<usize> = std::cell::Cell::new(0);
+}
+fn aview_scratch() -> usize {
+    AVIEW_FRAME_END.with(|c| { let end = (c.get() + 15) & !15; c.set(end+32); end+32 })
+}
+fn cg_aview_whole(v: &CgLocal, slot: usize, out: &mut String) {
+    if v.ty == Ty::AView {
+        out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
+        return;
+    }
+    let kind = match v.ty { Ty::Arr(_) => 0, Ty::DArr|Ty::DArrDyn|Ty::DArrS|Ty::DArrU=>1,Ty::DArr2=>2,Ty::DArr3=>3,Ty::DArr4=>4,_=>unreachable!("checked view root") };
+    if let Ty::Arr(n) = v.ty {
+        out.push_str(&format!("    lea -{}(%rbp), %rax\n    mov ${}, %edx\n",v.off,n));
+    } else { out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -{}(%rbp), %rdx\n",v.off,v.off-8)); }
+    out.push_str(&format!("    movq ${}, -{}(%rbp)\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n    lea -{}(%rbp), %rax\n",kind,slot,slot-8,slot-16,slot));
+}
+fn cg_aview_cell(root: &CgLocal, ie: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    // Index evaluates before header materialization, so nested calls cannot
+    // overwrite any live parent/child header; every scratch allocation is
+    // unique even for lateral arguments.
+    cg_value(ie,env,sigs,strs,out,target);
+    if expr_ty(ie,env,sigs)==Ty::Dyn { out.push_str("    call hbc_dyn_to_i64\n"); }
+    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+    let hdr=aview_scratch();
+    cg_aview_whole(root,hdr,out);
+    let child=aview_scratch();
+    out.push_str(&format!("    mov %rax, %rdi\n    mov (%rsp), %rsi\n    add $16, %rsp\n    lea -{}(%rbp), %rdx\n    call hbc_aview_get\n",child));
 }
 
 fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
@@ -7635,12 +7893,18 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     match var.ty {
                         Ty::I64 | Ty::F64 => konst(out, want_num),
                         Ty::Bool | Ty::Str | Ty::StrOwn => konst(out, false),
-                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn | Ty::Arr(_) => konst(out, !want_num),
+                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn | Ty::AView | Ty::Arr(_) => konst(out, !want_num),
                         _ => unreachable!("checked"),
                     }
                 }
                 Expr::Index(v, ie) => {
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                    if var.ty==Ty::AView {
+                        cg_aview_cell(var,ie,env,sigs,strs,out,target);
+                        out.push_str("    mov %rax, %r10\n");
+                        classify_tag(out,want_num);
+                        return;
+                    }
                     cg_expr(ie, env, sigs, strs, out, target);
                     match var.ty {
                         Ty::DArr | Ty::DArrS | Ty::DArrDyn => {
@@ -7710,7 +7974,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             }
             // %r10 = scalar Dyn tag: 0 i64 -> "N", 1 NIL -> "U", 2 str -> "C"
             fn vt_classify_scalar(strs: &mut Vec<String>, out: &mut String) {
-                out.push_str("    cmp $1, %r10\n    je 95f\n    cmp $2, %r10\n    je 96f\n    cmp $4, %r10\n    je 96f\n    cmp $3, %r10\n    je 98f\n");
+                out.push_str("    cmp $6, %r10\n    je 99f\n    cmp $1, %r10\n    je 95f\n    cmp $2, %r10\n    je 96f\n    cmp $4, %r10\n    je 96f\n    cmp $3, %r10\n    je 98f\n");
                 vt_letter(strs, out, "N");
                 out.push_str("    jmp 97f\n95:\n");
                 vt_letter(strs, out, "U");
@@ -7718,6 +7982,8 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 vt_letter(strs, out, "C");
                 out.push_str("    jmp 97f\n98:\n");
                 vt_letter(strs, out, "L");
+                out.push_str("    jmp 97f\n99:\n");
+                vt_letter(strs,out,"A");
                 out.push_str("97:\n");
             }
             match &args[0] {
@@ -7734,7 +8000,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                         Ty::I64 => vt_letter(strs, out, "N"),
                         Ty::Bool => vt_letter(strs, out, "L"), // hk197
                         Ty::Str | Ty::StrOwn => vt_letter(strs, out, "C"),
-                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::Arr(_) => vt_letter(strs, out, "A"),
+                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::AView | Ty::Arr(_) => vt_letter(strs, out, "A"),
                         Ty::Dyn => {
                             // tag word of the stack pair (tag at -(off))
                             out.push_str(&format!("    mov -{}(%rbp), %r10\n", var.off));
@@ -7757,6 +8023,12 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                         out.push_str("    test %rax, %rax\n    je 85f\n    mov (%rax), %r10\n    jmp 86f\n85:\n    call hbc_bound_error\n86:\n");
                         vt_classify_scalar(strs, out);
                     } else {
+                    if var.ty==Ty::AView {
+                        cg_aview_cell(var,ie,env,sigs,strs,out,target);
+                        out.push_str("    mov %rax, %r10\n");
+                        vt_classify_scalar(strs,out);
+                        return;
+                    }
                     cg_expr(ie, env, sigs, strs, out, target);
                     match var.ty {
                         Ty::DArr | Ty::DArrS | Ty::DArrDyn => {
@@ -7975,7 +8247,8 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 Expr::Var(v) => {
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                     match var.ty {
-                        Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash => out.push_str(&format!("    mov -{}(%rbp), %rax\n", var.off - 8)),
+                        Ty::DArrDyn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash => out.push_str(&format!("    mov -{}(%rbp), %rax\n", var.off - 8)),
+                        Ty::AView => out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov 16(%rax), %rax\n", var.off)),
                         Ty::DArrRef | Ty::DArrRef2 => out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov 8(%rax), %rax\n", var.off)),
                         Ty::Arr(k) => out.push_str(&format!("    mov ${}, %rax\n", k)),
                         _ => unreachable!("checked"),
@@ -8579,6 +8852,24 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             let psig = sigs.iter().find(|v| v.name == *id).map(|v| v.params.clone());
             let pborrowed = sigs.iter().find(|v| v.name == *id).map(|v| v.borrowed.clone());
             for (ai, a) in args.iter().enumerate() {
+                if psig.as_ref().and_then(|p|p.get(ai)) == Some(&Ty::AView) {
+                    match a {
+                        Expr::Var(v) => {
+                            let root=env.iter().rev().find(|x|x.name==*v).expect("checked");
+                            let slot=aview_scratch();
+                            cg_aview_whole(root,slot,out);
+                        }
+                        Expr::Index(v,ie) => {
+                            let root=env.iter().rev().find(|x|x.name==*v).expect("checked");
+                            cg_aview_cell(root,ie,env,sigs,strs,out,target);
+                            let ok=fresh_lbl();
+                            out.push_str(&format!("    cmp $6, %rax\n    je .Lavarg{}\n    call hbc_param_error\n.Lavarg{}:\n    mov %rdx, %rax\n",ok,ok));
+                        }
+                        _=>unreachable!("view boundary checked"),
+                    }
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    movq $0, 8(%rsp)\n");
+                    continue;
+                }
                 // Borrowed argument: `a[i]` on an array of arrays. The
                 // index evaluates FIRST (Harbour order), then the bounds
                 // walk yields the child cell's ADDRESS; the callee borrows
@@ -8836,6 +9127,10 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     out.push_str("    mov %rax, 8(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    add $32, %rsp\n");
                 }
                 out.push_str("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
+                return;
+            }
+            if v.ty == Ty::AView {
+                cg_aview_cell(v,ie,env,sigs,strs,out,target);
                 return;
             }
             if v.ty == Ty::DArr || v.ty == Ty::DArrDyn {
@@ -11927,7 +12222,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
             frame += size_of(own_sig.params[i]);
             // A parameter some caller feeds as `a[i]` arrives as the cell
             // ADDRESS (one word): borrow shape, never freed here.
-            let pty = if own_sig.borrowed.get(i).copied().unwrap_or(false) && own_sig.params[i] == Ty::DArr { Ty::DArrRef } else if own_sig.borrowed.get(i).copied().unwrap_or(false) && own_sig.params[i] == Ty::DArr2 { Ty::DArrRef2 } else { own_sig.params[i] };
+            let pty = if own_sig.aview[i] { Ty::AView } else if own_sig.borrowed.get(i).copied().unwrap_or(false) && own_sig.params[i] == Ty::DArr { Ty::DArrRef } else if own_sig.borrowed.get(i).copied().unwrap_or(false) && own_sig.params[i] == Ty::DArr2 { Ty::DArrRef2 } else { own_sig.params[i] };
             let pty = if byref.map(|m| m.get(i).copied().unwrap_or(false)).unwrap_or(false) {
                 // `@`-received parameter: the slot holds the OWNER's slot
                 // address (one word); reads and writes go through it and
@@ -11985,15 +12280,12 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
 
     let trace_off = frame + 32;
     frame = trace_off;
+    AVIEW_FRAME_END.with(|c| c.set((frame+15)&!15));
+    let avframe=fresh_lbl();
     out.push_str(&format!("hbc_fn_{}:\n", lbl));
     out.push_str("    push %rbp\n    mov %rsp, %rbp\n");
-    // Win64 ABI: rsp must be 16-byte aligned at every call. The Linux
-    // frame only needs 8-byte slots (syscalls do not care); round up to 16
-    // for Windows so the helper call sites keep ABI alignment.
-    let frame = if target == Target::Windows { (frame + 15) & !15 } else { frame };
-    if frame > 0 {
-        out.push_str(&format!("    sub ${}, %rsp\n", frame));
-    }
+    // Forward absolute expression finalized after scratch allocation.
+    out.push_str(&format!("    sub $.Lavframe{}, %rsp\n",avframe));
     PROC_NAME.with(|v| *v.borrow_mut() = f.name.split("__br").next().unwrap_or(&f.name).to_ascii_uppercase());
     CUR_FN.with(|c| *c.borrow_mut() = f.name.clone());
     trace_link(trace_off, out);
@@ -12101,6 +12393,9 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     for (id, ps, body) in blocks {
         emit_block(&f.name, id, &ps, &body, sigs, strs, out, target);
     }
+    let avend=AVIEW_FRAME_END.with(|c|c.get());
+    out.push_str(&format!(".set .Lavframe{}, {}\n",avframe,(avend+15)&!15));
+
 }
 
 const REG_ALLOC_L: &str = r"    # harness registry (instrumented build): record (base, bytes) so
@@ -14437,9 +14732,9 @@ hbc_aview_get:
     mov %rdx, %rbx
     mov 16(%rdi), %rcx
     cmp $1, %rsi
-    jl hbc_bound_error
+    jl 9f
     cmp %rcx, %rsi
-    jg hbc_bound_error
+    jg 9f
     dec %rsi
     mov 8(%rdi), %r8
     mov (%rdi), %rax
@@ -14478,6 +14773,8 @@ hbc_aview_get:
     mov %rbx, %rdx
     pop %rbx
     ret
+9:  pop %rbx
+    jmp hbc_bound_error
 
 # hbc_dyn_to_log: %rax = tag, %rdx = payload -> %rax = 0/1 (the logical
 # payload). Only tag 3 is a valid condition: NIL (hk266), integers
@@ -16319,9 +16616,9 @@ hbc_aview_get:
     mov %rdx, %rbx
     mov 16(%rdi), %rcx
     cmp $1, %rsi
-    jl hbc_bound_error
+    jl 9f
     cmp %rcx, %rsi
-    jg hbc_bound_error
+    jg 9f
     dec %rsi
     mov 8(%rdi), %r8
     mov (%rdi), %rax
@@ -16360,6 +16657,8 @@ hbc_aview_get:
     mov %rbx, %rdx
     pop %rbx
     ret
+9:  pop %rbx
+    jmp hbc_bound_error
 
 # hbc_dyn_to_log: %rax = tag, %rdx = payload -> %rax = 0/1 (the logical
 # payload). Only tag 3 is a valid condition: NIL (hk266), integers
@@ -17536,6 +17835,7 @@ fn main() {
         }
         let mut cur: Vec<Sig> = Vec::with_capacity(funcs.len());
         let before = view.clone();
+        let aview_safe = aview_candidates(&funcs, &view);
         // Argument evidence (arg_ev) is NOT reset between rounds: the
         // only recorded fact is "some call site passed a float", and
         // float-typedness is monotone across the fixpoint (literals and
@@ -17556,13 +17856,22 @@ fn main() {
             // round, the round converges, and the converged round reports
             // the pin error by name. (The body-first contract still holds:
             // the pin error is reported only when the body checks clean.)
-            let (ptys, inferred, pin_err) = match pin_params(f, &view) {
+            let (mut ptys, inferred, pin_err) = match pin_params(f, &view) {
                 Ok((pin, e)) => {
                     let inf: Vec<bool> = pin.iter().map(|x| x.is_some()).collect();
                     (pin.into_iter().map(|x| x.unwrap_or(Ty::I64)).collect(), inf, e)
                 }
                 Err(m) => (view[fi].params.clone(), view[fi].inferred.clone(), Some(m)),
             };
+            for i in 0..ptys.len() {
+                if view[fi].aview[i] || ptys[i]==Ty::AView || aview_array_evidence(&f.stmts,&f.params[i]) {
+                    view[fi].aview[i] = true;
+                    ptys[i] = Ty::AView;
+                }
+            }
+            if f.params.iter().enumerate().any(|(i,_)| view[fi].aview[i] && !aview_safe[fi][i]) {
+                if first_err.is_none() { first_err = Some(format!("array-view parameter of `{}` cannot escape, mutate, be captured, or pass to an unknown/owned route (ains piece 1b)", f.name)); }
+            }
             // Parameters enter the frame as owned locals: integer arguments copy,
             // string arguments move (callers hand over ownership). A parameter
             // some caller passes as `@p` is BORROWED from that caller instead
@@ -17649,7 +17958,7 @@ fn main() {
         // not lost by an early copy.
         let converged = cur.len() == before.len()
             && cur.iter().zip(before.iter()).all(|(c, b)| c.name == b.name && c.params == b.params && c.ret == b.ret && c.inferred == b.inferred)
-            && view.iter().zip(before.iter()).all(|(v, b)| v.name == b.name && v.borrowed == b.borrowed && v.arr_moved == b.arr_moved
+            && view.iter().zip(before.iter()).all(|(v, b)| v.name == b.name && v.borrowed == b.borrowed && v.arr_moved == b.arr_moved && v.aview == b.aview
                 // New float-argument evidence recorded THIS round feeds
                 // only the NEXT round's pins: convergence must wait for
                 // it (63zd; monotone None -> Some, so it stabilizes).
@@ -17661,8 +17970,8 @@ fn main() {
                 }
             }
             for (v, b) in view.iter().zip(before.iter()) {
-                if v.borrowed != b.borrowed || v.arr_moved != b.arr_moved {
-                    eprintln!("infer round {}: {} flags borrowed {:?} -> {:?} arr_moved {:?} -> {:?}", round, v.name, b.borrowed, v.borrowed, b.arr_moved, v.arr_moved);
+                if v.borrowed != b.borrowed || v.arr_moved != b.arr_moved || v.aview != b.aview {
+                    eprintln!("infer round {}: {} flags borrowed {:?} -> {:?} arr_moved {:?} -> {:?} aview {:?} -> {:?}", round, v.name, b.borrowed, v.borrowed, b.arr_moved, v.arr_moved, b.aview, v.aview);
                 }
             }
         }
@@ -17684,6 +17993,7 @@ fn main() {
             for (c, v) in cur.iter_mut().zip(view.iter()) {
                 c.borrowed = v.borrowed.clone();
                 c.arr_moved = v.arr_moved.clone();
+                c.aview = v.aview.clone();
             }
             sigs = cur;
             break;

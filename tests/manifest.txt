@@ -1439,3 +1439,34 @@ neg tests/t1442_isx_unknownindex_neg.hb unknown function `nosuchfn_xyzzy`
 neg tests/t1443_isx_movedowner_neg.hb use of moved value `a`
 neg tests/t1444_isx_zeroargs_neg.hb takes one argument
 neg tests/t1445_isx_dynvar_neg.hb over a Dyn variable is not measured
+
+# ains 1b step (b), read-only array views
+pos tests/t1446_aview_mixed.hb NCUL\n\n         4
+pos tests/t1447_aview_empty.hb \n         0\n         0
+pos tests/t1448_aview_recur.hb ANNANN\n         2
+pos tests/t1449_aview_forward.hb \n         2\nN\n         1
+pos tests/t1450_aview_nil.hb U.F.
+pos tests/t1451_aview_mem.hb NCULNCULNCULNCULNCUL\n         0
+pos tests/t1452_aview_nested.hb NNN\n         1\n         3\n         5
+pos tests/t1453_aview_depth.hb AAAUU\n         1
+pos tests/t1454_aview_strarr.hb CC\nx\n         0
+pos tests/t1455_aview_mutual.hb AANN\n         1
+neg tests/t1456_aview_escape.hb array-view
+neg tests/t1457_aview_mutate.hb array-view
+neg tests/t1458_aview_frozen.hb no other argument of the same call may mention it
+neg tests/t1459_aview_capture.hb array-view
+neg tests/t1460_aview_store.hb array-view
+neg tests/t1461_aview_byref.hb array-view
+neg tests/t1462_aview_printcell.hb array-view
+neg tests/t1463_aview_badindex.hb array index must be an integer
+neg tests/t1464_aview_moved.hb use of moved value
+neg tests/t1465_aview_children.hb no other argument of the same call may mention it
+posx tests/t1466_aview_low.hb 1 Bound error: array access\nCallstack:\n  at show (tests/t1466_aview_low.hb:7)\n  at main (tests/t1466_aview_low.hb:4)\n
+posx tests/t1467_aview_high.hb 1 Bound error: array access\nCallstack:\n  at show (tests/t1467_aview_high.hb:7)\n  at main (tests/t1467_aview_high.hb:4)\n
+posx tests/t1468_aview_nilpass.hb 1 UArgument error: PARAM\nCallstack:\n  at show (tests/t1468_aview_nilpass.hb:9)\n  at main (tests/t1468_aview_nilpass.hb:5)\n
+posx tests/t1469_aview_nontag6.hb 1 NArgument error: PARAM\nCallstack:\n  at show (tests/t1469_aview_nontag6.hb:8)\n  at main (tests/t1469_aview_nontag6.hb:4)\n
+
+neg tests/t1470_aview_outputcell.hb array-view
+neg tests/t1471_aview_outstdcell.hb array-view
+neg tests/t1472_aview_outerrcell.hb array-view
+neg tests/t1473_aview_qoutcell.hb array-view
