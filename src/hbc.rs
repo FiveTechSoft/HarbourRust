@@ -1457,7 +1457,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "dfree", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "dfree", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -9405,7 +9405,10 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 if let Some(v) = env.iter_mut().find(|v| v.name == *id) {
                     if v.ty == Ty::DArrU && matches!(vt, Ty::DArr | Ty::DArr2 | Ty::DArrDyn) {
                         v.ty = vt;
-                        flip = Some((v.off, (v.ty == Ty::DArr2) as u8));
+                        // Free class must track the re-pin: a {} -> mixed
+                        // reassign leaked the cell payloads when the class
+                        // stayed 0 (verifier empty_mixed_balance, 31Oct).
+                        flip = Some((v.off, if v.ty == Ty::DArrDyn { 8 } else { (v.ty == Ty::DArr2) as u8 }));
                     }
                 }
                 if let Some((off, deep)) = flip {
@@ -10033,7 +10036,11 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             }
                         }
                         Ty::Dyn => {
-                            out.push_str("    call hbc_print_dyn\n");
+                            // DArrDyn cell reads carry literal provenance
+                            // (piece 1a cells are literal-only): the lit
+                            // variant prints tag 0 with the literal rule.
+                            let lit_cell = matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArrDyn));
+                            out.push_str(if lit_cell { "    call hbc_print_dynlit\n" } else { "    call hbc_print_dyn\n" });
                             // An owned temporary (a call result) releases a
                             // tag-4 payload right after printing; a Var stays
                             // owned by its slot, and a DArrDyn cell read stays
@@ -10871,7 +10878,15 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // CURRENT type (the old value's type).
                                 let cur_ty = env.iter().find(|x| x.name == *id).map(|x| x.ty);
                                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                                if cur_ty == Some(Ty::DArrDyn) {
+                                if cur_ty == Some(Ty::DArrDyn) || (cur_ty == Some(Ty::DArrU) && t == Ty::DArrDyn) {
+                                    // cur_ty DArrU + DArrDyn RHS: the flip
+                                    // store. Straight-line the slot is null
+                                    // or the empty `{}` block (count 0,
+                                    // dfree is a plain free); in a LOOP the
+                                    // same store runs again with a LIVE
+                                    // DArrDyn from the previous iteration -
+                                    // the conditional dfree releases its
+                                    // payloads (verifier leak shape, 31Oct).
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov -{}(%rbp), %rsi\n    call hbc_dfree\n86:\n", off, off - 8));
                                 } else if cur_ty == Some(Ty::DArrS) {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov -{}(%rbp), %rsi\n    call hbc_sfree\n86:\n", off, off - 8));
@@ -14191,6 +14206,41 @@ hbc_print_dyn:
     syscall
     ret
 8:  mov %rdx, %rax
+    jmp hbc_print_i64c
+11: lea .Lfmsg(%rip), %rsi
+    test %rdx, %rdx
+    jz 12f
+    lea .Ltmsg(%rip), %rsi
+12: mov $3, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    ret
+9:  mov %rdx, %rax
+    mov -8(%rax), %rdx
+    jmp hbc_print_str
+
+# hbc_print_dynlit: hbc_print_dyn variant for DArrDyn LITERAL cell reads
+# (piece 1a): every cell is born from a literal, and Harbour stamps the
+# literal display length (oracle v_w/width_variable, 31Oct), so tag 0
+# prints via hbc_print_i64. Dyn values WITHOUT literal provenance keep
+# hbc_print_dyn (i64c macro) - the pre-existing ABI contract.
+hbc_print_dynlit:
+    test %rax, %rax
+    jz 8f
+    cmp $2, %rax
+    je 9f
+    cmp $4, %rax
+    je 9f
+    cmp $3, %rax
+    je 11f
+    lea .Lnilmsg(%rip), %rsi
+    mov $3, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    ret
+8:  mov %rdx, %rax
     jmp hbc_print_i64
 11: lea .Lfmsg(%rip), %rsi
     test %rdx, %rdx
@@ -14204,6 +14254,7 @@ hbc_print_dyn:
 9:  mov %rdx, %rax
     mov -8(%rax), %rdx
     jmp hbc_print_str
+
 
 # hbc_dyn_to_i64: %rax = tag, %rdx = payload -> %rax = payload. NIL here is
 # a Harbour type error (arithmetic/ordering/indexing on NIL); its dialog
@@ -15201,7 +15252,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if out.contains("call hbc_eprint_") {
         let original = out.clone();
         out.push_str("\n    .text\n");
-        for name in ["str", "sep", "i64", "i64c", "dyn", "f64"] {
+        for name in ["str", "sep", "i64", "i64c", "dyn", "dynlit", "f64"] {
             let label = format!("\nhbc_print_{}:", name);
             let start = original.find(&label).expect("print helper exists") + 1;
             let rest = &original[start..];
@@ -15978,6 +16029,44 @@ hbc_print_dyn:
     call hbc_print_str
     jmp 9f
 8:  mov %rdx, %rax
+    call hbc_print_i64c
+    jmp 9f
+10: mov %rdx, %rax
+    mov -8(%rax), %rdx
+    call hbc_print_str
+    jmp 9f
+11: lea .Lfmsg(%rip), %rax
+    test %rdx, %rdx
+    jz 12f
+    lea .Ltmsg(%rip), %rax
+12: mov $3, %edx
+    call hbc_print_str
+    jmp 9f
+9:  leave
+    ret
+
+# hbc_print_dynlit: hbc_print_dyn variant for DArrDyn LITERAL cell reads
+# (piece 1a): every cell is born from a literal, and Harbour stamps the
+# literal display length (oracle v_w/width_variable, 31Oct), so tag 0
+# prints via hbc_print_i64. Dyn values WITHOUT literal provenance keep
+# hbc_print_dyn (i64c macro) - the pre-existing ABI contract.
+hbc_print_dynlit:
+    push %rbp
+    mov %rsp, %rbp
+    sub $48, %rsp
+    test %rax, %rax
+    jz 8f
+    cmp $2, %rax
+    je 10f
+    cmp $4, %rax
+    je 10f
+    cmp $3, %rax
+    je 11f
+    lea .Lnilmsg(%rip), %rax
+    mov $3, %edx
+    call hbc_print_str
+    jmp 9f
+8:  mov %rdx, %rax
     call hbc_print_i64
     jmp 9f
 10: mov %rdx, %rax
@@ -15993,6 +16082,7 @@ hbc_print_dyn:
     jmp 9f
 9:  leave
     ret
+
 
 # hbc_dyn_to_i64: %rax = tag, %rdx = payload -> %rax = payload. NIL here is
 # a Harbour type error; see the linux copy for the failure-mode note.
