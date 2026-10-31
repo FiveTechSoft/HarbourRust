@@ -1493,3 +1493,6 @@ pos tests/t1494_stepd_lazy.hb x|DEAD9\n         0\n         0
 neg tests/t1495_stepd_neg_store.hb branches must share a scalar type
 neg tests/t1496_stepd_neg_return.hb branches must share a scalar type
 neg tests/t1497_stepd_neg_pass.hb branches must share a scalar type
+pos tests/t1498_stepd_orientation.hb \ncanary\n1\n1\ncanary\n         0\n         0
+pos tests/t1499_stepd_deaderror.hb \ncanary\ncanary\n         0\n         0
+pos tests/t1500_stepd_cond_once.hb \n1\n         1\n         0\n         0

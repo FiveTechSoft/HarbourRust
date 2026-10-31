@@ -10467,15 +10467,16 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
 // ains piece 1b step (c)-next (bounded; see check_iif_out_rawdyn):
 // iif(cond, ownedStrTemp, rawDynCell) as an output item. Returns
 // (cond, owned arm, cell arm). Mirrors the checker exactly.
-fn cg_iif_out_rawdyn<'a>(e: &'a Expr, env: &[CgLocal], sigs: &[Sig]) -> Option<(&'a Expr, &'a Expr, &'a Expr)> {
+// Returns (cond, true-arm, false-arm, true-arm-is-the-cell).
+fn cg_iif_out_rawdyn<'a>(e: &'a Expr, env: &[CgLocal], sigs: &[Sig]) -> Option<(&'a Expr, &'a Expr, &'a Expr, bool)> {
     if let Expr::Call(id, args) = e {
         if is_builtin(id, "iif") && args.len() == 3 {
             let cell_arm = |x: &Expr| matches!(x, Expr::Index(v, _) if env.iter().any(|l| l.name == *v && matches!(l.ty, Ty::AView | Ty::DArrDyn)));
-            let (owned, cell) = if cell_arm(&args[2]) && !cell_arm(&args[1]) { (&args[1], &args[2]) }
-                else if cell_arm(&args[1]) && !cell_arm(&args[2]) { (&args[2], &args[1]) }
+            let (owned, cell, cell1) = if cell_arm(&args[2]) && !cell_arm(&args[1]) { (&args[1], &args[2], false) }
+                else if cell_arm(&args[1]) && !cell_arm(&args[2]) { (&args[2], &args[1], true) }
                 else { return None };
             if !matches!(owned, Expr::Var(_)) && expr_ty(cell, env, sigs) == Ty::Dyn && expr_ty(owned, env, sigs) == Ty::StrOwn {
-                return Some((&args[0], owned, cell));
+                return Some((&args[0], &args[1], &args[2], cell1));
             }
         }
     }
@@ -10495,27 +10496,38 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                 // (hk16/hk20/hk24): only borrowed, never consumed.
                 let renders_empty = |e: &Expr| matches!(expr_ty(e, env, sigs), Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash | Ty::DArrRef | Ty::DArrRef2);
                 for e in es {
-                    if let Some((cond, owned, cell)) = cg_iif_out_rawdyn(e, env, sigs) {
+                    if let Some((cond, arm1, arm2, cell1)) = cg_iif_out_rawdyn(e, env, sigs) {
                         // Evaluate the condition ONCE, then only the chosen
                         // arm (iif laziness, hk321). Both arms push a
                         // uniform {tag, payload} pair: the owned string arm
                         // as marker tag 7 (freed after printing), the raw
                         // cell as its own borrowed tag (never freed -
                         // DArrDyn string cells are tag 4 owned by the
-                        // array itself).
+                        // array itself). ORIENTATION: the true branch is
+                        // always arm1 and the false branch arm2; the arm
+                        // KIND (owned vs raw cell), not its position,
+                        // decides each branch's emission (verifier finding
+                        // on c6b10774: a reversed iif printed the wrong
+                        // side; t1498 pins both orientations).
                         let id = print_lbl();
                         cg_value(cond, env, sigs, strs, out, target);
                         out.push_str(&format!("    test %rax, %rax\n    jz .Lprdraw{}\n", id));
-                        cg_value(owned, env, sigs, strs, out, target);
-                        // Tag 7 marks the OWNED arm (print + free): real
-                        // cells never carry it (0-4 in use, 5 reserved,
-                        // 6 array), and DArrDyn string cells are tag 4
-                        // OWNED BY THE ARRAY (hk254 layout) - borrowed
-                        // here, never freed.
-                        out.push_str(&format!("    mov %rax, %rcx\n    mov $7, %eax\n    push %rcx\n    push %rax\n    jmp .Lprdone{}\n", id));
+                        if cell1 {
+                            cg_expr(arm1, env, sigs, strs, out, target);
+                            out.push_str("    push %rdx\n    push %rax\n");
+                        } else {
+                            cg_value(arm1, env, sigs, strs, out, target);
+                            out.push_str("    mov %rax, %rcx\n    mov $7, %eax\n    push %rcx\n    push %rax\n");
+                        }
+                        out.push_str(&format!("    jmp .Lprdone{}\n", id));
                         out.push_str(&format!(".Lprdraw{}:\n", id));
-                        cg_expr(cell, env, sigs, strs, out, target);
-                        out.push_str(&format!("    push %rdx\n    push %rax\n"));
+                        if !cell1 {
+                            cg_expr(arm2, env, sigs, strs, out, target);
+                            out.push_str("    push %rdx\n    push %rax\n");
+                        } else {
+                            cg_value(arm2, env, sigs, strs, out, target);
+                            out.push_str("    mov %rax, %rcx\n    mov $7, %eax\n    push %rcx\n    push %rax\n");
+                        }
                         out.push_str(&format!(".Lprdone{}:\n", id));
                         continue;
                     }
