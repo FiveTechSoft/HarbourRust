@@ -1,0 +1,131 @@
+{
+  "scope": "6own plain type runtime oracle checks,not original corpus growth",
+  "rows": [
+    {
+      "file": "t1265_pp_plain_type_name.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\nnumber",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\nnumber",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\nnumber",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1266_pp_plain_type_expression.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\n1 + 2",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\n1 + 2",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\n1 + 2",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1267_pp_plain_type_call.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\nf(1,2)",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\nf(1,2)",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\nf(1,2)",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1268_pp_plain_type_reorder.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nf(1,2)\n         3",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nf(1,2)\n         3",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nf(1,2)\n         3",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1269_pp_plain_type_repeats.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\nnumber\ntext\n         1",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\nnumber\ntext\n         1",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\nnumber\ntext\n         1",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1270_pp_plain_type_operand.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\na + INIT\n         2",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\na + INIT\n         2",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\na + INIT\n         2",
+          "stderr": ""
+        }
+      }
+    }
+  ]
+}

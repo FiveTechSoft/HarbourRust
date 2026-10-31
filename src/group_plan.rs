@@ -67,7 +67,7 @@ impl Plan {
             if atoms.len()!=2{return false;}
             match (&atoms[0],&atoms[1],kind){
                 (Atom::Literal(t),Atom::Identifier(_),0)if t==","=>{},
-                (Atom::Restricted(_,choices),Atom::Identifier(_),1)|(Atom::Restricted(_,choices),Atom::Expression(_),2)=>{
+                (Atom::Restricted(_,choices),Atom::Identifier(_),1)|(Atom::Restricted(_,choices),Atom::Expression(_),1)|(Atom::Restricted(_,choices),Atom::Expression(_),2)=>{
                     for seq in choices{if seq.len()!=1||seq[0].len()<4&&seq[0].len()!=2{return false;}let word=seq[0].to_ascii_uppercase();if names.iter().any(|n:&String|n==&word||(n.len()>=4&&word.len()>=4&&n[..4]==word[..4])){return false;}names.push(word);}
                 },_=>return false,
             }
@@ -231,4 +231,12 @@ use super::*;fn w(t:&[&str])->Vec<String>{t.iter().map(|s|s.to_string()).collect
  #[test]fn reduced_expression_admission_is_not_a_general_parser(){assert!(Plan::expression_in_scope(&w(&["f","(","1",",","2",")","+","3"])));assert!(!Plan::expression_in_scope(&w(&["1","+"])));assert!(!Plan::expression_in_scope(&w(&[","])));}
  #[test]fn reduced_prefix_stays_out(){assert!(p().matches(&w(&["PROBE","alpha"]),true,true).is_err());}
  #[test]fn reduced_iteration_cap(){let mut t=w(&["PROBE","alpha"]);for _ in 0..1025{t.extend(w(&[",","beta"]));}assert!(p().matches(&t,true,false).is_err());}
+}
+
+#[cfg(test)]mod plain_type_tests{
+ use super::*;
+ #[test]fn plain_type_uses_its_own_owner(){
+ let tokens=["PROBE","<!a!>","[",",","<!b!>","]","[","<tp:TYPE,AS>","<t>","]","[","<ini:INIT,ASSIGN>","<v>","]"].iter().map(|s|s.to_string()).collect::<Vec<_>>();let p=Plan::parse(&tokens).unwrap();assert!(p.reduced_var());
+ let source=["PROBE","alpha","INIT","1","AS","f","(","2",",","3",")"].iter().map(|s|s.to_string()).collect::<Vec<_>>();let m=p.matches(&source,true,false).unwrap().unwrap();assert_eq!(m.iterations.iter().map(|i|i.group_id).collect::<Vec<_>>(),vec![10,6]);assert_eq!(m.iterations[1].captures.last(),Some(&(3,(5,11))));
+ }
 }

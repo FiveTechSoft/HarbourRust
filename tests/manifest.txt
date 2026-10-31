@@ -1260,3 +1260,11 @@ neg tests/t1261_pp_reduced_var_macro_neg.hb reduced VAR expression atom outside 
 neg tests/t1262_pp_reduced_var_power_neg.hb reduced VAR expression shape outside bounded contract
 neg tests/t1263_pp_reduced_var_incomplete_neg.hb reduced VAR expression shape outside bounded contract
 neg tests/t1264_pp_reduced_var_dot_neg.hb reduced VAR expression atom outside bounded contract
+pos tests/t1265_pp_plain_type_name.hb \nalpha\nnumber
+pos tests/t1266_pp_plain_type_expression.hb \nalpha\n1 + 2
+pos tests/t1267_pp_plain_type_call.hb \nalpha\nf(1,2)
+pos tests/t1268_pp_plain_type_reorder.hb \nalpha\nbeta\nf(1,2)\n         3
+pos tests/t1269_pp_plain_type_repeats.hb \nalpha\nnumber\ntext\n         1
+pos tests/t1270_pp_plain_type_operand.hb \nalpha\na + INIT\n         2
+neg tests/t1271_pp_plain_type_macro_neg.hb reduced VAR expression atom outside bounded contract
+neg tests/t1272_pp_plain_type_incomplete_neg.hb reduced VAR expression shape outside bounded contract

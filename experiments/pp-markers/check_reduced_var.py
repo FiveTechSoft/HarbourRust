@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Replay own reduced-VAR corpus. Rejections and unmatched gaps are not support."""
 import argparse,pathlib,json,gzip,subprocess,re,collections
-p=argparse.ArgumentParser();p.add_argument('--hbpp',required=True);p.add_argument('--hpp',required=True);p.add_argument('--output-dir',required=True);a=p.parse_args();root=pathlib.Path(__file__).resolve().parent;out=pathlib.Path(a.output_dir).resolve();out.mkdir(parents=True,exist_ok=True)
+p=argparse.ArgumentParser();p.add_argument('--corpus',default='reduced-var-20261031/cases.json.gz');p.add_argument('--hbpp',required=True);p.add_argument('--hpp',required=True);p.add_argument('--output-dir',required=True);a=p.parse_args();root=pathlib.Path(__file__).resolve().parent;out=pathlib.Path(a.output_dir).resolve();out.mkdir(parents=True,exist_ok=True)
 tok=lambda s:re.findall(r'"[^"\n]*"|\x27[^\x27\n]*\x27|[^\s]',s);counts=collections.Counter();rows=[]
-for i,row in enumerate(json.loads(gzip.decompress((root/'reduced-var-20261031/cases.json.gz').read_bytes()))):
+for i,row in enumerate(json.loads(gzip.decompress((root/a.corpus).read_bytes()))):
  f=out/'replay.prg';f.write_text(row['source']);h=subprocess.run([a.hbpp,str(f),'-q2'],capture_output=True,text=True,timeout=10);ref=f.with_suffix('.ppo').read_text();o=subprocess.run([a.hpp,str(f)],capture_output=True,text=True,timeout=10)
  assert h.returncode==0 and tok(ref)==tok(row['reference_output']),(i,'reference drift',ref)
  same=o.returncode==0 and tok(o.stdout)==tok(ref)

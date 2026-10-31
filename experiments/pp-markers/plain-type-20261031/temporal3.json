@@ -1,0 +1,17 @@
+[
+  {
+    "source": "#command PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>])\nPROBE alpha INIT 1 AS number\n#uncommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>])\nPROBE alpha INIT 1 AS number\n",
+    "reference_output": "\nOUT(\"alpha\" TYPE \"number\" INIT \"1\")\n\nPROBE alpha INIT 1 AS number\n",
+    "own_output": "OUT(\"alpha\"  TYPE \"number\" INIT \"1\")\nPROBE alpha INIT 1 AS number\n"
+  },
+  {
+    "source": "PROBE alpha INIT 1 AS number\n#command PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>])\nPROBE alpha INIT 1 AS number\n",
+    "reference_output": "PROBE alpha INIT 1 AS number\n\nOUT(\"alpha\" TYPE \"number\" INIT \"1\")\n",
+    "own_output": "PROBE alpha INIT 1 AS number\nOUT(\"alpha\"  TYPE \"number\" INIT \"1\")\n"
+  },
+  {
+    "source": "#command PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>])\n#uncommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] => WRONG\nPROBE alpha INIT 1 AS number\n",
+    "reference_output": "\n\nOUT(\"alpha\" TYPE \"number\" INIT \"1\")\n",
+    "own_output": "OUT(\"alpha\"  TYPE \"number\" INIT \"1\")\n"
+  }
+]
