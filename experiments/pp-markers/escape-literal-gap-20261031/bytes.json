@@ -1,0 +1,195 @@
+[
+  {
+    "case": 0,
+    "expression": "e\"a\\nb\"",
+    "source": "PROCEDURE Main()\nLOCAL s := e\"a\\nb\"\nLOCAL i\nFOR i := 1 TO Len(s)\n? Asc(SubStr(s,i,1))\nNEXT\nRETURN\n",
+    "reference_compile_exit": 0,
+    "byte_values": [
+      97,
+      10,
+      98
+    ],
+    "stdout_hex": "610a62"
+  },
+  {
+    "case": 1,
+    "expression": "e\"a\\tb\"",
+    "source": "PROCEDURE Main()\nLOCAL s := e\"a\\tb\"\nLOCAL i\nFOR i := 1 TO Len(s)\n? Asc(SubStr(s,i,1))\nNEXT\nRETURN\n",
+    "reference_compile_exit": 0,
+    "byte_values": [
+      97,
+      9,
+      98
+    ],
+    "stdout_hex": "610962"
+  },
+  {
+    "case": 2,
+    "expression": "e\"a\\rb\"",
+    "source": "PROCEDURE Main()\nLOCAL s := e\"a\\rb\"\nLOCAL i\nFOR i := 1 TO Len(s)\n? Asc(SubStr(s,i,1))\nNEXT\nRETURN\n",
+    "reference_compile_exit": 0,
+    "byte_values": [
+      97,
+      13,
+      98
+    ],
+    "stdout_hex": "610d62"
+  },
+  {
+    "case": 3,
+    "expression": "e\"a\\\\b\"",
+    "source": "PROCEDURE Main()\nLOCAL s := e\"a\\\\b\"\nLOCAL i\nFOR i := 1 TO Len(s)\n? Asc(SubStr(s,i,1))\nNEXT\nRETURN\n",
+    "reference_compile_exit": 0,
+    "byte_values": [
+      97,
+      92,
+      98
+    ],
+    "stdout_hex": "615c62"
+  },
+  {
+    "case": 4,
+    "expression": "e\"a\\\"b\"",
+    "source": "PROCEDURE Main()\nLOCAL s := e\"a\\\"b\"\nLOCAL i\nFOR i := 1 TO Len(s)\n? Asc(SubStr(s,i,1))\nNEXT\nRETURN\n",
+    "reference_compile_exit": 0,
+    "byte_values": [
+      97,
+      34,
+      98
+    ],
+    "stdout_hex": "612262"
+  },
+  {
+    "case": 5,
+    "expression": "e\"a\\qb\"",
+    "source": "PROCEDURE Main()\nLOCAL s := e\"a\\qb\"\nLOCAL i\nFOR i := 1 TO Len(s)\n? Asc(SubStr(s,i,1))\nNEXT\nRETURN\n",
+    "reference_compile_exit": 0,
+    "byte_values": [
+      97,
+      113,
+      98
+    ],
+    "stdout_hex": "617162"
+  },
+  {
+    "case": 6,
+    "expression": "e\"a\\x41b\"",
+    "source": "PROCEDURE Main()\nLOCAL s := e\"a\\x41b\"\nLOCAL i\nFOR i := 1 TO Len(s)\n? Asc(SubStr(s,i,1))\nNEXT\nRETURN\n",
+    "reference_compile_exit": 0,
+    "byte_values": [
+      97,
+      27
+    ],
+    "stdout_hex": "611b"
+  },
+  {
+    "case": 7,
+    "expression": "e\"a\\101b\"",
+    "source": "PROCEDURE Main()\nLOCAL s := e\"a\\101b\"\nLOCAL i\nFOR i := 1 TO Len(s)\n? Asc(SubStr(s,i,1))\nNEXT\nRETURN\n",
+    "reference_compile_exit": 0,
+    "byte_values": [
+      97,
+      65,
+      98
+    ],
+    "stdout_hex": "614162"
+  },
+  {
+    "case": 8,
+    "expression": "e\"a\\0b\"",
+    "source": "PROCEDURE Main()\nLOCAL s := e\"a\\0b\"\nLOCAL i\nFOR i := 1 TO Len(s)\n? Asc(SubStr(s,i,1))\nNEXT\nRETURN\n",
+    "reference_compile_exit": 0,
+    "byte_values": [
+      97,
+      0,
+      98
+    ],
+    "stdout_hex": "610062"
+  },
+  {
+    "case": 9,
+    "expression": "e\"a\\ab\"",
+    "source": "PROCEDURE Main()\nLOCAL s := e\"a\\ab\"\nLOCAL i\nFOR i := 1 TO Len(s)\n? Asc(SubStr(s,i,1))\nNEXT\nRETURN\n",
+    "reference_compile_exit": 0,
+    "byte_values": [
+      97,
+      7,
+      98
+    ],
+    "stdout_hex": "610762"
+  },
+  {
+    "case": 10,
+    "expression": "e\"a\\bb\"",
+    "source": "PROCEDURE Main()\nLOCAL s := e\"a\\bb\"\nLOCAL i\nFOR i := 1 TO Len(s)\n? Asc(SubStr(s,i,1))\nNEXT\nRETURN\n",
+    "reference_compile_exit": 0,
+    "byte_values": [
+      97,
+      8,
+      98
+    ],
+    "stdout_hex": "610862"
+  },
+  {
+    "case": 11,
+    "expression": "e\"a\\fb\"",
+    "source": "PROCEDURE Main()\nLOCAL s := e\"a\\fb\"\nLOCAL i\nFOR i := 1 TO Len(s)\n? Asc(SubStr(s,i,1))\nNEXT\nRETURN\n",
+    "reference_compile_exit": 0,
+    "byte_values": [
+      97,
+      12,
+      98
+    ],
+    "stdout_hex": "610c62"
+  },
+  {
+    "case": 12,
+    "expression": "e\"a\\vb\"",
+    "source": "PROCEDURE Main()\nLOCAL s := e\"a\\vb\"\nLOCAL i\nFOR i := 1 TO Len(s)\n? Asc(SubStr(s,i,1))\nNEXT\nRETURN\n",
+    "reference_compile_exit": 0,
+    "byte_values": [
+      97,
+      11,
+      98
+    ],
+    "stdout_hex": "610b62"
+  },
+  {
+    "case": 13,
+    "expression": "E\"a\\nb\"",
+    "source": "PROCEDURE Main()\nLOCAL s := E\"a\\nb\"\nLOCAL i\nFOR i := 1 TO Len(s)\n? Asc(SubStr(s,i,1))\nNEXT\nRETURN\n",
+    "reference_compile_exit": 0,
+    "byte_values": [
+      97,
+      10,
+      98
+    ],
+    "stdout_hex": "610a62"
+  },
+  {
+    "case": 14,
+    "expression": "e'a\\nb'",
+    "source": "PROCEDURE Main()\nLOCAL s := e'a\\nb'\nLOCAL i\nFOR i := 1 TO Len(s)\n? Asc(SubStr(s,i,1))\nNEXT\nRETURN\n",
+    "reference_compile_exit": 6
+  },
+  {
+    "case": 15,
+    "expression": "e\"a; // && \\\"b\"",
+    "source": "PROCEDURE Main()\nLOCAL s := e\"a; // && \\\"b\"\nLOCAL i\nFOR i := 1 TO Len(s)\n? Asc(SubStr(s,i,1))\nNEXT\nRETURN\n",
+    "reference_compile_exit": 0,
+    "byte_values": [
+      97,
+      59,
+      32,
+      47,
+      47,
+      32,
+      38,
+      38,
+      32,
+      34,
+      98
+    ],
+    "stdout_hex": "613b202f2f202626202262"
+  }
+]

@@ -715,3 +715,15 @@ originals are freshly exact,and268x4acceptance stays21/15Linux20/14Windows.
 Test1209 formerly rejected all bracket-comma macro arguments;it now checks an
 unterminated bracket,with positive1212covering the supported argument form.
 No runtime/ABI representation change or new size/speed claim.
+
+## Escape literal byte contract, measured before implementation
+
+16own expressions were compiled and executed,and then measured via numeric
+Asc(SubStr(...)) byte values because GTSTD transforms control characters.
+Upper/lower e double-quoted literals support newline,CR,TAB,bell,backspace,
+formfeed,vertical tab,backslash and escaped quote;unknown backslash-q becomes q.
+Single-quoted e syntax is not accepted. Octal101 gives65;hex41b consumes all
+three digits and yields byte27. This byte behavior is not automatically the
+compiler's UTF-8 String contract for values above127. A first implementation
+must explicitly bound numeric escapes rather than assume Unicode semantics.
+No production change in this characterization.

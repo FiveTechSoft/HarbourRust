@@ -1,0 +1,159 @@
+[
+  {
+    "case": 0,
+    "expression": "e\"a\\nb\"",
+    "source": "PROCEDURE Main()\n?? e\"a\\nb\"\nRETURN\n",
+    "reference_compile_exit": 0,
+    "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+    "reference_exit": 0,
+    "stdout_hex": "610a62",
+    "stderr_hex": ""
+  },
+  {
+    "case": 1,
+    "expression": "e\"a\\tb\"",
+    "source": "PROCEDURE Main()\n?? e\"a\\tb\"\nRETURN\n",
+    "reference_compile_exit": 0,
+    "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+    "reference_exit": 0,
+    "stdout_hex": "612e62",
+    "stderr_hex": ""
+  },
+  {
+    "case": 2,
+    "expression": "e\"a\\rb\"",
+    "source": "PROCEDURE Main()\n?? e\"a\\rb\"\nRETURN\n",
+    "reference_compile_exit": 0,
+    "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+    "reference_exit": 0,
+    "stdout_hex": "610a62",
+    "stderr_hex": ""
+  },
+  {
+    "case": 3,
+    "expression": "e\"a\\\\b\"",
+    "source": "PROCEDURE Main()\n?? e\"a\\\\b\"\nRETURN\n",
+    "reference_compile_exit": 0,
+    "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+    "reference_exit": 0,
+    "stdout_hex": "615c62",
+    "stderr_hex": ""
+  },
+  {
+    "case": 4,
+    "expression": "e\"a\\\"b\"",
+    "source": "PROCEDURE Main()\n?? e\"a\\\"b\"\nRETURN\n",
+    "reference_compile_exit": 0,
+    "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+    "reference_exit": 0,
+    "stdout_hex": "612262",
+    "stderr_hex": ""
+  },
+  {
+    "case": 5,
+    "expression": "e\"a\\qb\"",
+    "source": "PROCEDURE Main()\n?? e\"a\\qb\"\nRETURN\n",
+    "reference_compile_exit": 0,
+    "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+    "reference_exit": 0,
+    "stdout_hex": "617162",
+    "stderr_hex": ""
+  },
+  {
+    "case": 6,
+    "expression": "e\"a\\x41b\"",
+    "source": "PROCEDURE Main()\n?? e\"a\\x41b\"\nRETURN\n",
+    "reference_compile_exit": 0,
+    "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+    "reference_exit": 0,
+    "stdout_hex": "612e",
+    "stderr_hex": ""
+  },
+  {
+    "case": 7,
+    "expression": "e\"a\\101b\"",
+    "source": "PROCEDURE Main()\n?? e\"a\\101b\"\nRETURN\n",
+    "reference_compile_exit": 0,
+    "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+    "reference_exit": 0,
+    "stdout_hex": "614162",
+    "stderr_hex": ""
+  },
+  {
+    "case": 8,
+    "expression": "e\"a\\0b\"",
+    "source": "PROCEDURE Main()\n?? e\"a\\0b\"\nRETURN\n",
+    "reference_compile_exit": 0,
+    "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+    "reference_exit": 0,
+    "stdout_hex": "612e62",
+    "stderr_hex": ""
+  },
+  {
+    "case": 9,
+    "expression": "e\"a\\ab\"",
+    "source": "PROCEDURE Main()\n?? e\"a\\ab\"\nRETURN\n",
+    "reference_compile_exit": 0,
+    "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+    "reference_exit": 0,
+    "stdout_hex": "610762",
+    "stderr_hex": ""
+  },
+  {
+    "case": 10,
+    "expression": "e\"a\\bb\"",
+    "source": "PROCEDURE Main()\n?? e\"a\\bb\"\nRETURN\n",
+    "reference_compile_exit": 0,
+    "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+    "reference_exit": 0,
+    "stdout_hex": "62",
+    "stderr_hex": ""
+  },
+  {
+    "case": 11,
+    "expression": "e\"a\\fb\"",
+    "source": "PROCEDURE Main()\n?? e\"a\\fb\"\nRETURN\n",
+    "reference_compile_exit": 0,
+    "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+    "reference_exit": 0,
+    "stdout_hex": "612e62",
+    "stderr_hex": ""
+  },
+  {
+    "case": 12,
+    "expression": "e\"a\\vb\"",
+    "source": "PROCEDURE Main()\n?? e\"a\\vb\"\nRETURN\n",
+    "reference_compile_exit": 0,
+    "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+    "reference_exit": 0,
+    "stdout_hex": "612e62",
+    "stderr_hex": ""
+  },
+  {
+    "case": 13,
+    "expression": "E\"a\\nb\"",
+    "source": "PROCEDURE Main()\n?? E\"a\\nb\"\nRETURN\n",
+    "reference_compile_exit": 0,
+    "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+    "reference_exit": 0,
+    "stdout_hex": "610a62",
+    "stderr_hex": ""
+  },
+  {
+    "case": 14,
+    "expression": "e'a\\nb'",
+    "source": "PROCEDURE Main()\n?? e'a\\nb'\nRETURN\n",
+    "reference_compile_exit": 6,
+    "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n\n1 error\n\nNo code generated.\n\n/downloads/roadmap-20261030/escape-probe/case14.prg(2) Error E0030  Syntax error \"syntax error at '?'\"\nhbmk2: Error: Running Harbour compiler (built-in). 1\n('/tmp/harbour-reference/bin/linux/gcc/harbour') -n2 /downloads/roadmap-20261030/escape-probe/case14.prg -q -o/tmp/hbmk_jrrz7q.dir/ -i/tmp/harbour-reference/include\n"
+  },
+  {
+    "case": 15,
+    "expression": "e\"a; // && \\\"b\"",
+    "source": "PROCEDURE Main()\n?? e\"a; // && \\\"b\"\nRETURN\n",
+    "reference_compile_exit": 0,
+    "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+    "reference_exit": 0,
+    "stdout_hex": "613b202f2f202626202262",
+    "stderr_hex": ""
+  }
+]
