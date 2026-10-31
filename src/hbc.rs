@@ -4115,16 +4115,38 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 match &args[0] {
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Log(_) | Expr::Float(..) | Expr::FloatV(..) => {}
                     Expr::Var(v) => {
-                        match env.iter().rev().find(|x| x.name == *v).map(|x| x.ty.clone()) {
-                            Some(Ty::Dyn) => return Err(format!("line {}: `{}` over a Dyn variable is not measured in this PoC (cell reads stay in place: `{}`(a[i]))", n, id, id)),
-                            Some(_) => {}
+                        // The whole variable is validated BEFORE codegen:
+                        // measured static types only (verifier blockvar /
+                        // hashvar panics: Block and Hash have no tag-test
+                        // representation here), never a moved owner
+                        // (verifier movedowner), never Dyn.
+                        match env.iter().rev().find(|x| x.name == *v) {
+                            Some(x) if x.moved => return Err(format!("line {}: use of moved value `{}`", n, v)),
+                            Some(x) => match x.ty {
+                                Ty::Dyn => return Err(format!("line {}: `{}` over a Dyn variable is not measured in this PoC (cell reads stay in place: `{}`(a[i]))", n, id, id)),
+                                Ty::I64 | Ty::F64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn | Ty::Arr(_) => {}
+                                _ => return Err(format!("line {}: `{}` over this variable type is not measured in this PoC", n, id)),
+                            },
                             None => return Err(format!("line {}: `{}` names no visible variable", n, v)),
                         }
                     }
-                    Expr::Index(v, _) => {
-                        match env.iter().rev().find(|x| x.name == *v).map(|x| x.ty.clone()) {
-                            Some(Ty::DArr) | Some(Ty::DArrDyn) | Some(Ty::DArr2) | Some(Ty::DArrS) | Some(Ty::DArr4) => {}
-                            _ => return Err(format!("line {}: `{}` over this array depth is not measured in this PoC", n, id)),
+                    Expr::Index(v, ie) => {
+                        // Root AND index are validated BEFORE codegen
+                        // (verifier floatindex / stringindex /
+                        // unknownindex panics): the root is a measured
+                        // array type and not moved; the index type-checks
+                        // (an unknown call is the nominal unknown-function
+                        // error) and is an integer expression.
+                        match env.iter().rev().find(|x| x.name == *v) {
+                            Some(x) if x.moved => return Err(format!("line {}: use of moved value `{}`", n, v)),
+                            Some(x) => match x.ty {
+                                Ty::DArr | Ty::DArrDyn | Ty::DArr2 | Ty::DArrS | Ty::DArr4 => {}
+                                _ => return Err(format!("line {}: `{}` over this array depth is not measured in this PoC", n, id)),
+                            },
+                            None => return Err(format!("line {}: `{}` names no visible variable", n, v)),
+                        }
+                        if type_expr(ie, env, sigs, n)? != Ty::I64 {
+                            return Err(format!("line {}: `{}` index must be an integer expression in this PoC", n, id));
                         }
                     }
                     _ => return Err(format!("line {}: `{}` over this expression is not measured in this PoC", n, id)),

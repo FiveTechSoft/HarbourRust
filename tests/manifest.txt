@@ -1431,3 +1431,11 @@ pos tests/t1434_mixed_empty_to_mixed_direct.hb \nx\nx\n         0
 pos tests/t1435_mixed_empty_to_mixed_loop.hb \nx\n         0
 neg tests/t1436_mixed_branch_pin_neg.hb unknown until its first
 pos tests/t1437_isx_builtins.hb \n.T.\n.F.\n.F.\n.F.\n.F.\n.T.\n.F.\n.T.\n.T.\n.F.\n.T.
+neg tests/t1438_isx_blockvar_neg.hb over this variable type is not measured
+neg tests/t1439_isx_hashvar_neg.hb over this variable type is not measured
+neg tests/t1440_isx_floatindex_neg.hb index must be an integer expression
+neg tests/t1441_isx_stringindex_neg.hb index must be an integer expression
+neg tests/t1442_isx_unknownindex_neg.hb unknown function `nosuchfn_xyzzy`
+neg tests/t1443_isx_movedowner_neg.hb use of moved value `a`
+neg tests/t1444_isx_zeroargs_neg.hb takes one argument
+neg tests/t1445_isx_dynvar_neg.hb over a Dyn variable is not measured
