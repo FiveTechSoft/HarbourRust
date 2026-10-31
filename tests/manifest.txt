@@ -705,7 +705,6 @@ pos tests/t707_print_dyn_boundary.hb \nabc\nabc\nde\nde
 pos tests/t708_print_dyn_bool.hb \n.T.
 pos tests/t709_print_dyn_bool_return.hb \n.T.\n.T.\n.F.\n.F.
 pos tests/t710_print_dyn_all_scalars.hb \ntext\n        42\nNIL\n.T.
-neg tests/t711_dyn_bool_reassign_neg.hb type mismatch in assignment
 pos tests/t712_dyn_cond_bool.hb \n.T.\nyes\n.F.\nno
 posx tests/t713_dyn_cond_int.hb 1 \n         0Type error: condition is not a logical\nCallstack:\n  at p (tests/t713_dyn_cond_int.hb:10)\n  at main (tests/t713_dyn_cond_int.hb:6)
 posx tests/t714_dyn_cond_string.hb 1 \nabcType error: condition is not a logical\nCallstack:\n  at p (tests/t714_dyn_cond_string.hb:9)\n  at main (tests/t714_dyn_cond_string.hb:5)
@@ -928,16 +927,13 @@ pos tests/t929_sequence.hb \n         3\n         3          3\n        22      
 pos tests/t930_sequence.hb \n 12345678901\n 12345678901          2\n         7          4\n.F.          5\n.T.          6\n         6          7\n         1.5          8
 pos tests/t931_sequence.hb \n         3\n         1\n         2\n         3\n         4\n         4          5\n         7          6\n         0.50          8
 pos tests/t932_sequence.hb \n         2          2\n         3          2\n         3\n6172839450.50          3
-neg tests/t933_sequence_string_neg.hb numeric/logical results only
-neg tests/t934_sequence_dyn_neg.hb numeric/logical results only
-neg tests/t935_sequence_array_neg.hb numeric/logical results only
-neg tests/t936_sequence_block_neg.hb numeric/logical results only
+neg tests/t934_sequence_dyn_neg.hb borrowed-string results only
+neg tests/t935_sequence_array_neg.hb borrowed-string results only
+neg tests/t936_sequence_block_neg.hb borrowed-string results only
 neg tests/t937_sequence_capture_neg.hb codeblock captures are not in
 neg tests/t938_sequence_lvalue_neg.hb requires a variable lvalue
 neg tests/t939_sequence_missing_neg.hb unexpected token RParen
 neg tests/t940_sequence_empty_neg.hb unexpected token Comma
-neg tests/t941_sequence_assign_neg.hb missing )
-neg tests/t942_sequence_string_last_neg.hb numeric/logical results only
 neg tests/t943_sequence_undefined_neg.hb undefined variable
 pos tests/t944_sequence_literal.hb \n         1
 pos tests/t945_sequence_move.hb \n         1          1
@@ -987,10 +983,10 @@ neg tests/t987_inline_if_qout_move_neg.hb use of moved value
 neg tests/t988_inline_if_dyn_limit_neg.hb branches must share a scalar type
 neg tests/t989_inline_if_numeric_nil_neg.hb branches must share a scalar type
 neg tests/t990_inline_if_condition_neg.hb condition must be logical
-neg tests/t991_inline_if_arity_neg.hb takes 3 arguments
+neg tests/t991_inline_if_arity_neg.hb without `endif`
 pos tests/t993_inline_if_discard_balance.hb \n         0
 neg tests/t994_inline_if_missing_condition_neg.hb unexpected token Comma
-neg tests/t995_inline_if_extra_branch_neg.hb takes 3 arguments
+neg tests/t995_inline_if_extra_branch_neg.hb without `endif`
 neg tests/t996_regular_call_empty_arg_neg.hb unexpected token Comma
 pos tests/t997_original_recursiv.hb \nTesting recursive calls\n\n   3628800\n   3628800
 pos tests/t998_recursive_inline_mutual.hb \n   3628800     362880
@@ -1035,7 +1031,6 @@ pos tests/t1036_outstd_borrows.hb abc str   dyn     \n         3          1     
 pos tests/t1037_eol.hb \n.T. .T.\nC
 neg tests/t1038_eol_arity_neg.hb `hb_eol` takes no arguments
 neg tests/t1039_outstd_move_neg.hb use of moved value
-neg tests/t1040_seq_dyn_limit_neg.hb parenthesized comma expressions support numeric/logical results only
 pos2 tests/t1041_original_longstr.hb tests/t1041_longstr_linux.out tests/t1041_longstr_windows.out
 streams tests/t1042_outerr_streams.hb tests/t1042.stdout tests/t1042.stderr
 neg tests/t1043_original_longstr2_move_neg.hb use of moved value `short`
@@ -1364,3 +1359,21 @@ neg tests/t1366_omitted_float_pin_neg.hb but a call site omits it
 neg tests/t1367_hb_pvalue_float_neg.hb Dyn has no float payload tag
 neg tests/t1368_pcount_neg.hb `PCount` is not in this increment
 neg tests/t1369_unknown_nested_arg_neg.hb unknown function `replicate`
+pos tests/t1370_parexpr_inline_assign.hb \n        10\n        10\n        90\n         3
+pos tests/t1371_parexpr_if_seqcond.hb \nWorking\nWorking\n        10 .T.\nWorking
+pos tests/t1372_parexpr_iif_strseq.hb \nIF Working\nIF Working\nWorking
+pos tests/t1373_return_nil_parens.hb \nNIL
+pos tests/t1374_pragma_es0.hb \n         3
+neg tests/t1375_set_float_rhs_neg.hb inline `:=` in an expression supports integer/logical values only
+neg tests/t1376_set_undeclared_neg.hb assignment to undeclared variable `z`
+neg tests/t1377_pragma_other_neg.hb #pragma `-b-` is not in this PoC
+neg tests/t1378_seq_dyn_call_neg.hb parenthesized comma expressions support
+neg tests/t1379_set_byref_neg.hb inline `:=` through a by-reference parameter is not in this increment
+pos tests/t711_dyn_bool_reassign.hb \n.T.
+pos tests/t933_sequence_string.hb \n         1
+pos tests/t941_sequence_assign.hb \n         2
+pos tests/t942_sequence_string_last.hb \nlast
+pos tests/t1040_seq_dyn_var.hb
+pos tests/t1380_nilonly_shapes.hb \nok\nok\nok
+pos tests/t1381_seq_dyn_var_observable.hb \n         2
+pos tests/t1382_dyn_bool_readback.hb \n.T.\n.F.

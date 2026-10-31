@@ -2017,6 +2017,19 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                 // warnings are silent there, including unexpanded text.
                 // Do not turn their payload into source or expand macros.
             }
+            "PRAGMA" => {
+                // Harbour's #pragma flips warning/stream switches this
+                // dialect fixes at compile time. Only the inert warning
+                // severity switch -es<N> is accepted (original
+                // parexpr.prg's `#pragma -es0`: warnings do not exist
+                // here, so the switch changes no byte of output). Every
+                // other #pragma payload stays a named rejection.
+                let a = arg.trim();
+                let inert = a.len() > 3 && a.starts_with("-es") && a[3..].bytes().all(|b| b.is_ascii_digit());
+                if emitting && !inert {
+                    return Err(format!("line {}: #pragma `{}` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)", line, a));
+                }
+            }
             "" => {}
             _ => return Err(format!("line {}: unknown directive #{} in this PoC", line, dir.to_lowercase())),
         }

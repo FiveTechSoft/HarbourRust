@@ -271,6 +271,7 @@ fn fold_num_bin(op: char, a: &Expr, b: &Expr) -> Option<Expr> {
 // rejected by the checker before codegen.
 fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     match e {
+        Expr::Set(..) => unreachable!("inline `:=` is restricted to integer/logical values in this increment (checked)"),
         Expr::Seq(es) => {
             for e in &es[..es.len()-1] {
                 if expr_ty(e, env, sigs) == Ty::F64 { cg_f64_load(e, env, sigs, strs, out, target); }
@@ -759,6 +760,7 @@ enum Expr {
     Index3(String, Box<Expr>, Box<Expr>, Box<Expr>), // a[i][j] / a[i,j] on a DArr2 (probe m1/m2)
     Index4(String, Box<Expr>, Box<Expr>, Box<Expr>, Box<Expr>), // a[i,j,k,l] / a[i][j][k][l] on a DArr4 (hk103-hk107)
     IdxCompound(String, Box<Expr>, char, Box<Expr>), // a[i] op= e as a value (op +,-,*; tests/arrayidx.prg): the index runs once and first, the right side once and second, the expression yields the NEW cell
+    Set(String, Box<Expr>),          // `name := e` as an expression (original parexpr.prg; probe px2: Harbour accepts it in any expression position): the value is the NEW variable content
     BlockLit(usize, Vec<String>, Vec<Expr>), // {|p1, p2| e1, e2} -> last (probes c1-c5)
     DArrNew,                     // {} : empty DYNAMIC array (probes d1, e4)
     SelfObj,                     // Self (oracle cl2: return Self chains)
@@ -1131,12 +1133,15 @@ impl P {
                 }
             }
             Some(Tok::LParen) => {
-                let e = self.or_expr()?;
+                // Parenthesized content is a full ASSIGNMENT expression
+                // (parexpr.prg's inline `:=`: `( y := 10, y )`); comma
+                // elements too.
+                let e = self.assign_expr()?;
                 if self.peek() == Some(&Tok::Comma) {
                     let mut es = vec![e];
                     while self.peek() == Some(&Tok::Comma) {
                         self.pos += 1;
-                        es.push(self.or_expr()?);
+                        es.push(self.assign_expr()?);
                     }
                     if self.bump() != Some(Tok::RParen) {
                         return Err(format!("line {}: missing ) after expression list", self.n));
@@ -1303,6 +1308,18 @@ impl P {
     // numeric-cell decision (proposal recorded, not approved).
     fn assign_expr(&mut self) -> Result<Expr, String> {
         let save = self.pos;
+        // Inline assignment as an expression (original parexpr.prg; probe
+        // px2: Harbour accepts `name := e` wherever an expression is
+        // valid, including print items). Right-associative; the value of
+        // the expression is the NEW variable content.
+        if let Some(Tok::Ident(id)) = self.peek() {
+            if self.toks.get(self.pos + 1) == Some(&Tok::Assign) {
+                let id = id.clone();
+                self.pos += 2;
+                let rhs = self.assign_expr()?;
+                return Ok(Expr::Set(id, Box::new(rhs)));
+            }
+        }
         match self.try_index_compound()? {
             Some(e) => Ok(e),
             None => {
@@ -1444,6 +1461,16 @@ fn check_ident(id: &str, n: usize) -> Result<(), String> {
     Ok(())
 }
 
+// `return (nil)` is the same NIL return as bare `return nil` (original
+// parexpr.prg's `Return( NIL )`): a parenthesized literal NIL carries no
+// value, so it normalizes to the value-free return.
+fn parse_ret_expr(toks: Vec<Tok>, n: usize) -> Result<Stmt, String> {
+    match parse_expr_tokens(toks, n)? {
+        Expr::Nil => Ok(Stmt::Ret(n, None)),
+        e => Ok(Stmt::Ret(n, Some(e))),
+    }
+}
+
 fn parse_expr_tokens(toks: Vec<Tok>, n: usize) -> Result<Expr, String> {
     if toks.is_empty() {
         return Err(format!("line {}: missing expression", n));
@@ -1490,7 +1517,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     // other returns like any expression (probe n2 order-
                     // independence).
                     2 if toks[1] == Tok::KwNil => Stmt::Ret(n, None),
-                    _ => Stmt::Ret(n, Some(parse_expr_tokens(toks[1..].to_vec(), n)?)),
+                    _ => parse_ret_expr(toks[1..].to_vec(), n)?,
                 };
                 out.push(stmt);
                 *i += 1;
@@ -1615,16 +1642,24 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
             Tok::KwIf => {
                 // A comma at the outer call depth distinguishes IF(c,a,b)
                 // from block IF (condition), including parenthesized lists.
+                // Harbour's rule (parexpr.prg's own comment, verified
+                // against the reference): EXACTLY two top-level commas =
+                // three expressions = IIF inline; ONE comma is a block IF
+                // with a parenthesized comma-sequence condition
+                // (`IF ( x := 10, y := ( x == 10 ) )`).
                 let mut parens = 0i32;
-                let inline = toks.get(1) == Some(&Tok::LParen) && toks.iter().any(|t| {
-                    match t {
-                        Tok::LParen | Tok::LBracket | Tok::LBrace => parens += 1,
-                        Tok::RParen | Tok::RBracket | Tok::RBrace => parens -= 1,
-                        Tok::Comma if parens == 1 => return true,
-                        _ => {}
+                let mut commas = 0usize;
+                let inline = toks.get(1) == Some(&Tok::LParen) && {
+                    for t in toks.iter() {
+                        match t {
+                            Tok::LParen | Tok::LBracket | Tok::LBrace => parens += 1,
+                            Tok::RParen | Tok::RBracket | Tok::RBrace => parens -= 1,
+                            Tok::Comma if parens == 1 => commas += 1,
+                            _ => {}
+                        }
                     }
-                    false
-                });
+                    commas == 2
+                };
                 if inline {
                     let e = parse_expr_tokens(toks.clone(), n)?;
                     out.push(Stmt::CallStmt(n, e));
@@ -2635,7 +2670,7 @@ fn parse(src: &str) -> Result<Prog, String> {
             let stmt = match rt.len() {
                 1 => Stmt::Ret(*rn, None),
                 2 if rt[1] == Tok::KwNil => Stmt::Ret(*rn, None),
-                _ => Stmt::Ret(*rn, Some(parse_expr_tokens(rt[1..].to_vec(), *rn)?)),
+                _ => parse_ret_expr(rt[1..].to_vec(), *rn)?,
             };
             f.stmts.push(stmt);
             methods.push(MethodDef { class_name: cname, f });
@@ -2659,7 +2694,7 @@ fn parse(src: &str) -> Result<Prog, String> {
                     let stmt = match rt.len() {
                         1 => Stmt::Ret(*rn, None),
                         2 if rt[1] == Tok::KwNil => Stmt::Ret(*rn, None),
-                        _ => Stmt::Ret(*rn, Some(parse_expr_tokens(rt[1..].to_vec(), *rn)?)),
+                        _ => parse_ret_expr(rt[1..].to_vec(), *rn)?,
                     };
                     f.stmts.push(stmt);
                     i += 1;
@@ -2707,7 +2742,7 @@ fn parse(src: &str) -> Result<Prog, String> {
         let stmt = match toks.len() {
             1 => Stmt::Ret(*n, None),
             2 if toks[1] == Tok::KwNil => Stmt::Ret(*n, None),
-            _ => Stmt::Ret(*n, Some(parse_expr_tokens(toks[1..].to_vec(), *n)?)),
+            _ => parse_ret_expr(toks[1..].to_vec(), *n)?,
         };
         f.stmts.push(stmt);
         funcs.push(f);
@@ -2754,6 +2789,11 @@ fn parse_param_names(rest: &[Tok], n: usize) -> Result<Vec<String>, String> {
 struct Sig {
     name: String,
     params: Vec<Ty>,
+    // Every return of the function is bare `return` / `return nil`
+    // (parexpr's Something): its value is always a payload-free NIL
+    // casilla, so a call in a DISCARDED position owns nothing - unlike
+    // a generic Dyn return, which can carry an owned payload.
+    nil_ret_only: bool,
     // None when the function ends in `return nil` (void): its result cannot
     // be used in an expression in this PoC.
     ret: Option<Ty>,
@@ -2842,6 +2882,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     fn f64_typed(e: &Expr, lit: &[(String, Ty)], sigs: &[Sig], f: &Func, pin: &[Option<Ty>]) -> bool {
         match e {
             Expr::Seq(es) => f64_typed(es.last().expect("nonempty"), lit, sigs, f, pin),
+            Expr::Set(_, r) => f64_typed(r, lit, sigs, f, pin),
             Expr::Float(..) | Expr::FloatV(..) => true,
             Expr::Var(v) => lit.iter().any(|(x, t)| x == v && *t == Ty::F64)
                 || is_param(f, v).map(|i| pin[i] == Some(Ty::F64)).unwrap_or(false),
@@ -2944,6 +2985,12 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
         }
         match e {
             Expr::Seq(es) => pin_vars(f, es.last().expect("nonempty"), ty, pin, n),
+            Expr::Set(id, r) => {
+                // The target receives the value at this use's type (like
+                // the ++/-- pin); the right side flows at the same type.
+                if let Some(i) = is_param(f, id) { setpin(pin, i, ty, n)?; }
+                pin_vars(f, r, ty, pin, n)
+            }
             Expr::Inc(id, _, _) => { if let Some(i) = is_param(f, id) { setpin(pin, i, Ty::I64, n)?; } Ok(()) }
             Expr::Var(id) => { if let Some(i) = is_param(f, id) { setpin(pin, i, ty, n)?; } Ok(()) }
             Expr::Bin(_, a, b) => { pin_vars(f, a, Ty::I64, pin, n)?; pin_vars(f, b, Ty::I64, pin, n) }
@@ -3017,6 +3064,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     fn walk(f: &Func, e: &Expr, sigs: &[Sig], lit: &[(String, Ty)], pin: &mut Vec<Option<Ty>>, printed: &mut Vec<bool>, n: usize) -> Result<(), String> {
         match e {
             Expr::Seq(es) => { for e in es { walk(f, e, sigs, lit, pin, printed, n)?; } Ok(()) }
+            // Inline assignment (parexpr): a write alone pins nothing;
+            // the right side is walked at its own use types and reads of
+            // the target pin it where they happen.
+            Expr::Set(_, r) => walk(f, r, sigs, lit, pin, printed, n),
             Expr::Inc(id, _, _) => pin_vars(f, &Expr::Var(id.clone()), Ty::I64, pin, n),
             Expr::Bin(op, a, b) => {
                 // String `+` (oracle hk215): a `+` with string evidence on
@@ -3616,6 +3667,7 @@ fn expr_has_call(e: &Expr) -> bool {
     // growth (main's rule: reject or exclude unjustified forms).
     match e {
         Expr::Seq(_) => true, // effectful form excluded from in-place growth
+        Expr::Set(..) => true, // effectful form excluded from in-place growth (like Seq)
         Expr::Call(_, _) => true,
         Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => expr_has_call(a) || expr_has_call(b),
         Expr::Var(_) | Expr::Str(_) | Expr::Int(_) | Expr::Log(_) => false,
@@ -3636,6 +3688,7 @@ fn expr_mentions(e: &Expr, name: &str) -> bool {
         Expr::Call(_, args) => args.iter().any(|a| expr_mentions(a, name)),
         Expr::Index(id, i) => id == name || expr_mentions(i, name),
         Expr::IdxCompound(id, i, _, r) => id == name || expr_mentions(i, name) || expr_mentions(r, name),
+        Expr::Set(v, r) => *v == name || expr_mentions(r, name),
         Expr::Index2(id, i, j) => id == name || expr_mentions(i, name) || expr_mentions(j, name),
         Expr::Index3(id, i, j, k) => id == name || expr_mentions(i, name) || expr_mentions(j, name) || expr_mentions(k, name),
         Expr::Index4(id, i, j, k, l) => id == name || expr_mentions(i, name) || expr_mentions(j, name) || expr_mentions(k, name) || expr_mentions(l, name),
@@ -3661,6 +3714,9 @@ fn borrow_expr_ok(e: &Expr, pname: &str) -> bool {
         // a[i] op= e on a local fixed array: no borrow escapes through an
         // i64 cell; the index and right side must still be borrow-clean.
         Expr::IdxCompound(_, ie, _, re) => borrow_expr_ok(ie, pname) && borrow_expr_ok(re, pname),
+        // Writing the borrowed parameter itself through an inline
+        // assignment would reseat the borrow: not borrow-clean.
+        Expr::Set(v, r) => *v != pname && borrow_expr_ok(r, pname),
         Expr::Var(v) => v != pname,
         Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => borrow_expr_ok(a, pname) && borrow_expr_ok(b, pname),
         Expr::Call(id, args) => {
@@ -3753,11 +3809,21 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             let mut last = Ty::I64;
             for e in es {
                 let t = type_expr(e, &mut local, sigs, n)?;
-                // Only direct output calls add a payload-free NIL result.
-                // Generic Dyn variables/calls retain the ownership limit.
-                let nil_output = matches!(e, Expr::Call(id, _) if is_output_call(id));
-                if !matches!(t, Ty::I64 | Ty::Bool | Ty::F64) && !nil_output {
-                    return Err(format!("line {}: parenthesized comma expressions support numeric/logical results only in this increment; owned, Dyn, array and block results remain a named limit", n));
+                // Only direct output calls and calls to functions whose
+                // every return is bare/`nil` (ret None) add a payload-free
+                // NIL result. Generic Dyn variables/calls retain the
+                // ownership limit.
+                let nil_output = matches!(e, Expr::Call(id, _) if is_output_call(id) || sigs.iter().any(|s| s.name == *id && s.nil_ret_only));
+                // Borrowed strings (literals and borrowed parameters) are
+                // rodata views: discarding them owns and frees nothing
+                // (parexpr.prg's ("some", "text", "IF Working")).
+                // A Dyn VARIABLE element is a borrowed slot view: the
+                // read owns nothing, so discarding it is safe and every
+                // consumer already handles Dyn values (parexpr's
+                // `( y := 10, y )`). Owned Dyn temporaries keep the limit.
+                let dyn_var = t == Ty::Dyn && matches!(e, Expr::Var(_));
+                if !matches!(t, Ty::I64 | Ty::Bool | Ty::F64 | Ty::Str) && !nil_output && !dyn_var {
+                    return Err(format!("line {}: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit", n));
                 }
                 apply_moves(e, &mut local, sigs, false);
                 last = t;
@@ -3769,6 +3835,40 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 outer.moved |= inner.moved;
             }
             Ok(last)
+        }
+        Expr::Set(id, rhs) => {
+            // Inline assignment as an expression (parexpr; probe px2):
+            // the value is the NEW content. This increment restricts the
+            // new content to integers and logicals; float, string, Dyn,
+            // array and block payloads in inline position stay named
+            // limits (their ownership/promotion contract in expression
+            // position is not yet oracle-pinned).
+            let t = type_expr(rhs, env, sigs, n)?;
+            if !matches!(t, Ty::I64 | Ty::Bool) {
+                return Err(format!("line {}: inline `:=` in an expression supports integer/logical values only in this increment; floats, strings, Dyn, arrays and blocks remain a named limit", n));
+            }
+            let idx = match env.iter().position(|v| v.name == *id) {
+                Some(k) => k,
+                None => return Err(format!("line {}: assignment to undeclared variable `{}` (declare it with `local` first)", n, id)),
+            };
+            if env[idx].ro {
+                return Err(format!("line {}: cannot assign to the `for` loop variable `{}` (it advances only via the loop itself)", n, id));
+            }
+            if env[idx].byref {
+                return Err(format!("line {}: inline `:=` through a by-reference parameter is not in this increment", n));
+            }
+            let slot = env[idx].ty;
+            // Mirror of the statement Dyn rule (probe n2: reassignment
+            // re-tags a live variable), extended to logicals (tag 3,
+            // parexpr's `IF ( y := .T. )`).
+            let ok = slot == t || (slot == Ty::Dyn && matches!(t, Ty::I64 | Ty::Bool));
+            if !ok {
+                return Err(format!("line {}: type mismatch in assignment to `{}`", n, id));
+            }
+            apply_moves(rhs, env, sigs, false);
+            // Reassignment makes a moved variable live again (Rust too).
+            env[idx].moved = false;
+            Ok(t)
         }
         Expr::Int(_) => Ok(Ty::I64),
         Expr::Float(..) | Expr::FloatV(..) => Ok(Ty::F64),
@@ -5259,6 +5359,7 @@ fn free_vars(e: &Expr, out: &mut Vec<String>) {
     match e {
         Expr::Seq(es) => { for e in es { free_vars(e, out); } }
         Expr::Var(id) | Expr::Inc(id, _, _) => { if !out.iter().any(|x| x == id) { out.push(id.clone()); } }
+        Expr::Set(id, r) => { if !out.iter().any(|x| x == id) { out.push(id.clone()); } free_vars(r, out); }
         Expr::SelfObj | Expr::SelfGet(_) => {}
         Expr::Send(o, _, args) => { free_vars(o, out); for a in args { free_vars(a, out); } }
         Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => { free_vars(a, out); free_vars(b, out); }
@@ -5390,6 +5491,7 @@ fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
     fn expr_ok(e: &Expr, name: &str) -> bool {
         match e {
             Expr::Seq(es) => es.iter().all(|e| expr_ok(e, name)),
+            Expr::Set(v, r) => *v != name && expr_ok(r, name),
             Expr::Call(id, args) => {
                 if (is_builtin(id, "AAdd") || is_builtin(id, "ASize"))
                     && matches!(args.first(), Some(Expr::Var(v)) if v == name)
@@ -5446,6 +5548,7 @@ fn foreach_barr_lv_ok(stmts: &[Stmt], name: &str) -> bool {
     fn mentions(e: &Expr, name: &str) -> bool {
         match e {
             Expr::Seq(es) => es.iter().any(|e| mentions(e, name)),
+            Expr::Set(v, r) => *v == name || mentions(r, name),
             Expr::Var(v) => v == name,
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => mentions(a, name) || mentions(b, name),
             Expr::Call(_, args) => args.iter().any(|a| mentions(a, name)),
@@ -5494,6 +5597,7 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     fn mentions(e: &Expr, name: &str) -> bool {
         match e {
             Expr::Seq(es) => es.iter().any(|e| mentions(e, name)),
+            Expr::Set(v, r) => *v == name || mentions(r, name),
             Expr::Var(v) => v == name,
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => mentions(a, name) || mentions(b, name),
             Expr::Call(_, args) => args.iter().any(|a| mentions(a, name)),
@@ -5505,6 +5609,7 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     fn in_call(e: &Expr, name: &str) -> bool {
         match e {
             Expr::Seq(es) => es.iter().any(|e| in_call(e, name)),
+            Expr::Set(_, r) => in_call(r, name),
             Expr::Call(_, args) => args.iter().any(|a| mentions(a, name)),
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => in_call(a, name) || in_call(b, name),
             Expr::Index(_, i) | Expr::Index2(_, i, _) | Expr::Index3(_, i, _, _) | Expr::Index4(_, i, ..) => in_call(i, name),
@@ -6774,7 +6879,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if env[idx].ty == Ty::DArrU && matches!(t, Ty::DArr | Ty::DArr2) {
                     // Assigning a pinned dynamic array pins the empty `{}`.
                     env[idx].ty = t;
-                } else if env[idx].ty == Ty::Dyn && matches!(t, Ty::I64 | Ty::Dyn | Ty::Str | Ty::StrOwn) {
+                } else if env[idx].ty == Ty::Dyn && matches!(t, Ty::I64 | Ty::Bool | Ty::Dyn | Ty::Str | Ty::StrOwn) {
                     // Dyn slot: an i64 is tagged in, a Dyn is copied (probe
                     // n2: reassignment re-tags a live variable), a string
                     // becomes an OWNED tag-4 casilla (hk242): a literal is
@@ -7034,9 +7139,45 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
     match e {
         Expr::Seq(es) => {
             for e in es {
-                if expr_ty(e, env, sigs) == Ty::F64 {
+                let t = expr_ty(e, env, sigs);
+                if t == Ty::F64 {
                     cg_f64_load(e, env, sigs, strs, out, target);
+                } else if let Expr::Str(s) = e {
+                    // String literal elements intern like every other
+                    // emitter (cg_expr's Str arm is unreachable by
+                    // design); the pair is consumed only when this is the
+                    // last element, discarded otherwise.
+                    let idx = strs.len();
+                    strs.push(s.clone());
+                    out.push_str(&format!("    lea .Lstr{}(%rip), %rax\n", idx));
+                    out.push_str(&format!("    mov ${}, %edx\n", s.as_bytes().len()));
                 } else { cg_value(e, env, sigs, strs, out, target); }
+            }
+        }
+        Expr::Set(id, rhs) => {
+            // Inline assignment (parexpr): evaluate the right side, store
+            // it into the variable's slot, and leave the NEW content in
+            // rax as the expression's value. The checker restricts the
+            // target to plain I64/Bool locals and Dyn slots (no
+            // by-reference stores, no float/string payloads).
+            let v = env.iter().find(|v| v.name == *id).expect("checked");
+            let off = v.off;
+            let lty = v.ty;
+            let rt = expr_ty(rhs, env, sigs);
+            cg_value(rhs, env, sigs, strs, out, target);
+            if lty == Ty::Dyn {
+                // Dyn slot: tag the scalar in (mirror of the statement
+                // Dyn re-tag, probe n2); a live tag-4 payload is released
+                // first. The expression's value is the scalar itself.
+                let tag = if rt == Ty::Bool { 3 } else { 0 };
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                cg_dyn_free_old(out, off);
+                out.push_str(&format!("    mov (%rsp), %rdx\n    add $16, %rsp\n    mov ${}, %eax\n", tag));
+                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
+                out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
+                out.push_str("    mov %rdx, %rax\n");
+            } else {
+                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
             }
         }
         Expr::SelfObj | Expr::SelfGet(_) | Expr::Send(_, _, _) => unreachable!("rejected before codegen"),
@@ -8713,6 +8854,7 @@ fn cg_array_value(e: &Expr, off: usize, env: &[CgLocal], sigs: &[Sig], strs: &mu
 fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
     match e {
         Expr::Seq(es) => expr_ty(es.last().expect("nonempty"), env, sigs),
+        Expr::Set(_, r) => expr_ty(r, env, sigs),
         Expr::Float(..) | Expr::FloatV(..) => Ty::F64,
         Expr::Int(_) | Expr::Inc(..) | Expr::IdxCompound(..) => Ty::I64,
         Expr::Bin(op, a, b) => {
@@ -8823,6 +8965,7 @@ fn byref_names_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
             Expr::LNot(a) => ex(a, out),
             Expr::Index(_, a) => ex(a, out),
             Expr::IdxCompound(_, a, _, b) => { ex(a, out); ex(b, out); }
+            Expr::Set(_, r) => ex(r, out),
             Expr::Index2(_, a, b) => { ex(a, out); ex(b, out); }
             Expr::Index3(_, a, b, c) => { ex(a, out); ex(b, out); ex(c, out); }
             Expr::Index4(_, a, b, c, d) => { ex(a, out); ex(b, out); ex(c, out); ex(d, out); }
@@ -8867,6 +9010,7 @@ fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String,
             Expr::LNot(a) => ex(a, out),
             Expr::Index(_, a) => ex(a, out),
             Expr::IdxCompound(_, a, _, b) => { ex(a, out); ex(b, out); }
+            Expr::Set(_, r) => ex(r, out),
             Expr::Index2(_, a, b) => { ex(a, out); ex(b, out); }
             Expr::Index3(_, a, b, c) => { ex(a, out); ex(b, out); ex(c, out); }
             Expr::Index4(_, a, b, c, d) => { ex(a, out); ex(b, out); ex(c, out); ex(d, out); }
@@ -10329,6 +10473,16 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             }
                         }
                         match t {
+                            Ty::Bool if lty == Ty::Dyn => {
+                                // Dyn slot, logical value: tag 3 in
+                                // (parexpr's `y := .T.`); a live tag-4
+                                // payload is released first.
+                                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                                cg_dyn_free_old(out, off);
+                                out.push_str("    mov (%rsp), %rdx\n    add $16, %rsp\n    mov $3, %eax\n");
+                                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
+                                out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
+                            }
                             Ty::I64 | Ty::Block(_) if lty == Ty::Dyn => {
                                 // Dyn slot, i64 value: tag it in (probe n2:
                                 // reassignment re-tags a live variable).
@@ -11189,6 +11343,7 @@ fn collect_blocks_expr(e: &Expr, out: &mut Vec<(usize, Vec<String>, Vec<Expr>)>)
         Expr::ArrLit(es) => { for e in es { collect_blocks_expr(e, out); } }
         Expr::Index(_, ie) => collect_blocks_expr(ie, out),
         Expr::Index2(_, ie, ie2) => { collect_blocks_expr(ie, out); collect_blocks_expr(ie2, out); }
+        Expr::Set(_, r) => collect_blocks_expr(r, out),
         _ => {}
     }
 }
@@ -16230,6 +16385,7 @@ fn main() {
         }
         match e {
             Expr::Seq(es) => { for x in es { scan_byref_expr(x, cur, params, names, variants); } }
+            Expr::Set(_, r) => scan_byref_expr(r, cur, params, names, variants),
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => { scan_byref_expr(a, cur, params, names, variants); scan_byref_expr(b, cur, params, names, variants); }
             Expr::LNot(a) => scan_byref_expr(a, cur, params, names, variants),
             Expr::Call(_, args) => { for a in args { if !matches!(a, Expr::ByRef(_)) { scan_byref_expr(a, cur, params, names, variants); } } }
@@ -16289,6 +16445,23 @@ fn main() {
     // This is ONLY a provisional scalar seed: every arm and every call
     // must pass ordinary type checking against the converged table before
     // codegen. Do not seed unknown calls/owned values or mixed return sites.
+    // Every return of the function is bare `return` / `return nil`
+    // (AST-stable fact, safe to compute once before the fixpoint).
+    fn all_returns_nil(f: &Func) -> bool {
+        fn rs<'a>(ss: &'a [Stmt], out: &mut Vec<&'a Stmt>) {
+            for s in ss {
+                match s {
+                    Stmt::Ret(..) => out.push(s),
+                    Stmt::If(_, _, a, b) => { rs(a, out); rs(b, out); }
+                    Stmt::While(_, _, b) | Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => rs(b, out),
+                    _ => {}
+                }
+            }
+        }
+        let mut out = Vec::new();
+        rs(&f.stmts, &mut out);
+        !out.is_empty() && out.iter().all(|s| matches!(*s, Stmt::Ret(_, None)))
+    }
     fn inline_ret_seed(f: &Func) -> Option<Ty> {
         fn literal(e: &Expr) -> Option<Ty> {
             match e {
@@ -16324,6 +16497,7 @@ fn main() {
         None
     }
     let mut view: Vec<Sig> = funcs.iter().map(|f| Sig {
+        nil_ret_only: all_returns_nil(f),
         name: f.name.clone(),
         borrowed: vec![false; f.params.len()],
         arr_moved: vec![false; f.params.len()],
@@ -16447,7 +16621,7 @@ fn main() {
                 }
                 if first_pin_err.is_none() { first_pin_err = Some(m); }
             }
-            cur.push(Sig { name: f.name.clone(), borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], params: ptys.clone(), ret, inferred, arg_ev: view[fi].arg_ev.clone(), nil_ev: view[fi].nil_ev.clone() });
+            cur.push(Sig { name: f.name.clone(), nil_ret_only: view[fi].nil_ret_only, borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], params: ptys.clone(), ret, inferred, arg_ev: view[fi].arg_ev.clone(), nil_ev: view[fi].nil_ev.clone() });
             f.ret = ret;
         }
         // Types/returns converge by fresh re-inference (cur) against the

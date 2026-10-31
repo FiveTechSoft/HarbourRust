@@ -1,6 +1,7 @@
-// neg (63s): assigning a logical INTO a Dyn slot is not in this increment -
-// Dyn-slot logical stores land with the tag-L local increment (registered
-// limit; the admission boundary is call arguments only).
+// pos (was neg 63s; SOURCE UNCHANGED, role converted with oracle
+// capture): a logical store into a Dyn slot lands tag 3 - the parexpr
+// piece admits it (the original assigns booleans into NIL-holding
+// locals). Readback pinned separately in t1382.
 procedure main()
    p( .t. )
    return
