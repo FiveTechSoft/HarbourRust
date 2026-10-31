@@ -1,0 +1,17 @@
+[
+  {
+    "source": "#command PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nPROBE alpha INIT 1 AS number EXPORTED\n#uncommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nPROBE alpha INIT 1 AS number EXPORTED\n",
+    "reference_output": "\nOUT(\"alpha\" TYPE \"number\" INIT \"1\" .T.)\n\nPROBE alpha INIT 1 AS number EXPORTED\n",
+    "own_output": "OUT(\"alpha\"  TYPE \"number\" INIT \"1\" .T.)\nPROBE alpha INIT 1 AS number EXPORTED\n"
+  },
+  {
+    "source": "PROBE alpha INIT 1 AS number EXPORTED\n#command PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\nPROBE alpha INIT 1 AS number EXPORTED\n",
+    "reference_output": "PROBE alpha INIT 1 AS number EXPORTED\n\nOUT(\"alpha\" TYPE \"number\" INIT \"1\" .T.)\n",
+    "own_output": "PROBE alpha INIT 1 AS number EXPORTED\nOUT(\"alpha\"  TYPE \"number\" INIT \"1\" .T.)\n"
+  },
+  {
+    "source": "#command PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <(v)>] <.ex.>)\n#uncommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <t>] [<ini:INIT,ASSIGN> <v>] [<ex:EXPORTED,VISIBLE>] => WRONG\nPROBE alpha INIT 1 AS number EXPORTED\n",
+    "reference_output": "\n\nOUT(\"alpha\" TYPE \"number\" INIT \"1\" .T.)\n",
+    "own_output": "OUT(\"alpha\"  TYPE \"number\" INIT \"1\" .T.)\n"
+  }
+]

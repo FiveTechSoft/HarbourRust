@@ -59,10 +59,10 @@ impl Plan {
         let mut at=0;expr(tokens,&mut at,0)&&at==tokens.len()
     }
     pub fn reduced_var(&self)->bool{
-        if self.nodes.len()!=5{return false;}
+        if self.nodes.len()<5||self.nodes.len()>11{return false;}
         if !matches!(&self.nodes[0],Node::Atom(Atom::Literal(t)) if identifier(t))||!matches!(&self.nodes[1],Node::Atom(Atom::Identifier(_))){return false;}
         let expected=[0,1,2];let mut names=Vec::new();
-        for (node,kind) in self.nodes[2..].iter().zip(expected){
+        for (node,kind) in self.nodes[2..5].iter().zip(expected){
             let atoms=match node{Node::Optional{atoms,..}=>atoms,_=>return false};
             if atoms.len()!=2{return false;}
             match (&atoms[0],&atoms[1],kind){
@@ -71,6 +71,10 @@ impl Plan {
                     for seq in choices{if seq.len()!=1||seq[0].len()<4&&seq[0].len()!=2{return false;}let word=seq[0].to_ascii_uppercase();if names.iter().any(|n:&String|n==&word||(n.len()>=4&&word.len()>=4&&n[..4]==word[..4])){return false;}names.push(word);}
                 },_=>return false,
             }
+        }
+        for node in &self.nodes[5..]{
+            let choices=match node{Node::Optional{atoms,..}if atoms.len()==1=>match &atoms[0]{Atom::Restricted(_,choices)=>choices,_=>return false},_=>return false};
+            for seq in choices{if seq.len()!=1{return false;}let word=seq[0].to_ascii_uppercase();if names.iter().any(|n:&String|n==&word||(n.len()>=4&&word.len()>=4&&n[..4]==word[..4])){return false;}names.push(word);}
         }
         true
     }
@@ -239,4 +243,9 @@ use super::*;fn w(t:&[&str])->Vec<String>{t.iter().map(|s|s.to_string()).collect
  let tokens=["PROBE","<!a!>","[",",","<!b!>","]","[","<tp:TYPE,AS>","<t>","]","[","<ini:INIT,ASSIGN>","<v>","]"].iter().map(|s|s.to_string()).collect::<Vec<_>>();let p=Plan::parse(&tokens).unwrap();assert!(p.reduced_var());
  let source=["PROBE","alpha","INIT","1","AS","f","(","2",",","3",")"].iter().map(|s|s.to_string()).collect::<Vec<_>>();let m=p.matches(&source,true,false).unwrap().unwrap();assert_eq!(m.iterations.iter().map(|i|i.group_id).collect::<Vec<_>>(),vec![10,6]);assert_eq!(m.iterations[1].captures.last(),Some(&(3,(5,11))));
  }
+}
+
+#[cfg(test)]mod flag_tests{
+ use super::*;
+ #[test]fn flag_anchors_are_disjoint(){let mut t=["PROBE","<!a!>","[",",","<!b!>","]","[","<tp:TYPE,AS>","<t>","]","[","<ini:INIT,ASSIGN>","<v>","]","[","<ex:EXPORTED,VISIBLE>","]"].iter().map(|s|s.to_string()).collect::<Vec<_>>();assert!(Plan::parse(&t).unwrap().reduced_var());t[15]="<ex:ASSIGNED>".into();assert!(!Plan::parse(&t).unwrap().reduced_var());}
 }

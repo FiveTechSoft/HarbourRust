@@ -1,0 +1,131 @@
+{
+  "scope": "6own isolated flags runtime oracle checks,not original corpus growth",
+  "rows": [
+    {
+      "file": "t1273_pp_var_flags_absent.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\n.F.\n.F.\n.F.\n.F.\n.F.\n.F.",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\n.F.\n.F.\n.F.\n.F.\n.F.\n.F.",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\n.F.\n.F.\n.F.\n.F.\n.F.\n.F.",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1274_pp_var_flags_all.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\n.T.\n.T.\n.T.\n.T.\n.T.\n.T.",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\n.T.\n.T.\n.T.\n.T.\n.T.\n.T.",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\n.T.\n.T.\n.T.\n.T.\n.T.\n.T.",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1275_pp_var_flags_aliases.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\n.T.\n.F.\n.F.\n.T.\n.T.\n.F.",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\n.T.\n.F.\n.F.\n.T.\n.T.\n.F.",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\n.T.\n.F.\n.F.\n.T.\n.T.\n.F.",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1276_pp_var_flags_reorder.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nnumber\n         3\n.T.\n.F.\n.F.\n.F.\n.F.\n.T.",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nnumber\n         3\n.T.\n.F.\n.F.\n.F.\n.F.\n.T.",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\nbeta\nnumber\n         3\n.T.\n.F.\n.F.\n.F.\n.F.\n.T.",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1278_pp_var_flags_operand.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha\n         5\n.F.\n.F.\n.F.\n.T.\n.F.\n.F.",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha\n         5\n.F.\n.F.\n.F.\n.T.\n.F.\n.F.",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha\n         5\n.F.\n.F.\n.F.\n.T.\n.F.\n.F.",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1279_pp_var_flags_capture.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nVISIBLE\nEXPORTED\nRO\nPROPERTY",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nVISIBLE\nEXPORTED\nRO\nPROPERTY",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nVISIBLE\nEXPORTED\nRO\nPROPERTY",
+          "stderr": ""
+        }
+      }
+    }
+  ]
+}

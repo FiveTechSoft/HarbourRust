@@ -1268,3 +1268,12 @@ pos tests/t1269_pp_plain_type_repeats.hb \nalpha\nnumber\ntext\n         1
 pos tests/t1270_pp_plain_type_operand.hb \nalpha\na + INIT\n         2
 neg tests/t1271_pp_plain_type_macro_neg.hb reduced VAR expression atom outside bounded contract
 neg tests/t1272_pp_plain_type_incomplete_neg.hb reduced VAR expression shape outside bounded contract
+pos tests/t1273_pp_var_flags_absent.hb \nalpha\n.F.\n.F.\n.F.\n.F.\n.F.\n.F.
+pos tests/t1274_pp_var_flags_all.hb \nalpha\n.T.\n.T.\n.T.\n.T.\n.T.\n.T.
+pos tests/t1275_pp_var_flags_aliases.hb \nalpha\n.T.\n.F.\n.F.\n.T.\n.T.\n.F.
+pos tests/t1276_pp_var_flags_reorder.hb \nalpha\nbeta\nnumber\n         3\n.T.\n.F.\n.F.\n.F.\n.F.\n.T.
+neg tests/t1277_pp_var_flags_repeat.hb statement not in the subset
+pos tests/t1278_pp_var_flags_operand.hb \nalpha\n         5\n.F.\n.F.\n.F.\n.T.\n.F.\n.F.
+pos tests/t1279_pp_var_flags_capture.hb \nVISIBLE\nEXPORTED\nRO\nPROPERTY
+neg tests/t1280_pp_var_flags_macro_neg.hb reduced VAR expression atom outside bounded contract
+neg tests/t1281_pp_var_flags_incomplete_neg.hb reduced VAR expression shape outside bounded contract
