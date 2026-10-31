@@ -1,0 +1,904 @@
+{
+  "rows": [
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <x> => OUT(<x>)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(7)\n",
+      "own_exit": 0,
+      "own_output": "OUT(7)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <x> => OUT(<x>)\nSHOW [VALUE]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT([7])\n",
+      "own_exit": 0,
+      "own_output": "OUT([ 7 ])\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <x> => OUT(<x>)\nSHOW \"VALUE\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"VALUE\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"VALUE\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <x> => OUT(<x>)\n? SHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? SHOW 7\n",
+      "own_exit": 0,
+      "own_output": "? SHOW 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <x> => OUT(<x>)\nSHOW VALUE+1\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(7+1)\n",
+      "own_exit": 0,
+      "own_output": "OUT(7 + 1)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <x> => OUT(<x>)\nSHOW VALUE(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(7(1))\n",
+      "own_exit": 0,
+      "own_output": "OUT(7 ( 1 ))\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"7\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"7\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW [VALUE]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"[7]\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"[7]\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW \"VALUE\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT('\"VALUE\"')\n",
+      "own_exit": 0,
+      "own_output": "OUT('\"VALUE\"')\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <x> => OUT(<\"x\">)\n? SHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? SHOW 7\n",
+      "own_exit": 0,
+      "own_output": "? SHOW 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE+1\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"7+1\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"7+1\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"7(1)\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"7(1)\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW 7\n",
+      "own_exit": 0,
+      "own_output": "SHOW 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW [VALUE]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW [7]\n",
+      "own_exit": 0,
+      "own_output": "SHOW [7]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW \"VALUE\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW \"VALUE\"\n",
+      "own_exit": 0,
+      "own_output": "SHOW \"VALUE\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <!x!> => OUT(<x>)\n? SHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? SHOW 7\n",
+      "own_exit": 0,
+      "own_output": "? SHOW 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW VALUE+1\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW 7+1\n",
+      "own_exit": 0,
+      "own_output": "SHOW 7+1\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 7\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW VALUE(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW 7(1)\n",
+      "own_exit": 0,
+      "own_output": "SHOW 7(1)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <x> => OUT(<x>)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(007)\n",
+      "own_exit": 0,
+      "own_output": "OUT(007)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <x> => OUT(<x>)\nSHOW [VALUE]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT([007])\n",
+      "own_exit": 0,
+      "own_output": "OUT([ 007 ])\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <x> => OUT(<x>)\nSHOW \"VALUE\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"VALUE\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"VALUE\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <x> => OUT(<x>)\n? SHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? SHOW 007\n",
+      "own_exit": 0,
+      "own_output": "? SHOW 007\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <x> => OUT(<x>)\nSHOW VALUE+1\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(007+1)\n",
+      "own_exit": 0,
+      "own_output": "OUT(007 + 1)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <x> => OUT(<x>)\nSHOW VALUE(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(007(1))\n",
+      "own_exit": 0,
+      "own_output": "OUT(007 ( 1 ))\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"007\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"007\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW [VALUE]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"[007]\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"[007]\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW \"VALUE\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT('\"VALUE\"')\n",
+      "own_exit": 0,
+      "own_output": "OUT('\"VALUE\"')\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <x> => OUT(<\"x\">)\n? SHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? SHOW 007\n",
+      "own_exit": 0,
+      "own_output": "? SHOW 007\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE+1\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"007+1\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"007+1\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"007(1)\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"007(1)\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW 007\n",
+      "own_exit": 0,
+      "own_output": "SHOW 007\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW [VALUE]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW [007]\n",
+      "own_exit": 0,
+      "own_output": "SHOW [007]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW \"VALUE\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW \"VALUE\"\n",
+      "own_exit": 0,
+      "own_output": "SHOW \"VALUE\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <!x!> => OUT(<x>)\n? SHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? SHOW 007\n",
+      "own_exit": 0,
+      "own_output": "? SHOW 007\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW VALUE+1\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW 007+1\n",
+      "own_exit": 0,
+      "own_output": "SHOW 007+1\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 007\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW VALUE(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW 007(1)\n",
+      "own_exit": 0,
+      "own_output": "SHOW 007(1)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <x> => OUT(<x>)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(0)\n",
+      "own_exit": 0,
+      "own_output": "OUT(0)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <x> => OUT(<x>)\nSHOW [VALUE]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT([0])\n",
+      "own_exit": 0,
+      "own_output": "OUT([ 0 ])\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <x> => OUT(<x>)\nSHOW \"VALUE\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"VALUE\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"VALUE\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <x> => OUT(<x>)\n? SHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? SHOW 0\n",
+      "own_exit": 0,
+      "own_output": "? SHOW 0\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <x> => OUT(<x>)\nSHOW VALUE+1\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(0+1)\n",
+      "own_exit": 0,
+      "own_output": "OUT(0 + 1)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <x> => OUT(<x>)\nSHOW VALUE(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(0(1))\n",
+      "own_exit": 0,
+      "own_output": "OUT(0 ( 1 ))\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"0\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"0\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW [VALUE]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"[0]\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"[0]\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW \"VALUE\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT('\"VALUE\"')\n",
+      "own_exit": 0,
+      "own_output": "OUT('\"VALUE\"')\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <x> => OUT(<\"x\">)\n? SHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? SHOW 0\n",
+      "own_exit": 0,
+      "own_output": "? SHOW 0\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE+1\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"0+1\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"0+1\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"0(1)\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"0(1)\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW 0\n",
+      "own_exit": 0,
+      "own_output": "SHOW 0\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW [VALUE]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW [0]\n",
+      "own_exit": 0,
+      "own_output": "SHOW [0]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW \"VALUE\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW \"VALUE\"\n",
+      "own_exit": 0,
+      "own_output": "SHOW \"VALUE\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <!x!> => OUT(<x>)\n? SHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? SHOW 0\n",
+      "own_exit": 0,
+      "own_output": "? SHOW 0\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW VALUE+1\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW 0+1\n",
+      "own_exit": 0,
+      "own_output": "SHOW 0+1\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 0\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW VALUE(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW 0(1)\n",
+      "own_exit": 0,
+      "own_output": "SHOW 0(1)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <x> => OUT(<x>)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(9223372036854775808)\n",
+      "own_exit": 0,
+      "own_output": "OUT(9223372036854775808)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <x> => OUT(<x>)\nSHOW [VALUE]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT([9223372036854775808])\n",
+      "own_exit": 0,
+      "own_output": "OUT([ 9223372036854775808 ])\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <x> => OUT(<x>)\nSHOW \"VALUE\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"VALUE\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"VALUE\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <x> => OUT(<x>)\n? SHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? SHOW 9223372036854775808\n",
+      "own_exit": 0,
+      "own_output": "? SHOW 9223372036854775808\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <x> => OUT(<x>)\nSHOW VALUE+1\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(9223372036854775808+1)\n",
+      "own_exit": 0,
+      "own_output": "OUT(9223372036854775808 + 1)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <x> => OUT(<x>)\nSHOW VALUE(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(9223372036854775808(1))\n",
+      "own_exit": 0,
+      "own_output": "OUT(9223372036854775808 ( 1 ))\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"9223372036854775808\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"9223372036854775808\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW [VALUE]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"[9223372036854775808]\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"[9223372036854775808]\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW \"VALUE\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT('\"VALUE\"')\n",
+      "own_exit": 0,
+      "own_output": "OUT('\"VALUE\"')\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <x> => OUT(<\"x\">)\n? SHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? SHOW 9223372036854775808\n",
+      "own_exit": 0,
+      "own_output": "? SHOW 9223372036854775808\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE+1\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"9223372036854775808+1\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"9223372036854775808+1\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"9223372036854775808(1)\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"9223372036854775808(1)\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW 9223372036854775808\n",
+      "own_exit": 0,
+      "own_output": "SHOW 9223372036854775808\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW [VALUE]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW [9223372036854775808]\n",
+      "own_exit": 0,
+      "own_output": "SHOW [9223372036854775808]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW \"VALUE\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW \"VALUE\"\n",
+      "own_exit": 0,
+      "own_output": "SHOW \"VALUE\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <!x!> => OUT(<x>)\n? SHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? SHOW 9223372036854775808\n",
+      "own_exit": 0,
+      "own_output": "? SHOW 9223372036854775808\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW VALUE+1\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW 9223372036854775808+1\n",
+      "own_exit": 0,
+      "own_output": "SHOW 9223372036854775808+1\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE 9223372036854775808\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW VALUE(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW 9223372036854775808(1)\n",
+      "own_exit": 0,
+      "own_output": "SHOW 9223372036854775808(1)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <x> => OUT(<x>)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(7)\n",
+      "own_exit": 0,
+      "own_output": "OUT(7)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <x> => OUT(<x>)\nSHOW [VALUE]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT([7])\n",
+      "own_exit": 0,
+      "own_output": "OUT([ 7 ])\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <x> => OUT(<x>)\nSHOW \"VALUE\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"VALUE\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"VALUE\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <x> => OUT(<x>)\n? SHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? SHOW 7\n",
+      "own_exit": 0,
+      "own_output": "? SHOW 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <x> => OUT(<x>)\nSHOW VALUE+1\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(7+1)\n",
+      "own_exit": 0,
+      "own_output": "OUT(7 + 1)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <x> => OUT(<x>)\nSHOW VALUE(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(7(1))\n",
+      "own_exit": 0,
+      "own_output": "OUT(7 ( 1 ))\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"7\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"7\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW [VALUE]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"[7]\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"[7]\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW \"VALUE\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT('\"VALUE\"')\n",
+      "own_exit": 0,
+      "own_output": "OUT('\"VALUE\"')\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <x> => OUT(<\"x\">)\n? SHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? SHOW 7\n",
+      "own_exit": 0,
+      "own_output": "? SHOW 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE+1\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"7+1\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"7+1\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW VALUE(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"7(1)\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"7(1)\")\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW 7\n",
+      "own_exit": 0,
+      "own_output": "SHOW 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW [VALUE]\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW [7]\n",
+      "own_exit": 0,
+      "own_output": "SHOW [7]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW \"VALUE\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW \"VALUE\"\n",
+      "own_exit": 0,
+      "own_output": "SHOW \"VALUE\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <!x!> => OUT(<x>)\n? SHOW VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n? SHOW 7\n",
+      "own_exit": 0,
+      "own_output": "? SHOW 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW VALUE+1\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW 7+1\n",
+      "own_exit": 0,
+      "own_output": "SHOW 7+1\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#define ALIAS 7\n#define VALUE ALIAS\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW VALUE(1)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nSHOW 7(1)\n",
+      "own_exit": 0,
+      "own_output": "SHOW 7(1)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    }
+  ]
+}
