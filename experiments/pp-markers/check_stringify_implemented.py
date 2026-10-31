@@ -6,8 +6,12 @@ base=json.loads((root/'stringify-gap-20261031/results.json').read_text())['rows'
 for r in base+extra:
  ident=('base'if'directive'in r else'extra')+str(r['case']);f=out/(ident+'.prg');f.write_text(r['source']);ref=subprocess.run([a.hbpp,str(f),'-q2'],capture_output=True,text=True,timeout=10);o=subprocess.run([a.hpp,str(f)],capture_output=True,text=True,timeout=10);expected=f.with_suffix('.ppo').read_text()if f.with_suffix('.ppo').exists()else'';assert ref.returncode==0 and expected.strip()==r['reference_output'].strip()
  supported=(r['result']=='OUT( #<x> )'if'directive'in r else r['case']in[9,11,12,14,15,17,21,23,24,26])
+ list_added=(",..."in r.get("source","") and r.get("input","")!="PROBE WORD alpha WORD beta")
  normal_added=(r['result']=='OUT( <"x"> )' and ',...' not in r.get('pattern','') and r.get('input','')!='PROBE WORD alpha WORD beta' if 'directive'in r else r['case']in[10,13,16,22,25])
- if normal_added:
+ if list_added:
+  def parts(s):return re.findall(r'"[^"\n]*"|\'[^\'\n]*\'|[^\s]',s)
+  assert o.returncode==0 and parts(o.stdout)==parts(expected),(ident,o.stdout,o.stderr,expected);comparison='new scoped list stringify exact contents'
+ elif normal_added:
   def parts(s):return re.findall(r'"[^"\n]*"|\'[^\'\n]*\'|[^\s]',s)
   assert o.returncode==0 and parts(o.stdout)==parts(expected),(ident,o.stdout,o.stderr,expected);comparison='new scoped normal stringify exact contents'
  elif supported:

@@ -619,3 +619,23 @@ separator whitespace. Empty elements contribute no invented empty literal.
 Commas inside strings,calls,parentheses or array constructors do not split
 an element. Bracket-string and escape-literal semantics remain separate from
 the present simple quoted-literal implementation. No new matcher/runtime code.
+
+## Scoped list stringify implementation
+
+Existing list captures can now use #<x> for one quoted complete capture or
+<"x"> for separately quoted top-level elements. Commas and surrounding spaces
+are preserved;empty elements contribute no invented string. Parentheses and
+array-constructor braces keep inner commas together. Capture matching is not
+changed. Bracket tokens,escape literals,unrepresentable quote combinations,
+non-list nonplain markers and literal-bearing optional match groups remain
+outside this slice. Normal-list unmatched delimiter handling fails explicitly.
+
+224oracle observations:176supported exact quoted-content checks and48outside
+observations,not224passes.136plain normal probes have identical pp outputs,
+exit codes and diagnostics versus512a42d. Five own runtime programs are
+byte-exact against fresh Harbour. Tests1179/1196 formerly rejected all lists;
+they now reject bracket-token lists. The earlier110case suite becomes50#plain,
+45normal,3new list matches and12outside-slice rejections.1202default and436LLVM
+checks pass freshly locally;14reviewed originals are freshly exact.268x4audit
+acceptance stays21/15Linux20/14Windows. No lexer/runtime/ABI changes or speed
+and size claim follow from this preprocessor increment.

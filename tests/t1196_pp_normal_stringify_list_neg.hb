@@ -1,2 +1,2 @@
 #xcommand SHOW <x,...> => ? <"x">
-SHOW alpha, beta
+SHOW alpha[1], beta

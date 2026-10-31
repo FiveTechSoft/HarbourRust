@@ -1,0 +1,1797 @@
+{
+  "scope": "list captures only,no general pp proof",
+  "rows": [
+    {
+      "group": "results",
+      "case": 0,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 1,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha  ,   beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 2,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha(1, 2), beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 3,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"{1, 2}, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 4,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a,b\", \"c,d\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 5,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha,beta), gamma\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 6,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha,,beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 7,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \",alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 8,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha,\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 9,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta + 1\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 10,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 11,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of escape literals is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 12,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 13,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\"  ,   \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 14,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha(1, 2)\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 15,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"{1, 2}\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 16,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a,b\"', '\"c,d\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 17,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha,beta)\", \"gamma\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 18,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\",,\"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 19,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( ,\"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 20,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 21,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", \"beta + 1\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 22,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 23,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of escape literals is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 24,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 25,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\"  ,   \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 26,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha(1, 2)\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 27,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"{1, 2}\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 28,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a,b\"', '\"c,d\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 29,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha,beta)\", \"gamma\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 30,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\",,\"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 31,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( ,\"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 32,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 33,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", \"beta + 1\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 34,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 35,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of escape literals is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 36,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 37,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha  ,   beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 38,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha(1, 2), beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 39,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"{1, 2}, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 40,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a,b\", \"c,d\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 41,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha,beta), gamma\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 42,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha,,beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 43,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \",alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 44,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha,\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 45,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta + 1\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 46,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 47,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of escape literals is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 48,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 49,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\"  ,   \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 50,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha(1, 2)\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 51,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"{1, 2}\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 52,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a,b\"', '\"c,d\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 53,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha,beta)\", \"gamma\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 54,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\",,\"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 55,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( ,\"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 56,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 57,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", \"beta + 1\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 58,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 59,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of escape literals is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 60,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 61,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\"  ,   \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 62,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha(1, 2)\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 63,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"{1, 2}\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 64,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a,b\"', '\"c,d\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 65,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha,beta)\", \"gamma\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 66,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\",,\"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 67,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( ,\"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 68,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 69,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", \"beta + 1\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 70,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 71,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of escape literals is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 72,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 73,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha  ,   beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 74,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha(1, 2), beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 75,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"{1, 2}, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 76,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a,b\", \"c,d\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 77,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha,beta), gamma\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 78,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha,,beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 79,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \",alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 80,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha,\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 81,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta + 1\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 82,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 83,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of escape literals is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 84,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 85,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\"  ,   \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 86,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha(1, 2)\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 87,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"{1, 2}\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 88,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a,b\"', '\"c,d\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 89,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha,beta)\", \"gamma\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 90,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\",,\"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 91,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( ,\"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 92,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 93,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", \"beta + 1\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 94,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 95,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of escape literals is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 96,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 97,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\"  ,   \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 98,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha(1, 2)\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 99,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"{1, 2}\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 100,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a,b\"', '\"c,d\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 101,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha,beta)\", \"gamma\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 102,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\",,\"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 103,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( ,\"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 104,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 105,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", \"beta + 1\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 106,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 107,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of escape literals is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 108,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 109,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha  ,   beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 110,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha(1, 2), beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 111,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"{1, 2}, beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 112,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a,b\", \"c,d\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 113,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha,beta), gamma\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 114,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha,,beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 115,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \",alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 116,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha,\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 117,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha, beta + 1\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 118,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 119,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of escape literals is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 120,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 121,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\"  ,   \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 122,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha(1, 2)\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 123,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"{1, 2}\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 124,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a,b\"', '\"c,d\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 125,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha,beta)\", \"gamma\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 126,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\",,\"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 127,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( ,\"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 128,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 129,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", \"beta + 1\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 130,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 131,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of escape literals is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 132,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 133,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\"  ,   \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 134,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha(1, 2)\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 135,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"{1, 2}\", \"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 136,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( '\"a,b\"', '\"c,d\"' )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 137,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"(alpha,beta)\", \"gamma\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 138,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\",,\"beta\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 139,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( ,\"alpha\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 140,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 141,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT( \"alpha\", \"beta + 1\" )\n",
+      "own_error": ""
+    },
+    {
+      "group": "results",
+      "case": 142,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "results",
+      "case": 143,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify of escape literals is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 0,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 1,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\",\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 2,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\",,\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 3,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"a , , b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 4,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"a(1,{2,3}), b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 5,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 6,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"{a,{b,c}}, d\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 7,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT('\"a  , b\", c')\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 8,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify requiring bracket/escape literal is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 9,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT(\"a), b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 10,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 11,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(,)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 12,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(,,)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 13,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"a\" , , \"b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 14,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"a(1,{2,3})\", \"b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 15,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 16,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"{a,{b,c}}\", \"d\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 17,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT('\"a  , b\"', \"c\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 18,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify requiring bracket/escape literal is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 19,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with unbalanced delimiters is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 20,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 21,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\",\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 22,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\",,\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 23,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"a , , b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 24,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"a(1,{2,3}), b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 25,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 26,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"{a,{b,c}}, d\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 27,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT('\"a  , b\", c')\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 28,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify requiring bracket/escape literal is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 29,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT(\"a), b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 30,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT()\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 31,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(,)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 32,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(,,)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 33,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"a\" , , \"b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 34,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"a(1,{2,3})\", \"b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 35,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 36,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"{a,{b,c}}\", \"d\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 37,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT('\"a  , b\"', \"c\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 38,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify requiring bracket/escape literal is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 39,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with unbalanced delimiters is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 40,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 41,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\",\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 42,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\",,\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 43,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"a , , b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 44,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"a(1,{2,3}), b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 45,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 46,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"{a,{b,c}}, d\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 47,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT('\"a  , b\", c')\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 48,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify requiring bracket/escape literal is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 49,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT(\"a), b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 50,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "PROBE\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 51,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(,)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 52,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(,,)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 53,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"a\" , , \"b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 54,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"a(1,{2,3})\", \"b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 55,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 56,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"{a,{b,c}}\", \"d\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 57,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT('\"a  , b\"', \"c\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 58,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify requiring bracket/escape literal is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 59,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with unbalanced delimiters is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 60,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 61,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\",\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 62,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\",,\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 63,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"a , , b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 64,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"a(1,{2,3}), b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 65,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 66,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"{a,{b,c}}, d\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 67,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT('\"a  , b\", c')\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 68,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify requiring bracket/escape literal is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 69,
+      "kind": "outside slice observation",
+      "own_exit": 0,
+      "own_output": "OUT(\"a), b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 70,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT()\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 71,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(,)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 72,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(,,)\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 73,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"a\" , , \"b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 74,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"a(1,{2,3})\", \"b\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 75,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with bracket tokens is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 76,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT(\"{a,{b,c}}\", \"d\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 77,
+      "kind": "supported exact quoted contents",
+      "own_exit": 0,
+      "own_output": "OUT('\"a  , b\"', \"c\")\n",
+      "own_error": ""
+    },
+    {
+      "group": "extra",
+      "case": 78,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: stringify requiring bracket/escape literal is outside this increment\n"
+    },
+    {
+      "group": "extra",
+      "case": 79,
+      "kind": "outside slice observation",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: list stringify with unbalanced delimiters is outside this increment\n"
+    }
+  ]
+}

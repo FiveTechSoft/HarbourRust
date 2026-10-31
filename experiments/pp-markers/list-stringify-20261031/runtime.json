@@ -1,0 +1,27 @@
+[
+  {
+    "file": "t1197_pp_list_stringify.hb",
+    "exact": true,
+    "stdout_hex": "0a616c70686120202c202020626574610a6128312c7b322c337d292c2062"
+  },
+  {
+    "file": "t1198_pp_list_normal.hb",
+    "exact": true,
+    "stdout_hex": "0a616c70686120626574610a6128312c7b322c337d292062"
+  },
+  {
+    "file": "t1199_pp_list_quotes.hb",
+    "exact": true,
+    "stdout_hex": "0a22612c62222022632c6422"
+  },
+  {
+    "file": "t1200_pp_list_absent.hb",
+    "exact": true,
+    "stdout_hex": "0a41205a0a4120616c7068612062657461205a"
+  },
+  {
+    "file": "t1201_pp_list_empty.hb",
+    "exact": true,
+    "stdout_hex": "0a616c7068612c2c626574610a2c"
+  }
+]

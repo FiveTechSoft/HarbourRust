@@ -700,6 +700,33 @@ fn stringify_capture(capture: &Capture, source: &str, spans: &HashMap<usize, (us
     else { Err("stringify requiring bracket/escape literal is outside this increment".to_string()) }
 }
 
+fn stringify_list(capture: &Capture, source: &str, spans: &HashMap<usize,(usize,usize)>) -> Result<String,String> {
+    if capture.parts.is_empty() { return Ok(String::new()); }
+    let mut chunks = Vec::new(); let mut start = 0; let mut stack = Vec::new();
+    for (i,&(id,_)) in capture.parts.iter().enumerate() {
+        let &(a,b) = spans.get(&id).ok_or("capture source span unavailable")?;
+        let token = &source[a..b];
+        if token == "[" || token == "]" { return Err("list stringify with bracket tokens is outside this increment".into()); }
+        if token == "(" || token == "{" { stack.push(token); }
+        if token == ")" || token == "}" {
+            if stack.pop() != Some(if token == ")" {"("}else{"{"}) { return Err("list stringify with unbalanced delimiters is outside this increment".into()); }
+        }
+        if token == "," && stack.is_empty() { chunks.push((start,i)); start=i+1; }
+    }
+    if !stack.is_empty() { return Err("list stringify with unbalanced delimiters is outside this increment".into()); }
+    chunks.push((start,capture.parts.len()));
+    let mut cursor=spans[&capture.parts[0].0].0; let end=spans[&capture.parts.last().unwrap().0].1;
+    let mut out=String::new();
+    for (a,b) in chunks {
+        if a==b {continue;}
+        let first=spans[&capture.parts[a].0].0; let last=spans[&capture.parts[b-1].0].1;
+        out.push_str(&source[cursor..first]);
+        let part=Capture{text:String::new(),parts:capture.parts[a..b].to_vec()};
+        out.push_str(&stringify_capture(&part,source,spans)?); cursor=last;
+    }
+    out.push_str(&source[cursor..end]); Ok(out)
+}
+
 fn cmd_match(pat: &[String], src: &[String], restricted_exact: bool) -> Option<Vec<Capture>> {
     // First literal token at or after pat[i], looking through markers and
     // group brackets; used as the terminator for captures.
@@ -1078,11 +1105,12 @@ fn render_command(c: &Cmd, caps: &[Capture], source: &str, tokens: &[String], li
                             else if group > 0 && !(token.starts_with('<') && token.ends_with('>')) { grouped_literal = true; }
                         }
                         if grouped_literal { return Err(format!("line {}: stringify with literal-bearing optional groups is outside this increment", line_no)); }
-                        if inner.contains(",...") || inner.starts_with('!') || inner.starts_with('*') || inner.starts_with('(') || inner.contains(':') {
+                        if inner.starts_with('!') || inner.starts_with('*') || inner.starts_with('(') || inner.contains(':') {
                             return Err(format!("line {}: stringify of non-plain capture is outside this increment", line_no));
                         }
                         let spans = source_spans(source, tokens).map_err(|e| format!("line {}: {}", line_no, e))?;
-                        let value = if normal && caps[pi].is_empty() { String::new() } else { stringify_capture(&caps[pi], source, &spans).map_err(|e| format!("line {}: {}", line_no, e))? };
+                        if inner.contains(",...") && caps[pi].parts.iter().any(|(id,_)| {let(a,b)=spans[id]; &source[a..b]=="[" || &source[a..b]=="]"}) { return Err(format!("line {}: list stringify with bracket tokens is outside this increment",line_no)); }
+                        let value = if normal && inner.contains(",...") { stringify_list(&caps[pi],source,&spans).map_err(|e|format!("line {}: {}",line_no,e))? } else if normal && caps[pi].is_empty() { String::new() } else { stringify_capture(&caps[pi], source, &spans).map_err(|e| format!("line {}: {}", line_no, e))? };
                         // A resulting literal is data;later marker substitutions
                         // must not inspect marker-like text inside it.
                         let token = (0xe000..=0xf8ff).filter_map(char::from_u32).find(|ch|

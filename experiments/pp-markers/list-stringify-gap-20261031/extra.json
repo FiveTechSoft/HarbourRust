@@ -1,0 +1,642 @@
+[
+  {
+    "case": 0,
+    "source": "#command PROBE <x,...> => OUT(#<x>)\nPROBE \n",
+    "input": "",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE\n",
+    "reference_error": ""
+  },
+  {
+    "case": 1,
+    "source": "#command PROBE <x,...> => OUT(#<x>)\nPROBE ,\n",
+    "input": ",",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\",\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 2,
+    "source": "#command PROBE <x,...> => OUT(#<x>)\nPROBE ,,\n",
+    "input": ",,",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\",,\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 3,
+    "source": "#command PROBE <x,...> => OUT(#<x>)\nPROBE a , , b\n",
+    "input": "a , , b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a , , b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 4,
+    "source": "#command PROBE <x,...> => OUT(#<x>)\nPROBE a(1,{2,3}), b\n",
+    "input": "a(1,{2,3}), b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a(1,{2,3}), b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 5,
+    "source": "#command PROBE <x,...> => OUT(#<x>)\nPROBE a[1,2], b\n",
+    "input": "a[1,2], b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[1,2], b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 6,
+    "source": "#command PROBE <x,...> => OUT(#<x>)\nPROBE {a,{b,c}}, d\n",
+    "input": "{a,{b,c}}, d",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"{a,{b,c}}, d\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 7,
+    "source": "#command PROBE <x,...> => OUT(#<x>)\nPROBE \"a  , b\", c\n",
+    "input": "\"a  , b\", c",
+    "reference_exit": 0,
+    "reference_output": "\nOUT('\"a  , b\", c')\n",
+    "reference_error": ""
+  },
+  {
+    "case": 8,
+    "source": "#command PROBE <x,...> => OUT(#<x>)\nPROBE 'a\"b', c\n",
+    "input": "'a\"b', c",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(['a\"b', c])\n",
+    "reference_error": ""
+  },
+  {
+    "case": 9,
+    "source": "#command PROBE <x,...> => OUT(#<x>)\nPROBE a), b\n",
+    "input": "a), b",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE a), b\n",
+    "reference_error": ""
+  },
+  {
+    "case": 10,
+    "source": "#command PROBE <x,...> => OUT(<\"x\">)\nPROBE \n",
+    "input": "",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE\n",
+    "reference_error": ""
+  },
+  {
+    "case": 11,
+    "source": "#command PROBE <x,...> => OUT(<\"x\">)\nPROBE ,\n",
+    "input": ",",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(,)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 12,
+    "source": "#command PROBE <x,...> => OUT(<\"x\">)\nPROBE ,,\n",
+    "input": ",,",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(,,)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 13,
+    "source": "#command PROBE <x,...> => OUT(<\"x\">)\nPROBE a , , b\n",
+    "input": "a , , b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a\" , , \"b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 14,
+    "source": "#command PROBE <x,...> => OUT(<\"x\">)\nPROBE a(1,{2,3}), b\n",
+    "input": "a(1,{2,3}), b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a(1,{2,3})\", \"b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 15,
+    "source": "#command PROBE <x,...> => OUT(<\"x\">)\nPROBE a[1,2], b\n",
+    "input": "a[1,2], b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[1,2]\", \"b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 16,
+    "source": "#command PROBE <x,...> => OUT(<\"x\">)\nPROBE {a,{b,c}}, d\n",
+    "input": "{a,{b,c}}, d",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"{a,{b,c}}\", \"d\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 17,
+    "source": "#command PROBE <x,...> => OUT(<\"x\">)\nPROBE \"a  , b\", c\n",
+    "input": "\"a  , b\", c",
+    "reference_exit": 0,
+    "reference_output": "\nOUT('\"a  , b\"', \"c\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 18,
+    "source": "#command PROBE <x,...> => OUT(<\"x\">)\nPROBE 'a\"b', c\n",
+    "input": "'a\"b', c",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(['a\"b'], \"c\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 19,
+    "source": "#command PROBE <x,...> => OUT(<\"x\">)\nPROBE a), b\n",
+    "input": "a), b",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE a), b\n",
+    "reference_error": ""
+  },
+  {
+    "case": 20,
+    "source": "#command PROBE [<x,...>] => OUT(#<x>)\nPROBE \n",
+    "input": "",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 21,
+    "source": "#command PROBE [<x,...>] => OUT(#<x>)\nPROBE ,\n",
+    "input": ",",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\",\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 22,
+    "source": "#command PROBE [<x,...>] => OUT(#<x>)\nPROBE ,,\n",
+    "input": ",,",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\",,\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 23,
+    "source": "#command PROBE [<x,...>] => OUT(#<x>)\nPROBE a , , b\n",
+    "input": "a , , b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a , , b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 24,
+    "source": "#command PROBE [<x,...>] => OUT(#<x>)\nPROBE a(1,{2,3}), b\n",
+    "input": "a(1,{2,3}), b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a(1,{2,3}), b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 25,
+    "source": "#command PROBE [<x,...>] => OUT(#<x>)\nPROBE a[1,2], b\n",
+    "input": "a[1,2], b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[1,2], b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 26,
+    "source": "#command PROBE [<x,...>] => OUT(#<x>)\nPROBE {a,{b,c}}, d\n",
+    "input": "{a,{b,c}}, d",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"{a,{b,c}}, d\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 27,
+    "source": "#command PROBE [<x,...>] => OUT(#<x>)\nPROBE \"a  , b\", c\n",
+    "input": "\"a  , b\", c",
+    "reference_exit": 0,
+    "reference_output": "\nOUT('\"a  , b\", c')\n",
+    "reference_error": ""
+  },
+  {
+    "case": 28,
+    "source": "#command PROBE [<x,...>] => OUT(#<x>)\nPROBE 'a\"b', c\n",
+    "input": "'a\"b', c",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(['a\"b', c])\n",
+    "reference_error": ""
+  },
+  {
+    "case": 29,
+    "source": "#command PROBE [<x,...>] => OUT(#<x>)\nPROBE a), b\n",
+    "input": "a), b",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE a), b\n",
+    "reference_error": ""
+  },
+  {
+    "case": 30,
+    "source": "#command PROBE [<x,...>] => OUT(<\"x\">)\nPROBE \n",
+    "input": "",
+    "reference_exit": 0,
+    "reference_output": "\nOUT()\n",
+    "reference_error": ""
+  },
+  {
+    "case": 31,
+    "source": "#command PROBE [<x,...>] => OUT(<\"x\">)\nPROBE ,\n",
+    "input": ",",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(,)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 32,
+    "source": "#command PROBE [<x,...>] => OUT(<\"x\">)\nPROBE ,,\n",
+    "input": ",,",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(,,)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 33,
+    "source": "#command PROBE [<x,...>] => OUT(<\"x\">)\nPROBE a , , b\n",
+    "input": "a , , b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a\" , , \"b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 34,
+    "source": "#command PROBE [<x,...>] => OUT(<\"x\">)\nPROBE a(1,{2,3}), b\n",
+    "input": "a(1,{2,3}), b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a(1,{2,3})\", \"b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 35,
+    "source": "#command PROBE [<x,...>] => OUT(<\"x\">)\nPROBE a[1,2], b\n",
+    "input": "a[1,2], b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[1,2]\", \"b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 36,
+    "source": "#command PROBE [<x,...>] => OUT(<\"x\">)\nPROBE {a,{b,c}}, d\n",
+    "input": "{a,{b,c}}, d",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"{a,{b,c}}\", \"d\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 37,
+    "source": "#command PROBE [<x,...>] => OUT(<\"x\">)\nPROBE \"a  , b\", c\n",
+    "input": "\"a  , b\", c",
+    "reference_exit": 0,
+    "reference_output": "\nOUT('\"a  , b\"', \"c\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 38,
+    "source": "#command PROBE [<x,...>] => OUT(<\"x\">)\nPROBE 'a\"b', c\n",
+    "input": "'a\"b', c",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(['a\"b'], \"c\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 39,
+    "source": "#command PROBE [<x,...>] => OUT(<\"x\">)\nPROBE a), b\n",
+    "input": "a), b",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE a), b\n",
+    "reference_error": ""
+  },
+  {
+    "case": 40,
+    "source": "#xcommand PROBE <x,...> => OUT(#<x>)\nPROBE \n",
+    "input": "",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE\n",
+    "reference_error": ""
+  },
+  {
+    "case": 41,
+    "source": "#xcommand PROBE <x,...> => OUT(#<x>)\nPROBE ,\n",
+    "input": ",",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\",\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 42,
+    "source": "#xcommand PROBE <x,...> => OUT(#<x>)\nPROBE ,,\n",
+    "input": ",,",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\",,\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 43,
+    "source": "#xcommand PROBE <x,...> => OUT(#<x>)\nPROBE a , , b\n",
+    "input": "a , , b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a , , b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 44,
+    "source": "#xcommand PROBE <x,...> => OUT(#<x>)\nPROBE a(1,{2,3}), b\n",
+    "input": "a(1,{2,3}), b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a(1,{2,3}), b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 45,
+    "source": "#xcommand PROBE <x,...> => OUT(#<x>)\nPROBE a[1,2], b\n",
+    "input": "a[1,2], b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[1,2], b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 46,
+    "source": "#xcommand PROBE <x,...> => OUT(#<x>)\nPROBE {a,{b,c}}, d\n",
+    "input": "{a,{b,c}}, d",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"{a,{b,c}}, d\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 47,
+    "source": "#xcommand PROBE <x,...> => OUT(#<x>)\nPROBE \"a  , b\", c\n",
+    "input": "\"a  , b\", c",
+    "reference_exit": 0,
+    "reference_output": "\nOUT('\"a  , b\", c')\n",
+    "reference_error": ""
+  },
+  {
+    "case": 48,
+    "source": "#xcommand PROBE <x,...> => OUT(#<x>)\nPROBE 'a\"b', c\n",
+    "input": "'a\"b', c",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(['a\"b', c])\n",
+    "reference_error": ""
+  },
+  {
+    "case": 49,
+    "source": "#xcommand PROBE <x,...> => OUT(#<x>)\nPROBE a), b\n",
+    "input": "a), b",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE a), b\n",
+    "reference_error": ""
+  },
+  {
+    "case": 50,
+    "source": "#xcommand PROBE <x,...> => OUT(<\"x\">)\nPROBE \n",
+    "input": "",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE\n",
+    "reference_error": ""
+  },
+  {
+    "case": 51,
+    "source": "#xcommand PROBE <x,...> => OUT(<\"x\">)\nPROBE ,\n",
+    "input": ",",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(,)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 52,
+    "source": "#xcommand PROBE <x,...> => OUT(<\"x\">)\nPROBE ,,\n",
+    "input": ",,",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(,,)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 53,
+    "source": "#xcommand PROBE <x,...> => OUT(<\"x\">)\nPROBE a , , b\n",
+    "input": "a , , b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a\" , , \"b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 54,
+    "source": "#xcommand PROBE <x,...> => OUT(<\"x\">)\nPROBE a(1,{2,3}), b\n",
+    "input": "a(1,{2,3}), b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a(1,{2,3})\", \"b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 55,
+    "source": "#xcommand PROBE <x,...> => OUT(<\"x\">)\nPROBE a[1,2], b\n",
+    "input": "a[1,2], b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[1,2]\", \"b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 56,
+    "source": "#xcommand PROBE <x,...> => OUT(<\"x\">)\nPROBE {a,{b,c}}, d\n",
+    "input": "{a,{b,c}}, d",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"{a,{b,c}}\", \"d\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 57,
+    "source": "#xcommand PROBE <x,...> => OUT(<\"x\">)\nPROBE \"a  , b\", c\n",
+    "input": "\"a  , b\", c",
+    "reference_exit": 0,
+    "reference_output": "\nOUT('\"a  , b\"', \"c\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 58,
+    "source": "#xcommand PROBE <x,...> => OUT(<\"x\">)\nPROBE 'a\"b', c\n",
+    "input": "'a\"b', c",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(['a\"b'], \"c\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 59,
+    "source": "#xcommand PROBE <x,...> => OUT(<\"x\">)\nPROBE a), b\n",
+    "input": "a), b",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE a), b\n",
+    "reference_error": ""
+  },
+  {
+    "case": 60,
+    "source": "#xcommand PROBE [<x,...>] => OUT(#<x>)\nPROBE \n",
+    "input": "",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 61,
+    "source": "#xcommand PROBE [<x,...>] => OUT(#<x>)\nPROBE ,\n",
+    "input": ",",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\",\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 62,
+    "source": "#xcommand PROBE [<x,...>] => OUT(#<x>)\nPROBE ,,\n",
+    "input": ",,",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\",,\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 63,
+    "source": "#xcommand PROBE [<x,...>] => OUT(#<x>)\nPROBE a , , b\n",
+    "input": "a , , b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a , , b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 64,
+    "source": "#xcommand PROBE [<x,...>] => OUT(#<x>)\nPROBE a(1,{2,3}), b\n",
+    "input": "a(1,{2,3}), b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a(1,{2,3}), b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 65,
+    "source": "#xcommand PROBE [<x,...>] => OUT(#<x>)\nPROBE a[1,2], b\n",
+    "input": "a[1,2], b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[1,2], b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 66,
+    "source": "#xcommand PROBE [<x,...>] => OUT(#<x>)\nPROBE {a,{b,c}}, d\n",
+    "input": "{a,{b,c}}, d",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"{a,{b,c}}, d\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 67,
+    "source": "#xcommand PROBE [<x,...>] => OUT(#<x>)\nPROBE \"a  , b\", c\n",
+    "input": "\"a  , b\", c",
+    "reference_exit": 0,
+    "reference_output": "\nOUT('\"a  , b\", c')\n",
+    "reference_error": ""
+  },
+  {
+    "case": 68,
+    "source": "#xcommand PROBE [<x,...>] => OUT(#<x>)\nPROBE 'a\"b', c\n",
+    "input": "'a\"b', c",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(['a\"b', c])\n",
+    "reference_error": ""
+  },
+  {
+    "case": 69,
+    "source": "#xcommand PROBE [<x,...>] => OUT(#<x>)\nPROBE a), b\n",
+    "input": "a), b",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE a), b\n",
+    "reference_error": ""
+  },
+  {
+    "case": 70,
+    "source": "#xcommand PROBE [<x,...>] => OUT(<\"x\">)\nPROBE \n",
+    "input": "",
+    "reference_exit": 0,
+    "reference_output": "\nOUT()\n",
+    "reference_error": ""
+  },
+  {
+    "case": 71,
+    "source": "#xcommand PROBE [<x,...>] => OUT(<\"x\">)\nPROBE ,\n",
+    "input": ",",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(,)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 72,
+    "source": "#xcommand PROBE [<x,...>] => OUT(<\"x\">)\nPROBE ,,\n",
+    "input": ",,",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(,,)\n",
+    "reference_error": ""
+  },
+  {
+    "case": 73,
+    "source": "#xcommand PROBE [<x,...>] => OUT(<\"x\">)\nPROBE a , , b\n",
+    "input": "a , , b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a\" , , \"b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 74,
+    "source": "#xcommand PROBE [<x,...>] => OUT(<\"x\">)\nPROBE a(1,{2,3}), b\n",
+    "input": "a(1,{2,3}), b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a(1,{2,3})\", \"b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 75,
+    "source": "#xcommand PROBE [<x,...>] => OUT(<\"x\">)\nPROBE a[1,2], b\n",
+    "input": "a[1,2], b",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"a[1,2]\", \"b\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 76,
+    "source": "#xcommand PROBE [<x,...>] => OUT(<\"x\">)\nPROBE {a,{b,c}}, d\n",
+    "input": "{a,{b,c}}, d",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(\"{a,{b,c}}\", \"d\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 77,
+    "source": "#xcommand PROBE [<x,...>] => OUT(<\"x\">)\nPROBE \"a  , b\", c\n",
+    "input": "\"a  , b\", c",
+    "reference_exit": 0,
+    "reference_output": "\nOUT('\"a  , b\"', \"c\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 78,
+    "source": "#xcommand PROBE [<x,...>] => OUT(<\"x\">)\nPROBE 'a\"b', c\n",
+    "input": "'a\"b', c",
+    "reference_exit": 0,
+    "reference_output": "\nOUT(['a\"b'], \"c\")\n",
+    "reference_error": ""
+  },
+  {
+    "case": 79,
+    "source": "#xcommand PROBE [<x,...>] => OUT(<\"x\">)\nPROBE a), b\n",
+    "input": "a), b",
+    "reference_exit": 0,
+    "reference_output": "\nPROBE a), b\n",
+    "reference_error": ""
+  }
+]
