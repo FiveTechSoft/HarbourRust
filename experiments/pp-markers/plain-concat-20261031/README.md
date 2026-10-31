@@ -19,3 +19,7 @@ Four own runtime sources exact full Harbour/default/LLVM Linux. Local full
 MTHNAME-shaped rule can now match in scope,but class header/METHOD helpers
 still have other errors. No original unlock or runtime/class/ABI/ownership/main,
 size/speed claim. Independent remote validation pending.
+
+Independentremotee5bf420fresh1337/684fullgates,14originalsexact,268x4zero
+diagnosticdeltasverified. Runtime4.jsoncontains4sources;temporary inherited
+label6wasnot a sixth witness.
