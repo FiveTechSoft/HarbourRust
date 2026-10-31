@@ -1,0 +1,48 @@
+--- production/pp.rs
++++ inactive-source-aware/pp.rs
+@@ -521,7 +521,7 @@
+                 out.push(text[i..i+2].to_string()); i += 2; continue;
+             }
+         }
+-        if c == '<' {
++        if c == '<' && !source {
+             let mut j = i;
+             while j < b.len() && b[j] != b'>' { j += 1; }
+             if j < b.len() { out.push(text[i..=j].to_string()); i = j + 1; } else { out.push("<".to_string()); i += 1; }
+@@ -1183,7 +1183,7 @@
+ fn single_identifier_group(c:&Cmd,source:&str,tokens:&[String],line:usize)->Option<Result<Option<String>,String>> {
+     let plan=c.group_plan.as_ref()?;
+     let identifier_only=c.pattern.len()==4&&c.pattern[1]=="["&&c.pattern[3]=="]"&&c.pattern[2].starts_with("<!");
+-    if !identifier_only&&(!(plan.reduced_var()||plan.var_variant())||c.translation){return None;}
++    if !identifier_only&&(!(plan.reduced_var()||plan.var_variant()||plan.expression_root())||c.translation){return None;}
+     if !plan.nodes.iter().any(|n|matches!(n,group_plan::Node::Optional{..})){return None;}
+     if !tokens.first().map(|t|lit_match(t,&c.pattern[0])).unwrap_or(false){return None;}
+     // Nested result groups stay wholly on the historical path.
+@@ -1201,7 +1201,8 @@
+ 
+     let work=|| -> Result<Option<String>,String> {
+         let spans=source_spans(source,tokens)?;
+-        let matched=match plan.matches(tokens,c.restricted_exact,c.translation)?{Some(m)=>m,None=>return Ok(None)};
++        let adjacent:Vec<bool>=tokens.iter().enumerate().map(|(i,t)|i>0&&spans[&(tokens[i-1].as_ptr()as usize)].1==spans[&(t.as_ptr()as usize)].0).collect();
++        let matched=match plan.matches_source(tokens,c.restricted_exact,c.translation,&adjacent)?{Some(m)=>m,None=>return Ok(None)};
+         let (staged,mut saved)=staged_result(&c.result,source)?;
+         // The historical renderer substitutes inside quotes. Shield only this
+         // new iteration path's source-result literals before delegating atoms.
+@@ -1239,7 +1240,7 @@
+         let mut out=String::new();
+         for (group,part) in pieces{
+             let marker_ids:Vec<usize>=plan.markers.iter().enumerate().filter(|(_, (name,_))|[format!("<{}>",name),format!("#<{}>",name),format!("<({})>",name),format!("<\"{}\">",name),format!("<.{}.>",name),format!("<-{}->",name)].iter().any(|needle|!stringify_positions(part,needle).is_empty())).map(|(id,_)|id).collect();
+-            let iterations=match plan.result_iterations(&matched,&marker_ids,group){Ok(it)=>it,Err("repeated result marker outside associated group")=>return Ok(None),Err(e)=>return Err(e.into())};
++            let iterations=match plan.result_iterations(&matched,&marker_ids,group){Ok(it)=>it,Err("repeated result marker outside associated group")=>return Ok(None),Err("multiple repeated result owners outside bounded plan")if plan.expression_root()=>return Ok(None),Err(e)=>return Err(e.into())};
+             let flat=Cmd{rule_id:c.rule_id,group_plan:None,pattern:atom_pattern.clone(),result:part.into(),translation:false,restricted_exact:c.restricted_exact};
+             for it in iterations{
+                 let mut caps=vec![Capture::empty();plan.markers.len()];
+@@ -1279,7 +1280,7 @@
+                 if !safe_atom||!safe_tail{return Err(format!("line {}: overlapping VAR type expression outside bounded contract",line_no));}
+             }
+         }
+-        if let Some(result)=if isolated||family{single_identifier_group(c,line,&src,line_no)}else{None}{
++        if let Some(result)=if isolated||family||c.group_plan.as_ref().map(|p|p.expression_root()).unwrap_or(false){single_identifier_group(c,line,&src,line_no)}else{None}{
+             match result {Ok(None)=>continue,other=>{
+                 let lits=c.pattern.iter().filter(|t| !(t.starts_with('<')&&t.ends_with('>'))&&t.as_str()!="["&&t.as_str()!="]").count();
+                 if best.map(|(bl,_)|lits>=bl).unwrap_or(true){best=Some((lits,ci));best_group=Some(other);best_caps.clear();}

@@ -42,3 +42,19 @@ vs pre &x. A token-only contract cannot safely decide these boundaries.
 Restore conservative candidate; next prototype must carry source spans and
 adjacency into expression capture. Do not patch global source tokenizer merely
 to admit this plan. Production still unchanged; no closure gates rerun.
+
+## Source-aware v3: INACTIVE
+
+Captures receive an adjacency bit per source token from existing source spans.
+Date prefix and concatenated macro boundaries no longer guess whitespace.
+Experimentally tokenize source '<' as comparison, never pattern marker; this
+is a shared-source-tokenizer change and requires independent gates before use.
+Seed4199:4561/5000 exact;439 normalization-only differences under explicit
+.NOT./**/!= normalization. These are NOT5000 exact passes.
+Replay30929sources138deltas137matches1newfalse stringify:
+`METHOD &x. DECL` with result `<"name">` needs bare x, not quoted &x.
+This is smart normal stringify semantics, not merely capture identity.
+No production activation, no new repository/runtime/original audit gates.
+Conservative patch still stored independently as group_plan.rs.patch/pp.rs.patch.
+Next isolate plain result support from special marker semantics or implement and
+oracle-test the source-aware stringify contract before considering activation.
