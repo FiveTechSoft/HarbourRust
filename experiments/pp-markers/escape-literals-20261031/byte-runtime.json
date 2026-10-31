@@ -1,0 +1,62 @@
+[
+  {
+    "case": 0,
+    "source": "PROCEDURE Main()\n? Asc(e\"\\n\")\nRETURN\n",
+    "byte_value": 10,
+    "exact_runtime": true
+  },
+  {
+    "case": 1,
+    "source": "PROCEDURE Main()\n? Asc(e\"\\r\")\nRETURN\n",
+    "byte_value": 13,
+    "exact_runtime": true
+  },
+  {
+    "case": 2,
+    "source": "PROCEDURE Main()\n? Asc(e\"\\t\")\nRETURN\n",
+    "byte_value": 9,
+    "exact_runtime": true
+  },
+  {
+    "case": 3,
+    "source": "PROCEDURE Main()\n? Asc(e\"\\a\")\nRETURN\n",
+    "byte_value": 7,
+    "exact_runtime": true
+  },
+  {
+    "case": 4,
+    "source": "PROCEDURE Main()\n? Asc(e\"\\b\")\nRETURN\n",
+    "byte_value": 8,
+    "exact_runtime": true
+  },
+  {
+    "case": 5,
+    "source": "PROCEDURE Main()\n? Asc(e\"\\f\")\nRETURN\n",
+    "byte_value": 12,
+    "exact_runtime": true
+  },
+  {
+    "case": 6,
+    "source": "PROCEDURE Main()\n? Asc(e\"\\v\")\nRETURN\n",
+    "byte_value": 11,
+    "exact_runtime": true
+  },
+  {
+    "case": 7,
+    "source": "PROCEDURE Main()\n? Asc(e\"\\\\\")\nRETURN\n",
+    "byte_value": 92,
+    "exact_runtime": true
+  },
+  {
+    "case": 8,
+    "source": "PROCEDURE Main()\n? Asc(e\"\\\"\")\nRETURN\n",
+    "byte_value": 34,
+    "exact_runtime": true
+  },
+  {
+    "case": 9,
+    "source": "PROCEDURE Main()\n? Asc(e\"\\q\")\nRETURN\n",
+    "byte_value": 113,
+    "exact_runtime": true
+  }
+]

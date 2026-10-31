@@ -303,6 +303,7 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
     let mut in_str: Option<u8> = None;
     while i < b.len() {
         let c = b[i];
+        if in_str.is_none() {if let Some(end)=escape_literal_end(line,i) {outb.extend_from_slice(&b[i..end]);i=end;continue;}}
         if !c.is_ascii() {
             // UTF-8 lead/continuation byte: never a delimiter, copy through
             outb.push(c);
@@ -346,6 +347,7 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
                     let mut m = k + 1;
                     while m < b.len() {
                         let ch = b[m];
+                        if q.is_none() {if let Some(end)=escape_literal_end(line,m) {curb.extend_from_slice(&b[m..end]);m=end;continue;}}
                         curb.push(ch);
                         if q.is_none() && (ch == b'"' || ch == b'\'') { q = Some(ch); m += 1; continue; }
                         if q == Some(ch) { q = None; m += 1; continue; }
@@ -402,6 +404,7 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
 fn subst_params(text: &str, names: &[String], values: &[String]) -> String {
     let b=text.as_bytes(); let mut out=Vec::with_capacity(b.len()); let mut i=0; let mut quote=None;
     while i<b.len() {
+        if quote.is_none() {if let Some(end)=escape_literal_end(text,i) {out.extend_from_slice(&b[i..end]);i=end;continue;}}
         if quote.is_none() && (b[i]==b'"' || b[i]==b'\'') {quote=Some(b[i]);out.push(b[i]);i+=1;continue;}
         if quote==Some(b[i]) {quote=None;out.push(b[i]);i+=1;continue;}
         if quote.is_none() && (b[i].is_ascii_alphabetic() || b[i]==b'_') {
@@ -418,6 +421,32 @@ fn subst_params(text: &str, names: &[String], values: &[String]) -> String {
 // The pp reader recognizes raw bracket strings only where a token expression
 // can start. An identifier (even RETURN/IF before grammar parsing) keeps [ as
 // indexing. The compiler lexer can later use its keyword tokens as context.
+pub fn escape_literal_end(text: &str, start: usize) -> Option<usize> {
+    let b=text.as_bytes();
+    if start+1>=b.len() || !b[start].eq_ignore_ascii_case(&b'e') || b[start+1]!=b'"' {return None;}
+    if start>0 && (b[start-1].is_ascii_alphanumeric() || b[start-1]==b'_') {return None;}
+    let mut i=start+2;
+    while i<b.len() {if b[i]==b'\\' {i+=2;}else if b[i]==b'"' {return Some(i+1);}else{i+=1;}}
+    None
+}
+pub fn decode_escape_literal(text: &str) -> Result<String,String> {
+    let b=text.as_bytes();let mut out=Vec::new();let mut i=2;
+    while i+1<b.len() {
+        if b[i]!=b'\\' {out.push(b[i]);i+=1;continue;}
+        i+=1;if i+1>=b.len(){return Err("unterminated escape string".into());}
+        let c=match b[i] {b'n'=>10,b'r'=>13,b't'=>9,b'a'=>7,b'b'=>8,b'f'=>12,b'v'=>11,
+            b'0'..=b'7'|b'x'|b'X'=>return Err("numeric string escapes are outside this ASCII escape increment".into()),c=>c};
+        out.push(c);i+=1;
+    }
+    String::from_utf8(out).map_err(|_|"escape string bytes are not valid UTF-8".into())
+}
+fn quote_literal(text:&str)->String {
+    if !text.chars().any(|c|c.is_control()) && !text.contains('"') {format!("\"{}\"",text)}
+    else if !text.chars().any(|c|c.is_control()) && !text.contains('\'') {format!("'{}'",text)}
+    else if !text.chars().any(|c|c.is_control()) && !text.contains(']') {format!("[{}]",text)}
+    else {let mut s=String::from("e\"");for c in text.chars(){match c {'\\'=>s.push_str("\\\\"),'"'=>s.push_str("\\\""),'\n'=>s.push_str("\\n"),'\r'=>s.push_str("\\r"),'\t'=>s.push_str("\\t"),'\u{7}'=>s.push_str("\\a"),'\u{8}'=>s.push_str("\\b"),'\u{c}'=>s.push_str("\\f"),'\u{b}'=>s.push_str("\\v"),c=>s.push(c)}}s.push('"');s}
+}
+
 pub fn bracket_literal_start(text: &str, at: usize) -> bool {
     let before=text[..at].trim_end().to_ascii_uppercase();
     if [".AND.",".OR.",".NOT."].iter().any(|op|before.ends_with(op)) {return true;}
@@ -438,6 +467,7 @@ fn cmd_tokens_mode(text: &str, source: bool) -> Vec<String> {
     let mut i = 0usize;
     while i < b.len() {
         let c = b[i] as char;
+        if source {if let Some(end)=escape_literal_end(text,i) {out.push(text[i..end].to_string());i=end;continue;}}
         if c.is_whitespace() { i += 1; continue; }
         if source && c=='[' && bracket_literal_start(text,i) {
             let end=text[i+1..].find(']').map(|n|i+2+n).unwrap_or(text.len());
@@ -704,21 +734,18 @@ fn stringify_capture(capture: &Capture, source: &str, spans: &HashMap<usize, (us
             text.push_str(&source[prev..start]);
         }
         let token = &source[start..end];
-        if token.starts_with('[') { return Err("stringify of bracket literal requires separate escape-result support".into()); }
-        if (token.starts_with('"') || token.starts_with('\'')) && start > 0
-            && source.as_bytes()[start-1].eq_ignore_ascii_case(&b'e') {
-            return Err("stringify of escape literals is outside this increment".to_string());
-        }
+        if token.starts_with('[') && token.ends_with(']') {text.push_str(&quote_literal(&token[1..token.len()-1]));previous=Some(end);continue;}
+        if escape_literal_end(token,0)==Some(token.len()) {let decoded=decode_escape_literal(token)?;
+            if decoded.chars().any(|c|c.is_control()) {text.push('[');text.push_str(&decoded);text.push(']');}
+            else {text.push_str(&quote_literal(&decoded));}
+            previous=Some(end);continue;}
         if token.starts_with('\'') && token.ends_with('\'') {
             let inner = &token[1..token.len()-1];
-            if inner.contains('"') { return Err("stringify requiring bracket/escape literal is outside this increment".to_string()); }
-            text.push('"'); text.push_str(inner); text.push('"');
+            text.push_str(&quote_literal(inner));
         } else { text.push_str(token); }
         previous = Some(end);
     }
-    if !text.contains('"') { Ok(format!("\"{}\"", text)) }
-    else if !text.contains('\'') { Ok(format!("'{}'", text)) }
-    else { Err("stringify requiring bracket/escape literal is outside this increment".to_string()) }
+    Ok(quote_literal(&text))
 }
 
 fn stringify_list(capture: &Capture, source: &str, spans: &HashMap<usize,(usize,usize)>) -> Result<String,String> {
@@ -1006,7 +1033,7 @@ fn expand_fixed_translations(text: &str, rules: &[Cmd], calls: &[Cmd], line: usi
         let mut out = String::new(); let mut at = 0; let mut i = 0; let mut changed = false;
         while i < tokens.len() {
             let token = &tokens[i];
-            if token.starts_with('"') || token.starts_with('\'') || (token.starts_with('[') && token.ends_with(']')) { i += 1; continue; }
+            if escape_literal_end(token,0)==Some(token.len()) || token.starts_with('"') || token.starts_with('\'') || (token.starts_with('[') && token.ends_with(']')) { i += 1; continue; }
             let found = rules.iter().rev().find(|c| active_fixed_translation(c,rules,calls)
                 && i+c.pattern.len()<=tokens.len()
                 && c.pattern.iter().zip(&tokens[i..]).all(|(p,t)|
@@ -1066,6 +1093,7 @@ fn stringify_positions(text: &str, needle: &str) -> Vec<usize> {
     let b = text.as_bytes(); let n = needle.as_bytes();
     let mut quote = None; let mut positions = Vec::new(); let mut i = 0;
     while i < b.len() {
+        if quote.is_none() {if let Some(end)=escape_literal_end(text,i){i=end;continue;}}
         if let Some(q) = quote { if b[i] == q { quote = None; } i += 1; continue; }
         if b[i] == b'"' || b[i] == b'\'' { quote = Some(b[i]); i += 1; continue; }
         if b[i..].len() >= n.len() && b[i..i+n.len()].eq_ignore_ascii_case(n) {
@@ -1232,6 +1260,7 @@ fn expand_call_rules(text: &str, pp: &Pp, line: usize, depth: usize) -> Result<S
     let mut out = String::new();
     let mut i = 0;
     while i < b.len() {
+        if let Some(end)=escape_literal_end(text,i) {out.push_str(&text[i..end]);i=end;continue;}
         if b[i] == b'"' || b[i] == b'\'' || (b[i]==b'[' && bracket_literal_start(text,i)) {
             let q = if b[i]==b'[' {b']'}else{b[i]}; let start = i; i += 1;
             while i < b.len() && b[i] != q { i += 1; }
@@ -1247,6 +1276,7 @@ fn expand_call_rules(text: &str, pp: &Pp, line: usize, depth: usize) -> Result<S
                 let mut level = 1; let mut q = None; let mut end = k + 1;
                 while end < b.len() && level > 0 {
                     let c = b[end];
+                    if q.is_none() {if let Some(stop)=escape_literal_end(text,end) {end=stop;continue;}}
                     if q == Some(c) { q = None; }
                     else if q.is_none() {
                         if c == b'"' || c == b'\'' { q = Some(c); }
@@ -1337,6 +1367,11 @@ fn strip_line(raw: &str, in_block: &mut bool, block_line: &mut usize, line: usiz
     let mut it = raw.chars().peekable();
     let mut in_str: Option<char> = None;
     while let Some(c) = it.next() {
+        if !*in_block && in_str.is_none() && (c=='e'||c=='E') && it.peek()==Some(&'"') {
+            out.push(c);out.push(it.next().unwrap());
+            while let Some(ch)=it.next(){out.push(ch);if ch=='\\'{if let Some(next)=it.next(){out.push(next);}}else if ch=='"'{break;}}
+            continue;
+        }
         if *in_block {
             if c == '*' && it.peek() == Some(&'/') {
                 it.next();
@@ -1387,8 +1422,10 @@ fn strip_line(raw: &str, in_block: &mut bool, block_line: &mut usize, line: usiz
 fn split_statements(text: &str) -> Vec<&str> {
     let mut q = None;
     let mut start = 0;
-    let mut parts = Vec::new();
+    let mut parts = Vec::new(); let mut escape_until=0;
     for (i,c) in text.char_indices() {
+        if i<escape_until {continue;}
+        if q.is_none() {if let Some(end)=escape_literal_end(text,i){escape_until=end;continue;}}
         if let Some(v) = q { if c == v { q = None; } }
         else if c == '\'' || c == '"' { q = Some(c); }
         else if c=='[' && bracket_literal_start(text,i) {q=Some(']');}
@@ -1440,7 +1477,10 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
             let mut in_str = false;
             let mut q = '"';
             let mut last_non_ws: Option<char> = None;
+            let mut escape_until=0;
             for (at,ch) in joined.char_indices() {
+                if at<escape_until {continue;}
+                if !in_str {if let Some(end)=escape_literal_end(&joined,at){escape_until=end;last_non_ws=Some('"');continue;}}
                 if in_str {
                     if ch == q { in_str = false; }
                 } else if ch == '"' || ch == '\'' || (ch=='[' && bracket_literal_start(&joined,at)) {

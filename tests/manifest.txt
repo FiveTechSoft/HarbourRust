@@ -1172,8 +1172,8 @@ pos tests/t1173_pp_stringify_repeat_text.hb \na a
 pos tests/t1174_pp_stringify_call.hb \nalpha(1, 2)
 pos tests/t1175_pp_stringify_dotted.hb \n.T. .AND. .F.\na:=1
 pos tests/t1176_pp_stringify_literal_marker.hb \n"<y>"          7
-neg tests/t1177_pp_stringify_mixed_quotes_neg.hb stringify requiring bracket/escape literal
-neg tests/t1178_pp_stringify_escape_neg.hb stringify of escape literals
+neg tests/t1177_pp_stringify_mixed_quotes_neg.hb numeric string escapes
+neg tests/t1178_pp_stringify_escape_neg.hb numeric string escapes
 neg tests/t1179_pp_stringify_list_neg.hb list stringify with bracket tokens
 neg tests/t1180_pp_stringify_other_form_neg.hb unknown result marker
 pos tests/t1181_pp_stringify_quoted_result.hb \n#42\nA#42Z\n#42\n42
@@ -1190,14 +1190,14 @@ pos tests/t1191_pp_normal_stringify_absent.hb \nA Z\nA alpha Z
 pos tests/t1192_pp_normal_stringify_mix.hb \n42 42         42
 pos tests/t1193_pp_normal_stringify_marker.hb \n"<y>"          7
 pos tests/t1194_pp_normal_stringify_call.hb \nalpha(1, 2)
-neg tests/t1195_pp_normal_stringify_quotes_neg.hb stringify requiring bracket/escape literal
+neg tests/t1195_pp_normal_stringify_quotes_neg.hb numeric string escapes
 neg tests/t1196_pp_normal_stringify_list_neg.hb list stringify with bracket tokens
 pos tests/t1197_pp_list_stringify.hb \nalpha  ,   beta\na(1,{2,3}), b
 pos tests/t1198_pp_list_normal.hb \nalpha beta\na(1,{2,3}) b
 pos tests/t1199_pp_list_quotes.hb \n"a,b" "c,d"
 pos tests/t1200_pp_list_absent.hb \nA Z\nA alpha beta Z
 pos tests/t1201_pp_list_empty.hb \nalpha,,beta\n,
-neg tests/t1202_pp_list_escape_neg.hb stringify of escape literals
+neg tests/t1202_pp_list_escape_neg.hb numeric string escapes
 pos tests/t1203_pp_macro_nested_array.hb \n         3
 pos tests/t1204_pp_macro_nested_pair.hb \n         5
 pos tests/t1205_pp_macro_simultaneous.hb \n         8
@@ -1214,3 +1214,8 @@ pos tests/t1215_bracket_translate.hb \nWORD TOKEN          7\na(,);b
 neg tests/t1216_bracket_unterminated_neg.hb unterminated bracket string
 pos tests/t1217_bracket_continuation.hb \na;b\n7\na;b
 neg tests/t1218_bracket_macro_quotes_neg.hb macro bracket argument requiring both quotes
+pos tests/t1219_escape_values.hb \n        10         13          9          7          8         12         11\n        92         34        113
+pos tests/t1220_escape_protection.hb \nX; // && "WORD TOKEN"          8
+pos tests/t1221_escape_stringify.hb \n[a'"b]\n'a"b'
+pos tests/t1222_escape_call_macro.hb \na,"b x);"y
+pos tests/t1223_escape_continuation.hb \na";b

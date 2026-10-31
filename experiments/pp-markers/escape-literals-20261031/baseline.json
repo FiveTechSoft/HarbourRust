@@ -1,0 +1,30 @@
+[
+  {
+    "source": "? \"a\\nb\"",
+    "baseline_identical": true
+  },
+  {
+    "source": "? 'a\\nb'",
+    "baseline_identical": true
+  },
+  {
+    "source": "? [a\\nb]",
+    "baseline_identical": true
+  },
+  {
+    "source": "? a [1]",
+    "baseline_identical": true
+  },
+  {
+    "source": "#define X 7\n? \"X\",[X]",
+    "baseline_identical": true
+  },
+  {
+    "source": "#define ID(x) x\n? ID([a,b])",
+    "baseline_identical": true
+  },
+  {
+    "source": "? \"a; // && b\"",
+    "baseline_identical": true
+  }
+]

@@ -1,0 +1,74 @@
+[
+  {
+    "source": "#xcommand SHOW <x> => ? #<x>\nSHOW e\"a\\nb\"\n",
+    "ref": "\n? e\"[a\\nb]\"\n",
+    "own": "? e\"[a\\nb]\"\n",
+    "err": ""
+  },
+  {
+    "source": "#xcommand SHOW <x> => ? #<x>\nSHOW e\"a\\\"b\"\n",
+    "ref": "\n? ['a\"b']\n",
+    "own": "? ['a\"b']\n",
+    "err": ""
+  },
+  {
+    "source": "#xcommand SHOW <x> => ? #<x>\nSHOW [a'\"b]\n",
+    "ref": "\n? e\"[a'\\\"b]\"\n",
+    "own": "? e\"[a'\\\"b]\"\n",
+    "err": ""
+  },
+  {
+    "source": "#xcommand SHOW <x> => ? #<x>\nSHOW \"a'b\"\n",
+    "ref": "\n? [\"a'b\"]\n",
+    "own": "? [\"a'b\"]\n",
+    "err": ""
+  },
+  {
+    "source": "#xcommand SHOW <x> => ? #<x>\nSHOW 'a\"b'\n",
+    "ref": "\n? ['a\"b']\n",
+    "own": "? ['a\"b']\n",
+    "err": ""
+  },
+  {
+    "source": "#xcommand SHOW <x> => ? #<x>\nSHOW e\"a\\\\b\"\n",
+    "ref": "\n? '\"a\\b\"'\n",
+    "own": "? '\"a\\b\"'\n",
+    "err": ""
+  },
+  {
+    "source": "#xcommand SHOW <x> => ? <\"x\">\nSHOW e\"a\\nb\"\n",
+    "ref": "\n? e\"[a\\nb]\"\n",
+    "own": "? e\"[a\\nb]\"\n",
+    "err": ""
+  },
+  {
+    "source": "#xcommand SHOW <x> => ? <\"x\">\nSHOW e\"a\\\"b\"\n",
+    "ref": "\n? ['a\"b']\n",
+    "own": "? ['a\"b']\n",
+    "err": ""
+  },
+  {
+    "source": "#xcommand SHOW <x> => ? <\"x\">\nSHOW [a'\"b]\n",
+    "ref": "\n? e\"[a'\\\"b]\"\n",
+    "own": "? e\"[a'\\\"b]\"\n",
+    "err": ""
+  },
+  {
+    "source": "#xcommand SHOW <x> => ? <\"x\">\nSHOW \"a'b\"\n",
+    "ref": "\n? [\"a'b\"]\n",
+    "own": "? [\"a'b\"]\n",
+    "err": ""
+  },
+  {
+    "source": "#xcommand SHOW <x> => ? <\"x\">\nSHOW 'a\"b'\n",
+    "ref": "\n? ['a\"b']\n",
+    "own": "? ['a\"b']\n",
+    "err": ""
+  },
+  {
+    "source": "#xcommand SHOW <x> => ? <\"x\">\nSHOW e\"a\\\\b\"\n",
+    "ref": "\n? '\"a\\b\"'\n",
+    "own": "? '\"a\\b\"'\n",
+    "err": ""
+  }
+]

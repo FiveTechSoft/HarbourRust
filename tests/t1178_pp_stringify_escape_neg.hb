@@ -1,2 +1,2 @@
 #xcommand SHOW <x> => ? #<x>
-SHOW e"a\nb"
+SHOW e"a\xFFb"

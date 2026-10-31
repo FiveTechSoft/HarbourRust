@@ -727,3 +727,25 @@ three digits and yields byte27. This byte behavior is not automatically the
 compiler's UTF-8 String contract for values above127. A first implementation
 must explicitly bound numeric escapes rather than assume Unicode semantics.
 No production change in this characterization.
+
+## ASCII escape literal slice
+
+e"..." and E"..." now decode the measured standard ASCII escapes,backslash,
+escaped quote and unknown escaped character passthrough into existing Str.
+Octal and hex escapes explicitly reject pending a byte-string contract;no
+Unicode or >127numeric escape semantics are inferred. Source scanning protects
+escaped quotes through comments,separators,continuations,macros,call translations
+and source tokenization. Ordinary raw single/double/bracket strings are unchanged.
+Stringify can emit bracket or escaped results for both quote kinds/control
+contents. Bracket-capture contents preserve their measured quoted source layer.
+
+Ten numeric Asc byte checks exactly match Harbour/default;five own console
+programs are freshly byte-exact. Three qualify for LLVM;Asc builtin and string
+concatenation remain default-only existing limits.12own stringify outputs match
+hbpp exactly. Seven raw-string/index/macro baseline controls match301e081.
+Tests1177/1178/1195/1202now reject numeric escapes rather than forms newly
+supported by this slice. The old110suite's newly accepted literal boundaries
+are observations until individually verified,not silently counted as passes.
+1223default/470LLVM local checks pass. Fourteen originals are freshly exact;
+268x4acceptance stays21/15Linux20/14Windows. _pp_test advances120to168list index
+stringify,but is NOT fully accepted. No runtime/ABI change or size/speed claim.

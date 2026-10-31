@@ -478,6 +478,11 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
     let mut toks = Vec::new();
     let mut it = line.char_indices().peekable();
     while let Some(&(i, c)) = it.peek() {
+        if let Some(end)=pp::escape_literal_end(line,i) {
+            let value=pp::decode_escape_literal(&line[i..end]).map_err(|e|format!("line {}: {}",n,e))?;
+            while it.peek().map(|(at,_)|*at<end).unwrap_or(false){it.next();}
+            toks.push(Tok::Str(value));continue;
+        }
         match c {
             ' ' | '\t' => { it.next(); }
             '/' => {
