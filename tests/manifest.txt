@@ -1472,3 +1472,5 @@ neg tests/t1472_aview_outerrcell.hb array-view
 neg tests/t1473_aview_qoutcell.hb array-view
 neg tests/t1474_aview_idxconsume.hb may not mention the viewed array
 neg tests/t1475_aview_idxmutate.hb may not mention the viewed array
+neg tests/t1476_borrow_idxconsume.hb may not mention the owner array
+neg tests/t1477_borrow_idxmutate.hb may not mention the owner array

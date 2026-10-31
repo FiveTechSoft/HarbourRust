@@ -5132,6 +5132,22 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                             if env.iter().find(|v| v.name == *rid).map(|v| v.moved).unwrap_or(true) {
                                 return Err(format!("line {}: the index expression moves `{}`; compute the index first", n, rid));
                             }
+                            // Same class, closed nominally (diag after the
+                            // 243209ae independent review): the check above
+                            // reads env.moved, but type_expr does not apply
+                            // the index's moves (apply_moves runs per
+                            // statement), so an index that mentions the root
+                            // - only possible through an indirect call, a
+                            // direct mention is not an integer - can consume
+                            // or mutate it before the borrow is taken
+                            // (repros borrowidxmove2 / borrowidxmutate:
+                            // runtime Bound error vs Harbour rc 0). Reject
+                            // the mention; workaround: compute the index
+                            // into a local first. hk86 write-borrow contract
+                            // untouched: plain/loop-var indices unchanged.
+                            if expr_mentions(ie, rid) {
+                                return Err(format!("line {}: the index of a borrowed element may not mention the owner array `{}` (an indirect call there could consume or mutate it before the borrow); compute the index into a local first", n, rid));
+                            }
                             // No aliasing inside one call: no other argument
                             // may mention the same root (two live borrows, or
                             // a move while borrowed, are unsound).
