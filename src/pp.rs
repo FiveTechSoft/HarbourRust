@@ -337,7 +337,7 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
                     // collect balanced arguments (nesting + strings)
                     let mut args: Vec<String> = Vec::new();
                     let mut curb: Vec<u8> = Vec::new();
-                    let mut lev = 0i32;
+                    let mut delimiters: Vec<u8> = Vec::new();
                     let mut q: Option<u8> = None;
                     let mut m = k + 1;
                     while m < b.len() {
@@ -345,12 +345,26 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
                         curb.push(ch);
                         if q.is_none() && (ch == b'"' || ch == b'\'') { q = Some(ch); m += 1; continue; }
                         if q == Some(ch) { q = None; m += 1; continue; }
-                        if q.is_none() && ch == b'(' { lev += 1; m += 1; continue; }
-                        if q.is_none() && ch == b')' {
-                            if lev == 0 { curb.pop(); break; }
-                            lev -= 1; m += 1; continue;
+                        if q.is_none() && (ch == b'(' || ch == b'{' || ch == b'[') {
+                            if ch == b'[' {
+                                let previous = curb[..curb.len()-1].iter().rev().find(|c| !c.is_ascii_whitespace()).copied();
+                                let index = previous.map(|c|c.is_ascii_alphanumeric() || c==b'_' || c==b')' || c==b']').unwrap_or(false);
+                                if !index && b[m+1..].iter().take_while(|&&c|c!=b']').any(|&c|c==b',') {
+                                    return Err(format!("line {}: macro argument bracket literal with commas is outside this increment",line_no));
+                                }
+                            }
+                            delimiters.push(ch); m += 1; continue;
                         }
-                        if q.is_none() && lev == 0 && ch == b',' {
+                        if q.is_none() && ch == b')' {
+                            if delimiters.is_empty() { curb.pop(); break; }
+                            if delimiters.pop() != Some(b'(') { return Err(format!("line {}: mismatched delimiters in macro call {}",line_no,word)); }
+                            m += 1; continue;
+                        }
+                        if q.is_none() && (ch == b'}' || ch == b']') {
+                            if delimiters.pop() != Some(if ch == b'}' {b'{'}else{b'['}) { return Err(format!("line {}: mismatched delimiters in macro call {}",line_no,word)); }
+                            m += 1; continue;
+                        }
+                        if q.is_none() && delimiters.is_empty() && ch == b',' {
                             curb.pop();
                             args.push(String::from_utf8_lossy(&curb).trim().to_string());
                             curb.clear();
@@ -366,10 +380,7 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
                         return Err(format!("line {}: macro {} takes {} argument(s), got {}", line_no, word, d.params.len(), args.len()));
                     }
                     // substitute params (word-boundary, outside strings) in the body
-                    let mut body = d.body.clone();
-                    for (pi, pn) in d.params.iter().enumerate() {
-                        body = subst_param(&body, pn, &args[pi]);
-                    }
+                    let body = subst_params(&d.body, &d.params, &args);
                     outb.extend_from_slice(expand_depth(&body, defs, line_no, depth + 1)?.as_bytes());
                     i = m + 1;
                     continue;
@@ -387,28 +398,18 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
 
 // Replace whole-word occurrences of `name` in `text`, skipping string
 // literals (a parameter inside a quoted string is text, not an argument).
-fn subst_param(text: &str, name: &str, val: &str) -> String {
-    let b = text.as_bytes();
-    let nb = name.as_bytes();
-    let mut out: Vec<u8> = Vec::with_capacity(text.len());
-    let mut i = 0usize;
-    let mut in_str: Option<u8> = None;
-    while i < b.len() {
-        let c = b[i];
-        if !c.is_ascii() { out.push(c); i += 1; continue; } // UTF-8 passthrough
-        if in_str.is_none() && (c == b'"' || c == b'\'') { in_str = Some(c); out.push(c); i += 1; continue; }
-        if in_str == Some(c) { in_str = None; out.push(c); i += 1; continue; }
-        if in_str.is_none() && i + nb.len() <= b.len() && &b[i..i + nb.len()] == nb { // param substitution is case-sensitive too (probe a07)
-            let before = i == 0 || !(b[i - 1] as char).is_ascii_alphanumeric() && b[i - 1] != b'_';
-            let after = i + nb.len() == b.len() || !(b[i + nb.len()] as char).is_ascii_alphanumeric() && b[i + nb.len()] != b'_';
-            if before && after {
-                out.extend_from_slice(val.as_bytes());
-                i += nb.len();
-                continue;
-            }
-        }
-        out.push(c);
-        i += 1;
+fn subst_params(text: &str, names: &[String], values: &[String]) -> String {
+    let b=text.as_bytes(); let mut out=Vec::with_capacity(b.len()); let mut i=0; let mut quote=None;
+    while i<b.len() {
+        if quote.is_none() && (b[i]==b'"' || b[i]==b'\'') {quote=Some(b[i]);out.push(b[i]);i+=1;continue;}
+        if quote==Some(b[i]) {quote=None;out.push(b[i]);i+=1;continue;}
+        if quote.is_none() && (b[i].is_ascii_alphabetic() || b[i]==b'_') {
+            let start=i; i+=1;
+            while i<b.len() && (b[i].is_ascii_alphanumeric() || b[i]==b'_') {i+=1;}
+            let word=&text[start..i];
+            if let Some(k)=names.iter().position(|n|n==word) {out.extend_from_slice(values[k].as_bytes());}
+            else {out.extend_from_slice(&b[start..i]);}
+        } else {out.push(b[i]);i+=1;}
     }
     String::from_utf8_lossy(&out).into_owned()
 }

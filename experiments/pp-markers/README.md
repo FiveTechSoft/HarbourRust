@@ -639,3 +639,28 @@ they now reject bracket-token lists. The earlier110case suite becomes50#plain,
 checks pass freshly locally;14reviewed originals are freshly exact.268x4audit
 acceptance stays21/15Linux20/14Windows. No lexer/runtime/ABI changes or speed
 and size claim follow from this preprocessor increment.
+
+## Macro argument nesting and simultaneous parameter substitution
+
+Function-like define argument collection now balances parentheses,braces and
+index brackets before treating a comma as an argument separator. Existing
+single/double string protection is preserved. Newly reached bracket literals
+with commas reject explicitly rather than pretending existing literal support
+can normalize them. Mismatched delimiters reject. Existing empty/wrong-arity
+behavior is not widened or advertised as Harbour-compatible.
+
+Parameters are substituted in one scan of the ORIGINAL macro body,case-sensitive
+and at word boundaries outside strings. Inserted arguments are never rescanned
+as parameter names;the resulting body still goes through legitimate recursive
+macro expansion. This fixes PAIR(x,y) with an argument containing y,including
+codeblock argument syntax,without implementing codeblock runtime support.
+
+25oracle observations:16supported exact token checks and9outside-slice
+observations. Eight previously supported controls have identical pp output,
+exit and diagnostics versus a6c5cae. Five own console programs are byte-exact
+against fresh Harbour.1209default checks pass locally. The original _pp_test
+advances from line82macro arity to line120unrepresentable stringify quotes;
+it is NOT accepted as a whole.268x4audit acceptance stays21/15Linux20/14Windows;
+14reviewed originals are freshly exact. No runtime/ABI/lexer expansion or new
+size/speed claim. Existing tests for array temporary Len remain unchanged;
+new console fixtures assign arrays to locals rather than changing that limit.

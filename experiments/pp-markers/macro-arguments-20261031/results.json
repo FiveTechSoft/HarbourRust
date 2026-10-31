@@ -1,0 +1,205 @@
+{
+  "scope": "20macro argument observations,not implementation",
+  "rows": [
+    {
+      "case": 0,
+      "source": "#define TAKE(x) OUT(x)\nTAKE({1,2,3})\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT({1,2,3})\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: macro TAKE takes 1 argument(s), got 3\n"
+    },
+    {
+      "case": 1,
+      "source": "#define TAKE(x) OUT(x)\nTAKE(a[1,2])\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(a[1,2])\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: macro TAKE takes 1 argument(s), got 2\n"
+    },
+    {
+      "case": 2,
+      "source": "#define TAKE(x) OUT(x)\nTAKE(f(1,2))\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(f(1,2))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(f(1,2))\n",
+      "own_error": ""
+    },
+    {
+      "case": 3,
+      "source": "#define TAKE(x) OUT(x)\nTAKE({|x,y|x+y})\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT({|x,y|x+y})\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: macro TAKE takes 1 argument(s), got 2\n"
+    },
+    {
+      "case": 4,
+      "source": "#define TAKE(x) OUT(x)\nTAKE(\"a,b\")\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"a,b\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"a,b\")\n",
+      "own_error": ""
+    },
+    {
+      "case": 5,
+      "source": "#define TAKE(x) OUT(x)\nTAKE([a,b])\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"a,b\")\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: macro TAKE takes 1 argument(s), got 2\n"
+    },
+    {
+      "case": 6,
+      "source": "#define TAKE(x) OUT(x)\nTAKE(a,{1,2})\n",
+      "reference_exit": 0,
+      "reference_output": "\nTAKE(a,{1,2})\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: macro TAKE takes 1 argument(s), got 3\n"
+    },
+    {
+      "case": 7,
+      "source": "#define TAKE(x) OUT(x)\nTAKE()\n",
+      "reference_exit": 0,
+      "reference_output": "\nTAKE()\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT()\n",
+      "own_error": ""
+    },
+    {
+      "case": 8,
+      "source": "#define TAKE(x) OUT(x)\nTAKE({a,{b,c}})\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT({a,{b,c}})\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: macro TAKE takes 1 argument(s), got 3\n"
+    },
+    {
+      "case": 9,
+      "source": "#define TAKE(x) OUT(x)\nTAKE({1,2])\n",
+      "reference_exit": 0,
+      "reference_output": "\nTAKE({1,2])\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: macro TAKE takes 1 argument(s), got 2\n"
+    },
+    {
+      "case": 10,
+      "source": "#define PAIR(x,y) OUT(x,y)\nPAIR({1,2},3)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT({1,2},3)\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: macro PAIR takes 2 argument(s), got 3\n"
+    },
+    {
+      "case": 11,
+      "source": "#define PAIR(x,y) OUT(x,y)\nPAIR(1,{2,3})\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(1,{2,3})\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: macro PAIR takes 2 argument(s), got 3\n"
+    },
+    {
+      "case": 12,
+      "source": "#define PAIR(x,y) OUT(x,y)\nPAIR({|x,y|x+y},3)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT({|x,y|x+y},3)\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: macro PAIR takes 2 argument(s), got 3\n"
+    },
+    {
+      "case": 13,
+      "source": "#define PAIR(x,y) OUT(x,y)\nPAIR(a[1,2],3)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(a[1,2],3)\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: macro PAIR takes 2 argument(s), got 3\n"
+    },
+    {
+      "case": 14,
+      "source": "#define PAIR(x,y) OUT(x,y)\nPAIR([a,b],3)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"a,b\",3)\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: macro PAIR takes 2 argument(s), got 3\n"
+    },
+    {
+      "case": 15,
+      "source": "#define PAIR(x,y) OUT(x,y)\nPAIR(,3)\n",
+      "reference_exit": 0,
+      "reference_output": "\nPAIR(,3)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(,3)\n",
+      "own_error": ""
+    },
+    {
+      "case": 16,
+      "source": "#define PAIR(x,y) OUT(x,y)\nPAIR(1,)\n",
+      "reference_exit": 0,
+      "reference_output": "\nPAIR(1,)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(1,)\n",
+      "own_error": ""
+    },
+    {
+      "case": 17,
+      "source": "#define PAIR(x,y) OUT(x,y)\nPAIR({1,2},{3,4})\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT({1,2},{3,4})\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: macro PAIR takes 2 argument(s), got 4\n"
+    },
+    {
+      "case": 18,
+      "source": "#define PAIR(x,y) OUT(x,y)\nPAIR((1,2),3)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT((1,2),3)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT((1,2),3)\n",
+      "own_error": ""
+    },
+    {
+      "case": 19,
+      "source": "#define PAIR(x,y) OUT(x,y)\nPAIR(1,2,3)\n",
+      "reference_exit": 0,
+      "reference_output": "\nPAIR(1,2,3)\n",
+      "reference_error": "",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: macro PAIR takes 2 argument(s), got 3\n"
+    }
+  ]
+}

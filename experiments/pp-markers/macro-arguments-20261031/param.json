@@ -1,0 +1,47 @@
+[
+  {
+    "case": 0,
+    "source": "#define F(x,y) OUT(x,y)\nF(y,1)\n",
+    "reference_output": "\nOUT(y,1)\n",
+    "reference_exit": 0,
+    "own_output": "OUT(y,1)\n",
+    "own_exit": 0,
+    "own_error": ""
+  },
+  {
+    "case": 1,
+    "source": "#define F(x,y) OUT(x,y)\nF({|x,y|x+y},3)\n",
+    "reference_output": "\nOUT({|x,y|x+y},3)\n",
+    "reference_exit": 0,
+    "own_output": "OUT({|x,y|x+y},3)\n",
+    "own_exit": 0,
+    "own_error": ""
+  },
+  {
+    "case": 2,
+    "source": "#define F(x,y) OUT(x,\"y\",xx,y)\nF(y,x)\n",
+    "reference_output": "\nOUT(y,\"y\",xx,x)\n",
+    "reference_exit": 0,
+    "own_output": "OUT(y,\"y\",xx,x)\n",
+    "own_exit": 0,
+    "own_error": ""
+  },
+  {
+    "case": 3,
+    "source": "#define F(x) OUT(x)\nF([a'b,c])\n",
+    "reference_output": "\nOUT(\"a'b,c\")\n",
+    "reference_exit": 0,
+    "own_output": "",
+    "own_exit": 1,
+    "own_error": "error: line 2: unterminated macro call F\n"
+  },
+  {
+    "case": 4,
+    "source": "#define F(x) OUT(x)\nF(a[1,2])\n",
+    "reference_output": "\nOUT(a[1,2])\n",
+    "reference_exit": 0,
+    "own_output": "OUT(a[1,2])\n",
+    "own_exit": 0,
+    "own_error": ""
+  }
+]

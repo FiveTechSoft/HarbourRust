@@ -1,0 +1,202 @@
+[
+  {
+    "group": "results",
+    "case": 0,
+    "kind": "supported exact tokens",
+    "own_exit": 0,
+    "own_output": "OUT({1,2,3})\n",
+    "own_error": ""
+  },
+  {
+    "group": "results",
+    "case": 1,
+    "kind": "supported exact tokens",
+    "own_exit": 0,
+    "own_output": "OUT(a[1,2])\n",
+    "own_error": ""
+  },
+  {
+    "group": "results",
+    "case": 2,
+    "kind": "supported exact tokens",
+    "own_exit": 0,
+    "own_output": "OUT(f(1,2))\n",
+    "own_error": ""
+  },
+  {
+    "group": "results",
+    "case": 3,
+    "kind": "supported exact tokens",
+    "own_exit": 0,
+    "own_output": "OUT({|x,y|x+y})\n",
+    "own_error": ""
+  },
+  {
+    "group": "results",
+    "case": 4,
+    "kind": "supported exact tokens",
+    "own_exit": 0,
+    "own_output": "OUT(\"a,b\")\n",
+    "own_error": ""
+  },
+  {
+    "group": "results",
+    "case": 5,
+    "kind": "outside-slice observation:empty/wrong arity/bracket literal/malformed",
+    "own_exit": 1,
+    "own_output": "",
+    "own_error": "error: line 2: macro argument bracket literal with commas is outside this increment\n"
+  },
+  {
+    "group": "results",
+    "case": 6,
+    "kind": "outside-slice observation:empty/wrong arity/bracket literal/malformed",
+    "own_exit": 1,
+    "own_output": "",
+    "own_error": "error: line 2: macro TAKE takes 1 argument(s), got 2\n"
+  },
+  {
+    "group": "results",
+    "case": 7,
+    "kind": "outside-slice observation:empty/wrong arity/bracket literal/malformed",
+    "own_exit": 0,
+    "own_output": "OUT()\n",
+    "own_error": ""
+  },
+  {
+    "group": "results",
+    "case": 8,
+    "kind": "supported exact tokens",
+    "own_exit": 0,
+    "own_output": "OUT({a,{b,c}})\n",
+    "own_error": ""
+  },
+  {
+    "group": "results",
+    "case": 9,
+    "kind": "outside-slice observation:empty/wrong arity/bracket literal/malformed",
+    "own_exit": 1,
+    "own_output": "",
+    "own_error": "error: line 2: mismatched delimiters in macro call TAKE\n"
+  },
+  {
+    "group": "results",
+    "case": 10,
+    "kind": "supported exact tokens",
+    "own_exit": 0,
+    "own_output": "OUT({1,2},3)\n",
+    "own_error": ""
+  },
+  {
+    "group": "results",
+    "case": 11,
+    "kind": "supported exact tokens",
+    "own_exit": 0,
+    "own_output": "OUT(1,{2,3})\n",
+    "own_error": ""
+  },
+  {
+    "group": "results",
+    "case": 12,
+    "kind": "supported exact tokens",
+    "own_exit": 0,
+    "own_output": "OUT({|x,y|x+y},3)\n",
+    "own_error": ""
+  },
+  {
+    "group": "results",
+    "case": 13,
+    "kind": "supported exact tokens",
+    "own_exit": 0,
+    "own_output": "OUT(a[1,2],3)\n",
+    "own_error": ""
+  },
+  {
+    "group": "results",
+    "case": 14,
+    "kind": "outside-slice observation:empty/wrong arity/bracket literal/malformed",
+    "own_exit": 1,
+    "own_output": "",
+    "own_error": "error: line 2: macro argument bracket literal with commas is outside this increment\n"
+  },
+  {
+    "group": "results",
+    "case": 15,
+    "kind": "outside-slice observation:empty/wrong arity/bracket literal/malformed",
+    "own_exit": 0,
+    "own_output": "OUT(,3)\n",
+    "own_error": ""
+  },
+  {
+    "group": "results",
+    "case": 16,
+    "kind": "outside-slice observation:empty/wrong arity/bracket literal/malformed",
+    "own_exit": 0,
+    "own_output": "OUT(1,)\n",
+    "own_error": ""
+  },
+  {
+    "group": "results",
+    "case": 17,
+    "kind": "supported exact tokens",
+    "own_exit": 0,
+    "own_output": "OUT({1,2},{3,4})\n",
+    "own_error": ""
+  },
+  {
+    "group": "results",
+    "case": 18,
+    "kind": "supported exact tokens",
+    "own_exit": 0,
+    "own_output": "OUT((1,2),3)\n",
+    "own_error": ""
+  },
+  {
+    "group": "results",
+    "case": 19,
+    "kind": "outside-slice observation:empty/wrong arity/bracket literal/malformed",
+    "own_exit": 1,
+    "own_output": "",
+    "own_error": "error: line 2: macro PAIR takes 2 argument(s), got 3\n"
+  },
+  {
+    "group": "param",
+    "case": 0,
+    "kind": "supported exact tokens",
+    "own_exit": 0,
+    "own_output": "OUT(y,1)\n",
+    "own_error": ""
+  },
+  {
+    "group": "param",
+    "case": 1,
+    "kind": "supported exact tokens",
+    "own_exit": 0,
+    "own_output": "OUT({|x,y|x+y},3)\n",
+    "own_error": ""
+  },
+  {
+    "group": "param",
+    "case": 2,
+    "kind": "supported exact tokens",
+    "own_exit": 0,
+    "own_output": "OUT(y,\"y\",xx,x)\n",
+    "own_error": ""
+  },
+  {
+    "group": "param",
+    "case": 3,
+    "kind": "outside-slice observation:empty/wrong arity/bracket literal/malformed",
+    "own_exit": 1,
+    "own_output": "",
+    "own_error": "error: line 2: macro argument bracket literal with commas is outside this increment\n"
+  },
+  {
+    "group": "param",
+    "case": 4,
+    "kind": "supported exact tokens",
+    "own_exit": 0,
+    "own_output": "OUT(a[1,2])\n",
+    "own_error": ""
+  }
+]

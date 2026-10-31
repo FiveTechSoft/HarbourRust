@@ -1198,3 +1198,10 @@ pos tests/t1199_pp_list_quotes.hb \n"a,b" "c,d"
 pos tests/t1200_pp_list_absent.hb \nA Z\nA alpha beta Z
 pos tests/t1201_pp_list_empty.hb \nalpha,,beta\n,
 neg tests/t1202_pp_list_escape_neg.hb stringify of escape literals
+pos tests/t1203_pp_macro_nested_array.hb \n         3
+pos tests/t1204_pp_macro_nested_pair.hb \n         5
+pos tests/t1205_pp_macro_simultaneous.hb \n         8
+pos tests/t1206_pp_macro_strings.hb \na,b y c,d
+pos tests/t1207_pp_macro_nested_calls.hb \n         6
+neg tests/t1208_pp_macro_mismatch_neg.hb mismatched delimiters in macro call
+neg tests/t1209_pp_macro_bracket_comma_neg.hb macro argument bracket literal with commas

@@ -1,0 +1,42 @@
+[
+  {
+    "case": 0,
+    "source": "#define TAKE(x) OUT(x)\nTAKE(1)\n",
+    "baseline_identical": true
+  },
+  {
+    "case": 1,
+    "source": "#define TAKE(x) OUT(x)\nTAKE(foo)\n",
+    "baseline_identical": true
+  },
+  {
+    "case": 2,
+    "source": "#define TAKE(x) OUT(x)\nTAKE(f(1,2))\n",
+    "baseline_identical": true
+  },
+  {
+    "case": 3,
+    "source": "#define TAKE(x) OUT(x)\nTAKE(\"a,b\")\n",
+    "baseline_identical": true
+  },
+  {
+    "case": 4,
+    "source": "#define TAKE(x) OUT(x)\nTAKE('a,b')\n",
+    "baseline_identical": true
+  },
+  {
+    "case": 5,
+    "source": "#define TAKE(x) OUT(x)\nTAKE(x+1)\n",
+    "baseline_identical": true
+  },
+  {
+    "case": 6,
+    "source": "#define TAKE(x) OUT(x)\nTAKE((1+2))\n",
+    "baseline_identical": true
+  },
+  {
+    "case": 7,
+    "source": "#define TAKE(x) OUT(x)\nTAKE([abc])\n",
+    "baseline_identical": true
+  }
+]
