@@ -1,0 +1,303 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "sources_unchanged": true,
+  "source_count": 8,
+  "build_unit_count": 8,
+  "rows": [
+    {
+      "files": [
+        {
+          "file": "tests/rddtest/adscl52.prg",
+          "sha256": "ce19fb83e84cf9b3ebf61a5ce1d391bf29548d9277044b147c46e12afdb897b4"
+        }
+      ],
+      "review": "full source read2026-10-31;generated variants via complete exact diff from fully-read adscl52,adscl53",
+      "build_unit": "generated-Clipper-expected-state-test-includes-rddtst",
+      "reference_build_exit": 6,
+      "reference_options": [
+        "-gtstd",
+        "-q"
+      ],
+      "reference_run": "not-run",
+      "boundary": "ADS variants need external ADS SDK/library/server semantics;generator not run to avoid generating replacement expected sources;shared include not executable",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 61: cannot find include ads.ch",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 61: cannot find include ads.ch",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n\r/tmp/harbour-reference/tests/rddtest/rddtst.prg(61) Error F0029  Can't open #include file 'ads.ch'\nhbmk2: Error: Running Harbour compiler (built-in). 1\n('/tmp/harbour-reference/bin/linux/gcc/harbour') -n2 /tmp/harbour-reference/tests/rddtest/adscl52.prg -q -o/tmp/hbmk_v6xsz1.dir/ -i/tmp/harbour-reference/include\n",
+      "dependency_recheck": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n/usr/bin/ld: cannot find -lrddads: No such file or directory\n/usr/bin/ld: cannot find -lace: No such file or directory\ncollect2: error: ld returned 1 exit status\nhbmk2: Error: Running linker. 1\ngcc '/tmp/hbmk_puopxp.dir/adscl52.o' '/tmp/hbmk_puopxp.dir/hbmk_hkpisz.o'   -Wl,--start-group -lrddads -lace -lhbextern -lhbdebug -lhbvm -lhbrtl -lhblang -lhbcpage -lgtcgi -lgtpca -lgtstd -lgttrm -lhbrdd -lhbuddall -lhbusrrdd -lrddntx -lrddcdx -lrddnsx -lrddfpt -lhbrdd -lhbhsx -lhbsix -lhbmacro -lhbcplr -lhbpp -lhbcommon -lm -ldl -lrt -lz -lhbpcre   -Wl,--end-group -o'/downloads/original-by-one/nested-rddtest/adscl52/reference' -L'/tmp/harbour-reference/lib/linux/gcc'\n"
+    },
+    {
+      "files": [
+        {
+          "file": "tests/rddtest/adscl53.prg",
+          "sha256": "57d49ecee751d3f88a2059a7e2c1df790d3bcdfa7a1bdad6697c4d7d604be230"
+        }
+      ],
+      "review": "full source read2026-10-31;generated variants via complete exact diff from fully-read adscl52,adscl53",
+      "build_unit": "generated-Clipper-expected-state-test-includes-rddtst",
+      "reference_build_exit": 6,
+      "reference_options": [
+        "-gtstd",
+        "-q"
+      ],
+      "reference_run": "not-run",
+      "boundary": "ADS variants need external ADS SDK/library/server semantics;generator not run to avoid generating replacement expected sources;shared include not executable",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 61: cannot find include ads.ch",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 61: cannot find include ads.ch",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "reference_diagnostic": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n\r/tmp/harbour-reference/tests/rddtest/rddtst.prg(61) Error F0029  Can't open #include file 'ads.ch'\nhbmk2: Error: Running Harbour compiler (built-in). 1\n('/tmp/harbour-reference/bin/linux/gcc/harbour') -n2 /tmp/harbour-reference/tests/rddtest/adscl53.prg -q -o/tmp/hbmk_exe66o.dir/ -i/tmp/harbour-reference/include\n",
+      "dependency_recheck": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n/usr/bin/ld: cannot find -lrddads: No such file or directory\n/usr/bin/ld: cannot find -lace: No such file or directory\ncollect2: error: ld returned 1 exit status\nhbmk2: Error: Running linker. 1\ngcc '/tmp/hbmk_bz2fyc.dir/adscl53.o' '/tmp/hbmk_bz2fyc.dir/hbmk_m4ymu2.o'   -Wl,--start-group -lrddads -lace -lhbextern -lhbdebug -lhbvm -lhbrtl -lhblang -lhbcpage -lgtcgi -lgtpca -lgtstd -lgttrm -lhbrdd -lhbuddall -lhbusrrdd -lrddntx -lrddcdx -lrddnsx -lrddfpt -lhbrdd -lhbhsx -lhbsix -lhbmacro -lhbcplr -lhbpp -lhbcommon -lm -ldl -lrt -lz -lhbpcre   -Wl,--end-group -o'/downloads/original-by-one/nested-rddtest/adscl53/reference' -L'/tmp/harbour-reference/lib/linux/gcc'\n"
+    },
+    {
+      "files": [
+        {
+          "file": "tests/rddtest/cdxcl52.prg",
+          "sha256": "3c109e79cafd415b17ad7206f0883bf05298c0d4d67f62efc6712a63039b496a"
+        }
+      ],
+      "review": "full source read2026-10-31;generated variants via complete exact diff from fully-read adscl52,adscl53",
+      "build_unit": "generated-Clipper-expected-state-test-includes-rddtst",
+      "reference_build_exit": 0,
+      "reference_options": [
+        "-gtstd",
+        "-q"
+      ],
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 22800,
+        "stdout_sha256": "30dd5604d1b86ce252b2b675a1e7eabaf4637e9045bc117e0a5c30ebda5c89ba",
+        "stderr_bytes": 0,
+        "internal_summary": "[b'Number of tests: 442 ', b'Number of errors: 73 ']",
+        "leftover_files": []
+      },
+      "boundary": "Run only in fresh disposable directory:creates/deletes _tst.dbf and .??x plus TG_?.??x;exit code separate from internal mismatch count",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/rddtest/cdxcl53.prg",
+          "sha256": "ccbd108afa3bd29837265c2c10aa3fcf248805bb7f20e7b26e831c41982ec81d"
+        }
+      ],
+      "review": "full source read2026-10-31;generated variants via complete exact diff from fully-read adscl52,adscl53",
+      "build_unit": "generated-Clipper-expected-state-test-includes-rddtst",
+      "reference_build_exit": 0,
+      "reference_options": [
+        "-gtstd",
+        "-q"
+      ],
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 30579,
+        "stdout_sha256": "b5748fe4294c12717aea87fd55fbc4184fbf846d681a53d61a4c64e0410c70f3",
+        "stderr_bytes": 0,
+        "internal_summary": "[b'Number of tests: 665 ', b'Number of errors: 13 ']",
+        "leftover_files": []
+      },
+      "boundary": "Run only in fresh disposable directory:creates/deletes _tst.dbf and .??x plus TG_?.??x;exit code separate from internal mismatch count",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/rddtest/ntxcl52.prg",
+          "sha256": "6dc1db2b584edddbfb257e6a79e0de93d643f5a77ff4dd2f022801d4d3c24c22"
+        }
+      ],
+      "review": "full source read2026-10-31;generated variants via complete exact diff from fully-read adscl52,adscl53",
+      "build_unit": "generated-Clipper-expected-state-test-includes-rddtst",
+      "reference_build_exit": 0,
+      "reference_options": [
+        "-gtstd",
+        "-q"
+      ],
+      "reference_run": {
+        "exit": null,
+        "timeout_seconds": 10,
+        "stdout_bytes": 3460,
+        "stderr_bytes": 0
+      },
+      "boundary": "Run only in fresh disposable directory:creates/deletes _tst.dbf and .??x plus TG_?.??x;exit code separate from internal mismatch count",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/rddtest/ntxcl53.prg",
+          "sha256": "38d8aaab15ecddd3f146db9bd7ff653d1bbf268dc8047a1367bf4c57ff8a68a0"
+        }
+      ],
+      "review": "full source read2026-10-31;generated variants via complete exact diff from fully-read adscl52,adscl53",
+      "build_unit": "generated-Clipper-expected-state-test-includes-rddtst",
+      "reference_build_exit": 0,
+      "reference_options": [
+        "-gtstd",
+        "-q"
+      ],
+      "reference_run": {
+        "exit": null,
+        "timeout_seconds": 10,
+        "stdout_bytes": 3499,
+        "stderr_bytes": 0
+      },
+      "boundary": "Run only in fresh disposable directory:creates/deletes _tst.dbf and .??x plus TG_?.??x;exit code separate from internal mismatch count",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 300: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/rddtest/rddmktst.prg",
+          "sha256": "0a83a8ce2eb0a5b06e2eb7f83a50f37f9d4b2156f5a7e1ce16458b06aa7e6372"
+        }
+      ],
+      "review": "full source read2026-10-31;generated variants via complete exact diff from fully-read adscl52,adscl53",
+      "build_unit": "generator-executable-default-profile",
+      "reference_build_exit": 0,
+      "reference_options": [
+        "-gtstd",
+        "-q"
+      ],
+      "reference_run": "not-run",
+      "boundary": "ADS variants need external ADS SDK/library/server semantics;generator not run to avoid generating replacement expected sources;shared include not executable",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 314: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 314: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "files": [
+        {
+          "file": "tests/rddtest/rddtst.prg",
+          "sha256": "9ebe1c6b81efb6365f9a925a94bb3b2f32d6c8b6e273dadef3830bce7b84033f"
+        }
+      ],
+      "review": "full source read2026-10-31;generated variants via complete exact diff from fully-read adscl52,adscl53",
+      "build_unit": "shared-include-library-not-standalone-executable",
+      "reference_build_exit": 0,
+      "reference_options": [
+        "-gtstd",
+        "-q",
+        "-hblib",
+        "-n"
+      ],
+      "reference_run": "not-run",
+      "boundary": "ADS variants need external ADS SDK/library/server semantics;generator not run to avoid generating replacement expected sources;shared include not executable",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 19: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 19: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}
