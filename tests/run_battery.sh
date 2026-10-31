@@ -14,34 +14,49 @@
 #                                       on both targets
 cd "$(dirname "$0")/.." || exit 2
 fail=0
-build_linux() { ./hbc "$1" gen/"$base".s --target=linux --instrument -I tests >/dev/null 2>&1 && as -o gen/"$base".o gen/"$base".s && ld -o gen/"$base" gen/"$base".o; }
-build_win() { ./hbc "$1" gen/"$base"_w.s --target=windows --instrument -I tests >/dev/null 2>&1 && "$M"/x86_64-w64-mingw32-as -o gen/"$base"_w.o gen/"$base"_w.s && "$M"/x86_64-w64-mingw32-ld -o gen/"$base".exe gen/"$base"_w.o -e _start --subsystem console -L"$MLIB" -lkernel32; }
+build_linux() { ./hbc "$1" gen/"$base".s --target=linux --instrument -I tests >/dev/null 2>gen/"$base".hbc-linux.err && as -o gen/"$base".o gen/"$base".s && ld -o gen/"$base" gen/"$base".o; }
+build_win() { ./hbc "$1" gen/"$base"_w.s --target=windows --instrument -I tests >/dev/null 2>gen/"$base".hbc-win.err && "$M"/x86_64-w64-mingw32-as -o gen/"$base"_w.o gen/"$base"_w.s && "$M"/x86_64-w64-mingw32-ld -o gen/"$base".exe gen/"$base"_w.o -e _start --subsystem console -L"$MLIB" -lkernel32; }
+# Failure preservation (t528 incident, 31Oct): every failing case keeps
+# gen/<base>.{linux,wine}.{stdout,stderr,rc} and gen/<base>.hbc-{linux,win}.err
+# for later diagnosis. Acceptance is UNCHANGED: stdout must byte-match the
+# expectation on both targets and a non-empty stderr fails the case (the old
+# runner merged stderr into the captured output, which broke the byte-match
+# the same way). No retries.
 run_pos_kind() { # file expected [exit]
   local f=$1 exp=$2 want_rc=$3 base
   base=$(basename "$f" .hb)
-  if ! build_linux "$f"; then echo "FAIL $f (linux build)"; fail=1; return; fi
+  if ! build_linux "$f"; then echo "FAIL $f (linux build; stderr at gen/$base.hbc-linux.err)"; fail=1; return; fi
   local out_lin rc_lin
-  out_lin=$(timeout 15 "./gen/$base" 2>&1); rc_lin=$?
-  if ! build_win "$f"; then echo "FAIL $f (windows build)"; fail=1; return; fi
+  out_lin=$(timeout 15 "./gen/$base" 2>gen/"$base".linux.stderr); rc_lin=$?
+  printf '%s' "$out_lin" > gen/"$base".linux.stdout; echo "$rc_lin" > gen/"$base".linux.rc
+  if ! build_win "$f"; then echo "FAIL $f (windows build; stderr at gen/$base.hbc-win.err)"; fail=1; return; fi
   local out_win rc_win
-  out_win=$(timeout 20 "$WINE" gen/"$base".exe 2>/dev/null); rc_win=$?
+  out_win=$(timeout 20 "$WINE" gen/"$base".exe 2>gen/"$base".wine.stderr); rc_win=$?
+  printf '%s' "$out_win" > gen/"$base".wine.stdout; echo "$rc_win" > gen/"$base".wine.rc
   if [ -n "$want_rc" ] && { [ "$rc_lin" != "$want_rc" ] || [ "$rc_win" != "$want_rc" ]; }; then
-    echo "FAIL $f (exit codes linux=$rc_lin wine=$rc_win want=$want_rc)"; fail=1; return
+    echo "FAIL $f (exit codes linux=$rc_lin wine=$rc_win want=$want_rc; case diagnostics under gen/$base.*)"; fail=1; return
   fi
-  if [ "$out_lin" == "$exp" ] && [ "$out_win" == "$exp" ]; then echo "PASS $f"; else
-    echo "FAIL $f"
+  if [ "$out_lin" == "$exp" ] && [ "$out_win" == "$exp" ] && [ ! -s gen/"$base".linux.stderr ]; then
+    echo "PASS $f"
+    rm -f gen/"$base".linux.{stdout,stderr,rc} gen/"$base".wine.{stdout,stderr,rc} gen/"$base".hbc-linux.err gen/"$base".hbc-win.err
+  else
+    echo "FAIL $f (case diagnostics preserved under gen/$base.*)"
     echo "  exp: $(echo "$exp"|head -3|tr '\n' '|')"
     echo "  lin: $(echo "$out_lin"|head -3|tr '\n' '|')"
     echo "  win: $(echo "$out_win"|head -3|tr '\n' '|')"
+    [ -s gen/"$base".linux.stderr ] && echo "  lin-stderr: $(head -3 gen/"$base".linux.stderr|tr '\n' '|')"
     fail=1
   fi
 }
 run_neg() { # file expected_error_substr
-  local f=$1 exp=$2 l w le we
+  local f=$1 exp=$2 l w le we base
+  base=$(basename "$f" .hb)
   l=$(./hbc "$f" gen/neg.s --target=linux 2>&1); le=$?
   w=$(./hbc "$f" gen/neg_w.s --target=windows 2>&1); we=$?
   if [ $le -eq 1 ] && [ $we -eq 1 ] && [[ "$l" == *"$exp"* ]] && [[ "$w" == *"$exp"* ]]; then echo "PASS $f"; else
-    echo "FAIL $f le=$le we=$we"; echo "  lin: $l"; echo "  win: $w"; fail=1
+    printf '%s\n' "$l" > gen/"$base".neg-linux.err; echo "$le" > gen/"$base".neg-linux.rc
+    printf '%s\n' "$w" > gen/"$base".neg-win.err; echo "$we" > gen/"$base".neg-win.rc
+    echo "FAIL $f le=$le we=$we (diagnostics under gen/$base.neg-*)"; echo "  lin: $l"; echo "  win: $w"; fail=1
   fi
 }
 while IFS= read -r line; do
