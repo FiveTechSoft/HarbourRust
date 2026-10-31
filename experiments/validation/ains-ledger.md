@@ -49,6 +49,27 @@ Repro (probes/ains-preblockers01/local-then-assign.prg):
 - Impact: the ains original cannot compile unadapted until the split
   form pins the same way. Blocks piece (d) compilation.
 
+INVESTIGATION 31Oct (candidate untouched): the failure is NOT about
+mixed literals - a bare `LOCAL x` pins a Dyn slot (16B {tag,payload}),
+and the Dyn-slot assignment arm (check_stmts Stmt::Assign) admits only
+I64/Bool/Dyn/Str/StrOwn. EVERY array shape is rejected:
+`x := { 1, "a" }`, `{ 1, 2 }`, `{ "a", "b" }`, `{ 1, NIL }`, while
+scalar `x := 5 / "s" / .T.` all work (Dyn re-tagging, probe n2). The
+ains original uses this pattern throughout: LOCAL aFirst/aSecond/aMore
+then `aSecond := { 1, 2, 4 }` (twice), `aFirst := AClone(...)`,
+`aMore := { { 1, 2 }, { 3, 4 } }` - so P2 is a HARD requirement for
+piece (d), not a corner case. Options: (a) Dyn slots gain tag-6 array
+ownership - the slot holds tag6 + buffer pointer (the array buffer is
+self-describing: count word at base), the epilogue/reassignment frees
+it (deep free via the existing helpers), ValType reads "A", function
+passing reuses the classification machinery. Harbour-true, but it
+CROSSES THE LIVE BOUNDARY "no owned tag-6 array cells" - needs explicit
+authorization, plus an ownership design (reassignment frees the old
+array; moves; what a Dyn-held array means for the view/borrow rules).
+(b) Re-pinning a bare LOCAL on first assignment breaks the accepted
+n2-family re-tagging (x := 5 then x := "s" today works) - REGRESSION,
+rejected. ESCALATED to main 31Oct; no implementation without a decision.
+
 ## aDump recon (2026-10-31, probes/adump-recon01; aDump verbatim body used
 locally as oracle ONLY - never committed; driver is NOT the complete ains)
 
