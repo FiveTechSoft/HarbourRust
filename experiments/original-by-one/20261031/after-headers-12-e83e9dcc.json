@@ -1,0 +1,573 @@
+{
+ "phase": "non-.prg catch-up: inventoried .ch/.hb members of tests/ and extras/ not covered by the .prg-only counts (tests 268 .prg of 275 inventoried; extras 18 .prg of 35 inventoried)",
+ "order": "inventory path lexicographic within each phase",
+ "claim_precision": "tests/ phase = 268/268 .prg PLUS the 7 non-.prg recorded here; after this batch all 275 tests + all processed extras units have every inventoried member recorded",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "tests/clipper.ch",
+   "sha256": "134a4a5d4cbd8c6def99125758f007084348ab6146af5fc20ca26755b851385d",
+   "review": "full source manually read 2026-11-01 (65 lines)",
+   "entrypoint": "none (preprocessor header, compiled only via #include)",
+   "build_unit": "tests/ support header (included by legacy compat tests)",
+   "profile": "A/B header (.ch); content = constants/macros only",
+   "dependencies": "#xtranslate hb_* -> Clipper names under #ifndef __HARBOUR__",
+   "boundary": "Not compilable standalone by definition; recorded as inventoried unit member",
+   "reference_build_exit": null,
+   "reference_build_note": "header; not compiled standalone",
+   "reference_run": "not-run (header)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "tests/keywords.ch",
+   "sha256": "22da60b3b5e08afeadc3fc988a2c531babc739a6c74b1d31f5b73cc7cd16cc48",
+   "review": "full source manually read 2026-11-01 (5 lines)",
+   "entrypoint": "none (preprocessor header, compiled only via #include)",
+   "build_unit": "tests/ support header for keywords.prg #include test",
+   "profile": "A/B header (.ch); content = constants/macros only",
+   "dependencies": "comments only",
+   "boundary": "Not compilable standalone by definition; recorded as inventoried unit member",
+   "reference_build_exit": null,
+   "reference_build_note": "header; not compiled standalone",
+   "reference_run": "not-run (header)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "tests/hbdocext.hb",
+   "sha256": "a1ec8dd634fd6f8c24ce0a33099bfeb8d4c790da1b45c150a51c71fd607d2bf3",
+   "review": "full source manually read 2026-11-01 (34 lines)",
+   "entrypoint": "Main (.hb Harbour script)",
+   "build_unit": "tests/ utility script",
+   "profile": "A-tests .hb script",
+   "dependencies": "#pragma -w3/-km+/-ko+; Directory(); __hbdoc_ToSource/FromSource; hb_MemoWrit",
+   "boundary": "NOT run: mass-rewrites files in cwd (.txt extraction); destructive in a source tree",
+   "reference_build_exit": null,
+   "reference_build_note": "hbrun-capable script; not run (destructive class)",
+   "reference_run": "not-run (see boundary)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: #pragma `-w3` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: #pragma `-w3` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "tests/hbpp/compare.hb",
+   "sha256": "bce28eafc7ea745d913d87117e1c39ae68806e9fc7c1bde8342aa5dc723bd4eb",
+   "review": "full source manually read 2026-11-01 (13 lines)",
+   "entrypoint": "Main (.hb Harbour script)",
+   "build_unit": "tests/ utility script",
+   "profile": "A-tests .hb script",
+   "dependencies": "top-level statements (no Main): hb_FCopy/hb_run harbour+clipper/diff",
+   "boundary": "NOT run: requires clipper.exe (absent) and writes/deletes files in cwd",
+   "reference_build_exit": null,
+   "reference_build_note": "script; not run (external tool dependency + destructive class)",
+   "reference_run": "not-run (see boundary)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown function `hb_fcopy` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown function `hb_fcopy` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown function `hb_fcopy` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown function `hb_fcopy` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "tests/langchk.hb",
+   "sha256": "3aa32581e3c4b4cef9eb8092be599005cb5a2cbb698d480a9f88ede1f701ab4b",
+   "review": "full source manually read 2026-11-01 (44 lines)",
+   "entrypoint": "Main (.hb Harbour script)",
+   "build_unit": "tests/ utility script",
+   "profile": "A-tests .hb script",
+   "dependencies": "#pragma -w3; __dynsCount/__dynsGetName; hb_langMessage; writes langchk.txt",
+   "boundary": "NOT run: writes output file derived from __FILE__ into cwd; read-only traversal",
+   "reference_build_exit": null,
+   "reference_build_note": "script; not run",
+   "reference_run": "not-run (see boundary)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: #pragma `-w3` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: #pragma `-w3` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "tests/stripdoc.hb",
+   "sha256": "c7d7e51aaab0011a6b32162c546c41d564ae23a0c269404182494fd42ce53819",
+   "review": "full source manually read 2026-11-01 (26 lines)",
+   "entrypoint": "Main (.hb Harbour script)",
+   "build_unit": "tests/ utility script",
+   "profile": "A-tests .hb script",
+   "dependencies": "#pragma -w3; __hbdoc_FilterOut; rewrites .c/.prg files in place",
+   "boundary": "NOT run: rewrites source files in place (destructive class)",
+   "reference_build_exit": null,
+   "reference_build_note": "script; not run (destructive class)",
+   "reference_run": "not-run (see boundary)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: #pragma `-w3` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: #pragma `-w3` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "tests/stripid.hb",
+   "sha256": "d74e04f5706f37ad901b13b6b4f66be439da155e60decdd8925127cb37588265",
+   "review": "full source manually read 2026-11-01 (84 lines)",
+   "entrypoint": "Main (.hb Harbour script)",
+   "build_unit": "tests/ utility script",
+   "profile": "A-tests .hb script",
+   "dependencies": "#pragma -w3; StrTran VCS id headers; rewrites files in place",
+   "boundary": "NOT run: rewrites source files in place (destructive class)",
+   "reference_build_exit": null,
+   "reference_build_note": "script; not run (destructive class)",
+   "reference_run": "not-run (see boundary)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: #pragma `-w3` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: #pragma `-w3` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/gfspell/spell.ch",
+   "sha256": "309f69f39713d95ac678e34adbe7b6946ccdb03e7cd58ab6abed8a2d68578c8a",
+   "review": "full source manually read 2026-11-01 (16 lines)",
+   "entrypoint": "none (preprocessor header, compiled only via #include)",
+   "build_unit": "gfspell unit (batch 1); header row added in this catch-up batch",
+   "profile": "A/B header (.ch); content = constants/macros only",
+   "dependencies": "#define COMMON_WORDS..CHECK_FOR_RUNONS constants",
+   "boundary": "Not compilable standalone by definition; recorded as inventoried unit member",
+   "reference_build_exit": null,
+   "reference_build_note": "compiled as part of gfspell lib build (OK, batch 1)",
+   "reference_run": "not-run (header)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/hbusb/hbusb.ch",
+   "sha256": "ebeb2e27ffd232b28e5804ab3a4a92adda778342d78e24853e9cd0ca0386db3e",
+   "review": "full source manually read 2026-11-01 (11 lines)",
+   "entrypoint": "none (preprocessor header, compiled only via #include)",
+   "build_unit": "hbusb unit (batch 1); header row added in this catch-up batch",
+   "profile": "A/B header (.ch); content = constants/macros only",
+   "dependencies": "#define LIBUSB_* constants",
+   "boundary": "Not compilable standalone by definition; recorded as inventoried unit member",
+   "reference_build_exit": null,
+   "reference_build_note": "compiled as part of hbusb build attempt (FAIL: missing libusb dependency, batch 1)",
+   "reference_run": "not-run (header)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/hbvpdf/hbvpdf.ch",
+   "sha256": "3e5cd6dba374d49483caf77d9fac2d5de694d8a010b49070c51cc38f9d1948a5",
+   "review": "full source manually read 2026-11-01 (226 lines)",
+   "entrypoint": "none (preprocessor header, compiled only via #include)",
+   "build_unit": "hbvpdf unit (batch 2); header row added in this catch-up batch",
+   "profile": "A/B header (.ch); content = constants/macros only",
+   "dependencies": "#define PARAMLEN/color/style constants",
+   "boundary": "Not compilable standalone by definition; recorded as inventoried unit member",
+   "reference_build_exit": null,
+   "reference_build_note": "compiled as part of hbvpdf lib build (OK, batch 2)",
+   "reference_run": "not-run (header)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/rddado/adordd.ch",
+   "sha256": "b36173b6ac5e7fe9dab3c8e4f922a16dc32ba1ce83915198d26758f279de5ea3",
+   "review": "full source manually read 2026-11-01 (216 lines)",
+   "entrypoint": "none (preprocessor header, compiled only via #include)",
+   "build_unit": "rddado unit (adordd.prg + 4 tests pending)",
+   "profile": "A/B header (.ch); content = constants/macros only",
+   "dependencies": "ADO constants + #command USE..VIA/LOCATE redefinitions (result markers <{for}>)",
+   "boundary": "Not compilable standalone by definition; recorded as inventoried unit member",
+   "reference_build_exit": null,
+   "reference_build_note": "header of the rddado unit (build pending with adordd.prg)",
+   "reference_run": "not-run (header)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 211: unknown result marker <{for}> (Harbour: E0008)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 211: unknown result marker <{for}> (Harbour: E0008)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 211: unknown result marker <{for}> (Harbour: E0008)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 211: unknown result marker <{for}> (Harbour: E0008)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/template/hbtpl.ch",
+   "sha256": "352da6be1ff9e94b466f3ff022b3a9a9ac2f478d32af7c73dffea13dc62ebf21",
+   "review": "full source manually read 2026-11-01 (12 lines)",
+   "entrypoint": "none (preprocessor header, compiled only via #include)",
+   "build_unit": "template unit (core.prg + 3 tests pending)",
+   "profile": "A/B header (.ch); content = constants/macros only",
+   "dependencies": "#define HBTPL_MYCONSTANT + #command HBTPL_PRINT",
+   "boundary": "Not compilable standalone by definition; recorded as inventoried unit member",
+   "reference_build_exit": null,
+   "reference_build_note": "header of the template unit (build pending with core.prg)",
+   "reference_run": "not-run (header)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no functions found",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ]
+}
