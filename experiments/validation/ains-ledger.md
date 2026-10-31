@@ -35,9 +35,14 @@ every print-helper entry re-emits held spaces first, except the newline
 flush and program exit, which drop them. Must cover ALL render sites in
 cg_print_items (string, darrs_elem, darr2_child, the new iif raw-cell
 arms) and prints from inside called functions (t1494's side() case), so
-the mechanism belongs in the runtime helpers, not in cg. Open question
-for the design: OutStd/OutErr interleaving (raw, no trim today - probe
-`?? "ab  "` + outstd("x") + newline against the oracle first).
+the mechanism belongs in the runtime helpers, not in cg. OutStd/OutErr interleaving resolved by q11-q15: OutStd drops the hold,
+OutErr leaves it untouched.
+RESOLVED 31Oct 20:34 (review snapshot, commit follows this ledger line):
+implemented as hbc_pending/hbc_pstrt/hbc_pflush + per-site flushes in
+cg_print_items; q1-q21 20/21 (only the pre-existing all-spaces edge
+q19), aDump verbatim driver byte-exact, 139-case battery ALL GREEN
+Linux+Wine. Record: experiments/validation/20261031-ains-1b-p1.md.
+Independent review pending; not closed.
 
 ### P2. `LOCAL x` separated from a mixed-literal assignment is rejected
 Repro (probes/ains-preblockers01/local-then-assign.prg):

@@ -10579,12 +10579,32 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                     cg_value(e, env, sigs, strs, out, target);
                     out.push_str("    push %rdx\n    push %rax\n");
                 }
-                // `??` skips ONLY the leading newline (hk274-hk276);
-                // item evaluation order, separators, field widths and
-                // the trailing right-trim are identical to `?`.
+                // `??` skips ONLY the leading newline (hk274-hk276;
+                // the comment's further claim of a per-statement `??`
+                // right-trim had NO preserved probes and is falsified
+                // by q3/q6/q7: trailing spaces are held until the line
+                // flushes). Item evaluation order, separators and field
+                // widths are identical to `?`.
                 // Arguments (including nested output) have already evaluated.
                 let render_start = out.len();
-                if !inline { out.push_str("    call hbc_print_nl\n"); }
+                // Harbour QOut line flush (q1-q17): trailing spaces are
+                // held (hbc_pending) and resolved at the NEXT output:
+                // a `?` newline flushes the previous line and the held
+                // spaces DROP (q4/q14); `??` continues the line, so its
+                // first byte re-emits them (q6/q7); OutStd writes raw
+                // and the hold DROPS (q11); OutErr is a separate
+                // channel and leaves the hold untouched (q15). At
+                // program exit an unresolved hold is simply never
+                // emitted (q9/q10), which matches the EOF trim.
+                if !inline {
+                    if !stderr { out.push_str("    movq $0, hbc_pending(%rip)\n"); }
+                    out.push_str("    call hbc_print_nl\n");
+                } else if !stderr && raw {
+                    out.push_str("    movq $0, hbc_pending(%rip)\n");
+                }
+                // A `??` emits NOTHING at fragment start: the held spaces
+                // are re-emitted by the first render site that actually
+                // writes (q18/q21: an empty or bare `??` must not flush).
                 // Harbour renders a whole dynamic array or hash as
                 // NOTHING (oracles hk16/hk20/hk21/hk24) and QOut
                 // space-trims the END of the line (hk22/hk24/hk25);
@@ -10593,12 +10613,15 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                 // The trim is reproduced by dropping the static suffix
                 // of empty-rendering items together with their preceding
                 // separators, and by right-trimming a surviving trailing
-                // string at runtime (numbers never trail spaces).
-                // Registered edge: a trailing ALL-SPACES string still
-                // leaves the separator before it in this PoC; exact
-                // fidelity there needs a buffered line.
+                // string at runtime INTO A HOLD (hbc_pending/hbc_pstrt)
+                // that the next output resolves (numbers never trail
+                // spaces). Registered edges: a trailing ALL-SPACES
+                // string still leaves the separator before it; and a
+                // `??` statement that prints NOTHING (empty string /
+                // empty-rendering item) re-emits the hold early, so
+                // `?? "ab  " ?? "" ? "x"` keeps the spaces where
+                // Harbour's buffered line would trim them.
                 // OutStd preserves every separator and trailing byte.
-                // QOut/QQOut keep their existing line-end trimming.
                 let last_vis = if raw { es.len().checked_sub(1) } else { es.iter().rposition(|e| !renders_empty(e)) };
                 // Right-trim spaces (0x20) off %rdx bytes at %rax.
                 let rtrim = "97:    cmp $0, %rdx\n    je 98f\n    cmpb $0x20, -1(%rax,%rdx)\n    jne 98f\n    dec %rdx\n    jmp 97b\n98:\n";
@@ -10606,7 +10629,10 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                     if last_vis.map_or(true, |lv| i > lv) { break; }
                     let t = expr_ty(e, env, sigs);
                     let off = 16 * (es.len() - 1 - i);
-                    if i > 0 { out.push_str("    call hbc_print_sep\n"); }
+                    if i > 0 {
+                        if !stderr { out.push_str("    call hbc_pflush\n"); }
+                        out.push_str("    call hbc_print_sep\n");
+                    }
                     if renders_empty(e) { continue; }
                     let is_last = !raw && last_vis == Some(i);
                     if cg_iif_out_rawdyn(e, env, sigs).is_some() {
@@ -10618,13 +10644,31 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         // 6/unknown = registered error).
                         let id = print_lbl();
                         out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
-                        out.push_str(&format!("    cmp $2, %rax\n    je .Lprs{}\n    cmp $4, %rax\n    je .Lprs{}\n    cmp $7, %rax\n    je .Lprf{}\n    call hbc_print_dyncell\n    jmp .Lpre{}\n", id, id, id, id));
+                        out.push_str(&format!("    cmp $2, %rax\n    je .Lprs{}\n    cmp $4, %rax\n    je .Lprs{}\n    cmp $7, %rax\n    je .Lprf{}\n", id, id, id));
+                        if !stderr { out.push_str("    push %rdx\n    push %rax\n    call hbc_pflush\n    pop %rax\n    pop %rdx\n"); }
+                        out.push_str(&format!("    call hbc_print_dyncell\n    jmp .Lpre{}\n", id));
                         out.push_str(&format!(".Lprs{}:\n    mov %rdx, %rax\n    mov -8(%rax), %rdx\n", id));
-                        if is_last { out.push_str(rtrim); }
-                        out.push_str(&format!("    call hbc_print_str\n    jmp .Lpre{}\n", id));
+                        if is_last && !stderr {
+                            out.push_str("    call hbc_pstrt\n");
+                        } else {
+                            if is_last { out.push_str(rtrim); }
+                            if !stderr && !is_last {
+                                out.push_str(&format!("    test %rdx, %rdx\n    jz 91f\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov -8(%rax), %rdx\n91:\n", off + 8));
+                            }
+                            out.push_str("    call hbc_print_str\n");
+                        }
+                        out.push_str(&format!("    jmp .Lpre{}\n", id));
                         out.push_str(&format!(".Lprf{}:\n    mov %rdx, %rax\n    mov -8(%rax), %rdx\n", id));
-                        if is_last { out.push_str(rtrim); }
-                        out.push_str(&format!("    call hbc_print_str\n    mov {}(%rsp), %rdi\n    call hbc_freestr\n", off + 8));
+                        if is_last && !stderr {
+                            out.push_str("    call hbc_pstrt\n");
+                        } else {
+                            if is_last { out.push_str(rtrim); }
+                            if !stderr && !is_last {
+                                out.push_str(&format!("    test %rdx, %rdx\n    jz 91f\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov -8(%rax), %rdx\n91:\n", off + 8));
+                            }
+                            out.push_str("    call hbc_print_str\n");
+                        }
+                        out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n", off + 8));
                         out.push_str(&format!(".Lpre{}:\n", id));
                         continue;
                     }
@@ -10636,10 +10680,23 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
                         if is_last {
                             out.push_str("    cmp $2, %rdx\n    jne 95f\n    mov -8(%rax), %rdx\n");
-                            out.push_str(rtrim);
-                            out.push_str("    call hbc_print_str\n    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
+                            if stderr {
+                                out.push_str(rtrim);
+                                out.push_str("    call hbc_print_str\n");
+                            } else {
+                                out.push_str("    call hbc_pstrt\n");
+                            }
+                            if !stderr {
+                                out.push_str("    jmp 96f\n95:\n    call hbc_pflush\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
+                            } else {
+                                out.push_str("    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
+                            }
                         } else {
-                            out.push_str("    cmp $2, %rdx\n    jne 95f\n    mov -8(%rax), %rdx\n    call hbc_print_str\n    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
+                            if !stderr {
+                                out.push_str(&format!("    cmp $2, %rdx\n    jne 95f\n    mov -8(%rax), %rdx\n    test %rdx, %rdx\n    jz 91f\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov -8(%rax), %rdx\n91:\n    call hbc_print_str\n    jmp 96f\n95:\n    call hbc_pflush\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n", off));
+                            } else {
+                                out.push_str("    cmp $2, %rdx\n    jne 95f\n    mov -8(%rax), %rdx\n    call hbc_print_str\n    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
+                            }
                         }
                         continue;
                     }
@@ -10647,13 +10704,21 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         // A NIL casilla prints NIL (n1); a live child
                         // prints nothing (n5).
                         out.push_str(&format!("    mov {}(%rsp), %rax\n", off));
-                        out.push_str("    test %rax, %rax\n    jz 95f\n    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
+                        if !stderr {
+                            out.push_str("    test %rax, %rax\n    jz 95f\n    jmp 96f\n95:\n    call hbc_pflush\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
+                        } else {
+                            out.push_str("    test %rax, %rax\n    jz 95f\n    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
+                        }
                         continue;
                     }
                     if t == Ty::F64 {
                         // Numbers never trail spaces: no line-end trim.
+                        if !stderr { out.push_str("    call hbc_pflush\n"); }
                         out.push_str(&format!("    movsd {}(%rsp), %xmm0\n    mov {}(%rsp), %rdi\n    call hbc_print_f64\n", off, off + 8));
                         continue;
+                    }
+                    if !stderr && matches!(t, Ty::I64 | Ty::Dyn | Ty::Bool) {
+                        out.push_str("    call hbc_pflush\n");
                     }
                     out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
                     match t {
@@ -10666,9 +10731,17 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         Ty::I64 => out.push_str(if fold_int(e).is_some() { "    call hbc_print_i64\n" } else { "    call hbc_print_i64c\n" }),
                         Ty::Str | Ty::StrOwn => {
                             // Line-end space trim (hk22/hk24): only the
-                            // LAST visible item can trail spaces.
-                            if is_last { out.push_str(rtrim); }
-                            out.push_str("    call hbc_print_str\n");
+                            // LAST visible item can trail spaces. The
+                            // trim is HELD, not dropped (q1-q17).
+                            if is_last && !stderr {
+                                out.push_str("    call hbc_pstrt\n");
+                            } else {
+                                if is_last { out.push_str(rtrim); }
+                                if !stderr && !is_last {
+                                    out.push_str(&format!("    test %rdx, %rdx\n    jz 91f\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n91:\n", off, off + 8));
+                                }
+                                out.push_str("    call hbc_print_str\n");
+                            }
                             if t == Ty::StrOwn && !matches!(e, Expr::Var(_)) {
                                 // A temporary copy (e.g. `? keys[i]`): the
                                 // item owns it and frees it right after
@@ -14618,6 +14691,63 @@ hbc_print_sep:
     mov $1, %edx
     jmp hbc_print_str
 
+# hbc_pstrt: %rax = ptr, %rdx = len. Prints the bytes right-trimmed of
+# 0x20 and HOLDS the trimmed count in hbc_pending; hbc_pflush re-emits
+# the held spaces. Harbour flushes (and trims) a QOut line at its
+# newline, at an OutStd write, or at program exit - never at a `??`
+# statement boundary (oracle matrix q1-q17, 31Oct; this REPLACES the
+# hk274-hk276 comment claim of a per-statement `??` trim, which had no
+# preserved probes and is falsified by q3/q6/q7).
+hbc_pstrt:
+    sub $24, %rsp
+    mov %rdx, 8(%rsp)
+97:
+    cmp $0, %rdx
+    je 98f
+    cmpb $0x20, -1(%rax,%rdx)
+    jne 98f
+    dec %rdx
+    jmp 97b
+98:
+    mov 8(%rsp), %rcx
+    sub %rdx, %rcx
+    mov %rcx, 8(%rsp)
+    test %rdx, %rdx
+    jz 96f
+    mov %rax, 16(%rsp)
+    mov %rdx, (%rsp)
+    call hbc_pflush
+    mov 16(%rsp), %rax
+    mov (%rsp), %rdx
+96:
+    call hbc_print_str
+    mov 8(%rsp), %rcx
+    add %rcx, hbc_pending(%rip)
+    add $24, %rsp
+    ret
+
+# hbc_pflush: writes the held spaces and clears the hold. Called before
+# the first byte a `??` statement prints; `?` (leading newline) and
+# OutStd instead DROP the hold (hbc_pending zeroed at their cg sites).
+hbc_pflush:
+    sub $8, %rsp
+97:
+    mov hbc_pending(%rip), %rdx
+    test %rdx, %rdx
+    jz 98f
+    cmp $20, %rdx
+    jbe 99f
+    mov $20, %edx
+99:
+    sub %rdx, hbc_pending(%rip)
+    lea .Lpad20(%rip), %rax
+    call hbc_print_str
+    jmp 97b
+98:
+    add $8, %rsp
+    ret
+
+
 # hbc_str_eq: %rax = lhs ptr, %rdx = lhs len, %rcx = rhs ptr, %r8 = rhs len.
 # Returns %rax = 1 when equal, 0 otherwise. Harbour default (SET EXACT
 # OFF) `=`: compare over the length of the RIGHT operand, left read
@@ -16017,6 +16147,9 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     .data
     .align 8
 hbc_trace_top: .quad 0
+# Held trailing spaces of the open QOut line (q1-q17: Harbour trims at
+# line flush - newline, OutStd write, exit - not at statement end).
+hbc_pending: .quad 0
     .text
 # hbc_print_trace: native diagnostic chain, youngest frame first.
 # No heap, no fixed depth array. Preserve all nonvolatile GPRs.
@@ -16544,6 +16677,63 @@ hbc_print_sep:
     lea .Lpad20(%rip), %rax
     mov $1, %edx
     jmp hbc_print_str
+
+# hbc_pstrt: %rax = ptr, %rdx = len. Prints the bytes right-trimmed of
+# 0x20 and HOLDS the trimmed count in hbc_pending; hbc_pflush re-emits
+# the held spaces. Harbour flushes (and trims) a QOut line at its
+# newline, at an OutStd write, or at program exit - never at a `??`
+# statement boundary (oracle matrix q1-q17, 31Oct; this REPLACES the
+# hk274-hk276 comment claim of a per-statement `??` trim, which had no
+# preserved probes and is falsified by q3/q6/q7).
+hbc_pstrt:
+    sub $24, %rsp
+    mov %rdx, 8(%rsp)
+97:
+    cmp $0, %rdx
+    je 98f
+    cmpb $0x20, -1(%rax,%rdx)
+    jne 98f
+    dec %rdx
+    jmp 97b
+98:
+    mov 8(%rsp), %rcx
+    sub %rdx, %rcx
+    mov %rcx, 8(%rsp)
+    test %rdx, %rdx
+    jz 96f
+    mov %rax, 16(%rsp)
+    mov %rdx, (%rsp)
+    call hbc_pflush
+    mov 16(%rsp), %rax
+    mov (%rsp), %rdx
+96:
+    call hbc_print_str
+    mov 8(%rsp), %rcx
+    add %rcx, hbc_pending(%rip)
+    add $24, %rsp
+    ret
+
+# hbc_pflush: writes the held spaces and clears the hold. Called before
+# the first byte a `??` statement prints; `?` (leading newline) and
+# OutStd instead DROP the hold (hbc_pending zeroed at their cg sites).
+hbc_pflush:
+    sub $8, %rsp
+97:
+    mov hbc_pending(%rip), %rdx
+    test %rdx, %rdx
+    jz 98f
+    cmp $20, %rdx
+    jbe 99f
+    mov $20, %edx
+99:
+    sub %rdx, hbc_pending(%rip)
+    lea .Lpad20(%rip), %rax
+    call hbc_print_str
+    jmp 97b
+98:
+    add $8, %rsp
+    ret
+
 
 # hbc_str_eq: %rax = lhs ptr, %rdx = lhs len, %rcx = rhs ptr, %r8 = rhs len.
 # Returns %rax = 1 when equal, 0 otherwise. Harbour default (SET EXACT
