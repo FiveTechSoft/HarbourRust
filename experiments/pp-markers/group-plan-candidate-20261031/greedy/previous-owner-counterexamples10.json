@@ -1,0 +1,85 @@
+{
+  "scope": "10targeted newly admitted group association controls,candidate only",
+  "rows": [
+    {
+      "source": "#command PROBE [KEY <!x!> VALUE <!y!>] => OUT([<(x)>,<(y)>;])\nPROBE KEY alpha VALUE one KEY beta VALUE two\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"one\";\"beta\",\"two\";)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\"one\"\n\"beta\",\"two\"\n)\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE [KEY <!x!> VALUE <!y!>] => OUT(<(x)>)\nPROBE KEY alpha VALUE one KEY beta VALUE two\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE KEY alpha VALUE one KEY beta VALUE two\n",
+      "own_exit": 0,
+      "own_output": "PROBE KEY alpha VALUE one KEY beta VALUE two\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE [KEY <!x!> VALUE <!y!>] => OUT([<(x)>])\nPROBE KEY alpha VALUE one KEY beta VALUE\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE KEY alpha VALUE one KEY beta VALUE\n",
+      "own_exit": 0,
+      "own_output": "PROBE KEY alpha VALUE one KEY beta VALUE\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE [KEY <!x!> VALUE <!y!>] => OUT([<(x)>])\nPROBE KEY alpha VALUE one\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\")\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE [X <!x!>] [Y <!y!>] => OUT([<(x)>],[<(y)>])\nPROBE X alpha X beta Y one Y two\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\"\"beta\",\"one\"\"two\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\"\"beta\",\"one\"\"two\")\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE [X <!x!>] [Y <!y!>] => OUT([<(x)>,<(y)>])\nPROBE X alpha X beta Y one Y two\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"one\"\"beta\",\"two\")\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: multiple repeated result owners outside bounded plan\n"
+    },
+    {
+      "source": "#command PROBE [X <!x!>] [Y <!y!>] => OUT([<(x)>,<(y)>])\nPROBE X alpha X beta Y one\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"one\"\"beta\",\"one\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\"one\"\"beta\",\"one\")\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE [X <!x!>] [Y <!y!>] => OUT([<(x)>,<(y)>])\nPROBE X alpha Y one Y two\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"one\"\"alpha\",\"two\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\"one\"\"alpha\",\"two\")\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE [X <!x!>] [Y <!y!>] => OUT([<(x)>,<(y)>])\nPROBE X alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",)\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",)\n",
+      "own_error": ""
+    },
+    {
+      "source": "#command PROBE [<!x!>] END <!y!> => OUT([<(x)>],<(y)>)\nPROBE alpha beta END done\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha beta END done\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\"\"beta\",\"done\")\n",
+      "own_error": ""
+    }
+  ]
+}
