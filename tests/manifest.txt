@@ -1021,7 +1021,7 @@ neg tests/t1022_procline_effect_arg_neg.hb current frame
 pos tests/t1023_procline_include.hb \n         2          4
 pos tests/t1024_original_mem.hb
 pos tests/t1025_default_unused_effect.hb \n         2 yes\noverride
-pos tests/t1026_symbol_unused.hb \n         1
+neg tests/t1026_default_unused_undef_neg.hb unknown function `hb_symbol_unused`
 neg tests/t1027_default_unused_missing_neg.hb undefined variable `missing`
 neg tests/t1028_default_unused_moved_neg.hb use of moved value `s`
 pos tests/t1029_default_unused_array_hash.hb \n         2          1

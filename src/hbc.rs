@@ -4396,17 +4396,6 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // introspection is a named rejection, not a silent 0.
                 return Err(format!("line {}: `PCount` is not in this increment (the calling convention carries no argument count; `hb_PValue` over the declared parameters is the supported introspection)", n));
             }
-            if is_builtin(id, "hb_symbol_unused") {
-                // HB_SYMBOL_UNUSED(s) (multiarg): Harbour's macro expands to
-                // ((s)) - a read-only mention that silences unused warnings.
-                // The argument is type-checked (a bare variable is only read,
-                // never moved); the value is discarded.
-                if args.len() != 1 {
-                    return Err(format!("line {}: `HB_SYMBOL_UNUSED` takes one argument", n));
-                }
-                type_expr(&args[0], env, sigs, n)?;
-                return Ok(Ty::Dyn);
-            }
             if is_builtin(id, "hb_pvalue") {
                 // hb_PValue(n) (multiarg): the n-th DECLARED parameter of the
                 // enclosing function as a Dyn casilla; an out-of-range index
@@ -6954,9 +6943,9 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 }
                 return;
             }
-            if is_builtin(id, "hb_pvalue") || is_builtin(id, "hb_symbol_unused") {
-                // Read-only mentions: the PValue index / the unused symbol
-                // move nothing (multiarg).
+            if is_builtin(id, "hb_pvalue") {
+                // Read-only mention: the PValue index moves nothing
+                // (multiarg).
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
@@ -7960,9 +7949,6 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str(&format!("    add ${}, %rsp\n", 16 * k));
             }
         }
-        Expr::Call(id, _) if is_builtin(id, "hb_symbol_unused") => {
-            // HB_SYMBOL_UNUSED(s): a read-only mention - no code (multiarg).
-        }
         Expr::Call(id, args) if is_builtin(id, "hb_pvalue") => {
             // hb_PValue(n) (multiarg): the n-th declared parameter of the
             // enclosing function as a Dyn casilla in rax=tag, rdx=payload;
@@ -8772,7 +8758,6 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "empty") { return Ty::Bool; }
             if is_output_call(id) { return Ty::Dyn; }
             if is_builtin(id, "hb_pvalue") { return Ty::Dyn; }
-            if is_builtin(id, "hb_symbol_unused") { return Ty::Dyn; }
             if is_builtin(id, "asc") || is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
             if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
