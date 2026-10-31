@@ -1327,3 +1327,9 @@ pos tests/t1329_pp_inline_ident_call.hb \n         7
 pos tests/t1330_pp_inline_ident_suffix.hb \n         7
 pos tests/t1331_pp_inline_ident_quote.hb \nWORD X
 neg tests/t1332_pp_inline_ident_cycle.hb fixed translation expansion too deep
+pos tests/t1333_pp_concat_bare.hb \n         7
+pos tests/t1334_pp_concat_call.hb \n         7
+pos tests/t1335_pp_concat_math.hb \n         7
+pos tests/t1336_pp_concat_nested.hb \n         7
+neg tests/t1337_pp_concat_scope.hb inline plain-tail expression outside bounded contract
+neg tests/t1338_pp_concat_incomplete.hb inline plain-tail expression outside bounded contract

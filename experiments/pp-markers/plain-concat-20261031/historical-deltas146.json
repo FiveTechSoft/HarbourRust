@@ -1,0 +1,2779 @@
+{
+  "total": 30631,
+  "changes": [
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test \"New\"\n",
+      "baseline": [
+        0,
+        "? JOIN Test \"New\"\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_\"New\"\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_\"New\"\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test (New)\n",
+      "baseline": [
+        0,
+        "? JOIN Test (New)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_( New )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_(New)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test -New\n",
+      "baseline": [
+        0,
+        "? JOIN Test -New\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_- New\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_-New\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New\n",
+      "baseline": [
+        0,
+        "? JOIN Test New\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New +\n",
+      "baseline": [
+        0,
+        "? JOIN Test New +\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n? Test_New +\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New + 7\n",
+      "baseline": [
+        0,
+        "? JOIN Test New + 7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New + 7\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New + 7\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "? JOIN Test New + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New Other\n",
+      "baseline": [
+        0,
+        "? JOIN Test New Other\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New Other\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New Other\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New()\n",
+      "baseline": [
+        0,
+        "? JOIN Test New()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New ( )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New(1\n",
+      "baseline": [
+        0,
+        "? JOIN Test New(1\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n? Test_New(1\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New(1,2)\n",
+      "baseline": [
+        0,
+        "? JOIN Test New(1,2)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New ( 1 , 2 )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New(1,2)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New++\n",
+      "baseline": [
+        0,
+        "? JOIN Test New++\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n? Test_New++\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New+Other()\n",
+      "baseline": [
+        0,
+        "? JOIN Test New+Other()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New + Other ( )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New+Other()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New,7\n",
+      "baseline": [
+        0,
+        "? JOIN Test New,7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New,7\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New,7\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New[1]\n",
+      "baseline": [
+        0,
+        "? JOIN Test New[1]\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n? Test_New[1]\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test \"New\"()\n",
+      "baseline": [
+        0,
+        "@JOIN Test \"New\"()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_\"New\"()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test (New)()\n",
+      "baseline": [
+        0,
+        "@JOIN Test (New)()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_(New)()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test -New()\n",
+      "baseline": [
+        0,
+        "@JOIN Test -New()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "@Test_- New ( )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n@Test_-New()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New + 7()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New + 7()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_New + 7()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New + JOIN Other Last()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New + JOIN Other Last()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "@Test_New + Other_Last ( )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n@Test_New + Other_Last()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New +()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New +()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_New +()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New Other()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New Other()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "@Test_New Other()\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n@Test_New Other()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "@Test_New ( )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n@Test_New()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New()()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New()()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_New()()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New(1()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New(1()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_New(1()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New(1,2)()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New(1,2)()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_New(1,2)()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New++()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New++()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_New++()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New+Other()()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New+Other()()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_New+Other()()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New,7()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New,7()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "@Test_New,7()\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n@Test_New,7()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New[1]()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New[1]()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_New[1]()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nJOIN Test \"New\" + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_\"New\" + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_\"New\" + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_\"New\" + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nJOIN Test (New) + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_( New ) + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_( New ) + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_(New) + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nJOIN Test -New + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_- New + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_- New + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_-New + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New + + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New + + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New + + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New + + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New + 7 + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New + 7 + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New + 7 + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New + 7 + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New + JOIN Other Last + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New + JOIN Other Last + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New + Other_Last + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New + Other_Last + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New Other + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New Other + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New Other + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New Other + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New() + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New ( ) + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New ( ) + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New() + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New(1 + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New ( 1 + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nTest_New(1 + Other_Last\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New(1,2) + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New ( 1 , 2 ) + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New ( 1 , 2 ) + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New(1,2) + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New++ + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New ++ + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nTest_New++ + Other_Last\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New+Other() + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New + Other ( ) + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New + Other ( ) + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New+Other() + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New,7 + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New , 7 + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New,7 + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New,7 + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New[1] + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New [ 1 ] + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nTest_New[1] + Other_Last\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test \"New\")\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test \"New\")\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_\"New\")\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_\"New\")\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test (New))\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test (New))\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_( New ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_(New))\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test -New)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test -New)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_- New)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_-New)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New + 7)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New + 7)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New + 7)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New + 7)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New + JOIN Other Last)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New + JOIN Other Last)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New + Other_Last)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New + Other_Last)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New +)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New +)\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New +)\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New Other)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New Other)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New Other)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New Other)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New())\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New())\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New ( ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New())\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New(1)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New(1)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New ( 1 )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New(1)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New(1,2))\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New(1,2))\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New ( 1 , 2 ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New(1,2))\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New++)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New++)\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New++)\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New+Other())\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New+Other())\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New + Other ( ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New+Other())\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New,7)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New,7)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New,7)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New,7)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New[1])\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New[1])\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New[1])\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test \"New\"\n",
+      "baseline": [
+        0,
+        "X + JOIN Test \"New\"\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_\"New\"\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_\"New\"\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test (New)\n",
+      "baseline": [
+        0,
+        "X + JOIN Test (New)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_( New )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_(New)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test -New\n",
+      "baseline": [
+        0,
+        "X + JOIN Test -New\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_- New\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_-New\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_New\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New +\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New +\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New +\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New + 7\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New + 7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_New + 7\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New + 7\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_New + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New Other\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New Other\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_New Other\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New Other\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New()\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_New ( )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New(1\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New(1\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New(1\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New(1,2)\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New(1,2)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_New ( 1 , 2 )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New(1,2)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New++\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New++\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New++\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New+Other()\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New+Other()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_New + Other ( )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New+Other()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New,7\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New,7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_New,7\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New,7\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New[1]\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New[1]\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New[1]\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test \"New\"\n",
+      "baseline": [
+        0,
+        "? JOIN Test \"New\"\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_\"New\"\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_\"New\"\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test (New)\n",
+      "baseline": [
+        0,
+        "? JOIN Test (New)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_( New )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_(New)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test -New\n",
+      "baseline": [
+        0,
+        "? JOIN Test -New\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_- New\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_-New\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New\n",
+      "baseline": [
+        0,
+        "? JOIN Test New\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New +\n",
+      "baseline": [
+        0,
+        "? JOIN Test New +\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n? Test_New +\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New + 7\n",
+      "baseline": [
+        0,
+        "? JOIN Test New + 7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New + 7\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New + 7\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "? JOIN Test New + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New Other\n",
+      "baseline": [
+        0,
+        "? JOIN Test New Other\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New Other\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New Other\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New()\n",
+      "baseline": [
+        0,
+        "? JOIN Test New()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New ( )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New(1,2)\n",
+      "baseline": [
+        0,
+        "? JOIN Test New(1,2)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New ( 1 , 2 )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New(1,2)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New++\n",
+      "baseline": [
+        0,
+        "? JOIN Test New++\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n? Test_New++\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New+Other()\n",
+      "baseline": [
+        0,
+        "? JOIN Test New+Other()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New + Other ( )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New+Other()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New,7\n",
+      "baseline": [
+        0,
+        "? JOIN Test New,7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New,7\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New,7\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n? JOIN Test New[1]\n",
+      "baseline": [
+        0,
+        "? JOIN Test New[1]\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n? Test_New[1]\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test \"New\"()\n",
+      "baseline": [
+        0,
+        "@JOIN Test \"New\"()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_\"New\"()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test (New)()\n",
+      "baseline": [
+        0,
+        "@JOIN Test (New)()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_(New)()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test -New()\n",
+      "baseline": [
+        0,
+        "@JOIN Test -New()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "@Test_- New ( )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n@Test_-New()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New + 7()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New + 7()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_New + 7()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New + JOIN Other Last()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New + JOIN Other Last()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "@Test_New + Other_Last ( )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n@Test_New + Other_Last()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New +()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New +()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_New +()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New Other()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New Other()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "@Test_New Other()\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n@Test_New Other()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "@Test_New ( )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n@Test_New()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New()()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New()()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_New()()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New(1()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New(1()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_New(1()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New(1,2)()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New(1,2)()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_New(1,2)()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New++()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New++()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_New++()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New+Other()()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New+Other()()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_New+Other()()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New,7()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New,7()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "@Test_New,7()\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n@Test_New,7()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\n@JOIN Test New[1]()\n",
+      "baseline": [
+        0,
+        "@JOIN Test New[1]()\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\n@Test_New[1]()\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nJOIN Test \"New\" + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_\"New\" + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_\"New\" + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_\"New\" + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nJOIN Test (New) + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_( New ) + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_( New ) + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_(New) + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nJOIN Test -New + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_- New + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_- New + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_-New + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New + + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New + + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New + + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New + + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New + 7 + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New + 7 + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New + 7 + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New + 7 + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New + JOIN Other Last + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New + JOIN Other Last + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New + Other_Last + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New + Other_Last + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New Other + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New Other + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New Other + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New Other + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New() + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New ( ) + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New ( ) + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New() + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New(1 + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New ( 1 + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nTest_New(1 + Other_Last\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New++ + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New ++ + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nTest_New++ + Other_Last\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New+Other() + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New + Other ( ) + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New + Other ( ) + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New+Other() + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New,7 + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New , 7 + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "Test_New,7 + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nTest_New,7 + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nJOIN Test New[1] + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "Test_New [ 1 ] + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nTest_New[1] + Other_Last\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test \"New\")\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test \"New\")\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_\"New\")\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_\"New\")\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test (New))\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test (New))\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_( New ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_(New))\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test -New)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test -New)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_- New)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_-New)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New + 7)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New + 7)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New + 7)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New + 7)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New + JOIN Other Last)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New + JOIN Other Last)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New + Other_Last)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New + Other_Last)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New +)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New +)\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New +)\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New Other)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New Other)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New Other)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New Other)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New(1)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New(1)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New ( 1 )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New(1)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New(1,2))\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New(1,2))\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New ( 1 , 2 ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New(1,2))\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New++)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New++)\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New++)\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New+Other())\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New+Other())\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New + Other ( ))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New+Other())\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nWRAP(JOIN Test New[1])\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New[1])\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New[1])\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test \"New\"\n",
+      "baseline": [
+        0,
+        "X + JOIN Test \"New\"\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_\"New\"\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_\"New\"\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test -New\n",
+      "baseline": [
+        0,
+        "X + JOIN Test -New\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_- New\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_-New\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_New\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New +\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New +\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New +\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New + 7\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New + 7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_New + 7\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New + 7\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_New + Other_Last\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New + Other_Last\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New Other\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New Other\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_New Other\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New Other\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New()\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_New ( )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New(1\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New(1\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New(1\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New(1,2)\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New(1,2)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_New ( 1 , 2 )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New(1,2)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New++\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New++\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New++\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New+Other()\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New+Other()\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_New + Other ( )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New+Other()\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New,7\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New,7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "X + Test_New,7\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New,7\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <b> => <a>_<b>\nX + JOIN Test New[1]\n",
+      "baseline": [
+        0,
+        "X + JOIN Test New[1]\n",
+        ""
+      ],
+      "candidate": [
+        1,
+        "",
+        "error: line 2: inline plain-tail expression outside bounded contract\n"
+      ],
+      "reference": [
+        0,
+        "\nX + Test_New[1]\n",
+        ""
+      ],
+      "match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!class!> <name> => <class>_<name>\n? JOIN Test New(1,2)\n",
+      "baseline": [
+        0,
+        "? JOIN Test New(1,2)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New ( 1 , 2 )\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New(1,2)\n",
+        ""
+      ],
+      "match": true
+    }
+  ]
+}
