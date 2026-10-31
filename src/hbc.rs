@@ -12358,6 +12358,18 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         }
                     }
                     Ty::Dyn => {
+                        // B1 (reviewer, 31Oct): a Dyn RHS can be a BORROWED
+                        // pair - a Var view or a cell read (Expr::Index*),
+                        // whose payload stays owned by its slot/array.
+                        // Freeing a borrowed payload after the fill
+                        // double-frees at the owner's dfree; worse, a
+                        // source cell INSIDE the target array is freed by
+                        // the fill loop itself before later cells clone
+                        // from it. Fix: a borrowed STRING source is cloned
+                        // ONCE at entry (the clone is ours, freed after the
+                        // fill); only a genuinely owned temporary (call
+                        // result etc.) is consumed and freed directly.
+                        let borrowed = matches!(e, Expr::Var(_) | Expr::Index(..) | Expr::Index2(..) | Expr::Index3(..) | Expr::Index4(..));
                         let asm = r#"    cmp $2, %rax
     je .Lfds@K@
     cmp $4, %rax
@@ -12379,16 +12391,25 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     jmp .Lfdd@K@
 .Lfds@K@:
     mov -8(%rdx), %rcx
-    movq $1, 24(%rsp)
-    mov %rdx, 32(%rsp)
-    mov %rcx, 40(%rsp)
 "#.replace("@K@", &k.to_string());
                         out.push_str(&asm);
-                        if matches!(e, Expr::Var(_)) {
-                            let asm2 = "    movq $0, 56(%rsp)\n.Lfdd@K@:\n".replace("@K@", &k.to_string());
+                        if borrowed {
+                            let asm2 = r#"    mov %rdx, %rdi
+    mov %rcx, %rsi
+    call hbc_strcpy
+    movq $1, 24(%rsp)
+    mov %rax, 32(%rsp)
+    mov -8(%rax), %rcx
+    mov %rcx, 40(%rsp)
+    mov %rax, 56(%rsp)
+.Lfdd@K@:
+"#.replace("@K@", &k.to_string());
                             out.push_str(&asm2);
                         } else {
-                            let asm2 = r#"    cmp $4, %rax
+                            let asm2 = r#"    movq $1, 24(%rsp)
+    mov %rdx, 32(%rsp)
+    mov %rcx, 40(%rsp)
+    cmp $4, %rax
     jne .Lfdz@K@
     mov %rdx, 56(%rsp)
     jmp .Lfdd@K@

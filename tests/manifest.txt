@@ -1520,3 +1520,5 @@ neg tests/t1530_aistyped_neg.hb statically-typed arrays are not in this incremen
 neg tests/t1531_adelrhs_neg.hb unknown function `adel`
 neg tests/t1532_afillarity_neg.hb `AFill` takes two to four arguments
 neg tests/t1533_afillfloat_neg.hb the Dyn float tag is still undecided
+pos tests/t1534_afill_cellrhs_pos.hb \na a a\nc c c\na b c\na z z z
+pos tests/t1535_afill_callrhs_pos.hb \nQQ QQ QQ
