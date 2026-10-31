@@ -1,0 +1,245 @@
+{
+  "scope": "24reduced VAR candidate checks,not production",
+  "rows": [
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <v>])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\"   )\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <v>])\nPROBE alpha,beta,gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"beta\",\"gamma\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\" ,\"beta\",\"gamma\"  )\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <v>])\nPROBE alpha AS number\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\" TYPE \"number\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\"  TYPE \"number\" )\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <v>])\nPROBE alpha,beta AS number INIT 1+2\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"beta\" TYPE \"number\" INIT 1+2)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\" ,\"beta\" TYPE \"number\" INIT 1 + 2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <v>])\nPROBE alpha,beta TYPE number ASSIGN f(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"beta\" TYPE \"number\" INIT f(1,2))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\" ,\"beta\" TYPE \"number\" INIT f ( 1 , 2 ))\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <v>])\nPROBE alpha INIT (1 + 2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\" INIT (1 + 2))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\"   INIT ( 1 + 2 ))\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <v>])\nPROBE alpha INIT 1 + 2\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\" INIT 1 + 2)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\"   INIT 1 + 2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <v>])\nPROBE alpha AS number INIT 1 + 2\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\" TYPE \"number\" INIT 1 + 2)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\"  TYPE \"number\" INIT 1 + 2)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <v>])\nPROBE alpha AS\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha AS\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha AS\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <v>])\nPROBE alpha,beta AS number extra\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,beta AS number extra\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,beta AS number extra\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <v>])\nPROBE alpha,,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,,beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,,beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT(<(a)> [,<(b)>] [TYPE <(t)>] [INIT <v>])\nPROBE alpha INIT 1 AS number\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\" TYPE \"number\" INIT 1)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\"  TYPE \"number\" INIT 1)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT([<(a)>,<(b)>][ TYPE <(t)>][ INIT <(v)>])\nPROBE alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",)\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",)\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT([<(a)>,<(b)>][ TYPE <(t)>][ INIT <(v)>])\nPROBE alpha,beta,gamma\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"beta\"\"alpha\",\"gamma\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\"beta\"\"alpha\",\"gamma\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT([<(a)>,<(b)>][ TYPE <(t)>][ INIT <(v)>])\nPROBE alpha AS number\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\", TYPE \"number\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\", TYPE \"number\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT([<(a)>,<(b)>][ TYPE <(t)>][ INIT <(v)>])\nPROBE alpha,beta AS number INIT 1+2\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"beta\" TYPE \"number\" INIT \"1+2\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\"beta\" TYPE \"number\" INIT \"1+2\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT([<(a)>,<(b)>][ TYPE <(t)>][ INIT <(v)>])\nPROBE alpha,beta TYPE number ASSIGN f(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\",\"beta\" TYPE \"number\" INIT \"f(1,2)\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\",\"beta\" TYPE \"number\" INIT \"f(1,2)\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT([<(a)>,<(b)>][ TYPE <(t)>][ INIT <(v)>])\nPROBE alpha INIT (1 + 2)\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\", INIT (1 + 2))\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\", INIT (1 + 2))\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT([<(a)>,<(b)>][ TYPE <(t)>][ INIT <(v)>])\nPROBE alpha INIT 1 + 2\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\", INIT \"1 + 2\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\", INIT \"1 + 2\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT([<(a)>,<(b)>][ TYPE <(t)>][ INIT <(v)>])\nPROBE alpha AS number INIT 1 + 2\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\", TYPE \"number\" INIT \"1 + 2\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\", TYPE \"number\" INIT \"1 + 2\")\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT([<(a)>,<(b)>][ TYPE <(t)>][ INIT <(v)>])\nPROBE alpha AS\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha AS\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha AS\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT([<(a)>,<(b)>][ TYPE <(t)>][ INIT <(v)>])\nPROBE alpha,beta AS number extra\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,beta AS number extra\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,beta AS number extra\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT([<(a)>,<(b)>][ TYPE <(t)>][ INIT <(v)>])\nPROBE alpha,,beta\n",
+      "reference_exit": 0,
+      "reference_output": "\nPROBE alpha,,beta\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "PROBE alpha,,beta\n",
+      "own_error": "",
+      "token_match": true
+    },
+    {
+      "source": "#xcommand PROBE <!a!> [,<!b!>] [<tp:TYPE,AS> <!t!>] [<ini:INIT,ASSIGN> <v>] => OUT([<(a)>,<(b)>][ TYPE <(t)>][ INIT <(v)>])\nPROBE alpha INIT 1 AS number\n",
+      "reference_exit": 0,
+      "reference_output": "\nOUT(\"alpha\", TYPE \"number\" INIT \"1\")\n",
+      "reference_error": "",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\", TYPE \"number\" INIT \"1\")\n",
+      "own_error": "",
+      "token_match": true
+    }
+  ]
+}

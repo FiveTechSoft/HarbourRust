@@ -1,0 +1,19 @@
+--- a/src/pp.rs
++++ b/src/pp.rs
+@@ -1106,7 +1106,6 @@
+ 
+ // Scoped identifier group through the precompiled ownership plan.
+ fn single_identifier_group(c:&Cmd,source:&str,tokens:&[String],line:usize)->Option<Result<Option<String>,String>> {
+-    if c.pattern.len()!=4||c.pattern[1]!="["||c.pattern[3]!="]"||!c.pattern[2].starts_with("<!"){return None;}
+     let plan=c.group_plan.as_ref()?;
+     if !plan.nodes.iter().any(|n|matches!(n,group_plan::Node::Optional{..})){return None;}
+     if !tokens.first().map(|t|lit_match(t,&c.pattern[0])).unwrap_or(false){return None;}
+@@ -1159,7 +1158,7 @@
+         }
+         if group_start.is_some(){return Err("unbalanced result group".into());}
+         pieces.push((false,&text[start..]));
+-        let atom_pattern:Vec<String>=std::iter::once(c.pattern[0].clone()).chain(plan.markers.iter().map(|(name,_)|format!("<!{}!>",name))).collect();
++        let atom_pattern:Vec<String>=std::iter::once(c.pattern[0].clone()).chain(plan.markers.iter().map(|(name,_)|c.pattern.iter().find(|token|token.starts_with('<')&&token.ends_with('>')&&marker_name(&token[1..token.len()-1]).eq_ignore_ascii_case(name)).unwrap().clone())).collect();
+         let mut out=String::new();
+         for (group,part) in pieces{
+             let marker_ids:Vec<usize>=plan.markers.iter().enumerate().filter(|(_, (name,_))|[format!("<{}>",name),format!("#<{}>",name),format!("<({})>",name),format!("<\"{}\">",name),format!("<.{}.>",name),format!("<-{}->",name)].iter().any(|needle|!stringify_positions(part,needle).is_empty())).map(|(id,_)|id).collect();
