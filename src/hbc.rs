@@ -32,7 +32,7 @@ use std::process;
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { F64, I64, Str, Bool, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefStrOwn, DArrDyn }
+enum Ty { F64, I64, Str, Bool, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefStrOwn, DArrDyn, AView }
 
 // What a codeblock body's LAST expression returns (original t1.prg piece):
 // Int = an i64 in %rax; Nil = a payload-free Dyn NIL pair (%rax=1, %rdx=0,
@@ -2907,6 +2907,11 @@ struct Sig {
     // modes exclude each other for the same parameter.
     borrowed: Vec<bool>,
     arr_moved: Vec<bool>,
+    // aview[i]: parameter i receives an ArrayViewReadOnly (ains piece 1b,
+    // spec v3): a pointer to a caller-frame header {kind, ptr, len};
+    // read-only, non-owning; escapes and mutation are named rejections.
+    // Excludes borrowed and arr_moved on the same parameter.
+    aview: Vec<bool>,
     // inferred[i]: parameter i's type genuinely comes from the callee's
     // own body evidence (pin). FALSE only for placeholder entries of the
     // order-independent fixpoint (seed, or still-unpinned after a round);
@@ -5565,6 +5570,7 @@ fn ty_name(t: Ty) -> &'static str {
         Ty::F64 => "a float",
         Ty::I64 => "an integer",
         Ty::RefI64 => "a by-reference integer",
+        Ty::AView => "an array view",
         Ty::RefStrOwn => "a by-reference string",
         Ty::Str => "a string",
         Ty::Bool => "a boolean",
@@ -7409,7 +7415,7 @@ fn fold_int(e: &Expr) -> Option<i64> {
     }
 }
 fn size_of(t: Ty) -> usize {
-    match t { Ty::F64 => 16, Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(..) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefStrOwn => 8 }
+    match t { Ty::F64 => 16, Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(..) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefStrOwn | Ty::AView => 8 }
 }
 
 #[derive(Clone)]
@@ -7508,7 +7514,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 Ty::RefI64 => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n", v.off)),
                 Ty::RefStrOwn => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n    mov 8(%r11), %rdx\n", v.off)),
                 Ty::F64 => unreachable!("floats load through cg_f64_load (xmm0/rdi), never the rax/rdx channel"),
-                Ty::I64 | Ty::Block(..) | Ty::Bool => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
+                Ty::I64 | Ty::Block(..) | Ty::Bool | Ty::AView => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
                 Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrDyn => {
                     // ptr at -(off), len at -(off-8) — same layout as the store
                     out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
@@ -10168,6 +10174,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                     out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
                     match t {
                         Ty::RefI64 | Ty::RefStrOwn => unreachable!("expr_ty maps by-reference params to their pointee"),
+                        Ty::AView => unreachable!("whole-array-view printing rejected in analysis"),
                         Ty::F64 => unreachable!("handled above"),
                         // Literal (or compile-time foldable, hk326) keeps
                         // literal provenance; a runtime-computed integer
@@ -14415,6 +14422,62 @@ hbc_dyn_to_i64:
     jnz hbc_type_error
     mov %rdx, %rax
     ret
+# hbc_aview_get (ains piece 1b, spec v3): rdi = header {kind, ptr, len},
+# rsi = 1-based index, rdx = 32-byte out slot in the CALLER frame (only
+# DESC kinds fill it). Returns rax = cell tag, rdx = cell payload; a DESC
+# child returns rax=6 and rdx=&out-slot with the COMPLETE child header
+# {childkind, ptr, len}. kind: 0 RAW8 (stride-8 i64), 1 TAG16 (tagged 16B
+# cells), 2/3/4 DESC1/2/3 (2-word child descriptors; childkind = kind-1,
+# so DESC1 children are TAG16). A {null,0} descriptor is a NIL cell
+# (rax=1, rdx=0), never an accessor error. Out-of-range: hbc_bound_error.
+# Clobbers caller-saved only (rbx saved); no calls on success paths;
+# same code on both targets.
+hbc_aview_get:
+    push %rbx
+    mov %rdx, %rbx
+    mov 16(%rdi), %rcx
+    cmp $1, %rsi
+    jl hbc_bound_error
+    cmp %rcx, %rsi
+    jg hbc_bound_error
+    dec %rsi
+    mov 8(%rdi), %r8
+    mov (%rdi), %rax
+    test %rax, %rax
+    jnz 1f
+    mov (%r8,%rsi,8), %rdx
+    xor %eax, %eax
+    pop %rbx
+    ret
+1:  cmp $1, %rax
+    jne 2f
+    mov %rsi, %rax
+    shl $4, %rax
+    add %r8, %rax
+    mov 8(%rax), %rdx
+    mov (%rax), %rax
+    pop %rbx
+    ret
+2:  mov %rsi, %rax
+    shl $4, %rax
+    add %r8, %rax
+    mov (%rax), %r9
+    test %r9, %r9
+    jnz 3f
+    mov $1, %eax
+    xor %edx, %edx
+    pop %rbx
+    ret
+3:  mov 8(%rax), %r10
+    mov (%rdi), %rax
+    dec %rax
+    mov %rax, (%rbx)
+    mov %r9, 8(%rbx)
+    mov %r10, 16(%rbx)
+    mov $6, %eax
+    mov %rbx, %rdx
+    pop %rbx
+    ret
 
 # hbc_dyn_to_log: %rax = tag, %rdx = payload -> %rax = 0/1 (the logical
 # payload). Only tag 3 is a valid condition: NIL (hk266), integers
@@ -16241,6 +16304,62 @@ hbc_dyn_to_i64:
     jnz hbc_type_error
     mov %rdx, %rax
     ret
+# hbc_aview_get (ains piece 1b, spec v3): rdi = header {kind, ptr, len},
+# rsi = 1-based index, rdx = 32-byte out slot in the CALLER frame (only
+# DESC kinds fill it). Returns rax = cell tag, rdx = cell payload; a DESC
+# child returns rax=6 and rdx=&out-slot with the COMPLETE child header
+# {childkind, ptr, len}. kind: 0 RAW8 (stride-8 i64), 1 TAG16 (tagged 16B
+# cells), 2/3/4 DESC1/2/3 (2-word child descriptors; childkind = kind-1,
+# so DESC1 children are TAG16). A {null,0} descriptor is a NIL cell
+# (rax=1, rdx=0), never an accessor error. Out-of-range: hbc_bound_error.
+# Clobbers caller-saved only (rbx saved); no calls on success paths;
+# same code on both targets.
+hbc_aview_get:
+    push %rbx
+    mov %rdx, %rbx
+    mov 16(%rdi), %rcx
+    cmp $1, %rsi
+    jl hbc_bound_error
+    cmp %rcx, %rsi
+    jg hbc_bound_error
+    dec %rsi
+    mov 8(%rdi), %r8
+    mov (%rdi), %rax
+    test %rax, %rax
+    jnz 1f
+    mov (%r8,%rsi,8), %rdx
+    xor %eax, %eax
+    pop %rbx
+    ret
+1:  cmp $1, %rax
+    jne 2f
+    mov %rsi, %rax
+    shl $4, %rax
+    add %r8, %rax
+    mov 8(%rax), %rdx
+    mov (%rax), %rax
+    pop %rbx
+    ret
+2:  mov %rsi, %rax
+    shl $4, %rax
+    add %r8, %rax
+    mov (%rax), %r9
+    test %r9, %r9
+    jnz 3f
+    mov $1, %eax
+    xor %edx, %edx
+    pop %rbx
+    ret
+3:  mov 8(%rax), %r10
+    mov (%rdi), %rax
+    dec %rax
+    mov %rax, (%rbx)
+    mov %r9, 8(%rbx)
+    mov %r10, 16(%rbx)
+    mov $6, %eax
+    mov %rbx, %rdx
+    pop %rbx
+    ret
 
 # hbc_dyn_to_log: %rax = tag, %rdx = payload -> %rax = 0/1 (the logical
 # payload). Only tag 3 is a valid condition: NIL (hk266), integers
@@ -17399,6 +17518,7 @@ fn main() {
         name: f.name.clone(),
         borrowed: vec![false; f.params.len()],
         arr_moved: vec![false; f.params.len()],
+        aview: vec![false; f.params.len()],
         params: vec![Ty::I64; f.params.len()],
         ret: if f.name == "main" { None } else { inline_ret_seed(f) },
         inferred: vec![false; f.params.len()],
@@ -17519,7 +17639,7 @@ fn main() {
                 }
                 if first_pin_err.is_none() { first_pin_err = Some(m); }
             }
-            cur.push(Sig { name: f.name.clone(), nil_ret_only: view[fi].nil_ret_only, borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], params: ptys.clone(), ret, inferred, arg_ev: view[fi].arg_ev.clone(), nil_ev: view[fi].nil_ev.clone() });
+            cur.push(Sig { name: f.name.clone(), nil_ret_only: view[fi].nil_ret_only, borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], aview: vec![false; ptys.len()], params: ptys.clone(), ret, inferred, arg_ev: view[fi].arg_ev.clone(), nil_ev: view[fi].nil_ev.clone() });
             f.ret = ret;
         }
         // Types/returns converge by fresh re-inference (cur) against the
