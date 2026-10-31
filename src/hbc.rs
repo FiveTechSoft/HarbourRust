@@ -427,6 +427,12 @@ thread_local! {
     static TRACE_BLOCK_LINES: std::cell::RefCell<std::collections::HashMap<usize, usize>> = std::cell::RefCell::new(std::collections::HashMap::new());
     static PROC_LINES: std::cell::RefCell<Vec<usize>> = std::cell::RefCell::new(Vec::new());
     static PROC_NAME: std::cell::RefCell<String> = std::cell::RefCell::new(String::new());
+    // CUR_FN: the function whose body is being checked/emitted right now
+    // (hb_PValue exposes ITS declared parameters - multiarg). IN_BLOCK:
+    // set while a codeblock body is checked/emitted, where hb_PValue is a
+    // named rejection (it would expose the block's own parameters).
+    static CUR_FN: std::cell::RefCell<String> = std::cell::RefCell::new(String::new());
+    static IN_BLOCK: std::cell::Cell<bool> = std::cell::Cell::new(false);
     static TRACE_LINE: std::cell::Cell<usize> = std::cell::Cell::new(0);
     static TRACE_OFFSET: std::cell::Cell<usize> = std::cell::Cell::new(0);
 }
@@ -2774,6 +2780,11 @@ struct Sig {
     // hk302/hk303/hk306). Reset at the start of every inference round so
     // a stale mid-convergence reading cannot stick.
     arg_ev: Vec<Option<Ty>>,
+    // nil_ev[i]: at least one call site OMITS parameter i (multiarg).
+    // Harbour fills omitted trailing arguments with NIL, so the parameter
+    // must carry NIL: the fixpoint forces it to the tagged union (Dyn).
+    // Sticky and monotone like arg_ev.
+    nil_ev: Vec<bool>,
 }
 
 // Semantic analysis: types + ownership/move tracking. This pass is OURS:
@@ -3125,6 +3136,13 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     // m3/m10); a parameter used as a dimension pins I64.
                     for a in args { pin_vars(f, a, Ty::I64, pin, n)?; walk(f, a, sigs, lit, pin, printed, n)?; }
                     return Ok(());
+                }
+                if is_builtin(id, "hb_pvalue") {
+                    // hb_PValue(n): the index is an integer (multiarg).
+                    if args.len() == 1 {
+                        pin_vars(f, &args[0], Ty::I64, pin, n)?;
+                        return walk(f, &args[0], sigs, lit, pin, printed, n);
+                    }
                 }
                 if let Some(sig) = sigs.iter().find(|v| v.name == *id) {
                     for (i, a) in args.iter().enumerate() {
@@ -3520,6 +3538,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     let self_ev: Vec<Option<Ty>> = sigs.iter().find(|s| s.name == f.name)
         .map(|s| s.arg_ev.clone())
         .unwrap_or_else(|| vec![None; n]);
+    let nil_ev: Vec<bool> = sigs.iter().find(|s| s.name == f.name)
+        .map(|s| s.nil_ev.clone())
+        .unwrap_or_else(|| vec![false; n]);
     for (i, p) in f.params.iter().enumerate() {
         match (pin[i], self_ev[i]) {
             (Some(Ty::I64), Some(Ty::F64)) => pin[i] = Some(Ty::F64),
@@ -3527,6 +3548,23 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             (Some(t), Some(Ty::F64)) if t != Ty::F64 => {
                 if pin_err.is_none() {
                     pin_err = Some(format!("parameter `{}` of function `{}` is {} by its body but receives a float argument", p, f.name, ty_name(t)));
+                }
+            }
+            (Some(a), Some(b)) if a == b => {}
+            // An integer argument to a float parameter converts at the
+            // boundary (63zd; oracles hk302/hk303/hk307).
+            (Some(Ty::F64), Some(Ty::I64)) => {}
+            // Borrowed vs owned string is one family at this boundary.
+            (Some(Ty::StrOwn), Some(Ty::Str)) | (Some(Ty::Str), Some(Ty::StrOwn)) => {}
+            // Varying argument types across call sites merge to the tagged
+            // union in the evidence itself; the body's scalar pin absorbs
+            // into it (Harbour retypes the parameter per call).
+            (Some(t), Some(Ty::Dyn)) if matches!(t, Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::F64) => {
+                pin[i] = Some(Ty::Dyn);
+            }
+            (Some(t), Some(e)) => {
+                if pin_err.is_none() {
+                    pin_err = Some(format!("parameter `{}` of function `{}` is {} by its body but a call passes {}", p, f.name, ty_name(t), ty_name(e)));
                 }
             }
             _ => {}
@@ -3543,6 +3581,23 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
         // A float argument as the SOLE evidence pins F64.
         if pin[i].is_none() {
             pin[i] = self_ev[i];
+        }
+        // Omitted trailing arguments (multiarg): Harbour fills them with
+        // NIL, so the parameter must carry NIL - the tagged union absorbs
+        // any scalar pin. A float, array, hash or codeblock pin conflicts
+        // with the NIL fill by name: Dyn has no such payload in this
+        // increment (the float-payload representation decision is pending).
+        if nil_ev.get(i).copied().unwrap_or(false) {
+            pin[i] = match pin[i] {
+                None | Some(Ty::Dyn) => Some(Ty::Dyn),
+                Some(Ty::I64) | Some(Ty::Bool) | Some(Ty::Str) | Some(Ty::StrOwn) => Some(Ty::Dyn),
+                Some(t) => {
+                    if pin_err.is_none() {
+                        pin_err = Some(format!("parameter `{}` of function `{}` is {} by its body but a call site omits it; Harbour fills it with NIL and this increment's Dyn casilla cannot carry {}", p, f.name, ty_name(t), ty_name(t)));
+                    }
+                    pin[i]
+                }
+            };
         }
         if pin[i].is_none() && pin_err.is_none() {
             pin_err = Some(format!("cannot infer the type of parameter `{}` of function `{}` (returning or copying it is not enough; print it, use it in arithmetic, or compare it against a value of known type)", p, f.name));
@@ -4334,14 +4389,72 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::F64);
             }
+            if is_builtin(id, "hb_symbol_unused") {
+                // HB_SYMBOL_UNUSED(s) (multiarg): Harbour's macro expands to
+                // ((s)) - a read-only mention that silences unused warnings.
+                // The argument is type-checked (a bare variable is only read,
+                // never moved); the value is discarded.
+                if args.len() != 1 {
+                    return Err(format!("line {}: `HB_SYMBOL_UNUSED` takes one argument", n));
+                }
+                type_expr(&args[0], env, sigs, n)?;
+                return Ok(Ty::Dyn);
+            }
+            if is_builtin(id, "hb_pvalue") {
+                // hb_PValue(n) (multiarg): the n-th DECLARED parameter of the
+                // enclosing function as a Dyn casilla; an out-of-range index
+                // is NIL. Extra call arguments beyond the declared list stay
+                // rejected (registered limit), so declared parameters are the
+                // whole observable range. Every declared parameter must be
+                // Dyn-representable: integers, logicals, strings and Dyn
+                // casillas tag in place; a FLOAT parameter would need a Dyn
+                // float payload tag - the representation decision is pending
+                // (63zc family), so it is a named rejection, as are arrays,
+                // hashes and codeblocks.
+                if args.len() != 1 {
+                    return Err(format!("line {}: `hb_PValue` takes one argument", n));
+                }
+                if IN_BLOCK.with(|c| c.get()) {
+                    return Err(format!("line {}: `hb_PValue` inside a codeblock is not in this increment (it would expose the codeblock's own parameters)", n));
+                }
+                let ti = type_expr(&args[0], env, sigs, n)?;
+                if !matches!(ti, Ty::I64 | Ty::Dyn) {
+                    return Err(format!("line {}: `hb_PValue` takes an integer index", n));
+                }
+                let cur = CUR_FN.with(|c| c.borrow().clone());
+                if let Some(s) = sigs.iter().find(|v| v.name == cur) {
+                    for (pi, pt) in s.params.iter().enumerate() {
+                        match pt {
+                            Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::Dyn => {}
+                            Ty::F64 => return Err(format!("line {}: `hb_PValue` in `{}` would expose parameter #{} as Dyn, but Dyn has no float payload tag in this increment (the representation decision is pending)", n, cur, pi + 1)),
+                            other => return Err(format!("line {}: `hb_PValue` in `{}` cannot expose parameter #{} ({}) as a Dyn casilla in this increment", n, cur, pi + 1, ty_name(*other))),
+                        }
+                    }
+                }
+                // `main` has no signature entry: command-line arguments are
+                // not passed in this increment, so every index is NIL there
+                // (registered absence of Harbour's CLI channel).
+                return Ok(Ty::Dyn);
+            }
             let si = sigs.iter().position(|v| v.name == *id)
                 .ok_or_else(|| format!("line {}: unknown function `{}` (must be defined before use)", n, id))?;
             let (sig_params, sig_borrowed, sig_arr_moved, sig_ret, sig_inferred) = {
                 let s = &sigs[si];
                 (s.params.clone(), s.borrowed.clone(), s.arr_moved.clone(), s.ret, s.inferred.clone())
             };
-            if sig_params.len() != args.len() {
+            if args.len() > sig_params.len() {
+                // EXTRA arguments stay rejected (multiarg registered limit):
+                // hb_PValue introspection names only the declared list.
                 return Err(format!("line {}: `{}` takes {} argument(s), got {}", n, id, sig_params.len(), args.len()));
+            }
+            if args.len() < sig_params.len() {
+                // Harbour fills omitted trailing parameters with NIL
+                // (multiarg). Sticky evidence: the fixpoint forces those
+                // parameters to the tagged union (Dyn); codegen pads the
+                // boundary with NIL casillas (tag 1). Monotone false->true.
+                for i in args.len()..sig_params.len() {
+                    sigs[si].nil_ev[i] = true;
+                }
             }
             for (i, a) in args.iter().enumerate() {
                 // Float-argument evidence for the NEXT inference round
@@ -4353,8 +4466,26 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // skips checks anyway, and the inferred path re-runs
                 // type_expr below, where the same error propagates.
                 if !matches!(a, Expr::ByRef(_)) && i < sigs[si].arg_ev.len() {
-                    if let Ok(Ty::F64) = type_expr(a, env, sigs, n) {
-                        sigs[si].arg_ev[i] = Some(Ty::F64);
+                    // Literal argument-type evidence (multiarg): integer,
+                    // string and logical literals are stable across the
+                    // fixpoint, like the established float trail. Varying
+                    // types across call sites merge to the tagged union
+                    // (Harbour retypes the parameter per call; Dyn is that
+                    // union here); an integer/float mix keeps the 63zd
+                    // I64 -> F64 lift.
+                    let ev = match a {
+                        Expr::Int(_) => Some(Ty::I64),
+                        Expr::Str(_) => Some(Ty::Str),
+                        Expr::Log(_) => Some(Ty::Bool),
+                        _ => match type_expr(a, env, sigs, n) { Ok(Ty::F64) => Some(Ty::F64), _ => None },
+                    };
+                    if let Some(e) = ev {
+                        sigs[si].arg_ev[i] = match (sigs[si].arg_ev[i], e) {
+                            (None, x) => Some(x),
+                            (Some(x), y) if x == y => Some(x),
+                            (Some(Ty::I64), Ty::F64) | (Some(Ty::F64), Ty::I64) => Some(Ty::F64),
+                            (Some(_), _) => Some(Ty::Dyn),
+                        };
                     }
                 }
                 if !sig_inferred.get(i).copied().unwrap_or(false) {
@@ -5039,27 +5170,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
         }
         Expr::BlockLit(_, params, body) => {
-            // v1: no captures - the body sees ONLY its parameters (probe
-            // c3 captures a function local in Harbour; that is the next
-            // increment, not this one). Parameters are integers here.
-            for e in body {
-                let mut found = Vec::new();
-                free_vars(e, &mut found);
-                for v in found {
-                    if !params.iter().any(|p| *p == v) {
-                        return Err(format!("line {}: codeblock captures are not in this increment (`{}` is not a codeblock parameter)", n, v));
-                    }
-                }
-            }
-            let mut benv: Vec<Local> = params.iter().map(|p| Local { name: p.clone(), ty: Ty::I64, moved: false, ro: false, byref: false }).collect();
-            for (i, e) in body.iter().enumerate() {
-                let t = type_expr(e, &mut benv, sigs, n)?;
-                let discarded_print = i + 1 < body.len() && matches!(e, Expr::Call(id, _) if is_output_call(id));
-                if t != Ty::I64 && !discarded_print {
-                    return Err(format!("line {}: codeblock bodies are integer expressions in this increment", n));
-                }
-            }
-            Ok(Ty::Block(params.len()))
+            let prev_block = IN_BLOCK.with(|c| c.replace(true));
+            let r = check_block_body(params, body, sigs, n);
+            IN_BLOCK.with(|c| c.set(prev_block));
+            r
         }
         Expr::SelfObj | Expr::SelfGet(_) | Expr::Send(_, _, _) => {
             Err(format!("line {}: classes are not in this increment yet (parser landed; runtime representation pending)", n))
@@ -5085,6 +5199,32 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
 }
 
 // Free VARIABLE names used inside an expression (callees are not variables).
+// The codeblock body check (Expr::BlockLit arm), extracted so the IN_BLOCK
+// guard restores on every path.
+fn check_block_body(params: &[String], body: &[Expr], sigs: &mut Vec<Sig>, n: usize) -> Result<Ty, String> {
+    // v1: no captures - the body sees ONLY its parameters (probe
+    // c3 captures a function local in Harbour; that is the next
+    // increment, not this one). Parameters are integers here.
+    for e in body {
+        let mut found = Vec::new();
+        free_vars(e, &mut found);
+        for v in found {
+            if !params.iter().any(|p| *p == v) {
+                return Err(format!("line {}: codeblock captures are not in this increment (`{}` is not a codeblock parameter)", n, v));
+            }
+        }
+    }
+    let mut benv: Vec<Local> = params.iter().map(|p| Local { name: p.clone(), ty: Ty::I64, moved: false, ro: false, byref: false }).collect();
+    for (i, e) in body.iter().enumerate() {
+        let t = type_expr(e, &mut benv, sigs, n)?;
+        let discarded_print = i + 1 < body.len() && matches!(e, Expr::Call(id, _) if is_output_call(id));
+        if t != Ty::I64 && !discarded_print {
+            return Err(format!("line {}: codeblock bodies are integer expressions in this increment", n));
+        }
+    }
+    Ok(Ty::Block(params.len()))
+}
+
 fn ty_name(t: Ty) -> &'static str {
     match t {
         Ty::F64 => "a float",
@@ -6807,6 +6947,12 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 }
                 return;
             }
+            if is_builtin(id, "hb_pvalue") || is_builtin(id, "hb_symbol_unused") {
+                // Read-only mentions: the PValue index / the unused symbol
+                // move nothing (multiarg).
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
             let sig = sigs.iter().find(|v| v.name == *id).expect("checked");
             for (i, a) in args.iter().enumerate() {
                 // A static array argument is COPIED at the boundary (33l):
@@ -7807,6 +7953,57 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str(&format!("    add ${}, %rsp\n", 16 * k));
             }
         }
+        Expr::Call(id, _) if is_builtin(id, "hb_symbol_unused") => {
+            // HB_SYMBOL_UNUSED(s): a read-only mention - no code (multiarg).
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_pvalue") => {
+            // hb_PValue(n) (multiarg): the n-th declared parameter of the
+            // enclosing function as a Dyn casilla in rax=tag, rdx=payload;
+            // an out-of-range index is NIL (tag 1). Integers tag 0 in
+            // place, logicals tag 3, strings are COPIED to an owned tag-4
+            // payload (the parameter keeps its own slot; a printed
+            // temporary is freed by the `?` path, an assigned Dyn local at
+            // the epilogue - hk259 ownership), a Dyn parameter shares its
+            // casilla with the same string-clone contract as the call
+            // boundary. `@`-received parameters load through the owner's
+            // slot. The checker guarantees the index is I64/Dyn and every
+            // declared parameter is Dyn-representable.
+            let k = fresh_lbl();
+            cg_expr(&args[0], env, sigs, strs, out, target);
+            if expr_ty(&args[0], env, sigs) == Ty::Dyn {
+                out.push_str("    call hbc_dyn_to_i64\n");
+            }
+            let cur = CUR_FN.with(|c| c.borrow().clone());
+            let nparams = sigs.iter().find(|v| v.name == cur).map(|s| s.params.len()).unwrap_or(0);
+            for i in 0..nparams {
+                out.push_str(&format!("    cmp ${}, %rax\n    je .Lpv{}_{}\n", i + 1, k, i));
+            }
+            out.push_str(&format!("    mov $1, %eax\n    xor %edx, %edx\n    jmp .Lpve{}\n", k));
+            for i in 0..nparams {
+                // Parameters are the first frame slots, in declaration
+                // order (cg_func).
+                let v = env[i].clone();
+                out.push_str(&format!(".Lpv{}_{}:\n", k, i));
+                match v.ty {
+                    Ty::I64 => out.push_str(&format!("    mov -{}(%rbp), %rdx\n    xor %eax, %eax\n", v.off)),
+                    Ty::Bool => out.push_str(&format!("    mov -{}(%rbp), %rdx\n    mov $3, %eax\n", v.off)),
+                    Ty::RefI64 => out.push_str(&format!("    mov -{}(%rbp), %r10\n    mov (%r10), %rdx\n    xor %eax, %eax\n", v.off)),
+                    Ty::Str | Ty::StrOwn => {
+                        out.push_str(&format!("    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n", v.off, v.off - 8));
+                    }
+                    Ty::RefStrOwn => {
+                        out.push_str(&format!("    mov -{}(%rbp), %r10\n    mov (%r10), %rdi\n    mov 8(%r10), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n", v.off));
+                    }
+                    Ty::Dyn => {
+                        out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -{}(%rbp), %rdx\n", v.off, v.off - 8));
+                        cg_dyn_clone_if_str(out);
+                    }
+                    other => unreachable!("the checker rejects hb_PValue over parameter type {:?}", other),
+                }
+                out.push_str(&format!("    jmp .Lpve{}\n", k));
+            }
+            out.push_str(&format!(".Lpve{}:\n", k));
+        }
         Expr::Call(id, args) => {
             let _ = sigs;
             // Arguments are evaluated and pushed LEFT TO RIGHT (Harbour
@@ -7989,13 +8186,22 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
                 }
             }
+            // Omitted trailing parameters (multiarg): pad the boundary
+            // with NIL casillas (tag 1, payload 0); the checker pinned
+            // those parameters Dyn. The byref mask keeps the PROVIDED
+            // arguments only - the padded positions are never `@`, and the
+            // variant label must match collect_byref_variants exactly.
+            let total = psig.as_ref().map(|p| p.len()).unwrap_or(args.len());
+            for _ in args.len()..total {
+                out.push_str("    sub $16, %rsp\n    movq $1, (%rsp)\n    movq $0, 8(%rsp)\n");
+            }
             let brmask: Vec<bool> = args.iter().map(|a| matches!(a, Expr::ByRef(_))).collect();
             let call_lbl = if brmask.iter().any(|b| *b) {
                 format!("{}__br{}", id, brmask.iter().map(|b| if *b { "1" } else { "0" }).collect::<String>())
             } else { id.clone() };
             out.push_str(&format!("    call hbc_fn_{}\n", call_lbl));
-            if !args.is_empty() {
-                out.push_str(&format!("    add ${}, %rsp\n", 16 * args.len()));
+            if total > 0 {
+                out.push_str(&format!("    add ${}, %rsp\n", 16 * total));
             }
         }
         Expr::ArrLit(_) => unreachable!("array literals are emitted via cg_array_value"),
@@ -8558,6 +8764,8 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "min") || is_builtin(id, "max") { return expr_ty(&args[0], env, sigs); }
             if is_builtin(id, "empty") { return Ty::Bool; }
             if is_output_call(id) { return Ty::Dyn; }
+            if is_builtin(id, "hb_pvalue") { return Ty::Dyn; }
+            if is_builtin(id, "hb_symbol_unused") { return Ty::Dyn; }
             if is_builtin(id, "asc") || is_builtin(id, "eval") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
             if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
@@ -11038,6 +11246,9 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
         out.push_str(&format!("    sub ${}, %rsp\n", frame));
     }
     PROC_NAME.with(|v| *v.borrow_mut() = format!("(b){}", owner.split("__br").next().unwrap_or(owner).to_ascii_uppercase()));
+    // hb_PValue never reaches a codeblock body (named checker rejection);
+    // the marker keeps a missed case a panic, never a silent miscompile.
+    CUR_FN.with(|c| *c.borrow_mut() = format!("(blk){}", owner));
     trace_link(trace_off, out);
     let block_line = TRACE_BLOCK_LINES.with(|m| m.borrow().get(&id).copied()).unwrap_or(0);
     trace_location(&format!("<block#{}>", id), block_line, strs, out);
@@ -11141,6 +11352,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         out.push_str(&format!("    sub ${}, %rsp\n", frame));
     }
     PROC_NAME.with(|v| *v.borrow_mut() = f.name.split("__br").next().unwrap_or(&f.name).to_ascii_uppercase());
+    CUR_FN.with(|c| *c.borrow_mut() = f.name.clone());
     trace_link(trace_off, out);
     trace_location(&f.name, f.stmts.first().map(stmt_line).unwrap_or(0), strs, out);
     // Zero-init every dynamic-array slot (parameters included): the
@@ -16117,6 +16329,7 @@ fn main() {
         ret: if f.name == "main" { None } else { inline_ret_seed(f) },
         inferred: vec![false; f.params.len()],
         arg_ev: vec![None; f.params.len()],
+        nil_ev: vec![false; f.params.len()],
     }).collect();
     let mut sigs: Vec<Sig>;
     let mut has_main = false;
@@ -16189,6 +16402,7 @@ fn main() {
             }
             let mut ret = None;
             let mut top_exits: Vec<Vec<bool>> = Vec::new();
+            CUR_FN.with(|c| *c.borrow_mut() = f.name.clone());
             let mut res = check_stmts(&f.stmts, &mut env, &mut view, &mut ret, None, &mut top_exits, &dyn_names, &byref_names);
             if let Err(m) = &res {
                 let self_deadlock = m.contains("never returns a value")
@@ -16231,7 +16445,7 @@ fn main() {
                 }
                 if first_pin_err.is_none() { first_pin_err = Some(m); }
             }
-            cur.push(Sig { name: f.name.clone(), borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], params: ptys.clone(), ret, inferred, arg_ev: view[fi].arg_ev.clone() });
+            cur.push(Sig { name: f.name.clone(), borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], params: ptys.clone(), ret, inferred, arg_ev: view[fi].arg_ev.clone(), nil_ev: view[fi].nil_ev.clone() });
             f.ret = ret;
         }
         // Types/returns converge by fresh re-inference (cur) against the
@@ -16245,7 +16459,7 @@ fn main() {
                 // New float-argument evidence recorded THIS round feeds
                 // only the NEXT round's pins: convergence must wait for
                 // it (63zd; monotone None -> Some, so it stabilizes).
-                && v.arg_ev == b.arg_ev);
+                && v.arg_ev == b.arg_ev && v.nil_ev == b.nil_ev);
         if std::env::var("HBC_INFER_TRACE").is_ok() {
             for (c, b) in cur.iter().zip(before.iter()) {
                 if c.params != b.params || c.ret != b.ret || c.inferred != b.inferred {

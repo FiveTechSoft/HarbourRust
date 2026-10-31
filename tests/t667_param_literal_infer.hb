@@ -1,7 +1,7 @@
-// neg: a parameter the body never uses in a type-revealing way stays
-// uninferable, and the error must name THAT parameter - not mask every
-// parameter with an i64 placeholder (63k partial-pin fix: before it,
-// this program died with the misleading `==` named rejection).
+// Call-site literal evidence pins a parameter the body never uses in a
+// type-revealing way (multiarg family): num pins from the literal 42.
+// The 63k partial-pin contract stands: a genuinely uninferable parameter
+// is still named by the pin error (no literal at any call site).
 function greet( msg, num )
    if msg == "hi"
       ? "hello"

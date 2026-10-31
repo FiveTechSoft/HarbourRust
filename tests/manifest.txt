@@ -63,8 +63,8 @@ pos tests/t59_params_three.hb \n        22
 pos tests/t60_params_nested.hb \n        10
 pos tests/t61_params_forbound.hb \n      5050
 pos tests/t62_params_copy.hb \n         9\n         9\n         9
-neg tests/t63_params_arity.hb takes 2 argument(s), got 1
-neg tests/t64_params_strarg.hb cannot infer the type of parameter
+neg tests/t63_params_arity.hb takes 2 argument(s), got 3
+pos tests/t64_params_strarg.hb \nhola
 pos tests/t70_strparam_print_dyn.hb \nx\n         0
 neg tests/t69_strparam_useaftermove.hb use of moved value `v`
 neg tests/t73_strparam_wrongty.hb argument 1 of `isab` must be a string
@@ -661,7 +661,7 @@ neg tests/t663_dyn_str_foreach.hb its value borrows from the collection
 pos tests/t664_do_while.hb \n         4\n         3
 pos tests/t665_do_with.hb \nhello\n        43\nbye\n         8
 pos tests/t666_do_case.hb \none
-neg tests/t667_param_uninferable_neg.hb cannot infer the type of parameter `num`
+pos tests/t667_param_literal_infer.hb \nhello
 pos tests/t668_incr_stmt.hb \n         1\n         2\n         1\n         0
 pos tests/t669_compound_assign.hb \n        15\n        12\n        48
 pos tests/t670_str_plus_eq.hb \nabcd
@@ -696,7 +696,7 @@ pos tests/t698_discard_darrs.hb \nstrs-side\nstrs-side\ndone\n         0
 pos tests/t699_discard_darr.hb \narr-side\ndone\n         0
 pos tests/t700_discard_darr2.hb \ngrid-side\ndone\n         0
 neg tests/t701_discard_hash_neg.hb discarding a hash return
-neg tests/t702_return_only_param_neg.hb returning or copying it is not enough
+pos tests/t702_return_only_param.hb \nab
 pos tests/t703_print_then_arith.hb \n         5\n         6
 pos tests/t704_print_then_concat.hb \nab\nab!
 pos tests/t705_print_dyn_multitype.hb \ntext\n        42\nNIL
@@ -877,7 +877,7 @@ pos tests/t878_qout_param_forward.hb F\n.T.         7\n.T.\n         1.25\n     
 pos tests/t882_qout_param_owned.hb A\n.T.\n         1         65B\n.T.\n         0
 neg tests/t879_qout_param_array_neg.hb a static array argument
 neg tests/t880_qout_param_float_neg.hb must be a dynamic value, got a float
-neg tests/t881_qout_param_copy_only_neg.hb cannot infer the type of parameter
+pos tests/t881_qout_param_copy_only.hb          1
 pos tests/t883_print_dyn_temp.hb ABC\n        65\n         0
 pos tests/t884_qout_param_nested_temp.hb \n.T.B\n.T.A\n.T.\n        65\n         0
 pos tests/t885_cached_strings.hb \n         0          0 abcabc\n.T. abc\n         0
@@ -909,7 +909,7 @@ pos tests/t910_unary_plus.hb \n         3          6          3          3\n    
 pos tests/t911_unary_plus.hb \n         2          5          3\n        15          5\n         1.5 .F. NIL raw\n         2          1\nabc abc         5\nNIL
 pos tests/t912_unary_plus.hb \n         1          2\n         3          3
 neg tests/t913_unary_plus_move_neg.hb use of moved value
-neg tests/t914_unary_plus_no_pin_neg.hb cannot infer the type of parameter
+pos tests/t914_unary_plus_literal.hb \n         1
 neg tests/t915_unary_plus_literal_inc_neg.hb requires a variable lvalue
 neg tests/t916_unary_plus_float_inc_neg.hb integer variable lvalues only
 pos tests/t917_paren_stmt.hb \neffect\n         2 abc          1
@@ -939,7 +939,7 @@ neg tests/t940_sequence_empty_neg.hb unexpected token Comma
 neg tests/t941_sequence_assign_neg.hb missing )
 neg tests/t942_sequence_string_last_neg.hb numeric/logical results only
 neg tests/t943_sequence_undefined_neg.hb undefined variable
-neg tests/t944_sequence_nopin_neg.hb cannot infer the type of parameter
+pos tests/t944_sequence_literal.hb \n         1
 pos tests/t945_sequence_move.hb \n         1          1
 neg tests/t946_sequence_moved_again_neg.hb use of moved value
 neg tests/t947_sequence_moved_later_neg.hb use of moved value
@@ -998,7 +998,7 @@ pos tests/t999_recursive_inline_float.hb \n         4.25
 pos tests/t1000_recursive_inline_bool.hb \n.T.
 pos tests/t1001_recursive_inline_str.hb \nyes
 neg tests/t1002_recursive_inline_mixed.hb branches must share a scalar type
-neg tests/t1003_recursive_inline_wrongarg.hb argument 1
+neg tests/t1003_recursive_inline_wrongarg.hb never returns a value
 neg tests/t1004_recursive_inline_nonanchor.hb never returns a value
 neg tests/t1005_recursive_inline_noground.hb never returns a value
 pos tests/t1006_recursive_inline_multiple_returns.hb \n         5
@@ -1021,7 +1021,7 @@ neg tests/t1022_procline_effect_arg_neg.hb current frame
 pos tests/t1023_procline_include.hb \n         2          4
 pos tests/t1024_original_mem.hb
 pos tests/t1025_default_unused_effect.hb \n         2 yes\noverride
-neg tests/t1026_default_unused_undef_neg.hb unknown function `hb_symbol_unused`
+pos tests/t1026_symbol_unused.hb \n         1
 neg tests/t1027_default_unused_missing_neg.hb undefined variable `missing`
 neg tests/t1028_default_unused_moved_neg.hb use of moved value `s`
 pos tests/t1029_default_unused_array_hash.hb \n         2          1
@@ -1355,3 +1355,10 @@ posx tests/t1357_idxcompound_oob_order.hb 1 Bound error: array access\nCallstack
 pos tests/t1358_recursive_self_ret.hb \n         1\n         2\n         6\n        24\n       120\n       720
 pos tests/t1359_recursive_mutual.hb \n.T.
 neg tests/t1360_recursive_mutual_endret_limit.hb never returns a value
+pos tests/t1361_omitted_args_nil_fill.hb \n         7 NIL\n         8          9
+pos tests/t1362_hb_pvalue_scalars.hb \n         5 abc .T. NIL
+pos tests/t1363_hb_pvalue_dyn.hb \n        11\nxy\n.F.
+pos tests/t1364_hb_pvalue_byref.hb \n        42\n        42
+neg tests/t1365_hb_pvalue_block_neg.hb `hb_PValue` inside a codeblock is not in this increment
+neg tests/t1366_omitted_float_pin_neg.hb but a call site omits it
+neg tests/t1367_hb_pvalue_float_neg.hb Dyn has no float payload tag
