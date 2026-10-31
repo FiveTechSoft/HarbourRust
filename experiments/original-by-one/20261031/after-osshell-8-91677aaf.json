@@ -1,0 +1,257 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next8afterosshell",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/output.prg",
+      "sha256": "606c4d3b8fdc7422a3960d0d7989bd3134e3511d81486a07e7c88440b4282b6e",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single-source-executable",
+      "profile": "output-routing-printer-GT",
+      "dependencies": "Date;alternate/extra/printer files;ADDITIVE;MARGIN;screen-positioned SAY;EJECT",
+      "boundary": "Not run: disposable file/printer and screen-routing fixture needed",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/overload.prg",
+      "sha256": "25c77b47a72f63b19f406479066aa6ca0a78f223ea08501942b0868cbf84b2a6",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TString",
+      "build_unit": "single-source-executable",
+      "profile": "class-operator-overload-index",
+      "dependencies": "hbclass;comparisons/concat/substring;overloaded indexed get/set;PCount/hb_PValue",
+      "boundary": "Safe process-local reference console example",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 366,
+        "stdout_sha256": "68556957c1c822b1a668e1c85ea073e023b62c1c7a76aae11dc4b5a52dea1bcc",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 336: character not allowed `#` (U+0023)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 336: character not allowed `#` (U+0023)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/parexpr.prg",
+      "sha256": "132cb3b09bc3d8d7d1456049a3ad604c8fd9d5a1cf1440ae145ecd8b5e883ae1",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+Something",
+      "build_unit": "single-source-executable",
+      "profile": "comma-sequence-inline-assignment",
+      "dependencies": "nested parenthesized sequence;inline assignments;logical condition;IIF",
+      "boundary": "Safe deterministic console reference run",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 143,
+        "stdout_sha256": "e200d7d1ba07ace20a5f9f366a83a7df549f5ee43d60dbb9c0f6f7a4d9aed93f",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: unknown directive #pragma in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: unknown directive #pragma in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/parseini.prg",
+      "sha256": "8618552a461df52fc29ad189da4490f6c81b462adb3ee62e3048d1a34a8c15cb",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main(cName)",
+      "build_unit": "single-source-executable",
+      "profile": "INI-hash-file-GT",
+      "dependencies": "hb_iniRead/Write;hash traversal;output files;Inkey;screen",
+      "boundary": "Not run: disposable INI files plus scripted keys needed",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 14: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 14: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/passref.prg",
+      "sha256": "f34b586d02aa17ae3226627847f9b01413ae4e61baf55d73a29bf0330d9acf04",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+testfun",
+      "build_unit": "single-source-executable",
+      "profile": "byref-mixed-string-integer",
+      "dependencies": "@ integer/string;mutations in callee;IIF assertions",
+      "boundary": "Safe deterministic console reference run",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 157,
+        "stdout_sha256": "2c706a175500d3e658d4ab7f91a576ce6711b34902b4942a041e3ed27a9a0370",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_bytes": 157,
+            "stdout_sha256": "2c706a175500d3e658d4ab7f91a576ce6711b34902b4942a041e3ed27a9a0370",
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: LLVM scalar: only I64/logical scalar signatures supported",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/persist.prg",
+      "sha256": "a9595803493de7a1ef9b58f3b0b57c049c0cb6c57df2d5ab69008bd1cdb5ab85",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+Test+Test2",
+      "build_unit": "single-source-executable",
+      "profile": "object-persistence-file",
+      "dependencies": "HBPersistent classes;PROPERTY;SaveToText/SaveToFile test.txt;Date method",
+      "boundary": "Run only in disposable folder;preserved generated file",
+      "reference_build_exit": 0,
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 374,
+        "stdout_sha256": "2dc7102542445f3b343e6483766f21cca41c4d7eb8e3f565a0232f2b82ca45ea",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 335: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 335: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/pipes.prg",
+      "sha256": "565190be97e816c557d98ee7933d0230cad6cc54105da659ad28141e9dc480fc",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "main+msg",
+      "build_unit": "single-source-executable",
+      "profile": "subprocess-pipe-IPC",
+      "dependencies": "self-spawn process;10MB buffer;timeouts;read/write pipes;timestamp/argv",
+      "boundary": "Not run: bounded process-tree and IPC harness needed",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 177: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 177: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/pp.prg",
+      "sha256": "1cd0dcd3efc0d36d9d0488074cae9ad051525ced0456a0654e23e59021292863",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main;external s",
+      "build_unit": "compile-only-static-library-unresolved-s-not-executable",
+      "profile": "preprocess-compile-only",
+      "dependencies": "stringify markers;runtime macros;USE alias/index;undefined s",
+      "boundary": "Compile-only library;source explicitly says no execution;no synthetic stubs",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 11: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 11: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}
