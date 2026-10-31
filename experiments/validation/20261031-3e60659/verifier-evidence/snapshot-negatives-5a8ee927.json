@@ -1,0 +1,127 @@
+[
+  {
+    "name": "t1387_cb_neg_kind_mix",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: `b` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: `b` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: `b` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: `b` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "t1388_cb_neg_param_kind",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: argument 1 of `apply1` must be an integer-returning codeblock, got a NIL-returning one\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: argument 1 of `apply1` must be an integer-returning codeblock, got a NIL-returning one\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: argument 1 of `apply1` must be an integer-returning codeblock, got a NIL-returning one\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: argument 1 of `apply1` must be an integer-returning codeblock, got a NIL-returning one\n"
+      }
+    }
+  },
+  {
+    "name": "t1389_cb_neg_iif_blocks",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Block(0, Nil) and Block(1, Int)\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Block(0, Nil) and Block(1, Int)\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Block(0, Nil) and Block(1, Int)\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Block(0, Nil) and Block(1, Int)\n"
+      }
+    }
+  },
+  {
+    "name": "t872_qout_block_arg_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: cannot print a codeblock in this increment\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: cannot print a codeblock in this increment\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: cannot print a codeblock in this increment\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: cannot print a codeblock in this increment\n"
+      }
+    }
+  },
+  {
+    "name": "t937_sequence_capture_neg",
+    "results": {
+      "default-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: codeblock captures are not in this increment (`x` is not a codeblock parameter)\n"
+      },
+      "default-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: codeblock captures are not in this increment (`x` is not a codeblock parameter)\n"
+      },
+      "llvm-linux": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: codeblock captures are not in this increment (`x` is not a codeblock parameter)\n"
+      },
+      "llvm-windows": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 3: codeblock captures are not in this increment (`x` is not a codeblock parameter)\n"
+      }
+    }
+  }
+]

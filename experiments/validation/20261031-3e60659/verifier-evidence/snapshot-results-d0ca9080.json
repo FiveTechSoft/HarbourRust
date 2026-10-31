@@ -1,0 +1,1470 @@
+{
+  "snapshot": "514843374d4033f55a8f30fe5542c38eeeac74db",
+  "published": false,
+  "rows": [
+    {
+      "name": "original_t1",
+      "source_sha256": "250205eaa1f29140bd069a4e988955fca45f8b4a20f5027085fd8716b41757ad",
+      "source": "// while loop test\n\nPROCEDURE Main()\n\n   LOCAL i := 0\n   LOCAL cb := {|| QOut( \"test\" ) }\n\n   WHILE i < 1000\n      ? i\n      Eval( cb )\n      i++\n   ENDDO\n\n   RETURN\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/tmp/harbour-reference/tests/t1.prg -> /downloads/verify-t1v2-contracts/original_t1/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         0\ntest\n         1\ntest\n         2\ntest\n         3\ntest\n         4\ntest\n         5\ntest\n         6\ntest\n         7\ntest\n         8\ntest\n         9\ntest\n        10\ntest\n        11\ntest\n        12\ntest\n        13\ntest\n        14\ntest\n        15\ntest\n        16\ntest\n        17\ntest\n        18\ntest\n        19\ntest\n        20\ntest\n        21\ntest\n        22\ntest\n        23\ntest\n        24\ntest\n        25\ntest\n        26\ntest\n        27\ntest\n        28\ntest\n        29\ntest\n        30\ntest\n        31\ntest\n        32\ntest\n        33\ntest\n        34\ntest\n        35\ntest\n        36\ntest\n        37\ntest\n        38\ntest\n        39\ntest\n        40\ntest\n        41\ntest\n        42\ntest\n        43\ntest\n        44\ntest\n        45\ntest\n        46\ntest\n        47\ntest\n        48\ntest\n        49\ntest\n        50\ntest\n        51\ntest\n        52\ntest\n        53\ntest\n        54\ntest\n        55\ntest\n        56\ntest\n        57\ntest\n        58\ntest\n        59\ntest\n        60\ntest\n        61\ntest\n        62\ntest\n        63\ntest\n        64\ntest\n        65\ntest\n        66\ntest\n        67\ntest\n        68\ntest\n        69\ntest\n        70\ntest\n        71\ntest\n        72\ntest\n        73\ntest\n        74\ntest\n        75\ntest\n        76\ntest\n        77\ntest\n        78\ntest\n        79\ntest\n        80\ntest\n        81\ntest\n        82\ntest\n        83\ntest\n        84\ntest\n        85\ntest\n        86\ntest\n        87\ntest\n        88\ntest\n        89\ntest\n        90\ntest\n        91\ntest\n        92\ntest\n        93\ntest\n        94\ntest\n        95\ntest\n        96\ntest\n        97\ntest\n        98\ntest\n        99\ntest\n       100\ntest\n       101\ntest\n       102\ntest\n       103\ntest\n       104\ntest\n       105\ntest\n       106\ntest\n       107\ntest\n       108\ntest\n       109\ntest\n       110\ntest\n       111\ntest\n       112\ntest\n       113\ntest\n       114\ntest\n       115\ntest\n       116\ntest\n       117\ntest\n       118\ntest\n       119\ntest\n       120\ntest\n       121\ntest\n       122\ntest\n       123\ntest\n       124\ntest\n       125\ntest\n       126\ntest\n       127\ntest\n       128\ntest\n       129\ntest\n       130\ntest\n       131\ntest\n       132\ntest\n       133\ntest\n       134\ntest\n       135\ntest\n       136\ntest\n       137\ntest\n       138\ntest\n       139\ntest\n       140\ntest\n       141\ntest\n       142\ntest\n       143\ntest\n       144\ntest\n       145\ntest\n       146\ntest\n       147\ntest\n       148\ntest\n       149\ntest\n       150\ntest\n       151\ntest\n       152\ntest\n       153\ntest\n       154\ntest\n       155\ntest\n       156\ntest\n       157\ntest\n       158\ntest\n       159\ntest\n       160\ntest\n       161\ntest\n       162\ntest\n       163\ntest\n       164\ntest\n       165\ntest\n       166\ntest\n       167\ntest\n       168\ntest\n       169\ntest\n       170\ntest\n       171\ntest\n       172\ntest\n       173\ntest\n       174\ntest\n       175\ntest\n       176\ntest\n       177\ntest\n       178\ntest\n       179\ntest\n       180\ntest\n       181\ntest\n       182\ntest\n       183\ntest\n       184\ntest\n       185\ntest\n       186\ntest\n       187\ntest\n       188\ntest\n       189\ntest\n       190\ntest\n       191\ntest\n       192\ntest\n       193\ntest\n       194\ntest\n       195\ntest\n       196\ntest\n       197\ntest\n       198\ntest\n       199\ntest\n       200\ntest\n       201\ntest\n       202\ntest\n       203\ntest\n       204\ntest\n       205\ntest\n       206\ntest\n       207\ntest\n       208\ntest\n       209\ntest\n       210\ntest\n       211\ntest\n       212\ntest\n       213\ntest\n       214\ntest\n       215\ntest\n       216\ntest\n       217\ntest\n       218\ntest\n       219\ntest\n       220\ntest\n       221\ntest\n       222\ntest\n       223\ntest\n       224\ntest\n       225\ntest\n       226\ntest\n       227\ntest\n       228\ntest\n       229\ntest\n       230\ntest\n       231\ntest\n       232\ntest\n       233\ntest\n       234\ntest\n       235\ntest\n       236\ntest\n       237\ntest\n       238\ntest\n       239\ntest\n       240\ntest\n       241\ntest\n       242\ntest\n       243\ntest\n       244\ntest\n       245\ntest\n       246\ntest\n       247\ntest\n       248\ntest\n       249\ntest\n       250\ntest\n       251\ntest\n       252\ntest\n       253\ntest\n       254\ntest\n       255\ntest\n       256\ntest\n       257\ntest\n       258\ntest\n       259\ntest\n       260\ntest\n       261\ntest\n       262\ntest\n       263\ntest\n       264\ntest\n       265\ntest\n       266\ntest\n       267\ntest\n       268\ntest\n       269\ntest\n       270\ntest\n       271\ntest\n       272\ntest\n       273\ntest\n       274\ntest\n       275\ntest\n       276\ntest\n       277\ntest\n       278\ntest\n       279\ntest\n       280\ntest\n       281\ntest\n       282\ntest\n       283\ntest\n       284\ntest\n       285\ntest\n       286\ntest\n       287\ntest\n       288\ntest\n       289\ntest\n       290\ntest\n       291\ntest\n       292\ntest\n       293\ntest\n       294\ntest\n       295\ntest\n       296\ntest\n       297\ntest\n       298\ntest\n       299\ntest\n       300\ntest\n       301\ntest\n       302\ntest\n       303\ntest\n       304\ntest\n       305\ntest\n       306\ntest\n       307\ntest\n       308\ntest\n       309\ntest\n       310\ntest\n       311\ntest\n       312\ntest\n       313\ntest\n       314\ntest\n       315\ntest\n       316\ntest\n       317\ntest\n       318\ntest\n       319\ntest\n       320\ntest\n       321\ntest\n       322\ntest\n       323\ntest\n       324\ntest\n       325\ntest\n       326\ntest\n       327\ntest\n       328\ntest\n       329\ntest\n       330\ntest\n       331\ntest\n       332\ntest\n       333\ntest\n       334\ntest\n       335\ntest\n       336\ntest\n       337\ntest\n       338\ntest\n       339\ntest\n       340\ntest\n       341\ntest\n       342\ntest\n       343\ntest\n       344\ntest\n       345\ntest\n       346\ntest\n       347\ntest\n       348\ntest\n       349\ntest\n       350\ntest\n       351\ntest\n       352\ntest\n       353\ntest\n       354\ntest\n       355\ntest\n       356\ntest\n       357\ntest\n       358\ntest\n       359\ntest\n       360\ntest\n       361\ntest\n       362\ntest\n       363\ntest\n       364\ntest\n       365\ntest\n       366\ntest\n       367\ntest\n       368\ntest\n       369\ntest\n       370\ntest\n       371\ntest\n       372\ntest\n       373\ntest\n       374\ntest\n       375\ntest\n       376\ntest\n       377\ntest\n       378\ntest\n       379\ntest\n       380\ntest\n       381\ntest\n       382\ntest\n       383\ntest\n       384\ntest\n       385\ntest\n       386\ntest\n       387\ntest\n       388\ntest\n       389\ntest\n       390\ntest\n       391\ntest\n       392\ntest\n       393\ntest\n       394\ntest\n       395\ntest\n       396\ntest\n       397\ntest\n       398\ntest\n       399\ntest\n       400\ntest\n       401\ntest\n       402\ntest\n       403\ntest\n       404\ntest\n       405\ntest\n       406\ntest\n       407\ntest\n       408\ntest\n       409\ntest\n       410\ntest\n       411\ntest\n       412\ntest\n       413\ntest\n       414\ntest\n       415\ntest\n       416\ntest\n       417\ntest\n       418\ntest\n       419\ntest\n       420\ntest\n       421\ntest\n       422\ntest\n       423\ntest\n       424\ntest\n       425\ntest\n       426\ntest\n       427\ntest\n       428\ntest\n       429\ntest\n       430\ntest\n       431\ntest\n       432\ntest\n       433\ntest\n       434\ntest\n       435\ntest\n       436\ntest\n       437\ntest\n       438\ntest\n       439\ntest\n       440\ntest\n       441\ntest\n       442\ntest\n       443\ntest\n       444\ntest\n       445\ntest\n       446\ntest\n       447\ntest\n       448\ntest\n       449\ntest\n       450\ntest\n       451\ntest\n       452\ntest\n       453\ntest\n       454\ntest\n       455\ntest\n       456\ntest\n       457\ntest\n       458\ntest\n       459\ntest\n       460\ntest\n       461\ntest\n       462\ntest\n       463\ntest\n       464\ntest\n       465\ntest\n       466\ntest\n       467\ntest\n       468\ntest\n       469\ntest\n       470\ntest\n       471\ntest\n       472\ntest\n       473\ntest\n       474\ntest\n       475\ntest\n       476\ntest\n       477\ntest\n       478\ntest\n       479\ntest\n       480\ntest\n       481\ntest\n       482\ntest\n       483\ntest\n       484\ntest\n       485\ntest\n       486\ntest\n       487\ntest\n       488\ntest\n       489\ntest\n       490\ntest\n       491\ntest\n       492\ntest\n       493\ntest\n       494\ntest\n       495\ntest\n       496\ntest\n       497\ntest\n       498\ntest\n       499\ntest\n       500\ntest\n       501\ntest\n       502\ntest\n       503\ntest\n       504\ntest\n       505\ntest\n       506\ntest\n       507\ntest\n       508\ntest\n       509\ntest\n       510\ntest\n       511\ntest\n       512\ntest\n       513\ntest\n       514\ntest\n       515\ntest\n       516\ntest\n       517\ntest\n       518\ntest\n       519\ntest\n       520\ntest\n       521\ntest\n       522\ntest\n       523\ntest\n       524\ntest\n       525\ntest\n       526\ntest\n       527\ntest\n       528\ntest\n       529\ntest\n       530\ntest\n       531\ntest\n       532\ntest\n       533\ntest\n       534\ntest\n       535\ntest\n       536\ntest\n       537\ntest\n       538\ntest\n       539\ntest\n       540\ntest\n       541\ntest\n       542\ntest\n       543\ntest\n       544\ntest\n       545\ntest\n       546\ntest\n       547\ntest\n       548\ntest\n       549\ntest\n       550\ntest\n       551\ntest\n       552\ntest\n       553\ntest\n       554\ntest\n       555\ntest\n       556\ntest\n       557\ntest\n       558\ntest\n       559\ntest\n       560\ntest\n       561\ntest\n       562\ntest\n       563\ntest\n       564\ntest\n       565\ntest\n       566\ntest\n       567\ntest\n       568\ntest\n       569\ntest\n       570\ntest\n       571\ntest\n       572\ntest\n       573\ntest\n       574\ntest\n       575\ntest\n       576\ntest\n       577\ntest\n       578\ntest\n       579\ntest\n       580\ntest\n       581\ntest\n       582\ntest\n       583\ntest\n       584\ntest\n       585\ntest\n       586\ntest\n       587\ntest\n       588\ntest\n       589\ntest\n       590\ntest\n       591\ntest\n       592\ntest\n       593\ntest\n       594\ntest\n       595\ntest\n       596\ntest\n       597\ntest\n       598\ntest\n       599\ntest\n       600\ntest\n       601\ntest\n       602\ntest\n       603\ntest\n       604\ntest\n       605\ntest\n       606\ntest\n       607\ntest\n       608\ntest\n       609\ntest\n       610\ntest\n       611\ntest\n       612\ntest\n       613\ntest\n       614\ntest\n       615\ntest\n       616\ntest\n       617\ntest\n       618\ntest\n       619\ntest\n       620\ntest\n       621\ntest\n       622\ntest\n       623\ntest\n       624\ntest\n       625\ntest\n       626\ntest\n       627\ntest\n       628\ntest\n       629\ntest\n       630\ntest\n       631\ntest\n       632\ntest\n       633\ntest\n       634\ntest\n       635\ntest\n       636\ntest\n       637\ntest\n       638\ntest\n       639\ntest\n       640\ntest\n       641\ntest\n       642\ntest\n       643\ntest\n       644\ntest\n       645\ntest\n       646\ntest\n       647\ntest\n       648\ntest\n       649\ntest\n       650\ntest\n       651\ntest\n       652\ntest\n       653\ntest\n       654\ntest\n       655\ntest\n       656\ntest\n       657\ntest\n       658\ntest\n       659\ntest\n       660\ntest\n       661\ntest\n       662\ntest\n       663\ntest\n       664\ntest\n       665\ntest\n       666\ntest\n       667\ntest\n       668\ntest\n       669\ntest\n       670\ntest\n       671\ntest\n       672\ntest\n       673\ntest\n       674\ntest\n       675\ntest\n       676\ntest\n       677\ntest\n       678\ntest\n       679\ntest\n       680\ntest\n       681\ntest\n       682\ntest\n       683\ntest\n       684\ntest\n       685\ntest\n       686\ntest\n       687\ntest\n       688\ntest\n       689\ntest\n       690\ntest\n       691\ntest\n       692\ntest\n       693\ntest\n       694\ntest\n       695\ntest\n       696\ntest\n       697\ntest\n       698\ntest\n       699\ntest\n       700\ntest\n       701\ntest\n       702\ntest\n       703\ntest\n       704\ntest\n       705\ntest\n       706\ntest\n       707\ntest\n       708\ntest\n       709\ntest\n       710\ntest\n       711\ntest\n       712\ntest\n       713\ntest\n       714\ntest\n       715\ntest\n       716\ntest\n       717\ntest\n       718\ntest\n       719\ntest\n       720\ntest\n       721\ntest\n       722\ntest\n       723\ntest\n       724\ntest\n       725\ntest\n       726\ntest\n       727\ntest\n       728\ntest\n       729\ntest\n       730\ntest\n       731\ntest\n       732\ntest\n       733\ntest\n       734\ntest\n       735\ntest\n       736\ntest\n       737\ntest\n       738\ntest\n       739\ntest\n       740\ntest\n       741\ntest\n       742\ntest\n       743\ntest\n       744\ntest\n       745\ntest\n       746\ntest\n       747\ntest\n       748\ntest\n       749\ntest\n       750\ntest\n       751\ntest\n       752\ntest\n       753\ntest\n       754\ntest\n       755\ntest\n       756\ntest\n       757\ntest\n       758\ntest\n       759\ntest\n       760\ntest\n       761\ntest\n       762\ntest\n       763\ntest\n       764\ntest\n       765\ntest\n       766\ntest\n       767\ntest\n       768\ntest\n       769\ntest\n       770\ntest\n       771\ntest\n       772\ntest\n       773\ntest\n       774\ntest\n       775\ntest\n       776\ntest\n       777\ntest\n       778\ntest\n       779\ntest\n       780\ntest\n       781\ntest\n       782\ntest\n       783\ntest\n       784\ntest\n       785\ntest\n       786\ntest\n       787\ntest\n       788\ntest\n       789\ntest\n       790\ntest\n       791\ntest\n       792\ntest\n       793\ntest\n       794\ntest\n       795\ntest\n       796\ntest\n       797\ntest\n       798\ntest\n       799\ntest\n       800\ntest\n       801\ntest\n       802\ntest\n       803\ntest\n       804\ntest\n       805\ntest\n       806\ntest\n       807\ntest\n       808\ntest\n       809\ntest\n       810\ntest\n       811\ntest\n       812\ntest\n       813\ntest\n       814\ntest\n       815\ntest\n       816\ntest\n       817\ntest\n       818\ntest\n       819\ntest\n       820\ntest\n       821\ntest\n       822\ntest\n       823\ntest\n       824\ntest\n       825\ntest\n       826\ntest\n       827\ntest\n       828\ntest\n       829\ntest\n       830\ntest\n       831\ntest\n       832\ntest\n       833\ntest\n       834\ntest\n       835\ntest\n       836\ntest\n       837\ntest\n       838\ntest\n       839\ntest\n       840\ntest\n       841\ntest\n       842\ntest\n       843\ntest\n       844\ntest\n       845\ntest\n       846\ntest\n       847\ntest\n       848\ntest\n       849\ntest\n       850\ntest\n       851\ntest\n       852\ntest\n       853\ntest\n       854\ntest\n       855\ntest\n       856\ntest\n       857\ntest\n       858\ntest\n       859\ntest\n       860\ntest\n       861\ntest\n       862\ntest\n       863\ntest\n       864\ntest\n       865\ntest\n       866\ntest\n       867\ntest\n       868\ntest\n       869\ntest\n       870\ntest\n       871\ntest\n       872\ntest\n       873\ntest\n       874\ntest\n       875\ntest\n       876\ntest\n       877\ntest\n       878\ntest\n       879\ntest\n       880\ntest\n       881\ntest\n       882\ntest\n       883\ntest\n       884\ntest\n       885\ntest\n       886\ntest\n       887\ntest\n       888\ntest\n       889\ntest\n       890\ntest\n       891\ntest\n       892\ntest\n       893\ntest\n       894\ntest\n       895\ntest\n       896\ntest\n       897\ntest\n       898\ntest\n       899\ntest\n       900\ntest\n       901\ntest\n       902\ntest\n       903\ntest\n       904\ntest\n       905\ntest\n       906\ntest\n       907\ntest\n       908\ntest\n       909\ntest\n       910\ntest\n       911\ntest\n       912\ntest\n       913\ntest\n       914\ntest\n       915\ntest\n       916\ntest\n       917\ntest\n       918\ntest\n       919\ntest\n       920\ntest\n       921\ntest\n       922\ntest\n       923\ntest\n       924\ntest\n       925\ntest\n       926\ntest\n       927\ntest\n       928\ntest\n       929\ntest\n       930\ntest\n       931\ntest\n       932\ntest\n       933\ntest\n       934\ntest\n       935\ntest\n       936\ntest\n       937\ntest\n       938\ntest\n       939\ntest\n       940\ntest\n       941\ntest\n       942\ntest\n       943\ntest\n       944\ntest\n       945\ntest\n       946\ntest\n       947\ntest\n       948\ntest\n       949\ntest\n       950\ntest\n       951\ntest\n       952\ntest\n       953\ntest\n       954\ntest\n       955\ntest\n       956\ntest\n       957\ntest\n       958\ntest\n       959\ntest\n       960\ntest\n       961\ntest\n       962\ntest\n       963\ntest\n       964\ntest\n       965\ntest\n       966\ntest\n       967\ntest\n       968\ntest\n       969\ntest\n       970\ntest\n       971\ntest\n       972\ntest\n       973\ntest\n       974\ntest\n       975\ntest\n       976\ntest\n       977\ntest\n       978\ntest\n       979\ntest\n       980\ntest\n       981\ntest\n       982\ntest\n       983\ntest\n       984\ntest\n       985\ntest\n       986\ntest\n       987\ntest\n       988\ntest\n       989\ntest\n       990\ntest\n       991\ntest\n       992\ntest\n       993\ntest\n       994\ntest\n       995\ntest\n       996\ntest\n       997\ntest\n       998\ntest\n       999\ntest",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/tmp/harbour-reference/tests/t1.prg -> /downloads/verify-t1v2-contracts/original_t1/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         0\ntest\n         1\ntest\n         2\ntest\n         3\ntest\n         4\ntest\n         5\ntest\n         6\ntest\n         7\ntest\n         8\ntest\n         9\ntest\n        10\ntest\n        11\ntest\n        12\ntest\n        13\ntest\n        14\ntest\n        15\ntest\n        16\ntest\n        17\ntest\n        18\ntest\n        19\ntest\n        20\ntest\n        21\ntest\n        22\ntest\n        23\ntest\n        24\ntest\n        25\ntest\n        26\ntest\n        27\ntest\n        28\ntest\n        29\ntest\n        30\ntest\n        31\ntest\n        32\ntest\n        33\ntest\n        34\ntest\n        35\ntest\n        36\ntest\n        37\ntest\n        38\ntest\n        39\ntest\n        40\ntest\n        41\ntest\n        42\ntest\n        43\ntest\n        44\ntest\n        45\ntest\n        46\ntest\n        47\ntest\n        48\ntest\n        49\ntest\n        50\ntest\n        51\ntest\n        52\ntest\n        53\ntest\n        54\ntest\n        55\ntest\n        56\ntest\n        57\ntest\n        58\ntest\n        59\ntest\n        60\ntest\n        61\ntest\n        62\ntest\n        63\ntest\n        64\ntest\n        65\ntest\n        66\ntest\n        67\ntest\n        68\ntest\n        69\ntest\n        70\ntest\n        71\ntest\n        72\ntest\n        73\ntest\n        74\ntest\n        75\ntest\n        76\ntest\n        77\ntest\n        78\ntest\n        79\ntest\n        80\ntest\n        81\ntest\n        82\ntest\n        83\ntest\n        84\ntest\n        85\ntest\n        86\ntest\n        87\ntest\n        88\ntest\n        89\ntest\n        90\ntest\n        91\ntest\n        92\ntest\n        93\ntest\n        94\ntest\n        95\ntest\n        96\ntest\n        97\ntest\n        98\ntest\n        99\ntest\n       100\ntest\n       101\ntest\n       102\ntest\n       103\ntest\n       104\ntest\n       105\ntest\n       106\ntest\n       107\ntest\n       108\ntest\n       109\ntest\n       110\ntest\n       111\ntest\n       112\ntest\n       113\ntest\n       114\ntest\n       115\ntest\n       116\ntest\n       117\ntest\n       118\ntest\n       119\ntest\n       120\ntest\n       121\ntest\n       122\ntest\n       123\ntest\n       124\ntest\n       125\ntest\n       126\ntest\n       127\ntest\n       128\ntest\n       129\ntest\n       130\ntest\n       131\ntest\n       132\ntest\n       133\ntest\n       134\ntest\n       135\ntest\n       136\ntest\n       137\ntest\n       138\ntest\n       139\ntest\n       140\ntest\n       141\ntest\n       142\ntest\n       143\ntest\n       144\ntest\n       145\ntest\n       146\ntest\n       147\ntest\n       148\ntest\n       149\ntest\n       150\ntest\n       151\ntest\n       152\ntest\n       153\ntest\n       154\ntest\n       155\ntest\n       156\ntest\n       157\ntest\n       158\ntest\n       159\ntest\n       160\ntest\n       161\ntest\n       162\ntest\n       163\ntest\n       164\ntest\n       165\ntest\n       166\ntest\n       167\ntest\n       168\ntest\n       169\ntest\n       170\ntest\n       171\ntest\n       172\ntest\n       173\ntest\n       174\ntest\n       175\ntest\n       176\ntest\n       177\ntest\n       178\ntest\n       179\ntest\n       180\ntest\n       181\ntest\n       182\ntest\n       183\ntest\n       184\ntest\n       185\ntest\n       186\ntest\n       187\ntest\n       188\ntest\n       189\ntest\n       190\ntest\n       191\ntest\n       192\ntest\n       193\ntest\n       194\ntest\n       195\ntest\n       196\ntest\n       197\ntest\n       198\ntest\n       199\ntest\n       200\ntest\n       201\ntest\n       202\ntest\n       203\ntest\n       204\ntest\n       205\ntest\n       206\ntest\n       207\ntest\n       208\ntest\n       209\ntest\n       210\ntest\n       211\ntest\n       212\ntest\n       213\ntest\n       214\ntest\n       215\ntest\n       216\ntest\n       217\ntest\n       218\ntest\n       219\ntest\n       220\ntest\n       221\ntest\n       222\ntest\n       223\ntest\n       224\ntest\n       225\ntest\n       226\ntest\n       227\ntest\n       228\ntest\n       229\ntest\n       230\ntest\n       231\ntest\n       232\ntest\n       233\ntest\n       234\ntest\n       235\ntest\n       236\ntest\n       237\ntest\n       238\ntest\n       239\ntest\n       240\ntest\n       241\ntest\n       242\ntest\n       243\ntest\n       244\ntest\n       245\ntest\n       246\ntest\n       247\ntest\n       248\ntest\n       249\ntest\n       250\ntest\n       251\ntest\n       252\ntest\n       253\ntest\n       254\ntest\n       255\ntest\n       256\ntest\n       257\ntest\n       258\ntest\n       259\ntest\n       260\ntest\n       261\ntest\n       262\ntest\n       263\ntest\n       264\ntest\n       265\ntest\n       266\ntest\n       267\ntest\n       268\ntest\n       269\ntest\n       270\ntest\n       271\ntest\n       272\ntest\n       273\ntest\n       274\ntest\n       275\ntest\n       276\ntest\n       277\ntest\n       278\ntest\n       279\ntest\n       280\ntest\n       281\ntest\n       282\ntest\n       283\ntest\n       284\ntest\n       285\ntest\n       286\ntest\n       287\ntest\n       288\ntest\n       289\ntest\n       290\ntest\n       291\ntest\n       292\ntest\n       293\ntest\n       294\ntest\n       295\ntest\n       296\ntest\n       297\ntest\n       298\ntest\n       299\ntest\n       300\ntest\n       301\ntest\n       302\ntest\n       303\ntest\n       304\ntest\n       305\ntest\n       306\ntest\n       307\ntest\n       308\ntest\n       309\ntest\n       310\ntest\n       311\ntest\n       312\ntest\n       313\ntest\n       314\ntest\n       315\ntest\n       316\ntest\n       317\ntest\n       318\ntest\n       319\ntest\n       320\ntest\n       321\ntest\n       322\ntest\n       323\ntest\n       324\ntest\n       325\ntest\n       326\ntest\n       327\ntest\n       328\ntest\n       329\ntest\n       330\ntest\n       331\ntest\n       332\ntest\n       333\ntest\n       334\ntest\n       335\ntest\n       336\ntest\n       337\ntest\n       338\ntest\n       339\ntest\n       340\ntest\n       341\ntest\n       342\ntest\n       343\ntest\n       344\ntest\n       345\ntest\n       346\ntest\n       347\ntest\n       348\ntest\n       349\ntest\n       350\ntest\n       351\ntest\n       352\ntest\n       353\ntest\n       354\ntest\n       355\ntest\n       356\ntest\n       357\ntest\n       358\ntest\n       359\ntest\n       360\ntest\n       361\ntest\n       362\ntest\n       363\ntest\n       364\ntest\n       365\ntest\n       366\ntest\n       367\ntest\n       368\ntest\n       369\ntest\n       370\ntest\n       371\ntest\n       372\ntest\n       373\ntest\n       374\ntest\n       375\ntest\n       376\ntest\n       377\ntest\n       378\ntest\n       379\ntest\n       380\ntest\n       381\ntest\n       382\ntest\n       383\ntest\n       384\ntest\n       385\ntest\n       386\ntest\n       387\ntest\n       388\ntest\n       389\ntest\n       390\ntest\n       391\ntest\n       392\ntest\n       393\ntest\n       394\ntest\n       395\ntest\n       396\ntest\n       397\ntest\n       398\ntest\n       399\ntest\n       400\ntest\n       401\ntest\n       402\ntest\n       403\ntest\n       404\ntest\n       405\ntest\n       406\ntest\n       407\ntest\n       408\ntest\n       409\ntest\n       410\ntest\n       411\ntest\n       412\ntest\n       413\ntest\n       414\ntest\n       415\ntest\n       416\ntest\n       417\ntest\n       418\ntest\n       419\ntest\n       420\ntest\n       421\ntest\n       422\ntest\n       423\ntest\n       424\ntest\n       425\ntest\n       426\ntest\n       427\ntest\n       428\ntest\n       429\ntest\n       430\ntest\n       431\ntest\n       432\ntest\n       433\ntest\n       434\ntest\n       435\ntest\n       436\ntest\n       437\ntest\n       438\ntest\n       439\ntest\n       440\ntest\n       441\ntest\n       442\ntest\n       443\ntest\n       444\ntest\n       445\ntest\n       446\ntest\n       447\ntest\n       448\ntest\n       449\ntest\n       450\ntest\n       451\ntest\n       452\ntest\n       453\ntest\n       454\ntest\n       455\ntest\n       456\ntest\n       457\ntest\n       458\ntest\n       459\ntest\n       460\ntest\n       461\ntest\n       462\ntest\n       463\ntest\n       464\ntest\n       465\ntest\n       466\ntest\n       467\ntest\n       468\ntest\n       469\ntest\n       470\ntest\n       471\ntest\n       472\ntest\n       473\ntest\n       474\ntest\n       475\ntest\n       476\ntest\n       477\ntest\n       478\ntest\n       479\ntest\n       480\ntest\n       481\ntest\n       482\ntest\n       483\ntest\n       484\ntest\n       485\ntest\n       486\ntest\n       487\ntest\n       488\ntest\n       489\ntest\n       490\ntest\n       491\ntest\n       492\ntest\n       493\ntest\n       494\ntest\n       495\ntest\n       496\ntest\n       497\ntest\n       498\ntest\n       499\ntest\n       500\ntest\n       501\ntest\n       502\ntest\n       503\ntest\n       504\ntest\n       505\ntest\n       506\ntest\n       507\ntest\n       508\ntest\n       509\ntest\n       510\ntest\n       511\ntest\n       512\ntest\n       513\ntest\n       514\ntest\n       515\ntest\n       516\ntest\n       517\ntest\n       518\ntest\n       519\ntest\n       520\ntest\n       521\ntest\n       522\ntest\n       523\ntest\n       524\ntest\n       525\ntest\n       526\ntest\n       527\ntest\n       528\ntest\n       529\ntest\n       530\ntest\n       531\ntest\n       532\ntest\n       533\ntest\n       534\ntest\n       535\ntest\n       536\ntest\n       537\ntest\n       538\ntest\n       539\ntest\n       540\ntest\n       541\ntest\n       542\ntest\n       543\ntest\n       544\ntest\n       545\ntest\n       546\ntest\n       547\ntest\n       548\ntest\n       549\ntest\n       550\ntest\n       551\ntest\n       552\ntest\n       553\ntest\n       554\ntest\n       555\ntest\n       556\ntest\n       557\ntest\n       558\ntest\n       559\ntest\n       560\ntest\n       561\ntest\n       562\ntest\n       563\ntest\n       564\ntest\n       565\ntest\n       566\ntest\n       567\ntest\n       568\ntest\n       569\ntest\n       570\ntest\n       571\ntest\n       572\ntest\n       573\ntest\n       574\ntest\n       575\ntest\n       576\ntest\n       577\ntest\n       578\ntest\n       579\ntest\n       580\ntest\n       581\ntest\n       582\ntest\n       583\ntest\n       584\ntest\n       585\ntest\n       586\ntest\n       587\ntest\n       588\ntest\n       589\ntest\n       590\ntest\n       591\ntest\n       592\ntest\n       593\ntest\n       594\ntest\n       595\ntest\n       596\ntest\n       597\ntest\n       598\ntest\n       599\ntest\n       600\ntest\n       601\ntest\n       602\ntest\n       603\ntest\n       604\ntest\n       605\ntest\n       606\ntest\n       607\ntest\n       608\ntest\n       609\ntest\n       610\ntest\n       611\ntest\n       612\ntest\n       613\ntest\n       614\ntest\n       615\ntest\n       616\ntest\n       617\ntest\n       618\ntest\n       619\ntest\n       620\ntest\n       621\ntest\n       622\ntest\n       623\ntest\n       624\ntest\n       625\ntest\n       626\ntest\n       627\ntest\n       628\ntest\n       629\ntest\n       630\ntest\n       631\ntest\n       632\ntest\n       633\ntest\n       634\ntest\n       635\ntest\n       636\ntest\n       637\ntest\n       638\ntest\n       639\ntest\n       640\ntest\n       641\ntest\n       642\ntest\n       643\ntest\n       644\ntest\n       645\ntest\n       646\ntest\n       647\ntest\n       648\ntest\n       649\ntest\n       650\ntest\n       651\ntest\n       652\ntest\n       653\ntest\n       654\ntest\n       655\ntest\n       656\ntest\n       657\ntest\n       658\ntest\n       659\ntest\n       660\ntest\n       661\ntest\n       662\ntest\n       663\ntest\n       664\ntest\n       665\ntest\n       666\ntest\n       667\ntest\n       668\ntest\n       669\ntest\n       670\ntest\n       671\ntest\n       672\ntest\n       673\ntest\n       674\ntest\n       675\ntest\n       676\ntest\n       677\ntest\n       678\ntest\n       679\ntest\n       680\ntest\n       681\ntest\n       682\ntest\n       683\ntest\n       684\ntest\n       685\ntest\n       686\ntest\n       687\ntest\n       688\ntest\n       689\ntest\n       690\ntest\n       691\ntest\n       692\ntest\n       693\ntest\n       694\ntest\n       695\ntest\n       696\ntest\n       697\ntest\n       698\ntest\n       699\ntest\n       700\ntest\n       701\ntest\n       702\ntest\n       703\ntest\n       704\ntest\n       705\ntest\n       706\ntest\n       707\ntest\n       708\ntest\n       709\ntest\n       710\ntest\n       711\ntest\n       712\ntest\n       713\ntest\n       714\ntest\n       715\ntest\n       716\ntest\n       717\ntest\n       718\ntest\n       719\ntest\n       720\ntest\n       721\ntest\n       722\ntest\n       723\ntest\n       724\ntest\n       725\ntest\n       726\ntest\n       727\ntest\n       728\ntest\n       729\ntest\n       730\ntest\n       731\ntest\n       732\ntest\n       733\ntest\n       734\ntest\n       735\ntest\n       736\ntest\n       737\ntest\n       738\ntest\n       739\ntest\n       740\ntest\n       741\ntest\n       742\ntest\n       743\ntest\n       744\ntest\n       745\ntest\n       746\ntest\n       747\ntest\n       748\ntest\n       749\ntest\n       750\ntest\n       751\ntest\n       752\ntest\n       753\ntest\n       754\ntest\n       755\ntest\n       756\ntest\n       757\ntest\n       758\ntest\n       759\ntest\n       760\ntest\n       761\ntest\n       762\ntest\n       763\ntest\n       764\ntest\n       765\ntest\n       766\ntest\n       767\ntest\n       768\ntest\n       769\ntest\n       770\ntest\n       771\ntest\n       772\ntest\n       773\ntest\n       774\ntest\n       775\ntest\n       776\ntest\n       777\ntest\n       778\ntest\n       779\ntest\n       780\ntest\n       781\ntest\n       782\ntest\n       783\ntest\n       784\ntest\n       785\ntest\n       786\ntest\n       787\ntest\n       788\ntest\n       789\ntest\n       790\ntest\n       791\ntest\n       792\ntest\n       793\ntest\n       794\ntest\n       795\ntest\n       796\ntest\n       797\ntest\n       798\ntest\n       799\ntest\n       800\ntest\n       801\ntest\n       802\ntest\n       803\ntest\n       804\ntest\n       805\ntest\n       806\ntest\n       807\ntest\n       808\ntest\n       809\ntest\n       810\ntest\n       811\ntest\n       812\ntest\n       813\ntest\n       814\ntest\n       815\ntest\n       816\ntest\n       817\ntest\n       818\ntest\n       819\ntest\n       820\ntest\n       821\ntest\n       822\ntest\n       823\ntest\n       824\ntest\n       825\ntest\n       826\ntest\n       827\ntest\n       828\ntest\n       829\ntest\n       830\ntest\n       831\ntest\n       832\ntest\n       833\ntest\n       834\ntest\n       835\ntest\n       836\ntest\n       837\ntest\n       838\ntest\n       839\ntest\n       840\ntest\n       841\ntest\n       842\ntest\n       843\ntest\n       844\ntest\n       845\ntest\n       846\ntest\n       847\ntest\n       848\ntest\n       849\ntest\n       850\ntest\n       851\ntest\n       852\ntest\n       853\ntest\n       854\ntest\n       855\ntest\n       856\ntest\n       857\ntest\n       858\ntest\n       859\ntest\n       860\ntest\n       861\ntest\n       862\ntest\n       863\ntest\n       864\ntest\n       865\ntest\n       866\ntest\n       867\ntest\n       868\ntest\n       869\ntest\n       870\ntest\n       871\ntest\n       872\ntest\n       873\ntest\n       874\ntest\n       875\ntest\n       876\ntest\n       877\ntest\n       878\ntest\n       879\ntest\n       880\ntest\n       881\ntest\n       882\ntest\n       883\ntest\n       884\ntest\n       885\ntest\n       886\ntest\n       887\ntest\n       888\ntest\n       889\ntest\n       890\ntest\n       891\ntest\n       892\ntest\n       893\ntest\n       894\ntest\n       895\ntest\n       896\ntest\n       897\ntest\n       898\ntest\n       899\ntest\n       900\ntest\n       901\ntest\n       902\ntest\n       903\ntest\n       904\ntest\n       905\ntest\n       906\ntest\n       907\ntest\n       908\ntest\n       909\ntest\n       910\ntest\n       911\ntest\n       912\ntest\n       913\ntest\n       914\ntest\n       915\ntest\n       916\ntest\n       917\ntest\n       918\ntest\n       919\ntest\n       920\ntest\n       921\ntest\n       922\ntest\n       923\ntest\n       924\ntest\n       925\ntest\n       926\ntest\n       927\ntest\n       928\ntest\n       929\ntest\n       930\ntest\n       931\ntest\n       932\ntest\n       933\ntest\n       934\ntest\n       935\ntest\n       936\ntest\n       937\ntest\n       938\ntest\n       939\ntest\n       940\ntest\n       941\ntest\n       942\ntest\n       943\ntest\n       944\ntest\n       945\ntest\n       946\ntest\n       947\ntest\n       948\ntest\n       949\ntest\n       950\ntest\n       951\ntest\n       952\ntest\n       953\ntest\n       954\ntest\n       955\ntest\n       956\ntest\n       957\ntest\n       958\ntest\n       959\ntest\n       960\ntest\n       961\ntest\n       962\ntest\n       963\ntest\n       964\ntest\n       965\ntest\n       966\ntest\n       967\ntest\n       968\ntest\n       969\ntest\n       970\ntest\n       971\ntest\n       972\ntest\n       973\ntest\n       974\ntest\n       975\ntest\n       976\ntest\n       977\ntest\n       978\ntest\n       979\ntest\n       980\ntest\n       981\ntest\n       982\ntest\n       983\ntest\n       984\ntest\n       985\ntest\n       986\ntest\n       987\ntest\n       988\ntest\n       989\ntest\n       990\ntest\n       991\ntest\n       992\ntest\n       993\ntest\n       994\ntest\n       995\ntest\n       996\ntest\n       997\ntest\n       998\ntest\n       999\ntest",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Call(\"qout\", [Str(\"test\")])])\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Call(\"qout\", [Str(\"test\")])])\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n         0\ntest\n         1\ntest\n         2\ntest\n         3\ntest\n         4\ntest\n         5\ntest\n         6\ntest\n         7\ntest\n         8\ntest\n         9\ntest\n        10\ntest\n        11\ntest\n        12\ntest\n        13\ntest\n        14\ntest\n        15\ntest\n        16\ntest\n        17\ntest\n        18\ntest\n        19\ntest\n        20\ntest\n        21\ntest\n        22\ntest\n        23\ntest\n        24\ntest\n        25\ntest\n        26\ntest\n        27\ntest\n        28\ntest\n        29\ntest\n        30\ntest\n        31\ntest\n        32\ntest\n        33\ntest\n        34\ntest\n        35\ntest\n        36\ntest\n        37\ntest\n        38\ntest\n        39\ntest\n        40\ntest\n        41\ntest\n        42\ntest\n        43\ntest\n        44\ntest\n        45\ntest\n        46\ntest\n        47\ntest\n        48\ntest\n        49\ntest\n        50\ntest\n        51\ntest\n        52\ntest\n        53\ntest\n        54\ntest\n        55\ntest\n        56\ntest\n        57\ntest\n        58\ntest\n        59\ntest\n        60\ntest\n        61\ntest\n        62\ntest\n        63\ntest\n        64\ntest\n        65\ntest\n        66\ntest\n        67\ntest\n        68\ntest\n        69\ntest\n        70\ntest\n        71\ntest\n        72\ntest\n        73\ntest\n        74\ntest\n        75\ntest\n        76\ntest\n        77\ntest\n        78\ntest\n        79\ntest\n        80\ntest\n        81\ntest\n        82\ntest\n        83\ntest\n        84\ntest\n        85\ntest\n        86\ntest\n        87\ntest\n        88\ntest\n        89\ntest\n        90\ntest\n        91\ntest\n        92\ntest\n        93\ntest\n        94\ntest\n        95\ntest\n        96\ntest\n        97\ntest\n        98\ntest\n        99\ntest\n       100\ntest\n       101\ntest\n       102\ntest\n       103\ntest\n       104\ntest\n       105\ntest\n       106\ntest\n       107\ntest\n       108\ntest\n       109\ntest\n       110\ntest\n       111\ntest\n       112\ntest\n       113\ntest\n       114\ntest\n       115\ntest\n       116\ntest\n       117\ntest\n       118\ntest\n       119\ntest\n       120\ntest\n       121\ntest\n       122\ntest\n       123\ntest\n       124\ntest\n       125\ntest\n       126\ntest\n       127\ntest\n       128\ntest\n       129\ntest\n       130\ntest\n       131\ntest\n       132\ntest\n       133\ntest\n       134\ntest\n       135\ntest\n       136\ntest\n       137\ntest\n       138\ntest\n       139\ntest\n       140\ntest\n       141\ntest\n       142\ntest\n       143\ntest\n       144\ntest\n       145\ntest\n       146\ntest\n       147\ntest\n       148\ntest\n       149\ntest\n       150\ntest\n       151\ntest\n       152\ntest\n       153\ntest\n       154\ntest\n       155\ntest\n       156\ntest\n       157\ntest\n       158\ntest\n       159\ntest\n       160\ntest\n       161\ntest\n       162\ntest\n       163\ntest\n       164\ntest\n       165\ntest\n       166\ntest\n       167\ntest\n       168\ntest\n       169\ntest\n       170\ntest\n       171\ntest\n       172\ntest\n       173\ntest\n       174\ntest\n       175\ntest\n       176\ntest\n       177\ntest\n       178\ntest\n       179\ntest\n       180\ntest\n       181\ntest\n       182\ntest\n       183\ntest\n       184\ntest\n       185\ntest\n       186\ntest\n       187\ntest\n       188\ntest\n       189\ntest\n       190\ntest\n       191\ntest\n       192\ntest\n       193\ntest\n       194\ntest\n       195\ntest\n       196\ntest\n       197\ntest\n       198\ntest\n       199\ntest\n       200\ntest\n       201\ntest\n       202\ntest\n       203\ntest\n       204\ntest\n       205\ntest\n       206\ntest\n       207\ntest\n       208\ntest\n       209\ntest\n       210\ntest\n       211\ntest\n       212\ntest\n       213\ntest\n       214\ntest\n       215\ntest\n       216\ntest\n       217\ntest\n       218\ntest\n       219\ntest\n       220\ntest\n       221\ntest\n       222\ntest\n       223\ntest\n       224\ntest\n       225\ntest\n       226\ntest\n       227\ntest\n       228\ntest\n       229\ntest\n       230\ntest\n       231\ntest\n       232\ntest\n       233\ntest\n       234\ntest\n       235\ntest\n       236\ntest\n       237\ntest\n       238\ntest\n       239\ntest\n       240\ntest\n       241\ntest\n       242\ntest\n       243\ntest\n       244\ntest\n       245\ntest\n       246\ntest\n       247\ntest\n       248\ntest\n       249\ntest\n       250\ntest\n       251\ntest\n       252\ntest\n       253\ntest\n       254\ntest\n       255\ntest\n       256\ntest\n       257\ntest\n       258\ntest\n       259\ntest\n       260\ntest\n       261\ntest\n       262\ntest\n       263\ntest\n       264\ntest\n       265\ntest\n       266\ntest\n       267\ntest\n       268\ntest\n       269\ntest\n       270\ntest\n       271\ntest\n       272\ntest\n       273\ntest\n       274\ntest\n       275\ntest\n       276\ntest\n       277\ntest\n       278\ntest\n       279\ntest\n       280\ntest\n       281\ntest\n       282\ntest\n       283\ntest\n       284\ntest\n       285\ntest\n       286\ntest\n       287\ntest\n       288\ntest\n       289\ntest\n       290\ntest\n       291\ntest\n       292\ntest\n       293\ntest\n       294\ntest\n       295\ntest\n       296\ntest\n       297\ntest\n       298\ntest\n       299\ntest\n       300\ntest\n       301\ntest\n       302\ntest\n       303\ntest\n       304\ntest\n       305\ntest\n       306\ntest\n       307\ntest\n       308\ntest\n       309\ntest\n       310\ntest\n       311\ntest\n       312\ntest\n       313\ntest\n       314\ntest\n       315\ntest\n       316\ntest\n       317\ntest\n       318\ntest\n       319\ntest\n       320\ntest\n       321\ntest\n       322\ntest\n       323\ntest\n       324\ntest\n       325\ntest\n       326\ntest\n       327\ntest\n       328\ntest\n       329\ntest\n       330\ntest\n       331\ntest\n       332\ntest\n       333\ntest\n       334\ntest\n       335\ntest\n       336\ntest\n       337\ntest\n       338\ntest\n       339\ntest\n       340\ntest\n       341\ntest\n       342\ntest\n       343\ntest\n       344\ntest\n       345\ntest\n       346\ntest\n       347\ntest\n       348\ntest\n       349\ntest\n       350\ntest\n       351\ntest\n       352\ntest\n       353\ntest\n       354\ntest\n       355\ntest\n       356\ntest\n       357\ntest\n       358\ntest\n       359\ntest\n       360\ntest\n       361\ntest\n       362\ntest\n       363\ntest\n       364\ntest\n       365\ntest\n       366\ntest\n       367\ntest\n       368\ntest\n       369\ntest\n       370\ntest\n       371\ntest\n       372\ntest\n       373\ntest\n       374\ntest\n       375\ntest\n       376\ntest\n       377\ntest\n       378\ntest\n       379\ntest\n       380\ntest\n       381\ntest\n       382\ntest\n       383\ntest\n       384\ntest\n       385\ntest\n       386\ntest\n       387\ntest\n       388\ntest\n       389\ntest\n       390\ntest\n       391\ntest\n       392\ntest\n       393\ntest\n       394\ntest\n       395\ntest\n       396\ntest\n       397\ntest\n       398\ntest\n       399\ntest\n       400\ntest\n       401\ntest\n       402\ntest\n       403\ntest\n       404\ntest\n       405\ntest\n       406\ntest\n       407\ntest\n       408\ntest\n       409\ntest\n       410\ntest\n       411\ntest\n       412\ntest\n       413\ntest\n       414\ntest\n       415\ntest\n       416\ntest\n       417\ntest\n       418\ntest\n       419\ntest\n       420\ntest\n       421\ntest\n       422\ntest\n       423\ntest\n       424\ntest\n       425\ntest\n       426\ntest\n       427\ntest\n       428\ntest\n       429\ntest\n       430\ntest\n       431\ntest\n       432\ntest\n       433\ntest\n       434\ntest\n       435\ntest\n       436\ntest\n       437\ntest\n       438\ntest\n       439\ntest\n       440\ntest\n       441\ntest\n       442\ntest\n       443\ntest\n       444\ntest\n       445\ntest\n       446\ntest\n       447\ntest\n       448\ntest\n       449\ntest\n       450\ntest\n       451\ntest\n       452\ntest\n       453\ntest\n       454\ntest\n       455\ntest\n       456\ntest\n       457\ntest\n       458\ntest\n       459\ntest\n       460\ntest\n       461\ntest\n       462\ntest\n       463\ntest\n       464\ntest\n       465\ntest\n       466\ntest\n       467\ntest\n       468\ntest\n       469\ntest\n       470\ntest\n       471\ntest\n       472\ntest\n       473\ntest\n       474\ntest\n       475\ntest\n       476\ntest\n       477\ntest\n       478\ntest\n       479\ntest\n       480\ntest\n       481\ntest\n       482\ntest\n       483\ntest\n       484\ntest\n       485\ntest\n       486\ntest\n       487\ntest\n       488\ntest\n       489\ntest\n       490\ntest\n       491\ntest\n       492\ntest\n       493\ntest\n       494\ntest\n       495\ntest\n       496\ntest\n       497\ntest\n       498\ntest\n       499\ntest\n       500\ntest\n       501\ntest\n       502\ntest\n       503\ntest\n       504\ntest\n       505\ntest\n       506\ntest\n       507\ntest\n       508\ntest\n       509\ntest\n       510\ntest\n       511\ntest\n       512\ntest\n       513\ntest\n       514\ntest\n       515\ntest\n       516\ntest\n       517\ntest\n       518\ntest\n       519\ntest\n       520\ntest\n       521\ntest\n       522\ntest\n       523\ntest\n       524\ntest\n       525\ntest\n       526\ntest\n       527\ntest\n       528\ntest\n       529\ntest\n       530\ntest\n       531\ntest\n       532\ntest\n       533\ntest\n       534\ntest\n       535\ntest\n       536\ntest\n       537\ntest\n       538\ntest\n       539\ntest\n       540\ntest\n       541\ntest\n       542\ntest\n       543\ntest\n       544\ntest\n       545\ntest\n       546\ntest\n       547\ntest\n       548\ntest\n       549\ntest\n       550\ntest\n       551\ntest\n       552\ntest\n       553\ntest\n       554\ntest\n       555\ntest\n       556\ntest\n       557\ntest\n       558\ntest\n       559\ntest\n       560\ntest\n       561\ntest\n       562\ntest\n       563\ntest\n       564\ntest\n       565\ntest\n       566\ntest\n       567\ntest\n       568\ntest\n       569\ntest\n       570\ntest\n       571\ntest\n       572\ntest\n       573\ntest\n       574\ntest\n       575\ntest\n       576\ntest\n       577\ntest\n       578\ntest\n       579\ntest\n       580\ntest\n       581\ntest\n       582\ntest\n       583\ntest\n       584\ntest\n       585\ntest\n       586\ntest\n       587\ntest\n       588\ntest\n       589\ntest\n       590\ntest\n       591\ntest\n       592\ntest\n       593\ntest\n       594\ntest\n       595\ntest\n       596\ntest\n       597\ntest\n       598\ntest\n       599\ntest\n       600\ntest\n       601\ntest\n       602\ntest\n       603\ntest\n       604\ntest\n       605\ntest\n       606\ntest\n       607\ntest\n       608\ntest\n       609\ntest\n       610\ntest\n       611\ntest\n       612\ntest\n       613\ntest\n       614\ntest\n       615\ntest\n       616\ntest\n       617\ntest\n       618\ntest\n       619\ntest\n       620\ntest\n       621\ntest\n       622\ntest\n       623\ntest\n       624\ntest\n       625\ntest\n       626\ntest\n       627\ntest\n       628\ntest\n       629\ntest\n       630\ntest\n       631\ntest\n       632\ntest\n       633\ntest\n       634\ntest\n       635\ntest\n       636\ntest\n       637\ntest\n       638\ntest\n       639\ntest\n       640\ntest\n       641\ntest\n       642\ntest\n       643\ntest\n       644\ntest\n       645\ntest\n       646\ntest\n       647\ntest\n       648\ntest\n       649\ntest\n       650\ntest\n       651\ntest\n       652\ntest\n       653\ntest\n       654\ntest\n       655\ntest\n       656\ntest\n       657\ntest\n       658\ntest\n       659\ntest\n       660\ntest\n       661\ntest\n       662\ntest\n       663\ntest\n       664\ntest\n       665\ntest\n       666\ntest\n       667\ntest\n       668\ntest\n       669\ntest\n       670\ntest\n       671\ntest\n       672\ntest\n       673\ntest\n       674\ntest\n       675\ntest\n       676\ntest\n       677\ntest\n       678\ntest\n       679\ntest\n       680\ntest\n       681\ntest\n       682\ntest\n       683\ntest\n       684\ntest\n       685\ntest\n       686\ntest\n       687\ntest\n       688\ntest\n       689\ntest\n       690\ntest\n       691\ntest\n       692\ntest\n       693\ntest\n       694\ntest\n       695\ntest\n       696\ntest\n       697\ntest\n       698\ntest\n       699\ntest\n       700\ntest\n       701\ntest\n       702\ntest\n       703\ntest\n       704\ntest\n       705\ntest\n       706\ntest\n       707\ntest\n       708\ntest\n       709\ntest\n       710\ntest\n       711\ntest\n       712\ntest\n       713\ntest\n       714\ntest\n       715\ntest\n       716\ntest\n       717\ntest\n       718\ntest\n       719\ntest\n       720\ntest\n       721\ntest\n       722\ntest\n       723\ntest\n       724\ntest\n       725\ntest\n       726\ntest\n       727\ntest\n       728\ntest\n       729\ntest\n       730\ntest\n       731\ntest\n       732\ntest\n       733\ntest\n       734\ntest\n       735\ntest\n       736\ntest\n       737\ntest\n       738\ntest\n       739\ntest\n       740\ntest\n       741\ntest\n       742\ntest\n       743\ntest\n       744\ntest\n       745\ntest\n       746\ntest\n       747\ntest\n       748\ntest\n       749\ntest\n       750\ntest\n       751\ntest\n       752\ntest\n       753\ntest\n       754\ntest\n       755\ntest\n       756\ntest\n       757\ntest\n       758\ntest\n       759\ntest\n       760\ntest\n       761\ntest\n       762\ntest\n       763\ntest\n       764\ntest\n       765\ntest\n       766\ntest\n       767\ntest\n       768\ntest\n       769\ntest\n       770\ntest\n       771\ntest\n       772\ntest\n       773\ntest\n       774\ntest\n       775\ntest\n       776\ntest\n       777\ntest\n       778\ntest\n       779\ntest\n       780\ntest\n       781\ntest\n       782\ntest\n       783\ntest\n       784\ntest\n       785\ntest\n       786\ntest\n       787\ntest\n       788\ntest\n       789\ntest\n       790\ntest\n       791\ntest\n       792\ntest\n       793\ntest\n       794\ntest\n       795\ntest\n       796\ntest\n       797\ntest\n       798\ntest\n       799\ntest\n       800\ntest\n       801\ntest\n       802\ntest\n       803\ntest\n       804\ntest\n       805\ntest\n       806\ntest\n       807\ntest\n       808\ntest\n       809\ntest\n       810\ntest\n       811\ntest\n       812\ntest\n       813\ntest\n       814\ntest\n       815\ntest\n       816\ntest\n       817\ntest\n       818\ntest\n       819\ntest\n       820\ntest\n       821\ntest\n       822\ntest\n       823\ntest\n       824\ntest\n       825\ntest\n       826\ntest\n       827\ntest\n       828\ntest\n       829\ntest\n       830\ntest\n       831\ntest\n       832\ntest\n       833\ntest\n       834\ntest\n       835\ntest\n       836\ntest\n       837\ntest\n       838\ntest\n       839\ntest\n       840\ntest\n       841\ntest\n       842\ntest\n       843\ntest\n       844\ntest\n       845\ntest\n       846\ntest\n       847\ntest\n       848\ntest\n       849\ntest\n       850\ntest\n       851\ntest\n       852\ntest\n       853\ntest\n       854\ntest\n       855\ntest\n       856\ntest\n       857\ntest\n       858\ntest\n       859\ntest\n       860\ntest\n       861\ntest\n       862\ntest\n       863\ntest\n       864\ntest\n       865\ntest\n       866\ntest\n       867\ntest\n       868\ntest\n       869\ntest\n       870\ntest\n       871\ntest\n       872\ntest\n       873\ntest\n       874\ntest\n       875\ntest\n       876\ntest\n       877\ntest\n       878\ntest\n       879\ntest\n       880\ntest\n       881\ntest\n       882\ntest\n       883\ntest\n       884\ntest\n       885\ntest\n       886\ntest\n       887\ntest\n       888\ntest\n       889\ntest\n       890\ntest\n       891\ntest\n       892\ntest\n       893\ntest\n       894\ntest\n       895\ntest\n       896\ntest\n       897\ntest\n       898\ntest\n       899\ntest\n       900\ntest\n       901\ntest\n       902\ntest\n       903\ntest\n       904\ntest\n       905\ntest\n       906\ntest\n       907\ntest\n       908\ntest\n       909\ntest\n       910\ntest\n       911\ntest\n       912\ntest\n       913\ntest\n       914\ntest\n       915\ntest\n       916\ntest\n       917\ntest\n       918\ntest\n       919\ntest\n       920\ntest\n       921\ntest\n       922\ntest\n       923\ntest\n       924\ntest\n       925\ntest\n       926\ntest\n       927\ntest\n       928\ntest\n       929\ntest\n       930\ntest\n       931\ntest\n       932\ntest\n       933\ntest\n       934\ntest\n       935\ntest\n       936\ntest\n       937\ntest\n       938\ntest\n       939\ntest\n       940\ntest\n       941\ntest\n       942\ntest\n       943\ntest\n       944\ntest\n       945\ntest\n       946\ntest\n       947\ntest\n       948\ntest\n       949\ntest\n       950\ntest\n       951\ntest\n       952\ntest\n       953\ntest\n       954\ntest\n       955\ntest\n       956\ntest\n       957\ntest\n       958\ntest\n       959\ntest\n       960\ntest\n       961\ntest\n       962\ntest\n       963\ntest\n       964\ntest\n       965\ntest\n       966\ntest\n       967\ntest\n       968\ntest\n       969\ntest\n       970\ntest\n       971\ntest\n       972\ntest\n       973\ntest\n       974\ntest\n       975\ntest\n       976\ntest\n       977\ntest\n       978\ntest\n       979\ntest\n       980\ntest\n       981\ntest\n       982\ntest\n       983\ntest\n       984\ntest\n       985\ntest\n       986\ntest\n       987\ntest\n       988\ntest\n       989\ntest\n       990\ntest\n       991\ntest\n       992\ntest\n       993\ntest\n       994\ntest\n       995\ntest\n       996\ntest\n       997\ntest\n       998\ntest\n       999\ntest",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "forward_nil",
+      "source_sha256": "f4e2366a3c901be012f7e695b4fd8514069562d33d68b5e9c1b01617d93255ba",
+      "source": "function apply(f)\nreturn Eval(f)\nfunction forward(f)\nreturn apply(f)\nprocedure main()\nlocal b := {|| QOut(\"nil\")}\n? forward(b)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 7: argument 1 of `forward` must be an integer-returning codeblock, got a NIL-returning one\n"
+          }
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 7: argument 1 of `forward` must be an integer-returning codeblock, got a NIL-returning one\n"
+          }
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 7: argument 1 of `forward` must be an integer-returning codeblock, got a NIL-returning one\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 7: argument 1 of `forward` must be an integer-returning codeblock, got a NIL-returning one\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nnil\nNIL",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "alias_nil",
+      "source_sha256": "0e97f4e1d74e21b94367961b69a40d9bcf2756ca897f4579db0fffd0447a3eaf",
+      "source": "procedure main()\nlocal b := {|| QOut(\"nil\")}\nlocal c := b\n? ValType(Eval(c))\n? Eval(b)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `ValType` over this expression is not measured in this PoC\n"
+          }
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `ValType` over this expression is not measured in this PoC\n"
+          }
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `ValType` over this expression is not measured in this PoC\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `ValType` over this expression is not measured in this PoC\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nnil\nU\nnil\nNIL",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "loop_same_arity",
+      "source_sha256": "95b066df522bedbf07a54e26eddee4db94f91ea96a8d2e1a124a3f0ec26ab942",
+      "source": "procedure main()\nlocal b := {|| 42}\nlocal i := 0\nwhile i < 1\nb := {|| QOut(\"nil\")}\ni++\nenddo\n? Eval(b)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 5: `b` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment\n"
+          }
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 5: `b` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment\n"
+          }
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 5: `b` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 5: `b` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nnil\nNIL",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "int_prev",
+      "source_sha256": "e207e6b407e66c2133fba813ce753aa59670677f2cc520fa2990be48228319b4",
+      "source": "procedure main()\nlocal b := {|x| x * 2}\n? Eval(b,21), ValType(Eval(b,2))\n? Eval({|| 1, 42})\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: `ValType` over this expression is not measured in this PoC\n"
+          }
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: `ValType` over this expression is not measured in this PoC\n"
+          }
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: `ValType` over this expression is not measured in this PoC\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: `ValType` over this expression is not measured in this PoC\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        42 N\n        42",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "branch_same_arity",
+      "source_sha256": "c3a2a8b2ca03e4f7dbd03aedb1f5bacad9e90fc486cb60dbe46091d844685932",
+      "source": "procedure main()\nlocal b := {|| 42}\nif .f.\nb := {|| QOut(\"wrong\")}\nendif\n? Eval(b)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `b` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment\n"
+          }
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `b` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment\n"
+          }
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `b` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `b` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        42",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "nil_type_order",
+      "source_sha256": "dbb88e44a7c4aeee22065f0463348f65d1ef584edb85f0d3a94ae800e0b8c327",
+      "source": "procedure main()\nlocal b := {|| QOut(\"effect\")}\n? ValType(Eval(b))\n? Eval(b)\n? Eval({|| QOut(\"a\"), QOut(\"b\")})\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: `ValType` over this expression is not measured in this PoC\n"
+          }
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: `ValType` over this expression is not measured in this PoC\n"
+          }
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: `ValType` over this expression is not measured in this PoC\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 3: `ValType` over this expression is not measured in this PoC\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\neffect\nU\neffect\nNIL\na\nb\nNIL",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "iif_same_arity",
+      "source_sha256": "6854a4285bc8efbba00db90591402ebe49428cb512917bde057e92583e262851",
+      "source": "procedure main()\nlocal b := {|| 42}\nlocal c := {|| QOut(\"nil\")}\n? Eval(iif(.t., b, c))\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Block(0, Int) and Block(0, Nil)\n"
+          }
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Block(0, Int) and Block(0, Nil)\n"
+          }
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Block(0, Int) and Block(0, Nil)\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Block(0, Int) and Block(0, Nil)\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        42",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "return_nil_block",
+      "source_sha256": "af7da2ef2fbb16e2a0b7c3a4363e605a2362d592a5b519221df869b87685215b",
+      "source": "function maker()\nreturn {|| QOut(\"nil\")}\nprocedure main()\nlocal b := maker()\n? ValType(Eval(b)), Eval(b)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 2: codeblocks cannot be returned in this increment\n"
+          }
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 2: codeblocks cannot be returned in this increment\n"
+          }
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 2: codeblocks cannot be returned in this increment\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 2: codeblocks cannot be returned in this increment\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nnil\nnil\nU NIL",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "forward_int",
+      "source_sha256": "c0ceb8577118a88e98e530883b20ba78276e4515e82eadb11beb26cbf3d04e8c",
+      "source": "function apply(f)\nreturn Eval(f,21)\nfunction forward(f)\nreturn apply(f)\nprocedure main()\nlocal b := {|x| x * 2}\n? forward(b)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1-contracts/forward_int.prg -> /downloads/verify-t1v2-contracts/forward_int/default-linux/program.s (3 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        42",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1-contracts/forward_int.prg -> /downloads/verify-t1v2-contracts/forward_int/default-windows/program.s (3 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        42",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: only I64/logical scalar signatures supported\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: only I64/logical scalar signatures supported\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        42",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t870_qout_block_result_neg",
+      "source_sha256": "f76e2758fbabd728e673868f089fa4fb328ce710121372b4833795a8d3987c88",
+      "source": "function main()\nlocal b := {|| QOut(\"test\")}\nEval(b)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1v25148433/tests/t870_qout_block_result_neg.hb -> /downloads/verify-t1v2-contracts/t870_qout_block_result_neg/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\ntest",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1v25148433/tests/t870_qout_block_result_neg.hb -> /downloads/verify-t1v2-contracts/t870_qout_block_result_neg/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\ntest",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Call(\"qout\", [Str(\"test\")])])\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Call(\"qout\", [Str(\"test\")])])\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\ntest",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1384_eval_nil_result",
+      "source_sha256": "17b2281313560c2e474c01b7754e46d5ab45f47bac3d54eb82371cead6e3e952",
+      "source": "function main()\n    local b := {|| QOut(\"test\") }\n    eval(b)\n    ? eval(b)\n    eval(b, 1, 2)\n    ? eval(b, 1)\n    eval({|| QOut(\"inline\") })\n    ? eval({|| 42, QOut(\"seq\") })\n    QQOut(\"a\", \"b\")\n    ? OutStd(\"x\")\n    return nil\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1v25148433/tests/t1384_eval_nil_result.hb -> /downloads/verify-t1v2-contracts/t1384_eval_nil_result/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\ntest\ntest\nNIL\ntest\ntest\nNIL\ninline\nseq\nNILa bx\nNIL",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1v25148433/tests/t1384_eval_nil_result.hb -> /downloads/verify-t1v2-contracts/t1384_eval_nil_result/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\ntest\ntest\nNIL\ntest\ntest\nNIL\ninline\nseq\nNILa bx\nNIL",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Call(\"qout\", [Str(\"test\")])])\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Call(\"qout\", [Str(\"test\")])])\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\ntest\ntest\nNIL\ntest\ntest\nNIL\ninline\nseq\nNILa bx\nNIL",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1385_block_param_int",
+      "source_sha256": "5b47075e2c746950beb36ed9b5b2aa264015278387ee1b9d1c9648acef7ce1cb",
+      "source": "function main()\n    local b := {|x| x * 2 }\n    ? apply1(b)\n    return nil\nfunction apply1(f)\n    return eval(f, 21)\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1v25148433/tests/t1385_block_param_int.hb -> /downloads/verify-t1v2-contracts/t1385_block_param_int/default-linux/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        42",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1v25148433/tests/t1385_block_param_int.hb -> /downloads/verify-t1v2-contracts/t1385_block_param_int/default-windows/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        42",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: only I64/logical scalar signatures supported\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: only I64/logical scalar signatures supported\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        42",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1386_block_userfn_nilret",
+      "source_sha256": "2ecb1177b69e8387f30e3b40f6aaa2b8a23f5bce3276075658a3551a0232f485",
+      "source": "function main()\n    local b := {|| shout(\"hi\") }\n    ? eval(b)\n    return nil\nfunction shout(s)\n    QOut(s)\n    return\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1v25148433/tests/t1386_block_userfn_nilret.hb -> /downloads/verify-t1v2-contracts/t1386_block_userfn_nilret/default-linux/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nhi\nNIL",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1v25148433/tests/t1386_block_userfn_nilret.hb -> /downloads/verify-t1v2-contracts/t1386_block_userfn_nilret/default-windows/program.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nhi\nNIL",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: NIL-only effect call `shout` cannot be used as a value\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: NIL-only effect call `shout` cannot be used as a value\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nhi\nNIL",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "alias_nil_observable",
+      "source_sha256": "fbfae50e51b2b979eec5fb4238869081913d77918c3325a92dec4b90bde78942",
+      "source": "procedure main()\nlocal b := {|| QOut(\"nil\")}\nlocal c := b\nlocal r := Eval(c)\n? ValType(r), r\n? Eval(b)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1-contracts/alias_nil_observable.prg -> /downloads/verify-t1v2-contracts/alias_nil_observable/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nnil\nU NIL\nnil\nNIL",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1-contracts/alias_nil_observable.prg -> /downloads/verify-t1v2-contracts/alias_nil_observable/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nnil\nU NIL\nnil\nNIL",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Call(\"qout\", [Str(\"nil\")])])\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Call(\"qout\", [Str(\"nil\")])])\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nnil\nU NIL\nnil\nNIL",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "nil_type_stored",
+      "source_sha256": "af2942cb106691c33558c844c5d2126c8233783048597efe7c9767d539348655",
+      "source": "procedure main()\nlocal b := {|| QOut(\"effect\")}\nlocal r := Eval(b)\n? ValType(r), r\n? Eval({|| QOut(\"a\"), QOut(\"b\")})\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1-contracts/nil_type_stored.prg -> /downloads/verify-t1v2-contracts/nil_type_stored/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\neffect\nU NIL\na\nb\nNIL",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1-contracts/nil_type_stored.prg -> /downloads/verify-t1v2-contracts/nil_type_stored/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\neffect\nU NIL\na\nb\nNIL",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Call(\"qout\", [Str(\"effect\")])])\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Call(\"qout\", [Str(\"effect\")])])\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\neffect\nU NIL\na\nb\nNIL",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "int_type_stored",
+      "source_sha256": "172a1052a75719ae3ee5185786c3334a3d0e131830e663694944934ac84a719a",
+      "source": "procedure main()\nlocal b := {|x| x * 2}\nlocal r := Eval(b,21)\n? ValType(r), r\n? Eval({|| 1, 42})\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1-contracts/int_type_stored.prg -> /downloads/verify-t1v2-contracts/int_type_stored/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nN         42\n        42",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1-contracts/int_type_stored.prg -> /downloads/verify-t1v2-contracts/int_type_stored/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nN         42\n        42",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [\"x\"], [Bin('*', Var(\"x\"), Int(\"2\"))])\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [\"x\"], [Bin('*', Var(\"x\"), Int(\"2\"))])\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nN         42\n        42",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "alias_rebind_mix",
+      "source_sha256": "eecb3da4671f979e5e3ff5e43d032a432a24851797a8db8f654a12487ff3bb3e",
+      "source": "procedure main()\nlocal b := {|| 42}\nlocal c := b\nb := {|| QOut(\"nil\")}\n? Eval(c), Eval(b)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `b` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment\n"
+          }
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `b` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment\n"
+          }
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `b` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `b` would hold both integer- and NIL-returning codeblocks; that mix is not representable in this increment\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nnil\n        42 NIL",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "iif_nil_samekind",
+      "source_sha256": "e61a322cc6593bfce0f61f5adf187f8830ac07e3e01b02e6dd99726a3ce18595",
+      "source": "procedure main()\nlocal b := {|| QOut(\"A\")}\nlocal c := {|| QOut(\"B\")}\nlocal d := iif(.f., b, c)\n? Eval(d)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Block(0, Nil) and Block(0, Nil)\n"
+          }
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Block(0, Nil) and Block(0, Nil)\n"
+          }
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Block(0, Nil) and Block(0, Nil)\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Block(0, Nil) and Block(0, Nil)\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nB\nNIL",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "iif_int_samekind",
+      "source_sha256": "94b1ff21ddf8cc553eee6ff2f9635c1c34d0d05c48e14007c2513cf91adafe8d",
+      "source": "procedure main()\nlocal b := {|| 11}\nlocal c := {|| 22}\nlocal d := iif(.f., b, c)\n? Eval(d)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Block(0, Int) and Block(0, Int)\n"
+          }
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Block(0, Int) and Block(0, Int)\n"
+          }
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Block(0, Int) and Block(0, Int)\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Block(0, Int) and Block(0, Int)\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        22",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "param_nil_discard",
+      "source_sha256": "4083ad105257293b51498165f2a2194bd1c811b3951393ee84608f85f359543a",
+      "source": "function apply(f)\nEval(f)\nreturn nil\nprocedure main()\nlocal b := {|| QOut(\"nil\")}\napply(b)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 6: argument 1 of `apply` must be an integer-returning codeblock, got a NIL-returning one\n"
+          }
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 6: argument 1 of `apply` must be an integer-returning codeblock, got a NIL-returning one\n"
+          }
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 6: argument 1 of `apply` must be an integer-returning codeblock, got a NIL-returning one\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: line 6: argument 1 of `apply` must be an integer-returning codeblock, got a NIL-returning one\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nnil",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "if_branch_nil_reassign_samekind",
+      "source_sha256": "3e633b573c144488650ba652cc0e3bcfc8e8043a60fe881c2919556cb42f5fb5",
+      "source": "procedure main()\nlocal b := {|| QOut(\"A\")}\nif .t.\nb := {|| QOut(\"B\")}\nendif\n? Eval(b)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1-contracts/if_branch_nil_reassign_samekind.prg -> /downloads/verify-t1v2-contracts/if_branch_nil_reassign_samekind/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nB\nNIL",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1-contracts/if_branch_nil_reassign_samekind.prg -> /downloads/verify-t1v2-contracts/if_branch_nil_reassign_samekind/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\nB\nNIL",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Call(\"qout\", [Str(\"A\")])])\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Call(\"qout\", [Str(\"A\")])])\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\nB\nNIL",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "reassign_int_prior",
+      "source_sha256": "588d5c7c8bf576bf240eae448bcdded22d39d63bc2cc71c9e053a5563cdf05ca",
+      "source": "procedure main()\nlocal b := {|| 11}\nb := {|| 22}\n? Eval(b)\nreturn\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1-contracts/reassign_int_prior.prg -> /downloads/verify-t1v2-contracts/reassign_int_prior/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        22",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1-contracts/reassign_int_prior.prg -> /downloads/verify-t1v2-contracts/reassign_int_prior/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        22",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Int(\"11\")])\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Int(\"11\")])\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        22",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1391_block_reassign_samekind",
+      "source_sha256": "3ebf8cc6eed5b3ce2c02566412a83f05a5c5fa86caeb6ee3d61d21bab6999b9c",
+      "source": "function main()\n    local b := {|| 11 }\n    local c := {|| QOut(\"A\") }\n    local d := {|| QOut(\"A\") }\n    local i := 0\n    b := {|| 22 }\n    ? eval(b)\n    if .t.\n        c := {|| QOut(\"B\") }\n    endif\n    ? eval(c)\n    while i < 2\n        d := {|| QOut(\"C\") }\n        i++\n    enddo\n    ? eval(d)\n    return nil\n",
+      "results": {
+        "default-linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1v25148433/tests/t1391_block_reassign_samekind.hb -> /downloads/verify-t1v2-contracts/t1391_block_reassign_samekind/default-linux/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        22\nB\nNIL\nC\nNIL",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "default-windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-t1v25148433/tests/t1391_block_reassign_samekind.hb -> /downloads/verify-t1v2-contracts/t1391_block_reassign_samekind/default-windows/program.s (1 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n        22\nB\nNIL\nC\nNIL",
+            "stderr": ""
+          },
+          "exact": true
+        },
+        "llvm-linux": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Int(\"11\")])\n"
+          }
+        },
+        "llvm-windows": {
+          "compile": {
+            "exit": 1,
+            "stdout": "",
+            "stderr": "error: LLVM scalar: expression unsupported: BlockLit(0, [], [Int(\"11\")])\n"
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n        22\nB\nNIL\nC\nNIL",
+        "stderr": ""
+      }
+    }
+  ]
+}

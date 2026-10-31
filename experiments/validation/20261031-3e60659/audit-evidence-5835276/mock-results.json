@@ -1,0 +1,157 @@
+{
+  "commit": "58352760d674c9c90c0f7f241bbaea6b5e046ef3",
+  "method": "Exec exact lines70-94 with mocked subprocess results; no compiler or Wine execution",
+  "reviewed_block_sha256": "353de5a3713cbb9ba2531ba8e077195641073aa7b5000acaf212cec06cec8ff6",
+  "results": [
+    {
+      "name": "wrong_stdout_debugger_then_clean",
+      "target": "windows",
+      "status": "PASS",
+      "calls": 2,
+      "log": "RETRY wine teardown noise mock-case windows current attempt 1\n",
+      "failure": null,
+      "attempts": [
+        {
+          "rc": 0,
+          "stdout": "WRONG",
+          "stderr": "Unhandled page fault: starting debugger"
+        },
+        {
+          "rc": 0,
+          "stdout": "OK",
+          "stderr": ""
+        }
+      ]
+    },
+    {
+      "name": "linux_program_stderr_then_clean",
+      "target": "linux",
+      "status": "PASS",
+      "calls": 2,
+      "log": "RETRY wine teardown noise mock-case linux current attempt 1\n",
+      "failure": null,
+      "attempts": [
+        {
+          "rc": 0,
+          "stdout": "OK",
+          "stderr": "application says starting debugger"
+        },
+        {
+          "rc": 0,
+          "stdout": "OK",
+          "stderr": ""
+        }
+      ]
+    },
+    {
+      "name": "windows_real_program_stderr_then_clean",
+      "target": "windows",
+      "status": "PASS",
+      "calls": 2,
+      "log": "RETRY wine teardown noise mock-case windows current attempt 1\n",
+      "failure": null,
+      "attempts": [
+        {
+          "rc": 0,
+          "stdout": "OK",
+          "stderr": "REAL ERROR: starting debugger"
+        },
+        {
+          "rc": 0,
+          "stdout": "OK",
+          "stderr": ""
+        }
+      ]
+    },
+    {
+      "name": "wrong_rc_debugger",
+      "target": "windows",
+      "status": "FAIL",
+      "calls": 1,
+      "log": "",
+      "failure": "('mock-case', 'windows', 'current', CompletedProcess(args=['mock'], returncode=1, stdout=b'OK', stderr=b'starting debugger'))",
+      "attempts": [
+        {
+          "rc": 1,
+          "stdout": "OK",
+          "stderr": "starting debugger"
+        }
+      ]
+    },
+    {
+      "name": "wrong_stdout_without_stderr",
+      "target": "windows",
+      "status": "FAIL",
+      "calls": 1,
+      "log": "",
+      "failure": "('mock-case', 'windows', 'current', b'WRONG', b'OK')",
+      "attempts": [
+        {
+          "rc": 0,
+          "stdout": "WRONG",
+          "stderr": ""
+        }
+      ]
+    },
+    {
+      "name": "persistent_debugger",
+      "target": "windows",
+      "status": "FAIL",
+      "calls": 3,
+      "log": "RETRY wine teardown noise mock-case windows current attempt 1\nRETRY wine teardown noise mock-case windows current attempt 2\n",
+      "failure": "('mock-case', 'windows', 'current', CompletedProcess(args=['mock'], returncode=0, stdout=b'OK', stderr=b'starting debugger'))",
+      "attempts": [
+        {
+          "rc": 0,
+          "stdout": "OK",
+          "stderr": "starting debugger"
+        },
+        {
+          "rc": 0,
+          "stdout": "OK",
+          "stderr": "starting debugger"
+        },
+        {
+          "rc": 0,
+          "stdout": "OK",
+          "stderr": "starting debugger"
+        }
+      ]
+    },
+    {
+      "name": "other_stderr",
+      "target": "windows",
+      "status": "FAIL",
+      "calls": 1,
+      "log": "",
+      "failure": "('mock-case', 'windows', 'current', CompletedProcess(args=['mock'], returncode=0, stdout=b'OK', stderr=b'real error'))",
+      "attempts": [
+        {
+          "rc": 0,
+          "stdout": "OK",
+          "stderr": "real error"
+        }
+      ]
+    },
+    {
+      "name": "final_bad_stdout",
+      "target": "windows",
+      "status": "FAIL",
+      "calls": 2,
+      "log": "RETRY wine teardown noise mock-case windows current attempt 1\n",
+      "failure": "('mock-case', 'windows', 'current', b'WRONG', b'OK')",
+      "attempts": [
+        {
+          "rc": 0,
+          "stdout": "OK",
+          "stderr": "starting debugger"
+        },
+        {
+          "rc": 0,
+          "stdout": "WRONG",
+          "stderr": ""
+        }
+      ]
+    }
+  ]
+}

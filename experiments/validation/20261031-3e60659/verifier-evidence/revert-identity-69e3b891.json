@@ -1,0 +1,12 @@
+{
+  "commit": "96446dfca9d8926d2d4d5ddb6de6dac955cc9e05",
+  "remote_head": "96446dfca9d8926d2d4d5ddb6de6dac955cc9e05",
+  "base": "3e6065903faee3ab35c92b3776f7c1f068d11d01",
+  "base_tree": "e320c82aed495560adf0ece5e568b822340b07cb",
+  "revert_tree": "e320c82aed495560adf0ece5e568b822340b07cb",
+  "diff_vs_base": "",
+  "harness_base_blob": "03ab4a5e2814ae525372b3f2bb7833754f8de64e",
+  "harness_revert_blob": "03ab4a5e2814ae525372b3f2bb7833754f8de64e",
+  "src_diff": "",
+  "full_tree_equal": true
+}
