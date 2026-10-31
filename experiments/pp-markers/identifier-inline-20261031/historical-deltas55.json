@@ -1,0 +1,1050 @@
+{
+  "total": 30237,
+  "changes": [
+    {
+      "source": "#translate CHOOSE <!x!> => MARK\n? CHOOSE FROM\n",
+      "baseline": [
+        0,
+        "? CHOOSE FROM\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? MARK\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? MARK\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate CHOOSE <!x!> => MARK\nCHOOSE   FROM   +  1\n",
+      "baseline": [
+        0,
+        "CHOOSE   FROM   +  1\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "MARK   +  1\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMARK   +  1\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate CHOOSE <!x!> => MARK\nCHOOSE FROM + 1\n",
+      "baseline": [
+        0,
+        "CHOOSE FROM + 1\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "MARK + 1\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMARK + 1\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate CHOOSE <!x!> => MARK\nCHOOSE FROM CHOOSE FROM\n",
+      "baseline": [
+        0,
+        "CHOOSE FROM CHOOSE FROM\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "MARK MARK\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMARK MARK\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate CHOOSE <!x!> => MARK\nCHOOSE FROM extra\n",
+      "baseline": [
+        0,
+        "CHOOSE FROM extra\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "MARK extra\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMARK extra\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate CHOOSE <!x!> => MARK\nCHOOSE FROM(1)\n",
+      "baseline": [
+        0,
+        "CHOOSE FROM(1)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "MARK(1)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMARK(1)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate CHOOSE <!x!> => MARK\nCHOOSE FROM, rest\n",
+      "baseline": [
+        0,
+        "CHOOSE FROM, rest\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "MARK, rest\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMARK, rest\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate CHOOSE <!x!> => MARK\nCHOOSE OTHER extra\n",
+      "baseline": [
+        0,
+        "CHOOSE OTHER extra\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "MARK extra\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMARK extra\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate CHOOSE <!x!> => MARK\nx := CHOOSE FROM\n",
+      "baseline": [
+        0,
+        "x := CHOOSE FROM\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "x := MARK\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nx := MARK\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a><b>\n? JOIN Test New\n",
+      "baseline": [
+        0,
+        "? JOIN Test New\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? TestNew\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? TestNew\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a><b>\n? JOIN Test New + 7\n",
+      "baseline": [
+        0,
+        "? JOIN Test New + 7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? TestNew + 7\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? TestNew + 7\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a><b>\n? JOIN Test New(1,2)\n",
+      "baseline": [
+        0,
+        "? JOIN Test New(1,2)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? TestNew(1,2)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? TestNew(1,2)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a><b>\nWRAP(JOIN Test New)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(TestNew)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(TestNew)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New\n",
+      "baseline": [
+        0,
+        "? JOIN Test New\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New + 7\n",
+      "baseline": [
+        0,
+        "? JOIN Test New + 7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New + 7\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New + 7\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New(1,2)\n",
+      "baseline": [
+        0,
+        "? JOIN Test New(1,2)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New(1,2)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New(1,2)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_<b>\nWRAP(JOIN Test New)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New\n",
+      "baseline": [
+        0,
+        "? JOIN Test New\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? OUT(Test,New)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? OUT(Test,New)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New + 7\n",
+      "baseline": [
+        0,
+        "? JOIN Test New + 7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? OUT(Test,New) + 7\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? OUT(Test,New) + 7\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New(1,2)\n",
+      "baseline": [
+        0,
+        "? JOIN Test New(1,2)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? OUT(Test,New)(1,2)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? OUT(Test,New)(1,2)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>,<b>)\nWRAP(JOIN Test New)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(OUT(Test,New))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(OUT(Test,New))\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate PROBE <!x!> => OUT(#<x>)\nPROBE alpha beta\n",
+      "baseline": [
+        0,
+        "PROBE alpha beta\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(\"alpha\") beta\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"alpha\") beta\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#translate PROBE <!x!> => OUT(<\"x\">)\nPROBE alpha beta\n",
+      "baseline": [
+        0,
+        "PROBE alpha beta\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(\"alpha\") beta\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"alpha\") beta\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate CHOOSE <!x!> => MARK\n? CHOOSE FROM\n",
+      "baseline": [
+        0,
+        "? CHOOSE FROM\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? MARK\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? MARK\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate CHOOSE <!x!> => MARK\nCHOOSE   FROM   +  1\n",
+      "baseline": [
+        0,
+        "CHOOSE   FROM   +  1\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "MARK   +  1\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMARK   +  1\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate CHOOSE <!x!> => MARK\nCHOOSE FROM + 1\n",
+      "baseline": [
+        0,
+        "CHOOSE FROM + 1\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "MARK + 1\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMARK + 1\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate CHOOSE <!x!> => MARK\nCHOOSE FROM CHOOSE FROM\n",
+      "baseline": [
+        0,
+        "CHOOSE FROM CHOOSE FROM\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "MARK MARK\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMARK MARK\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate CHOOSE <!x!> => MARK\nCHOOSE FROM extra\n",
+      "baseline": [
+        0,
+        "CHOOSE FROM extra\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "MARK extra\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMARK extra\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate CHOOSE <!x!> => MARK\nCHOOSE FROM(1)\n",
+      "baseline": [
+        0,
+        "CHOOSE FROM(1)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "MARK(1)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMARK(1)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate CHOOSE <!x!> => MARK\nCHOOSE FROM, rest\n",
+      "baseline": [
+        0,
+        "CHOOSE FROM, rest\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "MARK, rest\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMARK, rest\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate CHOOSE <!x!> => MARK\nCHOOSE OTHER extra\n",
+      "baseline": [
+        0,
+        "CHOOSE OTHER extra\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "MARK extra\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nMARK extra\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate CHOOSE <!x!> => MARK\nx := CHOOSE FROM\n",
+      "baseline": [
+        0,
+        "x := CHOOSE FROM\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "x := MARK\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nx := MARK\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a><b>\n? JOIN Test New\n",
+      "baseline": [
+        0,
+        "? JOIN Test New\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? TestNew\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? TestNew\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a><b>\n? JOIN Test New + 7\n",
+      "baseline": [
+        0,
+        "? JOIN Test New + 7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? TestNew + 7\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? TestNew + 7\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a><b>\n? JOIN Test New(1,2)\n",
+      "baseline": [
+        0,
+        "? JOIN Test New(1,2)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? TestNew(1,2)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? TestNew(1,2)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a><b>\nWRAP(JOIN Test New)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(TestNew)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(TestNew)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New\n",
+      "baseline": [
+        0,
+        "? JOIN Test New\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New + 7\n",
+      "baseline": [
+        0,
+        "? JOIN Test New + 7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New + 7\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New + 7\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_<b>\n? JOIN Test New(1,2)\n",
+      "baseline": [
+        0,
+        "? JOIN Test New(1,2)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New(1,2)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New(1,2)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_<b>\nWRAP(JOIN Test New)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(Test_New)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(Test_New)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New\n",
+      "baseline": [
+        0,
+        "? JOIN Test New\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? OUT(Test,New)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? OUT(Test,New)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New + 7\n",
+      "baseline": [
+        0,
+        "? JOIN Test New + 7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? OUT(Test,New) + 7\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? OUT(Test,New) + 7\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New + JOIN Other Last\n",
+      "baseline": [
+        0,
+        "? JOIN Test New + JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? OUT(Test,New) + OUT(Other,Last)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? OUT(Test,New) + OUT(Other,Last)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New JOIN Other Last\n",
+      "baseline": [
+        0,
+        "? JOIN Test New JOIN Other Last\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? OUT(Test,New) OUT(Other,Last)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? OUT(Test,New) OUT(Other,Last)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New Other\n",
+      "baseline": [
+        0,
+        "? JOIN Test New Other\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? OUT(Test,New) Other\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? OUT(Test,New) Other\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New(1,2)\n",
+      "baseline": [
+        0,
+        "? JOIN Test New(1,2)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? OUT(Test,New)(1,2)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? OUT(Test,New)(1,2)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New(1,2) + 7\n",
+      "baseline": [
+        0,
+        "? JOIN Test New(1,2) + 7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? OUT(Test,New)(1,2) + 7\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? OUT(Test,New)(1,2) + 7\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New, 7\n",
+      "baseline": [
+        0,
+        "? JOIN Test New, 7\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? OUT(Test,New), 7\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? OUT(Test,New), 7\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New->Field\n",
+      "baseline": [
+        0,
+        "? JOIN Test New->Field\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? OUT(Test,New)->Field\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? OUT(Test,New)->Field\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\n? JOIN Test New[1]\n",
+      "baseline": [
+        0,
+        "? JOIN Test New[1]\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? OUT(Test,New)[1]\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? OUT(Test,New)[1]\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\nWRAP(JOIN Test New)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(OUT(Test,New))\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(OUT(Test,New))\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>,<b>)\nWRAP(JOIN Test New,7)\n",
+      "baseline": [
+        0,
+        "WRAP(JOIN Test New,7)\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "WRAP(OUT(Test,New),7)\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nWRAP(OUT(Test,New),7)\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!class!> <!name!> => <class>_<name>\n? JOIN Test New\n",
+      "baseline": [
+        0,
+        "? JOIN Test New\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "? Test_New\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\n? Test_New\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate PROBE <!x!> => OUT(#<x>)\nPROBE alpha beta\n",
+      "baseline": [
+        0,
+        "PROBE alpha beta\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(\"alpha\") beta\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"alpha\") beta\n",
+        ""
+      ],
+      "match": true
+    },
+    {
+      "source": "#xtranslate PROBE <!x!> => OUT(<\"x\">)\nPROBE alpha beta\n",
+      "baseline": [
+        0,
+        "PROBE alpha beta\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(\"alpha\") beta\n",
+        ""
+      ],
+      "reference": [
+        0,
+        "\nOUT(\"alpha\") beta\n",
+        ""
+      ],
+      "match": true
+    }
+  ]
+}

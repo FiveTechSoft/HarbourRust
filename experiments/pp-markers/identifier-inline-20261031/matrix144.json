@@ -1,0 +1,1444 @@
+{
+  "rows": [
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>)\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test)\n",
+      "own_exit": 0,
+      "own_output": "? OUT(Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>)\n? JOIN Test TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test)\n",
+      "own_exit": 0,
+      "own_output": "? OUT(Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>)\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test,JOIN Other\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test,JOIN Other\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>)\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>)\nWRAP(JOIN Test)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(JOIN Test)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(JOIN Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>)\n? JOIN Test[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test[1]\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test[1]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>)\n? JOIN Test + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test + 7\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => OUT(<a>)\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_ok\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_ok\n? JOIN Test TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_ok\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test,JOIN Other\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test,JOIN Other\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_ok\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_ok\nWRAP(JOIN Test)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(JOIN Test)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(JOIN Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_ok\n? JOIN Test[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test[1]\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test[1]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_ok\n? JOIN Test + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test + 7\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => <a>_ok\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => JOIN <a>\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => JOIN <a>\n? JOIN Test TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => JOIN <a>\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test,JOIN Other\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test,JOIN Other\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => JOIN <a>\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => JOIN <a>\nWRAP(JOIN Test)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(JOIN Test)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(JOIN Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => JOIN <a>\n? JOIN Test[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test[1]\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test[1]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => JOIN <a>\n? JOIN Test + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test + 7\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> <!b!> => JOIN <a>\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => OUT(<a>)\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test New\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => OUT(<a>)\n? JOIN Test TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test)\n",
+      "own_exit": 0,
+      "own_output": "? OUT(Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => OUT(<a>)\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test,JOIN Other\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test,JOIN Other\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => OUT(<a>)\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => OUT(<a>)\nWRAP(JOIN Test)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(JOIN Test)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(JOIN Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => OUT(<a>)\n? JOIN Test[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test[1]\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test[1]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => OUT(<a>)\n? JOIN Test + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test + 7\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => OUT(<a>)\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => <a>_ok\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test New\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => <a>_ok\n? JOIN Test TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => <a>_ok\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test,JOIN Other\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test,JOIN Other\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => <a>_ok\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => <a>_ok\nWRAP(JOIN Test)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(JOIN Test)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(JOIN Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => <a>_ok\n? JOIN Test[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test[1]\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test[1]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => <a>_ok\n? JOIN Test + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test + 7\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => <a>_ok\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => JOIN <a>\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test New\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => JOIN <a>\n? JOIN Test TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => JOIN <a>\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test,JOIN Other\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test,JOIN Other\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => JOIN <a>\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => JOIN <a>\nWRAP(JOIN Test)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(JOIN Test)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(JOIN Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => JOIN <a>\n? JOIN Test[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test[1]\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test[1]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => JOIN <a>\n? JOIN Test + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test + 7\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> TAIL => JOIN <a>\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> => OUT(<a>)\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test) New\n",
+      "own_exit": 0,
+      "own_output": "? OUT(Test) New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => OUT(<a>)\n? JOIN Test TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test) TAIL\n",
+      "own_exit": 0,
+      "own_output": "? OUT(Test) TAIL\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => OUT(<a>)\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test),OUT(Other)\n",
+      "own_exit": 0,
+      "own_output": "? OUT(Test),OUT(Other)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => OUT(<a>)\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> => OUT(<a>)\nWRAP(JOIN Test)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test))\n",
+      "own_exit": 0,
+      "own_output": "WRAP(OUT(Test))\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => OUT(<a>)\n? JOIN Test[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test)[1]\n",
+      "own_exit": 0,
+      "own_output": "? OUT(Test)[1]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => OUT(<a>)\n? JOIN Test + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test) + 7\n",
+      "own_exit": 0,
+      "own_output": "? OUT(Test) + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => OUT(<a>)\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> => <a>_ok\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok New\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => <a>_ok\n? JOIN Test TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok TAIL\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok TAIL\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => <a>_ok\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok,Other_ok\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok,Other_ok\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => <a>_ok\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> => <a>_ok\nWRAP(JOIN Test)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(Test_ok)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(Test_ok)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => <a>_ok\n? JOIN Test[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok[1]\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok[1]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => <a>_ok\n? JOIN Test + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok + 7\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => <a>_ok\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> => JOIN <a>\n? JOIN Test New\n",
+      "reference_exit": 1,
+      "reference_output": "\n? JOIN Test New\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: fixed translation expansion too deep (recursive translate?)\n",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => JOIN <a>\n? JOIN Test TAIL\n",
+      "reference_exit": 1,
+      "reference_output": "\n? JOIN Test TAIL\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: fixed translation expansion too deep (recursive translate?)\n",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => JOIN <a>\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 1,
+      "reference_output": "\n? JOIN Test,JOIN Other\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: fixed translation expansion too deep (recursive translate?)\n",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => JOIN <a>\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#translate JOIN <!a!> => JOIN <a>\nWRAP(JOIN Test)\n",
+      "reference_exit": 1,
+      "reference_output": "\nWRAP(JOIN Test)\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: fixed translation expansion too deep (recursive translate?)\n",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => JOIN <a>\n? JOIN Test[1]\n",
+      "reference_exit": 1,
+      "reference_output": "\n? JOIN Test[1]\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: fixed translation expansion too deep (recursive translate?)\n",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => JOIN <a>\n? JOIN Test + 7\n",
+      "reference_exit": 1,
+      "reference_output": "\n? JOIN Test + 7\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: fixed translation expansion too deep (recursive translate?)\n",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#translate JOIN <!a!> => JOIN <a>\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>)\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test)\n",
+      "own_exit": 0,
+      "own_output": "? OUT(Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>)\n? JOIN Test TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test)\n",
+      "own_exit": 0,
+      "own_output": "? OUT(Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>)\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test,JOIN Other\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test,JOIN Other\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>)\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>)\nWRAP(JOIN Test)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(JOIN Test)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(JOIN Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>)\n? JOIN Test[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test[1]\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test[1]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>)\n? JOIN Test + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test + 7\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => OUT(<a>)\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_ok\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_ok\n? JOIN Test TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_ok\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test,JOIN Other\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test,JOIN Other\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_ok\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_ok\nWRAP(JOIN Test)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(JOIN Test)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(JOIN Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_ok\n? JOIN Test[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test[1]\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test[1]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_ok\n? JOIN Test + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test + 7\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => <a>_ok\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => JOIN <a>\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => JOIN <a>\n? JOIN Test TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => JOIN <a>\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test,JOIN Other\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test,JOIN Other\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => JOIN <a>\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => JOIN <a>\nWRAP(JOIN Test)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(JOIN Test)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(JOIN Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => JOIN <a>\n? JOIN Test[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test[1]\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test[1]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => JOIN <a>\n? JOIN Test + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test + 7\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> <!b!> => JOIN <a>\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => OUT(<a>)\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test New\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => OUT(<a>)\n? JOIN Test TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test)\n",
+      "own_exit": 0,
+      "own_output": "? OUT(Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => OUT(<a>)\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test,JOIN Other\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test,JOIN Other\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => OUT(<a>)\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => OUT(<a>)\nWRAP(JOIN Test)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(JOIN Test)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(JOIN Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => OUT(<a>)\n? JOIN Test[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test[1]\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test[1]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => OUT(<a>)\n? JOIN Test + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test + 7\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => OUT(<a>)\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => <a>_ok\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test New\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => <a>_ok\n? JOIN Test TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => <a>_ok\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test,JOIN Other\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test,JOIN Other\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => <a>_ok\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => <a>_ok\nWRAP(JOIN Test)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(JOIN Test)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(JOIN Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => <a>_ok\n? JOIN Test[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test[1]\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test[1]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => <a>_ok\n? JOIN Test + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test + 7\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => <a>_ok\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => JOIN <a>\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test New\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => JOIN <a>\n? JOIN Test TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => JOIN <a>\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test,JOIN Other\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test,JOIN Other\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => JOIN <a>\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => JOIN <a>\nWRAP(JOIN Test)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(JOIN Test)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(JOIN Test)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => JOIN <a>\n? JOIN Test[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test[1]\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test[1]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => JOIN <a>\n? JOIN Test + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN Test + 7\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> TAIL => JOIN <a>\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => OUT(<a>)\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test) New\n",
+      "own_exit": 0,
+      "own_output": "? OUT(Test) New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => OUT(<a>)\n? JOIN Test TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test) TAIL\n",
+      "own_exit": 0,
+      "own_output": "? OUT(Test) TAIL\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => OUT(<a>)\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test),OUT(Other)\n",
+      "own_exit": 0,
+      "own_output": "? OUT(Test),OUT(Other)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => OUT(<a>)\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => OUT(<a>)\nWRAP(JOIN Test)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(OUT(Test))\n",
+      "own_exit": 0,
+      "own_output": "WRAP(OUT(Test))\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => OUT(<a>)\n? JOIN Test[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test)[1]\n",
+      "own_exit": 0,
+      "own_output": "? OUT(Test)[1]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => OUT(<a>)\n? JOIN Test + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? OUT(Test) + 7\n",
+      "own_exit": 0,
+      "own_output": "? OUT(Test) + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => OUT(<a>)\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok New\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok New\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n? JOIN Test TAIL\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok TAIL\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok TAIL\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok,Other_ok\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok,Other_ok\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\nWRAP(JOIN Test)\n",
+      "reference_exit": 0,
+      "reference_output": "\nWRAP(Test_ok)\n",
+      "own_exit": 0,
+      "own_output": "WRAP(Test_ok)\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n? JOIN Test[1]\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok[1]\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok[1]\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n? JOIN Test + 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok + 7\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok + 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => JOIN <a>\n? JOIN Test New\n",
+      "reference_exit": 1,
+      "reference_output": "\n? JOIN Test New\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: fixed translation expansion too deep (recursive translate?)\n",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => JOIN <a>\n? JOIN Test TAIL\n",
+      "reference_exit": 1,
+      "reference_output": "\n? JOIN Test TAIL\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: fixed translation expansion too deep (recursive translate?)\n",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => JOIN <a>\n? JOIN Test,JOIN Other\n",
+      "reference_exit": 1,
+      "reference_output": "\n? JOIN Test,JOIN Other\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: fixed translation expansion too deep (recursive translate?)\n",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => JOIN <a>\n? \"JOIN Test\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test\"\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => JOIN <a>\nWRAP(JOIN Test)\n",
+      "reference_exit": 1,
+      "reference_output": "\nWRAP(JOIN Test)\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: fixed translation expansion too deep (recursive translate?)\n",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => JOIN <a>\n? JOIN Test[1]\n",
+      "reference_exit": 1,
+      "reference_output": "\n? JOIN Test[1]\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: fixed translation expansion too deep (recursive translate?)\n",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => JOIN <a>\n? JOIN Test + 7\n",
+      "reference_exit": 1,
+      "reference_output": "\n? JOIN Test + 7\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: fixed translation expansion too deep (recursive translate?)\n",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "source": "#xtranslate JOIN <!a!> => JOIN <a>\n? JOI Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOI Test\n",
+      "own_exit": 0,
+      "own_output": "? JOI Test\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    }
+  ]
+}

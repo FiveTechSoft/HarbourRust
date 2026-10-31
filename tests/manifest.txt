@@ -1321,3 +1321,9 @@ pos tests/t1322_pp_call_factory.hb \n         7
 pos tests/t1323_pp_call_stringify.hb \nalpha
 pos tests/t1324_pp_call_temporal.hb \n         7\n         8
 neg tests/t1325_pp_call_cycle.hb command expansion too deep
+pos tests/t1326_pp_inline_ident_one.hb \nalpha
+pos tests/t1328_pp_inline_ident_join.hb \n         7
+pos tests/t1329_pp_inline_ident_call.hb \n         7
+pos tests/t1330_pp_inline_ident_suffix.hb \n         7
+pos tests/t1331_pp_inline_ident_quote.hb \nWORD X
+neg tests/t1332_pp_inline_ident_cycle.hb fixed translation expansion too deep

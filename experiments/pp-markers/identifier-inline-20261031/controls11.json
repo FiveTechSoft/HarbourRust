@@ -1,0 +1,125 @@
+{
+  "rows": [
+    {
+      "name": "remove",
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n? JOIN Test\n#untranslate JOIN <!a!> => <a>_ok\n? JOIN Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok\n\n? Test_ok\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok\n? Test_ok\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "name": "duplicate",
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n#xtranslate JOIN <!a!> => <a>_ok\n? JOIN Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_ok\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test\n",
+      "own_error": "",
+      "match": false,
+      "baseline_match": false
+    },
+    {
+      "name": "overlap_command",
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n#xcommand JOIN <a> => OUT(<a>)\n? JOIN Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_ok\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test\n",
+      "own_error": "",
+      "match": false,
+      "baseline_match": false
+    },
+    {
+      "name": "overlap_fixed",
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n#xtranslate JOIN Test => fixed\n? JOIN Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? fixed\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test\n",
+      "own_error": "",
+      "match": false,
+      "baseline_match": false
+    },
+    {
+      "name": "overlap_call",
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n#xtranslate JOIN(<a>) => OUT(<a>)\n? JOIN Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? Test_ok\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test\n",
+      "own_error": "",
+      "match": false,
+      "baseline_match": false
+    },
+    {
+      "name": "cycle",
+      "source": "#xtranslate JOIN <!a!> => JOIN <a>\n? JOIN Test\n",
+      "reference_exit": 1,
+      "reference_output": "\n? JOIN Test\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 2: fixed translation expansion too deep (recursive translate?)\n",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "name": "generated_remove",
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n#xcommand FIRST => #undef X ; ? JOIN Test\n#define X 7\nFIRST\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n ? Test_ok\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "name": "case",
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n? join tEsT\n",
+      "reference_exit": 0,
+      "reference_output": "\n? tEsT_ok\n",
+      "own_exit": 0,
+      "own_output": "? tEsT_ok\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    },
+    {
+      "name": "quoted",
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n? \"JOIN Test;\",[JOIN Test],e\"JOIN Test;\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n? \"JOIN Test;\",\"JOIN Test\",\"JOIN Test;\"\n",
+      "own_exit": 0,
+      "own_output": "? \"JOIN Test;\",[JOIN Test],e\"JOIN Test;\"\n",
+      "own_error": "",
+      "match": false,
+      "baseline_match": false
+    },
+    {
+      "name": "numeric",
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n? JOIN 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n? JOIN 7\n",
+      "own_exit": 0,
+      "own_output": "? JOIN 7\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": true
+    },
+    {
+      "name": "later_define",
+      "source": "#xtranslate JOIN <!a!> => <a>_ok\n? JOIN Test\n#define MARK 1\n? JOIN Test\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_ok\n\n? Test_ok\n",
+      "own_exit": 0,
+      "own_output": "? Test_ok\n? Test_ok\n",
+      "own_error": "",
+      "match": true,
+      "baseline_match": false
+    }
+  ]
+}

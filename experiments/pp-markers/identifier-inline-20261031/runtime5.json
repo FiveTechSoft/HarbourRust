@@ -1,0 +1,109 @@
+{
+  "rows": [
+    {
+      "file": "t1326_pp_inline_ident_one.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1328_pp_inline_ident_join.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1329_pp_inline_ident_call.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1330_pp_inline_ident_suffix.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1331_pp_inline_ident_quote.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nWORD X",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nWORD X",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nWORD X",
+          "stderr": ""
+        }
+      }
+    }
+  ]
+}

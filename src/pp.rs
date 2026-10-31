@@ -1090,12 +1090,17 @@ fn remove_rule_kind(cmds: &mut Vec<Cmd>, pattern: &[String], result: &str, trans
     }
 }
 
+fn identifier_translation(c:&Cmd)->bool{
+    c.translation && c.pattern.first().map(|t|!t.starts_with('<')).unwrap_or(false)
+        && c.pattern.iter().skip(1).any(|t|t.starts_with("<!"))
+        && c.pattern.iter().skip(1).all(|t|(t.starts_with("<!")&&t.ends_with("!>")) || marker_ident(t))
+}
 fn fixed_translation(c: &Cmd) -> bool {
     c.translation && c.pattern.iter().all(|p| p != "[" && p != "]" && !(p.starts_with('<') && p.ends_with('>')))
 }
-// A mixed family stays entirely on its historical path. Captured translation
-// priority/expression boundaries are intentionally not redefined by this slice.
+// New identifier captures enter inline mode only with no related rules.
 fn active_fixed_translation(c: &Cmd, rules: &[Cmd], calls: &[Cmd]) -> bool {
+    if identifier_translation(c){return !rules.iter().any(|other|other.rule_id!=c.rule_id&&c.pattern.first().zip(other.pattern.first()).map(|(a,b)|lit_match(a,b)||lit_match(b,a)).unwrap_or(false))&&!calls.iter().any(|other|c.pattern.first().zip(other.pattern.first()).map(|(a,b)|lit_match(a,b)||lit_match(b,a)).unwrap_or(false));}
     fixed_translation(c) && !rules.iter().filter(|other| other.translation && !fixed_translation(other)).chain(calls.iter()).any(|other| c.pattern.first().zip(other.pattern.first()).map(|(a,b)|lit_match(a,b)||lit_match(b,a)).unwrap_or(false))
 }
 fn expand_fixed_translations(text: &str, rules: &[Cmd], calls: &[Cmd], line: usize) -> Result<String, String> {
@@ -1112,14 +1117,15 @@ fn expand_fixed_translations(text: &str, rules: &[Cmd], calls: &[Cmd], line: usi
             let found = rules.iter().rev().find(|c| active_fixed_translation(c,rules,calls)
                 && i+c.pattern.len()<=tokens.len()
                 && c.pattern.iter().zip(&tokens[i..]).all(|(p,t)|
-                    if c.restricted_exact {t.eq_ignore_ascii_case(p)} else {lit_match(t,p)}));
+                    if p.starts_with("<!")&&p.ends_with("!>"){marker_ident(t)}else if c.restricted_exact {t.eq_ignore_ascii_case(p)} else {lit_match(t,p)}));
             if let Some(rule) = found {
                 replacements += 1;
                 if replacements > 10000 { return Err(format!("line {}: fixed translation replacement limit exceeded",line)); }
                 let (start,_) = spans[&(tokens[i].as_ptr() as usize)];
                 let (_,end) = spans[&(tokens[i+rule.pattern.len()-1].as_ptr() as usize)];
                 out.push_str(&current[at..start]);
-                out.push_str(&render_command(rule,&[],&current,&tokens,line)?);
+                let caps:Vec<Capture>=rule.pattern.iter().zip(&tokens[i..]).filter(|(p,_)|p.starts_with("<!")).map(|(_,t)|Capture::from_tokens(std::slice::from_ref(t))).collect();
+                out.push_str(&render_command(rule,&caps,&current,&tokens,line)?);
                 at=end; i+=rule.pattern.len(); changed=true;
             } else { i+=1; }
         }
