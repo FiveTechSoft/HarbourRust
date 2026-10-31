@@ -1,0 +1,130 @@
+{
+  "rows": [
+    {
+      "file": "t1319_pp_call_source.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1320_pp_call_head.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1321_pp_call_rescan.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1322_pp_call_factory.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         7",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1323_pp_call_stringify.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\nalpha",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\nalpha",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\nalpha",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "file": "t1324_pp_call_temporal.hb",
+      "exact": true,
+      "outputs": {
+        "ref": {
+          "exit": 0,
+          "stdout": "\n         7\n         8",
+          "stderr": ""
+        },
+        "default": {
+          "exit": 0,
+          "stdout": "\n         7\n         8",
+          "stderr": ""
+        },
+        "llvm": {
+          "exit": 0,
+          "stdout": "\n         7\n         8",
+          "stderr": ""
+        }
+      }
+    }
+  ]
+}

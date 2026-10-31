@@ -1,0 +1,94 @@
+{
+  "rows": [
+    {
+      "name": "call_before_command",
+      "source": "#xtranslate NAME(<x>) => <x>\n#xcommand SHOW <!x!> => OUT(<x>)\nSHOW NAME(alpha)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(alpha)\n",
+      "own_exit": 0,
+      "own_output": "OUT(alpha)\n",
+      "own_error": ""
+    },
+    {
+      "name": "call_alias_head",
+      "source": "#xtranslate NAME(<x>) => SHOW <x>\n#xcommand SHOW <!x!> => OUT(<x>)\nNAME(alpha)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(alpha)\n",
+      "own_exit": 0,
+      "own_output": "OUT(alpha)\n",
+      "own_error": ""
+    },
+    {
+      "name": "call_after_command",
+      "source": "#xtranslate NAME(<x>) => <x>\n#xcommand FIRST <x> => SHOW NAME(<x>)\n#xcommand SHOW <!x!> => OUT(<x>)\nFIRST alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(alpha)\n",
+      "own_exit": 0,
+      "own_output": "OUT(alpha)\n",
+      "own_error": ""
+    },
+    {
+      "name": "call_factory",
+      "source": "#xtranslate NAME(<x>([<args,...>])) => <x>\n#xcommand DECLARE <!x!> => #xcommand METHOD <x> => OUT(\"ok\")\nDECLARE NAME(New(1,2))\nMETHOD New\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(\"ok\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"ok\")\n",
+      "own_error": ""
+    },
+    {
+      "name": "call_factory_escaped",
+      "source": "#xtranslate NAME(<x>([<args,...>])) => <x>\n#xcommand DECLARE <!x!> => #xcommand METHOD <x> \\<arg> => OUT(\\<arg>)\nDECLARE NAME(New(1,2))\nMETHOD New 7\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(7)\n",
+      "own_exit": 0,
+      "own_output": "OUT(7)\n",
+      "own_error": ""
+    },
+    {
+      "name": "call_quote",
+      "source": "#xtranslate NAME(<x>) => <x>\n#xcommand SHOW <x> => OUT(<\"x\">)\nSHOW NAME(alpha)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(\"alpha\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(\"alpha\")\n",
+      "own_error": ""
+    },
+    {
+      "name": "call_separator",
+      "source": "#xtranslate NAME(<x>) => <x>;OUT(2)\n#xcommand SHOW <x> => OUT(<x>)\nSHOW NAME(alpha)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(alpha);OUT(2)\n",
+      "own_exit": 0,
+      "own_output": "OUT(alpha)\nOUT(2)\n",
+      "own_error": ""
+    },
+    {
+      "name": "call_no_double",
+      "source": "#xtranslate NAME(<x>) => OUT(<x>)\n#xcommand OUT(<x>) => RESULT(<x>)\n? NAME(alpha)\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n? OUT(alpha)\n",
+      "own_exit": 0,
+      "own_output": "? OUT(alpha)\n",
+      "own_error": ""
+    },
+    {
+      "name": "noncall_concat",
+      "source": "#xtranslate JOIN <!class!> <!name!> => <class>_<name>\n? JOIN Test New\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test New\n",
+      "own_error": ""
+    },
+    {
+      "name": "noncall_plain",
+      "source": "#xtranslate JOIN <!class!> <name> => <class>_<name>\n? JOIN Test New(1,2)\n",
+      "reference_exit": 0,
+      "reference_output": "\n? Test_New(1,2)\n",
+      "own_exit": 0,
+      "own_output": "? JOIN Test New(1,2)\n",
+      "own_error": ""
+    }
+  ]
+}

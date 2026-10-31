@@ -1314,3 +1314,10 @@ pos tests/t1315_pp_factory_separator.hb \n         1\n         7
 pos tests/t1316_pp_factory_separator.hb \n         1\n         7
 pos tests/t1317_pp_factory_separator.hb \n         1\n         7
 pos tests/t1318_pp_factory_separator.hb \n         1\n         7
+pos tests/t1319_pp_call_source.hb \nalpha
+pos tests/t1320_pp_call_head.hb \n         7
+pos tests/t1321_pp_call_rescan.hb \n         7
+pos tests/t1322_pp_call_factory.hb \n         7
+pos tests/t1323_pp_call_stringify.hb \nalpha
+pos tests/t1324_pp_call_temporal.hb \n         7\n         8
+neg tests/t1325_pp_call_cycle.hb command expansion too deep

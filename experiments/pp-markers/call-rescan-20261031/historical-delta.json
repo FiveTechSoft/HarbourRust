@@ -1,0 +1,18 @@
+{
+  "total": 30013,
+  "changes": [
+    {
+      "source": "#xtranslate WRAP(<x>) => PROBE <x> ; PROBE <x>\n#xcommand PROBE <x> => OUT(<x>)\nWRAP(alpha)\n",
+      "baseline": [
+        0,
+        "PROBE alpha \n PROBE alpha\n",
+        ""
+      ],
+      "candidate": [
+        0,
+        "OUT(alpha)\nOUT(alpha)\n",
+        ""
+      ]
+    }
+  ]
+}

@@ -1725,6 +1725,12 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                             continue 'work;
                         }
                         if cur.trim_start().starts_with('#'){break;}
+                        let early_calls=expand_call_rules(&cur,pp,line,0)?;
+                        if early_calls!=cur{
+                            if early_calls.len()>1_048_576{return Err(format!("line {}: command output limit exceeded",line));}
+                            if rescan_budget==0{return Err(format!("line {}: command rescan budget exceeded",line));}rescan_budget-=1;
+                            cur=early_calls;continue;
+                        }
                         let aliases=identifier_aliases(&pp.defs);
                         let expanded_macros=expand(&cur,&aliases,line)?;
                         if expanded_macros!=cur{
@@ -1745,8 +1751,8 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                         }
                     }
                     // Generated command factories can emit several definitions.
-                    // A separator followed by another command directive ends
-                    // this definition; ordinary body semicolons
+                    // Only a doubled separator followed by another command
+                    // directive ends this definition; ordinary body semicolons
                     // belong to the newly registered rule.
                     if cur.trim_start().starts_with('#') {
                         let mut pending = cur.as_str();

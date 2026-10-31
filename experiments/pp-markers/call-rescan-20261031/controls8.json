@@ -1,0 +1,84 @@
+{
+  "rows": [
+    {
+      "name": "cycle_command",
+      "source": "#xtranslate NAME(<x>) => SHOW <x>\n#xcommand SHOW <x> => NAME(<x>)\nNAME(alpha)\n",
+      "reference_exit": 1,
+      "reference_output": "\n\nSHOW alpha\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 3: command expansion too deep (recursive command?)\n",
+      "match": true
+    },
+    {
+      "name": "cycle_macro",
+      "source": "#define A B\n#xtranslate B() => A()\nA()\n",
+      "reference_exit": 1,
+      "reference_output": "\n\nB()\n",
+      "own_exit": 1,
+      "own_output": "",
+      "own_error": "error: line 3: translation expansion too deep (recursive translate?)\n",
+      "match": true
+    },
+    {
+      "name": "factory_quoted",
+      "source": "#xtranslate NAME(<x>) => <x>\n#xcommand MAKE => #xcommand SHOW \\<x> => NAME(\\<x>)\nMAKE\nSHOW alpha\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nalpha\n",
+      "own_exit": 0,
+      "own_output": "alpha\n",
+      "own_error": "",
+      "match": true
+    },
+    {
+      "name": "undef_temporal",
+      "source": "#define MODE alpha\n#xtranslate NAME(<x>) => <x>\n#xcommand SHOW <x> => OUT(<x>)\n#xcommand BOTH => SHOW NAME(MODE);#undef MODE;SHOW NAME(MODE)\nBOTH\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\nOUT(alpha);OUT(MODE)\n",
+      "own_exit": 0,
+      "own_output": "OUT(alpha)\nOUT(MODE)\n",
+      "own_error": "",
+      "match": true
+    },
+    {
+      "name": "define_temporal",
+      "source": "#define MODE alpha\n#xtranslate NAME(<x>) => <x>\n#xcommand SHOW <x> => OUT(<x>)\n#xcommand BOTH => SHOW NAME(MODE);#define MODE beta;SHOW NAME(MODE)\nBOTH\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\n\nOUT(alpha);OUT(beta)\n",
+      "own_exit": 0,
+      "own_output": "OUT(alpha)\nOUT(beta)\n",
+      "own_error": "",
+      "match": true
+    },
+    {
+      "name": "function_body_literal",
+      "source": "#xtranslate NAME(<x>) => <x>\n#xcommand MAKE => #define FN(x) NAME(x);SHOW FN(7)\n#xcommand SHOW <x> => OUT(<x>)\nMAKE\n",
+      "reference_exit": 0,
+      "reference_output": "\n\n\nOUT(7)\n",
+      "own_exit": 0,
+      "own_output": "OUT(7)\n",
+      "own_error": "",
+      "match": true
+    },
+    {
+      "name": "call_adjacency",
+      "source": "#xtranslate NAME(<x>) => <x>\n#xcommand SHOW <x> => OUT(<x>)\nSHOW e\"NAME(alpha);\"\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(\"NAME(alpha);\")\n",
+      "own_exit": 0,
+      "own_output": "OUT(e\"NAME(alpha);\")\n",
+      "own_error": "",
+      "match": false
+    },
+    {
+      "name": "nested",
+      "source": "#xtranslate NAME(<x>) => <x>\n#xcommand SHOW <x> => OUT(<x>)\nSHOW NAME(NAME(alpha))\n",
+      "reference_exit": 0,
+      "reference_output": "\n\nOUT(alpha)\n",
+      "own_exit": 0,
+      "own_output": "OUT(alpha)\n",
+      "own_error": "",
+      "match": true
+    }
+  ]
+}
