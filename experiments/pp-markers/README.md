@@ -928,3 +928,32 @@ boundary. Captured translate can consume only a prefix. The historical t93
 negative is correct for spaced1+2without parentheses but its comment claiming
 that the marker always REQUIRES parentheses is too broad. No extended matcher
 change is included:implementing it as ordinary expression capture would be wrong.
+
+## Scoped smart-result ASCII escape literals
+
+The smart-result conversion now lets an escape-string capture use the existing
+literal decoder and quoting path. This does not change parsing, runtime, ABI,
+ordinary stringify, extended match, or repeated-group contracts.
+
+- 140 own preprocessor cases compared with pinned Harbour hbpp: decoded literal
+  contents are equal, not necessarily source typography. Covers command,
+  xcommand, translate, xtranslate and existing single/list/wildcard captures.
+- Numeric escapes remain explicitly rejected; t1240 now tests that boundary.
+- Four own console programs were freshly built with Harbour/GTSTD and the
+  default backend, with exact exit/stdout/stderr equality. Control characters
+  are checked by Len/Asc, because GTSTD renders a raw tab differently from our
+  console output. This does not claim raw control output parity.
+- t1243 is default-only: LLVM does not implement Len(string). The other three
+  new cases pass both backends on Linux and Windows/Wine. No LLVM domain was
+  widened for this change.
+- Fresh local battery:1246 default checks,514 LLVM-suite PASS rows, including
+  ABI/rejection/control checks. 140 decoded checks and410previous smart checks
+  plus3scope rejections pass separately.
+- Full268-source four-profile compile audit, including diagnostics, is identical
+  to the guarded-smart production baseline. All14 reviewed unchanged Linux
+  console originals are freshly exact Harbour/default/LLVM. No speed/size claim.
+
+Evidence: `evidence/smart-escape-ascii-140.json` and
+`evidence/smart-escape-console4.json`. Reproduce the140cases with
+`check_smart_escape_implemented.py --hbpp /path/hbpp --hpp /path/hpp
+--output-dir /tmp/smart-escape` after building the probe frontend.

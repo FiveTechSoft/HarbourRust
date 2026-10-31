@@ -10,9 +10,9 @@ for directive in ['command','xcommand','translate','xtranslate']:
   if '['in pattern:inputs=inputs+['']
   for value in inputs:
    f=out/f'case{len(rows)}.prg';text=f'#{directive} {pattern} => OUT(<(x)>)\nPROBE {value}\n';f.write_text(text);ref=subprocess.run([a.hbpp,str(f),'-q2'],capture_output=True,text=True,timeout=10);own=subprocess.run([a.hpp,str(f)],capture_output=True,text=True,timeout=10);expected=f.with_suffix('.ppo').read_text()if f.with_suffix('.ppo').exists()else'';assert ref.returncode==own.returncode==0 and tok(expected)==tok(own.stdout),(text,expected,own.stdout,own.stderr);rows.append(dict(source=text,reference_output=expected,own_output=own.stdout))
-# Runtime macro and escape contracts stay explicit,not silently quoted.
-for value in ['e"a\\tb"']:
- f=out/f'case{len(rows)}.prg';text=f'#command PROBE <x> => OUT(<(x)>)\nPROBE {value}\n';f.write_text(text);own=subprocess.run([a.hpp,str(f)],capture_output=True,text=True);assert own.returncode!=0 and 'smart stringify of' in own.stderr,(text,own.stdout,own.stderr);rows.append(dict(source=text,kind='explicit scope rejection',own_error=own.stderr))
+# Numeric escapes stay explicitly outside this increment.
+for value in ['e"a\\x41b"']:
+ f=out/f'case{len(rows)}.prg';text=f'#command PROBE <x> => OUT(<(x)>)\nPROBE {value}\n';f.write_text(text);own=subprocess.run([a.hpp,str(f)],capture_output=True,text=True);assert own.returncode!=0 and 'numeric string escapes' in own.stderr,(text,own.stdout,own.stderr);rows.append(dict(source=text,kind='explicit scope rejection',own_error=own.stderr))
 (out/'results.json').write_text(json.dumps({'scope':'scoped smart result;not extended matching or macro runtime','rows':rows},indent=2)+'\n');print(len(rows),'checks PASS,including1explicit rejection')
 
 for pattern,value,message in [('PROBE [<x:alpha,beta>]','alpha beta','repeated/disjoint'),('PROBE [KEY <!x!> VALUE <y>]','KEY alpha VALUE 1 KEY beta VALUE 2','literal-bearing')]:

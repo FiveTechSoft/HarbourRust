@@ -1,4 +1,4 @@
 #command SHOW <x> => ? <(x)>
 procedure main()
-SHOW e"a\tb"
+SHOW e"a\x41b"
 return

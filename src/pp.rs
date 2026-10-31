@@ -771,7 +771,6 @@ fn smart_stringify_capture(capture: &Capture, source: &str, spans: &HashMap<usiz
         if marker_ident(ident) { return Ok(ident.to_string()); }
         return Ok(quote_literal(&text));
     }
-    if escape_literal_end(&text,0).is_some() { return Err("smart stringify of escape captures is outside this increment".into()); }
     let preserve=text.starts_with('(') || text.starts_with('\"') || text.starts_with('\'') || escape_literal_end(&text,0).is_some();
     if !preserve { return Ok(quote_literal(&text)); }
     // Source quotes are data. Normalize ordinary single-quoted and escape strings

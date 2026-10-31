@@ -1,0 +1,845 @@
+{
+  "scope": "140decoded-literal checks;not numeric escapes or repeated matching",
+  "rows": [
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\tb\"\n",
+      "reference_output": "\nOUT(\"a\tb\")\n",
+      "own_output": "OUT(e\"a\\tb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\nb\"\n",
+      "reference_output": "\nOUT(e\"a\\nb\")\n",
+      "own_output": "OUT(e\"a\\nb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\rb\"\n",
+      "reference_output": "\nOUT(e\"a\\rb\")\n",
+      "own_output": "OUT(e\"a\\rb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\ab\"\n",
+      "reference_output": "\nOUT(\"a\u0007b\")\n",
+      "own_output": "OUT(e\"a\\ab\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\bb\"\n",
+      "reference_output": "\nOUT(\"a\bb\")\n",
+      "own_output": "OUT(e\"a\\bb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\fb\"\n",
+      "reference_output": "\nOUT(\"a\fb\")\n",
+      "own_output": "OUT(e\"a\\fb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\vb\"\n",
+      "reference_output": "\nOUT(\"a\u000bb\")\n",
+      "own_output": "OUT(e\"a\\vb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\\"b\"\n",
+      "reference_output": "\nOUT('a\"b')\n",
+      "own_output": "OUT('a\"b')\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\\\b\"\n",
+      "reference_output": "\nOUT(\"a\\b\")\n",
+      "own_output": "OUT(\"a\\b\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\qb\"\n",
+      "reference_output": "\nOUT(\"aqb\")\n",
+      "own_output": "OUT(\"aqb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x> => OUT(<(x)>)\nPROBE e\"#<x>\"\n",
+      "reference_output": "\nOUT(\"#<x>\")\n",
+      "own_output": "OUT(\"#<x>\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\tb\"\n",
+      "reference_output": "\nOUT(\"a\tb\")\n",
+      "own_output": "OUT(e\"a\\tb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\nb\"\n",
+      "reference_output": "\nOUT(e\"a\\nb\")\n",
+      "own_output": "OUT(e\"a\\nb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\rb\"\n",
+      "reference_output": "\nOUT(e\"a\\rb\")\n",
+      "own_output": "OUT(e\"a\\rb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\ab\"\n",
+      "reference_output": "\nOUT(\"a\u0007b\")\n",
+      "own_output": "OUT(e\"a\\ab\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\bb\"\n",
+      "reference_output": "\nOUT(\"a\bb\")\n",
+      "own_output": "OUT(e\"a\\bb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\fb\"\n",
+      "reference_output": "\nOUT(\"a\fb\")\n",
+      "own_output": "OUT(e\"a\\fb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\vb\"\n",
+      "reference_output": "\nOUT(\"a\u000bb\")\n",
+      "own_output": "OUT(e\"a\\vb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\\"b\"\n",
+      "reference_output": "\nOUT('a\"b')\n",
+      "own_output": "OUT('a\"b')\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\\\b\"\n",
+      "reference_output": "\nOUT(\"a\\b\")\n",
+      "own_output": "OUT(\"a\\b\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\qb\"\n",
+      "reference_output": "\nOUT(\"aqb\")\n",
+      "own_output": "OUT(\"aqb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE e\"#<x>\"\n",
+      "reference_output": "\nOUT(\"#<x>\")\n",
+      "own_output": "OUT(\"#<x>\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\tb\", e\"c\\nd\"\n",
+      "reference_output": "\nOUT(\"a\tb\", e\"c\\nd\")\n",
+      "own_output": "OUT(e\"a\\tb\", e\"c\\nd\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\tb\"\n",
+      "reference_output": "\nOUT(\"a\tb\")\n",
+      "own_output": "OUT(e\"a\\tb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\nb\"\n",
+      "reference_output": "\nOUT(e\"a\\nb\")\n",
+      "own_output": "OUT(e\"a\\nb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\rb\"\n",
+      "reference_output": "\nOUT(e\"a\\rb\")\n",
+      "own_output": "OUT(e\"a\\rb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\ab\"\n",
+      "reference_output": "\nOUT(\"a\u0007b\")\n",
+      "own_output": "OUT(e\"a\\ab\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\bb\"\n",
+      "reference_output": "\nOUT(\"a\bb\")\n",
+      "own_output": "OUT(e\"a\\bb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\fb\"\n",
+      "reference_output": "\nOUT(\"a\fb\")\n",
+      "own_output": "OUT(e\"a\\fb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\vb\"\n",
+      "reference_output": "\nOUT(\"a\u000bb\")\n",
+      "own_output": "OUT(e\"a\\vb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\\"b\"\n",
+      "reference_output": "\nOUT('a\"b')\n",
+      "own_output": "OUT('a\"b')\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\\\b\"\n",
+      "reference_output": "\nOUT(\"a\\b\")\n",
+      "own_output": "OUT(\"a\\b\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\qb\"\n",
+      "reference_output": "\nOUT(\"aqb\")\n",
+      "own_output": "OUT(\"aqb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE e\"#<x>\"\n",
+      "reference_output": "\nOUT(\"#<x>\")\n",
+      "own_output": "OUT(\"#<x>\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#command PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\tb\", e\"c\\nd\"\n",
+      "reference_output": "\nOUT(\"a\tb\", e\"c\\nd\")\n",
+      "own_output": "OUT(e\"a\\tb\", e\"c\\nd\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\tb\"\n",
+      "reference_output": "\nOUT(\"a\tb\")\n",
+      "own_output": "OUT(e\"a\\tb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\nb\"\n",
+      "reference_output": "\nOUT(e\"a\\nb\")\n",
+      "own_output": "OUT(e\"a\\nb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\rb\"\n",
+      "reference_output": "\nOUT(e\"a\\rb\")\n",
+      "own_output": "OUT(e\"a\\rb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\ab\"\n",
+      "reference_output": "\nOUT(\"a\u0007b\")\n",
+      "own_output": "OUT(e\"a\\ab\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\bb\"\n",
+      "reference_output": "\nOUT(\"a\bb\")\n",
+      "own_output": "OUT(e\"a\\bb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\fb\"\n",
+      "reference_output": "\nOUT(\"a\fb\")\n",
+      "own_output": "OUT(e\"a\\fb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\vb\"\n",
+      "reference_output": "\nOUT(\"a\u000bb\")\n",
+      "own_output": "OUT(e\"a\\vb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\\"b\"\n",
+      "reference_output": "\nOUT('a\"b')\n",
+      "own_output": "OUT('a\"b')\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\\\b\"\n",
+      "reference_output": "\nOUT(\"a\\b\")\n",
+      "own_output": "OUT(\"a\\b\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\qb\"\n",
+      "reference_output": "\nOUT(\"aqb\")\n",
+      "own_output": "OUT(\"aqb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x> => OUT(<(x)>)\nPROBE e\"#<x>\"\n",
+      "reference_output": "\nOUT(\"#<x>\")\n",
+      "own_output": "OUT(\"#<x>\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\tb\"\n",
+      "reference_output": "\nOUT(\"a\tb\")\n",
+      "own_output": "OUT(e\"a\\tb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\nb\"\n",
+      "reference_output": "\nOUT(e\"a\\nb\")\n",
+      "own_output": "OUT(e\"a\\nb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\rb\"\n",
+      "reference_output": "\nOUT(e\"a\\rb\")\n",
+      "own_output": "OUT(e\"a\\rb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\ab\"\n",
+      "reference_output": "\nOUT(\"a\u0007b\")\n",
+      "own_output": "OUT(e\"a\\ab\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\bb\"\n",
+      "reference_output": "\nOUT(\"a\bb\")\n",
+      "own_output": "OUT(e\"a\\bb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\fb\"\n",
+      "reference_output": "\nOUT(\"a\fb\")\n",
+      "own_output": "OUT(e\"a\\fb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\vb\"\n",
+      "reference_output": "\nOUT(\"a\u000bb\")\n",
+      "own_output": "OUT(e\"a\\vb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\\"b\"\n",
+      "reference_output": "\nOUT('a\"b')\n",
+      "own_output": "OUT('a\"b')\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\\\b\"\n",
+      "reference_output": "\nOUT(\"a\\b\")\n",
+      "own_output": "OUT(\"a\\b\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\qb\"\n",
+      "reference_output": "\nOUT(\"aqb\")\n",
+      "own_output": "OUT(\"aqb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE e\"#<x>\"\n",
+      "reference_output": "\nOUT(\"#<x>\")\n",
+      "own_output": "OUT(\"#<x>\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\tb\", e\"c\\nd\"\n",
+      "reference_output": "\nOUT(\"a\tb\", e\"c\\nd\")\n",
+      "own_output": "OUT(e\"a\\tb\", e\"c\\nd\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\tb\"\n",
+      "reference_output": "\nOUT(\"a\tb\")\n",
+      "own_output": "OUT(e\"a\\tb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\nb\"\n",
+      "reference_output": "\nOUT(e\"a\\nb\")\n",
+      "own_output": "OUT(e\"a\\nb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\rb\"\n",
+      "reference_output": "\nOUT(e\"a\\rb\")\n",
+      "own_output": "OUT(e\"a\\rb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\ab\"\n",
+      "reference_output": "\nOUT(\"a\u0007b\")\n",
+      "own_output": "OUT(e\"a\\ab\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\bb\"\n",
+      "reference_output": "\nOUT(\"a\bb\")\n",
+      "own_output": "OUT(e\"a\\bb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\fb\"\n",
+      "reference_output": "\nOUT(\"a\fb\")\n",
+      "own_output": "OUT(e\"a\\fb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\vb\"\n",
+      "reference_output": "\nOUT(\"a\u000bb\")\n",
+      "own_output": "OUT(e\"a\\vb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\\"b\"\n",
+      "reference_output": "\nOUT('a\"b')\n",
+      "own_output": "OUT('a\"b')\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\\\b\"\n",
+      "reference_output": "\nOUT(\"a\\b\")\n",
+      "own_output": "OUT(\"a\\b\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\qb\"\n",
+      "reference_output": "\nOUT(\"aqb\")\n",
+      "own_output": "OUT(\"aqb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE e\"#<x>\"\n",
+      "reference_output": "\nOUT(\"#<x>\")\n",
+      "own_output": "OUT(\"#<x>\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xcommand PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\tb\", e\"c\\nd\"\n",
+      "reference_output": "\nOUT(\"a\tb\", e\"c\\nd\")\n",
+      "own_output": "OUT(e\"a\\tb\", e\"c\\nd\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\tb\"\n",
+      "reference_output": "\nOUT(\"a\tb\")\n",
+      "own_output": "OUT(e\"a\\tb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\nb\"\n",
+      "reference_output": "\nOUT(e\"a\\nb\")\n",
+      "own_output": "OUT(e\"a\\nb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\rb\"\n",
+      "reference_output": "\nOUT(e\"a\\rb\")\n",
+      "own_output": "OUT(e\"a\\rb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\ab\"\n",
+      "reference_output": "\nOUT(\"a\u0007b\")\n",
+      "own_output": "OUT(e\"a\\ab\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\bb\"\n",
+      "reference_output": "\nOUT(\"a\bb\")\n",
+      "own_output": "OUT(e\"a\\bb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\fb\"\n",
+      "reference_output": "\nOUT(\"a\fb\")\n",
+      "own_output": "OUT(e\"a\\fb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\vb\"\n",
+      "reference_output": "\nOUT(\"a\u000bb\")\n",
+      "own_output": "OUT(e\"a\\vb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\\"b\"\n",
+      "reference_output": "\nOUT('a\"b')\n",
+      "own_output": "OUT('a\"b')\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\\\b\"\n",
+      "reference_output": "\nOUT(\"a\\b\")\n",
+      "own_output": "OUT(\"a\\b\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\qb\"\n",
+      "reference_output": "\nOUT(\"aqb\")\n",
+      "own_output": "OUT(\"aqb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x> => OUT(<(x)>)\nPROBE e\"#<x>\"\n",
+      "reference_output": "\nOUT(\"#<x>\")\n",
+      "own_output": "OUT(\"#<x>\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\tb\"\n",
+      "reference_output": "\nOUT(\"a\tb\")\n",
+      "own_output": "OUT(e\"a\\tb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\nb\"\n",
+      "reference_output": "\nOUT(e\"a\\nb\")\n",
+      "own_output": "OUT(e\"a\\nb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\rb\"\n",
+      "reference_output": "\nOUT(e\"a\\rb\")\n",
+      "own_output": "OUT(e\"a\\rb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\ab\"\n",
+      "reference_output": "\nOUT(\"a\u0007b\")\n",
+      "own_output": "OUT(e\"a\\ab\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\bb\"\n",
+      "reference_output": "\nOUT(\"a\bb\")\n",
+      "own_output": "OUT(e\"a\\bb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\fb\"\n",
+      "reference_output": "\nOUT(\"a\fb\")\n",
+      "own_output": "OUT(e\"a\\fb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\vb\"\n",
+      "reference_output": "\nOUT(\"a\u000bb\")\n",
+      "own_output": "OUT(e\"a\\vb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\\"b\"\n",
+      "reference_output": "\nOUT('a\"b')\n",
+      "own_output": "OUT('a\"b')\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\\\b\"\n",
+      "reference_output": "\nOUT(\"a\\b\")\n",
+      "own_output": "OUT(\"a\\b\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\qb\"\n",
+      "reference_output": "\nOUT(\"aqb\")\n",
+      "own_output": "OUT(\"aqb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"#<x>\"\n",
+      "reference_output": "\nOUT(\"#<x>\")\n",
+      "own_output": "OUT(\"#<x>\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\tb\", e\"c\\nd\"\n",
+      "reference_output": "\nOUT(\"a\tb\", e\"c\\nd\")\n",
+      "own_output": "OUT(e\"a\\tb\", e\"c\\nd\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\tb\"\n",
+      "reference_output": "\nOUT(\"a\tb\")\n",
+      "own_output": "OUT(e\"a\\tb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\nb\"\n",
+      "reference_output": "\nOUT(e\"a\\nb\")\n",
+      "own_output": "OUT(e\"a\\nb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\rb\"\n",
+      "reference_output": "\nOUT(e\"a\\rb\")\n",
+      "own_output": "OUT(e\"a\\rb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\ab\"\n",
+      "reference_output": "\nOUT(\"a\u0007b\")\n",
+      "own_output": "OUT(e\"a\\ab\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\bb\"\n",
+      "reference_output": "\nOUT(\"a\bb\")\n",
+      "own_output": "OUT(e\"a\\bb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\fb\"\n",
+      "reference_output": "\nOUT(\"a\fb\")\n",
+      "own_output": "OUT(e\"a\\fb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\vb\"\n",
+      "reference_output": "\nOUT(\"a\u000bb\")\n",
+      "own_output": "OUT(e\"a\\vb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\\"b\"\n",
+      "reference_output": "\nOUT('a\"b')\n",
+      "own_output": "OUT('a\"b')\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\\\b\"\n",
+      "reference_output": "\nOUT(\"a\\b\")\n",
+      "own_output": "OUT(\"a\\b\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\qb\"\n",
+      "reference_output": "\nOUT(\"aqb\")\n",
+      "own_output": "OUT(\"aqb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"#<x>\"\n",
+      "reference_output": "\nOUT(\"#<x>\")\n",
+      "own_output": "OUT(\"#<x>\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#translate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\tb\", e\"c\\nd\"\n",
+      "reference_output": "\nOUT(\"a\tb\", e\"c\\nd\")\n",
+      "own_output": "OUT(e\"a\\tb\", e\"c\\nd\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\tb\"\n",
+      "reference_output": "\nOUT(\"a\tb\")\n",
+      "own_output": "OUT(e\"a\\tb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\nb\"\n",
+      "reference_output": "\nOUT(e\"a\\nb\")\n",
+      "own_output": "OUT(e\"a\\nb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\rb\"\n",
+      "reference_output": "\nOUT(e\"a\\rb\")\n",
+      "own_output": "OUT(e\"a\\rb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\ab\"\n",
+      "reference_output": "\nOUT(\"a\u0007b\")\n",
+      "own_output": "OUT(e\"a\\ab\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\bb\"\n",
+      "reference_output": "\nOUT(\"a\bb\")\n",
+      "own_output": "OUT(e\"a\\bb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\fb\"\n",
+      "reference_output": "\nOUT(\"a\fb\")\n",
+      "own_output": "OUT(e\"a\\fb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\vb\"\n",
+      "reference_output": "\nOUT(\"a\u000bb\")\n",
+      "own_output": "OUT(e\"a\\vb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\\"b\"\n",
+      "reference_output": "\nOUT('a\"b')\n",
+      "own_output": "OUT('a\"b')\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\\\b\"\n",
+      "reference_output": "\nOUT(\"a\\b\")\n",
+      "own_output": "OUT(\"a\\b\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE e\"a\\qb\"\n",
+      "reference_output": "\nOUT(\"aqb\")\n",
+      "own_output": "OUT(\"aqb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x> => OUT(<(x)>)\nPROBE e\"#<x>\"\n",
+      "reference_output": "\nOUT(\"#<x>\")\n",
+      "own_output": "OUT(\"#<x>\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\tb\"\n",
+      "reference_output": "\nOUT(\"a\tb\")\n",
+      "own_output": "OUT(e\"a\\tb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\nb\"\n",
+      "reference_output": "\nOUT(e\"a\\nb\")\n",
+      "own_output": "OUT(e\"a\\nb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\rb\"\n",
+      "reference_output": "\nOUT(e\"a\\rb\")\n",
+      "own_output": "OUT(e\"a\\rb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\ab\"\n",
+      "reference_output": "\nOUT(\"a\u0007b\")\n",
+      "own_output": "OUT(e\"a\\ab\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\bb\"\n",
+      "reference_output": "\nOUT(\"a\bb\")\n",
+      "own_output": "OUT(e\"a\\bb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\fb\"\n",
+      "reference_output": "\nOUT(\"a\fb\")\n",
+      "own_output": "OUT(e\"a\\fb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\vb\"\n",
+      "reference_output": "\nOUT(\"a\u000bb\")\n",
+      "own_output": "OUT(e\"a\\vb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\\"b\"\n",
+      "reference_output": "\nOUT('a\"b')\n",
+      "own_output": "OUT('a\"b')\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\\\b\"\n",
+      "reference_output": "\nOUT(\"a\\b\")\n",
+      "own_output": "OUT(\"a\\b\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\qb\"\n",
+      "reference_output": "\nOUT(\"aqb\")\n",
+      "own_output": "OUT(\"aqb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"#<x>\"\n",
+      "reference_output": "\nOUT(\"#<x>\")\n",
+      "own_output": "OUT(\"#<x>\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <x,...> => OUT(<(x)>)\nPROBE e\"a\\tb\", e\"c\\nd\"\n",
+      "reference_output": "\nOUT(\"a\tb\", e\"c\\nd\")\n",
+      "own_output": "OUT(e\"a\\tb\", e\"c\\nd\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\tb\"\n",
+      "reference_output": "\nOUT(\"a\tb\")\n",
+      "own_output": "OUT(e\"a\\tb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\nb\"\n",
+      "reference_output": "\nOUT(e\"a\\nb\")\n",
+      "own_output": "OUT(e\"a\\nb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\rb\"\n",
+      "reference_output": "\nOUT(e\"a\\rb\")\n",
+      "own_output": "OUT(e\"a\\rb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\ab\"\n",
+      "reference_output": "\nOUT(\"a\u0007b\")\n",
+      "own_output": "OUT(e\"a\\ab\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\bb\"\n",
+      "reference_output": "\nOUT(\"a\bb\")\n",
+      "own_output": "OUT(e\"a\\bb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\fb\"\n",
+      "reference_output": "\nOUT(\"a\fb\")\n",
+      "own_output": "OUT(e\"a\\fb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\vb\"\n",
+      "reference_output": "\nOUT(\"a\u000bb\")\n",
+      "own_output": "OUT(e\"a\\vb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\\"b\"\n",
+      "reference_output": "\nOUT('a\"b')\n",
+      "own_output": "OUT('a\"b')\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\\\b\"\n",
+      "reference_output": "\nOUT(\"a\\b\")\n",
+      "own_output": "OUT(\"a\\b\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\qb\"\n",
+      "reference_output": "\nOUT(\"aqb\")\n",
+      "own_output": "OUT(\"aqb\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"#<x>\"\n",
+      "reference_output": "\nOUT(\"#<x>\")\n",
+      "own_output": "OUT(\"#<x>\")\n",
+      "exact_decoded_contents": true
+    },
+    {
+      "source": "#xtranslate PROBE <*x*> => OUT(<(x)>)\nPROBE e\"a\\tb\", e\"c\\nd\"\n",
+      "reference_output": "\nOUT(\"a\tb\", e\"c\\nd\")\n",
+      "own_output": "OUT(e\"a\\tb\", e\"c\\nd\")\n",
+      "exact_decoded_contents": true
+    }
+  ]
+}
