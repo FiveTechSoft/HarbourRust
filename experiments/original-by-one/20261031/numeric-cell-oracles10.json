@@ -1,0 +1,82 @@
+[
+  {
+    "name": "preserve_integer",
+    "source": "PROCEDURE Main()\nLOCAL a := {1,2}\n? a[1]\na[2] /= 5\n? a[1],a[2],ValType(a[1]),ValType(a[2])\nRETURN\n",
+    "reference_build_exit": 0,
+    "exit": 0,
+    "stdout": "\n         1\n         1          0.40 N N",
+    "stderr": ""
+  },
+  {
+    "name": "replace_types",
+    "source": "PROCEDURE Main()\nLOCAL a := {1}\na[1] /= 5\n? a[1]\na[1] := 7\n? a[1]\na[1] := 7.00\n? a[1]\nRETURN\n",
+    "reference_build_exit": 0,
+    "exit": 0,
+    "stdout": "\n         0.20\n         7\n         7.00",
+    "stderr": ""
+  },
+  {
+    "name": "growth_nil",
+    "source": "PROCEDURE Main()\nLOCAL a := {1}\na[1] /= 5\nASize(a,3)\n? a[1],a[2],a[3]\na[2] := 4.5\n? a[2]\nRETURN\n",
+    "reference_build_exit": 0,
+    "exit": 0,
+    "stdout": "\n         0.20 NIL NIL\n         4.5",
+    "stderr": ""
+  },
+  {
+    "name": "parameter_mutation",
+    "source": "PROCEDURE Main()\nLOCAL a := {4}\nchange(a)\n? a[1]\nRETURN\nPROCEDURE change(a)\na[1] /= 5\nRETURN\n",
+    "reference_build_exit": 0,
+    "exit": 0,
+    "stdout": "\n         0.80",
+    "stderr": ""
+  },
+  {
+    "name": "return_array",
+    "source": "PROCEDURE Main()\nLOCAL a := make()\n? a[1]\nRETURN\nFUNCTION make()\nLOCAL a := {4}\na[1] /= 5\nRETURN a\nRETURN\n",
+    "reference_build_exit": 0,
+    "exit": 0,
+    "stdout": "\n         0.80",
+    "stderr": ""
+  },
+  {
+    "name": "alias_visible",
+    "source": "PROCEDURE Main()\nLOCAL a := {4}\nLOCAL b := a\na[1] /= 5\n? a[1],b[1]\nRETURN\n",
+    "reference_build_exit": 0,
+    "exit": 0,
+    "stdout": "\n         0.80          0.80",
+    "stderr": ""
+  },
+  {
+    "name": "overflow",
+    "source": "PROCEDURE Main()\nLOCAL a := {9223372036854775807}\na[1] += 1\n? ValType(a[1]),a[1]\nRETURN\n",
+    "reference_build_exit": 0,
+    "exit": 0,
+    "stdout": "\nN  9223372036854776000",
+    "stderr": ""
+  },
+  {
+    "name": "fraction_width",
+    "source": "PROCEDURE Main()\nLOCAL a := {1.2300,2}\n? a[1]\na[1] += a[2]\n? a[1]\na[1] *= 1.20\n? a[1]\nRETURN\n",
+    "reference_build_exit": 0,
+    "exit": 0,
+    "stdout": "\n         1.2300\n         3.2300\n         3.876000",
+    "stderr": ""
+  },
+  {
+    "name": "index_rhs_order",
+    "source": "PROCEDURE Main()\nLOCAL a := {10,20,30}\nLOCAL n := 0\n? a[++n] += bump(@n)\n? n,a[1],a[2]\nRETURN\nFUNCTION bump(n)\nn++\nRETURN 5\nRETURN\n",
+    "reference_build_exit": 0,
+    "exit": 0,
+    "stdout": "\n        15\n         2         15         20",
+    "stderr": ""
+  },
+  {
+    "name": "zero_divisor",
+    "source": "PROCEDURE Main()\nLOCAL a := {1}\na[1] %= 0\n? a[1]\nRETURN\n",
+    "reference_build_exit": 0,
+    "exit": 0,
+    "stdout": "\n         0",
+    "stderr": ""
+  }
+]

@@ -41,3 +41,11 @@ newpermission. ains missingAClone/mixedcells requires fineranalysis;array.prgsel
 reference isunambiguouscyclefrontier. TerminalGTquestionpending;debuggerseparate,
 roadmaponly. No runtime/ABIdecision changed or originaladaptation. Compiler remains
 d999a46closure7e07714;restrictedrootresearchd864ea2inactive.
+
+Thirdcheckpoint:next17units(big5_genthroughclasses),39totalreviewedbuildunits.
+Reference39successfulbuilds:38executables+1staticlibrary(cgi,noMain),NOT39
+standaloneexampleexecutables.12referenceexecutions inthewalk,includingexisting
+calling exactdefault121bytes;0newcompleteHarbourRustcompatibleoriginals.
+Newreferenceoutputs:byref677,classch34,classes37bytes(allnormalexit0).
+Nextlexicographiccls.prg. Fullinventoryremainsnotcompletedbythese39units.
+Numeric-cellproposal/oracles10preparedforarrayidx;noABI/storageimplementation.

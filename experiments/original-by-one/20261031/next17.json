@@ -1,0 +1,526 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "tests lexicographic,next17unitsafterbegin;CGIcompanionnotstandalone",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/big5_gen.prg",
+      "sha256": "81f4f6cee6bb93a1255f13471b675cfea86b6c7634c081a9df6a8622117917c6",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main+helpers",
+      "build_unit": "single source",
+      "profile": "generator-externaldata",
+      "dependencies": "BIG5.TXT input,big5.c output,arrays/hashes/numericops",
+      "boundary": "Needs pinned input+disposable generated-output fixture;not run",
+      "reference_build_exit": 0,
+      "reference_build_kind": "executable",
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 57: trailing tokens after expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 57: trailing tokens after expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/box.prg",
+      "sha256": "a7e9f65a6848466453bc66a686f3c45ea9414c134c01d03c6b9ec98ea44c108f",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "GT-screen",
+      "dependencies": "box.ch,DispBox/Unicode",
+      "boundary": "Screen pixels not stdout;GT pending;not run",
+      "reference_build_exit": 0,
+      "reference_build_kind": "executable",
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 64: unknown function `dispbox` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 64: unknown function `dispbox` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/box2.prg",
+      "sha256": "c63761bc2f1ef14933af546f4f5e1147d1756b7289bcf2bed98d89763a3103ed",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "GT-screen-input",
+      "dependencies": "box.ch,CLS,MaxRow/Col,clipping,Inkey5",
+      "boundary": "GT clipping+input wait;not run",
+      "reference_build_exit": 0,
+      "reference_build_kind": "executable",
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 67: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 67: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/box3.prg",
+      "sha256": "f12a7edff88b90bb6983c61c646b99fe68ce4395731a26777541ab2cc156c4e1",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main+MESSAGE",
+      "build_unit": "single source",
+      "profile": "GT-screen-input",
+      "dependencies": "@BOX,__BoxS/D,CLS,Inkey",
+      "boundary": "GT keyboard/screen;not run",
+      "reference_build_exit": 0,
+      "reference_build_kind": "executable",
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/browse.prg",
+      "sha256": "c854c766804bd1665f500ef864b27f58f6900fcc007839f77e263a6776605415",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "GT-RDD",
+      "dependencies": "inkey.ch,existingtestDBF,Browse",
+      "boundary": "GT/RDDdateformat and externalDB fixture;not run",
+      "reference_build_exit": 0,
+      "reference_build_kind": "executable",
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 120: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 120: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/brwpos.prg",
+      "sha256": "aef2c4cded395b5a99c1ce99757c694db6dea8774d37c15980a19db8f609c2b1",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main+TestBrw",
+      "build_unit": "single source",
+      "profile": "GT-object-closure",
+      "dependencies": "fileSTATIC,TBrowse,TBColumn,capturingmutableblocks,keys",
+      "boundary": "GT/object/persistentclosure contract;not run",
+      "reference_build_exit": 0,
+      "reference_build_kind": "executable",
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 113: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 113: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/byref.prg",
+      "sha256": "d339ac9d6ceee3abc535a896b387053a7875987a5525fbac1c8cbc75f59bda8e",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main+ref1..4",
+      "build_unit": "single source",
+      "profile": "static-byref-console",
+      "dependencies": "procedureSTATIC,forwarded@,arrayreference,indexincrement",
+      "boundary": "Safe reference run;existingexclusiveborrow scope separated from persistentstaticstorage",
+      "reference_build_exit": 0,
+      "reference_build_kind": "executable",
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 677,
+        "stdout_sha256": "156080bfcc5771035d1cf44d933d81fd5ada0a5d28ad284adf58f8bbbb345250",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/calling.prg",
+      "sha256": "2bc92508ea35cd18d06ebbeaa82afdf7c8894495fe31cec77cb8968246032de5",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main+SecondOne+Third+Fourth",
+      "build_unit": "single source",
+      "profile": "console-existing-default",
+      "dependencies": "stringargument,NIL-onlyeffects",
+      "boundary": "Alreadydefaultexact;LLVMstringargumentABI not supported",
+      "reference_build_exit": 0,
+      "reference_build_kind": "executable",
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 121,
+        "stdout_sha256": "7434087d042fcc6c066a8f2086f96a47c4f59d73f0f6b9ec83b7290757afbf89",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 0,
+          "diagnostic": "",
+          "link": "passed",
+          "execution": {
+            "exit": 0,
+            "stdout_sha256": "7434087d042fcc6c066a8f2086f96a47c4f59d73f0f6b9ec83b7290757afbf89",
+            "stdout_bytes": 121,
+            "stderr_bytes": 0
+          },
+          "comparison": "exact"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: LLVM scalar: only I64/logical scalar signatures supported",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/cdow.prg",
+      "sha256": "bc81a2978acfea5ec26fd5930863f9ed02a013936629da2d0c7fe7b692d0f54b",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "clock-localization",
+      "dependencies": "CMonth,CDoW,Date/datearithmetic",
+      "boundary": "Output clock/locale dependent;fixtureclockneeded;not run",
+      "reference_build_exit": 0,
+      "reference_build_kind": "executable",
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown function `cmonth` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown function `cmonth` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/cdx.prg",
+      "sha256": "0169250b19600764e68421b8fd02151105461f2749485628f99c85637d99d584",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "RDD-mutating-interactive",
+      "dependencies": "DBFCDX,testDBF,creates/deletestestcdx,indexcallbacks,Inkey",
+      "boundary": "RDD+isolatedfiles+GT;not run",
+      "reference_build_exit": 0,
+      "reference_build_kind": "executable",
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/cgi.prg",
+      "sha256": "dd0f973c72e14e96865ecca921af6e4fa86b676877ffb1403a9e5e39c4220ec1",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "ParseString+THTMLmethods;noMain",
+      "build_unit": "library-companion",
+      "profile": "library-companion",
+      "dependencies": "fileio.ch,hbclass.ch,CGIenvironment,read/writefiles",
+      "boundary": "Librarybuildunit,not standalone CGIexecutable;no run",
+      "reference_build_exit": 0,
+      "reference_build_kind": "static-library",
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 536: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 536: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/checkbox.prg",
+      "sha256": "7ba8d263701d83af3d78a811b9428957b6ad7c2672e7f155b7a063752fd281e1",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "GT-getsystem",
+      "dependencies": "GetList,RadioButton,@GET,READ,objects",
+      "boundary": "GTform,inputscriptandobjectcontract;not run",
+      "reference_build_exit": 0,
+      "reference_build_kind": "executable",
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 9: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/clasinh.prg",
+      "sha256": "2692fde017dc9ef2422e7114b2299474570020ecf63e8a991930bde5179ea9c6",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main+TClassBase/TAnyClass",
+      "build_unit": "single source",
+      "profile": "objects-GT",
+      "dependencies": "hbclass.ch,inheritance,Self,Alert",
+      "boundary": "Objectinstancelifetime+GT;not run",
+      "reference_build_exit": 0,
+      "reference_build_kind": "executable",
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 342: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 342: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/clasinit.prg",
+      "sha256": "bcb4c6689110b78bf25fe212168145d22d4c10ae61480963568b6a1f5f56fda7",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main+TForm+New+Show",
+      "build_unit": "single source",
+      "profile": "objects-console",
+      "dependencies": "HBClassdynamicbuilder,STATICinstance,messages,block",
+      "boundary": "Safe reference console;objectsharedlifetime not approved;not run",
+      "reference_build_exit": 0,
+      "reference_build_kind": "executable",
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 25: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 25: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/clasname.prg",
+      "sha256": "792df54ea3df5cbcfa3aafc41deb91be3dc25dfdc48543474c7b58e0599fe87a",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main",
+      "build_unit": "single source",
+      "profile": "notest-type-message",
+      "dependencies": "AEval,heterogeneousvalues,Date,ErrorNew,:ClassName",
+      "boundary": "NOTEST designated compiler/type inspection;not normalpass;not run",
+      "reference_build_exit": 0,
+      "reference_build_kind": "executable",
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 13: unknown function `aeval` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 13: unknown function `aeval` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/classch.prg",
+      "sha256": "e26e134ee7547069ec676fd44ee9825615d70c675ec0adba85d18f441fdce6b1",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main+TTest/TParent",
+      "build_unit": "single source",
+      "profile": "objects-console",
+      "dependencies": "hbclass.ch,INHERIT,VAR,METHOD,INLINE,super,sharedinstances",
+      "boundary": "Safe reference console;preprocessor+objectsemantics blockers separated",
+      "reference_build_exit": 0,
+      "reference_build_kind": "executable",
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 34,
+        "stdout_sha256": "b78ad0afb17662f3ce7cccafc4975e6444b804adfc5a9c47727afb9b76d427d4",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 331: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 331: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "tests/classes.prg",
+      "sha256": "ba8641fe705f21c1205cb1b3b5e2e8a75630a8392a3c017202f98c3ab9404115",
+      "review": "full source manually read2026-10-31",
+      "entrypoint": "Main+TForm+New+Show",
+      "build_unit": "single source",
+      "profile": "objects-console",
+      "dependencies": "HBClassdynamicbuilder,STATICclass,QSelf,instancefields",
+      "boundary": "Safe reference console;objectlifetime anddynamism unresolved",
+      "reference_build_exit": 0,
+      "reference_build_kind": "executable",
+      "reference_run": {
+        "exit": 0,
+        "stdout_bytes": 37,
+        "stdout_sha256": "df1f490fbbd23531d3e80f2d23c965f2ff5bbf4dc53d63551eb2ce6363e0489c",
+        "stderr_bytes": 0
+      },
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 15: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 15: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}
