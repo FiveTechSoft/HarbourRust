@@ -1,0 +1,36 @@
+{
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "compiler": "d999a46",
+  "order": "testslexicographic,next1afterrto_get",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "tests/rto_tb.prg",
+      "sha256": "d1b0a7d500421e2f52a3fdbb2df9657679132a506a08e0fe31fa0eb3d8dd3478",
+      "review": "fullsource manuallyread2026-10-31",
+      "entrypoint": "Main+TBRAssign+TBCAssign+TEST_C_TBR/TBC+LogMe+LogTBRVars+LogTBCVars+XToStr/E/X+ArrayToList/EList+ErrorMessage+OBJ_CREATE+__eInstVar53",
+      "build_unit": "single-source-executable",
+      "profile": "TBrowse-TBColumn-class-regression-GT-log",
+      "dependencies": "819lines;TBrowse/TBColumn properties;invalid assignments;ErrorBlock recovery;object dump;cursor;tb_hb.txt;optionalC53;local__eInstVar53 compatibility override",
+      "boundary": "Not run: GT cursor/state plus log fixture;error details and binary object layout profile-specific;explicit original override not copied into implementation",
+      "reference_build_exit": 0,
+      "reference_run": "not-run",
+      "backends": {
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 194: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 194: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ]
+}
