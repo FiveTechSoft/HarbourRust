@@ -3855,6 +3855,59 @@ fn expr_has_call(e: &Expr) -> bool {
     }
 }
 
+// ains P2 stage 1 closure (independent-review blocker): collect the
+// Dyn roots whose cells an expression reads (a borrowed {tag, payload}
+// pair is pushed for the render), and find a direct assignment to any
+// of them inside the same expression. An output statement evaluates its
+// items before rendering, so a Set frees the owner under the borrowed
+// pair regardless of item order - static rejection, both ends visible.
+fn collect_dyn_index_roots(e: &Expr, env: &[Local], out: &mut Vec<String>) {
+    match e {
+        Expr::Index(id, ie) => {
+            if env.iter().any(|v| v.name == *id && v.ty == Ty::Dyn) && !out.contains(id) {
+                out.push(id.clone());
+            }
+            collect_dyn_index_roots(ie, env, out);
+        }
+        Expr::Seq(es) | Expr::ArrLit(es) => { for x in es { collect_dyn_index_roots(x, env, out); } }
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => {
+            collect_dyn_index_roots(a, env, out); collect_dyn_index_roots(b, env, out);
+        }
+        Expr::LNot(a) => collect_dyn_index_roots(a, env, out),
+        Expr::Call(_, args) => { for a in args { collect_dyn_index_roots(a, env, out); } }
+        Expr::IdxCompound(_, i, _, r) => { collect_dyn_index_roots(i, env, out); collect_dyn_index_roots(r, env, out); }
+        Expr::Set(_, r) => collect_dyn_index_roots(r, env, out),
+        Expr::Index2(_, a, b) => { collect_dyn_index_roots(a, env, out); collect_dyn_index_roots(b, env, out); }
+        Expr::Index3(_, a, b, c) => { collect_dyn_index_roots(a, env, out); collect_dyn_index_roots(b, env, out); collect_dyn_index_roots(c, env, out); }
+        Expr::Index4(_, a, b, c, d) => { collect_dyn_index_roots(a, env, out); collect_dyn_index_roots(b, env, out); collect_dyn_index_roots(c, env, out); collect_dyn_index_roots(d, env, out); }
+        _ => {}
+    }
+}
+fn find_set_into(e: &Expr, roots: &[String]) -> Option<String> {
+    match e {
+        Expr::Set(v, r) => {
+            if roots.iter().any(|x| x == v) { return Some(v.clone()); }
+            find_set_into(r, roots)
+        }
+        Expr::Inc(v, ..) => {
+            if roots.iter().any(|x| x == v) { return Some(v.clone()); }
+            None
+        }
+        Expr::Seq(es) | Expr::ArrLit(es) => es.iter().find_map(|x| find_set_into(x, roots)),
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => {
+            find_set_into(a, roots).or_else(|| find_set_into(b, roots))
+        }
+        Expr::LNot(a) => find_set_into(a, roots),
+        Expr::Call(_, args) => args.iter().find_map(|a| find_set_into(a, roots)),
+        Expr::Index(_, i) => find_set_into(i, roots),
+        Expr::IdxCompound(_, i, _, r) => find_set_into(i, roots).or_else(|| find_set_into(r, roots)),
+        Expr::Index2(_, a, b) => find_set_into(a, roots).or_else(|| find_set_into(b, roots)),
+        Expr::Index3(_, a, b, c) => find_set_into(a, roots).or_else(|| find_set_into(b, roots)).or_else(|| find_set_into(c, roots)),
+        Expr::Index4(_, a, b, c, d) => find_set_into(a, roots).or_else(|| find_set_into(b, roots)).or_else(|| find_set_into(c, roots)).or_else(|| find_set_into(d, roots)),
+        _ => None,
+    }
+}
+
 fn expr_mentions(e: &Expr, name: &str) -> bool {
     match e {
         Expr::Seq(es) => es.iter().any(|e| expr_mentions(e, name)),
@@ -5744,6 +5797,15 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     if v.moved {
                         return Err(format!("line {}: use of moved value `{}`", n, id));
                     }
+                    // ains P2 stage 1 closure (independent-review
+                    // blocker): the index of a cell read on a Dyn root
+                    // may not mention the root itself - an assignment
+                    // there (a Seq) frees the owner before the tag-8
+                    // guard reads it. Static rejection: the root is
+                    // statically visible (aview-index precedent).
+                    if v.ty == Ty::Dyn && expr_mentions(ie, id) {
+                        return Err(format!("line {}: the index of a cell read on the dynamic array `{}` may not mention it (an assignment there frees the array before the read); compute the index into a local first (ains P2 stage 1)", n, id));
+                    }
                     // Elements are {tag, payload}: a read is a Dyn value
                     // (probes n1/n2: a grown or NIL-stored slot reads NIL).
                     // ains P2 stage 1: a Dyn root is admitted - codegen
@@ -6391,6 +6453,20 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 env.push(Local { name: id.clone(), ty: t, moved: false, ro: false, byref: false });
             }
             Stmt::Print(n, es, _) => {
+                // ains P2 stage 1 closure (independent-review blocker):
+                // an output statement that borrows a Dyn root's cells
+                // freezes the root to the last render.
+                {
+                    let mut roots: Vec<String> = Vec::new();
+                    for e in es { collect_dyn_index_roots(e, env, &mut roots); }
+                    if !roots.is_empty() {
+                        for e in es {
+                            if let Some(t) = find_set_into(e, &roots) {
+                                return Err(format!("line {}: `{}` is borrowed by a cell read in this output statement - assigning it here frees the array under the borrowed cell; assign it before or after the print (ains P2 stage 1)", n, t));
+                            }
+                        }
+                    }
+                }
                 if es.iter().any(|e| matches!(e,Expr::Index(v,_) if env.iter().any(|x|x.name==*v && x.ty==Ty::AView))) {
                     return Err(format!("line {}: direct print of an array-view cell may expose an array (tag 6); classify and consume a scalar in place (ains piece 1b)",n));
                 }
@@ -7373,6 +7449,13 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         }
                         if type_expr(ie, env, sigs, *n)? != Ty::I64 {
                             return Err(format!("line {}: array index must be an integer", n));
+                        }
+                        // ains P2 stage 1 closure (independent-review
+                        // blocker): the index may not mention the root
+                        // itself - an assignment there frees the owner
+                        // before the store's tag-8 guard reads it.
+                        if expr_mentions(ie, id) {
+                            return Err(format!("line {}: the index of a cell store on the dynamic array `{}` may not mention it (an assignment there frees the array before the store); compute the index into a local first (ains P2 stage 1)", n, id));
                         }
                         apply_moves(e, env, sigs, false);
                         apply_moves(ie, env, sigs, false);
@@ -9210,6 +9293,13 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     // cloned at the boundary so caller and callee never
                     // share an allocation.
                     cg_dyn_clone_if_str(out);
+                    // ains P2 stage 1 closure (independent-review
+                    // blocker): a Dyn-held ARRAY (tag 8) may not cross a
+                    // normal parameter boundary - the callee epilogue
+                    // would free the caller's owner. Registered clean
+                    // error, caller keeps the value (the AView bridge is
+                    // the only array crossing and guards separately).
+                    out.push_str("    cmp $8, %rax\n    je hbc_type_error\n");
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     continue;
                 }
@@ -11123,6 +11213,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // keeps its copy and the shared epilogue frees it.
                 if expr_ty(e, env, sigs) == Ty::Dyn {
                     cg_dyn_clone_if_str(out);
+                    // ains P2 stage 1 closure (independent-review
+                    // blocker): a Dyn-held ARRAY (tag 8) may not escape
+                    // through a return - the caller would alias the owner
+                    // and the callee epilogue would free it under him.
+                    // Registered clean error (alias-differential
+                    // pattern); Dyn array params/returns stay out of
+                    // scope. Scalar Dyn returns pass the guard unchanged.
+                    out.push_str("    cmp $8, %rax\n    je hbc_type_error\n");
                 }
                 // Returning a dynamic array MOVES it to the caller: the
                 // source slot is nulled BEFORE the shared epilogue runs, so

@@ -1502,3 +1502,7 @@ pos tests/t1512_dynarr_bridge_pos.hb NCLU\n\n         4\nA xy
 neg tests/t1513_dynarr_nested_neg.hb cannot mix integers and arrays
 neg tests/t1514_dynarr_computed_neg.hb holds scalar literals only in this stage
 posx tests/t1515_dynarr_alias_posx.hb 1 Type error: NIL used as a number\nCallstack:\n  at main (tests/t1515_dynarr_alias_posx.hb:9)
+posx tests/t1516_dynret_owner_posx.hb 1 Type error: NIL used as a number\nCallstack:\n  at make (tests/t1516_dynret_owner_posx.hb:15)\n  at main (tests/t1516_dynret_owner_posx.hb:8)
+posx tests/t1517_dynparam_owner_posx.hb 1 Type error: NIL used as a number\nCallstack:\n  at main (tests/t1517_dynparam_owner_posx.hb:9)
+neg tests/t1518_dynout_freeze_neg.hb is borrowed by a cell read in this output statement
+neg tests/t1519_dynselfroot_neg.hb may not mention it (an assignment there frees the array before the store)
