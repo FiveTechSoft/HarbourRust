@@ -1906,7 +1906,11 @@ hbc_abi_test:
     # hbc_print_i64c (63zf, new entry): computed integer field. Positive
     # small, positive at and over the 9999999999 threshold, negative at
     # and over the -999999999 threshold, and the Dyn numeric payload path
-    # (tag 0) which now routes here. Canaries, 16-alignment and stack
+    # (tag 0), which routes to hbc_print_i64: piece-1a Dyn cells hold
+    # literal-only values and Harbour stamps the literal display length
+    # (oracle v_w, 31Oct: cell 2147483648 prints w11, not macro w10), so
+    # the 14-digit payload below takes w15 (digits+1), not w20. Canaries,
+    # 16-alignment and stack
     # balance around every call; the printed fields land on stdout and
     # are part of the expected output below, on BOTH targets.
     mov $5, %rax
@@ -2208,7 +2212,7 @@ cmp gen/abi.stderr.expected gen/abi_l.stderr
 cmp gen/abi.stderr.expected gen/abi_w.stderr
 echo "linux: $out_l (exit $rc_l)"
 echo "wine:  $out_w (exit $rc_w)"
-if [ "$out_l" = "         1.5         59999999999         10000000000-999999999         -1000000000      50000005000000ABI OK" ] && [ "$out_w" = "         1.5         59999999999         10000000000-999999999         -1000000000      50000005000000ABI OK" ] && [ $rc_l -eq 0 ] && [ $rc_w -eq 0 ]; then
+if [ "$out_l" = "         1.5         59999999999         10000000000-999999999         -1000000000 50000005000000ABI OK" ] && [ "$out_w" = "         1.5         59999999999         10000000000-999999999         -1000000000 50000005000000ABI OK" ] && [ $rc_l -eq 0 ] && [ $rc_w -eq 0 ]; then
   echo "ABI HARNESS PASS"
 else
   echo "ABI HARNESS FAIL"; exit 1

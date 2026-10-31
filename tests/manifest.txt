@@ -1420,3 +1420,10 @@ pos tests/t1423_mixed_dyn_arith.hb \nC\nL\n        10\n         6\n         0
 neg tests/t1424_mixed_cell_store_neg.hb storing a cell of the mixed array
 neg tests/t1425_mixed_cell_assign_neg.hb storing into a cell of the mixed array
 neg tests/t1426_mixed_isnumeric_neg.hb unknown function `hb_isnumeric`
+pos tests/t1427_mixed_dyn_pos_t139form.hb \n         1\ndos
+pos tests/t1428_mixed_dyn_pos_t697form.hb \na\n         1
+pos tests/t1429_mixed_imm64_bounds.hb \n 9223372036854775807\n-9223372036854775807\n 2147483647\n 2147483648\n         -2147483648\n         -2147483649\n 9223372036854775807
+pos tests/t1430_mixed_reassign.hb \n         2\nanother\n         0
+neg tests/t1431_mixed_use_after_move_neg.hb use of moved value `a`
+pos tests/t1432_mixed_empty_to_mixed_reassign.hb \nx\n         0
+pos tests/t1433_int_width_matrix.hb \n 2147483647\n 9999999999\n2147483648\n         10000000000\n         -1000000000\n    -12345
