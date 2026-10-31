@@ -1,0 +1,23 @@
+[
+  {
+    "source": "#command PROBE [<!x!>] => OUT([<(x)>])\nPROBE alpha beta\n",
+    "reference_output": "\nOUT(\"alpha\"\"beta\")\n",
+    "previous_output": "OUT(( alpha beta ))\n",
+    "current_output": "",
+    "current_error": "error: line 2: smart stringify of repeated/disjoint captures is outside this increment\n"
+  },
+  {
+    "source": "#command PROBE [KEY <!x!> VALUE <y>] => OUT([<(x)>])\nPROBE KEY alpha VALUE 1 KEY beta VALUE 2\n",
+    "reference_output": "\nOUT(\"alpha\"\"beta\")\n",
+    "previous_output": "OUT(( alpha ))\n",
+    "current_output": "OUT(\"alpha\")\n",
+    "current_error": ""
+  },
+  {
+    "source": "#command PROBE [<x:alpha,beta>] => OUT([<(x)>])\nPROBE alpha beta\n",
+    "reference_output": "\nOUT(\"alpha\"\"beta\")\n",
+    "previous_output": "OUT(( alpha beta ))\n",
+    "current_output": "OUT(\"alpha beta\")\n",
+    "current_error": ""
+  }
+]

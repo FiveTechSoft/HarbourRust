@@ -874,3 +874,13 @@ change is not included. No fallback preserves known-false output.
 Fresh local batteries1240default/504LLVM and14originals exact. Acceptance stays
 21/15Linux20/14Windows. No classes/runtime/ABI/main change, no speed/size claim.
 The earlier candidate patch/results are historical, not the final implementation.
+
+## Repeated result groups: representation gap measured separately
+
+280own-source observations in repeated-smart-gap-20261031 show that repeated
+matching and result groups are coupled. A result group repeats its full template,
+including separators; a non-grouped marker does not grant repeated whole-command
+matching. Current capture concatenation erases this information. Literal-bearing
+optional groups also have a historical tail-overcapture gap,documented with
+Harbour/previous/current outputs. This evidence commit does not implement or
+claim repeated compatibility;production compiler remains284d009.
