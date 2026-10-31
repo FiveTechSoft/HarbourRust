@@ -1,0 +1,228 @@
+{
+  "commit": "42cbe67703384f8bdc89f56dcb6ea03102617476",
+  "scope": "fresh compiler; fib original exact Linux/Wine plus direct and early-return mutual controls, 3 named negative guards; no full batteries rerun",
+  "rows": [
+    {
+      "name": "fib",
+      "source_sha256": "93732a58377061fcb844f00b11f61c39a41f084477effcc8c46164107e04ae81",
+      "source": "PROCEDURE Main()\n\n   LOCAL n\n\n   FOR n := 1 TO 20\n      ? FibR( n )\n      ? FibI( n )\n   NEXT\n\n   RETURN\n\nFUNCTION FibR( n )\n\n   LOCAL nFib\n\n   IF n < 2\n      nFib := n\n   ELSE\n      nFib := FibR( n - 2 ) + FibR( n - 1 )\n   ENDIF\n\n   RETURN nFib\n\nFUNCTION FibI( n )\n\n   LOCAL nFibMin1  := 1\n   LOCAL nFibMinN1 := 0\n   LOCAL i         := 1\n   LOCAL nFib\n\n   IF n < 2\n      nFib := n\n   ELSE\n      DO WHILE i < n\n         nFib      := nFibMin1 + nFibMinN1\n         nFibMinN1 := nFibMin1\n         nFibMin1  := nFib\n         ++i\n      ENDDO\n   ENDIF\n\n   RETURN nFib\n",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/tmp/harbour-reference/tests/fib.prg -> /downloads/verify-fib42cbe67-scope/fib-linux.s (3 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         1\n         1\n         1\n         1\n         2\n         2\n         3\n         3\n         5\n         5\n         8\n         8\n        13\n        13\n        21\n        21\n        34\n        34\n        55\n        55\n        89\n        89\n       144\n       144\n       233\n       233\n       377\n       377\n       610\n       610\n       987\n       987\n      1597\n      1597\n      2584\n      2584\n      4181\n      4181\n      6765\n      6765",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/tmp/harbour-reference/tests/fib.prg -> /downloads/verify-fib42cbe67-scope/fib-windows.s (3 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         1\n         1\n         1\n         1\n         2\n         2\n         3\n         3\n         5\n         5\n         8\n         8\n        13\n        13\n        21\n        21\n        34\n        34\n        55\n        55\n        89\n        89\n       144\n       144\n       233\n       233\n       377\n       377\n       610\n       610\n       987\n       987\n      1597\n      1597\n      2584\n      2584\n      4181\n      4181\n      6765\n      6765",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n         1\n         1\n         1\n         1\n         2\n         2\n         3\n         3\n         5\n         5\n         8\n         8\n        13\n        13\n        21\n        21\n        34\n        34\n        55\n        55\n        89\n        89\n       144\n       144\n       233\n       233\n       377\n       377\n       610\n       610\n       987\n       987\n      1597\n      1597\n      2584\n      2584\n      4181\n      4181\n      6765\n      6765",
+        "stderr": ""
+      },
+      "llvm_compile": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: LLVM scalar: only I64/logical scalar signatures supported\n"
+      }
+    },
+    {
+      "name": "t1358",
+      "source_sha256": "10a872f4649cfea16cb4cb69580bd08041e81f10ed0456df9a32d63773489c50",
+      "source": "// Direct self-recursion return inference (fib piece): the recursive\n// call sits before the RETURN whose expression feeds inference, so\n// the function is seeded Dyn and the fixpoint refines from there.\n// Own probe; fib.prg itself stays oracle-side only.\nfunction fact( n )\n   local r\n   if n < 2\n      r := 1\n   else\n      r := n * fact( n - 1 )\n   endif\nreturn r\nfunction main()\n   local i\n   for i := 1 to 6\n      ? fact( i )\n   next\nreturn nil\n",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-fib42cbe67/tests/t1358_recursive_self_ret.hb -> /downloads/verify-fib42cbe67-scope/t1358-linux.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         1\n         2\n         6\n        24\n       120\n       720",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-fib42cbe67/tests/t1358_recursive_self_ret.hb -> /downloads/verify-fib42cbe67-scope/t1358-windows.s (2 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n         1\n         2\n         6\n        24\n       120\n       720",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n         1\n         2\n         6\n        24\n       120\n       720",
+        "stderr": ""
+      },
+      "llvm_compile": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: LLVM scalar: only I64/logical scalar signatures supported\n"
+      }
+    },
+    {
+      "name": "t1359",
+      "source_sha256": "f56d7d69cb78fc62cba0b53f2324de8bb6b6e3fa113bdb826f83c9689c3e29f9",
+      "source": "// Mutual recursion stays the named inference limit: neither function\n// calls ITSELF, so no seed applies and the return types never\n// materialize (fib piece; direct self-recursion is the covered form).\nfunction isodd( n )\n   if n == 0\n      return .f.\n   endif\nreturn iseven( n - 1 )\nfunction iseven( n )\n   if n == 0\n      return .t.\n   endif\nreturn isodd( n - 1 )\nfunction main()\n   ? isodd( 3 )\nreturn nil\n",
+      "targets": {
+        "linux": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-fib42cbe67/tests/t1359_recursive_mutual.hb -> /downloads/verify-fib42cbe67-scope/t1359-linux.s (3 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n.T.",
+            "stderr": ""
+          }
+        },
+        "windows": {
+          "compile": {
+            "exit": 0,
+            "stdout": "/downloads/verify-fib42cbe67/tests/t1359_recursive_mutual.hb -> /downloads/verify-fib42cbe67-scope/t1359-windows.s (3 functions)\n",
+            "stderr": ""
+          },
+          "assemble": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "link": {
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "exit": 0,
+            "stdout": "\n.T.",
+            "stderr": ""
+          }
+        }
+      },
+      "ref_build": {
+        "exit": 0,
+        "stdout": "Harbour 3.2.1dev (r2610242111)\nCopyright (c) 1999-2025, https://harbour.github.io/\n",
+        "stderr": ""
+      },
+      "reference": {
+        "exit": 0,
+        "stdout": "\n.T.",
+        "stderr": ""
+      },
+      "llvm_compile": {
+        "exit": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "t1004_recursive_inline_nonanchor",
+      "compile": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `f` never returns a value; its result cannot be used in an expression in this PoC\n"
+      }
+    },
+    {
+      "name": "t1005_recursive_inline_noground",
+      "compile": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 2: `f` never returns a value; its result cannot be used in an expression in this PoC\n"
+      }
+    },
+    {
+      "name": "t1360_recursive_mutual_endret_limit",
+      "compile": {
+        "exit": 1,
+        "stdout": "",
+        "stderr": "error: line 11: `iseven` never returns a value; its result cannot be used in an expression in this PoC\n"
+      }
+    }
+  ]
+}

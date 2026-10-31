@@ -1,0 +1,191 @@
+warning: unreachable pattern
+    --> src/hbc.rs:2613:17
+     |
+2609 |                 [Tok::KwMethod, Tok::Ident(m), Tok::LParen, rest @ .., Tok::RParen, Tok::KwClass, Tok::Ident(c)] => {
+     |                 ------------------------------------------------------------------------------------------------ matches all the relevant values
+...
+2613 |                 [Tok::KwMethod, Tok::Ident(m), Tok::LParen, Tok::RParen, Tok::KwClass, Tok::Ident(c)] => {
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no value can reach this
+     |
+     = note: `#[warn(unreachable_patterns)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `x`
+    --> src/hbc.rs:4482:37
+     |
+4482 |                         if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn)) {
+     |                                     ^ help: if this is intentional, prefix it with an underscore: `_x`
+     |
+     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `x`
+    --> src/hbc.rs:5538:33
+     |
+5538 |                     if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn)) {
+     |                                 ^ help: if this is intentional, prefix it with an underscore: `_x`
+
+warning: unused variable: `x`
+    --> src/hbc.rs:6615:37
+     |
+6615 |                         if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn)) {
+     |                                     ^ help: if this is intentional, prefix it with an underscore: `_x`
+
+warning: variable does not need to be mutable
+     --> src/hbc.rs:16121:9
+      |
+16121 |     let mut sigs: Vec<Sig>;
+      |         ----^^^^
+      |         |
+      |         help: remove this `mut`
+      |
+      = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: type `Def` is more private than the item `Pp::defs`
+  --> src/pp.rs:35:5
+   |
+35 |     pub defs: HashMap<String, Def>, // key: exact name (macro names are case-sensitive)
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ field `Pp::defs` is reachable at visibility `pub(crate)`
+   |
+note: but type `Def` is only usable at visibility `pub(self)`
+  --> src/pp.rs:21:1
+   |
+21 | struct Def {
+   | ^^^^^^^^^^
+   = note: `#[warn(private_interfaces)]` on by default
+
+warning: type `Def` is more private than the item `eval_if`
+  --> src/pp.rs:97:1
+   |
+97 | pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<bool, String> {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `eval_if` is reachable at visibility `pub(crate)`
+   |
+note: but type `Def` is only usable at visibility `pub(self)`
+  --> src/pp.rs:21:1
+   |
+21 | struct Def {
+   | ^^^^^^^^^^
+
+warning: type `Def` is more private than the item `expand`
+   --> src/pp.rs:299:1
+    |
+299 | pub fn expand(line: &str, defs: &HashMap<String, Def>, line_no: usize) -> Result<String, String> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `expand` is reachable at visibility `pub(crate)`
+    |
+note: but type `Def` is only usable at visibility `pub(self)`
+   --> src/pp.rs:21:1
+    |
+ 21 | struct Def {
+    | ^^^^^^^^^^
+
+warning: field `0` is never read
+   --> src/hbc.rs:759:13
+    |
+759 |     SelfGet(String),             // ::name inside a method (class parser landed; codegen pending)
+    |     ------- ^^^^^^
+    |     |
+    |     field in this variant
+    |
+    = note: `Expr` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+    |
+759 -     SelfGet(String),             // ::name inside a method (class parser landed; codegen pending)
+759 +     SelfGet(()),             // ::name inside a method (class parser landed; codegen pending)
+    |
+
+warning: field `1` is never read
+   --> src/hbc.rs:760:21
+    |
+760 |     Send(Box<Expr>, String, Vec<Expr>), // obj:name(args) / obj:name - Harbour message send (cl1/cl10)
+    |     ----            ^^^^^^
+    |     |
+    |     field in this variant
+    |
+    = note: `Expr` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+    |
+760 -     Send(Box<Expr>, String, Vec<Expr>), // obj:name(args) / obj:name - Harbour message send (cl1/cl10)
+760 +     Send(Box<Expr>, (), Vec<Expr>), // obj:name(args) / obj:name - Harbour message send (cl1/cl10)
+    |
+
+warning: field `1` is never read
+   --> src/hbc.rs:791:20
+    |
+791 |     SelfSet(usize, String, Expr),       // ::name := expr
+    |     -------        ^^^^^^
+    |     |
+    |     field in this variant
+    |
+    = note: `Stmt` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+    |
+791 -     SelfSet(usize, String, Expr),       // ::name := expr
+791 +     SelfSet(usize, (), Expr),       // ::name := expr
+    |
+
+warning: field `2` is never read
+   --> src/hbc.rs:792:26
+    |
+792 |     SendSet(usize, Expr, String, Expr), // obj:name := expr (simple receiver)
+    |     -------              ^^^^^^
+    |     |
+    |     field in this variant
+    |
+    = note: `Stmt` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+    |
+792 -     SendSet(usize, Expr, String, Expr), // obj:name := expr (simple receiver)
+792 +     SendSet(usize, Expr, (), Expr), // obj:name := expr (simple receiver)
+    |
+
+warning: field `parent` is never read
+    --> src/hbc.rs:2475:5
+     |
+2473 | struct ClassDecl {
+     |        --------- field in this struct
+2474 |     name: String,
+2475 |     parent: Option<String>,
+     |     ^^^^^^
+
+warning: fields `class_name` and `f` are never read
+    --> src/hbc.rs:2480:5
+     |
+2479 | struct MethodDef {
+     |        --------- fields in this struct
+2480 |     class_name: String,
+     |     ^^^^^^^^^^
+2481 |     f: Func,
+     |     ^
+
+warning: field `dup` is never read
+  --> src/pp.rs:31:5
+   |
+21 | struct Def {
+   |        --- field in this struct
+...
+31 |     dup: u32,
+   |     ^^^
+   |
+   = note: `Def` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: this method call resolves to `<&[T; N] as IntoIterator>::into_iter` (due to backwards compatibility), but will resolve to `<[T; N] as IntoIterator>::into_iter` in Rust 2021
+    --> src/hbc.rs:6392:54
+     |
+6392 |                 for oe in [se.as_ref(), ce.as_ref()].into_iter().flatten() {
+     |                                                      ^^^^^^^^^
+     |
+     = warning: this changes meaning in Rust 2021
+     = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2021/IntoIterator-for-arrays.html>
+     = note: `#[warn(array_into_iter)]` (part of `#[warn(rust_2021_compatibility)]`) on by default
+help: use `.iter()` instead of `.into_iter()` to avoid ambiguity
+     |
+6392 -                 for oe in [se.as_ref(), ce.as_ref()].into_iter().flatten() {
+6392 +                 for oe in [se.as_ref(), ce.as_ref()].iter().flatten() {
+     |
+help: or use `IntoIterator::into_iter(..)` instead of `.into_iter()` to explicitly iterate by value
+     |
+6392 -                 for oe in [se.as_ref(), ce.as_ref()].into_iter().flatten() {
+6392 +                 for oe in IntoIterator::into_iter([se.as_ref(), ce.as_ref()]).flatten() {
+     |
+
+warning: 16 warnings emitted
+
