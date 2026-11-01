@@ -10532,6 +10532,12 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
             }
             Stmt::Switch(_, sel, arms, otherwise) => {
                 let mark = env.len();
+                // In lockstep with cg_stmts: an entirely empty SWITCH is a
+                // no-op (oracle sw-empty-fx: the selector is not even
+                // evaluated) - no hidden slot, no frees.
+                if arms.is_empty() && otherwise.is_none() {
+                    continue;
+                }
                 // Hidden selector slot, in lockstep with cg_stmts: a
                 // non-variable selector lands in a frame slot (i64 one
                 // word; string/dyn the two-word pair).
@@ -11602,6 +11608,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    jmp .Lret_{}\n", fname));
             }
             Stmt::Switch(_, sel, arms, otherwise) => {
+                // Oracle sw-empty/sw-empty-fx: an entirely empty SWITCH is
+                // a legal no-op - the selector is not even evaluated.
+                if arms.is_empty() && otherwise.is_none() {
+                    continue;
+                }
                 let id = *label;
                 *label += 1;
                 let end = format!(".Lendsw_{}_{}", fname, id);

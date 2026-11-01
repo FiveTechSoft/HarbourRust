@@ -1527,3 +1527,11 @@ pos tests/t1537_arginline_pos.hb \n        34         22\n         6          3
 neg tests/t1538_argidxassign_neg.hb expected `,` or `)` in call arguments
 pos tests/t1539_argomit_bodyi64_pos.hb \n        -1\n         3\n         2\n        -1\n        -1\n        -1\n         2\n         3
 neg tests/t1540_argidxcompound_neg.hb unexpected token Eq in expression
+
+pos tests/t1541_sw_typed_fall.hb \ntwo\noth\nAB\nx\nsoth\ndone
+pos tests/t1542_sw_dyn_int.hb \n       110\n     10110
+pos tests/t1543_sw_dynstr_cell.hb \n      1000\n      1001\nafter
+pos tests/t1544_sw_dynstr_ret.hb \n      1000\n    111000
+posx tests/t1545_sw_nil_err.hb 1 Argument error: SWITCH\nCallstack:\n  at main (tests/t1545_sw_nil_err.hb:3)
+pos tests/t1546_sw_nil_empty.hb \nafter
+pos tests/t1547_sw_empty_noeval.hb \nafter
