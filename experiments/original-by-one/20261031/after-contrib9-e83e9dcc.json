@@ -13,19 +13,22 @@
       "path": "contrib/hbtest/core.prg",
       "kind": "source",
       "first_fail": "hbtest/core.prg:110: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "sha256": "3b6861f486ab2dcab23e51527c3b07e4bc46ddf68ad327df68a9b835e69c7f82"
     },
     {
       "path": "contrib/hbtest/tests/test.prg",
       "kind": "test",
       "first_fail": "hbtest/tests/test.prg:1: unknown directive #require in this PoC",
-      "class": "unknown directive #require (parked)"
+      "class": "unknown directive #require (parked)",
+      "sha256": "c108d837fefe8a50a68a87a68c24de0ffa5b736ced57ab23b57b895270a2c976"
     },
     {
       "path": "contrib/make.hb",
       "kind": "source",
       "first_fail": "contrib/make.hb:1: unknown directive #!/usr/bin/env in this PoC",
-      "class": "shebang line parsed as directive"
+      "class": "shebang line parsed as directive",
+      "sha256": "c79f7f37ca4d5724a5be2bde81b70cc6cacf65828ba34832c77481f4e0b26145"
     },
     {
       "path": "contrib/hbtest/hbtest.ch",
@@ -34,5 +37,8 @@
       "class": "header - no direct compile"
     }
   ],
-  "notes": "Matrix uniform base(d999a46)==HEAD(92947baf)==LLVM for all 3 compilable. New classes: identifier-led statement not in subset (core.prg:110 - hbtest_Call macro-led call line); shebang-as-directive (make.hb:1). #require parked per contract. No compatibility claimed. Eligible pending after this batch: 213 (33 dirs)."
+  "notes": "Matrix uniform base(d999a46)==HEAD(92947baf)==LLVM for all 3 compilable. New classes: identifier-led statement not in subset (core.prg:110 - hbtest_Call macro-led call line); shebang-as-directive (make.hb:1). #require parked per contract. No compatibility claimed. Eligible pending after this batch: 213 (33 dirs).",
+  "corrections": [
+    "2026-11-01: sha256 added to all 4 rows (omitted in initial write). Values from /tmp/walk/contrib9.sha256 computed on checkout @694428e1."
+  ]
 }
