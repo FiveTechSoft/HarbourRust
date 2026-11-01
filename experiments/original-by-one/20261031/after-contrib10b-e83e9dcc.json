@@ -17,7 +17,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/afteratn.prg",
@@ -27,7 +28,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/asciisum.prg",
@@ -37,7 +39,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/ascpos.prg",
@@ -47,7 +50,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/atadjust.prg",
@@ -57,7 +61,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/atnum.prg",
@@ -67,7 +72,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/atrepl.prg",
@@ -77,7 +83,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/attoken.prg",
@@ -87,7 +94,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/beforatn.prg",
@@ -97,7 +105,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charadd.prg",
@@ -107,7 +116,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charand.prg",
@@ -117,7 +127,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/chareven.prg",
@@ -127,7 +138,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charhist.prg",
@@ -137,7 +149,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charlist.prg",
@@ -147,7 +160,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charmirr.prg",
@@ -157,7 +171,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charmix.prg",
@@ -167,7 +182,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charnlst.prg",
@@ -177,7 +193,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charnot.prg",
@@ -187,7 +204,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charodd.prg",
@@ -197,7 +215,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charone.prg",
@@ -207,7 +226,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charonly.prg",
@@ -217,7 +237,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charor.prg",
@@ -227,7 +248,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charrem.prg",
@@ -237,7 +259,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charrepl.prg",
@@ -247,7 +270,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charrll.prg",
@@ -257,7 +281,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charrlr.prg",
@@ -267,7 +292,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charshl.prg",
@@ -277,7 +303,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charshr.prg",
@@ -287,7 +314,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charslst.prg",
@@ -297,7 +325,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charsort.prg",
@@ -307,7 +336,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charsub.prg",
@@ -317,7 +347,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charswap.prg",
@@ -327,7 +358,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charxor.prg",
@@ -337,7 +369,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/csetarge.prg",
@@ -347,7 +380,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/csetatmu.prg",
@@ -357,7 +391,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/csetref.prg",
@@ -367,7 +402,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/ctwtest.prg",
@@ -377,7 +413,8 @@
       "first_fail_head_92947baf": "error: line 7: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/dates4.prg",
@@ -387,7 +424,8 @@
       "first_fail_head_92947baf": "error: line 2: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/datetime.prg",
@@ -397,7 +435,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/expomant.prg",
@@ -407,7 +446,8 @@
       "first_fail_head_92947baf": "error: line 50: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/finan.prg",
@@ -417,7 +457,8 @@
       "first_fail_head_92947baf": "error: line 52: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/math.prg",
@@ -427,7 +468,8 @@
       "first_fail_head_92947baf": "error: line 52: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/num1.prg",
@@ -437,7 +479,8 @@
       "first_fail_head_92947baf": "error: line 50: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/numline.prg",
@@ -447,7 +490,8 @@
       "first_fail_head_92947baf": "error: line 8: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/numtoken.prg",
@@ -457,7 +501,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/rangerem.prg",
@@ -467,7 +512,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/rangerep.prg",
@@ -477,7 +523,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/setatlik.prg",
@@ -487,7 +534,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/strdiff.prg",
@@ -497,7 +545,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/tab.prg",
@@ -507,7 +556,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/test.prg",
@@ -517,7 +567,8 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/token.prg",
@@ -527,7 +578,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/token2.prg",
@@ -537,7 +589,8 @@
       "first_fail_head_92947baf": "error: line 57: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/tokenlow.prg",
@@ -547,7 +600,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/tokensep.prg",
@@ -557,7 +611,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/tokenupp.prg",
@@ -567,7 +622,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/trig.prg",
@@ -577,7 +633,8 @@
       "first_fail_head_92947baf": "error: line 59: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/valpos.prg",
@@ -587,7 +644,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/wordone.prg",
@@ -597,7 +655,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/wordonly.prg",
@@ -607,7 +666,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/wordrem.prg",
@@ -617,7 +677,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/wordrepl.prg",
@@ -627,7 +688,8 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/wordswap.prg",
@@ -637,8 +699,13 @@
       "first_fail_head_92947baf": "error: line 49: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked (no pragma shortcut)"
+      "class": "#require directive parked (no pragma shortcut)",
+      "evidence_level": "inventory+matrix"
     }
   ],
-  "notes": "63 test .prg: uniform line-1 '#require' rejection (parked per no-pragma-shortcut rule), LLVM identical, zero base/head divergence. hbct dir COMPLETE: 86 files."
+  "notes": "63 test .prg: uniform line-1 '#require' rejection (parked per no-pragma-shortcut rule), LLVM identical, zero base/head divergence. hbct dir COMPLETE: 86 files.",
+  "evidence_level": "inventory+matrix (NOT manual line-by-line review)",
+  "corrections": [
+    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed."
+  ]
 }

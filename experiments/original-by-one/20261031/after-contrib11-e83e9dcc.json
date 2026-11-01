@@ -17,7 +17,8 @@
       "first_fail_head_92947baf": "error: line 164: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "unknown dotted word `..` variadic"
+      "class": "unknown dotted word `..` variadic",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbnetio/tests/netiomt1.prg",
@@ -27,7 +28,8 @@
       "first_fail_head_92947baf": "error: line 8: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbnetio/tests/netiot02.prg",
@@ -37,7 +39,8 @@
       "first_fail_head_92947baf": "error: line 8: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbnetio/tests/netiot03.prg",
@@ -47,7 +50,8 @@
       "first_fail_head_92947baf": "error: line 9: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbnetio/tests/netiotst.prg",
@@ -57,7 +61,8 @@
       "first_fail_head_92947baf": "error: line 9: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbnetio/utils/hbnetio/_console.prg",
@@ -67,7 +72,8 @@
       "first_fail_head_92947baf": "error: line 363: expected `,` or `}` in the codeblock body, got Some(Assign)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "codeblock body"
+      "class": "codeblock body",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbnetio/utils/hbnetio/_winsvc.prg",
@@ -77,7 +83,8 @@
       "first_fail_head_92947baf": "error: line 23: cannot find include hbwin.ch",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "missing include"
+      "class": "missing include",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbnetio/utils/hbnetio/hbnetio.prg",
@@ -87,7 +94,8 @@
       "first_fail_head_92947baf": "error: line 481: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "unknown dotted word `..` variadic"
+      "class": "unknown dotted word `..` variadic",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbnetio/utils/hbnetio/netiomgm.hb",
@@ -97,7 +105,8 @@
       "first_fail_head_92947baf": "error: line 82: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "unknown dotted word `..` variadic"
+      "class": "unknown dotted word `..` variadic",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbnetio/utils/hbnetio/rpcdemo.hb",
@@ -107,15 +116,21 @@
       "first_fail_head_92947baf": "error: line 9: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "unknown dotted word `..` variadic"
+      "class": "unknown dotted word `..` variadic",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbnetio/hbnetio.ch",
       "kind": "header",
       "sha256": "34b88ce909ba18e5daccaa1761b4d3300e5e8561f8113423c83f5995e2be9919",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     }
   ],
-  "notes": "hbnetio COMPLETE (11 files: 2 top .prg + 1 .ch + 4 tests + 4 utils). Matrix uniform base==HEAD==LLVM, 0/10 compile. New class: 'unknown dotted word ..' variadic (netiomt, hbnetio.prg, netiomgm, rpcdemo). #require parked x4. No compatibility claimed."
+  "notes": "hbnetio COMPLETE (11 files: 2 top .prg + 1 .ch + 4 tests + 4 utils). Matrix uniform base==HEAD==LLVM, 0/10 compile. New class: 'unknown dotted word ..' variadic (netiomt, hbnetio.prg, netiomgm, rpcdemo). #require parked x4. No compatibility claimed.",
+  "evidence_level": "inventory+matrix (NOT manual line-by-line review)",
+  "corrections": [
+    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed."
+  ]
 }

@@ -18,7 +18,8 @@
       "first_fail_head_92947baf": "error: line 115: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "file-scope STATIC not in increment"
+      "class": "file-scope STATIC not in increment",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbcomm/tests/test.prg",
@@ -28,7 +29,8 @@
       "first_fail_head_92947baf": "error: line 9: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbcups/tests/test.prg",
@@ -38,14 +40,16 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hblzf/hblzf.ch",
       "kind": "header",
       "sha256": "94996825a671b01ed6a21997a1c289510a960219e8bbb3d162a76d6bc709aba3",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hblzf/tests/test.prg",
@@ -55,7 +59,8 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hblzf/tests/test2.prg",
@@ -65,14 +70,16 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbmagic/hbmagic.ch",
       "kind": "header",
       "sha256": "fe16111f7608432e5f51779b2e0e0bd89ae3a88a5b2570518a0458aab95fef9d",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbmagic/hbmagis.prg",
@@ -82,7 +89,8 @@
       "first_fail_head_92947baf": "error: line 85: unknown function `hb_default` (must be defined before use)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "unknown function/builtin coverage"
+      "class": "unknown function/builtin coverage",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbmagic/tests/hbmagit.prg",
@@ -92,7 +100,8 @@
       "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbmemio/tests/test.prg",
@@ -102,14 +111,16 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbmlzo/hbmlzo.ch",
       "kind": "header",
       "sha256": "c6a028140ab1700ceea08ebe3d7285d6d70427be0fe22affb9f40370b7eb4729",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbmlzo/tests/test.prg",
@@ -119,14 +130,16 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbmzip/hbmzip.ch",
       "kind": "header",
       "sha256": "2ded283bc49c3759cd3f4b00716764aa081040ee31f492a940a19ff45d152f6a",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbmzip/mziperr.prg",
@@ -136,7 +149,8 @@
       "first_fail_head_92947baf": "error: line 105: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbmzip/tests/myunzip.prg",
@@ -146,7 +160,8 @@
       "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbmzip/tests/myzip.prg",
@@ -156,7 +171,8 @@
       "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hboslib/core.prg",
@@ -166,14 +182,16 @@
       "first_fail_head_92947baf": "error: line 137: unknown function `hb_gtinfo` (must be defined before use)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "unknown function/builtin coverage"
+      "class": "unknown function/builtin coverage",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbpgsql/postgres.ch",
       "kind": "header",
       "sha256": "b7e4efecc251d16aa8197f931bd1710ab384485beaf4db3a7ae95f7ee6df928a",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbpgsql/tests/async.prg",
@@ -183,7 +201,8 @@
       "first_fail_head_92947baf": "error: line 3: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbpgsql/tests/cache.prg",
@@ -193,7 +212,8 @@
       "first_fail_head_92947baf": "error: line 3: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbpgsql/tests/dbf2pg.prg",
@@ -203,7 +223,8 @@
       "first_fail_head_92947baf": "error: line 48: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbpgsql/tests/ping.prg",
@@ -213,7 +234,8 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbpgsql/tests/simple.prg",
@@ -223,7 +245,8 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbpgsql/tests/stress.prg",
@@ -233,7 +256,8 @@
       "first_fail_head_92947baf": "error: line 3: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbpgsql/tests/test.prg",
@@ -243,7 +267,8 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbpgsql/tpostgre.prg",
@@ -253,7 +278,8 @@
       "first_fail_head_92947baf": "error: line 61: reduced VAR expression atom outside bounded contract",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "reduced VAR expression atom"
+      "class": "reduced VAR expression atom",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbpipeio/tests/test.prg",
@@ -263,7 +289,8 @@
       "first_fail_head_92947baf": "error: line 8: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbsms/sms.prg",
@@ -273,7 +300,8 @@
       "first_fail_head_92947baf": "error: line 107: expected `local name [:= expr]`",
       "llvm_identical_default": true,
       "head_advances_vs_base": true,
-      "class": "expected local name"
+      "class": "expected local name",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbsms/tests/send.prg",
@@ -283,7 +311,8 @@
       "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbtinymt/tests/test32.prg",
@@ -293,7 +322,8 @@
       "first_fail_head_92947baf": "error: line 6: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbtinymt/tests/test64.prg",
@@ -303,14 +333,16 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbtpathy/telepath.ch",
       "kind": "header",
       "sha256": "0bc14d502a0708ee0170030fa2fb05b0b0d0ed66de4b0270f3d888a6314d084a",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbtpathy/telepath.prg",
@@ -320,7 +352,8 @@
       "first_fail_head_92947baf": "error: line 206: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "unknown dotted word `..` variadic"
+      "class": "unknown dotted word `..` variadic",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbtpathy/tests/test.prg",
@@ -330,7 +363,8 @@
       "first_fail_head_92947baf": "error: line 61: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbtpathy/tp_idle.prg",
@@ -340,7 +374,8 @@
       "first_fail_head_92947baf": "error: line 52: `.AND.`/`.OR.` need logical operands (hk197/hk198)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "logical operands gate"
+      "class": "logical operands gate",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbunix/tests/daemon.prg",
@@ -350,7 +385,8 @@
       "first_fail_head_92947baf": "error: line 7: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbunix/tests/getpid.prg",
@@ -360,7 +396,8 @@
       "first_fail_head_92947baf": "error: line 7: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbunix/tests/sigpipe.prg",
@@ -370,14 +407,16 @@
       "first_fail_head_92947baf": "error: line 5: unknown function `posix_signal` (must be defined before use)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "unknown function/builtin coverage"
+      "class": "unknown function/builtin coverage",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbxdiff/hbxdiff.ch",
       "kind": "header",
       "sha256": "5b93905ae251d5865d19035fd736943b4f8c69785cc77dcfba7e79ed3141df27",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbxdiff/tests/test.prg",
@@ -387,7 +426,8 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbxdiff/tests/test2.prg",
@@ -397,7 +437,8 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbxdiff/tests/test3.prg",
@@ -407,14 +448,16 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbzebra/hbzebra.ch",
       "kind": "header",
       "sha256": "42948db21a4ee69dbf886d646195b36eb6f76179d9fe5b03a8a9de5793a8ba31",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbzebra/tests/bmp.prg",
@@ -424,7 +467,8 @@
       "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbzebra/tests/cairo.prg",
@@ -434,7 +478,8 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbzebra/tests/gtgfx.prg",
@@ -444,7 +489,8 @@
       "first_fail_head_92947baf": "error: line 7: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbzebra/tests/harupdf.prg",
@@ -454,7 +500,8 @@
       "first_fail_head_92947baf": "error: line 7: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbzebra/tests/pclqr.prg",
@@ -464,7 +511,8 @@
       "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbzebra/tests/wingdi.prg",
@@ -474,7 +522,8 @@
       "first_fail_head_92947baf": "error: line 7: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbziparc/tests/unzipa.prg",
@@ -484,7 +533,8 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbziparc/tests/zipa.prg",
@@ -494,7 +544,8 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbziparc/ziparc.prg",
@@ -504,14 +555,16 @@
       "first_fail_head_92947baf": "error: line 52: cannot find include hbmzip.ch",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "missing include"
+      "class": "missing include",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/rddads/ads.ch",
       "kind": "header",
       "sha256": "181bda0e55fb0e02d7782b2e499e799ca81fa82c3dd653af23927b4dba02bda4",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/rddads/tests/datad.prg",
@@ -521,7 +574,8 @@
       "first_fail_head_92947baf": "error: line 3: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/rddads/tests/manage.prg",
@@ -531,7 +585,8 @@
       "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/rddbm/bmdbfcdx.prg",
@@ -541,7 +596,8 @@
       "first_fail_head_92947baf": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/rddbm/bmdbfnsx.prg",
@@ -551,7 +607,8 @@
       "first_fail_head_92947baf": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/rddbm/bmdbfntx.prg",
@@ -561,7 +618,8 @@
       "first_fail_head_92947baf": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/rddmisc/arrayrdd.prg",
@@ -571,7 +629,8 @@
       "first_fail_head_92947baf": "error: line 2141: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "unknown dotted word `..` variadic"
+      "class": "unknown dotted word `..` variadic",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/rddmisc/dbtcdx.prg",
@@ -581,7 +640,8 @@
       "first_fail_head_92947baf": "error: line 347: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/rddmisc/fptcdx.prg",
@@ -591,7 +651,8 @@
       "first_fail_head_92947baf": "error: line 347: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/rddmisc/hscdx.prg",
@@ -601,7 +662,8 @@
       "first_fail_head_92947baf": "error: line 423: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/rddmisc/logrdd.prg",
@@ -611,7 +673,8 @@
       "first_fail_head_92947baf": "error: line 422: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/rddmisc/rlcdx.prg",
@@ -621,7 +684,8 @@
       "first_fail_head_92947baf": "error: line 217: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/rddmisc/smtcdx.prg",
@@ -631,7 +695,8 @@
       "first_fail_head_92947baf": "error: line 347: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/rddmisc/vfpcdx.prg",
@@ -641,7 +706,8 @@
       "first_fail_head_92947baf": "error: line 340: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/rddsql/tests/arrayrdd.prg",
@@ -651,7 +717,8 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/sddmy/tests/test1.prg",
@@ -661,7 +728,8 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/sddoci/tests/test1.prg",
@@ -671,7 +739,8 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/sddodbc/tests/test1.prg",
@@ -681,7 +750,8 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/sddodbc/tests/test2.prg",
@@ -691,7 +761,8 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/sddsqlt3/tests/mttest.prg",
@@ -701,7 +772,8 @@
       "first_fail_head_92947baf": "error: line 33: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/sddsqlt3/tests/struct.prg",
@@ -711,7 +783,8 @@
       "first_fail_head_92947baf": "error: line 8: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/sddsqlt3/tests/test.prg",
@@ -721,8 +794,13 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     }
   ],
-  "notes": "74 files, 25 dirs. Matrix at pin 92947baf: LLVM identical everywhere; 1 advance via args increment (hbsms/sms.prg 68->107, fails later, NO compatibility claim); #require parked dominant. CONTRIB ELIGIBLE TRAVERSAL COMPLETE: covered 637/695 + GT 58 excluded pending scope = 695."
+  "notes": "74 files, 25 dirs. Matrix at pin 92947baf: LLVM identical everywhere; 1 advance via args increment (hbsms/sms.prg 68->107, fails later, NO compatibility claim); #require parked dominant. CONTRIB ELIGIBLE TRAVERSAL COMPLETE: covered 637/695 + GT 58 excluded pending scope = 695.",
+  "evidence_level": "inventory+matrix (NOT manual line-by-line review)",
+  "corrections": [
+    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed."
+  ]
 }

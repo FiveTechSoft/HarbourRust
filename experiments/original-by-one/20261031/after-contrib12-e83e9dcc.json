@@ -14,7 +14,8 @@
       "first_fail_head_92947baf": "error: line 171: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbsqlit3/hdbc.prg",
@@ -24,7 +25,8 @@
       "first_fail_head_92947baf": "error: line 59: reduced VAR expression atom outside bounded contract",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "reduced VAR expression atom"
+      "class": "reduced VAR expression atom",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbsqlit3/tests/authoriz.prg",
@@ -34,7 +36,8 @@
       "first_fail_head_92947baf": "error: line 73: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbsqlit3/tests/backup.prg",
@@ -44,7 +47,8 @@
       "first_fail_head_92947baf": "error: line 61: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbsqlit3/tests/blob.prg",
@@ -54,7 +58,8 @@
       "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbsqlit3/tests/demo.prg",
@@ -64,7 +69,8 @@
       "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbsqlit3/tests/hdbc.prg",
@@ -74,7 +80,8 @@
       "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbsqlit3/tests/hooks.prg",
@@ -84,7 +91,8 @@
       "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbsqlit3/tests/metadata.prg",
@@ -94,7 +102,8 @@
       "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbsqlit3/tests/pack.prg",
@@ -104,15 +113,21 @@
       "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "#require directive parked"
+      "class": "#require directive parked",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbsqlit3/hbsqlit3.ch",
       "kind": "header",
       "sha256": "f19b52c070344f027cb9a5ab8fa8667d1e8839fda8f97cc358068542fd760672",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     }
   ],
-  "notes": "hbsqlit3 COMPLETE (11: 2 top .prg + 1 .ch + 8 tests). hbsqlit3.hbp rc0 pin 694428e1. Matrix uniform base==HEAD==LLVM; classes: #require parked (7), identifier-led statement (errstr 171), reduced VAR atom (hdbc 59). No compatibility claimed."
+  "notes": "hbsqlit3 COMPLETE (11: 2 top .prg + 1 .ch + 8 tests). hbsqlit3.hbp rc0 pin 694428e1. Matrix uniform base==HEAD==LLVM; classes: #require parked (7), identifier-led statement (errstr 171), reduced VAR atom (hdbc 59). No compatibility claimed.",
+  "evidence_level": "inventory+matrix (NOT manual line-by-line review)",
+  "corrections": [
+    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed."
+  ]
 }

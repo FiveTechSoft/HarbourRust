@@ -17,7 +17,8 @@
       "first_fail_head_92947baf": "error: line 48: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "file-scope STATIC not in increment"
+      "class": "file-scope STATIC not in increment",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/ctdummy.prg",
@@ -27,7 +28,8 @@
       "first_fail_head_92947baf": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/ctmisc.prg",
@@ -37,7 +39,8 @@
       "first_fail_head_92947baf": "error: line 206: unknown function `hb_default` (must be defined before use)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "unknown function/builtin coverage"
+      "class": "unknown function/builtin coverage",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/ctrand.prg",
@@ -47,7 +50,8 @@
       "first_fail_head_92947baf": "error: line 48: unknown function `hb_islogical` (must be defined before use)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "unknown function/builtin coverage"
+      "class": "unknown function/builtin coverage",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/cttime.prg",
@@ -57,7 +61,8 @@
       "first_fail_head_92947baf": "error: line 54: unknown function `seconds` (must be defined before use)",
       "llvm_identical_default": true,
       "head_advances_vs_base": true,
-      "class": "unknown function/builtin coverage"
+      "class": "unknown function/builtin coverage",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/fcopy.prg",
@@ -67,7 +72,8 @@
       "first_fail_head_92947baf": "error: line 142: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/getinfo.prg",
@@ -77,7 +83,8 @@
       "first_fail_head_92947baf": "error: line 68: expected `,` or `}` in the codeblock body, got Some(EqEq)",
       "llvm_identical_default": true,
       "head_advances_vs_base": true,
-      "class": "codeblock body"
+      "class": "codeblock body",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/getinput.prg",
@@ -87,7 +94,8 @@
       "first_fail_head_92947baf": "error: line 64: statement not in the subset (At)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "other"
+      "class": "other",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/getsecrt.prg",
@@ -97,7 +105,8 @@
       "first_fail_head_92947baf": "error: line 277: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": true,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/keysave.prg",
@@ -107,7 +116,8 @@
       "first_fail_head_92947baf": "error: line 48: unknown function `hb_setkeysave` (must be defined before use)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "unknown function/builtin coverage"
+      "class": "unknown function/builtin coverage",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/keysec.prg",
@@ -117,7 +127,8 @@
       "first_fail_head_92947baf": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/keytime.prg",
@@ -127,7 +138,8 @@
       "first_fail_head_92947baf": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/kxlat.prg",
@@ -137,7 +149,8 @@
       "first_fail_head_92947baf": "error: line 396: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "file-scope STATIC not in increment"
+      "class": "file-scope STATIC not in increment",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/screen3.prg",
@@ -147,7 +160,8 @@
       "first_fail_head_92947baf": "error: line 50: unknown function `row` (must be defined before use)",
       "llvm_identical_default": true,
       "head_advances_vs_base": true,
-      "class": "unknown function/builtin coverage"
+      "class": "unknown function/builtin coverage",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/scrmark.prg",
@@ -157,7 +171,8 @@
       "first_fail_head_92947baf": "error: line 57: unknown function `hb_default` (must be defined before use)",
       "llvm_identical_default": true,
       "head_advances_vs_base": true,
-      "class": "unknown function/builtin coverage"
+      "class": "unknown function/builtin coverage",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/showtime.prg",
@@ -167,7 +182,8 @@
       "first_fail_head_92947baf": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset"
+      "class": "identifier-led statement not in subset",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/tempfile.prg",
@@ -177,50 +193,61 @@
       "first_fail_head_92947baf": "error: line 132: unknown function `hb_isstring` (must be defined before use)",
       "llvm_identical_default": true,
       "head_advances_vs_base": true,
-      "class": "unknown function/builtin coverage"
+      "class": "unknown function/builtin coverage",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/ct.ch",
       "kind": "header",
       "sha256": "72408cf21e2fd480aa49c52fe576475ef0ac1aeb6b1d4f65413ef08093383495",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/ctcom.ch",
       "kind": "header",
       "sha256": "89fbcffd6ef024127f906baa13eb131d66306d82c41fc939899318791fa360e5",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/ctdisk.ch",
       "kind": "header",
       "sha256": "a06be1d8464b69d36906d290481048a558de3281c7ab9bd12a68c436824eb8fb",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/cterror.ch",
       "kind": "header",
       "sha256": "9b07af91ee429a3eb5312f9ef7054eaa7868af467f8500926910f104f8524950",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/ctscan.ch",
       "kind": "header",
       "sha256": "07c6baf88aece0d17c6bc92c3a7801e31e910fd13ccbd87c8b833e8b15fe8dda",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     },
     {
       "path": "contrib/hbct/ctvideo.ch",
       "kind": "header",
       "sha256": "0bc3d4b30bae64f0d4ccf798655e76cca424537802a86b5a20559400bb672707",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "evidence_level": "inventory+matrix"
     }
   ],
-  "notes": "hbct top-level 23 files (17 .prg + 6 .ch). Matrix at pin 92947baf: LLVM identical to default everywhere; 0/17 compile (all named rejections); 6 files advance past previous failure via args increment (cttime, getinfo, getsecrt, screen3, scrmark, tempfile - fail LATER, no compatibility claim). tests/ 63 .prg pending in 10b."
+  "notes": "hbct top-level 23 files (17 .prg + 6 .ch). Matrix at pin 92947baf: LLVM identical to default everywhere; 0/17 compile (all named rejections); 6 files advance past previous failure via args increment (cttime, getinfo, getsecrt, screen3, scrmark, tempfile - fail LATER, no compatibility claim). tests/ 63 .prg pending in 10b.",
+  "evidence_level": "inventory+matrix (NOT manual line-by-line review)",
+  "corrections": [
+    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed."
+  ]
 }
