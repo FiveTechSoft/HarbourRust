@@ -51,6 +51,147 @@
    }
   },
   {
+   "file": "contrib/xhb/cgi.ch",
+   "sha256": "20b0449ba57edf2aef8763e47cb42f568012812e302c0b31d65781559111abe6",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/classex.ch",
+   "sha256": "86e51902f47916d0639e2a3960f1bd0bc603f183f30ea7b2bba0ad60c2543f96",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/cstruct.ch",
+   "sha256": "dcfcbc4d5fb51b83c0d5a9ba7ca99d86d1f72742e895e061d4d901b8271d6fb7",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
    "file": "contrib/xhb/cstruct.prg",
    "sha256": "56182508891df99452b9cf45586603dcf93d243163f00ceec38280aea14a4fd4",
    "review": "full source manually read 2026-11-01",
@@ -333,6 +474,147 @@
    }
   },
   {
+   "file": "contrib/xhb/hbcommon.ch",
+   "sha256": "547618d443b4e7af8b3018b8b080a47520820f524386f39986db5cd8291c7e7a",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/hbcompat.ch",
+   "sha256": "b845d25ad2dd14535f8d0bf6cbc11107c708968bbb4ef0526a6a00bb715230e8",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/hbcomprs.ch",
+   "sha256": "31f1002daa6117c6b43d5b63bc5bf763276c34ef3c6317dc1fb0fc4e15f1c7c9",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
    "file": "contrib/xhb/hbcomprs.prg",
    "sha256": "38f408f6ac55dbf07740a0d3d91309f09d60704d5ef0b0fdb52fb10918e224f0",
    "review": "full source manually read 2026-11-01",
@@ -373,6 +655,147 @@
     "llvm": {
      "compile_exit": 1,
      "diagnostic": "error: line 165: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/hbctypes.ch",
+   "sha256": "b29c2f7cee1a4578668ab824a77e765269ba2b0d8f22a041ef9dd128d4a2f2c4",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/hbdll.ch",
+   "sha256": "37e88071d1d71caef772dace634c213893a8c5cd17820b5f44063067a1234fe3",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/hblog.ch",
+   "sha256": "9a9927ae77ad9ecd6e54224ac07ccc9e46aca65582a1082fcdb10920a87642df",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
      "link": "not-run",
      "execution": "not-run",
      "comparison": "not-run"
@@ -427,6 +850,53 @@
    }
   },
   {
+   "file": "contrib/xhb/hblogdef.ch",
+   "sha256": "93075ace1643dd967b6a300a30a72ccacd2c013401a7dc5cdb610924104ad591",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
    "file": "contrib/xhb/hblognet.prg",
    "sha256": "a0a60bbc95e03d25ef62704fc7daf68923df04950b891bc10242d810b415bce9",
    "review": "full source manually read 2026-11-01",
@@ -467,6 +937,241 @@
     "llvm": {
      "compile_exit": 1,
      "diagnostic": "error: line 201: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/hbrpc.ch",
+   "sha256": "f7d061f4ff4162043a7494ef92866e7d54cdb385ba23fc53524bb44fa166f87a",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/hbserv.ch",
+   "sha256": "2934f77edf9958c83b4718c9f5d735bf0ad05697872dcc768504b475ad9da807",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/hbstruct.ch",
+   "sha256": "8fa99a11344b94c0422f9c3f238e66bbc28c45a67325a9b4564342e4be3540c0",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/hbstruct.prg",
+   "sha256": "68385b6b8356d01e2753547e7c69b3b7de040199a00a2a3b2b05ebf82e2be12b",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "hb_HashAddMember",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbstruct.ch/class headers",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 53: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 53: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 53: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 53: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/hbxml.ch",
+   "sha256": "f88e65462360cefea106e2ee15a28ae1b94828d992ae2d234e5bbf267b9eff3b",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
      "link": "not-run",
      "execution": "not-run",
      "comparison": "not-run"
@@ -615,6 +1320,147 @@
    }
   },
   {
+   "file": "contrib/xhb/html.ch",
+   "sha256": "71b61624092b65f3b7a22af96d493cade3f190d0cfd861c89e9314119ec8be7e",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/htmlclrs.ch",
+   "sha256": "61d909c80b5cd5bff1c218c3c86d0cfc10eaec1d5c480896eede72e549ea008d",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/htmlform.ch",
+   "sha256": "050ca67d1dcc1989a28c41a949e6314d0c1c0055de6e52eadf9a624b38941a1d",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
    "file": "contrib/xhb/htmutil.prg",
    "sha256": "dcb10a25e7bb3afdcb4e3f76fc22dd8120ef24bb0212ab95db98928f17b24811",
    "review": "full source manually read 2026-11-01",
@@ -655,6 +1501,53 @@
     "llvm": {
      "compile_exit": 1,
      "diagnostic": "error: line 222: unknown result marker <br /> (Harbour: E0008)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/math.ch",
+   "sha256": "0da05fc9a68fd3f20e81cee33d557a21f5ec6f50272dfaa1232d7fb3fc60a0bd",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
      "link": "not-run",
      "execution": "not-run",
      "comparison": "not-run"
@@ -890,6 +1783,288 @@
     "llvm": {
      "compile_exit": 1,
      "diagnostic": "error: line 67: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/tests/compress.prg",
+   "sha256": "d43b19df856436abb542b6cae53f5f8f66ffde29f90b5b82624012987b3728b4",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/xhb/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require xhb",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program)",
+   "reference_run": "not-run (test program)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/tests/copyfile.prg",
+   "sha256": "ba0651381e341088a2362cd97c9549aa40ad08f9e7aba889eb1daa506f605c1e",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/xhb/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require xhb",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program)",
+   "reference_run": "not-run (test program)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/tests/decode.prg",
+   "sha256": "cb636d5604c1c1878389a8065eac96e357342f63b97623bbb53f53f666b7ed50",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/xhb/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require xhb",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program)",
+   "reference_run": "not-run (test program)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/tests/dll.prg",
+   "sha256": "4d9b103faaa0d961af5a589b62ba95969411cb71c5ae1dea7292911b7e472636",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/xhb/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require xhb",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program)",
+   "reference_run": "not-run (test program)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/tests/regexrpl.prg",
+   "sha256": "9ce49968b678783165e365e9b4a6f8eb76a8e666280962e074af0f8c9276c034",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/xhb/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require xhb",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program)",
+   "reference_run": "not-run (test program)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/tests/xml1.prg",
+   "sha256": "cbc324970d7b8b97bfd6f1d99e816b432ea458eb645070945d4d77bb176cf01f",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/xhb/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require xhb",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program)",
+   "reference_run": "not-run (test program)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
      "link": "not-run",
      "execution": "not-run",
      "comparison": "not-run"
@@ -1179,6 +2354,53 @@
    }
   },
   {
+   "file": "contrib/xhb/ttable.ch",
+   "sha256": "4830765ecc3b2625e6cbd7ef2c53d96402eb07d3f8b2b5585c89ef79e1901984",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
    "file": "contrib/xhb/ttable.prg",
    "sha256": "876e3aaba04b50b1f46334b7d72fb8d075e3112536537346599027f388012397",
    "review": "full source manually read 2026-11-01",
@@ -1273,6 +2495,147 @@
    }
   },
   {
+   "file": "contrib/xhb/usrrdd.ch",
+   "sha256": "b49efc1466b88c4cdc413f382f612aa1adc17d7f10e4fce74ba510ece9f3434a",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/win32prn.ch",
+   "sha256": "d7ea62ba0d9e3846c0854034b19a18dd268e06c6269488c1df74436462e2135c",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/wintypes.ch",
+   "sha256": "4123b9dd93cc8ef438ae134395ace90763ec6fcc66831a49f6d68fb3d907b668",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
    "file": "contrib/xhb/xcstr.prg",
    "sha256": "622ce776fc70e422133d5b249895d04104722861a82581304ceb78fbe0bd632e",
    "review": "full source manually read 2026-11-01",
@@ -1360,6 +2723,100 @@
     "llvm": {
      "compile_exit": 1,
      "diagnostic": "error: line 308: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/xhb.ch",
+   "sha256": "2d196232c2b49f57e880f32144905de030e16de9e2d781dd61daae571b0e7b2e",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/xhbcls.ch",
+   "sha256": "9ff1348b32c6546c830640e699e666db15cb5d5efb0d83b5f238e7ded35fcb81",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
      "link": "not-run",
      "execution": "not-run",
      "comparison": "not-run"
@@ -1548,6 +3005,53 @@
     "llvm": {
      "compile_exit": 1,
      "diagnostic": "error: line 136: unknown function `hb_gtinfo` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/xhb/xhbinkey.ch",
+   "sha256": "1eb57b42316aa4fca5a89d4996470c2d3cbe95cc58a4ab8355bd4243eb7af94c",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
      "link": "not-run",
      "execution": "not-run",
      "comparison": "not-run"
@@ -1837,6 +3341,53 @@
    }
   },
   {
+   "file": "contrib/xhb/xhbver.ch",
+   "sha256": "6b970c4ceed9836bcf394710f6dad6be242730b5c75ae06c6e5e1e4416d1e9a4",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/xhb/xhb.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
    "file": "contrib/xhb/xhbver.prg",
    "sha256": "70d0008962befc99d69f3d0186ac5390b1cca458ee150aae4fb17c12bf67131a",
    "review": "full source manually read 2026-11-01",
@@ -1924,1510 +3475,6 @@
     "llvm": {
      "compile_exit": 1,
      "diagnostic": "error: no main function",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/cgi.ch",
-   "sha256": "20b0449ba57edf2aef8763e47cb42f568012812e302c0b31d65781559111abe6",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/classex.ch",
-   "sha256": "86e51902f47916d0639e2a3960f1bd0bc603f183f30ea7b2bba0ad60c2543f96",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/cstruct.ch",
-   "sha256": "dcfcbc4d5fb51b83c0d5a9ba7ca99d86d1f72742e895e061d4d901b8271d6fb7",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/hbcommon.ch",
-   "sha256": "547618d443b4e7af8b3018b8b080a47520820f524386f39986db5cd8291c7e7a",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/hbcompat.ch",
-   "sha256": "b845d25ad2dd14535f8d0bf6cbc11107c708968bbb4ef0526a6a00bb715230e8",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/hbcomprs.ch",
-   "sha256": "31f1002daa6117c6b43d5b63bc5bf763276c34ef3c6317dc1fb0fc4e15f1c7c9",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/hbctypes.ch",
-   "sha256": "b29c2f7cee1a4578668ab824a77e765269ba2b0d8f22a041ef9dd128d4a2f2c4",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/hbdll.ch",
-   "sha256": "37e88071d1d71caef772dace634c213893a8c5cd17820b5f44063067a1234fe3",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/hblog.ch",
-   "sha256": "9a9927ae77ad9ecd6e54224ac07ccc9e46aca65582a1082fcdb10920a87642df",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/hblogdef.ch",
-   "sha256": "93075ace1643dd967b6a300a30a72ccacd2c013401a7dc5cdb610924104ad591",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/hbrpc.ch",
-   "sha256": "f7d061f4ff4162043a7494ef92866e7d54cdb385ba23fc53524bb44fa166f87a",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/hbserv.ch",
-   "sha256": "2934f77edf9958c83b4718c9f5d735bf0ad05697872dcc768504b475ad9da807",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/hbstruct.ch",
-   "sha256": "8fa99a11344b94c0422f9c3f238e66bbc28c45a67325a9b4564342e4be3540c0",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/hbxml.ch",
-   "sha256": "f88e65462360cefea106e2ee15a28ae1b94828d992ae2d234e5bbf267b9eff3b",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/html.ch",
-   "sha256": "71b61624092b65f3b7a22af96d493cade3f190d0cfd861c89e9314119ec8be7e",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/htmlclrs.ch",
-   "sha256": "61d909c80b5cd5bff1c218c3c86d0cfc10eaec1d5c480896eede72e549ea008d",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/htmlform.ch",
-   "sha256": "050ca67d1dcc1989a28c41a949e6314d0c1c0055de6e52eadf9a624b38941a1d",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/math.ch",
-   "sha256": "0da05fc9a68fd3f20e81cee33d557a21f5ec6f50272dfaa1232d7fb3fc60a0bd",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/ttable.ch",
-   "sha256": "4830765ecc3b2625e6cbd7ef2c53d96402eb07d3f8b2b5585c89ef79e1901984",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/usrrdd.ch",
-   "sha256": "b49efc1466b88c4cdc413f382f612aa1adc17d7f10e4fce74ba510ece9f3434a",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/win32prn.ch",
-   "sha256": "d7ea62ba0d9e3846c0854034b19a18dd268e06c6269488c1df74436462e2135c",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/wintypes.ch",
-   "sha256": "4123b9dd93cc8ef438ae134395ace90763ec6fcc66831a49f6d68fb3d907b668",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/xhb.ch",
-   "sha256": "2d196232c2b49f57e880f32144905de030e16de9e2d781dd61daae571b0e7b2e",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/xhbcls.ch",
-   "sha256": "9ff1348b32c6546c830640e699e666db15cb5d5efb0d83b5f238e7ded35fcb81",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/xhbinkey.ch",
-   "sha256": "1eb57b42316aa4fca5a89d4996470c2d3cbe95cc58a4ab8355bd4243eb7af94c",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/xhbver.ch",
-   "sha256": "6b970c4ceed9836bcf394710f6dad6be242730b5c75ae06c6e5e1e4416d1e9a4",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives only)",
-   "build_unit": "contrib/xhb/xhb.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/tests/compress.prg",
-   "sha256": "d43b19df856436abb542b6cae53f5f8f66ffde29f90b5b82624012987b3728b4",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "Main",
-   "build_unit": "contrib/xhb/tests (no .hbm; per-file)",
-   "profile": "C-contrib",
-   "dependencies": "#require xhb",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": "not-run",
-   "reference_build_note": "not-run (test program)",
-   "reference_run": "not-run (test program)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 7: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 7: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 7: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 7: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/tests/copyfile.prg",
-   "sha256": "ba0651381e341088a2362cd97c9549aa40ad08f9e7aba889eb1daa506f605c1e",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "Main",
-   "build_unit": "contrib/xhb/tests (no .hbm; per-file)",
-   "profile": "C-contrib",
-   "dependencies": "#require xhb",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": "not-run",
-   "reference_build_note": "not-run (test program)",
-   "reference_run": "not-run (test program)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/tests/decode.prg",
-   "sha256": "cb636d5604c1c1878389a8065eac96e357342f63b97623bbb53f53f666b7ed50",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "Main",
-   "build_unit": "contrib/xhb/tests (no .hbm; per-file)",
-   "profile": "C-contrib",
-   "dependencies": "#require xhb",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": "not-run",
-   "reference_build_note": "not-run (test program)",
-   "reference_run": "not-run (test program)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 47: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 47: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 47: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 47: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/tests/dll.prg",
-   "sha256": "4d9b103faaa0d961af5a589b62ba95969411cb71c5ae1dea7292911b7e472636",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "Main",
-   "build_unit": "contrib/xhb/tests (no .hbm; per-file)",
-   "profile": "C-contrib",
-   "dependencies": "#require xhb",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": "not-run",
-   "reference_build_note": "not-run (test program)",
-   "reference_run": "not-run (test program)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/tests/regexrpl.prg",
-   "sha256": "9ce49968b678783165e365e9b4a6f8eb76a8e666280962e074af0f8c9276c034",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "Main",
-   "build_unit": "contrib/xhb/tests (no .hbm; per-file)",
-   "profile": "C-contrib",
-   "dependencies": "#require xhb",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": "not-run",
-   "reference_build_note": "not-run (test program)",
-   "reference_run": "not-run (test program)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 9: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 9: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 9: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 9: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/xhb/tests/xml1.prg",
-   "sha256": "cbc324970d7b8b97bfd6f1d99e816b432ea458eb645070945d4d77bb176cf01f",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "Main",
-   "build_unit": "contrib/xhb/tests (no .hbm; per-file)",
-   "profile": "C-contrib",
-   "dependencies": "#require xhb",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": "not-run",
-   "reference_build_note": "not-run (test program)",
-   "reference_run": "not-run (test program)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
      "link": "not-run",
      "execution": "not-run",
      "comparison": "not-run"
