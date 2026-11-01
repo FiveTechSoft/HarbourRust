@@ -77,7 +77,7 @@ enum Tok {
     Ne,       // <> or !=
     Lt, Le, Gt, Ge,
     KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElseif, KwElse, KwEndif, KwWhile, KwEnddo, KwExit, KwLoop,
-    KwFor, KwTo, KwStep, KwNext, KwEach, KwIn,
+    KwFor, KwTo, KwStep, KwNext, KwEach, KwIn, KwSwitch, KwEndswitch,
     EqEq,       // == (measured: integers hk124, DArr identity hk126; object identity cl7/cl19 class-gated)
     Colon,      // : (message send, o:name)
     ColonColon, // :: (self member, inside a method)
@@ -489,7 +489,7 @@ fn stmt_line(s: &Stmt) -> usize {
         Stmt::ASizeSub(n,..) | Stmt::AAddSub2(n,..) | Stmt::ASizeSub2(n,..) |
         Stmt::AAddSub3(n,..) | Stmt::ASizeSub3(n,..) | Stmt::ASize(n,..) |
         Stmt::AIns(n,..) | Stmt::ADel(n,..) | Stmt::AFill(n,..) |
-        Stmt::Exit(n) | Stmt::Loop(n) | Stmt::For(n,..) | Stmt::ForEach(n,..) => *n,
+        Stmt::Exit(n) | Stmt::Loop(n) | Stmt::For(n,..) | Stmt::ForEach(n,..) | Stmt::Switch(n,..) => *n,
     }
 }
 
@@ -653,6 +653,8 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                     "to" => Tok::KwTo,
                     "step" => Tok::KwStep,
                     "next" => Tok::KwNext,
+                    "switch" => Tok::KwSwitch,
+                    "endswitch" => Tok::KwEndswitch,
                     "create" => Tok::KwCreate,
                     "class" => Tok::KwClass,
                     "endclass" => Tok::KwEndclass,
@@ -795,6 +797,9 @@ enum Expr {
     LOr(Box<Expr>, Box<Expr>),   // x .OR. y, short-circuit (hk203)
 }
 
+#[derive(Clone, Debug, PartialEq)]
+enum CaseLit { Int(String), Str(String) }
+
 #[derive(Debug)]
 enum Stmt {
     Local(usize, String, Expr),
@@ -834,6 +839,7 @@ enum Stmt {
     Loop(usize),                 // loop: jump to the next iteration of the innermost loop
     For(usize, String, Expr, Expr, i64, Vec<Stmt>), // line, var, start, end, step (non-zero literal), body
     ForEach(usize, String, Expr, Vec<Stmt>), // line, var, collection (borrowed), body
+    Switch(usize, Expr, Vec<(usize, CaseLit, Vec<Stmt>)>, Option<(usize, Vec<Stmt>)>), // line, selector, case arms, otherwise
 }
 
 struct Func {
@@ -1613,6 +1619,12 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 }
                 return Ok(());
             }
+            Tok::KwEndswitch => {
+                if depth == 0 {
+                    return Err(format!("line {}: `endswitch` without `switch`", n));
+                }
+                return Ok(());
+            }
             Tok::KwFor => {
                 // `for each x in <collection>`: Harbour REQUIRES the EACH
                 // keyword - `for x in a` is its E0030 syntax error
@@ -1711,6 +1723,81 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 }
                 *i += 1;
                 out.push(Stmt::While(n, cond, body));
+            }
+            Tok::KwSwitch => {
+                // SWITCH (oracle contract W1-W10): exact == comparisons,
+                // fall-through between cases AND into OTHERWISE
+                // (sw-fall / sw-str-trail-a/b), selector evaluated once.
+                // CASE takes an integer or string LITERAL only (Harbour
+                // E0055 parity: NIL/expressions rejected; signed/float/
+                // boolean literals out of this increment); duplicates are
+                // E0070 parity; OTHERWISE is unique and last (a later
+                // CASE is a named divergence: Harbour accepts
+                // `otherwise` first, sw-oth-first).
+                if toks.len() < 2 {
+                    return Err(format!("line {}: expected `switch <expr>`", n));
+                }
+                let sel = parse_expr_tokens(toks[1..].to_vec(), n)?;
+                *i += 1;
+                let mut arms: Vec<(usize, CaseLit, Vec<Stmt>)> = Vec::new();
+                let mut otherwise: Option<(usize, Vec<Stmt>)> = None;
+                loop {
+                    if *i >= lines.len() {
+                        return Err(format!("line {}: `switch` without `endswitch`", n));
+                    }
+                    let (ln, ref ltoks) = lines[*i];
+                    match &ltoks[0] {
+                        Tok::Ident(id) if id.eq_ignore_ascii_case("case")
+                            && !matches!(ltoks.get(1), Some(Tok::Assign) | Some(Tok::Eq)) => {
+                            let cn = ln;
+                            if otherwise.is_some() {
+                                return Err(format!("line {}: `case` after `otherwise` is a named rejection in this PoC (Harbour accepts `otherwise` first, oracle sw-oth-first; registered divergence)", cn));
+                            }
+                            if ltoks.len() != 2 {
+                                return Err(format!("line {}: `case` takes exactly one literal constant (Harbour Error E0055 parity)", cn));
+                            }
+                            let lit = match &ltoks[1] {
+                                Tok::Int(v) => CaseLit::Int(v.clone()),
+                                Tok::Str(s) => CaseLit::Str(s.clone()),
+                                _ => return Err(format!("line {}: `case` takes an integer or string literal only (Harbour Error E0055 parity; NIL, floats, booleans and expressions are out of this increment)", cn)),
+                            };
+                            let dup = arms.iter().any(|(_, l, _)| match (l, &lit) {
+                                (CaseLit::Int(a), CaseLit::Int(b)) => a.parse::<i64>().ok() == b.parse::<i64>().ok(),
+                                (CaseLit::Str(a), CaseLit::Str(b)) => a == b,
+                                _ => false,
+                            });
+                            if dup {
+                                return Err(format!("line {}: duplicate `case` literal (Harbour Error E0070 parity)", cn));
+                            }
+                            *i += 1;
+                            let mut cbody = Vec::new();
+                            parse_stmts(lines, i, &mut cbody, depth + 1)?;
+                            arms.push((cn, lit, cbody));
+                        }
+                        Tok::Ident(id) if id.eq_ignore_ascii_case("otherwise") => {
+                            let on = ln;
+                            if otherwise.is_some() {
+                                return Err(format!("line {}: duplicate `otherwise` (Harbour Error E0037 parity)", on));
+                            }
+                            if ltoks.len() != 1 {
+                                return Err(format!("line {}: `otherwise` takes no expression", on));
+                            }
+                            *i += 1;
+                            let mut obody = Vec::new();
+                            parse_stmts(lines, i, &mut obody, depth + 1)?;
+                            otherwise = Some((on, obody));
+                        }
+                        Tok::KwEndswitch => {
+                            if ltoks.len() != 1 {
+                                return Err(format!("line {}: `endswitch` takes no expression", ln));
+                            }
+                            *i += 1;
+                            break;
+                        }
+                        _ => return Err(format!("line {}: expected `case`, `otherwise` or `endswitch` inside `switch`", ln)),
+                    }
+                }
+                out.push(Stmt::Switch(n, sel, arms, otherwise));
             }
             Tok::KwIf => {
                 // A comma at the outer call depth distinguishes IF(c,a,b)
@@ -3603,6 +3690,15 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 Stmt::ForEach(n, _, c, body) => {
                     walk(f, c, sigs, lit, pin, printed, *n)?;
                     walk_stmts(f, body, sigs, lit, pin, printed, nil_ret)?;
+                }
+                Stmt::Switch(n, sel, arms, otherwise) => {
+                    walk(f, sel, sigs, lit, pin, printed, *n)?;
+                    for (_, _, body) in arms {
+                        walk_stmts(f, body, sigs, lit, pin, printed, nil_ret)?;
+                    }
+                    if let Some((_, obody)) = otherwise {
+                        walk_stmts(f, obody, sigs, lit, pin, printed, nil_ret)?;
+                    }
                 }
                 Stmt::ArrSet(n, id, ie, e) => {
                     // p["key"] := v: a string key pins a hash parameter
@@ -6153,6 +6249,7 @@ fn prescan_dyn(f: &Func, sigs: &[Sig], ptys: &[Ty]) -> std::collections::HashSet
                 Stmt::If(_, _, t, e) => { scan_darr(t, darr); scan_darr(e, darr); }
                 Stmt::While(_, _, b) => scan_darr(b, darr),
                 Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => scan_darr(b, darr),
+                Stmt::Switch(_, _, arms, otherwise) => { for (_, _, b) in arms { scan_darr(b, darr); } if let Some((_, ob)) = otherwise { scan_darr(ob, darr); } }
                 _ => {}
             }
         }
@@ -6166,6 +6263,7 @@ fn prescan_dyn(f: &Func, sigs: &[Sig], ptys: &[Ty]) -> std::collections::HashSet
                 Stmt::If(_, _, t, e) => { collect(t, out); collect(e, out); }
                 Stmt::While(_, _, b) => collect(b, out),
                 Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => collect(b, out),
+                Stmt::Switch(_, _, arms, otherwise) => { for (_, _, b) in arms { collect(b, out); } if let Some((_, ob)) = otherwise { collect(ob, out); } }
                 _ => {}
             }
         }
@@ -6257,6 +6355,11 @@ fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
         Stmt::Print(_, items, _) => items.iter().all(|i| expr_ok(i, name)),
         Stmt::Ret(_, Some(e)) => expr_ok(e, name),
         Stmt::CallStmt(_, e) => expr_ok(e, name),
+        Stmt::Switch(_, sel, arms, otherwise) => {
+            expr_ok(sel, name)
+                && arms.iter().all(|(_, _, b)| foreach_coll_untouched(b, name))
+                && otherwise.as_ref().map_or(true, |(_, b)| foreach_coll_untouched(b, name))
+        }
         _ => true,
     })
 }
@@ -6409,6 +6512,11 @@ fn stmt_mentions(s: &Stmt, name: &str) -> bool {
             expr_mentions(c, name) || stmts_mention(a, name) || stmts_mention(b, name)
         }
         Stmt::While(_, c, b) => expr_mentions(c, name) || stmts_mention(b, name),
+        Stmt::Switch(_, sel, arms, otherwise) => {
+            expr_mentions(sel, name)
+                || arms.iter().any(|(_, _, b)| stmts_mention(b, name))
+                || otherwise.as_ref().map_or(false, |(_, b)| stmts_mention(b, name))
+        }
         Stmt::Assign(_, id, e) => id == name || expr_mentions(e, name),
         Stmt::HDel(_, id, e) | Stmt::HDelAt(_, id, e) | Stmt::HFill(_, id, e) => {
             id == name || expr_mentions(e, name)
@@ -6487,7 +6595,12 @@ fn stmt_mentions(s: &Stmt, name: &str) -> bool {
     }
 }
 
-fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &mut Option<Ty>, loop_pre: Option<&Vec<bool>>, exits: &mut Vec<Vec<bool>>, dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) -> Result<bool, String> {
+// One enclosing breakable construct for the moved-value checker: a loop
+// (EXIT/LOOP bind it) or a switch (EXIT binds it, LOOP passes through to
+// the innermost loop - oracle sw-loop-in-for).
+struct ChkCtx { is_loop: bool, pre: Vec<bool>, exits: Vec<Vec<bool>> }
+
+fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &mut Option<Ty>, ctxs: &mut Vec<ChkCtx>, dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) -> Result<bool, String> {
     let mut falls = true;
     for (si, s) in stmts.iter().enumerate() {
         match s {
@@ -6685,9 +6798,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
                 let outer = env.len();
                 let mut env_then = env.clone();
-                let ft = check_stmts(then_s, &mut env_then, sigs, ret, loop_pre, exits, dyn_names, byref_names)?;
+                let ft = check_stmts(then_s, &mut env_then, sigs, ret, ctxs, dyn_names, byref_names)?;
                 let mut env_else = env.clone();
-                let fe = check_stmts(else_s, &mut env_else, sigs, ret, loop_pre, exits, dyn_names, byref_names)?;
+                let fe = check_stmts(else_s, &mut env_else, sigs, ret, ctxs, dyn_names, byref_names)?;
                 for k in 0..outer {
                     env[k].moved = env_then[k].moved || env_else[k].moved;
                 }
@@ -6702,8 +6815,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let outer = env.len();
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_body = env.clone();
-                let mut wexits: Vec<Vec<bool>> = Vec::new();
-                let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut wexits, dyn_names, byref_names)?;
+                ctxs.push(ChkCtx { is_loop: true, pre, exits: Vec::new() });
+                let fb = check_stmts(body, &mut env_body, sigs, ret, ctxs, dyn_names, byref_names)?;
+                let wctx = ctxs.pop().expect("frame pushed above");
+                let pre = wctx.pre;
+                let wexits = wctx.exits;
                 // A variable moved on a path that reaches the next
                 // iteration must be live again there (Rust's loop rule).
                 if fb {
@@ -6752,8 +6868,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let outer = env.len();
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_body = env.clone();
-                let mut fexits: Vec<Vec<bool>> = Vec::new();
-                let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut fexits, dyn_names, byref_names)?;
+                ctxs.push(ChkCtx { is_loop: true, pre, exits: Vec::new() });
+                let fb = check_stmts(body, &mut env_body, sigs, ret, ctxs, dyn_names, byref_names)?;
+                let fctx = ctxs.pop().expect("frame pushed above");
+                let pre = fctx.pre;
+                let fexits = fctx.exits;
                 if fb {
                     for k in 0..outer {
                         if !pre[k] && env_body[k].moved {
@@ -6917,8 +7036,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let outer = env.len();
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_body = env.clone();
-                let mut fexits: Vec<Vec<bool>> = Vec::new();
-                let fb = check_stmts(body, &mut env_body, sigs, ret, Some(&pre), &mut fexits, dyn_names, byref_names)?;
+                ctxs.push(ChkCtx { is_loop: true, pre, exits: Vec::new() });
+                let fb = check_stmts(body, &mut env_body, sigs, ret, ctxs, dyn_names, byref_names)?;
+                let fctx = ctxs.pop().expect("frame pushed above");
+                let pre = fctx.pre;
+                let fexits = fctx.exits;
                 if let Some(cn) = &cname {
                     let kc = env.iter().position(|v| v.name == *cn).expect("collection exists");
                     if env_body[kc].moved || !foreach_coll_untouched(body, cn) {
@@ -6953,21 +7075,66 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 env[kp].ty = saved.0;
                 env[kp].ro = saved.1;
             }
-            Stmt::Exit(n) => {
-                let pre = match loop_pre {
-                    Some(p) => p,
-                    None => return Err(format!("line {}: `exit` outside a `while` loop or `for` loop", n)),
+            Stmt::Switch(n, sel, arms, otherwise) => {
+                let st = type_expr(sel, env, sigs, *n)?;
+                apply_moves(sel, env, sigs, false);
+                let fam = match st {
+                    Ty::I64 => 0u8,
+                    Ty::Str | Ty::StrOwn => 1u8,
+                    Ty::Dyn => 2u8,
+                    _ => return Err(format!("line {}: `switch` selector must be an integer, string or dynamic value in this increment (booleans, floats, arrays, hashes and objects are a named rejection)", n)),
                 };
-                exits.push(env[..pre.len()].iter().map(|v| v.moved).collect());
+                for (cn, lit, _) in arms {
+                    let lfam = match lit { CaseLit::Int(_) => 0u8, CaseLit::Str(_) => 1u8 };
+                    if fam != 2 && lfam != fam {
+                        return Err(format!("line {}: `case` literal family does not match the `switch` selector type (Harbour compares across families at runtime; this PoC rejects the mismatch as a named divergence)", cn));
+                    }
+                }
+                // Fall-through threads the body chain; OTHERWISE also runs
+                // on fall-through (oracle sw-str-trail-a/b), so it checks
+                // in the same chain. Post-switch joins the no-match path,
+                // the chain end and every `exit` snapshot.
+                let outer = env.len();
+                let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
+                let mut env_chain = env.clone();
+                ctxs.push(ChkCtx { is_loop: false, pre, exits: Vec::new() });
+                let mut any_fall = otherwise.is_none();
+                for (_, _, body) in arms {
+                    let fb = check_stmts(body, &mut env_chain, sigs, ret, ctxs, dyn_names, byref_names)?;
+                    any_fall = any_fall || fb;
+                }
+                if let Some((_, obody)) = otherwise {
+                    let fo = check_stmts(obody, &mut env_chain, sigs, ret, ctxs, dyn_names, byref_names)?;
+                    any_fall = any_fall || fo;
+                }
+                let sctx = ctxs.pop().expect("frame pushed above");
+                any_fall = any_fall || !sctx.exits.is_empty();
+                for k in 0..outer {
+                    env[k].moved = (if otherwise.is_none() { sctx.pre[k] } else { false })
+                        || env_chain[k].moved || sctx.exits.iter().any(|xs| xs[k]);
+                    if env[k].ty == Ty::DArrU && matches!(env_chain[k].ty, Ty::DArr | Ty::DArr2 | Ty::DArrDyn) {
+                        env[k].ty = env_chain[k].ty;
+                    }
+                }
+                falls = any_fall;
+            }
+            Stmt::Exit(n) => {
+                match ctxs.last_mut() {
+                    None => return Err(format!("line {}: `exit` outside a `while` loop, `for` loop or `switch`", n)),
+                    Some(c) => {
+                        let plen = c.pre.len();
+                        c.exits.push(env[..plen].iter().map(|v| v.moved).collect());
+                    }
+                }
                 falls = false;
             }
             Stmt::Loop(n) => {
-                let pre = match loop_pre {
-                    Some(p) => p,
+                let lpre = match ctxs.iter().rev().find(|c| c.is_loop) {
                     None => return Err(format!("line {}: `loop` outside a `while` loop or `for` loop", n)),
+                    Some(c) => &c.pre,
                 };
-                for k in 0..pre.len() {
-                    if !pre[k] && env[k].moved {
+                for k in 0..lpre.len() {
+                    if !lpre[k] && env[k].moved {
                         return Err(format!("line {}: `{}` is moved inside the `while` body and not reassigned before `loop` (the next iteration would use a moved value)", n, env[k].name));
                     }
                 }
@@ -10202,6 +10369,7 @@ fn byref_names_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
                 Stmt::While(_, c, b) => { ex(c, out); st(b, out); }
                 Stmt::For(_, _, a, b, _, body) => { ex(a, out); ex(b, out); st(body, out); }
                 Stmt::ForEach(_, _, c, body) => { ex(c, out); st(body, out); }
+                Stmt::Switch(_, sel, arms, otherwise) => { ex(sel, out); for (_, _, b) in arms { st(b, out); } if let Some((_, ob)) = otherwise { st(ob, out); } }
                 _ => {}
             }
         }
@@ -10247,6 +10415,7 @@ fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String,
                 Stmt::While(_, c, b) => { ex(c, out); st(b, out); }
                 Stmt::For(_, _, a, b, _, body) => { ex(a, out); ex(b, out); st(body, out); }
                 Stmt::ForEach(_, _, c, body) => { ex(c, out); st(body, out); }
+                Stmt::Switch(_, sel, arms, otherwise) => { ex(sel, out); for (_, _, b) in arms { st(b, out); } if let Some((_, ob)) = otherwise { st(ob, out); } }
                 _ => {}
             }
         }
@@ -10359,6 +10528,27 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                     env.push(CgLocal { name: var.clone(), ty: Ty::I64, off: *frame });
                 }
                 layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names);
+                env.truncate(mark);
+            }
+            Stmt::Switch(_, sel, arms, otherwise) => {
+                let mark = env.len();
+                // Hidden selector slot, in lockstep with cg_stmts: a
+                // non-variable selector lands in a frame slot (i64 one
+                // word; string/dyn the two-word pair).
+                if !matches!(sel, Expr::Var(_)) {
+                    match expr_ty(sel, env, sigs) {
+                        Ty::I64 => *frame += 8,
+                        _ => *frame += 16,
+                    }
+                }
+                // Fall-through bodies share the growing environment, like
+                // cg_stmts: no per-body truncation.
+                for (_, _, body) in arms {
+                    layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names);
+                }
+                if let Some((_, obody)) = otherwise {
+                    layout_locals(obody, env, sigs, frame, darr_slots, dyn_names, byref_names);
+                }
                 env.truncate(mark);
             }
             Stmt::ForEach(_, var, coll, body) => {
@@ -11149,7 +11339,16 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                 }
 }
 
-fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, ll: &Option<(String, String)>, slots: &[(usize, u8)], dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
+// Innermost-construct flow for codegen: Loop(cond, end) and
+// Switch(end). EXIT jumps to the innermost construct's end; LOOP jumps
+// to the innermost LOOP's condition, passing through enclosing switches
+// (oracle sw-loop-in-for). Selector temps are freed in the dispatch
+// stubs before any body runs, so neither EXIT/LOOP nor RETURN inside a
+// body touches them.
+#[derive(Clone)]
+enum CgFrame { Loop(String, String), Switch(String) }
+
+fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, flow: &[CgFrame], slots: &[(usize, u8)], dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
     for (si, s) in stmts.iter().enumerate() {
         trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
         match s {
@@ -11402,6 +11601,133 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");
                 out.push_str(&format!("    jmp .Lret_{}\n", fname));
             }
+            Stmt::Switch(_, sel, arms, otherwise) => {
+                let id = *label;
+                *label += 1;
+                let end = format!(".Lendsw_{}_{}", fname, id);
+                let onolab = format!(".Lswoth_{}_{}", fname, id);
+                let mark = env.len();
+                let st = expr_ty(sel, env, sigs);
+                // Selector evaluated ONCE (oracle sw-once). A variable
+                // selector is borrowed in place - no temp, no free; the
+                // cascade completes before any body runs, so a body
+                // mutating the variable cannot invalidate the compares.
+                let (hname, hoff, owned) = if let Expr::Var(vn) = sel {
+                    let off = env.iter().rev().find(|v| v.name == *vn).expect("analysis checked the local exists").off;
+                    (vn.clone(), off, false)
+                } else {
+                    let hname = format!("$sw{}", id);
+                    cg_value(sel, env, sigs, strs, out, target);
+                    match st {
+                        Ty::I64 => {
+                            *frame += 8;
+                            let off = *frame;
+                            out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
+                            env.push(CgLocal { name: hname.clone(), ty: Ty::I64, off });
+                            (hname, off, false)
+                        }
+                        Ty::Str | Ty::StrOwn | Ty::Dyn => {
+                            // Dyn temp ownership (sw-t10): a Dyn value
+                            // produced by a call arrives OWNED (the
+                            // return boundary clones it for the caller);
+                            // every other Dyn expression (array cell
+                            // read, assignment expression, ...) BORROWS
+                            // the cell/slot payload, so clone-if-str at
+                            // the temp boundary like any owned hand-off
+                            // (cg_dyn_clone_if_str discipline). After
+                            // this the temp owns any string payload and
+                            // the dispatch stubs free it exactly once.
+                            if st == Ty::Dyn && !matches!(sel, Expr::Call(..)) {
+                                cg_dyn_clone_if_str(out);
+                            }
+                            *frame += 16;
+                            let off = *frame;
+                            out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
+                            env.push(CgLocal { name: hname.clone(), ty: st, off });
+                            (hname, off, st != Ty::Str)
+                        }
+                        _ => unreachable!("analysis rejected other selector types"),
+                    }
+                };
+                let free_class = if !owned { 0u8 } else { match st { Ty::StrOwn => 1, Ty::Dyn => 2, _ => 0 } };
+                // Dyn selector holding NIL fails the whole SWITCH at
+                // entry, before any comparison (oracle sw-nil-oth:
+                // BASE/3104 "Argument error: SWITCH"; clean named exit 1
+                // here, registered failure mode).
+                // Oracle sw-nil-empty: a NIL selector errors only when
+                // the switch has any arm or an otherwise; an entirely
+                // empty SWITCH is a legal no-op.
+                if st == Ty::Dyn && (!arms.is_empty() || otherwise.is_some()) {
+                    out.push_str(&format!("    cmpq $1, -{}(%rbp)\n    je hbc_swxeq_nil_error\n", hoff));
+                }
+                let emit_free = |out: &mut String, tag: &str| {
+                    match free_class {
+                        1 => out.push_str(&format!("    mov -{}(%rbp), %rdi\n    call hbc_freestr\n", hoff)),
+                        2 => out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne .Lswf{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Lswf{}\n    call hbc_freestr\n.Lswf{}:\n", hoff, tag, hoff - 8, tag, tag)),
+                        _ => {}
+                    }
+                };
+                // Cascade: every compare runs against the LIVE temp; the
+                // entry label is decided before any stub frees it.
+                for (k, (_, lit, _)) in arms.iter().enumerate() {
+                    let stub = format!(".Lswd_{}_{}", id, k);
+                    let skip = format!(".Lswx_{}_{}", id, k);
+                    match (st, lit) {
+                        (Ty::Dyn, CaseLit::Int(v)) => {
+                            // Number casilla x Int literal: payload
+                            // equality; every other tag is a non-match
+                            // (cross-family is .F. in SWITCH, oracle
+                            // sw-dyn-xsn - never an error here).
+                            out.push_str(&format!("    cmpq $0, -{}(%rbp)\n    jne {}\n", hoff, skip));
+                            out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov ${}, %r11\n    cmp %r11, %rax\n    je {}\n", hoff - 8, v, stub));
+                            out.push_str(&format!("{}:\n", skip));
+                        }
+                        (Ty::Dyn, CaseLit::Str(sv)) => {
+                            // String casilla x Str literal: exact compare
+                            // over the payload (length header at payload-8,
+                            // like hbc_dynxeq_dd); other tags: non-match.
+                            let ix = strs.len();
+                            strs.push(sv.clone());
+                            out.push_str(&format!("    cmpq $2, -{}(%rbp)\n    je 91f\n    cmpq $4, -{}(%rbp)\n    jne {}\n91:\n", hoff, hoff, skip));
+                            out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -8(%rax), %rdx\n    lea .Lstr{}(%rip), %rcx\n    mov ${}, %r8\n    call hbc_str_xeq\n    test %rax, %rax\n    jnz {}\n", hoff - 8, ix, sv.as_bytes().len(), stub));
+                            out.push_str(&format!("{}:\n", skip));
+                        }
+                        _ => {
+                            let lex = match lit { CaseLit::Int(v) => Expr::Int(v.clone()), CaseLit::Str(sv) => Expr::Str(sv.clone()) };
+                            let cmp = Expr::Cmp(CmpOp::EqEq, Box::new(Expr::Var(hname.clone())), Box::new(lex));
+                            cg_cond_jump(&cmp, env, sigs, strs, out, target, &stub);
+                        }
+                    }
+                }
+                out.push_str(&format!("    jmp .Lswnom_{}\n", id));
+                // Dispatch stubs: exactly one free per entry path (matched
+                // case, otherwise, no-match), placed before the body.
+                for (k, _) in arms.iter().enumerate() {
+                    out.push_str(&format!(".Lswd_{}_{}:\n", id, k));
+                    emit_free(out, &format!("{}_{}", id, k));
+                    out.push_str(&format!("    jmp .Lcase_{}_{}\n", id, k));
+                }
+                out.push_str(&format!(".Lswnom_{}:\n", id));
+                emit_free(out, &format!("{}_nom", id));
+                if otherwise.is_some() {
+                    out.push_str(&format!("    jmp {}\n", onolab));
+                } else {
+                    out.push_str(&format!("    jmp {}\n", end));
+                }
+                env.truncate(mark);
+                let mut inner = flow.to_vec();
+                inner.push(CgFrame::Switch(end.clone()));
+                for (k, (_, _, body)) in arms.iter().enumerate() {
+                    out.push_str(&format!(".Lcase_{}_{}:\n", id, k));
+                    cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names, byref_names);
+                }
+                if let Some((_, obody)) = otherwise {
+                    out.push_str(&format!("{}:\n", onolab));
+                    cg_stmts(obody, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names, byref_names);
+                }
+                out.push_str(&format!("{}:\n", end));
+                env.truncate(mark);
+            }
             Stmt::If(_, cond, then_s, else_s) => {
                 let id = *label;
                 *label += 1;
@@ -11409,11 +11735,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    jmp .Lelse_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lthen_{}_{}:\n", fname, id));
                 let mark = env.len();
-                cg_stmts(then_s, env, frame, sigs, strs, out, target, fname, label, ll, slots, dyn_names, byref_names);
+                cg_stmts(then_s, env, frame, sigs, strs, out, target, fname, label, flow, slots, dyn_names, byref_names);
                 env.truncate(mark);
                 out.push_str(&format!("    jmp .Lend_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lelse_{}_{}:\n", fname, id));
-                cg_stmts(else_s, env, frame, sigs, strs, out, target, fname, label, ll, slots, dyn_names, byref_names);
+                cg_stmts(else_s, env, frame, sigs, strs, out, target, fname, label, flow, slots, dyn_names, byref_names);
                 env.truncate(mark);
                 out.push_str(&format!(".Lend_{}_{}:\n", fname, id));
             }
@@ -11426,7 +11752,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    jmp .Lendw_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lbody_{}_{}:\n", fname, id));
                 let mark = env.len();
-                let inner = Some((format!(".Lwhile_{}_{}", fname, id), format!(".Lendw_{}_{}", fname, id)));
+                let mut inner = flow.to_vec();
+                inner.push(CgFrame::Loop(format!(".Lwhile_{}_{}", fname, id), format!(".Lendw_{}_{}", fname, id)));
                 cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names, byref_names);
                 env.truncate(mark);
                 out.push_str(&format!("    jmp .Lwhile_{}_{}\n", fname, id));
@@ -11463,7 +11790,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 } else {
                     out.push_str(&format!("    jl .Lfore_{}_{}\n", fname, id));
                 }
-                let inner = Some((format!(".Lforn_{}_{}", fname, id), format!(".Lfore_{}_{}", fname, id)));
+                let mut inner = flow.to_vec();
+                inner.push(CgFrame::Loop(format!(".Lforn_{}_{}", fname, id), format!(".Lfore_{}_{}", fname, id)));
                 cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names, byref_names);
                 env.truncate(mark);
                 out.push_str(&format!(".Lforn_{}_{}:\n", fname, id));
@@ -11760,7 +12088,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     mov %rdx, -{}(%rbp)
 ", lv_off, lv_off - 8));
                 }
-                let inner = Some((format!(".Lfen_{}_{}", fname, id), format!(".Lfee_{}_{}", fname, id)));
+                let mut inner = flow.to_vec();
+                inner.push(CgFrame::Loop(format!(".Lfen_{}_{}", fname, id), format!(".Lfee_{}_{}", fname, id)));
                 cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names, byref_names);
                 env[kl].ty = saved_lv.0;
                 env[kl].off = saved_lv.1;
@@ -11773,12 +12102,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
 ", fname, id));
             }
             Stmt::Exit(_) => {
-                let (_, end) = ll.as_ref().expect("analysis checked `exit` is inside a loop");
-                out.push_str(&format!("    jmp {}\n", end));
+                match flow.last() {
+                    Some(CgFrame::Loop(_, e)) | Some(CgFrame::Switch(e)) => out.push_str(&format!("    jmp {}\n", e)),
+                    None => unreachable!("analysis checked `exit` is inside a loop or switch"),
+                }
             }
             Stmt::Loop(_) => {
-                let (cond, _) = ll.as_ref().expect("analysis checked `loop` is inside a loop");
-                out.push_str(&format!("    jmp {}\n", cond));
+                let c = flow.iter().rev().find_map(|f| match f { CgFrame::Loop(c, _) => Some(c), _ => None }).expect("analysis checked `loop` is inside a loop");
+                out.push_str(&format!("    jmp {}\n", c));
             }
             Stmt::Assign(_, id, e) => {
                 let t = expr_ty(e, env, sigs);
@@ -13268,6 +13599,7 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
             Stmt::While(_, c, body) => { collect_blocks_expr(c, out); collect_blocks_stmts(body, out); }
             Stmt::For(_, _, a, b, _, body) => { collect_blocks_expr(a, out); collect_blocks_expr(b, out); collect_blocks_stmts(body, out); }
             Stmt::ForEach(_, _, c, body) => { collect_blocks_expr(c, out); collect_blocks_stmts(body, out); }
+            Stmt::Switch(_, sel, arms, otherwise) => { collect_blocks_expr(sel, out); for (_, _, b) in arms { collect_blocks_stmts(b, out); } if let Some((_, ob)) = otherwise { collect_blocks_stmts(ob, out); } }
         }
     }
 }
@@ -13428,7 +13760,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     let mut walk_frame = params_frame;
     let mut label = 0usize;
     let byref_names = byref_names_in(&f.stmts);
-    cg_stmts(&f.stmts, &mut env, &mut walk_frame, sigs, strs, out, target, &lbl, &mut label, &None, &darr_slots, &f.dyn_names, &byref_names);
+    cg_stmts(&f.stmts, &mut env, &mut walk_frame, sigs, strs, out, target, &lbl, &mut label, &[], &darr_slots, &f.dyn_names, &byref_names);
     // Free every dynamic array still owned on this exit path. A slot is
     // null when its value was moved out (moves null the source, so each
     // allocation has exactly one freeing owner) or when it never held a
@@ -16457,6 +16789,20 @@ hbc_dynxeq_error:
     mov $1, %edi
     syscall
 
+# hbc_swxeq_nil_error: a NIL casilla reaches a SWITCH selector (noreturn).
+# Harbour raises BASE/3104 "Argument error: SWITCH" (oracle sw-nil-oth:
+# error at entry, before any comparison; dialog hangs headless) - clean
+# named exit 1 here, registered failure mode, same error condition.
+hbc_swxeq_nil_error:
+    lea .Lswxnilmsg(%rip), %rsi
+    mov $23, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 # hbc_dyncmp_lt/gt/le/ge_error: a NIL or numeric Dyn ordered against
 # a string (noreturn). Harbour raises BASE/1073 "Argument error: <",
 # BASE/1075 "Argument error: >", BASE/1074 "Argument error: <=" and
@@ -17104,7 +17450,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Lparamerrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,80,65,82,65,77,10\n");
     out.push_str(".Lsnilmsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,101,120,112,101,99,116,101,100,32,97,32,115,116,114,105,110,103,32,101,108,101,109,101,110,116,44,32,103,111,116,32,78,73,76,10\n");
     out.push_str(".Ldyncmpeqmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,61,10\n");
-    out.push_str(".Ldynxeqmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,61,61,10\n");
+    out.push_str(".Ldynxeqmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,61,61,10\n.Lswxnilmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,83,87,73,84,67,72,10\n");
     out.push_str(".Ldyncmpnemsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,60,62,10\n");
     out.push_str(".Ldyncmpltmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,60,10\n");
     out.push_str(".Ldyncmpgtmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,62,10\n");
@@ -18435,6 +18781,21 @@ hbc_dynxeq_error:
     mov $1, %ecx
     call ExitProcess
 
+# hbc_swxeq_nil_error: a NIL casilla reaches a SWITCH selector (noreturn).
+# Harbour raises BASE/3104 "Argument error: SWITCH" (oracle sw-nil-oth:
+# error at entry, before any comparison; dialog hangs headless) - clean
+# named exit 1 here, registered failure mode, same error condition.
+hbc_swxeq_nil_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Lswxnilmsg(%rip), %rax
+    mov $23, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
 hbc_dyncmp_lt_error:
     push %rbp
     mov %rsp, %rbp
@@ -19050,6 +19411,7 @@ fn main() {
                 Stmt::While(_, c, b) => { scan_byref_expr(c, cur, params, names, variants); scan_byref_stmts(b, cur, params, names, variants); }
                 Stmt::For(_, _, a, b, _, body) => { scan_byref_expr(a, cur, params, names, variants); scan_byref_expr(b, cur, params, names, variants); scan_byref_stmts(body, cur, params, names, variants); }
                 Stmt::ForEach(_, _, c, body) => { scan_byref_expr(c, cur, params, names, variants); scan_byref_stmts(body, cur, params, names, variants); }
+                Stmt::Switch(_, sel, arms, otherwise) => { scan_byref_expr(sel, cur, params, names, variants); for (_, _, b) in arms { scan_byref_stmts(b, cur, params, names, variants); } if let Some((_, ob)) = otherwise { scan_byref_stmts(ob, cur, params, names, variants); } }
                 _ => {}
             }
         }
@@ -19095,6 +19457,7 @@ fn main() {
                     Stmt::Ret(..) => out.push(s),
                     Stmt::If(_, _, a, b) => { rs(a, out); rs(b, out); }
                     Stmt::While(_, _, b) | Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => rs(b, out),
+                    Stmt::Switch(_, _, arms, otherwise) => { for (_, _, b) in arms { rs(b, out); } if let Some((_, ob)) = otherwise { rs(ob, out); } }
                     _ => {}
                 }
             }
@@ -19237,9 +19600,9 @@ fn main() {
                 env.push(Local { name: p.clone(), ty: ptys[i], moved: false, ro: false, byref: brp.contains(&i) });
             }
             let mut ret = None;
-            let mut top_exits: Vec<Vec<bool>> = Vec::new();
+            let mut top_ctxs: Vec<ChkCtx> = Vec::new();
             CUR_FN.with(|c| *c.borrow_mut() = f.name.clone());
-            let mut res = check_stmts(&f.stmts, &mut env, &mut view, &mut ret, None, &mut top_exits, &dyn_names, &byref_names);
+            let mut res = check_stmts(&f.stmts, &mut env, &mut view, &mut ret, &mut top_ctxs, &dyn_names, &byref_names);
             if let Err(m) = &res {
                 let self_deadlock = m.contains("never returns a value")
                     && m.contains(&format!("`{}`", f.name));
@@ -19252,12 +19615,12 @@ fn main() {
                         env2.push(Local { name: p.clone(), ty: ptys[i], moved: false, ro: false, byref: brp.contains(&i) });
                     }
                     let mut ret2 = None;
-                    let mut top_exits2: Vec<Vec<bool>> = Vec::new();
-                    let res2 = check_stmts(&f.stmts, &mut env2, &mut view, &mut ret2, None, &mut top_exits2, &dyn_names, &byref_names);
+                    let mut top_ctxs2: Vec<ChkCtx> = Vec::new();
+                    let res2 = check_stmts(&f.stmts, &mut env2, &mut view, &mut ret2, &mut top_ctxs2, &dyn_names, &byref_names);
                     if res2.is_ok() {
                         res = res2;
                         ret = ret2;
-                        top_exits = top_exits2;
+                        top_ctxs = top_ctxs2;
                     } else {
                         view[fi].ret = saved;
                         res = Err(first.0);
