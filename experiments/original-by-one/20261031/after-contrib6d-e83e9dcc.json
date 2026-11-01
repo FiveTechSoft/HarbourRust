@@ -1,1843 +1,1844 @@
 {
-  "unit_note": "contrib batch 6 sub-batch 6d: hbwin 8 top .prg + 3 .ch + 28 tests .prg = 39 files (hbwin dir COMPLETE). C-contrib cumulative 324/695. Reference: hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only, no build claim). HR matrix 36 .prg x base/head x default/llvm at pin 92947baf (args increment): LLVM identical to default for all 36; 2 files advance vs baseline (win_os line 335 'expected , or ) in call arguments, got Some(Assign)' -> line 336 'statement not in subset'; win_reg line 311 'unexpected token Comma' -> line 389 'statement not in subset') - the args increment working on real originals; recorded, not claimed as compatibility. Diagnostics: 'unknown function' Windows-API coverage class dominates (wapi_*/win_*/ole), 'unknown directive #require' (tests line 1), 'statement not in subset', 'command not in this increment' classes. Baseline column labeled BASELINE, never current state. No compatibility claimed.",
-  "reference": "694428e1c12f726675b19324d62167fa77d68185",
-  "sources_unchanged": true,
-  "rows": [
-    {
-      "file": "contrib/hbwin/axfunc.prg",
-      "sha256": "30846b7596fa50a05117a6590ade300f0bfa4b68d6d8cd3c6110cd6395d531e6",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "win_axGetControl",
-      "build_unit": "contrib/hbwin/hbwin.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbwin/hbclass/hbsim headers; wapi/ole C layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 50,
-      "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only)",
-      "reference_run": "not-run (Windows-only unit)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 49: unknown function `win_oleauto` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 49: unknown function `win_oleauto` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 49: unknown function `win_oleauto` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 49: unknown function `win_oleauto` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
+ "unit_note": "contrib batch 6 sub-batch 6d: hbwin 8 top .prg + 3 .ch + 28 tests .prg = 39 files (hbwin dir COMPLETE). C-contrib cumulative 324/695. Reference: hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only, no build claim). HR matrix 36 .prg x base/head x default/llvm at pin 92947baf (args increment): LLVM identical to default for all 36; 2 files advance vs baseline (win_os line 335 'expected , or ) in call arguments, got Some(Assign)' -> line 336 'statement not in subset'; win_reg line 311 'unexpected token Comma' -> line 389 'statement not in subset') - the args increment working on real originals; recorded, not claimed as compatibility. Diagnostics: 'unknown function' Windows-API coverage class dominates (wapi_*/win_*/ole), 'unknown directive #require' (tests line 1), 'statement not in subset', 'command not in this increment' classes. Baseline column labeled BASELINE, never current state. No compatibility claimed.",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "contrib/hbwin/axfunc.prg",
+   "sha256": "30846b7596fa50a05117a6590ade300f0bfa4b68d6d8cd3c6110cd6395d531e6",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "win_axGetControl",
+   "build_unit": "contrib/hbwin/hbwin.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbwin/hbclass/hbsim headers; wapi/ole C layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 50,
+   "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only)",
+   "reference_run": "not-run (Windows-only unit)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: unknown function `win_oleauto` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
     },
-    {
-      "file": "contrib/hbwin/oleauto.prg",
-      "sha256": "8b19598c0bb7b2f46b0894fe7736fc7901093f2313997b5c7827e5afd15571c3",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "win_oleAuto, __enumStart, __enumSkip, PROCEDURE",
-      "build_unit": "contrib/hbwin/hbwin.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbwin/hbclass/hbsim headers; wapi/ole C layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 50,
-      "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only)",
-      "reference_run": "not-run (Windows-only unit)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 394: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 394: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 394: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 394: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/wce_sim.prg",
-      "sha256": "bbfe759553da602d61cdf111d28055cc1d7f80f78dbbeccbd43516304f043335",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "wce_Sim, New, lInitialize, lDeInitialize",
-      "build_unit": "contrib/hbwin/hbwin.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbwin/hbclass/hbsim headers; wapi/ole C layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 50,
-      "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only)",
-      "reference_run": "not-run (Windows-only unit)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 53: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 53: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 53: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 53: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/win_os.prg",
-      "sha256": "553167912bf11c5dc658921b7122d7615680fa0f6017c4ca34393630b451b7dd",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "win_osNetRegOk, win_osNetVRedirOk",
-      "build_unit": "contrib/hbwin/hbwin.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbwin/hbclass/hbsim headers; wapi/ole C layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 50,
-      "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only)",
-      "reference_run": "not-run (Windows-only unit)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 335: expected `,` or `)` in call arguments, got Some(Assign)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 335: expected `,` or `)` in call arguments, got Some(Assign)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 336: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 336: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/win_reg.prg",
-      "sha256": "d651de84b0886a94c2732e7767db487f461fae95cfca85a3a08c1fdb2ebe2145",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "win_regPathSplit, win_regRead, win_regWrite, win_regDelete",
-      "build_unit": "contrib/hbwin/hbwin.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbwin/hbclass/hbsim headers; wapi/ole C layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 50,
-      "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only)",
-      "reference_run": "not-run (Windows-only unit)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 311: unexpected token Comma in expression",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 311: unexpected token Comma in expression",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 389: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 389: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/win_tbmp.prg",
-      "sha256": "872488b893c81d8fe74ea02eb5cafe8d6b2ac750ee92f9338a81127880026066",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "win_BMP, New, LoadFile, Create",
-      "build_unit": "contrib/hbwin/hbwin.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbwin/hbclass/hbsim headers; wapi/ole C layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 50,
-      "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only)",
-      "reference_run": "not-run (Windows-only unit)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 63: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 63: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 63: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 63: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/win_tcom.prg",
-      "sha256": "ca6f9786ddcaa20b29215e6b3c5210c23ef5b826264cb9974a8374575fb4af34",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "win_Com, Init, QueueSize, TimeOuts",
-      "build_unit": "contrib/hbwin/hbwin.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbwin/hbclass/hbsim headers; wapi/ole C layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 50,
-      "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only)",
-      "reference_run": "not-run (Windows-only unit)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 605: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 605: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 605: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 605: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/win_tprn.prg",
-      "sha256": "a7c10d36db6ce245b216d88931f6545f277eb042ea3c5dfca38131153a008fca",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "win_Prn, New, Create, Destroy",
-      "build_unit": "contrib/hbwin/hbwin.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbwin/hbclass/hbsim headers; wapi/ole C layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 50,
-      "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only)",
-      "reference_run": "not-run (Windows-only unit)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 75: command expansion too deep (recursive command?)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 75: command expansion too deep (recursive command?)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 75: command expansion too deep (recursive command?)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 75: command expansion too deep (recursive command?)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/hbole.ch",
-      "sha256": "0e0ce070c6b74c289de2b0f528ccf9c0441e777fc8278dbd7afba3e2ef23b275",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "header (preprocessor directives only)",
-      "build_unit": "contrib/hbwin/hbwin.hbp",
-      "profile": "C-contrib",
-      "dependencies": "included by unit sources",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 50,
-      "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; header consumed by unit sources)",
-      "reference_run": "not-run (header row)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/hbsim.ch",
-      "sha256": "0d47b486ae1f83bc50bfab0c6d00a353763d808f3403466533190fe2c1a1aea4",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "header (preprocessor directives only)",
-      "build_unit": "contrib/hbwin/hbwin.hbp",
-      "profile": "C-contrib",
-      "dependencies": "included by unit sources",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 50,
-      "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; header consumed by unit sources)",
-      "reference_run": "not-run (header row)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/hbwin.ch",
-      "sha256": "49c0d3a311a75f44402aa8a92a48b70ff8538d16e51fa582d4de8a5ef842a93a",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "header (preprocessor directives only)",
-      "build_unit": "contrib/hbwin/hbwin.hbp",
-      "profile": "C-contrib",
-      "dependencies": "included by unit sources",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 50,
-      "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; header consumed by unit sources)",
-      "reference_run": "not-run (header row)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/activex.prg",
-      "sha256": "e007fd0a6d32bf0603d670ae5ea1e92d31d255b5ef314baf64595b6006627cdd",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main, Event",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/dlg.prg",
-      "sha256": "ab31a199317ec513cb553844de1240ba5ea63f643a7634eaaec237cf49719f6b",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main, DialogFunc",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/eventlog.prg",
-      "sha256": "ba47c9ba3bff38bd943f9f8d7355ad804c4450792c99e32e3b8c3823be99b3cb",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/mapimail.prg",
-      "sha256": "16b3c777644ebd86c5ef83af5731e9442188df448057f93e9afc161c019bc761",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/mutexwin.prg",
-      "sha256": "09974812c99a0b32d88f7d0d9a2f973081d4118acc43e75e8f09eefb7d7679b4",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/ole.prg",
-      "sha256": "3ea5933fb523d4ce1cfa668ffc7ed45ee3a4ca0584edea2c82d8376baa907bd6",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main, Exm_MSExcel, Exm_MSWord, Exm_MSOutlook",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 10: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 10: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 10: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 10: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/olesrv1.prg",
-      "sha256": "dcf39a16d2af387d4d2ff7dd109a1b00d2d93cdcd6cb86c1df8a985cf37545fd",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "DllMain",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 431: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 431: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 431: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 431: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/olesrv2.prg",
-      "sha256": "f079dee3df2787d89dc092f90a597d4199b26d04fa6d4e4e9edd4c8542c04e0c",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "DllMain, get_data",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 30: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 30: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 30: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 30: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/olesrv3.prg",
-      "sha256": "5533a47e87132288d58838cd464c67d3739424ca3c1e98e007b10a3e006bb63d",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "DllMain, MyMethod",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 25: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 25: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 25: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 25: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/olesrv4.prg",
-      "sha256": "e21e7da16a2bb110cc9819204fd3c0af5b0680eab43b4c30855ac4a358549954",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "DllMain",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 349: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 349: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 349: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 349: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/oletst1.prg",
-      "sha256": "ca3685266713837a11fc401aac29ab4a8028aeeff2bdf5a3a93f8fa59916c875",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/oletst2.prg",
-      "sha256": "ca2f4408ceb5110c7f8b71b2412a7e8ddf9ee4141d21344bce5520bc948edf56",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 9: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 9: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 9: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 9: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/oletst3.prg",
-      "sha256": "0d99dd9afcfa7e3a183bf9403a5845da873f336eea2ca2dc10976b912d9b240b",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 9: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 9: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 9: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 9: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/oletst4.prg",
-      "sha256": "c8b969c34f6f89a36a74a53e5d098a50b2ac3f2df29972adef5b942c2af253ba",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 9: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 9: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 9: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 9: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/pdfcreat.prg",
-      "sha256": "a381784823bd9c7ff8d1e54b21bed1d3e9df6b0f1b9e056eff83c805e76dd603",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 17: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 17: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 17: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 17: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/prn1.prg",
-      "sha256": "fccba044294b5bd93e6dd37fc64f79ce87907d16af7a44ae18745f5cc0a69973",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main, PrnTest, PrintBitmap",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/prn2.prg",
-      "sha256": "4c8ada6c99b2746d820bddaf814f354b9feeebd417e46d325ecc3df4045e9d94",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main, PrnTest",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/prn3.prg",
-      "sha256": "5f155d3bcae2907e6d633faf1f47bea571feb46b4e17a9396da13bb81fc0034f",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main, Dump",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/prn4.prg",
-      "sha256": "6706c2f7ac77e966640d0d7c49449a34d1f993ff0a74887cca86400ef00c79df",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/prngdi.prg",
-      "sha256": "1f5a3c0c81f44b6bd8646c04c3b1723f5b1b24a87563d68e8979becbb1b37448",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/registry.prg",
-      "sha256": "00b1deb6ef8b87fd9d8f448647d04e9bee364a3117e04d6916c1fe9b4c37cfd7",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/serial1.prg",
-      "sha256": "66eaec422c3e029e681803375c9bdfdc11181fbfd52058f0f363791dbd260e76",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 47: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 47: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 47: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 47: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/serial2.prg",
-      "sha256": "887deed04b21b6ef331fb96b914b74e832edb7b211c860be0a829d91cb2a1185",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 47: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 47: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 47: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 47: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/service.prg",
-      "sha256": "a1dc86fade9f983d59209c6453264f1809953bebd9fa4130405e40df776d22bd",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main, SrvMain, Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 56: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 56: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 56: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 56: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/shfileop.prg",
-      "sha256": "3a5134856302ece5b9e0bc870798d03816a7d3a80c6f7dcb7e0e9220b2e68035",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/simwce.prg",
-      "sha256": "98417406559bc456492a159752168cd7c819be4990c0c92f47ffe975cc36d4d4",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/sysdir.prg",
-      "sha256": "34fd8748fc282e74e3dd7a9a3a24b1f7334d7b675d95cb4fbae26db52eab9182",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbwin/tests/uuid.prg",
-      "sha256": "372d5bfee93175002f58a0b73decfcf6a9b2a287f5f14a6bbb23a2308832e8f3",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbwin / Windows-only APIs",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program; Windows-only)",
-      "reference_run": "not-run (Windows-only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: unknown function `win_oleauto` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
     }
-  ],
-  "corrections": [
-    "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence."
-  ]
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: unknown function `win_oleauto` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: unknown function `win_oleauto` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/oleauto.prg",
+   "sha256": "8b19598c0bb7b2f46b0894fe7736fc7901093f2313997b5c7827e5afd15571c3",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "win_oleAuto, __enumStart, __enumSkip, PROCEDURE",
+   "build_unit": "contrib/hbwin/hbwin.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbwin/hbclass/hbsim headers; wapi/ole C layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 50,
+   "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only)",
+   "reference_run": "not-run (Windows-only unit)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 394: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 394: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 394: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 394: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/wce_sim.prg",
+   "sha256": "bbfe759553da602d61cdf111d28055cc1d7f80f78dbbeccbd43516304f043335",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "wce_Sim, New, lInitialize, lDeInitialize",
+   "build_unit": "contrib/hbwin/hbwin.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbwin/hbclass/hbsim headers; wapi/ole C layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 50,
+   "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only)",
+   "reference_run": "not-run (Windows-only unit)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 53: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 53: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 53: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 53: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/win_os.prg",
+   "sha256": "553167912bf11c5dc658921b7122d7615680fa0f6017c4ca34393630b451b7dd",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "win_osNetRegOk, win_osNetVRedirOk",
+   "build_unit": "contrib/hbwin/hbwin.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbwin/hbclass/hbsim headers; wapi/ole C layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 50,
+   "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only)",
+   "reference_run": "not-run (Windows-only unit)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 335: expected `,` or `)` in call arguments, got Some(Assign)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 335: expected `,` or `)` in call arguments, got Some(Assign)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 336: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 336: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/win_reg.prg",
+   "sha256": "d651de84b0886a94c2732e7767db487f461fae95cfca85a3a08c1fdb2ebe2145",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "win_regPathSplit, win_regRead, win_regWrite, win_regDelete",
+   "build_unit": "contrib/hbwin/hbwin.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbwin/hbclass/hbsim headers; wapi/ole C layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 50,
+   "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only)",
+   "reference_run": "not-run (Windows-only unit)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 311: unexpected token Comma in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 311: unexpected token Comma in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 389: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 389: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/win_tbmp.prg",
+   "sha256": "872488b893c81d8fe74ea02eb5cafe8d6b2ac750ee92f9338a81127880026066",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "win_BMP, New, LoadFile, Create",
+   "build_unit": "contrib/hbwin/hbwin.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbwin/hbclass/hbsim headers; wapi/ole C layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 50,
+   "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only)",
+   "reference_run": "not-run (Windows-only unit)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 63: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 63: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 63: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 63: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/win_tcom.prg",
+   "sha256": "ca6f9786ddcaa20b29215e6b3c5210c23ef5b826264cb9974a8374575fb4af34",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "win_Com, Init, QueueSize, TimeOuts",
+   "build_unit": "contrib/hbwin/hbwin.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbwin/hbclass/hbsim headers; wapi/ole C layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 50,
+   "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only)",
+   "reference_run": "not-run (Windows-only unit)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 605: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 605: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 605: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 605: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/win_tprn.prg",
+   "sha256": "a7c10d36db6ce245b216d88931f6545f277eb042ea3c5dfca38131153a008fca",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "win_Prn, New, Create, Destroy",
+   "build_unit": "contrib/hbwin/hbwin.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbwin/hbclass/hbsim headers; wapi/ole C layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 50,
+   "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; recorded rc only)",
+   "reference_run": "not-run (Windows-only unit)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 75: command expansion too deep (recursive command?)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 75: command expansion too deep (recursive command?)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 75: command expansion too deep (recursive command?)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 75: command expansion too deep (recursive command?)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/hbole.ch",
+   "sha256": "0e0ce070c6b74c289de2b0f528ccf9c0441e777fc8278dbd7afba3e2ef23b275",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/hbwin/hbwin.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 50,
+   "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/hbsim.ch",
+   "sha256": "0d47b486ae1f83bc50bfab0c6d00a353763d808f3403466533190fe2c1a1aea4",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/hbwin/hbwin.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 50,
+   "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/hbwin.ch",
+   "sha256": "49c0d3a311a75f44402aa8a92a48b70ff8538d16e51fa582d4de8a5ef842a93a",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/hbwin/hbwin.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 50,
+   "reference_build_note": "hbwin.hbp rc50 on Linux (Windows-target unit; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/activex.prg",
+   "sha256": "e007fd0a6d32bf0603d670ae5ea1e92d31d255b5ef314baf64595b6006627cdd",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main, Event",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/dlg.prg",
+   "sha256": "ab31a199317ec513cb553844de1240ba5ea63f643a7634eaaec237cf49719f6b",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main, DialogFunc",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/eventlog.prg",
+   "sha256": "ba47c9ba3bff38bd943f9f8d7355ad804c4450792c99e32e3b8c3823be99b3cb",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/mapimail.prg",
+   "sha256": "16b3c777644ebd86c5ef83af5731e9442188df448057f93e9afc161c019bc761",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/mutexwin.prg",
+   "sha256": "09974812c99a0b32d88f7d0d9a2f973081d4118acc43e75e8f09eefb7d7679b4",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/ole.prg",
+   "sha256": "3ea5933fb523d4ce1cfa668ffc7ed45ee3a4ca0584edea2c82d8376baa907bd6",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main, Exm_MSExcel, Exm_MSWord, Exm_MSOutlook",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 10: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 10: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 10: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 10: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/olesrv1.prg",
+   "sha256": "dcf39a16d2af387d4d2ff7dd109a1b00d2d93cdcd6cb86c1df8a985cf37545fd",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "DllMain",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 431: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 431: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 431: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 431: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/olesrv2.prg",
+   "sha256": "f079dee3df2787d89dc092f90a597d4199b26d04fa6d4e4e9edd4c8542c04e0c",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "DllMain, get_data",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 30: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 30: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 30: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 30: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/olesrv3.prg",
+   "sha256": "5533a47e87132288d58838cd464c67d3739424ca3c1e98e007b10a3e006bb63d",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "DllMain, MyMethod",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 25: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 25: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 25: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 25: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/olesrv4.prg",
+   "sha256": "e21e7da16a2bb110cc9819204fd3c0af5b0680eab43b4c30855ac4a358549954",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "DllMain",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 349: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 349: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 349: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 349: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/oletst1.prg",
+   "sha256": "ca3685266713837a11fc401aac29ab4a8028aeeff2bdf5a3a93f8fa59916c875",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/oletst2.prg",
+   "sha256": "ca2f4408ceb5110c7f8b71b2412a7e8ddf9ee4141d21344bce5520bc948edf56",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/oletst3.prg",
+   "sha256": "0d99dd9afcfa7e3a183bf9403a5845da873f336eea2ca2dc10976b912d9b240b",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/oletst4.prg",
+   "sha256": "c8b969c34f6f89a36a74a53e5d098a50b2ac3f2df29972adef5b942c2af253ba",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/pdfcreat.prg",
+   "sha256": "a381784823bd9c7ff8d1e54b21bed1d3e9df6b0f1b9e056eff83c805e76dd603",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 17: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 17: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 17: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 17: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/prn1.prg",
+   "sha256": "fccba044294b5bd93e6dd37fc64f79ce87907d16af7a44ae18745f5cc0a69973",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main, PrnTest, PrintBitmap",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/prn2.prg",
+   "sha256": "4c8ada6c99b2746d820bddaf814f354b9feeebd417e46d325ecc3df4045e9d94",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main, PrnTest",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/prn3.prg",
+   "sha256": "5f155d3bcae2907e6d633faf1f47bea571feb46b4e17a9396da13bb81fc0034f",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main, Dump",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/prn4.prg",
+   "sha256": "6706c2f7ac77e966640d0d7c49449a34d1f993ff0a74887cca86400ef00c79df",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/prngdi.prg",
+   "sha256": "1f5a3c0c81f44b6bd8646c04c3b1723f5b1b24a87563d68e8979becbb1b37448",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/registry.prg",
+   "sha256": "00b1deb6ef8b87fd9d8f448647d04e9bee364a3117e04d6916c1fe9b4c37cfd7",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/serial1.prg",
+   "sha256": "66eaec422c3e029e681803375c9bdfdc11181fbfd52058f0f363791dbd260e76",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/serial2.prg",
+   "sha256": "887deed04b21b6ef331fb96b914b74e832edb7b211c860be0a829d91cb2a1185",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/service.prg",
+   "sha256": "a1dc86fade9f983d59209c6453264f1809953bebd9fa4130405e40df776d22bd",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main, SrvMain, Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 56: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 56: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 56: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 56: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/shfileop.prg",
+   "sha256": "3a5134856302ece5b9e0bc870798d03816a7d3a80c6f7dcb7e0e9220b2e68035",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/simwce.prg",
+   "sha256": "98417406559bc456492a159752168cd7c819be4990c0c92f47ffe975cc36d4d4",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/sysdir.prg",
+   "sha256": "34fd8748fc282e74e3dd7a9a3a24b1f7334d7b675d95cb4fbae26db52eab9182",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbwin/tests/uuid.prg",
+   "sha256": "372d5bfee93175002f58a0b73decfcf6a9b2a287f5f14a6bbb23a2308832e8f3",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbwin/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbwin / Windows-only APIs",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program; Windows-only)",
+   "reference_run": "not-run (Windows-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ],
+ "corrections": [
+  "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence.",
+  "2026-11-01 retraction: the integrity-verification figures recorded in the previous note (89/114 byte-identical after comment-strip, 24 inline-comment-only, 2 mapping collisions, 1 real loss testmxml) are WITHDRAWN: they do not reproduce from the on-disk script /tmp/walk/integrity_check.py, whose heuristic name-pairing yields 402 NORAW entries (including files separately verified, e.g. testmxml) and 266 LOSS lines (many with 0 lost lines = benign retained-comment insertions; several with >0 lost lines needing canonical re-pairing). No integrity verification is closed. ALL compressed-source readings of batches 1-15 remain REPORTED pending independent contrast AND a canonical re-derivation: sets from ledger path lists vs raw @694428e1, no double counting. Only the testmxml 'foo/*/two' block re-read from raw stands as individually verified. Ordered by main 2026-11-01 02:03."
+ ]
 }

@@ -1,54 +1,55 @@
 {
-  "walk_date": "2026-11-01",
-  "batch": "contrib9 (hbtest COMPLETE + make.hb)",
-  "harbour_pin": "694428e1",
-  "compiler_pin": "92947baf",
-  "src_sha256": "2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f",
-  "branch_tip": "f1745794",
-  "reference_build": {
-    "hbtest.hbp": "rc0 (pin 694428e1)"
+ "walk_date": "2026-11-01",
+ "batch": "contrib9 (hbtest COMPLETE + make.hb)",
+ "harbour_pin": "694428e1",
+ "compiler_pin": "92947baf",
+ "src_sha256": "2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f",
+ "branch_tip": "f1745794",
+ "reference_build": {
+  "hbtest.hbp": "rc0 (pin 694428e1)"
+ },
+ "files": [
+  {
+   "path": "contrib/hbtest/core.prg",
+   "kind": "source",
+   "first_fail": "hbtest/core.prg:110: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+   "class": "identifier-led statement not in subset",
+   "sha256": "3b6861f486ab2dcab23e51527c3b07e4bc46ddf68ad327df68a9b835e69c7f82",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
   },
-  "files": [
-    {
-      "path": "contrib/hbtest/core.prg",
-      "kind": "source",
-      "first_fail": "hbtest/core.prg:110: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-      "class": "identifier-led statement not in subset",
-      "sha256": "3b6861f486ab2dcab23e51527c3b07e4bc46ddf68ad327df68a9b835e69c7f82",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbtest/tests/test.prg",
-      "kind": "test",
-      "first_fail": "hbtest/tests/test.prg:1: unknown directive #require in this PoC",
-      "class": "unknown directive #require (parked)",
-      "sha256": "c108d837fefe8a50a68a87a68c24de0ffa5b736ced57ab23b57b895270a2c976",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/make.hb",
-      "kind": "source",
-      "first_fail": "contrib/make.hb:1: unknown directive #!/usr/bin/env in this PoC",
-      "class": "shebang line parsed as directive",
-      "sha256": "c79f7f37ca4d5724a5be2bde81b70cc6cacf65828ba34832c77481f4e0b26145",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbtest/hbtest.ch",
-      "kind": "header",
-      "first_fail": null,
-      "class": "header - no direct compile",
-      "sha256": "1c71f09506c1bf0a10e9d51bd9888bb1e401a6fc5633691422373afb78bf75e0",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    }
-  ],
-  "notes": "Matrix uniform base(d999a46)==HEAD(92947baf)==LLVM for all 3 compilable. New classes: identifier-led statement not in subset (core.prg:110 - hbtest_Call macro-led call line); shebang-as-directive (make.hb:1). #require parked per contract. No compatibility claimed. Eligible pending after this batch: 213 (33 dirs).",
-  "corrections": [
-    "2026-11-01: sha256 added to all 4 rows (omitted in initial write). Values from /tmp/walk/contrib9.sha256 computed on checkout @694428e1.",
-    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed.",
-    "2026-11-01: all 4 rows upgraded to manual full-source read (core.prg 183 compressed lines, tests/test.prg 36, make.hb 527, hbtest.ch full). Constructs noted: SWITCH (core.prg x2 - the parked blocker), THREAD STATIC, BEGIN SEQUENCE/RECOVER, DO CASE, FOR EACH, codeblocks, sends, hb_* RTL, #xtranslate HBTEST macro, shebang (make.hb).",
-    "2026-11-01 (main 01:50): downgrade to reported-read pending independent contrast. Trust note: during the 10b reading pass the reader hallucinated 9 filenames (bitand, bitshift, bittoc, blank, center, cfmt, charevn, charop, chrtab - none exist); the sha/matrix evidence came from on-disk glob and is unaffected, and the re-read used the real sha-file list (charand/charshl/charshr/etc). Notes in the previous correction entry refer to the real files. No past evidence reconstructed.",
-    "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence."
-  ],
-  "evidence_level": "inventory+matrix (NOT manual line-by-line review)"
+  {
+   "path": "contrib/hbtest/tests/test.prg",
+   "kind": "test",
+   "first_fail": "hbtest/tests/test.prg:1: unknown directive #require in this PoC",
+   "class": "unknown directive #require (parked)",
+   "sha256": "c108d837fefe8a50a68a87a68c24de0ffa5b736ced57ab23b57b895270a2c976",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/make.hb",
+   "kind": "source",
+   "first_fail": "contrib/make.hb:1: unknown directive #!/usr/bin/env in this PoC",
+   "class": "shebang line parsed as directive",
+   "sha256": "c79f7f37ca4d5724a5be2bde81b70cc6cacf65828ba34832c77481f4e0b26145",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbtest/hbtest.ch",
+   "kind": "header",
+   "first_fail": null,
+   "class": "header - no direct compile",
+   "sha256": "1c71f09506c1bf0a10e9d51bd9888bb1e401a6fc5633691422373afb78bf75e0",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  }
+ ],
+ "notes": "Matrix uniform base(d999a46)==HEAD(92947baf)==LLVM for all 3 compilable. New classes: identifier-led statement not in subset (core.prg:110 - hbtest_Call macro-led call line); shebang-as-directive (make.hb:1). #require parked per contract. No compatibility claimed. Eligible pending after this batch: 213 (33 dirs).",
+ "corrections": [
+  "2026-11-01: sha256 added to all 4 rows (omitted in initial write). Values from /tmp/walk/contrib9.sha256 computed on checkout @694428e1.",
+  "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed.",
+  "2026-11-01: all 4 rows upgraded to manual full-source read (core.prg 183 compressed lines, tests/test.prg 36, make.hb 527, hbtest.ch full). Constructs noted: SWITCH (core.prg x2 - the parked blocker), THREAD STATIC, BEGIN SEQUENCE/RECOVER, DO CASE, FOR EACH, codeblocks, sends, hb_* RTL, #xtranslate HBTEST macro, shebang (make.hb).",
+  "2026-11-01 (main 01:50): downgrade to reported-read pending independent contrast. Trust note: during the 10b reading pass the reader hallucinated 9 filenames (bitand, bitshift, bittoc, blank, center, cfmt, charevn, charop, chrtab - none exist); the sha/matrix evidence came from on-disk glob and is unaffected, and the re-read used the real sha-file list (charand/charshl/charshr/etc). Notes in the previous correction entry refer to the real files. No past evidence reconstructed.",
+  "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence.",
+  "2026-11-01 retraction: the integrity-verification figures recorded in the previous note (89/114 byte-identical after comment-strip, 24 inline-comment-only, 2 mapping collisions, 1 real loss testmxml) are WITHDRAWN: they do not reproduce from the on-disk script /tmp/walk/integrity_check.py, whose heuristic name-pairing yields 402 NORAW entries (including files separately verified, e.g. testmxml) and 266 LOSS lines (many with 0 lost lines = benign retained-comment insertions; several with >0 lost lines needing canonical re-pairing). No integrity verification is closed. ALL compressed-source readings of batches 1-15 remain REPORTED pending independent contrast AND a canonical re-derivation: sets from ledger path lists vs raw @694428e1, no double counting. Only the testmxml 'foo/*/two' block re-read from raw stands as individually verified. Ordered by main 2026-11-01 02:03."
+ ],
+ "evidence_level": "inventory+matrix (NOT manual line-by-line review)"
 }

@@ -1,113 +1,114 @@
 {
-  "walk_date": "2026-11-01",
-  "batch": "contrib13 (hbssl)",
-  "harbour_pin": "694428e1",
-  "compiler_pin": "92947baf",
-  "src_sha256": "2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f",
-  "branch_tip": "pending",
-  "files": [
-    {
-      "path": "contrib/hbssl/ssl_hbcon.prg",
-      "kind": "source",
-      "sha256": "8452c70cb825e1824475619df8f83a95219c158e739f8af39319dd3dd8029412",
-      "first_fail_base_d999a46": "error: line 50: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-      "first_fail_head_92947baf": "error: line 50: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "identifier-led statement not in subset",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbssl/tests/bio.prg",
-      "kind": "source",
-      "sha256": "3a0ab4ae6e9c9c636c9afa78566b8a0a92a1f10150c1f76ccd3cab49fe95f9d8",
-      "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbssl/tests/crypt.prg",
-      "kind": "source",
-      "sha256": "d6575ebbc70be2b46f88fad2ae16a3fdeb2dd5ed1feb33648a71b76be2ee79b5",
-      "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbssl/tests/digest.prg",
-      "kind": "source",
-      "sha256": "192253c997c0d363b967ed8802a521277016feed5cd5ecd43a347702effbf098",
-      "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbssl/tests/encode.prg",
-      "kind": "source",
-      "sha256": "f7cc36d2231ab79851e46eb04f9fe906174b435ac360003df7ad75dafe21d656",
-      "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbssl/tests/inetssl.prg",
-      "kind": "source",
-      "sha256": "180cf18d3d88eae0752cf00ab7be85cd0eec6872d53aab93ab3798cd62a7b61b",
-      "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbssl/tests/pem.prg",
-      "kind": "source",
-      "sha256": "abe6624c44118acabd908ea00d1244770c84ab953b9178caef70d10a7af87ebd",
-      "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbssl/tests/test.prg",
-      "kind": "source",
-      "sha256": "26cbe22a1d731e156bd7d462dbb9892040039c17d87159006b2eb6a9c4dabf71",
-      "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbssl/hbssl.ch",
-      "kind": "header",
-      "sha256": "403fcbac06e20f8c6d51364aeec9c9dcbbd60a48977c5488863c93941c45bff3",
-      "first_fail": null,
-      "class": "header - no direct compile",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    }
-  ],
-  "notes": "hbssl COMPLETE (9: 1 top .prg + 1 .ch + 7 tests). hbssl.hbp rc10 missing OpenSSL dep (environment class, recorded). Matrix uniform; classes: #require parked (7), identifier-led (ssl_hbcon 50). No compatibility claimed.",
-  "evidence_level": "inventory+matrix (NOT manual line-by-line review)",
-  "corrections": [
-    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed.",
-    "2026-11-01: 8 source rows read in full (459 compressed lines; hbssl.hbp = build manifest, non-source). Marked REPORTED pending independent contrast per main 01:50 rule. Content: ssl_hbcon (hb_threadOnce init, connect helpers), tests bio/crypt/digest/encode/pem (EVP, PEM_READ_BIO, #pragma __cstream inline key), inetssl (threaded SSL echo server/client), test (inet+SSL fortify.net).",
-    "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence."
-  ]
+ "walk_date": "2026-11-01",
+ "batch": "contrib13 (hbssl)",
+ "harbour_pin": "694428e1",
+ "compiler_pin": "92947baf",
+ "src_sha256": "2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f",
+ "branch_tip": "pending",
+ "files": [
+  {
+   "path": "contrib/hbssl/ssl_hbcon.prg",
+   "kind": "source",
+   "sha256": "8452c70cb825e1824475619df8f83a95219c158e739f8af39319dd3dd8029412",
+   "first_fail_base_d999a46": "error: line 50: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+   "first_fail_head_92947baf": "error: line 50: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "identifier-led statement not in subset",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbssl/tests/bio.prg",
+   "kind": "source",
+   "sha256": "3a0ab4ae6e9c9c636c9afa78566b8a0a92a1f10150c1f76ccd3cab49fe95f9d8",
+   "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbssl/tests/crypt.prg",
+   "kind": "source",
+   "sha256": "d6575ebbc70be2b46f88fad2ae16a3fdeb2dd5ed1feb33648a71b76be2ee79b5",
+   "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbssl/tests/digest.prg",
+   "kind": "source",
+   "sha256": "192253c997c0d363b967ed8802a521277016feed5cd5ecd43a347702effbf098",
+   "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbssl/tests/encode.prg",
+   "kind": "source",
+   "sha256": "f7cc36d2231ab79851e46eb04f9fe906174b435ac360003df7ad75dafe21d656",
+   "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbssl/tests/inetssl.prg",
+   "kind": "source",
+   "sha256": "180cf18d3d88eae0752cf00ab7be85cd0eec6872d53aab93ab3798cd62a7b61b",
+   "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbssl/tests/pem.prg",
+   "kind": "source",
+   "sha256": "abe6624c44118acabd908ea00d1244770c84ab953b9178caef70d10a7af87ebd",
+   "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbssl/tests/test.prg",
+   "kind": "source",
+   "sha256": "26cbe22a1d731e156bd7d462dbb9892040039c17d87159006b2eb6a9c4dabf71",
+   "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbssl/hbssl.ch",
+   "kind": "header",
+   "sha256": "403fcbac06e20f8c6d51364aeec9c9dcbbd60a48977c5488863c93941c45bff3",
+   "first_fail": null,
+   "class": "header - no direct compile",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  }
+ ],
+ "notes": "hbssl COMPLETE (9: 1 top .prg + 1 .ch + 7 tests). hbssl.hbp rc10 missing OpenSSL dep (environment class, recorded). Matrix uniform; classes: #require parked (7), identifier-led (ssl_hbcon 50). No compatibility claimed.",
+ "evidence_level": "inventory+matrix (NOT manual line-by-line review)",
+ "corrections": [
+  "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed.",
+  "2026-11-01: 8 source rows read in full (459 compressed lines; hbssl.hbp = build manifest, non-source). Marked REPORTED pending independent contrast per main 01:50 rule. Content: ssl_hbcon (hb_threadOnce init, connect helpers), tests bio/crypt/digest/encode/pem (EVP, PEM_READ_BIO, #pragma __cstream inline key), inetssl (threaded SSL echo server/client), test (inet+SSL fortify.net).",
+  "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence.",
+  "2026-11-01 retraction: the integrity-verification figures recorded in the previous note (89/114 byte-identical after comment-strip, 24 inline-comment-only, 2 mapping collisions, 1 real loss testmxml) are WITHDRAWN: they do not reproduce from the on-disk script /tmp/walk/integrity_check.py, whose heuristic name-pairing yields 402 NORAW entries (including files separately verified, e.g. testmxml) and 266 LOSS lines (many with 0 lost lines = benign retained-comment insertions; several with >0 lost lines needing canonical re-pairing). No integrity verification is closed. ALL compressed-source readings of batches 1-15 remain REPORTED pending independent contrast AND a canonical re-derivation: sets from ledger path lists vs raw @694428e1, no double counting. Only the testmxml 'foo/*/two' block re-read from raw stands as individually verified. Ordered by main 2026-11-01 02:03."
+ ]
 }

@@ -1,470 +1,471 @@
 {
-  "unit_note": "contrib batch 1: hbamf(2) + hbblat(4) + hbblink(2) + hbbmp(2) + hbbz2(2) = 12/695 C-contrib files. 4 unit .hbp reference builds rc0 at pin 694428e1 (hbamf, hbblink, hbbmp, hbbz2: libraries, no safe deterministic executable run); hbblat.hbp rc50 = hbmk2 intentional stop on non-Windows (-stop{!win}, blat is Windows-only, no objects produced) - dependency class environment/Windows-only; original misrecorded rc0 due to piped capture, corrected after-contrib2. First diagnostics identical baseline/HEAD on all 8 compilable .prg: #require class (tests), CREATE CLASS VAR INIT 'reduced VAR expression atom' (blatcls:57, known class), 'unterminated dotted word' (hbamfobj:367), 'unknown dotted word `..`' (blinker:318), assignment-in-call-args 'got Some(Assign)' (hbbmptst:13).",
-  "reference": "694428e1c12f726675b19324d62167fa77d68185",
-  "sources_unchanged": true,
-  "rows": [
-    {
-      "file": "contrib/hbamf/hbamfobj.prg",
-      "sha256": "24f648077b0243ae634a5344a6f90509bf7c8f1b641bad78f2b45b1d9dcd1108",
-      "review": "full source manually read 2026-11-01 (110 non-comment lines)",
-      "entrypoint": "amf_Obj/amf_Raw hbclass classes (ERROR HANDLER noMessage variadic, hash-cached property access)",
-      "build_unit": "hbamf.hbp",
-      "profile": "C-contrib",
-      "dependencies": "AMF0/AMF3 C core (amfdec/amfenc/amfstdio) + hbamf.hbx",
-      "boundary": "contrib library/test source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (Lines 823, Functions/Procedures 6 -> hbamfobj.c; libhbamf) (unit .hbp)",
-      "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 367: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 367: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 367: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 367: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
+ "unit_note": "contrib batch 1: hbamf(2) + hbblat(4) + hbblink(2) + hbbmp(2) + hbbz2(2) = 12/695 C-contrib files. 4 unit .hbp reference builds rc0 at pin 694428e1 (hbamf, hbblink, hbbmp, hbbz2: libraries, no safe deterministic executable run); hbblat.hbp rc50 = hbmk2 intentional stop on non-Windows (-stop{!win}, blat is Windows-only, no objects produced) - dependency class environment/Windows-only; original misrecorded rc0 due to piped capture, corrected after-contrib2. First diagnostics identical baseline/HEAD on all 8 compilable .prg: #require class (tests), CREATE CLASS VAR INIT 'reduced VAR expression atom' (blatcls:57, known class), 'unterminated dotted word' (hbamfobj:367), 'unknown dotted word `..`' (blinker:318), assignment-in-call-args 'got Some(Assign)' (hbbmptst:13).",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "contrib/hbamf/hbamfobj.prg",
+   "sha256": "24f648077b0243ae634a5344a6f90509bf7c8f1b641bad78f2b45b1d9dcd1108",
+   "review": "full source manually read 2026-11-01 (110 non-comment lines)",
+   "entrypoint": "amf_Obj/amf_Raw hbclass classes (ERROR HANDLER noMessage variadic, hash-cached property access)",
+   "build_unit": "hbamf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "AMF0/AMF3 C core (amfdec/amfenc/amfstdio) + hbamf.hbx",
+   "boundary": "contrib library/test source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (Lines 823, Functions/Procedures 6 -> hbamfobj.c; libhbamf) (unit .hbp)",
+   "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 367: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
     },
-    {
-      "file": "contrib/hbamf/tests/test.prg",
-      "sha256": "001b84fae54c97e1abe4d25717e2eaffa3b2476f61d69072d9c1a83e8cab9b4c",
-      "review": "full source manually read 2026-11-01 (37 non-comment lines)",
-      "entrypoint": "HBTEST amf3_Encode byte-exact vectors (UTF8EX codepage)",
-      "build_unit": "tests via hbmk2 -lhblib -lhbamf",
-      "profile": "C-contrib",
-      "dependencies": "#require hbamf/hbtest; deterministic console",
-      "boundary": "contrib library/test source at upstream pin",
-      "reference_build_exit": null,
-      "reference_build_note": "built as part of unit .hbp: rc0 (Lines 823, Functions/Procedures 6 -> hbamfobj.c; libhbamf)",
-      "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbblat/blatcls.prg",
-      "sha256": "bf95899e8d905406a1b034b99d40a1e92ab050ccc7b602c984696192e4568781",
-      "review": "full source manually read 2026-11-01 (685 non-comment lines)",
-      "entrypoint": "HBBlat hbclass wrapper: full Blat command-line builder + error translation",
-      "build_unit": "hbblat.hbp",
-      "profile": "C-contrib",
-      "dependencies": "blatwrp.c (Windows Blat DLL); hbblat.ch error defines",
-      "boundary": "contrib library/test source at upstream pin",
-      "reference_build_exit": 50,
-      "reference_build_note": "rc50 hbmk2 -stop{!win}: intentional stop, blat is Windows-only; no objects produced on Linux (dependency class: environment/Windows-only). Original misrecorded as rc0 in 0cd58c56 due to piped capture; corrected after-contrib2. (unit .hbp)",
-      "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 57: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 57: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 57: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 57: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbblat/hbblat.ch",
-      "sha256": "d14dbeb46f8e44e5f52f36a83b74c24ebb3e697220cfa1b3be4e5abeee1a7aa7",
-      "review": "full source manually read 2026-11-01 (90 non-comment lines)",
-      "entrypoint": "BLAT_ERR_*/BLAT_TEXT_* #define tables",
-      "build_unit": "hbblat.hbp",
-      "profile": "C-contrib",
-      "dependencies": "header only",
-      "boundary": "contrib library/test source at upstream pin",
-      "reference_build_exit": null,
-      "reference_build_note": "unit .hbp build rc50 (-stop{!win}, Windows-only); no lib produced on Linux. Original misrecorded rc0 in 0cd58c56; corrected after-contrib2.",
-      "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "note": "header (.ch) - not compiled standalone"
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
-        "note": "header (.ch) - not compiled standalone"
-      }
-    },
-    {
-      "file": "contrib/hbblat/tests/blatcmd.prg",
-      "sha256": "9fec87a75dec7b5588007de56067064fcef7c0de3c6d40a1f5f7fd181a94c19b",
-      "review": "full source manually read 2026-11-01 (15 non-comment lines)",
-      "entrypoint": "simple hb_blatSend command interface",
-      "build_unit": "tests",
-      "profile": "C-contrib",
-      "dependencies": "#require hbblat; win_GetCommandLineParam (Windows)",
-      "boundary": "contrib library/test source at upstream pin",
-      "reference_build_exit": null,
-      "reference_build_note": "unit .hbp build rc50 (-stop{!win}, Windows-only); no lib produced on Linux. Original misrecorded rc0 in 0cd58c56; corrected after-contrib2.",
-      "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 47: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 47: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 47: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 47: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbblat/tests/test.prg",
-      "sha256": "e86518caa3f6702d90f0b6a467229001e5ebf7e0f98d18de92fc8c7a8982d13b",
-      "review": "full source manually read 2026-11-01 (37 non-comment lines)",
-      "entrypoint": "interactive SMTP send test (hardcoded placeholder addresses)",
-      "build_unit": "tests",
-      "profile": "C-contrib",
-      "dependencies": "#require hbblat; network + Windows blat",
-      "boundary": "contrib library/test source at upstream pin",
-      "reference_build_exit": null,
-      "reference_build_note": "unit .hbp build rc50 (-stop{!win}, Windows-only); no lib produced on Linux. Original misrecorded rc0 in 0cd58c56; corrected after-contrib2.",
-      "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 47: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 47: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 47: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 47: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbblink/blinker.prg",
-      "sha256": "aad0113f77e2bf3e26a54093beeb98851b418c933a1ae58be4b2945d6e55463f",
-      "review": "full source manually read 2026-11-01 (232 non-comment lines)",
-      "entrypoint": "Blinker 7.0 compatibility API stubs (Bli*/Swp* over hb_hrbLoad/Memory/hb_run)",
-      "build_unit": "hbblink.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbhrb.ch hbmemory.ch hbblink.ch",
-      "boundary": "contrib library/test source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (Lines 670, Functions/Procedures 63 -> blinker.c) (unit .hbp)",
-      "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 318: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 318: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 318: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 318: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbblink/hbblink.ch",
-      "sha256": "e74557ae581b0509de52b2103ffe4ebc92a42152029cf79cf48cc3bf016fdf30",
-      "review": "full source manually read 2026-11-01 (29 non-comment lines)",
-      "entrypoint": "BliCache*/BliHost*/BliMode* #define tables",
-      "build_unit": "hbblink.hbp",
-      "profile": "C-contrib",
-      "dependencies": "header only",
-      "boundary": "contrib library/test source at upstream pin",
-      "reference_build_exit": null,
-      "reference_build_note": "built as part of unit .hbp: rc0 (Lines 670, Functions/Procedures 63 -> blinker.c)",
-      "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "note": "header (.ch) - not compiled standalone"
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
-        "note": "header (.ch) - not compiled standalone"
-      }
-    },
-    {
-      "file": "contrib/hbbmp/hbbmp.ch",
-      "sha256": "497f52dc9fba0c5b1d81b297e7ab9dcbc15c5ba8630dcddbba49f32778488b8b",
-      "review": "full source manually read 2026-11-01 (16 non-comment lines)",
-      "entrypoint": "HB_BMP_ERROR_* #define table (shared with C)",
-      "build_unit": "hbbmp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "header only; core.c BMP library",
-      "boundary": "contrib library/test source at upstream pin",
-      "reference_build_exit": null,
-      "reference_build_note": "built as part of unit .hbp: rc0 (hbbmp.hbx -> libhbbmp)",
-      "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "note": "header (.ch) - not compiled standalone"
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
-        "note": "header (.ch) - not compiled standalone"
-      }
-    },
-    {
-      "file": "contrib/hbbmp/tests/hbbmptst.prg",
-      "sha256": "63625611a78908c2ca66a346a71f72331f56feeec23a8bf860283e509105f870",
-      "review": "full source manually read 2026-11-01 (62 non-comment lines)",
-      "entrypoint": "BMP creation/color/rect/line/save test writing test_XX.bmp files",
-      "build_unit": "tests",
-      "profile": "C-contrib",
-      "dependencies": "#xtranslate _out/_err; REQUEST HB_GT_CGI_DEFAULT",
-      "boundary": "contrib library/test source at upstream pin",
-      "reference_build_exit": null,
-      "reference_build_note": "built as part of unit .hbp: rc0 (hbbmp.hbx -> libhbbmp)",
-      "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 13: expected `,` or `)` in call arguments, got Some(Assign)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 13: expected `,` or `)` in call arguments, got Some(Assign)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 13: expected `,` or `)` in call arguments, got Some(Assign)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 13: expected `,` or `)` in call arguments, got Some(Assign)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbbz2/hbbz2.ch",
-      "sha256": "1a3a1b68010f6e5f1b0832d52fa9decdab945ca6bc8371cdb8e177b13b65f2fa",
-      "review": "full source manually read 2026-11-01 (22 non-comment lines)",
-      "entrypoint": "HB_BZ_* #define table (shared with C)",
-      "build_unit": "hbbz2.hbp",
-      "profile": "C-contrib",
-      "dependencies": "header only; core.c bzip2 wrapper",
-      "boundary": "contrib library/test source at upstream pin",
-      "reference_build_exit": null,
-      "reference_build_note": "built as part of unit .hbp: rc0 (hbbz2.hbx -> libhbbz2)",
-      "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "note": "header (.ch) - not compiled standalone"
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
-        "note": "header (.ch) - not compiled standalone"
-      }
-    },
-    {
-      "file": "contrib/hbbz2/tests/test.prg",
-      "sha256": "feb10817f4dabdb8237e9b82780437e494de95e94fcc6dd3e2046fb84b00ed98",
-      "review": "full source manually read 2026-11-01 (8 non-comment lines)",
-      "entrypoint": "hb_bz2_Compress smoke test printing hex",
-      "build_unit": "tests",
-      "profile": "C-contrib",
-      "dependencies": "#require hbbz2; simpleio.ch",
-      "boundary": "contrib library/test source at upstream pin",
-      "reference_build_exit": null,
-      "reference_build_note": "built as part of unit .hbp: rc0 (hbbz2.hbx -> libhbbz2)",
-      "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 367: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
     }
-  ],
-  "corrections": [
-    "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence."
-  ]
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 367: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 367: unterminated dotted word `.` (Harbour logical tokens need a closing dot)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbamf/tests/test.prg",
+   "sha256": "001b84fae54c97e1abe4d25717e2eaffa3b2476f61d69072d9c1a83e8cab9b4c",
+   "review": "full source manually read 2026-11-01 (37 non-comment lines)",
+   "entrypoint": "HBTEST amf3_Encode byte-exact vectors (UTF8EX codepage)",
+   "build_unit": "tests via hbmk2 -lhblib -lhbamf",
+   "profile": "C-contrib",
+   "dependencies": "#require hbamf/hbtest; deterministic console",
+   "boundary": "contrib library/test source at upstream pin",
+   "reference_build_exit": null,
+   "reference_build_note": "built as part of unit .hbp: rc0 (Lines 823, Functions/Procedures 6 -> hbamfobj.c; libhbamf)",
+   "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbblat/blatcls.prg",
+   "sha256": "bf95899e8d905406a1b034b99d40a1e92ab050ccc7b602c984696192e4568781",
+   "review": "full source manually read 2026-11-01 (685 non-comment lines)",
+   "entrypoint": "HBBlat hbclass wrapper: full Blat command-line builder + error translation",
+   "build_unit": "hbblat.hbp",
+   "profile": "C-contrib",
+   "dependencies": "blatwrp.c (Windows Blat DLL); hbblat.ch error defines",
+   "boundary": "contrib library/test source at upstream pin",
+   "reference_build_exit": 50,
+   "reference_build_note": "rc50 hbmk2 -stop{!win}: intentional stop, blat is Windows-only; no objects produced on Linux (dependency class: environment/Windows-only). Original misrecorded as rc0 in 0cd58c56 due to piped capture; corrected after-contrib2. (unit .hbp)",
+   "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 57: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 57: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 57: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 57: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbblat/hbblat.ch",
+   "sha256": "d14dbeb46f8e44e5f52f36a83b74c24ebb3e697220cfa1b3be4e5abeee1a7aa7",
+   "review": "full source manually read 2026-11-01 (90 non-comment lines)",
+   "entrypoint": "BLAT_ERR_*/BLAT_TEXT_* #define tables",
+   "build_unit": "hbblat.hbp",
+   "profile": "C-contrib",
+   "dependencies": "header only",
+   "boundary": "contrib library/test source at upstream pin",
+   "reference_build_exit": null,
+   "reference_build_note": "unit .hbp build rc50 (-stop{!win}, Windows-only); no lib produced on Linux. Original misrecorded rc0 in 0cd58c56; corrected after-contrib2.",
+   "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "note": "header (.ch) - not compiled standalone"
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
+    "note": "header (.ch) - not compiled standalone"
+   }
+  },
+  {
+   "file": "contrib/hbblat/tests/blatcmd.prg",
+   "sha256": "9fec87a75dec7b5588007de56067064fcef7c0de3c6d40a1f5f7fd181a94c19b",
+   "review": "full source manually read 2026-11-01 (15 non-comment lines)",
+   "entrypoint": "simple hb_blatSend command interface",
+   "build_unit": "tests",
+   "profile": "C-contrib",
+   "dependencies": "#require hbblat; win_GetCommandLineParam (Windows)",
+   "boundary": "contrib library/test source at upstream pin",
+   "reference_build_exit": null,
+   "reference_build_note": "unit .hbp build rc50 (-stop{!win}, Windows-only); no lib produced on Linux. Original misrecorded rc0 in 0cd58c56; corrected after-contrib2.",
+   "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbblat/tests/test.prg",
+   "sha256": "e86518caa3f6702d90f0b6a467229001e5ebf7e0f98d18de92fc8c7a8982d13b",
+   "review": "full source manually read 2026-11-01 (37 non-comment lines)",
+   "entrypoint": "interactive SMTP send test (hardcoded placeholder addresses)",
+   "build_unit": "tests",
+   "profile": "C-contrib",
+   "dependencies": "#require hbblat; network + Windows blat",
+   "boundary": "contrib library/test source at upstream pin",
+   "reference_build_exit": null,
+   "reference_build_note": "unit .hbp build rc50 (-stop{!win}, Windows-only); no lib produced on Linux. Original misrecorded rc0 in 0cd58c56; corrected after-contrib2.",
+   "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 47: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbblink/blinker.prg",
+   "sha256": "aad0113f77e2bf3e26a54093beeb98851b418c933a1ae58be4b2945d6e55463f",
+   "review": "full source manually read 2026-11-01 (232 non-comment lines)",
+   "entrypoint": "Blinker 7.0 compatibility API stubs (Bli*/Swp* over hb_hrbLoad/Memory/hb_run)",
+   "build_unit": "hbblink.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbhrb.ch hbmemory.ch hbblink.ch",
+   "boundary": "contrib library/test source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (Lines 670, Functions/Procedures 63 -> blinker.c) (unit .hbp)",
+   "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 318: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 318: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 318: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 318: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbblink/hbblink.ch",
+   "sha256": "e74557ae581b0509de52b2103ffe4ebc92a42152029cf79cf48cc3bf016fdf30",
+   "review": "full source manually read 2026-11-01 (29 non-comment lines)",
+   "entrypoint": "BliCache*/BliHost*/BliMode* #define tables",
+   "build_unit": "hbblink.hbp",
+   "profile": "C-contrib",
+   "dependencies": "header only",
+   "boundary": "contrib library/test source at upstream pin",
+   "reference_build_exit": null,
+   "reference_build_note": "built as part of unit .hbp: rc0 (Lines 670, Functions/Procedures 63 -> blinker.c)",
+   "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "note": "header (.ch) - not compiled standalone"
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
+    "note": "header (.ch) - not compiled standalone"
+   }
+  },
+  {
+   "file": "contrib/hbbmp/hbbmp.ch",
+   "sha256": "497f52dc9fba0c5b1d81b297e7ab9dcbc15c5ba8630dcddbba49f32778488b8b",
+   "review": "full source manually read 2026-11-01 (16 non-comment lines)",
+   "entrypoint": "HB_BMP_ERROR_* #define table (shared with C)",
+   "build_unit": "hbbmp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "header only; core.c BMP library",
+   "boundary": "contrib library/test source at upstream pin",
+   "reference_build_exit": null,
+   "reference_build_note": "built as part of unit .hbp: rc0 (hbbmp.hbx -> libhbbmp)",
+   "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "note": "header (.ch) - not compiled standalone"
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
+    "note": "header (.ch) - not compiled standalone"
+   }
+  },
+  {
+   "file": "contrib/hbbmp/tests/hbbmptst.prg",
+   "sha256": "63625611a78908c2ca66a346a71f72331f56feeec23a8bf860283e509105f870",
+   "review": "full source manually read 2026-11-01 (62 non-comment lines)",
+   "entrypoint": "BMP creation/color/rect/line/save test writing test_XX.bmp files",
+   "build_unit": "tests",
+   "profile": "C-contrib",
+   "dependencies": "#xtranslate _out/_err; REQUEST HB_GT_CGI_DEFAULT",
+   "boundary": "contrib library/test source at upstream pin",
+   "reference_build_exit": null,
+   "reference_build_note": "built as part of unit .hbp: rc0 (hbbmp.hbx -> libhbbmp)",
+   "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 13: expected `,` or `)` in call arguments, got Some(Assign)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 13: expected `,` or `)` in call arguments, got Some(Assign)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 13: expected `,` or `)` in call arguments, got Some(Assign)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 13: expected `,` or `)` in call arguments, got Some(Assign)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbbz2/hbbz2.ch",
+   "sha256": "1a3a1b68010f6e5f1b0832d52fa9decdab945ca6bc8371cdb8e177b13b65f2fa",
+   "review": "full source manually read 2026-11-01 (22 non-comment lines)",
+   "entrypoint": "HB_BZ_* #define table (shared with C)",
+   "build_unit": "hbbz2.hbp",
+   "profile": "C-contrib",
+   "dependencies": "header only; core.c bzip2 wrapper",
+   "boundary": "contrib library/test source at upstream pin",
+   "reference_build_exit": null,
+   "reference_build_note": "built as part of unit .hbp: rc0 (hbbz2.hbx -> libhbbz2)",
+   "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "note": "header (.ch) - not compiled standalone"
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
+    "note": "header (.ch) - not compiled standalone"
+   }
+  },
+  {
+   "file": "contrib/hbbz2/tests/test.prg",
+   "sha256": "feb10817f4dabdb8237e9b82780437e494de95e94fcc6dd3e2046fb84b00ed98",
+   "review": "full source manually read 2026-11-01 (8 non-comment lines)",
+   "entrypoint": "hb_bz2_Compress smoke test printing hex",
+   "build_unit": "tests",
+   "profile": "C-contrib",
+   "dependencies": "#require hbbz2; simpleio.ch",
+   "boundary": "contrib library/test source at upstream pin",
+   "reference_build_exit": null,
+   "reference_build_note": "built as part of unit .hbp: rc0 (hbbz2.hbx -> libhbbz2)",
+   "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 870ae228, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ],
+ "corrections": [
+  "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence.",
+  "2026-11-01 retraction: the integrity-verification figures recorded in the previous note (89/114 byte-identical after comment-strip, 24 inline-comment-only, 2 mapping collisions, 1 real loss testmxml) are WITHDRAWN: they do not reproduce from the on-disk script /tmp/walk/integrity_check.py, whose heuristic name-pairing yields 402 NORAW entries (including files separately verified, e.g. testmxml) and 266 LOSS lines (many with 0 lost lines = benign retained-comment insertions; several with >0 lost lines needing canonical re-pairing). No integrity verification is closed. ALL compressed-source readings of batches 1-15 remain REPORTED pending independent contrast AND a canonical re-derivation: sets from ledger path lists vs raw @694428e1, no double counting. Only the testmxml 'foo/*/two' block re-read from raw stands as individually verified. Ordered by main 2026-11-01 02:03."
+ ]
 }

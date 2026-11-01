@@ -1,1044 +1,1045 @@
 {
-  "unit_note": "contrib batch 7: hbxpp COMPLETE (16 top .prg + 4 .ch + 2 tests = 22). C-contrib cumulative 346/695. Reference: hbxpp.hbp rc0 (pin 694428e1, rc clean). HR matrix 18 .prg x base/head x default/llvm at pin 92947baf (args increment): LLVM identical for all 18; 1 file advances vs baseline (runshell line 63 'unexpected token Comma' -> line 52 'unknown function hb_isstring') - args increment effect. Diagnostics: 'unknown function' RDD/compat coverage class dominates (tbrowsenew/__dbcopy/hb_isstring etc), 'statement not in subset', '#require' (tests). Baseline column labeled BASELINE, never current state. No compatibility claimed.",
-  "reference": "694428e1c12f726675b19324d62167fa77d68185",
-  "sources_unchanged": true,
-  "rows": [
-    {
-      "file": "contrib/hbxpp/browdbx.prg",
-      "sha256": "47681ea14a69424bca4d8339a25586a34e3e74d5385e5415398a3c7ab078f618",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "xpp_TBrowseDB",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 54: unknown function `tbrowsenew` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 54: unknown function `tbrowsenew` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 54: unknown function `tbrowsenew` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 54: unknown function `tbrowsenew` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
+ "unit_note": "contrib batch 7: hbxpp COMPLETE (16 top .prg + 4 .ch + 2 tests = 22). C-contrib cumulative 346/695. Reference: hbxpp.hbp rc0 (pin 694428e1, rc clean). HR matrix 18 .prg x base/head x default/llvm at pin 92947baf (args increment): LLVM identical for all 18; 1 file advances vs baseline (runshell line 63 'unexpected token Comma' -> line 52 'unknown function hb_isstring') - args increment effect. Diagnostics: 'unknown function' RDD/compat coverage class dominates (tbrowsenew/__dbcopy/hb_isstring etc), 'statement not in subset', '#require' (tests). Baseline column labeled BASELINE, never current state. No compatibility claimed.",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "contrib/hbxpp/browdbx.prg",
+   "sha256": "47681ea14a69424bca4d8339a25586a34e3e74d5385e5415398a3c7ab078f618",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "xpp_TBrowseDB",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 54: unknown function `tbrowsenew` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
     },
-    {
-      "file": "contrib/hbxpp/dbfuncsx.prg",
-      "sha256": "81c3ed1d3b489c0be54cdc7aa82298f48794deea4a21fbbeb022e1da5f8b3b74",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "_dbExport, xpp_dbUseArea",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/dbjoinx.prg",
-      "sha256": "b64233f5f1ca3bce841df3e7edb91954c50794f0afaf2d218a26dceb93b16f56",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "dbJoin",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dbjoin` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dbjoin` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dbjoin` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dbjoin` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/dblistx.prg",
-      "sha256": "d625e09c6081634dddef6015ffba45810e6f84a8448caa15a253ab77958b99f1",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "dbList",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dblist` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dblist` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dblist` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dblist` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/dbsortx.prg",
-      "sha256": "9e17bf8ab86fd5336d8cf3de1b058be163ea88bc8de3fbf3c38f53b20e90bdee",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "dbSort",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dbsort` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dbsort` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dbsort` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dbsort` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/dbstruxx.prg",
-      "sha256": "d814d66f17edeb6d6c11ab9a28ddfd2ce8d7f0ff3e66143c62a4bc20d5a9b015",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "dbCopyStruct, dbCopyExtStruct",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 50: unknown function `dbcreate` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 50: unknown function `dbcreate` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 50: unknown function `dbcreate` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 50: unknown function `dbcreate` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/dbtotalx.prg",
-      "sha256": "e84760f66ff9421233e2c9c84f04bb557d49431fa4ba0284167e9eacd1b2d08c",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "dbTotal",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dbtotal` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dbtotal` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dbtotal` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dbtotal` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/dbupdatx.prg",
-      "sha256": "d4c91a15d3daaf353adf9a4822e7ff8d2daf5f299e4e40ea37cbb3f337f2e2f9",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "dbUpdate",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dbupdate` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dbupdate` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dbupdate` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__dbupdate` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/runshell.prg",
-      "sha256": "fcd4ccb7c52d9fc500ac714e714778ab587288ed7a21cca196040eb01194fe4b",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "RunShell",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 63: unexpected token Comma in expression",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 63: unexpected token Comma in expression",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 52: unknown function `hb_isstring` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 52: unknown function `hb_isstring` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/tbcolumx.prg",
-      "sha256": "d2c0510f411ad60672f4d3b254b611fbac227b867041304f9f624d1ee24f1a08",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "xpp_TBColumn",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/tbrowsex.prg",
-      "sha256": "2552dab5fec5b4f92e7ceaef1858cd2933edc2b3969700814d29c7834de89ead",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "xpp_TBrowse, viewArea, firstScrCol, _left",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/tgetx.prg",
-      "sha256": "aaeabe76f2e79a4085aa0b7d65230cbea56725abb827f9ec4eb25b26fd502d14",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "xpp_Get, posInBuffer, _end, _assign",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 361: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 361: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 361: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 361: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/thfuncx.prg",
-      "sha256": "857d0c0832effbafab7761f05bb3fe3de5fd98692edf229fade9d59fd4aaf9d0",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "ThreadID, ThreadObject, ThreadWait, ThreadWaitAll",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 52: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 52: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 52: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 52: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/tthreadx.prg",
-      "sha256": "623f9628d6aa5a066e08c1200dff300cbb6fab6b0b41a216003fe9b5a600791d",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Signal, new, wait, signal",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 89: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 89: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 89: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 89: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/typefilx.prg",
-      "sha256": "44747a1f70dcfd4aa95f9c7d7975eaeb46347705a08a8779af8de8819c414f07",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "_TypeFile",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__typefile` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__typefile` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__typefile` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 48: unknown function `__typefile` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/xppop.prg",
-      "sha256": "8c80cf53d8e221c4eb9507ccfe9c023992c33f58d0f69abf944e405c8f030583",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Character, Array",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 374: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 374: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 374: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 374: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/dll.ch",
-      "sha256": "4d89f9e7fa9600c1dbc4effafbcee081aba070a2d88cdbbfb20cec152fb4571b",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "header (preprocessor directives only)",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "included by unit sources",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-      "reference_run": "not-run (header row)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/dmlb.ch",
-      "sha256": "7b58d41ab921aa9c9eb85b34c474723befce2dee4d928aa53ac7d0052e5296a7",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "header (preprocessor directives only)",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "included by unit sources",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-      "reference_run": "not-run (header row)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/hbxpp.ch",
-      "sha256": "f141db0414999f389afe2811d55d69edc77510585656dbab20713f206be76148",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "header (preprocessor directives only)",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "included by unit sources",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-      "reference_run": "not-run (header row)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/thread.ch",
-      "sha256": "3f2e74862d0791afff51d67bd3b98c78582553962f6f59bef69e33b920bcd179",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "header (preprocessor directives only)",
-      "build_unit": "contrib/hbxpp/hbxpp.hbp",
-      "profile": "C-contrib",
-      "dependencies": "included by unit sources",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-      "reference_run": "not-run (header row)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": "not-run",
-          "diagnostic": "header row (not compiled directly)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/tests/dllcall.prg",
-      "sha256": "232f5d1d03edbb8c26f87de59091797da86e48a4317e7d21c000afd54d6eddbc",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbxpp/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbxpp; dll.ch/hbxpp.ch",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program)",
-      "reference_run": "not-run (test program)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbxpp/tests/opover.prg",
-      "sha256": "a8fa57533b1cecf71130de156ee83abb2c91d0defb8fcc051fae67a341b765f3",
-      "review": "full source manually read 2026-11-01",
-      "entrypoint": "Main",
-      "build_unit": "contrib/hbxpp/tests (no .hbm; per-file)",
-      "profile": "C-contrib",
-      "dependencies": "#require hbxpp; dll.ch/hbxpp.ch",
-      "boundary": "contrib source at upstream pin",
-      "reference_build_exit": "not-run",
-      "reference_build_note": "not-run (test program)",
-      "reference_run": "not-run (test program)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 54: unknown function `tbrowsenew` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
     }
-  ],
-  "corrections": [
-    "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence."
-  ]
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 54: unknown function `tbrowsenew` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 54: unknown function `tbrowsenew` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/dbfuncsx.prg",
+   "sha256": "81c3ed1d3b489c0be54cdc7aa82298f48794deea4a21fbbeb022e1da5f8b3b74",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "_dbExport, xpp_dbUseArea",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/dbjoinx.prg",
+   "sha256": "b64233f5f1ca3bce841df3e7edb91954c50794f0afaf2d218a26dceb93b16f56",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "dbJoin",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dbjoin` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dbjoin` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dbjoin` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dbjoin` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/dblistx.prg",
+   "sha256": "d625e09c6081634dddef6015ffba45810e6f84a8448caa15a253ab77958b99f1",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "dbList",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dblist` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dblist` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dblist` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dblist` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/dbsortx.prg",
+   "sha256": "9e17bf8ab86fd5336d8cf3de1b058be163ea88bc8de3fbf3c38f53b20e90bdee",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "dbSort",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dbsort` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dbsort` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dbsort` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dbsort` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/dbstruxx.prg",
+   "sha256": "d814d66f17edeb6d6c11ab9a28ddfd2ce8d7f0ff3e66143c62a4bc20d5a9b015",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "dbCopyStruct, dbCopyExtStruct",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 50: unknown function `dbcreate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 50: unknown function `dbcreate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 50: unknown function `dbcreate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 50: unknown function `dbcreate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/dbtotalx.prg",
+   "sha256": "e84760f66ff9421233e2c9c84f04bb557d49431fa4ba0284167e9eacd1b2d08c",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "dbTotal",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dbtotal` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dbtotal` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dbtotal` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dbtotal` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/dbupdatx.prg",
+   "sha256": "d4c91a15d3daaf353adf9a4822e7ff8d2daf5f299e4e40ea37cbb3f337f2e2f9",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "dbUpdate",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dbupdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dbupdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dbupdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__dbupdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/runshell.prg",
+   "sha256": "fcd4ccb7c52d9fc500ac714e714778ab587288ed7a21cca196040eb01194fe4b",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "RunShell",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 63: unexpected token Comma in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 63: unexpected token Comma in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 52: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 52: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/tbcolumx.prg",
+   "sha256": "d2c0510f411ad60672f4d3b254b611fbac227b867041304f9f624d1ee24f1a08",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "xpp_TBColumn",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/tbrowsex.prg",
+   "sha256": "2552dab5fec5b4f92e7ceaef1858cd2933edc2b3969700814d29c7834de89ead",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "xpp_TBrowse, viewArea, firstScrCol, _left",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 365: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/tgetx.prg",
+   "sha256": "aaeabe76f2e79a4085aa0b7d65230cbea56725abb827f9ec4eb25b26fd502d14",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "xpp_Get, posInBuffer, _end, _assign",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 361: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 361: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 361: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 361: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/thfuncx.prg",
+   "sha256": "857d0c0832effbafab7761f05bb3fe3de5fd98692edf229fade9d59fd4aaf9d0",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "ThreadID, ThreadObject, ThreadWait, ThreadWaitAll",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 52: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 52: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 52: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 52: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/tthreadx.prg",
+   "sha256": "623f9628d6aa5a066e08c1200dff300cbb6fab6b0b41a216003fe9b5a600791d",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Signal, new, wait, signal",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 89: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 89: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 89: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 89: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/typefilx.prg",
+   "sha256": "44747a1f70dcfd4aa95f9c7d7975eaeb46347705a08a8779af8de8819c414f07",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "_TypeFile",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__typefile` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__typefile` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__typefile` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: unknown function `__typefile` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/xppop.prg",
+   "sha256": "8c80cf53d8e221c4eb9507ccfe9c023992c33f58d0f69abf944e405c8f030583",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Character, Array",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbxpp/hbclass/thread headers; RDD-compat layer",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 374: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 374: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 374: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 374: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/dll.ch",
+   "sha256": "4d89f9e7fa9600c1dbc4effafbcee081aba070a2d88cdbbfb20cec152fb4571b",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/dmlb.ch",
+   "sha256": "7b58d41ab921aa9c9eb85b34c474723befce2dee4d928aa53ac7d0052e5296a7",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/hbxpp.ch",
+   "sha256": "f141db0414999f389afe2811d55d69edc77510585656dbab20713f206be76148",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/thread.ch",
+   "sha256": "3f2e74862d0791afff51d67bd3b98c78582553962f6f59bef69e33b920bcd179",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "header (preprocessor directives only)",
+   "build_unit": "contrib/hbxpp/hbxpp.hbp",
+   "profile": "C-contrib",
+   "dependencies": "included by unit sources",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+   "reference_run": "not-run (header row)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": "not-run",
+     "diagnostic": "header row (not compiled directly)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/tests/dllcall.prg",
+   "sha256": "232f5d1d03edbb8c26f87de59091797da86e48a4317e7d21c000afd54d6eddbc",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbxpp/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbxpp; dll.ch/hbxpp.ch",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program)",
+   "reference_run": "not-run (test program)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbxpp/tests/opover.prg",
+   "sha256": "a8fa57533b1cecf71130de156ee83abb2c91d0defb8fcc051fae67a341b765f3",
+   "review": "full source manually read 2026-11-01",
+   "entrypoint": "Main",
+   "build_unit": "contrib/hbxpp/tests (no .hbm; per-file)",
+   "profile": "C-contrib",
+   "dependencies": "#require hbxpp; dll.ch/hbxpp.ch",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": "not-run",
+   "reference_build_note": "not-run (test program)",
+   "reference_run": "not-run (test program)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ],
+ "corrections": [
+  "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence.",
+  "2026-11-01 retraction: the integrity-verification figures recorded in the previous note (89/114 byte-identical after comment-strip, 24 inline-comment-only, 2 mapping collisions, 1 real loss testmxml) are WITHDRAWN: they do not reproduce from the on-disk script /tmp/walk/integrity_check.py, whose heuristic name-pairing yields 402 NORAW entries (including files separately verified, e.g. testmxml) and 266 LOSS lines (many with 0 lost lines = benign retained-comment insertions; several with >0 lost lines needing canonical re-pairing). No integrity verification is closed. ALL compressed-source readings of batches 1-15 remain REPORTED pending independent contrast AND a canonical re-derivation: sets from ledger path lists vs raw @694428e1, no double counting. Only the testmxml 'foo/*/two' block re-read from raw stands as individually verified. Ordered by main 2026-11-01 02:03."
+ ]
 }

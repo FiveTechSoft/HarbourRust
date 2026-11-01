@@ -1,1047 +1,1048 @@
 {
-  "unit_note": "contrib batch 4: hbgd(18) + hbhpdf(5) = 23 files; C-contrib cumulative 68/695 files (17/66 dirs touched; dirs NOT counted complete until all files reviewed). Reference builds pin 694428e1 (rc clean, no pipes): hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd absent), hbhpdf.hbp rc0 (libhbhpdf.a). hbhpdf/tests/test.prg build rc0 (21048 B); run attempted: GT console prints HB_HPDF_INVALID strings then upstream Error BASE/1003 'Variable does not exist: HPDF_ARRAY_ITEM_UNEXPECTED_TYPE' dialog waiting on GT input; killed at 60s; raw preserved; suite-upstream-at-pin observation, NOT HR compatibility. Other hbgd/hbhpdf tests not-run (need libgd/libharu data files, image output, or GT/server input). HR matrix 21 compilable .prg x base/head x default/llvm: ALL identical base/HEAD. Classes: #require unknown (14 files), 'reduced VAR expression atom' (gd.prg:66 is 'unexpected token Comma in expression' at CREATE CLASS INIT inline? no - gd.prg:66 comma; gdbar:78, gdimage:63), 'unknown dotted word ..' variadic (gdbarcod:362, gdchart:437), 'statement not in subset' (errstr:209 - identifier-led call statement), 'unknown function hb_hpdf_version' (misc:51). No new divergence class in this batch. No compatibility claimed.",
-  "reference": "694428e1c12f726675b19324d62167fa77d68185",
-  "sources_unchanged": true,
-  "rows": [
-    {
-      "file": "contrib/hbgd/gd.ch",
-      "sha256": "06dc3e6aab2ed140b27490e7d0122767925d63ecd660c867b61f7ed7a6e94023",
-      "review": "full source manually read 2026-11-01 (65 non-comment lines)",
-      "entrypoint": "header: gdLib #define constants (GD_* pens/styles, gdStyled/gdTiled, font names)",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "core RTL",
-      "boundary": "contrib header source at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": "not-run (header; #define/#xtranslate table - nothing to compile in this PoC)"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": "not-run (header; #define/#xtranslate table - nothing to compile in this PoC)"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/gd.prg",
-      "sha256": "a58a3ea3505c159418c621b49a2e61adb89b5e0e58994624a3f2691a416ba411",
-      "review": "full source manually read 2026-11-01 (158 non-comment lines)",
-      "entrypoint": "PROCEDURE wrappers over gd C API (gdImageCreate/Line/Arc/Fill/color alloc, 140+ thin wrappers)",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd (C contrib binding)",
-      "boundary": "contrib library source at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 66: unexpected token Comma in expression",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 66: unexpected token Comma in expression",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 66: unexpected token Comma in expression",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 66: unexpected token Comma in expression",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/gdbar.prg",
-      "sha256": "0446fc62ee504b955599d24ae313fd2829cd12932b835bc793557a2ddf7560aa",
-      "review": "full source manually read 2026-11-01 (202 non-comment lines)",
-      "entrypoint": "CREATE CLASS GDBarcode INHERIT GDImage? no: barcode helper (code39/ean via gd bars)",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd binding",
-      "boundary": "contrib library source at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 78: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 78: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 78: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 78: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/gdbarcod.prg",
-      "sha256": "981ab7e65bf7691eb0ad5bf126a48ad5ba354b1c1913a17742f297161f4b6ae6",
-      "review": "full source manually read 2026-11-01 (412 non-comment lines)",
-      "entrypoint": "CREATE CLASS GDBarcode2 (EAN13/UPC/CODE39 check digits, bar pattern tables)",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd binding",
-      "boundary": "contrib library source at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/gdchart.prg",
-      "sha256": "bac301211fba203d4768c71680c9af6243c464fb3341d0cbfeb61f342d87518d",
-      "review": "full source manually read 2026-11-01 (700 non-comment lines)",
-      "entrypoint": "CREATE CLASS GDChart INHERIT GDImage (PieChart/VerticalBarChart/HorizontalBarChart/LineChart + __HGetValue)",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd binding, hbclass",
-      "boundary": "contrib library source at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 437: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 437: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 437: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 437: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/gdimage.prg",
-      "sha256": "c08817cd56842e191fc1290d177afe8aedcfeb476b585df7e3f50eb9a6a2a571",
-      "review": "full source manually read 2026-11-01 (485 non-comment lines)",
-      "entrypoint": "CREATE CLASS GDImage (core wrapper: create/load/save, draw, fonts, copy/resize/rotate, Clone)",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd binding, hbclass",
-      "boundary": "contrib library source at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 63: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 63: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 63: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 63: reduced VAR expression atom outside bounded contract",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/tests/animgif.prg",
-      "sha256": "8c3076f89f3a2f2ecad04dd5cb5ee9caf94da2fc6186ac6e258c65b6776ded20",
-      "review": "full source manually read 2026-11-01 (66 non-comment lines)",
-      "entrypoint": "test: animated gif frames via GDImage",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd, images_in/imgs_out files",
-      "boundary": "contrib test at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 9: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 9: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 9: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 9: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/tests/antialia.prg",
-      "sha256": "4f294afb4b82e5a53434156e4938ea3e9c7c9827bda747e9709bb8e407051307",
-      "review": "full source manually read 2026-11-01 (56 non-comment lines)",
-      "entrypoint": "test: antialiased lines",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd, image output files",
-      "boundary": "contrib test at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/tests/barcode.prg",
-      "sha256": "db9dac656f0804698e97ad5e616bd99c639b4a4dd874d163a0c2791f184a9ba8",
-      "review": "full source manually read 2026-11-01 (50 non-comment lines)",
-      "entrypoint": "test: barcode image generation",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd, image output files",
-      "boundary": "contrib test at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/tests/barcode2.prg",
-      "sha256": "8fae9800dc8874987b2b1103b6894b3f2186ec763b9e3db9c35fc0627d1cd812",
-      "review": "full source manually read 2026-11-01 (50 non-comment lines)",
-      "entrypoint": "test: barcode2 image generation",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd, image output files",
-      "boundary": "contrib test at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/tests/cgi.prg",
-      "sha256": "e73c53e61c30019cdc714ede32b59ca2c784601434e962f1214f6d02687f57b3",
-      "review": "full source manually read 2026-11-01 (250 non-comment lines)",
-      "entrypoint": "test: CGI counter/stats page (WRITE #command output to stdout)",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd, CGI env/server",
-      "boundary": "contrib test at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/tests/counter.prg",
-      "sha256": "8606820eecaccb3f226d1d9f31be5f9ae3fd6103c5fdf552b1864b0e44a9fb3f",
-      "review": "full source manually read 2026-11-01 (81 non-comment lines)",
-      "entrypoint": "test: counter image from file count",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd, counter file",
-      "boundary": "contrib test at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/tests/fontdpi.prg",
-      "sha256": "dee479cf321021a9a239bd350ddebb9fb6585a951b42aa6711f059106d34ff43",
-      "review": "full source manually read 2026-11-01 (17 non-comment lines)",
-      "entrypoint": "test: FreeType font dpi sample",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd+FreeType, font files",
-      "boundary": "contrib test at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 8: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/tests/gdapi.prg",
-      "sha256": "384de8ad55e7ce6cd5f88b66a5d81af5ae2317b4bf5c07526eddb91db1b4959b",
-      "review": "full source manually read 2026-11-01 (66 non-comment lines)",
-      "entrypoint": "test: raw gd API calls",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd, image output files",
-      "boundary": "contrib test at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/tests/gdclass.prg",
-      "sha256": "96b5b141e9ccee81fbfb34d2a7469e5eff84622ff66d3ed6e21534e740399f1a",
-      "review": "full source manually read 2026-11-01 (66 non-comment lines)",
-      "entrypoint": "test: GDImage class usage",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd, image output files",
-      "boundary": "contrib test at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/tests/test.prg",
-      "sha256": "78de7bbf22714e8b1125c19a5ca12b0b70042b292754311d87924423902a71f2",
-      "review": "full source manually read 2026-11-01 (20 non-comment lines)",
-      "entrypoint": "test: basic GDImage create/line/save png",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd, image output files",
-      "boundary": "contrib test at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/tests/tostring.prg",
-      "sha256": "0627a8fdd543d01abdb6b4927381ebe759ceda324c4879be7c50c50747d7ff0b",
-      "review": "full source manually read 2026-11-01 (66 non-comment lines)",
-      "entrypoint": "test: gdImageToString variants",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd, image output files",
-      "boundary": "contrib test at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 7: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbgd/tests/tpoly.prg",
-      "sha256": "0308087245e4a9fe48ee352fc4576a0f9e38a11f651801e7f9b1102183e6f078",
-      "review": "full source manually read 2026-11-01 (66 non-comment lines)",
-      "entrypoint": "test: polygon drawing",
-      "build_unit": "hbgd.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libgd, image output files",
-      "boundary": "contrib test at upstream pin",
-      "reference_build_exit": 10,
-      "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
-      "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 5: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 5: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 5: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 5: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbhpdf/errstr.prg",
-      "sha256": "9dae8456ef920081cd81a764e4c4eadb5c092ea94c92854f06a0a6e397f08db1",
-      "review": "full source manually read 2026-11-01 (120 non-comment lines)",
-      "entrypoint": "FUNCTION hb_HPDF_GetErrorString + GetErrorDetail (error code tables)",
-      "build_unit": "hbhpdf.hbp",
-      "profile": "C-contrib",
-      "dependencies": "core RTL + hbhpdf extern",
-      "boundary": "contrib library source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "unit hbhpdf.hbp rc0 (libhbhpdf.a) (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 209: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 209: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 209: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 209: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbhpdf/harupdf.ch",
-      "sha256": "7ff20bab1d128524438caf0ed3c6dbc305232fd8c6fd714afdbdcc2843fe2c05",
-      "review": "full source manually read 2026-11-01 (120 non-comment lines)",
-      "entrypoint": "header: HPDF_* #define constants (error codes, page sizes, encodings, annot icons)",
-      "build_unit": "hbhpdf.hbp",
-      "profile": "C-contrib",
-      "dependencies": "core RTL",
-      "boundary": "contrib header source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "unit hbhpdf.hbp rc0 (libhbhpdf.a) (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": "not-run (header; #define/#xtranslate table - nothing to compile in this PoC)"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": "not-run (header; #define/#xtranslate table - nothing to compile in this PoC)"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbhpdf/misc.prg",
-      "sha256": "2f951e14482280261d8fbc2ed80ac52a261eabd6e1e91fd6bd868571ab6c8d01",
-      "review": "full source manually read 2026-11-01 (9 non-comment lines)",
-      "entrypoint": "FUNCTION hb_HPDF_Version wrapper over hb_hpdf_version",
-      "build_unit": "hbhpdf.hbp",
-      "profile": "C-contrib",
-      "dependencies": "hbhpdf C binding",
-      "boundary": "contrib library source at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "unit hbhpdf.hbp rc0 (libhbhpdf.a) (unit .hbp)",
-      "reference_run": "not-run (library unit; recorded build rc only)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 51: unknown function `hb_hpdf_version` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 51: unknown function `hb_hpdf_version` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 51: unknown function `hb_hpdf_version` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 51: unknown function `hb_hpdf_version` (must be defined before use)",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbhpdf/tests/harupdf.prg",
-      "sha256": "6105680b262f851ed741ce9523a3696c8f71b1d07ce7b3ad73849875bdb332ba",
-      "review": "full source manually read 2026-11-01 (1030 non-comment lines)",
-      "entrypoint": "test: full libharu demo (fonts/lines/text/graphics/annotations/images/codepages, myharu.pdf)",
-      "build_unit": "hbhpdf.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libharu, files/*.png+a010013l font files",
-      "boundary": "contrib test at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "unit hbhpdf.hbp rc0 (libhbhpdf.a) (unit .hbp)",
-      "reference_run": "not-run (writes myharu.pdf; needs files/*.png + a010013l font data; GT Alert dialogs)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 45: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 45: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 45: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 45: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
-    },
-    {
-      "file": "contrib/hbhpdf/tests/test.prg",
-      "sha256": "1c145a2d0e19fbcd1e68faf91a28192d404684baf630f8d4dfafb6dbf1a2db04",
-      "review": "full source manually read 2026-11-01 (9 non-comment lines)",
-      "entrypoint": "test: prints hb_HPDF_GetErrorString table to console",
-      "build_unit": "hbhpdf.hbp",
-      "profile": "C-contrib",
-      "dependencies": "libhbhpdf",
-      "boundary": "contrib test at upstream pin",
-      "reference_build_exit": 0,
-      "reference_build_note": "unit hbhpdf.hbp rc0 (libhbhpdf.a) (unit .hbp)",
-      "reference_run": "run attempted: builds rc0 against libhbhpdf.a (21048 B); console GT output shows HB_HPDF_INVALID strings then upstream Error BASE/1003 dialog 'Variable does not exist: HPDF_ARRAY_ITEM_UNEXPECTED_TYPE' waiting on GT input; killed at 60s timeout - raw preserved /tmp/walk/contribbuild4/hpdftest.out; result input/environment-dependent (suite upstream at pin, NOT HR compatibility)",
-      "backends_baseline": {
-        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      },
-      "backends_head": {
-        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
-        "default": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        },
-        "llvm": {
-          "compile_exit": 1,
-          "diagnostic": "error: line 1: unknown directive #require in this PoC",
-          "link": "not-run",
-          "execution": "not-run",
-          "comparison": "not-run"
-        }
-      }
+ "unit_note": "contrib batch 4: hbgd(18) + hbhpdf(5) = 23 files; C-contrib cumulative 68/695 files (17/66 dirs touched; dirs NOT counted complete until all files reviewed). Reference builds pin 694428e1 (rc clean, no pipes): hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd absent), hbhpdf.hbp rc0 (libhbhpdf.a). hbhpdf/tests/test.prg build rc0 (21048 B); run attempted: GT console prints HB_HPDF_INVALID strings then upstream Error BASE/1003 'Variable does not exist: HPDF_ARRAY_ITEM_UNEXPECTED_TYPE' dialog waiting on GT input; killed at 60s; raw preserved; suite-upstream-at-pin observation, NOT HR compatibility. Other hbgd/hbhpdf tests not-run (need libgd/libharu data files, image output, or GT/server input). HR matrix 21 compilable .prg x base/head x default/llvm: ALL identical base/HEAD. Classes: #require unknown (14 files), 'reduced VAR expression atom' (gd.prg:66 is 'unexpected token Comma in expression' at CREATE CLASS INIT inline? no - gd.prg:66 comma; gdbar:78, gdimage:63), 'unknown dotted word ..' variadic (gdbarcod:362, gdchart:437), 'statement not in subset' (errstr:209 - identifier-led call statement), 'unknown function hb_hpdf_version' (misc:51). No new divergence class in this batch. No compatibility claimed.",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "contrib/hbgd/gd.ch",
+   "sha256": "06dc3e6aab2ed140b27490e7d0122767925d63ecd660c867b61f7ed7a6e94023",
+   "review": "full source manually read 2026-11-01 (65 non-comment lines)",
+   "entrypoint": "header: gdLib #define constants (GD_* pens/styles, gdStyled/gdTiled, font names)",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "core RTL",
+   "boundary": "contrib header source at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run (header; #define/#xtranslate table - nothing to compile in this PoC)"
     }
-  ],
-  "corrections": [
-    "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence."
-  ]
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": "not-run (header; #define/#xtranslate table - nothing to compile in this PoC)"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/gd.prg",
+   "sha256": "a58a3ea3505c159418c621b49a2e61adb89b5e0e58994624a3f2691a416ba411",
+   "review": "full source manually read 2026-11-01 (158 non-comment lines)",
+   "entrypoint": "PROCEDURE wrappers over gd C API (gdImageCreate/Line/Arc/Fill/color alloc, 140+ thin wrappers)",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd (C contrib binding)",
+   "boundary": "contrib library source at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 66: unexpected token Comma in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 66: unexpected token Comma in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 66: unexpected token Comma in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 66: unexpected token Comma in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/gdbar.prg",
+   "sha256": "0446fc62ee504b955599d24ae313fd2829cd12932b835bc793557a2ddf7560aa",
+   "review": "full source manually read 2026-11-01 (202 non-comment lines)",
+   "entrypoint": "CREATE CLASS GDBarcode INHERIT GDImage? no: barcode helper (code39/ean via gd bars)",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd binding",
+   "boundary": "contrib library source at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 78: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 78: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 78: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 78: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/gdbarcod.prg",
+   "sha256": "981ab7e65bf7691eb0ad5bf126a48ad5ba354b1c1913a17742f297161f4b6ae6",
+   "review": "full source manually read 2026-11-01 (412 non-comment lines)",
+   "entrypoint": "CREATE CLASS GDBarcode2 (EAN13/UPC/CODE39 check digits, bar pattern tables)",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd binding",
+   "boundary": "contrib library source at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/gdchart.prg",
+   "sha256": "bac301211fba203d4768c71680c9af6243c464fb3341d0cbfeb61f342d87518d",
+   "review": "full source manually read 2026-11-01 (700 non-comment lines)",
+   "entrypoint": "CREATE CLASS GDChart INHERIT GDImage (PieChart/VerticalBarChart/HorizontalBarChart/LineChart + __HGetValue)",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd binding, hbclass",
+   "boundary": "contrib library source at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 437: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 437: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 437: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 437: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/gdimage.prg",
+   "sha256": "c08817cd56842e191fc1290d177afe8aedcfeb476b585df7e3f50eb9a6a2a571",
+   "review": "full source manually read 2026-11-01 (485 non-comment lines)",
+   "entrypoint": "CREATE CLASS GDImage (core wrapper: create/load/save, draw, fonts, copy/resize/rotate, Clone)",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd binding, hbclass",
+   "boundary": "contrib library source at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 63: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 63: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 63: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 63: reduced VAR expression atom outside bounded contract",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/tests/animgif.prg",
+   "sha256": "8c3076f89f3a2f2ecad04dd5cb5ee9caf94da2fc6186ac6e258c65b6776ded20",
+   "review": "full source manually read 2026-11-01 (66 non-comment lines)",
+   "entrypoint": "test: animated gif frames via GDImage",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd, images_in/imgs_out files",
+   "boundary": "contrib test at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 9: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/tests/antialia.prg",
+   "sha256": "4f294afb4b82e5a53434156e4938ea3e9c7c9827bda747e9709bb8e407051307",
+   "review": "full source manually read 2026-11-01 (56 non-comment lines)",
+   "entrypoint": "test: antialiased lines",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd, image output files",
+   "boundary": "contrib test at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/tests/barcode.prg",
+   "sha256": "db9dac656f0804698e97ad5e616bd99c639b4a4dd874d163a0c2791f184a9ba8",
+   "review": "full source manually read 2026-11-01 (50 non-comment lines)",
+   "entrypoint": "test: barcode image generation",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd, image output files",
+   "boundary": "contrib test at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/tests/barcode2.prg",
+   "sha256": "8fae9800dc8874987b2b1103b6894b3f2186ec763b9e3db9c35fc0627d1cd812",
+   "review": "full source manually read 2026-11-01 (50 non-comment lines)",
+   "entrypoint": "test: barcode2 image generation",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd, image output files",
+   "boundary": "contrib test at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/tests/cgi.prg",
+   "sha256": "e73c53e61c30019cdc714ede32b59ca2c784601434e962f1214f6d02687f57b3",
+   "review": "full source manually read 2026-11-01 (250 non-comment lines)",
+   "entrypoint": "test: CGI counter/stats page (WRITE #command output to stdout)",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd, CGI env/server",
+   "boundary": "contrib test at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/tests/counter.prg",
+   "sha256": "8606820eecaccb3f226d1d9f31be5f9ae3fd6103c5fdf552b1864b0e44a9fb3f",
+   "review": "full source manually read 2026-11-01 (81 non-comment lines)",
+   "entrypoint": "test: counter image from file count",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd, counter file",
+   "boundary": "contrib test at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/tests/fontdpi.prg",
+   "sha256": "dee479cf321021a9a239bd350ddebb9fb6585a951b42aa6711f059106d34ff43",
+   "review": "full source manually read 2026-11-01 (17 non-comment lines)",
+   "entrypoint": "test: FreeType font dpi sample",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd+FreeType, font files",
+   "boundary": "contrib test at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 8: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/tests/gdapi.prg",
+   "sha256": "384de8ad55e7ce6cd5f88b66a5d81af5ae2317b4bf5c07526eddb91db1b4959b",
+   "review": "full source manually read 2026-11-01 (66 non-comment lines)",
+   "entrypoint": "test: raw gd API calls",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd, image output files",
+   "boundary": "contrib test at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/tests/gdclass.prg",
+   "sha256": "96b5b141e9ccee81fbfb34d2a7469e5eff84622ff66d3ed6e21534e740399f1a",
+   "review": "full source manually read 2026-11-01 (66 non-comment lines)",
+   "entrypoint": "test: GDImage class usage",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd, image output files",
+   "boundary": "contrib test at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/tests/test.prg",
+   "sha256": "78de7bbf22714e8b1125c19a5ca12b0b70042b292754311d87924423902a71f2",
+   "review": "full source manually read 2026-11-01 (20 non-comment lines)",
+   "entrypoint": "test: basic GDImage create/line/save png",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd, image output files",
+   "boundary": "contrib test at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/tests/tostring.prg",
+   "sha256": "0627a8fdd543d01abdb6b4927381ebe759ceda324c4879be7c50c50747d7ff0b",
+   "review": "full source manually read 2026-11-01 (66 non-comment lines)",
+   "entrypoint": "test: gdImageToString variants",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd, image output files",
+   "boundary": "contrib test at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 7: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbgd/tests/tpoly.prg",
+   "sha256": "0308087245e4a9fe48ee352fc4576a0f9e38a11f651801e7f9b1102183e6f078",
+   "review": "full source manually read 2026-11-01 (66 non-comment lines)",
+   "entrypoint": "test: polygon drawing",
+   "build_unit": "hbgd.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libgd, image output files",
+   "boundary": "contrib test at upstream pin",
+   "reference_build_exit": 10,
+   "reference_build_note": "unit hbgd.hbp rc10 'Missing dependency: gd' (environment: libgd not installed) (unit .hbp)",
+   "reference_run": "not-run (needs libgd + image/font data files; no deterministic console output)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 5: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 5: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 5: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 5: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbhpdf/errstr.prg",
+   "sha256": "9dae8456ef920081cd81a764e4c4eadb5c092ea94c92854f06a0a6e397f08db1",
+   "review": "full source manually read 2026-11-01 (120 non-comment lines)",
+   "entrypoint": "FUNCTION hb_HPDF_GetErrorString + GetErrorDetail (error code tables)",
+   "build_unit": "hbhpdf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "core RTL + hbhpdf extern",
+   "boundary": "contrib library source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "unit hbhpdf.hbp rc0 (libhbhpdf.a) (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 209: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 209: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 209: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 209: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbhpdf/harupdf.ch",
+   "sha256": "7ff20bab1d128524438caf0ed3c6dbc305232fd8c6fd714afdbdcc2843fe2c05",
+   "review": "full source manually read 2026-11-01 (120 non-comment lines)",
+   "entrypoint": "header: HPDF_* #define constants (error codes, page sizes, encodings, annot icons)",
+   "build_unit": "hbhpdf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "core RTL",
+   "boundary": "contrib header source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "unit hbhpdf.hbp rc0 (libhbhpdf.a) (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": "not-run (header; #define/#xtranslate table - nothing to compile in this PoC)"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": "not-run (header; #define/#xtranslate table - nothing to compile in this PoC)"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbhpdf/misc.prg",
+   "sha256": "2f951e14482280261d8fbc2ed80ac52a261eabd6e1e91fd6bd868571ab6c8d01",
+   "review": "full source manually read 2026-11-01 (9 non-comment lines)",
+   "entrypoint": "FUNCTION hb_HPDF_Version wrapper over hb_hpdf_version",
+   "build_unit": "hbhpdf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hbhpdf C binding",
+   "boundary": "contrib library source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "unit hbhpdf.hbp rc0 (libhbhpdf.a) (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 51: unknown function `hb_hpdf_version` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 51: unknown function `hb_hpdf_version` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 51: unknown function `hb_hpdf_version` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 51: unknown function `hb_hpdf_version` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbhpdf/tests/harupdf.prg",
+   "sha256": "6105680b262f851ed741ce9523a3696c8f71b1d07ce7b3ad73849875bdb332ba",
+   "review": "full source manually read 2026-11-01 (1030 non-comment lines)",
+   "entrypoint": "test: full libharu demo (fonts/lines/text/graphics/annotations/images/codepages, myharu.pdf)",
+   "build_unit": "hbhpdf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libharu, files/*.png+a010013l font files",
+   "boundary": "contrib test at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "unit hbhpdf.hbp rc0 (libhbhpdf.a) (unit .hbp)",
+   "reference_run": "not-run (writes myharu.pdf; needs files/*.png + a010013l font data; GT Alert dialogs)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 45: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 45: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 45: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 45: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbhpdf/tests/test.prg",
+   "sha256": "1c145a2d0e19fbcd1e68faf91a28192d404684baf630f8d4dfafb6dbf1a2db04",
+   "review": "full source manually read 2026-11-01 (9 non-comment lines)",
+   "entrypoint": "test: prints hb_HPDF_GetErrorString table to console",
+   "build_unit": "hbhpdf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "libhbhpdf",
+   "boundary": "contrib test at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "unit hbhpdf.hbp rc0 (libhbhpdf.a) (unit .hbp)",
+   "reference_run": "run attempted: builds rc0 against libhbhpdf.a (21048 B); console GT output shows HB_HPDF_INVALID strings then upstream Error BASE/1003 dialog 'Variable does not exist: HPDF_ARRAY_ITEM_UNEXPECTED_TYPE' waiting on GT input; killed at 60s timeout - raw preserved /tmp/walk/contribbuild4/hpdftest.out; result input/environment-dependent (suite upstream at pin, NOT HR compatibility)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 6c6b6db3, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ],
+ "corrections": [
+  "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence.",
+  "2026-11-01 retraction: the integrity-verification figures recorded in the previous note (89/114 byte-identical after comment-strip, 24 inline-comment-only, 2 mapping collisions, 1 real loss testmxml) are WITHDRAWN: they do not reproduce from the on-disk script /tmp/walk/integrity_check.py, whose heuristic name-pairing yields 402 NORAW entries (including files separately verified, e.g. testmxml) and 266 LOSS lines (many with 0 lost lines = benign retained-comment insertions; several with >0 lost lines needing canonical re-pairing). No integrity verification is closed. ALL compressed-source readings of batches 1-15 remain REPORTED pending independent contrast AND a canonical re-derivation: sets from ledger path lists vs raw @694428e1, no double counting. Only the testmxml 'foo/*/two' block re-read from raw stands as individually verified. Ordered by main 2026-11-01 02:03."
+ ]
 }

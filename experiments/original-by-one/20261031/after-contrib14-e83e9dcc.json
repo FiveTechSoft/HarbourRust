@@ -1,253 +1,254 @@
 {
-  "walk_date": "2026-11-01",
-  "batch": "contrib14 (hbodbc+hbcairo+hbmxml+hbmysql COMPLETE)",
-  "harbour_pin": "694428e1",
-  "compiler_pin": "92947baf",
-  "src_sha256": "2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f",
-  "branch_tip": "80db60c3",
-  "reference_build": {
-    "hbodbc.hbp": "rc10 (ODBC dep, environment)",
-    "hbcairo.hbp": "rc10 (cairo dep, environment)",
-    "hbmxml.hbp": "rc0 (pin 694428e1)",
-    "hbmysql.hbp": "rc10 (MySQL dep, environment)"
+ "walk_date": "2026-11-01",
+ "batch": "contrib14 (hbodbc+hbcairo+hbmxml+hbmysql COMPLETE)",
+ "harbour_pin": "694428e1",
+ "compiler_pin": "92947baf",
+ "src_sha256": "2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f",
+ "branch_tip": "80db60c3",
+ "reference_build": {
+  "hbodbc.hbp": "rc10 (ODBC dep, environment)",
+  "hbcairo.hbp": "rc10 (cairo dep, environment)",
+  "hbmxml.hbp": "rc0 (pin 694428e1)",
+  "hbmysql.hbp": "rc10 (MySQL dep, environment)"
+ },
+ "files": [
+  {
+   "path": "contrib/hbcairo/hbcairo.ch",
+   "kind": "header",
+   "sha256": "0e124bc9cdbe2f4e5681fa9640cc4918e5f6e49c56bd8a41768780e5273f7a6a",
+   "first_fail": null,
+   "class": "header - no direct compile",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
   },
-  "files": [
-    {
-      "path": "contrib/hbcairo/hbcairo.ch",
-      "kind": "header",
-      "sha256": "0e124bc9cdbe2f4e5681fa9640cc4918e5f6e49c56bd8a41768780e5273f7a6a",
-      "first_fail": null,
-      "class": "header - no direct compile",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbcairo/tests/fancytxt.prg",
-      "kind": "source",
-      "sha256": "2bea8ca678d2ab6e8ad959cc6e1e5312aa46db0067f58e7eaf534205be28127d",
-      "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbcairo/tests/glyphdbg.prg",
-      "kind": "source",
-      "sha256": "94cdbf55d34cb8a21bcca52f5769b24862f8649088f222df169c5d64992a9266",
-      "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbcairo/tests/hellow.prg",
-      "kind": "source",
-      "sha256": "293ba3f166ebe3adc08f94283e52f72f385b3c2d819d54c68f673276475a9602",
-      "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbcairo/tests/lightnin.prg",
-      "kind": "source",
-      "sha256": "2e1d5aa61f543bb10bf64855de1e93a027a0b0acd3e9c4567e4fbc5d7e742ea4",
-      "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbcairo/tests/table.prg",
-      "kind": "source",
-      "sha256": "d6f651272bf1aebd71b15d83b86e4343aaaa45f3ff96494b56b6108d5ee3de7b",
-      "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbmxml/format.prg",
-      "kind": "source",
-      "sha256": "2eacfcfaf447960ca00f3291cfe0ddc964c958940f9ebb72c1398c532a4455c0",
-      "first_fail_base_d999a46": "error: line 110: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-      "first_fail_head_92947baf": "error: line 110: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "other",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbmxml/hbmxml.ch",
-      "kind": "header",
-      "sha256": "f19a3076bc26524c652b8d406bb2abc2c777941c69b2ac0af080ab06f89ab22f",
-      "first_fail": null,
-      "class": "header - no direct compile",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbmxml/tests/custom.prg",
-      "kind": "source",
-      "sha256": "1919154ca964e6742a689f5290c18d6477f87a13a2cbc8f8e12b0ac05f38b37c",
-      "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbmxml/tests/reminder.prg",
-      "kind": "source",
-      "sha256": "0e7a0a5a3bfaf6709e62887dd973d5902bea807a14294c535b3104638e711203",
-      "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbmxml/tests/testmxml.prg",
-      "kind": "source",
-      "sha256": "b7832a1a56510488aadf8a74cf78e5eb86518deb7641bc641918deeb425ba3fa",
-      "first_fail_base_d999a46": "error: line 18: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 18: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbmysql/mysql.ch",
-      "kind": "header",
-      "sha256": "07ac87617e709a65d900b68ab6b6d48fc64043dfc6de0024b70f6397c19d85ff",
-      "first_fail": null,
-      "class": "header - no direct compile",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbmysql/tests/dbf2mysq.prg",
-      "kind": "source",
-      "sha256": "1691a47c76c31878badf555a96b3103b972fd01d782754f2f557ad3a0604896b",
-      "first_fail_base_d999a46": "error: line 47: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbmysql/tests/test.prg",
-      "kind": "source",
-      "sha256": "a6cde8957ecb64933e7a87d5b9267f6a04963a5ed54b38770a5b78346c31f94c",
-      "first_fail_base_d999a46": "error: line 47: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbmysql/tmysql.prg",
-      "kind": "source",
-      "sha256": "a2e008327a5aaa6716c54859fd51b50a0d2060b7b688ddbb7f7eb5fba5e95ea6",
-      "first_fail_base_d999a46": "error: line 526: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-      "first_fail_head_92947baf": "error: line 526: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "other",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbmysql/tsqlbrw.prg",
-      "kind": "source",
-      "sha256": "292e61444d6966fd54b09152caa16534ce6e8ac387d0a22adc1f9e9356b2b557",
-      "first_fail_base_d999a46": "error: line 604: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-      "first_fail_head_92947baf": "error: line 604: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "other",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbodbc/browse.prg",
-      "kind": "source",
-      "sha256": "28cff0fd27ec8d1fc3ff6f1a66f45b4b0d71e3d98d1afcfe5a90806aa5e235dd",
-      "first_fail_base_d999a46": "error: line 308: expected `,` or `)` in the message arguments, got Some(LBracket)",
-      "first_fail_head_92947baf": "error: line 308: expected `,` or `)` in the message arguments, got Some(LBracket)",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "message arguments comma",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbodbc/sql.ch",
-      "kind": "header",
-      "sha256": "081206d3a9c2851f89e6df81e4e9e8f8c7bc0f8bf4127a8d6a5019c79e8ce3df",
-      "first_fail": null,
-      "class": "header - no direct compile",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbodbc/tests/odbc.prg",
-      "kind": "source",
-      "sha256": "daca71fea16051a697f9fac3ffa8bb9ebd2d76f489631733145eed2cdbea6252",
-      "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbodbc/tests/odbccall.prg",
-      "kind": "source",
-      "sha256": "b4a3d617e895be317d8d915b1a83ab7b8e5ee176ab77d5fa9a8af3867fcd5027",
-      "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbodbc/tests/todbc.prg",
-      "kind": "source",
-      "sha256": "972d510465019a3b8150e6b226f55f0b5cef21a4bd8ab78c226d9f1507ccf8ae",
-      "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
-      "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "#require directive parked",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    },
-    {
-      "path": "contrib/hbodbc/todbc.prg",
-      "kind": "source",
-      "sha256": "e55e1ad2a5c04d8fd88d6575796904575c3e594edf818b1c4721aea2d5a0731b",
-      "first_fail_base_d999a46": "error: line 65: reduced VAR expression atom outside bounded contract",
-      "first_fail_head_92947baf": "error: line 65: reduced VAR expression atom outside bounded contract",
-      "llvm_identical_default": true,
-      "head_advances_vs_base": false,
-      "class": "reduced VAR expression atom",
-      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
-    }
-  ],
-  "notes": "22 files (4 dirs COMPLETE). Matrix uniform base==HEAD==LLVM, 0/18 compile. Classes: #require parked x12, reduced VAR atom (todbc:65, mysql tests), message-args comma (dbf2mysq:308). No compatibility claimed.",
-  "evidence_level": "inventory+matrix (NOT manual line-by-line review)",
-  "corrections": [
-    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed.",
-    "2026-11-01: 18 source rows read in full (2970 compressed lines + raw re-read of testmxml where compression dropped ~20 code lines with /* */ in strings; 4 rows are .hbp manifests, non-source). Marked REPORTED pending independent contrast per main 01:50 rule. Content: hbodbc TODBC class + tests (SQLAlloc/SQLFetchScroll, cached recordset), hbcairo tests (pdf/image surfaces, path iterators), hbmxml format helpers + tests (mxml SAX/index/custom handlers), hbmysql TMySQL classes (Row/Query/Table/Server, SWITCH ValType mappings, #if 0 blocks).",
-    "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence."
-  ]
+  {
+   "path": "contrib/hbcairo/tests/fancytxt.prg",
+   "kind": "source",
+   "sha256": "2bea8ca678d2ab6e8ad959cc6e1e5312aa46db0067f58e7eaf534205be28127d",
+   "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbcairo/tests/glyphdbg.prg",
+   "kind": "source",
+   "sha256": "94cdbf55d34cb8a21bcca52f5769b24862f8649088f222df169c5d64992a9266",
+   "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbcairo/tests/hellow.prg",
+   "kind": "source",
+   "sha256": "293ba3f166ebe3adc08f94283e52f72f385b3c2d819d54c68f673276475a9602",
+   "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbcairo/tests/lightnin.prg",
+   "kind": "source",
+   "sha256": "2e1d5aa61f543bb10bf64855de1e93a027a0b0acd3e9c4567e4fbc5d7e742ea4",
+   "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbcairo/tests/table.prg",
+   "kind": "source",
+   "sha256": "d6f651272bf1aebd71b15d83b86e4343aaaa45f3ff96494b56b6108d5ee3de7b",
+   "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbmxml/format.prg",
+   "kind": "source",
+   "sha256": "2eacfcfaf447960ca00f3291cfe0ddc964c958940f9ebb72c1398c532a4455c0",
+   "first_fail_base_d999a46": "error: line 110: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+   "first_fail_head_92947baf": "error: line 110: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "other",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbmxml/hbmxml.ch",
+   "kind": "header",
+   "sha256": "f19a3076bc26524c652b8d406bb2abc2c777941c69b2ac0af080ab06f89ab22f",
+   "first_fail": null,
+   "class": "header - no direct compile",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbmxml/tests/custom.prg",
+   "kind": "source",
+   "sha256": "1919154ca964e6742a689f5290c18d6477f87a13a2cbc8f8e12b0ac05f38b37c",
+   "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbmxml/tests/reminder.prg",
+   "kind": "source",
+   "sha256": "0e7a0a5a3bfaf6709e62887dd973d5902bea807a14294c535b3104638e711203",
+   "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbmxml/tests/testmxml.prg",
+   "kind": "source",
+   "sha256": "b7832a1a56510488aadf8a74cf78e5eb86518deb7641bc641918deeb425ba3fa",
+   "first_fail_base_d999a46": "error: line 18: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 18: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbmysql/mysql.ch",
+   "kind": "header",
+   "sha256": "07ac87617e709a65d900b68ab6b6d48fc64043dfc6de0024b70f6397c19d85ff",
+   "first_fail": null,
+   "class": "header - no direct compile",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbmysql/tests/dbf2mysq.prg",
+   "kind": "source",
+   "sha256": "1691a47c76c31878badf555a96b3103b972fd01d782754f2f557ad3a0604896b",
+   "first_fail_base_d999a46": "error: line 47: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbmysql/tests/test.prg",
+   "kind": "source",
+   "sha256": "a6cde8957ecb64933e7a87d5b9267f6a04963a5ed54b38770a5b78346c31f94c",
+   "first_fail_base_d999a46": "error: line 47: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbmysql/tmysql.prg",
+   "kind": "source",
+   "sha256": "a2e008327a5aaa6716c54859fd51b50a0d2060b7b688ddbb7f7eb5fba5e95ea6",
+   "first_fail_base_d999a46": "error: line 526: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+   "first_fail_head_92947baf": "error: line 526: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "other",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbmysql/tsqlbrw.prg",
+   "kind": "source",
+   "sha256": "292e61444d6966fd54b09152caa16534ce6e8ac387d0a22adc1f9e9356b2b557",
+   "first_fail_base_d999a46": "error: line 604: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+   "first_fail_head_92947baf": "error: line 604: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "other",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbodbc/browse.prg",
+   "kind": "source",
+   "sha256": "28cff0fd27ec8d1fc3ff6f1a66f45b4b0d71e3d98d1afcfe5a90806aa5e235dd",
+   "first_fail_base_d999a46": "error: line 308: expected `,` or `)` in the message arguments, got Some(LBracket)",
+   "first_fail_head_92947baf": "error: line 308: expected `,` or `)` in the message arguments, got Some(LBracket)",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "message arguments comma",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbodbc/sql.ch",
+   "kind": "header",
+   "sha256": "081206d3a9c2851f89e6df81e4e9e8f8c7bc0f8bf4127a8d6a5019c79e8ce3df",
+   "first_fail": null,
+   "class": "header - no direct compile",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbodbc/tests/odbc.prg",
+   "kind": "source",
+   "sha256": "daca71fea16051a697f9fac3ffa8bb9ebd2d76f489631733145eed2cdbea6252",
+   "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbodbc/tests/odbccall.prg",
+   "kind": "source",
+   "sha256": "b4a3d617e895be317d8d915b1a83ab7b8e5ee176ab77d5fa9a8af3867fcd5027",
+   "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbodbc/tests/todbc.prg",
+   "kind": "source",
+   "sha256": "972d510465019a3b8150e6b226f55f0b5cef21a4bd8ab78c226d9f1507ccf8ae",
+   "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
+   "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "#require directive parked",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  },
+  {
+   "path": "contrib/hbodbc/todbc.prg",
+   "kind": "source",
+   "sha256": "e55e1ad2a5c04d8fd88d6575796904575c3e594edf818b1c4721aea2d5a0731b",
+   "first_fail_base_d999a46": "error: line 65: reduced VAR expression atom outside bounded contract",
+   "first_fail_head_92947baf": "error: line 65: reduced VAR expression atom outside bounded contract",
+   "llvm_identical_default": true,
+   "head_advances_vs_base": false,
+   "class": "reduced VAR expression atom",
+   "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
+  }
+ ],
+ "notes": "22 files (4 dirs COMPLETE). Matrix uniform base==HEAD==LLVM, 0/18 compile. Classes: #require parked x12, reduced VAR atom (todbc:65, mysql tests), message-args comma (dbf2mysq:308). No compatibility claimed.",
+ "evidence_level": "inventory+matrix (NOT manual line-by-line review)",
+ "corrections": [
+  "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed.",
+  "2026-11-01: 18 source rows read in full (2970 compressed lines + raw re-read of testmxml where compression dropped ~20 code lines with /* */ in strings; 4 rows are .hbp manifests, non-source). Marked REPORTED pending independent contrast per main 01:50 rule. Content: hbodbc TODBC class + tests (SQLAlloc/SQLFetchScroll, cached recordset), hbcairo tests (pdf/image surfaces, path iterators), hbmxml format helpers + tests (mxml SAX/index/custom handlers), hbmysql TMySQL classes (Row/Query/Table/Server, SWITCH ValType mappings, #if 0 blocks).",
+  "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence.",
+  "2026-11-01 retraction: the integrity-verification figures recorded in the previous note (89/114 byte-identical after comment-strip, 24 inline-comment-only, 2 mapping collisions, 1 real loss testmxml) are WITHDRAWN: they do not reproduce from the on-disk script /tmp/walk/integrity_check.py, whose heuristic name-pairing yields 402 NORAW entries (including files separately verified, e.g. testmxml) and 266 LOSS lines (many with 0 lost lines = benign retained-comment insertions; several with >0 lost lines needing canonical re-pairing). No integrity verification is closed. ALL compressed-source readings of batches 1-15 remain REPORTED pending independent contrast AND a canonical re-derivation: sets from ledger path lists vs raw @694428e1, no double counting. Only the testmxml 'foo/*/two' block re-read from raw stands as individually verified. Ordered by main 2026-11-01 02:03."
+ ]
 }
