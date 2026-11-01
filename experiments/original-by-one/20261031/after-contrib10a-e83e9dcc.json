@@ -1,0 +1,226 @@
+{
+  "walk_date": "2026-11-01",
+  "batch": "contrib10a (hbct top-level)",
+  "harbour_pin": "694428e1",
+  "compiler_pin": "92947baf",
+  "src_sha256": "2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f",
+  "branch_tip": "384da2e5",
+  "reference_build": {
+    "hbct.hbp": "rc0 (pin 694428e1)"
+  },
+  "files": [
+    {
+      "path": "contrib/hbct/ct.prg",
+      "kind": "source",
+      "sha256": "499bcd51c5cbbcb28b8e3d2897131a16c8565ba7c6f42530c50599e447449e5a",
+      "first_fail_base_d999a46": "error: line 48: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+      "first_fail_head_92947baf": "error: line 48: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "file-scope STATIC not in increment"
+    },
+    {
+      "path": "contrib/hbct/ctdummy.prg",
+      "kind": "source",
+      "sha256": "f13cd75748f23d36d4f8ddaefb7d74944c36f2006105390074f1dbb4a21840e6",
+      "first_fail_base_d999a46": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "first_fail_head_92947baf": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "identifier-led statement not in subset"
+    },
+    {
+      "path": "contrib/hbct/ctmisc.prg",
+      "kind": "source",
+      "sha256": "10a8cd21b2abdebe0b776d13f7c8fd50e7ad804d271f7779500a2142861d0871",
+      "first_fail_base_d999a46": "error: line 206: unknown function `hb_default` (must be defined before use)",
+      "first_fail_head_92947baf": "error: line 206: unknown function `hb_default` (must be defined before use)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "unknown function/builtin coverage"
+    },
+    {
+      "path": "contrib/hbct/ctrand.prg",
+      "kind": "source",
+      "sha256": "07f5381fd91c65b4c9264a6933d93e6cacccab056328f1d6f41f0a8d78f0be09",
+      "first_fail_base_d999a46": "error: line 48: unknown function `hb_islogical` (must be defined before use)",
+      "first_fail_head_92947baf": "error: line 48: unknown function `hb_islogical` (must be defined before use)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "unknown function/builtin coverage"
+    },
+    {
+      "path": "contrib/hbct/cttime.prg",
+      "kind": "source",
+      "sha256": "c13798387f3121ca9114da3a15b7c7fb43eef63c908020d7724fc4c8c4a1c028",
+      "first_fail_base_d999a46": "error: line 62: missing )",
+      "first_fail_head_92947baf": "error: line 54: unknown function `seconds` (must be defined before use)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": true,
+      "class": "unknown function/builtin coverage"
+    },
+    {
+      "path": "contrib/hbct/fcopy.prg",
+      "kind": "source",
+      "sha256": "58dd3e314b2a3eb4a084e0954c52f0345400e4b15d538e0a88b173b9195d7a7a",
+      "first_fail_base_d999a46": "error: line 142: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "first_fail_head_92947baf": "error: line 142: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "identifier-led statement not in subset"
+    },
+    {
+      "path": "contrib/hbct/getinfo.prg",
+      "kind": "source",
+      "sha256": "b4572a25ac6fc92538ee587062b85e93edfade899dc5b447990f26cd93eac16f",
+      "first_fail_base_d999a46": "error: line 59: missing )",
+      "first_fail_head_92947baf": "error: line 68: expected `,` or `}` in the codeblock body, got Some(EqEq)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": true,
+      "class": "codeblock body"
+    },
+    {
+      "path": "contrib/hbct/getinput.prg",
+      "kind": "source",
+      "sha256": "6687651d02b35b0d93b0b9ef77ddadc7c1fa7955e617f6a217d71d70ffdd0663",
+      "first_fail_base_d999a46": "error: line 64: statement not in the subset (At)",
+      "first_fail_head_92947baf": "error: line 64: statement not in the subset (At)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "other"
+    },
+    {
+      "path": "contrib/hbct/getsecrt.prg",
+      "kind": "source",
+      "sha256": "d2624098e64933d2d58d4af50448eff47d1207cf41605280a97f2d9ed93a6ca3",
+      "first_fail_base_d999a46": "error: line 276: unexpected token Comma in expression",
+      "first_fail_head_92947baf": "error: line 277: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": true,
+      "class": "identifier-led statement not in subset"
+    },
+    {
+      "path": "contrib/hbct/keysave.prg",
+      "kind": "source",
+      "sha256": "6c1941f5958eec3429178b4533ec5a7d765b97a4e04102267f4c076106c374cf",
+      "first_fail_base_d999a46": "error: line 48: unknown function `hb_setkeysave` (must be defined before use)",
+      "first_fail_head_92947baf": "error: line 48: unknown function `hb_setkeysave` (must be defined before use)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "unknown function/builtin coverage"
+    },
+    {
+      "path": "contrib/hbct/keysec.prg",
+      "kind": "source",
+      "sha256": "c93941a339f4ab1eaafba6eab22eed42c5c607a68a5868be319efcff442cf140",
+      "first_fail_base_d999a46": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "first_fail_head_92947baf": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "identifier-led statement not in subset"
+    },
+    {
+      "path": "contrib/hbct/keytime.prg",
+      "kind": "source",
+      "sha256": "5422f8f9a2a14512973cb46b618e6f048e71def6a79d492a10d35b480cf1e648",
+      "first_fail_base_d999a46": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "first_fail_head_92947baf": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "identifier-led statement not in subset"
+    },
+    {
+      "path": "contrib/hbct/kxlat.prg",
+      "kind": "source",
+      "sha256": "b08981c29ac5f121507f7f1ca6bbffe32c0c7e0050f79920c5befd0a55d807e1",
+      "first_fail_base_d999a46": "error: line 396: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+      "first_fail_head_92947baf": "error: line 396: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "file-scope STATIC not in increment"
+    },
+    {
+      "path": "contrib/hbct/screen3.prg",
+      "kind": "source",
+      "sha256": "1e799ba835f26d3aada6184c6bd357dac758cb21f4414de8a319be6ffa65f7c1",
+      "first_fail_base_d999a46": "error: line 53: unexpected token Comma in expression",
+      "first_fail_head_92947baf": "error: line 50: unknown function `row` (must be defined before use)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": true,
+      "class": "unknown function/builtin coverage"
+    },
+    {
+      "path": "contrib/hbct/scrmark.prg",
+      "kind": "source",
+      "sha256": "fe9ab90083b527a6362cc2dc878706acb05b94d19be79b81b4b28997f43c1045",
+      "first_fail_base_d999a46": "error: line 77: missing )",
+      "first_fail_head_92947baf": "error: line 57: unknown function `hb_default` (must be defined before use)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": true,
+      "class": "unknown function/builtin coverage"
+    },
+    {
+      "path": "contrib/hbct/showtime.prg",
+      "kind": "source",
+      "sha256": "d1c0e135558eec9e67bf9c2b428735a601893003540bfc5eae99491be51977c5",
+      "first_fail_base_d999a46": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "first_fail_head_92947baf": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "identifier-led statement not in subset"
+    },
+    {
+      "path": "contrib/hbct/tempfile.prg",
+      "kind": "source",
+      "sha256": "5fae425690912532c65db7517725e72dc324a064f6f27448fa75ce9570877084",
+      "first_fail_base_d999a46": "error: line 142: unexpected token Comma in expression",
+      "first_fail_head_92947baf": "error: line 132: unknown function `hb_isstring` (must be defined before use)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": true,
+      "class": "unknown function/builtin coverage"
+    },
+    {
+      "path": "contrib/hbct/ct.ch",
+      "kind": "header",
+      "sha256": "72408cf21e2fd480aa49c52fe576475ef0ac1aeb6b1d4f65413ef08093383495",
+      "first_fail": null,
+      "class": "header - no direct compile"
+    },
+    {
+      "path": "contrib/hbct/ctcom.ch",
+      "kind": "header",
+      "sha256": "89fbcffd6ef024127f906baa13eb131d66306d82c41fc939899318791fa360e5",
+      "first_fail": null,
+      "class": "header - no direct compile"
+    },
+    {
+      "path": "contrib/hbct/ctdisk.ch",
+      "kind": "header",
+      "sha256": "a06be1d8464b69d36906d290481048a558de3281c7ab9bd12a68c436824eb8fb",
+      "first_fail": null,
+      "class": "header - no direct compile"
+    },
+    {
+      "path": "contrib/hbct/cterror.ch",
+      "kind": "header",
+      "sha256": "9b07af91ee429a3eb5312f9ef7054eaa7868af467f8500926910f104f8524950",
+      "first_fail": null,
+      "class": "header - no direct compile"
+    },
+    {
+      "path": "contrib/hbct/ctscan.ch",
+      "kind": "header",
+      "sha256": "07c6baf88aece0d17c6bc92c3a7801e31e910fd13ccbd87c8b833e8b15fe8dda",
+      "first_fail": null,
+      "class": "header - no direct compile"
+    },
+    {
+      "path": "contrib/hbct/ctvideo.ch",
+      "kind": "header",
+      "sha256": "0bc3d4b30bae64f0d4ccf798655e76cca424537802a86b5a20559400bb672707",
+      "first_fail": null,
+      "class": "header - no direct compile"
+    }
+  ],
+  "notes": "hbct top-level 23 files (17 .prg + 6 .ch). Matrix at pin 92947baf: LLVM identical to default everywhere; 0/17 compile (all named rejections); 6 files advance past previous failure via args increment (cttime, getinfo, getsecrt, screen3, scrmark, tempfile - fail LATER, no compatibility claim). tests/ 63 .prg pending in 10b."
+}
