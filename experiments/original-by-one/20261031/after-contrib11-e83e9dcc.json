@@ -1,0 +1,121 @@
+{
+  "walk_date": "2026-11-01",
+  "batch": "contrib11 (hbnetio COMPLETE)",
+  "harbour_pin": "694428e1",
+  "compiler_pin": "92947baf",
+  "src_sha256": "2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f",
+  "branch_tip": "cb50e960",
+  "reference_build": {
+    "hbnetio.hbp": "rc0 (pin 694428e1)"
+  },
+  "files": [
+    {
+      "path": "contrib/hbnetio/netiomt.prg",
+      "kind": "source",
+      "sha256": "819608090a0b0ec42ce47c698a35d24ca74476931004a48b0a5d08f85c55225b",
+      "first_fail_base_d999a46": "error: line 164: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+      "first_fail_head_92947baf": "error: line 164: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "unknown dotted word `..` variadic"
+    },
+    {
+      "path": "contrib/hbnetio/tests/netiomt1.prg",
+      "kind": "source",
+      "sha256": "499094c7a2d57700c4bec1cf6f553b416e9cf705f19ae5505ad582d3b66ce1ee",
+      "first_fail_base_d999a46": "error: line 8: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 8: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbnetio/tests/netiot02.prg",
+      "kind": "source",
+      "sha256": "7a2a7f9f8d0298bda1e1cc29ae2bddf71a4ed8c7cc480ba6f96e65ce6f2b40df",
+      "first_fail_base_d999a46": "error: line 8: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 8: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbnetio/tests/netiot03.prg",
+      "kind": "source",
+      "sha256": "caf82f93ec828a2b980a883eb285176f09af441202636ca42db199db2c342c51",
+      "first_fail_base_d999a46": "error: line 9: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 9: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbnetio/tests/netiotst.prg",
+      "kind": "source",
+      "sha256": "e7bcfeac6c3bae66ffe6d1d37c38eb26eb60a2055ea7836773b1fafdad02d00a",
+      "first_fail_base_d999a46": "error: line 9: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 9: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbnetio/utils/hbnetio/_console.prg",
+      "kind": "source",
+      "sha256": "0dcb7b965d64cfd3f1f2be823bd5ecbc43e93f1a90a56fec059fba7a43797f9f",
+      "first_fail_base_d999a46": "error: line 363: expected `,` or `}` in the codeblock body, got Some(Assign)",
+      "first_fail_head_92947baf": "error: line 363: expected `,` or `}` in the codeblock body, got Some(Assign)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "codeblock body"
+    },
+    {
+      "path": "contrib/hbnetio/utils/hbnetio/_winsvc.prg",
+      "kind": "source",
+      "sha256": "32d0c7c3c187e8f5f6712f0b8c3d3abf51424188750bfec3330d4ded518e5735",
+      "first_fail_base_d999a46": "error: line 23: cannot find include hbwin.ch",
+      "first_fail_head_92947baf": "error: line 23: cannot find include hbwin.ch",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "missing include"
+    },
+    {
+      "path": "contrib/hbnetio/utils/hbnetio/hbnetio.prg",
+      "kind": "source",
+      "sha256": "1585f3c8108dfb6cf4391b7b2b2a0f33dec4b8cbe457c7c38d93ba92680c1ced",
+      "first_fail_base_d999a46": "error: line 481: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+      "first_fail_head_92947baf": "error: line 481: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "unknown dotted word `..` variadic"
+    },
+    {
+      "path": "contrib/hbnetio/utils/hbnetio/netiomgm.hb",
+      "kind": "source",
+      "sha256": "cfcfeb1951fc82c198d3e0b79b9d8adfba9a6cfe6beec11eb2028121bfd7a5c4",
+      "first_fail_base_d999a46": "error: line 82: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+      "first_fail_head_92947baf": "error: line 82: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "unknown dotted word `..` variadic"
+    },
+    {
+      "path": "contrib/hbnetio/utils/hbnetio/rpcdemo.hb",
+      "kind": "source",
+      "sha256": "da750bbfe740352c3f9dc0c78d29bf6d4da52c41232369016df12a77ae8ee4c9",
+      "first_fail_base_d999a46": "error: line 9: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+      "first_fail_head_92947baf": "error: line 9: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "unknown dotted word `..` variadic"
+    },
+    {
+      "path": "contrib/hbnetio/hbnetio.ch",
+      "kind": "header",
+      "sha256": "34b88ce909ba18e5daccaa1761b4d3300e5e8561f8113423c83f5995e2be9919",
+      "first_fail": null,
+      "class": "header - no direct compile"
+    }
+  ],
+  "notes": "hbnetio COMPLETE (11 files: 2 top .prg + 1 .ch + 4 tests + 4 utils). Matrix uniform base==HEAD==LLVM, 0/10 compile. New class: 'unknown dotted word ..' variadic (netiomt, hbnetio.prg, netiomgm, rpcdemo). #require parked x4. No compatibility claimed."
+}
