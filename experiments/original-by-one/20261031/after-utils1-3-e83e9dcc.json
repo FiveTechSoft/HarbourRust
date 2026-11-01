@@ -1,0 +1,150 @@
+{
+ "phase": "utils/ build units (20 inventoried)",
+ "order": "inventory path lexicographic: hbi18n, hbmk2 (examples, then hbmk2.prg 17122 lines - dedicated batch), hbtest (12 files)",
+ "unit_note": "hbi18n COMPLETE (1/1). hbmk2 examples recorded; hbmk2.prg pending (dedicated batch).",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "utils/hbi18n/hbi18n.prg",
+   "sha256": "4de1065757ff9defca5895fc0199755deb9bddefd19fce4ccabd32f7eca0b1b0",
+   "review": "full source manually read 2026-11-01 (346 lines)",
+   "entrypoint": "Main( ... ) variadic",
+   "build_unit": "hbi18n.hbp (single-source exe)",
+   "profile": "B-utils",
+   "dependencies": "__i18n_potArray* / __i18n_hash* / hb_i18n_* core i18n API; hb_AParams; GT CGI default; Directory wildcard expansion (non-UNIX)",
+   "boundary": ".pot/.hbl merge/generate/autotranslate manager",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbi18n.hbp builds OK at pin 694428e1",
+   "reference_run": "run 'hbi18n -q' (no files): rc1, prints logo+syntax to stdout - deterministic console text (no Date/Time, no GT frame)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 249: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 249: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 249: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 249: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "utils/hbmk2/examples/plug_bis.hb",
+   "sha256": "402d50deec513a617de74338236cdf13fd46bee5477382a3291f9a873ede577a",
+   "review": "full source manually read 2026-11-01 (190 lines)",
+   "entrypoint": "hbmk_plugin_bison (hbmk2 plugin) / Main fallback message",
+   "build_unit": "hbmk2 plugin example (.hb, -plugin=)",
+   "profile": "B-utils",
+   "dependencies": "hbmk_* plugin API; bison tool detection; hb_processRun; FOR EACH parallel arrays",
+   "boundary": "bison integration plugin for hbmk2; not run (requires hbmk2 plugin host)",
+   "reference_build_exit": null,
+   "reference_build_note": "plugin script; loaded by hbmk2 -plugin= (not built standalone)",
+   "reference_run": "not-run (plugin host required)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 23: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 23: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 23: #pragma `-w3` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 23: #pragma `-w3` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "utils/hbmk2/examples/plug_tpl.hb",
+   "sha256": "01932e0ab90b13486f7f2f2f046a2965272001169098d3785b9d7ebef821420e",
+   "review": "full source manually read 2026-11-01 (68 lines)",
+   "entrypoint": "hbmk_plugin_tpl (hbmk2 plugin) / Main fallback message",
+   "build_unit": "hbmk2 plugin example (.hb, -plugin=)",
+   "profile": "B-utils",
+   "dependencies": "hbmk_* plugin API; SWITCH on cSTATE; hash member access",
+   "boundary": "plugin template; not run (requires hbmk2 plugin host)",
+   "reference_build_exit": null,
+   "reference_build_note": "plugin script; loaded by hbmk2 -plugin= (not built standalone)",
+   "reference_run": "not-run (plugin host required)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: #pragma `-w3` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: #pragma `-w3` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ]
+}
