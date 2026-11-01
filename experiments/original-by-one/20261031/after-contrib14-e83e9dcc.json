@@ -18,7 +18,7 @@
       "sha256": "0e124bc9cdbe2f4e5681fa9640cc4918e5f6e49c56bd8a41768780e5273f7a6a",
       "first_fail": null,
       "class": "header - no direct compile",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbcairo/tests/fancytxt.prg",
@@ -29,7 +29,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbcairo/tests/glyphdbg.prg",
@@ -40,7 +40,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbcairo/tests/hellow.prg",
@@ -51,7 +51,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbcairo/tests/lightnin.prg",
@@ -62,7 +62,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbcairo/tests/table.prg",
@@ -73,7 +73,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbmxml/format.prg",
@@ -84,7 +84,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "other",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbmxml/hbmxml.ch",
@@ -92,7 +92,7 @@
       "sha256": "f19a3076bc26524c652b8d406bb2abc2c777941c69b2ac0af080ab06f89ab22f",
       "first_fail": null,
       "class": "header - no direct compile",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbmxml/tests/custom.prg",
@@ -103,7 +103,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbmxml/tests/reminder.prg",
@@ -114,7 +114,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbmxml/tests/testmxml.prg",
@@ -125,7 +125,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbmysql/mysql.ch",
@@ -133,7 +133,7 @@
       "sha256": "07ac87617e709a65d900b68ab6b6d48fc64043dfc6de0024b70f6397c19d85ff",
       "first_fail": null,
       "class": "header - no direct compile",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbmysql/tests/dbf2mysq.prg",
@@ -144,7 +144,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbmysql/tests/test.prg",
@@ -155,7 +155,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbmysql/tmysql.prg",
@@ -166,7 +166,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "other",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbmysql/tsqlbrw.prg",
@@ -177,7 +177,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "other",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbodbc/browse.prg",
@@ -188,7 +188,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "message arguments comma",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbodbc/sql.ch",
@@ -196,7 +196,7 @@
       "sha256": "081206d3a9c2851f89e6df81e4e9e8f8c7bc0f8bf4127a8d6a5019c79e8ce3df",
       "first_fail": null,
       "class": "header - no direct compile",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbodbc/tests/odbc.prg",
@@ -207,7 +207,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbodbc/tests/odbccall.prg",
@@ -218,7 +218,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbodbc/tests/todbc.prg",
@@ -229,7 +229,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbodbc/todbc.prg",
@@ -240,12 +240,13 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "reduced VAR expression atom",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     }
   ],
   "notes": "22 files (4 dirs COMPLETE). Matrix uniform base==HEAD==LLVM, 0/18 compile. Classes: #require parked x12, reduced VAR atom (todbc:65, mysql tests), message-args comma (dbf2mysq:308). No compatibility claimed.",
   "evidence_level": "inventory+matrix (NOT manual line-by-line review)",
   "corrections": [
-    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed."
+    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed.",
+    "2026-11-01: 18 source rows read in full (2970 compressed lines + raw re-read of testmxml where compression dropped ~20 code lines with /* */ in strings; 4 rows are .hbp manifests, non-source). Marked REPORTED pending independent contrast per main 01:50 rule. Content: hbodbc TODBC class + tests (SQLAlloc/SQLFetchScroll, cached recordset), hbcairo tests (pdf/image surfaces, path iterators), hbmxml format helpers + tests (mxml SAX/index/custom handlers), hbmysql TMySQL classes (Row/Query/Table/Server, SWITCH ValType mappings, #if 0 blocks)."
   ]
 }
