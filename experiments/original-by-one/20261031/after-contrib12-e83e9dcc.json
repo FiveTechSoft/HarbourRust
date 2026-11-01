@@ -1,0 +1,118 @@
+{
+  "walk_date": "2026-11-01",
+  "batch": "contrib12 (hbsqlit3)",
+  "harbour_pin": "694428e1",
+  "compiler_pin": "92947baf",
+  "src_sha256": "2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f",
+  "branch_tip": "pending",
+  "files": [
+    {
+      "path": "contrib/hbsqlit3/errstr.prg",
+      "kind": "source",
+      "sha256": "a0949382c8823c0a40bac27b8a763b1a421fc7207f3ec7a8077b5032600b4a0e",
+      "first_fail_base_d999a46": "error: line 171: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "first_fail_head_92947baf": "error: line 171: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "identifier-led statement not in subset"
+    },
+    {
+      "path": "contrib/hbsqlit3/hdbc.prg",
+      "kind": "source",
+      "sha256": "5bd59db3c1e49514687b70054e6afe99fc5740f7ee7c3bdf1d8a76252b71930c",
+      "first_fail_base_d999a46": "error: line 59: reduced VAR expression atom outside bounded contract",
+      "first_fail_head_92947baf": "error: line 59: reduced VAR expression atom outside bounded contract",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "reduced VAR expression atom"
+    },
+    {
+      "path": "contrib/hbsqlit3/tests/authoriz.prg",
+      "kind": "source",
+      "sha256": "64320bdf8c4a31ebd21d174215f68b80639a412801d50872769e7ebbaae7b259",
+      "first_fail_base_d999a46": "error: line 73: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 73: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbsqlit3/tests/backup.prg",
+      "kind": "source",
+      "sha256": "d9b1e1267c5587ba9c61fdb4a7893965b934eeab6475c64a60ff77ac006d8a61",
+      "first_fail_base_d999a46": "error: line 61: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 61: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbsqlit3/tests/blob.prg",
+      "kind": "source",
+      "sha256": "6c2eb8788b26d6863e15fab1e049200cd455e760d667b72a9162d510b7a41d37",
+      "first_fail_base_d999a46": "error: line 47: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbsqlit3/tests/demo.prg",
+      "kind": "source",
+      "sha256": "058dedb25a388acbf5acb465e99030b74042ec13341696b7cd5b7d87bb3e1e0e",
+      "first_fail_base_d999a46": "error: line 47: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbsqlit3/tests/hdbc.prg",
+      "kind": "source",
+      "sha256": "5df6d0ec8d88efa027a649dce7a8ba98817fd6b5bbbb8a6f66977ff702b25cb7",
+      "first_fail_base_d999a46": "error: line 1: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 1: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbsqlit3/tests/hooks.prg",
+      "kind": "source",
+      "sha256": "856048172e329d70492197110247048e7b101f1e7f34d129a97524e84dfc7d41",
+      "first_fail_base_d999a46": "error: line 47: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbsqlit3/tests/metadata.prg",
+      "kind": "source",
+      "sha256": "c53da426cd35696aea5f3ecb5aba0e1b88eeaa52dcd4c0fcbc395843b4b169ee",
+      "first_fail_base_d999a46": "error: line 47: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbsqlit3/tests/pack.prg",
+      "kind": "source",
+      "sha256": "e84ee0c6c75580796843214b2f57e2983de07e4f279807c9889701e4e415b85e",
+      "first_fail_base_d999a46": "error: line 47: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 47: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbsqlit3/hbsqlit3.ch",
+      "kind": "header",
+      "sha256": "f19b52c070344f027cb9a5ab8fa8667d1e8839fda8f97cc358068542fd760672",
+      "first_fail": null,
+      "class": "header - no direct compile"
+    }
+  ],
+  "notes": "hbsqlit3 COMPLETE (11: 2 top .prg + 1 .ch + 8 tests). hbsqlit3.hbp rc0 pin 694428e1. Matrix uniform base==HEAD==LLVM; classes: #require parked (7), identifier-led statement (errstr 171), reduced VAR atom (hdbc 59). No compatibility claimed."
+}

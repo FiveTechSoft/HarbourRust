@@ -1,0 +1,98 @@
+{
+  "walk_date": "2026-11-01",
+  "batch": "contrib13 (hbssl)",
+  "harbour_pin": "694428e1",
+  "compiler_pin": "92947baf",
+  "src_sha256": "2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f",
+  "branch_tip": "pending",
+  "files": [
+    {
+      "path": "contrib/hbssl/ssl_hbcon.prg",
+      "kind": "source",
+      "sha256": "8452c70cb825e1824475619df8f83a95219c158e739f8af39319dd3dd8029412",
+      "first_fail_base_d999a46": "error: line 50: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "first_fail_head_92947baf": "error: line 50: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "identifier-led statement not in subset"
+    },
+    {
+      "path": "contrib/hbssl/tests/bio.prg",
+      "kind": "source",
+      "sha256": "3a0ab4ae6e9c9c636c9afa78566b8a0a92a1f10150c1f76ccd3cab49fe95f9d8",
+      "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbssl/tests/crypt.prg",
+      "kind": "source",
+      "sha256": "d6575ebbc70be2b46f88fad2ae16a3fdeb2dd5ed1feb33648a71b76be2ee79b5",
+      "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbssl/tests/digest.prg",
+      "kind": "source",
+      "sha256": "192253c997c0d363b967ed8802a521277016feed5cd5ecd43a347702effbf098",
+      "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbssl/tests/encode.prg",
+      "kind": "source",
+      "sha256": "f7cc36d2231ab79851e46eb04f9fe906174b435ac360003df7ad75dafe21d656",
+      "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbssl/tests/inetssl.prg",
+      "kind": "source",
+      "sha256": "180cf18d3d88eae0752cf00ab7be85cd0eec6872d53aab93ab3798cd62a7b61b",
+      "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbssl/tests/pem.prg",
+      "kind": "source",
+      "sha256": "abe6624c44118acabd908ea00d1244770c84ab953b9178caef70d10a7af87ebd",
+      "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbssl/tests/test.prg",
+      "kind": "source",
+      "sha256": "26cbe22a1d731e156bd7d462dbb9892040039c17d87159006b2eb6a9c4dabf71",
+      "first_fail_base_d999a46": "error: line 5: unknown directive #require in this PoC",
+      "first_fail_head_92947baf": "error: line 5: unknown directive #require in this PoC",
+      "llvm_identical_default": true,
+      "head_advances_vs_base": false,
+      "class": "#require directive parked"
+    },
+    {
+      "path": "contrib/hbssl/hbssl.ch",
+      "kind": "header",
+      "sha256": "403fcbac06e20f8c6d51364aeec9c9dcbbd60a48977c5488863c93941c45bff3",
+      "first_fail": null,
+      "class": "header - no direct compile"
+    }
+  ],
+  "notes": "hbssl COMPLETE (9: 1 top .prg + 1 .ch + 7 tests). hbssl.hbp rc10 missing OpenSSL dep (environment class, recorded). Matrix uniform; classes: #require parked (7), identifier-led (ssl_hbcon 50). No compatibility claimed."
+}
