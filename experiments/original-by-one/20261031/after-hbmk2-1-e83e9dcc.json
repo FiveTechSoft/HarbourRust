@@ -1,0 +1,54 @@
+{
+ "unit_note": "hbmk2.prg COMPLETE (1/1) - dedicated batch for the 17122-line self-hosting build tool. utils/ now 4/20 (hbi18n, plug_bis, plug_tpl, hbmk2.prg).",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "utils/hbmk2/hbmk2.prg",
+   "sha256": "ef6cff9cc15bd57a4c04c8ab3c1d424578226c00165ea57008375c52497d2746",
+   "review": "full source manually read 2026-11-01 (17122 lines / 14499 non-comment; 266 function/procedure definitions)",
+   "entrypoint": "__hbmk() via entry trampolines (hbmk2/hbrun/hbshell/hbscript aliases) - massive 2-pass option parser + toolchain driver",
+   "build_unit": "self-hosting: hbmk2 hbmk2.prg (also hbmk2.hbp)",
+   "profile": "B-utils",
+   "dependencies": "full RTL surface: hb_processRun, hb_regex*, __i18n_potArray*, hb_hrb*, hb_compileBuf/hb_compileFromBuf (GPL API), __dyns*, GT drivers (interactive shell), DYNAMIC win_reg*, Get()/ReadModal CUI, plugin API hbmk_*; 14499 non-comment lines covering option parsing, 17 platforms x 30+ compiler toolchain tables, .hbc/.hbp/.hbm processing, macro/filter engine, .po/.pot/.hbl i18n, rtlnk/Blinker script compat, VCS ID, implib generation, hbshell interactive REPL + plugins",
+   "boundary": "the Harbour build tool itself; largest single .prg in the tree; full-language stress case (macro eval, codeblocks, hashes, OO Get class, __cstream pragmas, #command metaprogramming)",
+   "reference_build_exit": 0,
+   "reference_build_note": "SELF-HOSTING build verbatim: 'hbmk2 -quiet hbmk2.prg' at pin 694428e1: 'Lines 18924, Functions/Procedures 248', C generation OK, link OK, binary 1076216 bytes",
+   "reference_run": "run './hbmk2 -help': rc19 (= _EXIT_HELP, documented help exit code), 678 lines deterministic console help text",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 52: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 52: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 52: #pragma `-w3` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 52: #pragma `-w3` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ]
+}
