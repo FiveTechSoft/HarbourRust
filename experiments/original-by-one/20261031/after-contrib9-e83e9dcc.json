@@ -1,0 +1,38 @@
+{
+  "walk_date": "2026-11-01",
+  "batch": "contrib9 (hbtest COMPLETE + make.hb)",
+  "harbour_pin": "694428e1",
+  "compiler_pin": "92947baf",
+  "src_sha256": "2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f",
+  "branch_tip": "f1745794",
+  "reference_build": {
+    "hbtest.hbp": "rc0 (pin 694428e1)"
+  },
+  "files": [
+    {
+      "path": "contrib/hbtest/core.prg",
+      "kind": "source",
+      "first_fail": "hbtest/core.prg:110: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "class": "identifier-led statement not in subset"
+    },
+    {
+      "path": "contrib/hbtest/tests/test.prg",
+      "kind": "test",
+      "first_fail": "hbtest/tests/test.prg:1: unknown directive #require in this PoC",
+      "class": "unknown directive #require (parked)"
+    },
+    {
+      "path": "contrib/make.hb",
+      "kind": "source",
+      "first_fail": "contrib/make.hb:1: unknown directive #!/usr/bin/env in this PoC",
+      "class": "shebang line parsed as directive"
+    },
+    {
+      "path": "contrib/hbtest/hbtest.ch",
+      "kind": "header",
+      "first_fail": null,
+      "class": "header - no direct compile"
+    }
+  ],
+  "notes": "Matrix uniform base(d999a46)==HEAD(92947baf)==LLVM for all 3 compilable. New classes: identifier-led statement not in subset (core.prg:110 - hbtest_Call macro-led call line); shebang-as-directive (make.hb:1). #require parked per contract. No compatibility claimed. Eligible pending after this batch: 213 (33 dirs)."
+}
