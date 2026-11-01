@@ -15,7 +15,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "identifier-led statement not in subset",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbssl/tests/bio.prg",
@@ -26,7 +26,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbssl/tests/crypt.prg",
@@ -37,7 +37,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbssl/tests/digest.prg",
@@ -48,7 +48,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbssl/tests/encode.prg",
@@ -59,7 +59,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbssl/tests/inetssl.prg",
@@ -70,7 +70,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbssl/tests/pem.prg",
@@ -81,7 +81,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbssl/tests/test.prg",
@@ -92,7 +92,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbssl/hbssl.ch",
@@ -100,12 +100,13 @@
       "sha256": "403fcbac06e20f8c6d51364aeec9c9dcbbd60a48977c5488863c93941c45bff3",
       "first_fail": null,
       "class": "header - no direct compile",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     }
   ],
   "notes": "hbssl COMPLETE (9: 1 top .prg + 1 .ch + 7 tests). hbssl.hbp rc10 missing OpenSSL dep (environment class, recorded). Matrix uniform; classes: #require parked (7), identifier-led (ssl_hbcon 50). No compatibility claimed.",
   "evidence_level": "inventory+matrix (NOT manual line-by-line review)",
   "corrections": [
-    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed."
+    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed.",
+    "2026-11-01: 8 source rows read in full (459 compressed lines; hbssl.hbp = build manifest, non-source). Marked REPORTED pending independent contrast per main 01:50 rule. Content: ssl_hbcon (hb_threadOnce init, connect helpers), tests bio/crypt/digest/encode/pem (EVP, PEM_READ_BIO, #pragma __cstream inline key), inetssl (threaded SSL echo server/client), test (inet+SSL fortify.net)."
   ]
 }
