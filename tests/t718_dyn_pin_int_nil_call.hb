@@ -1,9 +1,8 @@
-// posx 1 (63u): comparing a parameter against an integer pins it to an
-// integer (pinning evidence wins over any weak evidence); passing NIL
-// then hits the registered extraction failure at the call boundary
-// ("nil -> clean type error"). Harbour prints .F. for NIL = 5 instead
-// (hk271) - a registered failure-mode divergence of the pinning model,
-// not a silent miscompile.
+// pos (63u, updated by the args contract A1): an explicit NIL argument
+// is the same boundary event as an omitted one - nil_ev flips the
+// parameter to the tagged union, the compare routes through Dyn and
+// prints .F. for NIL = 5, EXACTLY Harbour's hk271 (oracle-verified on
+// the reference build; the old extraction-failure divergence is gone).
 procedure main()
    ? p( 5 )
    ? p( 4 )

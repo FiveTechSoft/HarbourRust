@@ -711,8 +711,8 @@ posx tests/t714_dyn_cond_string.hb 1 \nabcType error: condition is not a logical
 neg tests/t715_dyn_cond_str_elem_neg.hb a bare value is not a condition in this PoC
 pos tests/t716_while_dyn_cond.hb \n.F.\nafter\n.T.\nin\nafter
 posx tests/t717_while_dyn_int.hb 1 \n         0Type error: condition is not a logical\nCallstack:\n  at p (tests/t717_while_dyn_int.hb:9)\n  at main (tests/t717_while_dyn_int.hb:5)
-posx tests/t718_dyn_pin_int_nil_call.hb 1 \n.T.\n.F.Type error: NIL used as a number\nCallstack:\n  at main (tests/t718_dyn_pin_int_nil_call.hb:10)
-neg tests/t719_dyn_pin_str_nil_call_neg.hb must be a string, got a dynamic value
+pos tests/t718_dyn_pin_int_nil_call.hb \n.T.\n.F.\n.F.
+pos tests/t719_dyn_pin_str_nil_call_neg.hb \n.T.\n.F.
 pos tests/t720_qq_basic.hb abcd\nef        42\ngh
 pos tests/t721_qq_multiargs.hb a b          1          2\nc d
 pos tests/t722_qq_logical.hb .T..F.\nend
@@ -985,9 +985,9 @@ neg tests/t989_inline_if_numeric_nil_neg.hb branches must share a scalar type
 neg tests/t990_inline_if_condition_neg.hb condition must be logical
 neg tests/t991_inline_if_arity_neg.hb without `endif`
 pos tests/t993_inline_if_discard_balance.hb \n         0
-neg tests/t994_inline_if_missing_condition_neg.hb unexpected token Comma
+neg tests/t994_inline_if_missing_condition_neg.hb `iif` condition must be logical
 neg tests/t995_inline_if_extra_branch_neg.hb without `endif`
-neg tests/t996_regular_call_empty_arg_neg.hb unexpected token Comma
+neg tests/t996_regular_call_empty_arg_neg.hb `f` takes 1 argument(s), got 2
 pos tests/t997_original_recursiv.hb \nTesting recursive calls\n\n   3628800\n   3628800
 pos tests/t998_recursive_inline_mutual.hb \n   3628800     362880
 pos tests/t999_recursive_inline_float.hb \n         4.25
@@ -1522,3 +1522,8 @@ neg tests/t1532_afillarity_neg.hb `AFill` takes two to four arguments
 neg tests/t1533_afillfloat_neg.hb the Dyn float tag is still undecided
 pos tests/t1534_afill_cellrhs_pos.hb \na a a\nc c c\na b c\na z z z
 pos tests/t1535_afill_callrhs_pos.hb \nQQ QQ QQ
+pos tests/t1536_argomit_pos.hb \n|U|N|\n|N|U|\n|U|U|
+pos tests/t1537_arginline_pos.hb \n        34         22\n         6          3
+neg tests/t1538_argidxassign_neg.hb expected `,` or `)` in call arguments
+pos tests/t1539_argomit_bodyi64_pos.hb \n        -1\n         3\n         2\n        -1\n        -1\n        -1\n         2\n         3
+neg tests/t1540_argidxcompound_neg.hb unexpected token Eq in expression

@@ -1061,9 +1061,14 @@ impl P {
                     let mut args: Vec<Expr> = Vec::new();
                     if self.peek() != Some(&Tok::RParen) {
                         loop {
-                            if id == "iif" && !args.is_empty() && matches!(self.peek(), Some(Tok::Comma | Tok::RParen)) {
-                                // Only inline-IF branch arguments may be empty
-                                // here. Harbour Argument -> empty means NIL.
+                            if matches!(self.peek(), Some(Tok::Comma | Tok::RParen)) {
+                                // Harbour Argument -> empty means NIL, in
+                                // every position of every call (multiarg;
+                                // oracle p3 of the args proposal: F(,2),
+                                // F(1,) and F(,) all bind NIL). The checker
+                                // marks the slot nil_ev like a trailing
+                                // omission; the fixpoint forces the
+                                // parameter to the tagged union.
                                 args.push(Expr::Nil);
                             } else if self.peek() == Some(&Tok::At) {
                                 // `@x`: by-reference argument (hk216). One
@@ -1075,11 +1080,28 @@ impl P {
                                     Some(Tok::Ident(vn)) => args.push(Expr::ByRef(vn)),
                                     other => return Err(format!("line {}: `@` expects a variable name, got {:?}", self.n, other)),
                                 }
+                            } else if let Some(Tok::Ident(vn)) = self.peek() {
+                                if self.toks.get(self.pos + 1) == Some(&Tok::Assign) {
+                                    // Inline assignment as an argument
+                                    // (parexpr contract): the Expr::Set
+                                    // form only. An index target falls
+                                    // through to or_expr, which reports it
+                                    // there; the integer/logical and
+                                    // ro/byref/moved guards live in the
+                                    // checker's Expr::Set arm. The right
+                                    // side stops at the argument comma.
+                                    let vn = vn.clone();
+                                    self.pos += 2;
+                                    let rhs = self.assign_expr()?;
+                                    args.push(Expr::Set(vn, Box::new(rhs)));
+                                } else {
+                                    // Full expression level (63ze; oracle
+                                    // hk322): a comparison/logical is a
+                                    // first-class Bool VALUE (hk198), legal
+                                    // in argument position.
+                                    args.push(self.or_expr()?);
+                                }
                             } else {
-                                // Full expression level (63ze; oracle
-                                // hk322): a comparison/logical is a
-                                // first-class Bool VALUE (hk198), legal
-                                // in argument position.
                                 args.push(self.or_expr()?);
                             }
                             match self.bump() {
@@ -5101,6 +5123,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
             }
             for (i, a) in args.iter().enumerate() {
+                // An EXPLICIT NIL argument (an empty Argument in the
+                // source or a literal NIL) is the same boundary event as
+                // a trailing omission: the parameter must carry NIL, so
+                // the fixpoint forces it to the tagged union (Dyn).
+                if matches!(a, Expr::Nil) && i < sigs[si].nil_ev.len() {
+                    sigs[si].nil_ev[i] = true;
+                }
                 // Float-argument evidence for the NEXT inference round
                 // (63zd): recorded even against a placeholder parameter,
                 // ahead of every per-argument check below. Only F64 is
