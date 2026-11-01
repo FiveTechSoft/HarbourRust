@@ -9057,6 +9057,14 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 unreachable!("checked: hb_HValueAt takes a hash variable");
             }
             out.push_str("    test %rax, %rax\n    je 85f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 86f\n85:\n    call hbc_bound_error\n86:\n");
+            // Ownership (reviewer, 1Nov): the hit path dereferences the
+            // hash entry and returns a BORROWED view whose payload stays
+            // owned by the hash, but consumers treat a Call result as an
+            // owned temporary (switch frees it, Dyn stores move it, print
+            // consumes it). Clone a string payload at the producer
+            // boundary so the caller owns its copy; the bound-error path
+            // never reaches here.
+            cg_dyn_clone_if_str(out);
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hget") => {
             // hb_HGet(h, key [, default]): key first (borrowed), then
@@ -9092,6 +9100,14 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 unreachable!("checked: hb_HGet takes a hash variable");
             }
             out.push_str("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
+            // Ownership (reviewer, 1Nov): the hit path dereferences the
+            // hash entry and returns a BORROWED view whose payload stays
+            // owned by the hash, but consumers treat a Call result as an
+            // owned temporary (switch frees it, Dyn stores move it, print
+            // consumes it). Clone a string payload at the producer
+            // boundary so the caller owns its copy; the bound-error path
+            // never reaches here.
+            cg_dyn_clone_if_str(out);
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hgetdef") => {
             // hb_HGetDef(h, key [, default]): hbc_hget does the lookup
@@ -9135,7 +9151,22 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 unreachable!("checked: hb_HGetDef takes a hash variable");
             }
             let addend = if temp_key { 48 } else { 32 };
-            out.push_str(&format!("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 82f\n81:\n    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n82:\n    add ${}, %rsp\n", addend));
+            // Ownership (reviewer, 1Nov): the hit path returns a BORROWED
+            // view of the hash entry (the hash owns the payload); clone a
+            // string payload so the caller owns its copy. The miss path
+            // returns the saved default cells: a Var or hash-cell default
+            // is likewise a borrowed view of its owner's slot, cloned at
+            // the same boundary; an owned temporary default (a call
+            // result) already moves in as-is, and scalar defaults tag
+            // through unchanged.
+            out.push_str("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n");
+            cg_dyn_clone_if_str(out);
+            out.push_str("    jmp 82f\n81:\n    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n");
+            if args.len() == 3 && expr_ty(&args[2], env, sigs) == Ty::Dyn
+                && (matches!(&args[2], Expr::Var(_)) || expr_is_hash_cell(&args[2], env)) {
+                cg_dyn_clone_if_str(out);
+            }
+            out.push_str(&format!("82:\n    add ${}, %rsp\n", addend));
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hsetdef") => {
             // hb_HSetDef(h, key [, default]): key first (borrowed),
@@ -9180,6 +9211,12 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             } else {
                 unreachable!("checked: hb_HSetDef takes a hash variable");
             }
+            // Ownership (reviewer, 1Nov): hbc_hsetdef returns the entry's
+            // pair - a BORROWED view owned by the hash (present key, newly
+            // stored default, or the NIL cell). Clone a string payload so
+            // the caller owns its copy, the same producer boundary as
+            // hb_HGet / hb_HGetDef / hb_HValueAt.
+            cg_dyn_clone_if_str(out);
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hclone") => {
             // hb_HClone(h): the helper deep-copies every entry into a
@@ -10447,6 +10484,15 @@ fn cg_dyn_free_old(out: &mut String, off: usize) {
 
 // rax=tag, rdx=payload -> the pair with any string (tag 2 or 4) cloned
 // into a fresh owned tag-4 copy. Scalar tags pass through untouched.
+// Hash cell reads (h["k"]) are BORROWED views of the hash entry, exactly
+// like Var reads of a Dyn slot: the hash owns the payload. Sites that
+// treat a value as an owned temporary must clone these at the boundary
+// too (reviewer, 1Nov: h["k"] into an owned Dyn store freed hash-owned
+// payload).
+fn expr_is_hash_cell(e: &Expr, env: &[CgLocal]) -> bool {
+    matches!(e, Expr::Index(v, _) if env.iter().rev().any(|x| x.name == *v && x.ty == Ty::Hash))
+}
+
 fn cg_dyn_clone_if_str(out: &mut String) {
     out.push_str("    cmp $2, %rax\n    je 88f\n    cmp $4, %rax\n    jne 89f\n88:\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n89:\n");
 }
@@ -11479,7 +11525,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // pair: clone any string payload so the new
                                 // slot owns its own copy (the same boundary
                                 // rule as Dyn-to-Dyn assignment).
-                                if t == Ty::Dyn && matches!(e, Expr::Var(_)) {
+                                if t == Ty::Dyn && (matches!(e, Expr::Var(_)) || expr_is_hash_cell(e, env)) { // hash cell reads borrow the entry pair too (reviewer, 1Nov)
                                     cg_dyn_clone_if_str(out);
                                     // ains P2 stage 1: a tag-8 (array) copy
                                     // would alias the owner - clean error.
@@ -12278,7 +12324,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // no-op (a tag-8 payload would otherwise be
                                 // freed before the store).
                                 if let Expr::Var(src) = e { if src == id { continue; } }
-                                if matches!(e, Expr::Var(_)) {
+                                // A hash cell read (h["k"]) is borrowed the
+                                // same way - the hash owns the payload
+                                // (reviewer, 1Nov).
+                                if matches!(e, Expr::Var(_)) || expr_is_hash_cell(e, env) {
                                     cg_dyn_clone_if_str(out);
                                     // ains P2 stage 1: copying a Dyn var
                                     // holding an ARRAY (tag 8) would alias
