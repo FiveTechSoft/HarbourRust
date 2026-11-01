@@ -34,7 +34,8 @@
       "path": "contrib/hbtest/hbtest.ch",
       "kind": "header",
       "first_fail": null,
-      "class": "header - no direct compile"
+      "class": "header - no direct compile",
+      "sha256": "1c71f09506c1bf0a10e9d51bd9888bb1e401a6fc5633691422373afb78bf75e0"
     }
   ],
   "notes": "Matrix uniform base(d999a46)==HEAD(92947baf)==LLVM for all 3 compilable. New classes: identifier-led statement not in subset (core.prg:110 - hbtest_Call macro-led call line); shebang-as-directive (make.hb:1). #require parked per contract. No compatibility claimed. Eligible pending after this batch: 213 (33 dirs).",

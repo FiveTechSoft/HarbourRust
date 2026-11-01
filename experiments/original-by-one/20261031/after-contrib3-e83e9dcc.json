@@ -99,7 +99,7 @@
     },
     {
       "file": "contrib/hbformat/utils/hbformat.prg",
-      "sha256": "386f57042c2218f4f7520e642c49e48b445740be16ca69375a6393fb22b9e847eac6f663b92f25f0",
+      "sha256": "386f57042c2218f4f6c3a6b6b8c03269a3ca1585f3584b7bfb3dd0a3b04a0de9",
       "review": "full source manually read 2026-11-01 (100 non-comment lines)",
       "entrypoint": "PROCEDURE Main( ... ): hbformat CLI (options/@config/file masks, DirEval recursion)",
       "build_unit": "hbformat.prg + libhbformat.a",
@@ -146,7 +146,7 @@
     },
     {
       "file": "contrib/hbfoxpro/dll.prg",
-      "sha256": "ae14d3b9a29db07d68ac95c99a5b180d11b6d0ce0894c91e75bfeff41b6f0ceeb1",
+      "sha256": "ae8d182b6ab8bc69335c01feb57dbf6a37028c2e52e978695e8572a52178e4fd",
       "review": "full source manually read 2026-11-01 (67 non-comment lines)",
       "entrypoint": "FUNCTION fox___DynCall( cCommand, ... ): FoxPro DECLARE parser -> hb_DynCall",
       "build_unit": "hbfoxpro.hbp",
