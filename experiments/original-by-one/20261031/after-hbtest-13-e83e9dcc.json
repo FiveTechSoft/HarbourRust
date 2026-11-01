@@ -1,0 +1,618 @@
+{
+ "unit_note": "hbtest COMPLETE (13/13 .prg = 8468 non-comment lines + rt_main.ch/rt_vars.ch/rt_init.ch + rt_miscc.c). utils/ now 5/20 (hbi18n, plug_bis, plug_tpl, hbmk2.prg, hbtest). Single common blocker class: #pragma linenumber=on at rt_main.ch:62 (shared include), identical first diagnostic on all 13 files; deeper per-file diagnostics not reachable without linenumber pragma support. BASELINE d999a46 vs HEAD message-class delta identical to hbmk2 batch (base: 'unknown directive #pragma in this PoC'; head: names -es<N> subset). Reference suite run green: 4862/4862 passed.",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "utils/hbtest/hbtest.prg",
+   "sha256": "96824f4ad36f83a515e03ef530ef7e4335ea55bf9f29aa7574168dfbba037c59",
+   "review": "full source manually read 2026-11-01 (531 non-comment lines)",
+   "entrypoint": "driver",
+   "build_unit": "hbtest.hbp (-q0 -w3 -es2 -kmo): hbtest.prg + rt_array/date/file/hvm/hvma/math/misc/mt/str/stra/trans/class.prg + rt_miscc.c",
+   "profile": "B-utils",
+   "dependencies": "driver: TEST_BEGIN/TEST_CALL/TEST_END harness, XToStr* serializers, creates _hbtmp_.dbf workarea; Main calls Main_HVM/HVMA/MATH/DATE/STR/STRA/TRANS/Comp_Str/Exact_Str/New_STRINGS/Long_STRINGS/ARRAY/FILE/MISC/OPOVERL/CLASS/MT/LAST",
+   "boundary": "official Harbour regression suite module; shared includes rt_main.ch/rt_vars.ch/rt_init.ch (HBTEST/HBTEST2 #command macros)",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 -quiet hbtest.hbp at pin 694428e1: rc0, binary hbtest_ref 447864 bytes",
+   "reference_run": "run './hbtest_ref' in /tmp scratch: rc0, 'Test calls passed: 4862 ( 100.00 % )', 0 failed, deterministic console report",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 8277bdc2, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "utils/hbtest/rt_array.prg",
+   "sha256": "ed98d2e09439bfd37dd8d5d7f9ce169ee253b5fe6dfa8408a9c7a8e874c6bcf2",
+   "review": "full source manually read 2026-11-01 (405 non-comment lines)",
+   "entrypoint": "ACopy/AClone/AEval/AScan/ASort/AFill/ADel/AIns/ATail/ASize/Array boundary tables",
+   "build_unit": "hbtest.hbp (-q0 -w3 -es2 -kmo): hbtest.prg + rt_array/date/file/hvm/hvma/math/misc/mt/str/stra/trans/class.prg + rt_miscc.c",
+   "profile": "B-utils",
+   "dependencies": "ACopy/AClone/AEval/AScan/ASort/AFill/ADel/AIns/ATail/ASize/Array boundary tables",
+   "boundary": "official Harbour regression suite module; shared includes rt_main.ch/rt_vars.ch/rt_init.ch (HBTEST/HBTEST2 #command macros)",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 -quiet hbtest.hbp at pin 694428e1: rc0, binary hbtest_ref 447864 bytes",
+   "reference_run": "run './hbtest_ref' in /tmp scratch: rc0, 'Test calls passed: 4862 ( 100.00 % )', 0 failed, deterministic console report",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 8277bdc2, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "utils/hbtest/rt_class.prg",
+   "sha256": "18ab75f8e0619305b847cf68d75a0b4dee7b136eb4e9ae6936733f94d7a6601e",
+   "review": "full source manually read 2026-11-01 (1264 non-comment lines)",
+   "entrypoint": "hbclass.ch OO",
+   "build_unit": "hbtest.hbp (-q0 -w3 -es2 -kmo): hbtest.prg + rt_array/date/file/hvm/hvma/math/misc/mt/str/stra/trans/class.prg + rt_miscc.c",
+   "profile": "B-utils",
+   "dependencies": "hbclass.ch OO: DTORCLASS destructors + GC cross-references (hb_gcAll), IVARS/CVARS/SVARS multi-inheritance instance/class/shared var casting, __cls_CntClsData/__cls_CntShrData, super casting, NVCLASS hidden/protected dispatch",
+   "boundary": "official Harbour regression suite module; shared includes rt_main.ch/rt_vars.ch/rt_init.ch (HBTEST/HBTEST2 #command macros)",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 -quiet hbtest.hbp at pin 694428e1: rc0, binary hbtest_ref 447864 bytes",
+   "reference_run": "run './hbtest_ref' in /tmp scratch: rc0, 'Test calls passed: 4862 ( 100.00 % )', 0 failed, deterministic console report",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 8277bdc2, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "utils/hbtest/rt_date.prg",
+   "sha256": "9ab9b8942c19961f4f41ebe70d7ad511988ec7bb76ce3604cec851c13b9c8798",
+   "review": "full source manually read 2026-11-01 (122 non-comment lines)",
+   "entrypoint": "Year/Month/Day/DoW/CMonth/CDoW/DToC/CToD/DToS tables",
+   "build_unit": "hbtest.hbp (-q0 -w3 -es2 -kmo): hbtest.prg + rt_array/date/file/hvm/hvma/math/misc/mt/str/stra/trans/class.prg + rt_miscc.c",
+   "profile": "B-utils",
+   "dependencies": "Year/Month/Day/DoW/CMonth/CDoW/DToC/CToD/DToS tables",
+   "boundary": "official Harbour regression suite module; shared includes rt_main.ch/rt_vars.ch/rt_init.ch (HBTEST/HBTEST2 #command macros)",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 -quiet hbtest.hbp at pin 694428e1: rc0, binary hbtest_ref 447864 bytes",
+   "reference_run": "run './hbtest_ref' in /tmp scratch: rc0, 'Test calls passed: 4862 ( 100.00 % )', 0 failed, deterministic console report",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 8277bdc2, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "utils/hbtest/rt_file.prg",
+   "sha256": "c750e5f8581a082154ac8a5ec0a5ccf33dde19039d9d99e196642dfa68cf2852",
+   "review": "full source manually read 2026-11-01 (153 non-comment lines)",
+   "entrypoint": "low-level F* fileio sequence (order-relevant)",
+   "build_unit": "hbtest.hbp (-q0 -w3 -es2 -kmo): hbtest.prg + rt_array/date/file/hvm/hvma/math/misc/mt/str/stra/trans/class.prg + rt_miscc.c",
+   "profile": "B-utils",
+   "dependencies": "low-level F* fileio sequence (order-relevant)",
+   "boundary": "official Harbour regression suite module; shared includes rt_main.ch/rt_vars.ch/rt_init.ch (HBTEST/HBTEST2 #command macros)",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 -quiet hbtest.hbp at pin 694428e1: rc0, binary hbtest_ref 447864 bytes",
+   "reference_run": "run './hbtest_ref' in /tmp scratch: rc0, 'Test calls passed: 4862 ( 100.00 % )', 0 failed, deterministic console report",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 8277bdc2, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "utils/hbtest/rt_hvm.prg",
+   "sha256": "d1e3acdd5dcb96b4f35934d1eeccfc881dffaff1650b4212dd247a17d0c72985",
+   "review": "full source manually read 2026-11-01 (507 non-comment lines)",
+   "entrypoint": "ValType/Type/",
+   "build_unit": "hbtest.hbp (-q0 -w3 -es2 -kmo): hbtest.prg + rt_array/date/file/hvm/hvma/math/misc/mt/str/stra/trans/class.prg + rt_miscc.c",
+   "profile": "B-utils",
+   "dependencies": "ValType/Type/:className/:classH + full comparison-operator matrices",
+   "boundary": "official Harbour regression suite module; shared includes rt_main.ch/rt_vars.ch/rt_init.ch (HBTEST/HBTEST2 #command macros)",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 -quiet hbtest.hbp at pin 694428e1: rc0, binary hbtest_ref 447864 bytes",
+   "reference_run": "run './hbtest_ref' in /tmp scratch: rc0, 'Test calls passed: 4862 ( 100.00 % )', 0 failed, deterministic console report",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 8277bdc2, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "utils/hbtest/rt_hvma.prg",
+   "sha256": "142f321f06053507737f78723dd71a615a5a54cdea3c19147106438ec4e64237",
+   "review": "full source manually read 2026-11-01 (535 non-comment lines)",
+   "entrypoint": "arithmetic/concat/Str width tables + RTSTR big-number width table",
+   "build_unit": "hbtest.hbp (-q0 -w3 -es2 -kmo): hbtest.prg + rt_array/date/file/hvm/hvma/math/misc/mt/str/stra/trans/class.prg + rt_miscc.c",
+   "profile": "B-utils",
+   "dependencies": "arithmetic/concat/Str width tables + RTSTR big-number width table",
+   "boundary": "official Harbour regression suite module; shared includes rt_main.ch/rt_vars.ch/rt_init.ch (HBTEST/HBTEST2 #command macros)",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 -quiet hbtest.hbp at pin 694428e1: rc0, binary hbtest_ref 447864 bytes",
+   "reference_run": "run './hbtest_ref' in /tmp scratch: rc0, 'Test calls passed: 4862 ( 100.00 % )', 0 failed, deterministic console report",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 8277bdc2, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "utils/hbtest/rt_math.prg",
+   "sha256": "84fa0881e6a0254c3058f83c004f1cffdd78f4310df9c55c455a5a736af11b97",
+   "review": "full source manually read 2026-11-01 (572 non-comment lines)",
+   "entrypoint": "Log/Sqrt/Abs/Exp/Round/Int/Min/Max/Mod + ++/--/op-assign incl. macro &s member forms",
+   "build_unit": "hbtest.hbp (-q0 -w3 -es2 -kmo): hbtest.prg + rt_array/date/file/hvm/hvma/math/misc/mt/str/stra/trans/class.prg + rt_miscc.c",
+   "profile": "B-utils",
+   "dependencies": "Log/Sqrt/Abs/Exp/Round/Int/Min/Max/Mod + ++/--/op-assign incl. macro &s member forms",
+   "boundary": "official Harbour regression suite module; shared includes rt_main.ch/rt_vars.ch/rt_init.ch (HBTEST/HBTEST2 #command macros)",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 -quiet hbtest.hbp at pin 694428e1: rc0, binary hbtest_ref 447864 bytes",
+   "reference_run": "run './hbtest_ref' in /tmp scratch: rc0, 'Test calls passed: 4862 ( 100.00 % )', 0 failed, deterministic console report",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 8277bdc2, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "utils/hbtest/rt_misc.prg",
+   "sha256": "372adb16a583333c38b556c112f3a571935bc036b1497d97b5b7167fde07aab4",
+   "review": "full source manually read 2026-11-01 (1058 non-comment lines)",
+   "entrypoint": "Set/SetColor tables, Samples (AMPM/Days/ElapTime/Secs/TString/SoundEx), NationMsg/IsAffirm/IsNegative, FOR/NEXT stepping (TFORNEXT*), Eval/",
+   "build_unit": "hbtest.hbp (-q0 -w3 -es2 -kmo): hbtest.prg + rt_array/date/file/hvm/hvma/math/misc/mt/str/stra/trans/class.prg + rt_miscc.c",
+   "profile": "B-utils",
+   "dependencies": "Set/SetColor tables, Samples (AMPM/Days/ElapTime/Secs/TString/SoundEx), NationMsg/IsAffirm/IsNegative, FOR/NEXT stepping (TFORNEXT*), Eval/:Eval, Bin2*/I2Bin/L2Bin, __CopyFile, HardCR/MemoTran/MemoWrit/Read, hb_FNameSplit/Merge, MLCToPos, HB_TString operator-overload class",
+   "boundary": "official Harbour regression suite module; shared includes rt_main.ch/rt_vars.ch/rt_init.ch (HBTEST/HBTEST2 #command macros)",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 -quiet hbtest.hbp at pin 694428e1: rc0, binary hbtest_ref 447864 bytes",
+   "reference_run": "run './hbtest_ref' in /tmp scratch: rc0, 'Test calls passed: 4862 ( 100.00 % )', 0 failed, deterministic console report",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 8277bdc2, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "utils/hbtest/rt_mt.prg",
+   "sha256": "2ae7b1046723406b9a8c6aefa048eeb55ea75f8e5ec0ec469c6d540a042d75f2",
+   "review": "full source manually read 2026-11-01 (62 non-comment lines)",
+   "entrypoint": "hb_mutex*/hb_thread* job-queue test (Harbour MT builds only)",
+   "build_unit": "hbtest.hbp (-q0 -w3 -es2 -kmo): hbtest.prg + rt_array/date/file/hvm/hvma/math/misc/mt/str/stra/trans/class.prg + rt_miscc.c",
+   "profile": "B-utils",
+   "dependencies": "hb_mutex*/hb_thread* job-queue test (Harbour MT builds only)",
+   "boundary": "official Harbour regression suite module; shared includes rt_main.ch/rt_vars.ch/rt_init.ch (HBTEST/HBTEST2 #command macros)",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 -quiet hbtest.hbp at pin 694428e1: rc0, binary hbtest_ref 447864 bytes",
+   "reference_run": "run './hbtest_ref' in /tmp scratch: rc0, 'Test calls passed: 4862 ( 100.00 % )', 0 failed, deterministic console report",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 8277bdc2, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "utils/hbtest/rt_str.prg",
+   "sha256": "492ee59c9eed15b6333557ff7a3583a749bfad09916310394d702628131fa410",
+   "review": "full source manually read 2026-11-01 (701 non-comment lines)",
+   "entrypoint": "Val/Chr/Asc/IsDigit/IsAlpha/IsUpper/IsLower/AllTrim/Trim/RTrim/LTrim/StrTran/Upper/Lower/At/RAt/Replicate/Space/SubStr/Left/Right/Pad/PadR/PadL/PadC/Stuff tables; #pragma -kh+/- Clipper-compat toggles",
+   "build_unit": "hbtest.hbp (-q0 -w3 -es2 -kmo): hbtest.prg + rt_array/date/file/hvm/hvma/math/misc/mt/str/stra/trans/class.prg + rt_miscc.c",
+   "profile": "B-utils",
+   "dependencies": "Val/Chr/Asc/IsDigit/IsAlpha/IsUpper/IsLower/AllTrim/Trim/RTrim/LTrim/StrTran/Upper/Lower/At/RAt/Replicate/Space/SubStr/Left/Right/Pad/PadR/PadL/PadC/Stuff tables; #pragma -kh+/- Clipper-compat toggles",
+   "boundary": "official Harbour regression suite module; shared includes rt_main.ch/rt_vars.ch/rt_init.ch (HBTEST/HBTEST2 #command macros)",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 -quiet hbtest.hbp at pin 694428e1: rc0, binary hbtest_ref 447864 bytes",
+   "reference_run": "run './hbtest_ref' in /tmp scratch: rc0, 'Test calls passed: 4862 ( 100.00 % )', 0 failed, deterministic console report",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 8277bdc2, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "utils/hbtest/rt_stra.prg",
+   "sha256": "a9dc63ae0913a17252d7031ef22930e5def1e6abb2ecab9baa43e3b108dbe259",
+   "review": "full source manually read 2026-11-01 (462 non-comment lines)",
+   "entrypoint": "Str/StrZero width+decimals tables incl. TEST_DBFAvail() workarea fields, Comp_Str/Exact_Str comparison matrices (SET EXACT), hb_ValToStr/hb_StrShrink, Long_STRINGS 64KB-1MB strings",
+   "build_unit": "hbtest.hbp (-q0 -w3 -es2 -kmo): hbtest.prg + rt_array/date/file/hvm/hvma/math/misc/mt/str/stra/trans/class.prg + rt_miscc.c",
+   "profile": "B-utils",
+   "dependencies": "Str/StrZero width+decimals tables incl. TEST_DBFAvail() workarea fields, Comp_Str/Exact_Str comparison matrices (SET EXACT), hb_ValToStr/hb_StrShrink, Long_STRINGS 64KB-1MB strings",
+   "boundary": "official Harbour regression suite module; shared includes rt_main.ch/rt_vars.ch/rt_init.ch (HBTEST/HBTEST2 #command macros)",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 -quiet hbtest.hbp at pin 694428e1: rc0, binary hbtest_ref 447864 bytes",
+   "reference_run": "run './hbtest_ref' in /tmp scratch: rc0, 'Test calls passed: 4862 ( 100.00 % )', 0 failed, deterministic console report",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 8277bdc2, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "utils/hbtest/rt_trans.prg",
+   "sha256": "fc4a40ce6199bff9e476fe71481975192bc70066ce95a6d6fca598829f1389cd",
+   "review": "full source manually read 2026-11-01 (677 non-comment lines)",
+   "entrypoint": "Transform() PICTURE matrices",
+   "build_unit": "hbtest.hbp (-q0 -w3 -es2 -kmo): hbtest.prg + rt_array/date/file/hvm/hvma/math/misc/mt/str/stra/trans/class.prg + rt_miscc.c",
+   "profile": "B-utils",
+   "dependencies": "Transform() PICTURE matrices: @R @! @Z @B @D @E @C @X @( @) @L @0 @S @F @T, date/numeric/logical pictures, SET CENTURY/DATEFORMAT/FIXED/DECIMALS interplay",
+   "boundary": "official Harbour regression suite module; shared includes rt_main.ch/rt_vars.ch/rt_init.ch (HBTEST/HBTEST2 #command macros)",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 -quiet hbtest.hbp at pin 694428e1: rc0, binary hbtest_ref 447864 bytes",
+   "reference_run": "run './hbtest_ref' in /tmp scratch: rc0, 'Test calls passed: 4862 ( 100.00 % )', 0 failed, deterministic console report",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: unknown directive #pragma in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 8277bdc2, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 62: #pragma `linenumber=on` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ]
+}
