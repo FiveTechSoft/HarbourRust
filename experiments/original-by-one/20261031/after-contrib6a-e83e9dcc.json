@@ -1,0 +1,2827 @@
+{
+ "unit_note": "contrib batch 6 sub-batch 6a: hbnf logic/dates/math/string 60 .prg of 99 top-level (hbnf dir NOT complete: 39 top-level + 2 .ch + 59 tests pending in 6b/6c). C-contrib cumulative 185/695 files. Reference build pin 694428e1 (rc clean, no pipes): hbnf.hbp rc0 (libhbnf.a, all 99 .prg of the unit). Tests not-run here (6c). HR matrix 60 x base/head x default/llvm: FIRST batch with systematic base/HEAD divergence (21 files): HEAD pin c212a9a6 fails LATER than baseline d999a46 on more advanced constructs (e.g. aavg base 'missing )' line 30 vs head 'unknown function __defaultnil' line 25; acctweek base 'expected name[idx] := expr' line 46 vs head 'unknown function date' line 31; netpv base 'statement not in subset' vs head 'unexpected token Eq in expression'; linked base 'missing )' vs head 'expected , or } in the codeblock body got Some(EqEq)' line 57; workdays base 'missing )' vs head 'unknown function dow' line 37). Baseline column labeled BASELINE, never current state. New class this batch: '`/=` is not in this increment: Harbour division yields decimals (oracle hk246) and the float/decimal design is parked (hk226-hk233)' (d2e:50, sqzn:37); 'unknown function hb_ntos/int/val/date/dow/hb_isstring/hb_isnumeric/hb_islogical/seconds/__defaultnil' (builtin coverage class, dominates); 'expected local name [:= expr]' (4); 'no main function' (2 STATIC-only files); 'missing )' (3 baseline-only). LLVM column identical to default for all 60. No compatibility claimed.",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "contrib/hbnf/aading.prg",
+   "sha256": "4d012df62f430df5afe505d0bfe2c12eaf7268707cc56bd95fd35962f314c099",
+   "review": "full source manually read 2026-11-01 (31 non-comment lines)",
+   "entrypoint": "ft_AAddition (sum of matching trimmed/case-insensitive elements)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "AClone/AScan codeblocks",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: expected `,` or `}` in the codeblock body, got Some(EqEq)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: expected `,` or `}` in the codeblock body, got Some(EqEq)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: expected `,` or `}` in the codeblock body, got Some(EqEq)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: expected `,` or `}` in the codeblock body, got Some(EqEq)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/aavg.prg",
+   "sha256": "7ce40344539b1e1f0e9b9b6455744e8b69dbe3b7bc5cb528d4261d2077c28ac8",
+   "review": "full source manually read 2026-11-01 (17 non-comment lines)",
+   "entrypoint": "ft_AAvg (array average)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "ft_ASum",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 30: missing )",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 30: missing )",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 25: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 25: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/acctadj.prg",
+   "sha256": "78c0c5f6e628010b9d5b11c17e8190d21841ee8cd258eee9fcb25c0667e2fccf",
+   "review": "full source manually read 2026-11-01 (17 non-comment lines)",
+   "entrypoint": "ft_AcctAdj (adjust to acct week boundary)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "ft_DayToBoW",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 33: unknown function `hb_isdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 33: unknown function `hb_isdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 33: unknown function `hb_isdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 33: unknown function `hb_isdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/acctmnth.prg",
+   "sha256": "d411a03f6b92b233f880aacf53a4b33b87ad6a4a996a0a717f1f89a2c0aee13a",
+   "review": "full source manually read 2026-11-01 (47 non-comment lines)",
+   "entrypoint": "ft_AcctMonth (accounting month period)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "ft_Month/ft_AcctAdj/ft_MAdd",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 29: unknown function `hb_isnumeric` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 29: unknown function `hb_isnumeric` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: unknown function `date` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: unknown function `date` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/acctqtr.prg",
+   "sha256": "aeccda1a7b3cbbb15439f6aa4a534da3d8b4399746aef025a56af2966a2c2c3c",
+   "review": "full source manually read 2026-11-01 (47 non-comment lines)",
+   "entrypoint": "ft_AcctQtr (accounting quarter)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "ft_Qtr/ft_AcctAdj",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 29: unknown function `hb_isnumeric` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 29: unknown function `hb_isnumeric` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: unknown function `date` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: unknown function `date` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/acctweek.prg",
+   "sha256": "83a4b5c27b42bad3dd248f28381ba264f53f651c7e7444fe6bab58a8d7d532c3",
+   "review": "full source manually read 2026-11-01 (22 non-comment lines)",
+   "entrypoint": "ft_AcctWeek (accounting week)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "ft_AcctYear/ft_DayToBoW",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 46: expected `name[idx] := expr`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 46: expected `name[idx] := expr`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: unknown function `date` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: unknown function `date` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/acctyear.prg",
+   "sha256": "f4decd99ace32b7c54fe6ebde38c2ded259f8f9d634f147c10010dad4ba9ccb4",
+   "review": "full source manually read 2026-11-01 (23 non-comment lines)",
+   "entrypoint": "ft_AcctYear (accounting year)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "ft_Year/ft_AcctAdj/ft_MAdd",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 29: unknown function `hb_isdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 29: unknown function `hb_isdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 29: unknown function `hb_isdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 29: unknown function `hb_isdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/amedian.prg",
+   "sha256": "0163b5f723b87a9f4069ec1e8cb58c6dc759a44e3ff2be9882e63917c6c2368e",
+   "review": "full source manually read 2026-11-01 (19 non-comment lines)",
+   "entrypoint": "ft_AMedian (median via ACopy/ASort)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "arrays",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: missing )",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: missing )",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/anomatch.prg",
+   "sha256": "c2bb585df74a9f31a94b9bee5b92d9483bf2c30d0a2620cc284cab52883710c7",
+   "review": "full source manually read 2026-11-01 (13 non-comment lines)",
+   "entrypoint": "ft_ANoMatches (count non-matches via AEval)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "codeblocks",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: missing )",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: missing )",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/any2any.prg",
+   "sha256": "a777a613ef66b26f3a7d8d6408273cdd8c04c3dd434940eee2d0de5abc9568d4",
+   "review": "full source manually read 2026-11-01 (69 non-comment lines)",
+   "entrypoint": "ft_XToY (any type to any type via CASE_AT macros)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "type conversion",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 32: trailing tokens after expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 32: trailing tokens after expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 32: trailing tokens after expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 32: trailing tokens after expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/asum.prg",
+   "sha256": "10705c921d3ca4567733dda9ba267cc33cb5a7aa1a5cea31ca368618b2c46722",
+   "review": "full source manually read 2026-11-01 (17 non-comment lines)",
+   "entrypoint": "ft_ASum (sum numbers, Len of strings)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "AEval",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: missing )",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: missing )",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 34: unexpected token Eq in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 34: unexpected token Eq in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/at2.prg",
+   "sha256": "1788fc09990bfc9b4950546095e794ab98e1af80f01ad22da0387ae2cc80e67a",
+   "review": "full source manually read 2026-11-01 (37 non-comment lines)",
+   "entrypoint": "ft_At2 (nth occurrence At/RAt)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "strings",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 32: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 32: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 32: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 32: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/bitclr.prg",
+   "sha256": "651ea9b6a4fb4f2a7343b1be3e85b656dbff8ee19061109081ba654169b18a3b",
+   "review": "full source manually read 2026-11-01 (6 non-comment lines)",
+   "entrypoint": "ft_BitClr",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_bitReset",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/bitset.prg",
+   "sha256": "4bbd8769081f4b6f96f24dda33b5188fb679910dcf5263e834d1bdb582b10917",
+   "review": "full source manually read 2026-11-01 (6 non-comment lines)",
+   "entrypoint": "ft_BitSet",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_bitSet",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/byt2bit.prg",
+   "sha256": "aead4ab67ecfdbfdaf56d9f3c41e616ae1417918f26c43cc4a0b28a47b074913",
+   "review": "full source manually read 2026-11-01 (12 non-comment lines)",
+   "entrypoint": "ft_Byt2Bit (byte to binary string)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_bitTest",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/byt2hex.prg",
+   "sha256": "271482a8cce9e6c6f7bb71e4418691df970b7941d8a55fd14403359e7b3e6fe4",
+   "review": "full source manually read 2026-11-01 (6 non-comment lines)",
+   "entrypoint": "ft_Byt2Hex",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_StrToHex",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/byteand.prg",
+   "sha256": "6130392daf528f094aed6b8b0ed45da0903dc2c242828c4aced74a20857dbec7",
+   "review": "full source manually read 2026-11-01 (6 non-comment lines)",
+   "entrypoint": "ft_ByteAnd",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_bitAnd",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/byteneg.prg",
+   "sha256": "a4eac7b0e72f52aa1f265ebb57b4f06fe12d3a35b2a5b3d9a3216d76aad8a0b0",
+   "review": "full source manually read 2026-11-01 (6 non-comment lines)",
+   "entrypoint": "ft_ByteNeg",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "byte math",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/bytenot.prg",
+   "sha256": "f89c10bbcd304337b189fd83affe47e6cc3e75f0de2d1e94142139f5d5fc1158",
+   "review": "full source manually read 2026-11-01 (6 non-comment lines)",
+   "entrypoint": "ft_ByteNot",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_bitNot",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 25: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 25: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 25: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 25: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/bytexor.prg",
+   "sha256": "ec2a9b69a5c8de95b223901399124b05b4365529572f70b06b88b0c6d9f6f7e1",
+   "review": "full source manually read 2026-11-01 (6 non-comment lines)",
+   "entrypoint": "ft_ByteXor",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_bitXor",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/d2e.prg",
+   "sha256": "092f540b27310e5a51006b23dd4520fcaad6d3e17f3ca34b362dc5d77ccb841f",
+   "review": "full source manually read 2026-11-01 (19 non-comment lines)",
+   "entrypoint": "ft_D2E (decimal to exponential)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "Log/Str",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 37: `/=` is not in this increment: Harbour division yields decimals (oracle hk246: n /= 2 prints 24.00) and the float/decimal design is parked (hk226-hk233)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 37: `/=` is not in this increment: Harbour division yields decimals (oracle hk246: n /= 2 prints 24.00) and the float/decimal design is parked (hk226-hk233)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 37: `/=` is not in this increment: Harbour division yields decimals (oracle hk246: n /= 2 prints 24.00) and the float/decimal design is parked (hk226-hk233)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 37: `/=` is not in this increment: Harbour division yields decimals (oracle hk246: n /= 2 prints 24.00) and the float/decimal design is parked (hk226-hk233)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/datecnfg.prg",
+   "sha256": "22a7010a7098ca9db1d14c2a29362849834f6e061ab784a95b75eedab0151353",
+   "review": "full source manually read 2026-11-01 (18 non-comment lines)",
+   "entrypoint": "ft_DateCnfg (fiscal year config, THREAD STATIC)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_SToD/hb_DToC",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/dayofyr.prg",
+   "sha256": "65fd1c39a8fe0d8aa438ab22f7cd2100e0f842303dc398261b3eea2040d06357",
+   "review": "full source manually read 2026-11-01 (27 non-comment lines)",
+   "entrypoint": "ft_DayOfYr (day of year, acct aware)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "ft_AcctYear/ft_Year",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 52: expected `name[idx] := expr`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 52: expected `name[idx] := expr`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: unknown function `date` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: unknown function `date` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/daytobow.prg",
+   "sha256": "975de74fcbe99a33c91e0a4e6c9f2833913d52d4cc900fd3eabc38f06a4abddf",
+   "review": "full source manually read 2026-11-01 (6 non-comment lines)",
+   "entrypoint": "ft_DayToBoW (days since week start)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "ft_DateCnfg/DoW",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 29: trailing tokens after expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 29: trailing tokens after expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 29: trailing tokens after expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 29: trailing tokens after expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/dectobin.prg",
+   "sha256": "c977d6038cfa03951aa5a1725aea0419a7969cf593926b76f55af2cb560640eb",
+   "review": "full source manually read 2026-11-01 (13 non-comment lines)",
+   "entrypoint": "ft_Dec2Bin (byte to 8-char binary)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "strings",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no main function",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no main function",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no main function",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no main function",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/e2d.prg",
+   "sha256": "abd37b5be0b4e743cd3bec33f69e9d01bab460d4a1829b2de874ea11651da5aa",
+   "review": "full source manually read 2026-11-01 (8 non-comment lines)",
+   "entrypoint": "ft_E2D (exponential to decimal)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "Val",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `val` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `val` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `val` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `val` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/easter.prg",
+   "sha256": "38c1996dac223d5da31ac6322310e93325800e81cf489a06c164f0088687e246",
+   "review": "full source manually read 2026-11-01 (41 non-comment lines)",
+   "entrypoint": "ft_Easter (Easter date algorithm)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_SToD",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 28: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 28: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 28: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 28: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/elapmil.prg",
+   "sha256": "14f2fd9148114e27cb1db51bc59a51db434d099027c6715cb06b3f63051b9cbd",
+   "review": "full source manually read 2026-11-01 (5 non-comment lines)",
+   "entrypoint": "ft_ElapMin (elapsed minutes hh:mm)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "Val",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `val` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `val` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `val` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `val` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/elapsed.prg",
+   "sha256": "4fd3e477cac75b756b3a944a5e6b05f642edc9697ec61132ac280c018b5c4a6e",
+   "review": "full source manually read 2026-11-01 (38 non-comment lines)",
+   "entrypoint": "ft_Elapsed (d+h+m+s arrays)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "date/time math",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: expected `local name [:= expr]`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: expected `local name [:= expr]`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: expected `local name [:= expr]`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: expected `local name [:= expr]`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/eltime.prg",
+   "sha256": "a5640b448388c449f94187404a03c31452b618f08b41cdc537ab43650807b9fa",
+   "review": "full source manually read 2026-11-01 (17 non-comment lines)",
+   "entrypoint": "ft_ElTime (hh:mm:ss difference)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_ntos",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: unknown function `val` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: unknown function `val` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: unknown function `val` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: unknown function `val` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/findith.prg",
+   "sha256": "29cfc2f84ca3264cb0fd37773db3d0b8332163771e864be7bb3588d5e2e17a04",
+   "review": "full source manually read 2026-11-01 (10 non-comment lines)",
+   "entrypoint": "ft_FindIth (ith occurrence)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "StrTran/At",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 33: missing )",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 33: missing )",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 28: unknown function `hb_islogical` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 28: unknown function `hb_islogical` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/firstday.prg",
+   "sha256": "ef89f2814a13b4b16fcd52d7fb1ef396158275a4f94127f5fedf7a34b3206e9b",
+   "review": "full source manually read 2026-11-01 (6 non-comment lines)",
+   "entrypoint": "ft_FDay (first day of month)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "date math",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/gcd.prg",
+   "sha256": "861897d965ddc81fd0d081114ec7525b0f1a25279e787e9e7f4f2c072dfef1ea",
+   "review": "full source manually read 2026-11-01 (21 non-comment lines)",
+   "entrypoint": "ft_GCD (greatest common divisor)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "math",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 34: unknown function `abs` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 34: unknown function `abs` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 34: unknown function `abs` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 34: unknown function `abs` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/hex2dec.prg",
+   "sha256": "4c69640f9ad8d101741ac982b94ecfc11fbcab16b6ec54a4e27ffb45ac372975",
+   "review": "full source manually read 2026-11-01 (3 non-comment lines)",
+   "entrypoint": "ft_Hex2Dec",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_HexToNum",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown function `hb_hextonum` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown function `hb_hextonum` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown function `hb_hextonum` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown function `hb_hextonum` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/isbit.prg",
+   "sha256": "5e5434c59615ff4fea2eb5234fe5ffaf7a4606739e7ee1b9bf9e6c25d7cf52a4",
+   "review": "full source manually read 2026-11-01 (6 non-comment lines)",
+   "entrypoint": "ft_IsBit",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_bitTest",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/isbiton.prg",
+   "sha256": "4b896e3ce26f32a447e9d9209868f94745df85b979f58ff4549047916a9c0aff",
+   "review": "full source manually read 2026-11-01 (3 non-comment lines)",
+   "entrypoint": "ft_IsBitOn",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_bitTest",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: `hb_bittest` bit index must be a literal from 0 to 63; dynamic/out-of-range semantics are not in this increment",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: `hb_bittest` bit index must be a literal from 0 to 63; dynamic/out-of-range semantics are not in this increment",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: `hb_bittest` bit index must be a literal from 0 to 63; dynamic/out-of-range semantics are not in this increment",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: `hb_bittest` bit index must be a literal from 0 to 63; dynamic/out-of-range semantics are not in this increment",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/lastday.prg",
+   "sha256": "15e2d758007d8ec8612ec9a9c740e5c757d4ec34f39b2dfb9d1d488d29f33b23",
+   "review": "full source manually read 2026-11-01 (9 non-comment lines)",
+   "entrypoint": "ft_LDay (last day of month)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "date math",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 32: unexpected token Eq in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 32: unexpected token Eq in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 32: unexpected token Eq in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 32: unexpected token Eq in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/linked.prg",
+   "sha256": "c5f2c6a5a4f35bb1b368f89b41a3711704f6cfa1c9d46837a140a48bcbe01278",
+   "review": "full source manually read 2026-11-01 (25 non-comment lines)",
+   "entrypoint": "ft_Linked (check functions linked via Type())",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "Alert/Type",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 36: missing )",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 36: missing )",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 57: expected `,` or `}` in the codeblock body, got Some(EqEq)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 57: expected `,` or `}` in the codeblock body, got Some(EqEq)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/madd.prg",
+   "sha256": "e19e69795e3e8946444f9bf63c8e15edd507dd87af2d13fc8af5f613df30ee3b",
+   "review": "full source manually read 2026-11-01 (22 non-comment lines)",
+   "entrypoint": "ft_MAdd (add months, EOM aware)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "date math",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 50: unexpected token Eq in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 50: unexpected token Eq in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 50: unexpected token Eq in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 50: unexpected token Eq in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/metaph.prg",
+   "sha256": "d5957393f85176b8cf9f2b5b32162e6d47a53379ce134282840c9e1bfcd6bfc3",
+   "review": "full source manually read 2026-11-01 (104 non-comment lines)",
+   "entrypoint": "ft_Metaph (metaphone phonetic algorithm)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "strings",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 94: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 94: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 94: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 94: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/miltime.prg",
+   "sha256": "f3cb17da8f6debe69cc25b91656bced330d8bdea487b8d621354f3eb3ce47b05",
+   "review": "full source manually read 2026-11-01 (65 non-comment lines)",
+   "entrypoint": "ft_Mil2Min/Min2Mil/Mil2Civ/Civ2Mil/Sys2Mil",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "time conversion",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `int` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `int` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `int` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 24: unknown function `int` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/min2dhm.prg",
+   "sha256": "03e869001ff05810893bcbd35f4fdb78081618b74b83b14cd25ac64b7a8db749",
+   "review": "full source manually read 2026-11-01 (6 non-comment lines)",
+   "entrypoint": "ft_Min2Dhm (minutes to d/h/m array)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_ntos",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: unknown function `hb_ntos` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: unknown function `hb_ntos` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: unknown function `int` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: unknown function `int` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/month.prg",
+   "sha256": "a4c18959817ab5a7c02ca0e95b9dae03579393393f0445f6257910ffccb8ca64",
+   "review": "full source manually read 2026-11-01 (22 non-comment lines)",
+   "entrypoint": "ft_Month (fiscal month period)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "ft_Year/ft_MAdd",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: expected `name[idx] := expr`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 48: expected `name[idx] := expr`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: unknown function `date` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: unknown function `date` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/netpv.prg",
+   "sha256": "6c5b17fa1fa6fdc8613dc269f64a63eb8dd466f2e3745652f1dbc68dc87eebce",
+   "review": "full source manually read 2026-11-01 (10 non-comment lines)",
+   "entrypoint": "ft_NetPV (net present value via AEval)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "finance",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 28: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 28: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 28: unexpected token Eq in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 28: unexpected token Eq in expression",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/nooccur.prg",
+   "sha256": "30e2f01fdc887cf158b50def2ea694c4bdb2bf80936471242a09d59c8d432830",
+   "review": "full source manually read 2026-11-01 (10 non-comment lines)",
+   "entrypoint": "ft_NoOccur (occurrence count)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "StrTran",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: unknown function `hb_islogical` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: unknown function `hb_islogical` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: unknown function `hb_islogical` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 26: unknown function `hb_islogical` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/ntow.prg",
+   "sha256": "a9d4632f2a7037cfa0751e987fd632e2c5f63a74f4b1634d9eebcc04f448f3ca",
+   "review": "full source manually read 2026-11-01 (45 non-comment lines)",
+   "entrypoint": "ft_NToW (number to English words, STATIC tables)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "arrays",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 19: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 19: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 19: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 19: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/pchr.prg",
+   "sha256": "25f526e7d830c14f5669e85031da8e2419a09fc28097297d81f749c7276b6bc0",
+   "review": "full source manually read 2026-11-01 (101 non-comment lines)",
+   "entrypoint": "ft_PChr (printer control code expansion)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_BChar",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 33: unknown function `left` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 33: unknown function `left` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 33: unknown function `left` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 33: unknown function `left` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/pvid.prg",
+   "sha256": "970044d2018e127f70497ac9ab5f1167e57a62b4a33f1ff6363a33813c777e9e",
+   "review": "full source manually read 2026-11-01 (39 non-comment lines)",
+   "entrypoint": "ft_PushVid/ft_PopVid (video state stack, THREAD STATIC)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "GT SaveScreen",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 19: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 19: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 19: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 19: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/qtr.prg",
+   "sha256": "36d38551e50af9c80dad6eb0aad76aa6d05eafe5ed240e2ee48c9b6ac80dca51",
+   "review": "full source manually read 2026-11-01 (23 non-comment lines)",
+   "entrypoint": "ft_Qtr (fiscal quarter)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "ft_Year/ft_MAdd",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: expected `name[idx] := expr`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 49: expected `name[idx] := expr`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: unknown function `date` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: unknown function `date` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/round.prg",
+   "sha256": "128ccc6bcea83e5aadc9f2dd0e51dd8695e8340c94eeb514f0ea5c5012c2dd27",
+   "review": "full source manually read 2026-11-01 (49 non-comment lines)",
+   "entrypoint": "ft_Round (extended rounding modes)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "math",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 34: missing )",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 34: missing )",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 25: unknown function `abs` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 25: unknown function `abs` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/savearr.prg",
+   "sha256": "3f842012043dc782b5999d444c68f97f1c9da3159742a62b798b7f842473ac17",
+   "review": "full source manually read 2026-11-01 (112 non-comment lines)",
+   "entrypoint": "ft_SaveArr/ft_RestArr (binary array serialization)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "FCreate/FWrite/FRead",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 57: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 57: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 57: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 57: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/sleep.prg",
+   "sha256": "5c92a543263de129b0dd309ac2683debf5d1c37bae47069b0b57fc041a2dd4da",
+   "review": "full source manually read 2026-11-01 (11 non-comment lines)",
+   "entrypoint": "ft_Sleep (timed sleep)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_idleSleep",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 21: unknown function `hb_isnumeric` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 21: unknown function `hb_isnumeric` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 22: unknown function `seconds` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 22: unknown function `seconds` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/sqzn.prg",
+   "sha256": "906f4e359ad09d2b50f880563a54f26bd6ac3e4b0fe3c6b4c06da48d07e0080f",
+   "review": "full source manually read 2026-11-01 (32 non-comment lines)",
+   "entrypoint": "ft_Sqzn/ft_Unsqzn (BCD-ish number compression)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_BChar/hb_BCode",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 23: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 23: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 23: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 23: unknown function `__defaultnil` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/tbwhile.prg",
+   "sha256": "5f95d02746c9db37251e468bcfa7fd600b5adbcfdacb9cbc7e24ef218a096208",
+   "review": "full source manually read 2026-11-01 (187 non-comment lines)",
+   "entrypoint": "ft_BrwsWhl (TBrowse while-condition browser)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "TBrowseDB/GT/rdd",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 299: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 299: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 299: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 299: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/tempfile.prg",
+   "sha256": "047dbef58d23a600034c7b6e2f6b9f7657c80819da28ca4220e23192ab85a052",
+   "review": "full source manually read 2026-11-01 (12 non-comment lines)",
+   "entrypoint": "ft_TempFil (temp file create)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_FTempCreate",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 123: unknown function `hb_default` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 123: unknown function `hb_default` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 123: unknown function `hb_default` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 123: unknown function `hb_default` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/wda.prg",
+   "sha256": "0444055443d263c538d8ea79fbf3d68aefe5a6377cf798648e476a9cdc1c0b35",
+   "review": "full source manually read 2026-11-01 (6 non-comment lines)",
+   "entrypoint": "ft_AddWkDy (add workdays)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "DoW math",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 21: unknown function `dow` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 21: unknown function `dow` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 21: unknown function `dow` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 21: unknown function `dow` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/week.prg",
+   "sha256": "11308e822fd7eb3b87bec581398e0f116bf918c67fc0577cfff6d4e67f328be2",
+   "review": "full source manually read 2026-11-01 (24 non-comment lines)",
+   "entrypoint": "ft_Week (fiscal week)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "ft_Year/ft_DayToBoW",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 38: expected `name[idx] := expr`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 38: expected `name[idx] := expr`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: unknown function `date` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 31: unknown function `date` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/workdays.prg",
+   "sha256": "4af48638d5e60127d3ec7a916603bc2d49942a71f70f44ff1fa86180495b7f6c",
+   "review": "full source manually read 2026-11-01 (30 non-comment lines)",
+   "entrypoint": "ft_Workdays (working days between dates)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "DoW math",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 37: missing )",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 37: missing )",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 37: unknown function `dow` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 37: unknown function `dow` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/woy.prg",
+   "sha256": "aa696e0e6f2d8646d1facefe9c48956e1e10a5d64854f2951246ec9b11e80f3d",
+   "review": "full source manually read 2026-11-01 (24 non-comment lines)",
+   "entrypoint": "ft_WoY/ft_DoY (week/day of year)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "hb_SToD/DoW",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown function `hb_isdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown function `hb_isdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown function `hb_isdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: unknown function `hb_isdate` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "contrib/hbnf/year.prg",
+   "sha256": "05de0bb83a9e96aa45a6a2c532f6f2e033b70ef28771beca7a17a57cbb9c2c71",
+   "review": "full source manually read 2026-11-01 (14 non-comment lines)",
+   "entrypoint": "ft_Year (fiscal year period)",
+   "build_unit": "contrib/hbnf.hbp",
+   "profile": "C-contrib",
+   "dependencies": "ft_DateCnfg/ft_MAdd",
+   "boundary": "contrib source at upstream pin",
+   "reference_build_exit": 0,
+   "reference_build_note": "rc0 (unit .hbp)",
+   "reference_run": "not-run (library unit; recorded build rc only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: expected `local name [:= expr]`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: expected `local name [:= expr]`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama dcadf263, que solo acumula ledgers desde c212a9a6)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: expected `local name [:= expr]`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 27: expected `local name [:= expr]`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ]
+}
