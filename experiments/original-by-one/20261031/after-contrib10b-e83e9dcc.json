@@ -18,7 +18,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/afteratn.prg",
@@ -29,7 +29,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/asciisum.prg",
@@ -40,7 +40,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/ascpos.prg",
@@ -51,7 +51,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/atadjust.prg",
@@ -62,7 +62,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/atnum.prg",
@@ -73,7 +73,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/atrepl.prg",
@@ -84,7 +84,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/attoken.prg",
@@ -95,7 +95,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/beforatn.prg",
@@ -106,7 +106,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charadd.prg",
@@ -117,7 +117,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charand.prg",
@@ -128,7 +128,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/chareven.prg",
@@ -139,7 +139,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charhist.prg",
@@ -150,7 +150,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charlist.prg",
@@ -161,7 +161,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charmirr.prg",
@@ -172,7 +172,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charmix.prg",
@@ -183,7 +183,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charnlst.prg",
@@ -194,7 +194,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charnot.prg",
@@ -205,7 +205,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charodd.prg",
@@ -216,7 +216,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charone.prg",
@@ -227,7 +227,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charonly.prg",
@@ -238,7 +238,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charor.prg",
@@ -249,7 +249,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charrem.prg",
@@ -260,7 +260,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charrepl.prg",
@@ -271,7 +271,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charrll.prg",
@@ -282,7 +282,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charrlr.prg",
@@ -293,7 +293,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charshl.prg",
@@ -304,7 +304,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charshr.prg",
@@ -315,7 +315,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charslst.prg",
@@ -326,7 +326,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charsort.prg",
@@ -337,7 +337,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charsub.prg",
@@ -348,7 +348,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charswap.prg",
@@ -359,7 +359,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/charxor.prg",
@@ -370,7 +370,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/csetarge.prg",
@@ -381,7 +381,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/csetatmu.prg",
@@ -392,7 +392,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/csetref.prg",
@@ -403,7 +403,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/ctwtest.prg",
@@ -414,7 +414,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/dates4.prg",
@@ -425,7 +425,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/datetime.prg",
@@ -436,7 +436,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/expomant.prg",
@@ -447,7 +447,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/finan.prg",
@@ -458,7 +458,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/math.prg",
@@ -469,7 +469,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/num1.prg",
@@ -480,7 +480,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/numline.prg",
@@ -491,7 +491,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/numtoken.prg",
@@ -502,7 +502,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/rangerem.prg",
@@ -513,7 +513,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/rangerep.prg",
@@ -524,7 +524,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/setatlik.prg",
@@ -535,7 +535,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/strdiff.prg",
@@ -546,7 +546,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/tab.prg",
@@ -557,7 +557,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/test.prg",
@@ -568,7 +568,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/token.prg",
@@ -579,7 +579,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/token2.prg",
@@ -590,7 +590,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/tokenlow.prg",
@@ -601,7 +601,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/tokensep.prg",
@@ -612,7 +612,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/tokenupp.prg",
@@ -623,7 +623,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/trig.prg",
@@ -634,7 +634,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/valpos.prg",
@@ -645,7 +645,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/wordone.prg",
@@ -656,7 +656,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/wordonly.prg",
@@ -667,7 +667,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/wordrem.prg",
@@ -678,7 +678,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/wordrepl.prg",
@@ -689,7 +689,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     },
     {
       "path": "contrib/hbct/tests/wordswap.prg",
@@ -700,12 +700,13 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked (no pragma shortcut)",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read 2026-11-01 + inventory+matrix"
     }
   ],
   "notes": "63 test .prg: uniform line-1 '#require' rejection (parked per no-pragma-shortcut rule), LLVM identical, zero base/head divergence. hbct dir COMPLETE: 86 files.",
   "evidence_level": "inventory+matrix (NOT manual line-by-line review)",
   "corrections": [
-    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed."
+    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed.",
+    "2026-11-01: all 63 rows upgraded to manual full-source read (2911 compressed lines). Content: 62 formulaic ctinit/? /ctexit test drivers + test.prg full HBTEST battery (~190 assertions incl CSetRef/@byref, multi-pass, SetAtLike wildcard, tab expansion, trig/finan numeric) + interactive GT tests (ctwtest window/move, datetime AChoice/GET menus, token2 incremental tokenizer, csetarge error handler with ACCEPT). No re-run of builds/matrix."
   ]
 }
