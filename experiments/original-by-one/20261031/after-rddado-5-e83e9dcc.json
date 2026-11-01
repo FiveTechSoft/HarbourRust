@@ -1,0 +1,244 @@
+{
+ "phase": "extras/utils/contrib build units (tests phase: 275/275 recorded incl. non-.prg after batch 7)",
+ "order": "inventory path lexicographic: extras first, then utils, then contrib",
+ "unit_note": "rddado directory COMPLETE (6 files: adordd.ch in batch 7 + adordd.prg + 4 tests). Next: superlib, template -> extras COMPLETE.",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "extras/rddado/adordd.prg",
+   "sha256": "4cd612ce0840a183490d21c843faa0ae05ae3e9265d0947cf7b9dc5701534218",
+   "review": "full source manually read 2026-11-01 (1593 lines)",
+   "entrypoint": "INIT PROCEDURE ADORDD_INIT registers RDD (library, no Main)",
+   "build_unit": "rddado.hbp: -hblib adordd.prg, -stop{!win} (Windows only), hbx export list",
+   "profile": "B-extras rddado (ADORDD - RDD over Microsoft ADO/OLE), GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "USRRDD hbusrrdd.ch super-RDD function table (54 methods); win_oleCreateObject ADODB.Connection/Recordset + ADOX.Catalog; THREAD STATIC; SQLTranslate; hb_langErrMsg",
+   "boundary": "ADO via OLE (Windows-only); full RDD: create/open/fields/skip/lock/relations/orders/locate",
+   "reference_build_exit": 50,
+   "reference_build_note": "hbmk2 rddado.hbp rc50 empty output: upstream hbp declares -stop{!win} (Windows-only unit, ADO/OLE via hbwin; project-design platform skip, not a language error)",
+   "reference_run": "not-run (Windows/ADO-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 211: unknown result marker <{for}> (Harbour: E0008)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 211: unknown result marker <{for}> (Harbour: E0008)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 211: unknown result marker <{for}> (Harbour: E0008)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 211: unknown result marker <{for}> (Harbour: E0008)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/rddado/tests/access1.prg",
+   "sha256": "0989d05309f7fc93a01a7f493f354ef0f54de79207eadb796b8f6ecff447a3de",
+   "review": "full source manually read 2026-11-01 (18 lines)",
+   "entrypoint": "Main",
+   "build_unit": "rddado tests (single-source exe against rddado lib)",
+   "profile": "B-extras rddado (ADORDD - RDD over Microsoft ADO/OLE), GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "#require rddado; REQUEST ADORDD; adordd.ch USE..VIA command; browse test.mdb via ADORDD; OLE/ADO + Windows + (mysql: remote server)",
+   "boundary": "Windows/ADO-only; mysql tests also need a live remote MySQL",
+   "reference_build_exit": null,
+   "reference_build_note": "not built individually (unit is Windows-skipped upstream)",
+   "reference_run": "not-run (Windows/ADO-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/rddado/tests/access2.prg",
+   "sha256": "2b41d5fe01632a978b2b7cca735b836d7c43ace9bd12923902ba4d320ba0fd24",
+   "review": "full source manually read 2026-11-01 (42 lines)",
+   "entrypoint": "Main",
+   "build_unit": "rddado tests (single-source exe against rddado lib)",
+   "profile": "B-extras rddado (ADORDD - RDD over Microsoft ADO/OLE), GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "#require rddado; REQUEST ADORDD; adordd.ch USE..VIA command; dbCreate test2.mdb + append + LOCATE; OLE/ADO + Windows + (mysql: remote server)",
+   "boundary": "Windows/ADO-only; mysql tests also need a live remote MySQL",
+   "reference_build_exit": null,
+   "reference_build_note": "not built individually (unit is Windows-skipped upstream)",
+   "reference_run": "not-run (Windows/ADO-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 3: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 3: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 3: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 3: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/rddado/tests/mysql1.prg",
+   "sha256": "0784f217e3c473c9421506f8115bbaa3315ea8c12f0c6bab7f404ab481e06533",
+   "review": "full source manually read 2026-11-01 (16 lines)",
+   "entrypoint": "Main",
+   "build_unit": "rddado tests (single-source exe against rddado lib)",
+   "profile": "B-extras rddado (ADORDD - RDD over Microsoft ADO/OLE), GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "#require rddado; REQUEST ADORDD; adordd.ch USE..VIA command; USE remote MySQL via ADORDD + Browse; OLE/ADO + Windows + (mysql: remote server)",
+   "boundary": "Windows/ADO-only; mysql tests also need a live remote MySQL",
+   "reference_build_exit": null,
+   "reference_build_note": "not built individually (unit is Windows-skipped upstream)",
+   "reference_run": "not-run (Windows/ADO-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/rddado/tests/mysql3.prg",
+   "sha256": "52f81c6deef7bed219d5a467795f7516068a72469888b24c023518edb7d8659f",
+   "review": "full source manually read 2026-11-01 (23 lines)",
+   "entrypoint": "Main",
+   "build_unit": "rddado tests (single-source exe against rddado lib)",
+   "profile": "B-extras rddado (ADORDD - RDD over Microsoft ADO/OLE), GPLv2 + Harbour linking exception (upstream header; no source copied)",
+   "dependencies": "#require rddado; REQUEST ADORDD; adordd.ch USE..VIA command; LOCATE FOR + CONTINUE over remote MySQL; OLE/ADO + Windows + (mysql: remote server)",
+   "boundary": "Windows/ADO-only; mysql tests also need a live remote MySQL",
+   "reference_build_exit": null,
+   "reference_build_note": "not built individually (unit is Windows-skipped upstream)",
+   "reference_run": "not-run (Windows/ADO-only)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ]
+}
