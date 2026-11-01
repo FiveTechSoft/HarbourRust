@@ -801,6 +801,7 @@
   "notes": "74 files, 25 dirs. Matrix at pin 92947baf: LLVM identical everywhere; 1 advance via args increment (hbsms/sms.prg 68->107, fails later, NO compatibility claim); #require parked dominant. CONTRIB ELIGIBLE TRAVERSAL COMPLETE: covered 637/695 + GT 58 excluded pending scope = 695.",
   "evidence_level": "inventory+matrix (NOT manual line-by-line review)",
   "corrections": [
-    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed."
+    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed.",
+    "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence."
   ]
 }

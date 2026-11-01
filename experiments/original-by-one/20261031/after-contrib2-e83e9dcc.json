@@ -1,787 +1,790 @@
 {
- "unit_note": "contrib batch 2: hbcurl(3) + hbdoc(5) + hbexpat(4) + hbfbird(4) + hbfimage(2) = 18 files; C-contrib cumulative 30/695. Reference builds at pin 694428e1: hbdoc.hbp rc0 (hbdoc binary 92680 B; hbdoc -h rc0 deterministic help - suite upstream, NOT HR compatibility), hbexpat.hbp rc0 (libhbexpat.a + unitable.c generated); hbcurl/hbfbird/hbfimage.hbp rc10 hbmk2 'Missing dependency: curl/firebird/freeimage' (environment/dependency class). GT dirs excluded pending GT scope. HR matrix 14 compilable .prg x base/head x default/llvm: diagnostics identical baseline/HEAD except _html.prg:588 #pragma class (baseline 'unknown directive #pragma', HEAD names the -es<N> subset - known divergence class). Diagnostic classes: #require unknown (9 files), 'unknown dotted word `..`' variadic Main(_base:424, _xml:362, hbdoc:509, tfirebrd:429), 'reduced VAR expression atom' (_txt:80), 'statement not in subset identifier-led' (unitable:115). 3 headers pure #define table (hbcurl.ch, hbexpat.ch, freeimag.ch) recorded not-run compile. No compatibility claimed.",
- "reference": "694428e1c12f726675b19324d62167fa77d68185",
- "sources_unchanged": true,
- "rows": [
-  {
-   "file": "contrib/hbcurl/hbcurl.ch",
-   "sha256": "ebb75c0c1c27c35e05f85f6c4686289b90345d7c6baebe1428a08f65698c3bc7",
-   "review": "full source manually read 2026-11-01 (540 non-comment lines)",
-   "entrypoint": "header: hbCurlOpt keys, HB_CURLOPT_*/HB_CURLINFO_* #define table (no functions)",
-   "build_unit": "hbcurl.hbp",
-   "profile": "C-contrib",
-   "dependencies": "curl C library dev headers (missing in environment: rc10)",
-   "boundary": "contrib header source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbcurl.hbp rc10 (hbmk2 'Missing dependency: curl') - dependency class environment (libcurl dev absent)",
-   "reference_run": "not-run (library unit; tests need network FTP - recorded build attempt only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run (header; pure #define table - nothing to compile in this PoC)"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": "not-run (header; pure #define table - nothing to compile in this PoC)"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbcurl/tests/ftp_uldl.prg",
-   "sha256": "00dee540443e94705cf1b69e79effc0f0c24c4aea2286d7b53332927f82092dd",
-   "review": "full source manually read 2026-11-01 (148 non-comment lines)",
-   "entrypoint": "Main(): curl ftp upload/download round-trip test",
-   "build_unit": "tests via hbmk2 -lhblib -lhbcurl",
-   "profile": "C-contrib",
-   "dependencies": "#require hbcurl + network FTP server",
-   "boundary": "contrib test source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbcurl.hbp rc10 (missing curl dependency) - environment class",
-   "reference_run": "not-run (needs FTP/network; dependency class)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 3: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+  "unit_note": "contrib batch 2: hbcurl(3) + hbdoc(5) + hbexpat(4) + hbfbird(4) + hbfimage(2) = 18 files; C-contrib cumulative 30/695. Reference builds at pin 694428e1: hbdoc.hbp rc0 (hbdoc binary 92680 B; hbdoc -h rc0 deterministic help - suite upstream, NOT HR compatibility), hbexpat.hbp rc0 (libhbexpat.a + unitable.c generated); hbcurl/hbfbird/hbfimage.hbp rc10 hbmk2 'Missing dependency: curl/firebird/freeimage' (environment/dependency class). GT dirs excluded pending GT scope. HR matrix 14 compilable .prg x base/head x default/llvm: diagnostics identical baseline/HEAD except _html.prg:588 #pragma class (baseline 'unknown directive #pragma', HEAD names the -es<N> subset - known divergence class). Diagnostic classes: #require unknown (9 files), 'unknown dotted word `..`' variadic Main(_base:424, _xml:362, hbdoc:509, tfirebrd:429), 'reduced VAR expression atom' (_txt:80), 'statement not in subset identifier-led' (unitable:115). 3 headers pure #define table (hbcurl.ch, hbexpat.ch, freeimag.ch) recorded not-run compile. No compatibility claimed.",
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "contrib/hbcurl/hbcurl.ch",
+      "sha256": "ebb75c0c1c27c35e05f85f6c4686289b90345d7c6baebe1428a08f65698c3bc7",
+      "review": "full source manually read 2026-11-01 (540 non-comment lines)",
+      "entrypoint": "header: hbCurlOpt keys, HB_CURLOPT_*/HB_CURLINFO_* #define table (no functions)",
+      "build_unit": "hbcurl.hbp",
+      "profile": "C-contrib",
+      "dependencies": "curl C library dev headers (missing in environment: rc10)",
+      "boundary": "contrib header source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbcurl.hbp rc10 (hbmk2 'Missing dependency: curl') - dependency class environment (libcurl dev absent)",
+      "reference_run": "not-run (library unit; tests need network FTP - recorded build attempt only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": "not-run (header; pure #define table - nothing to compile in this PoC)"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": "not-run (header; pure #define table - nothing to compile in this PoC)"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 3: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 3: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbcurl/tests/ftp_uldl.prg",
+      "sha256": "00dee540443e94705cf1b69e79effc0f0c24c4aea2286d7b53332927f82092dd",
+      "review": "full source manually read 2026-11-01 (148 non-comment lines)",
+      "entrypoint": "Main(): curl ftp upload/download round-trip test",
+      "build_unit": "tests via hbmk2 -lhblib -lhbcurl",
+      "profile": "C-contrib",
+      "dependencies": "#require hbcurl + network FTP server",
+      "boundary": "contrib test source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbcurl.hbp rc10 (missing curl dependency) - environment class",
+      "reference_run": "not-run (needs FTP/network; dependency class)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 3: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbcurl/tests/multi.prg",
-   "sha256": "b35658fd3d98fb7d2863a84641b86b9ad4ba81fa85ac312f2183fb445795835f",
-   "review": "full source manually read 2026-11-01 (103 non-comment lines)",
-   "entrypoint": "Main(): curl multi-interface 2-URL parallel fetch",
-   "build_unit": "tests via hbmk2 -lhblib -lhbcurl",
-   "profile": "C-contrib",
-   "dependencies": "#require hbcurl + network HTTP",
-   "boundary": "contrib test source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbcurl.hbp rc10 (missing curl dependency) - environment class",
-   "reference_run": "not-run (needs network; dependency class)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 5: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbcurl/tests/multi.prg",
+      "sha256": "b35658fd3d98fb7d2863a84641b86b9ad4ba81fa85ac312f2183fb445795835f",
+      "review": "full source manually read 2026-11-01 (103 non-comment lines)",
+      "entrypoint": "Main(): curl multi-interface 2-URL parallel fetch",
+      "build_unit": "tests via hbmk2 -lhblib -lhbcurl",
+      "profile": "C-contrib",
+      "dependencies": "#require hbcurl + network HTTP",
+      "boundary": "contrib test source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbcurl.hbp rc10 (missing curl dependency) - environment class",
+      "reference_run": "not-run (needs network; dependency class)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 5: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 5: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 5: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbdoc/_base.prg",
+      "sha256": "564e1239347ea52691f1b82047f26212a6ac0ad494d1fe7553a61e24929ac834",
+      "review": "full source manually read 2026-11-01 (53 non-comment lines)",
+      "entrypoint": "STATICs s_hSource/s_hOutput helpers: hb_FGetAttr/hb_FSetAttr wrappers (no entrypoint; included by hbdoc.prg)",
+      "build_unit": "hbdoc.hbp",
+      "profile": "C-contrib",
+      "dependencies": "none beyond core RTL",
+      "boundary": "contrib tool source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbdoc.hbp rc0 (hbdoc binary built, 92680 B) (unit .hbp)",
+      "reference_run": "unit binary: hbdoc -h rc0 deterministic help text (upstream tool at pin; suite upstream, NOT HR compatibility)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 424: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 424: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 424: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 424: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 5: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbdoc/_base.prg",
-   "sha256": "564e1239347ea52691f1b82047f26212a6ac0ad494d1fe7553a61e24929ac834",
-   "review": "full source manually read 2026-11-01 (53 non-comment lines)",
-   "entrypoint": "STATICs s_hSource/s_hOutput helpers: hb_FGetAttr/hb_FSetAttr wrappers (no entrypoint; included by hbdoc.prg)",
-   "build_unit": "hbdoc.hbp",
-   "profile": "C-contrib",
-   "dependencies": "none beyond core RTL",
-   "boundary": "contrib tool source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbdoc.hbp rc0 (hbdoc binary built, 92680 B) (unit .hbp)",
-   "reference_run": "unit binary: hbdoc -h rc0 deterministic help text (upstream tool at pin; suite upstream, NOT HR compatibility)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 424: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbdoc/_html.prg",
+      "sha256": "4b7605259088e6bb2cf5c9f420d54e32f30589a88e1e4cb0e281829f995ff3ab",
+      "review": "full source manually read 2026-11-01 (418 non-comment lines)",
+      "entrypoint": "CreateHTMLTable/GenerateHTMLCSS generators (no entrypoint; included by hbdoc.prg)",
+      "build_unit": "hbdoc.hbp",
+      "profile": "C-contrib",
+      "dependencies": "hbdoc.css (present, embedded via #pragma __streaminclude)",
+      "boundary": "contrib tool source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbdoc.hbp rc0 (unit .hbp)",
+      "reference_run": "unit binary: hbdoc -h rc0 deterministic help text (upstream tool at pin; NOT HR compatibility)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 588: unknown directive #pragma in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 588: unknown directive #pragma in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 588: #pragma `__streaminclude \"hbdoc.css\" | cString := %s` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 588: #pragma `__streaminclude \"hbdoc.css\" | cString := %s` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 424: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 424: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbdoc/_txt.prg",
+      "sha256": "3e3c01e98e4fa932049a7fc7eba3b136563ae72181603fe6e56ec2dc5fa79517",
+      "review": "full source manually read 2026-11-01 (82 non-comment lines)",
+      "entrypoint": "GenerateAscii/GenerateText/GenerateSource generators (no entrypoint; included by hbdoc.prg)",
+      "build_unit": "hbdoc.hbp",
+      "profile": "C-contrib",
+      "dependencies": "none beyond core RTL",
+      "boundary": "contrib tool source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbdoc.hbp rc0 (unit .hbp)",
+      "reference_run": "unit binary: hbdoc -h rc0 deterministic help text (upstream tool at pin; NOT HR compatibility)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 80: reduced VAR expression atom outside bounded contract",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 80: reduced VAR expression atom outside bounded contract",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 80: reduced VAR expression atom outside bounded contract",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 80: reduced VAR expression atom outside bounded contract",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 424: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbdoc/_html.prg",
-   "sha256": "4b7605259088e6bb2cf5c9f420d54e32f30589a88e1e4cb0e281829f995ff3ab",
-   "review": "full source manually read 2026-11-01 (418 non-comment lines)",
-   "entrypoint": "CreateHTMLTable/GenerateHTMLCSS generators (no entrypoint; included by hbdoc.prg)",
-   "build_unit": "hbdoc.hbp",
-   "profile": "C-contrib",
-   "dependencies": "hbdoc.css (present, embedded via #pragma __streaminclude)",
-   "boundary": "contrib tool source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbdoc.hbp rc0 (unit .hbp)",
-   "reference_run": "unit binary: hbdoc -h rc0 deterministic help text (upstream tool at pin; NOT HR compatibility)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 588: unknown directive #pragma in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbdoc/_xml.prg",
+      "sha256": "c8d39333fb0513fb22a2966233140cd0d01be60aa744df627daf77aa86b6b83b",
+      "review": "full source manually read 2026-11-01 (76 non-comment lines)",
+      "entrypoint": "CreateXMLIndex/GenerateXMLData generators (no entrypoint; included by hbdoc.prg)",
+      "build_unit": "hbdoc.hbp",
+      "profile": "C-contrib",
+      "dependencies": "none beyond core RTL",
+      "boundary": "contrib tool source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbdoc.hbp rc0 (unit .hbp)",
+      "reference_run": "unit binary: hbdoc -h rc0 deterministic help text (upstream tool at pin; NOT HR compatibility)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 588: unknown directive #pragma in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 588: #pragma `__streaminclude \"hbdoc.css\" | cString := %s` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbdoc/hbdoc.prg",
+      "sha256": "05a15822abd1a585210f6abe00a760a483331204297802aafdb2fe68b6a3ebd6",
+      "review": "full source manually read 2026-11-01 (1030 non-comment lines)",
+      "entrypoint": "Main( ... ) variadic: Harbour Document Compiler (template/constraint engine, CREATE CLASS Entry, hash-based s_generators)",
+      "build_unit": "hbdoc.hbp",
+      "profile": "C-contrib",
+      "dependencies": "includes _base/_txt/_xml/_html.prg via #include",
+      "boundary": "contrib tool source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp -> hbdoc binary 92680 B)",
+      "reference_run": "hbdoc -h rc0 deterministic 20-line help text (upstream tool at pin; suite upstream, NOT HR compatibility)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 509: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 509: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 509: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 509: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 588: #pragma `__streaminclude \"hbdoc.css\" | cString := %s` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbdoc/_txt.prg",
-   "sha256": "3e3c01e98e4fa932049a7fc7eba3b136563ae72181603fe6e56ec2dc5fa79517",
-   "review": "full source manually read 2026-11-01 (82 non-comment lines)",
-   "entrypoint": "GenerateAscii/GenerateText/GenerateSource generators (no entrypoint; included by hbdoc.prg)",
-   "build_unit": "hbdoc.hbp",
-   "profile": "C-contrib",
-   "dependencies": "none beyond core RTL",
-   "boundary": "contrib tool source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbdoc.hbp rc0 (unit .hbp)",
-   "reference_run": "unit binary: hbdoc -h rc0 deterministic help text (upstream tool at pin; NOT HR compatibility)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 80: reduced VAR expression atom outside bounded contract",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbexpat/hbexpat.ch",
+      "sha256": "c0f141bf7ec672f61156a092e081d5f0d49381b7e5af9b4861633b113c8fab74",
+      "review": "full source manually read 2026-11-01 (59 non-comment lines)",
+      "entrypoint": "header: HB_EXPAT_* #define table + HB_FUNC declarations (no functions)",
+      "build_unit": "hbexpat.hbp",
+      "profile": "C-contrib",
+      "dependencies": "expat C library (bundled in unit .hbp sources)",
+      "boundary": "contrib header source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbexpat.hbp rc0 (libhbexpat.a produced; unitable.c generated) (unit .hbp)",
+      "reference_run": "not-run (library unit; tests need XML input file - recorded build rc0 only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": "not-run (header; pure #define table - nothing to compile in this PoC)"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": "not-run (header; pure #define table - nothing to compile in this PoC)"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 80: reduced VAR expression atom outside bounded contract",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 80: reduced VAR expression atom outside bounded contract",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbexpat/tests/test.prg",
+      "sha256": "bd908947d54147dd3daaa9f7acc8eb8d20b20a5ec3547bd0a174f8c1798970aa",
+      "review": "full source manually read 2026-11-01 (56 non-comment lines)",
+      "entrypoint": "hb_expat parser walk over XML file arg",
+      "build_unit": "tests via hbmk2 -lhblib -lhbexpat",
+      "profile": "C-contrib",
+      "dependencies": "#require hbexpat + local XML file argument",
+      "boundary": "contrib test source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbexpat.hbp rc0 (unit .hbp)",
+      "reference_run": "not-run (needs XML input file + linked lib; recorded build rc0 only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 80: reduced VAR expression atom outside bounded contract",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbdoc/_xml.prg",
-   "sha256": "c8d39333fb0513fb22a2966233140cd0d01be60aa744df627daf77aa86b6b83b",
-   "review": "full source manually read 2026-11-01 (76 non-comment lines)",
-   "entrypoint": "CreateXMLIndex/GenerateXMLData generators (no entrypoint; included by hbdoc.prg)",
-   "build_unit": "hbdoc.hbp",
-   "profile": "C-contrib",
-   "dependencies": "none beyond core RTL",
-   "boundary": "contrib tool source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbdoc.hbp rc0 (unit .hbp)",
-   "reference_run": "unit binary: hbdoc -h rc0 deterministic help text (upstream tool at pin; NOT HR compatibility)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbexpat/tests/tohash.prg",
+      "sha256": "381b646d8b78a8de66c6960fc253e7d14855cd319a63128a61d070641c4631ab",
+      "review": "full source manually read 2026-11-01 (115 non-comment lines)",
+      "entrypoint": "hb_expat XML-to-hash converter with handler table",
+      "build_unit": "tests via hbmk2 -lhblib -lhbexpat",
+      "profile": "C-contrib",
+      "dependencies": "#require hbexpat + local XML file argument",
+      "boundary": "contrib test source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbexpat.hbp rc0 (unit .hbp)",
+      "reference_run": "not-run (needs XML input file + linked lib; recorded build rc0 only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbexpat/unitable.prg",
+      "sha256": "6c476422ca6afb9c13537ebb85554bc243bf6885678dcc729e6d1044df96b36d",
+      "review": "full source manually read 2026-11-01 (17 non-comment lines)",
+      "entrypoint": "STATIC PROCEDURE __hb_expat_unitables(): UN-escape table init (unit table generator)",
+      "build_unit": "hbexpat.hbp",
+      "profile": "C-contrib",
+      "dependencies": "expat C library",
+      "boundary": "contrib library source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbexpat.hbp rc0 (unitable.c generated, lib produced) (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc0 only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 115: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 115: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 115: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 115: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 362: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbdoc/hbdoc.prg",
-   "sha256": "05a15822abd1a585210f6abe00a760a483331204297802aafdb2fe68b6a3ebd6",
-   "review": "full source manually read 2026-11-01 (1030 non-comment lines)",
-   "entrypoint": "Main( ... ) variadic: Harbour Document Compiler (template/constraint engine, CREATE CLASS Entry, hash-based s_generators)",
-   "build_unit": "hbdoc.hbp",
-   "profile": "C-contrib",
-   "dependencies": "includes _base/_txt/_xml/_html.prg via #include",
-   "boundary": "contrib tool source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp -> hbdoc binary 92680 B)",
-   "reference_run": "hbdoc -h rc0 deterministic 20-line help text (upstream tool at pin; suite upstream, NOT HR compatibility)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 509: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbfbird/tests/simple.prg",
+      "sha256": "90754ecc855cb019d5b3f4f622ca67045b8e15ef1c2e546b97c304f7ed6ae30d",
+      "review": "full source manually read 2026-11-01 (138 non-comment lines)",
+      "entrypoint": "Main(): TFirebird connect/create/insert/select demo",
+      "build_unit": "tests via hbmk2 -lhblib -lhbfbird",
+      "profile": "C-contrib",
+      "dependencies": "#require hbfbird + Firebird server/database",
+      "boundary": "contrib test source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbfbird.hbp rc10 (hbmk2 'Missing dependency: firebird') - dependency class environment",
+      "reference_run": "not-run (needs Firebird server; dependency class)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 509: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 509: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbfbird/tests/stress.prg",
+      "sha256": "5cefbf7f9b4dbe2a92430ca35060e130f3a27dfbede588178bd418042ab976f2",
+      "review": "full source manually read 2026-11-01 (99 non-comment lines)",
+      "entrypoint": "Main(): TFirebird multi-transaction stress test",
+      "build_unit": "tests via hbmk2 -lhblib -lhbfbird",
+      "profile": "C-contrib",
+      "dependencies": "#require hbfbird + Firebird server/database",
+      "boundary": "contrib test source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbfbird.hbp rc10 (missing firebird dependency) - environment class",
+      "reference_run": "not-run (needs Firebird server; dependency class)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 3: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 509: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbexpat/hbexpat.ch",
-   "sha256": "c0f141bf7ec672f61156a092e081d5f0d49381b7e5af9b4861633b113c8fab74",
-   "review": "full source manually read 2026-11-01 (59 non-comment lines)",
-   "entrypoint": "header: HB_EXPAT_* #define table + HB_FUNC declarations (no functions)",
-   "build_unit": "hbexpat.hbp",
-   "profile": "C-contrib",
-   "dependencies": "expat C library (bundled in unit .hbp sources)",
-   "boundary": "contrib header source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbexpat.hbp rc0 (libhbexpat.a produced; unitable.c generated) (unit .hbp)",
-   "reference_run": "not-run (library unit; tests need XML input file - recorded build rc0 only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run (header; pure #define table - nothing to compile in this PoC)"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": "not-run (header; pure #define table - nothing to compile in this PoC)"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbexpat/tests/test.prg",
-   "sha256": "bd908947d54147dd3daaa9f7acc8eb8d20b20a5ec3547bd0a174f8c1798970aa",
-   "review": "full source manually read 2026-11-01 (56 non-comment lines)",
-   "entrypoint": "hb_expat parser walk over XML file arg",
-   "build_unit": "tests via hbmk2 -lhblib -lhbexpat",
-   "profile": "C-contrib",
-   "dependencies": "#require hbexpat + local XML file argument",
-   "boundary": "contrib test source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbexpat.hbp rc0 (unit .hbp)",
-   "reference_run": "not-run (needs XML input file + linked lib; recorded build rc0 only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 3: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbfbird/tests/test.prg",
+      "sha256": "458d9dfba7581a258ef849e5248e080509de11932d78bd6aef213c08f22de6ce",
+      "review": "full source manually read 2026-11-01 (86 non-comment lines)",
+      "entrypoint": "Main(): TFirebird blob/insert/select test",
+      "build_unit": "tests via hbmk2 -lhblib -lhbfbird",
+      "profile": "C-contrib",
+      "dependencies": "#require hbfbird + Firebird server/database",
+      "boundary": "contrib test source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbfbird.hbp rc10 (missing firebird dependency) - environment class",
+      "reference_run": "not-run (needs Firebird server; dependency class)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 1: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 3: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 3: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbfbird/tfirebrd.prg",
+      "sha256": "cd2335788d619fe2c6b638e92dd729dfe4a5011cae62255c206a9126f1bf6f34",
+      "review": "full source manually read 2026-11-01 (767 non-comment lines)",
+      "entrypoint": "CREATE CLASS TFirebird (fbclient API wrapper: connect/execute/blob/transactions)",
+      "build_unit": "hbfbird.hbp",
+      "profile": "C-contrib",
+      "dependencies": "Firebird client C library (missing in environment: rc10)",
+      "boundary": "contrib library source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbfbird.hbp rc10 (missing firebird dependency) - dependency class environment",
+      "reference_run": "not-run (library unit; needs Firebird server - recorded build attempt only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 429: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 429: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 429: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 429: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 3: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbexpat/tests/tohash.prg",
-   "sha256": "381b646d8b78a8de66c6960fc253e7d14855cd319a63128a61d070641c4631ab",
-   "review": "full source manually read 2026-11-01 (115 non-comment lines)",
-   "entrypoint": "hb_expat XML-to-hash converter with handler table",
-   "build_unit": "tests via hbmk2 -lhblib -lhbexpat",
-   "profile": "C-contrib",
-   "dependencies": "#require hbexpat + local XML file argument",
-   "boundary": "contrib test source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbexpat.hbp rc0 (unit .hbp)",
-   "reference_run": "not-run (needs XML input file + linked lib; recorded build rc0 only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 3: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbfimage/freeimag.ch",
+      "sha256": "9595ef0a7d5c94b1824d53000751fbe36ff2dc8426f4bcb18aad89a16a9bcbe5",
+      "review": "full source manually read 2026-11-01 (228 non-comment lines)",
+      "entrypoint": "header: FREE_IMAGE_FORMAT/FILTER/COLOR_TYPE #define table + HB_FUNC declarations (no functions)",
+      "build_unit": "hbfimage.hbp",
+      "profile": "C-contrib",
+      "dependencies": "FreeImage C library (missing in environment: rc10)",
+      "boundary": "contrib header source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbfimage.hbp rc10 (hbmk2 'Missing dependency: freeimage') - dependency class environment",
+      "reference_run": "not-run (library unit; recorded build attempt only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": "not-run (header; pure #define table - nothing to compile in this PoC)"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": "not-run (header; pure #define table - nothing to compile in this PoC)"
+        }
+      }
     },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 3: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
+    {
+      "file": "contrib/hbfimage/tests/test.prg",
+      "sha256": "fcf6850448af4f852752868a5daefd6baf5caa4b57db7248b149def24be43993",
+      "review": "full source manually read 2026-11-01 (155 non-comment lines)",
+      "entrypoint": "Main(): fi_Load/convert/save image ops + thumbnail",
+      "build_unit": "tests via hbmk2 -lhblib -lhbfimage",
+      "profile": "C-contrib",
+      "dependencies": "#require hbfimage + sample image file",
+      "boundary": "contrib test source at upstream pin",
+      "reference_build_exit": null,
+      "reference_build_note": "unit hbfimage.hbp rc10 (missing freeimage dependency) - environment class",
+      "reference_run": "not-run (needs FreeImage lib + sample image; dependency class)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 7: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 7: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 7: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 7: unknown directive #require in this PoC",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
     }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 3: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 3: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbexpat/unitable.prg",
-   "sha256": "6c476422ca6afb9c13537ebb85554bc243bf6885678dcc729e6d1044df96b36d",
-   "review": "full source manually read 2026-11-01 (17 non-comment lines)",
-   "entrypoint": "STATIC PROCEDURE __hb_expat_unitables(): UN-escape table init (unit table generator)",
-   "build_unit": "hbexpat.hbp",
-   "profile": "C-contrib",
-   "dependencies": "expat C library",
-   "boundary": "contrib library source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbexpat.hbp rc0 (unitable.c generated, lib produced) (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc0 only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 115: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 115: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 115: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 115: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbfbird/tests/simple.prg",
-   "sha256": "90754ecc855cb019d5b3f4f622ca67045b8e15ef1c2e546b97c304f7ed6ae30d",
-   "review": "full source manually read 2026-11-01 (138 non-comment lines)",
-   "entrypoint": "Main(): TFirebird connect/create/insert/select demo",
-   "build_unit": "tests via hbmk2 -lhblib -lhbfbird",
-   "profile": "C-contrib",
-   "dependencies": "#require hbfbird + Firebird server/database",
-   "boundary": "contrib test source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbfbird.hbp rc10 (hbmk2 'Missing dependency: firebird') - dependency class environment",
-   "reference_run": "not-run (needs Firebird server; dependency class)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbfbird/tests/stress.prg",
-   "sha256": "5cefbf7f9b4dbe2a92430ca35060e130f3a27dfbede588178bd418042ab976f2",
-   "review": "full source manually read 2026-11-01 (99 non-comment lines)",
-   "entrypoint": "Main(): TFirebird multi-transaction stress test",
-   "build_unit": "tests via hbmk2 -lhblib -lhbfbird",
-   "profile": "C-contrib",
-   "dependencies": "#require hbfbird + Firebird server/database",
-   "boundary": "contrib test source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbfbird.hbp rc10 (missing firebird dependency) - environment class",
-   "reference_run": "not-run (needs Firebird server; dependency class)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 3: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 3: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 3: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 3: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbfbird/tests/test.prg",
-   "sha256": "458d9dfba7581a258ef849e5248e080509de11932d78bd6aef213c08f22de6ce",
-   "review": "full source manually read 2026-11-01 (86 non-comment lines)",
-   "entrypoint": "Main(): TFirebird blob/insert/select test",
-   "build_unit": "tests via hbmk2 -lhblib -lhbfbird",
-   "profile": "C-contrib",
-   "dependencies": "#require hbfbird + Firebird server/database",
-   "boundary": "contrib test source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbfbird.hbp rc10 (missing firebird dependency) - environment class",
-   "reference_run": "not-run (needs Firebird server; dependency class)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 1: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbfbird/tfirebrd.prg",
-   "sha256": "cd2335788d619fe2c6b638e92dd729dfe4a5011cae62255c206a9126f1bf6f34",
-   "review": "full source manually read 2026-11-01 (767 non-comment lines)",
-   "entrypoint": "CREATE CLASS TFirebird (fbclient API wrapper: connect/execute/blob/transactions)",
-   "build_unit": "hbfbird.hbp",
-   "profile": "C-contrib",
-   "dependencies": "Firebird client C library (missing in environment: rc10)",
-   "boundary": "contrib library source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbfbird.hbp rc10 (missing firebird dependency) - dependency class environment",
-   "reference_run": "not-run (library unit; needs Firebird server - recorded build attempt only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 429: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 429: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 429: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 429: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbfimage/freeimag.ch",
-   "sha256": "9595ef0a7d5c94b1824d53000751fbe36ff2dc8426f4bcb18aad89a16a9bcbe5",
-   "review": "full source manually read 2026-11-01 (228 non-comment lines)",
-   "entrypoint": "header: FREE_IMAGE_FORMAT/FILTER/COLOR_TYPE #define table + HB_FUNC declarations (no functions)",
-   "build_unit": "hbfimage.hbp",
-   "profile": "C-contrib",
-   "dependencies": "FreeImage C library (missing in environment: rc10)",
-   "boundary": "contrib header source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbfimage.hbp rc10 (hbmk2 'Missing dependency: freeimage') - dependency class environment",
-   "reference_run": "not-run (library unit; recorded build attempt only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run (header; pure #define table - nothing to compile in this PoC)"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": "not-run (header; pure #define table - nothing to compile in this PoC)"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbfimage/tests/test.prg",
-   "sha256": "fcf6850448af4f852752868a5daefd6baf5caa4b57db7248b149def24be43993",
-   "review": "full source manually read 2026-11-01 (155 non-comment lines)",
-   "entrypoint": "Main(): fi_Load/convert/save image ops + thumbnail",
-   "build_unit": "tests via hbmk2 -lhblib -lhbfimage",
-   "profile": "C-contrib",
-   "dependencies": "#require hbfimage + sample image file",
-   "boundary": "contrib test source at upstream pin",
-   "reference_build_exit": null,
-   "reference_build_note": "unit hbfimage.hbp rc10 (missing freeimage dependency) - environment class",
-   "reference_run": "not-run (needs FreeImage lib + sample image; dependency class)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 7: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 7: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin c212a9a6 (src/hbc.rs sha256 3a7555e2...; verificado identico a punta de rama 0cd58c56, que solo acumula ledgers desde c212a9a6)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 7: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 7: unknown directive #require in this PoC",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  }
- ]
+  ],
+  "corrections": [
+    "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence."
+  ]
 }

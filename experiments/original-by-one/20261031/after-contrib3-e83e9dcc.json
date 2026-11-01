@@ -688,6 +688,7 @@
     }
   ],
   "corrections": [
-    "2026-11-01: sha256 corrected for hbformat/utils/hbformat.prg and hbfoxpro/dll.prg (recorded values did not match checkout/inventory; verified against harbour-ref @694428e1). Original rows otherwise unchanged; see audit report 01:44."
+    "2026-11-01: sha256 corrected for hbformat/utils/hbformat.prg and hbfoxpro/dll.prg (recorded values did not match checkout/inventory; verified against harbour-ref @694428e1). Original rows otherwise unchanged; see audit report 01:44.",
+    "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence."
   ]
 }

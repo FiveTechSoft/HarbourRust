@@ -1,1934 +1,1937 @@
 {
- "unit_note": "contrib batch 6 sub-batch 6b: hbnf remaining 39 .prg + 2 .ch = 41 files (hbnf top-level COMPLETE: 99 .prg + 2 .ch; 59 tests pending in 6c). C-contrib cumulative 226/695 files. Reference build pin 694428e1 (rc clean, no pipes): hbnf.hbp rc0 (libhbnf.a, all 99 .prg). HR matrix 39 x base/head x default/llvm RE-RUN at the new compiler pin 92947baf (args increment): 9 files diverge base/HEAD (adessort, clrsel, dispmsg, floptst, restsets, savesets, sinkey, vertmenu, video2); in every case HEAD fails LATER or on a more advanced construct. video2 advances vs the previous pin c212a9a6 (empty-Argument now parses; first failure moves from 'unexpected token Comma' line 51 to 'unknown function hb_default' line 49) - the args increment working as designed, recorded, not claimed as compatibility. Diagnostics: 'unknown function' builtin coverage class dominates (iscolor/setcolor/hb_isstring/substr/memory/set/hb_diskspace/hb_osdriveseparator/_ft_nwkstat/hb_default/__defaultnil/savescreen/aeval); 'statement not in subset (identifier-led line)' (8); 'expected local name [:= expr]' (4); 'expected , or } in the codeblock body' (6); SET commands class (cntryset); '`PCount` is not in this increment' (sinkey); 'unterminated escaped result marker' (menuto); 'missing )' baseline-only (3). LLVM column identical to default for all 39. Baseline column labeled BASELINE, never current state. No compatibility claimed.",
- "reference": "694428e1c12f726675b19324d62167fa77d68185",
- "sources_unchanged": true,
- "rows": [
-  {
-   "file": "contrib/hbnf/adapter.prg",
-   "sha256": "4e08fc372731cb7ac5ed7de35fbb454e7c275c211e1fd3e0234b2d32e88fa3d8",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_Adapter",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 49: unknown function `iscolor` (must be defined before use)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 49: unknown function `iscolor` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 49: unknown function `iscolor` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 49: unknown function `iscolor` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 49: unknown function `iscolor` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/adessort.prg",
-   "sha256": "6dec8312394dcd2e04bda16e1d4af255d1f7ca123a339600bac0a938960783ea",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_ADesSort",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 32: expected `,` or `}` in the codeblock body, got Some(Gt)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 29: missing )",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 29: missing )",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 32: expected `,` or `}` in the codeblock body, got Some(Gt)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 32: expected `,` or `}` in the codeblock body, got Some(Gt)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/aemaxlen.prg",
-   "sha256": "155a203d4e6b05caa0722c5e0a71f95a3a8979d9a19c0fbea063bb79a510df33",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_AEMaxLen",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/aeminlen.prg",
-   "sha256": "7687d8c575dc41f991536332eee17f4d223ddf5270d735ff86ebdb76ec8ff548",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_AEMinLen",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/aredit.prg",
-   "sha256": "d8d533353cf53e3382d8c093a377ef0518fdb6d27ba6e1fe52aa2bcf7515abfc",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_ArEdit",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 233: expected `,` or `}` in the codeblock body, got Some(Assign)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 233: expected `,` or `}` in the codeblock body, got Some(Assign)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 233: expected `,` or `}` in the codeblock body, got Some(Assign)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 233: expected `,` or `}` in the codeblock body, got Some(Assign)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 233: expected `,` or `}` in the codeblock body, got Some(Assign)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/blink.prg",
-   "sha256": "f791e6006e2107a6ebf99c3e74851b82e21977770179faa53ca83a74977c2bc1",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_Blink",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 31: unknown function `setcolor` (must be defined before use)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 31: unknown function `setcolor` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 31: unknown function `setcolor` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 31: unknown function `setcolor` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 31: unknown function `setcolor` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/byteor.prg",
-   "sha256": "babb7ced8188961011ce708f7daace21f72c57d32a8fc0bf62e022d70f67d58b",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_ByteOr",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/calendar.prg",
-   "sha256": "a3e5b517d42a984c53297b391a3d92f57ed95420bf3cfeaea051829bfcadb0f7",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_Calendar, STATIC JDOY, STATIC VALS",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 240: expected `local name [:= expr]`",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 240: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 240: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 240: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 240: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/clrsel.prg",
-   "sha256": "953d18fda6b983475cbd933219a2481159298ebff456b1e83d53ad0069fac962",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_ClrSel, STATIC _ftHiLite, STATIC _ftColours, STATIC _ftShowIt",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 245: expected `,` or `}` in the codeblock body, got Some(Assign)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 245: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 245: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 245: expected `,` or `}` in the codeblock body, got Some(Assign)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 245: expected `,` or `}` in the codeblock body, got Some(Assign)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/cntryset.prg",
-   "sha256": "34372eda2f9206b360608c2a153bf042b6f2abb574c2e00b6d905684738519ed",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_SetCentury",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 31: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 31: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 31: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 31: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 31: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/default.prg",
-   "sha256": "c828157b6a1342151c34d001d1d3c34b19c96ddb64a5eadd8cddb28358aecb27",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_Default",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/dfile.prg",
-   "sha256": "68737804dbb25f915a365d47218a63e7ce69de0fb7460d3dbf87651bde51bf41",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_DFSetup, ft_DFClose",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 105: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 105: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 105: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 105: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 105: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/diskfunc.prg",
-   "sha256": "9ae31ea954904caf026dd2747daa058e9e5e23c69cea43d804b93ffc0df8200d",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_DskSize, ft_DskFree",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 106: unknown function `hb_diskspace` (must be defined before use)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 106: unknown function `hb_diskspace` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 106: unknown function `hb_diskspace` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 106: unknown function `hb_diskspace` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 106: unknown function `hb_diskspace` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/dispmsg.prg",
-   "sha256": "b269a5213cc72a93647b99a2677a303dd033f01b7876de92d1c1f7620486cc7a",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_DispMsg",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 112: expected `,` or `}` in the codeblock body, got Some(Assign)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 112: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 112: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 112: expected `,` or `}` in the codeblock body, got Some(Assign)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 112: expected `,` or `}` in the codeblock body, got Some(Assign)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/floptst.prg",
-   "sha256": "b54e2dc945bb514592c3d2f6629ed93e3a16a94fd118f20ca29c58dd530519ac",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_FlopTst",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 138: unknown function `hb_osdriveseparator` (must be defined before use)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 148: missing )",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 148: missing )",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 138: unknown function `hb_osdriveseparator` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 138: unknown function `hb_osdriveseparator` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/invclr.prg",
-   "sha256": "b0dc2cb0a9f4e9ba4b2c4acb68f7418b7848e14b3b79afd6bfc1d90818a97b72",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_InvClr",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 28: unknown function `__defaultnil` (must be defined before use)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 28: unknown function `__defaultnil` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 28: unknown function `__defaultnil` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 28: unknown function `__defaultnil` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 28: unknown function `__defaultnil` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/menu1.prg",
-   "sha256": "d5061770ac17ec1e4986d5d3b8652b038703db5fecb8841d45b192ed552014f9",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_Menu1, STATIC __ftAcUdf, STATIC _ftWidest, STATIC _ftLocat",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 246: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 246: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 246: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 246: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 246: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/menuto.prg",
-   "sha256": "3a93e261a40029a58bd62312656b0406f8d0891df2db982d2234cd2705f89076",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_Prompt, ft_MenuTo",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 35: unterminated escaped result marker",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 35: unterminated escaped result marker",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 35: unterminated escaped result marker",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 35: unterminated escaped result marker",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 35: unterminated escaped result marker",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/mouse1.prg",
-   "sha256": "aeeba2b8a9086e16cc0f791d98c4469502d4de71c537d4e53bd7ecd777633278",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_MDblClk, ft_MInRegion, ft_MMickeys, ft_MGetPos",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/nwlstat.prg",
-   "sha256": "ea4afea73302939ce44659c7466fa09b8bd4a66ff6f27c48f71052a62e054101",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_NWLStat",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 25: unknown function `_ft_nwkstat` (must be defined before use)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 25: unknown function `_ft_nwkstat` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 25: unknown function `_ft_nwkstat` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 25: unknown function `_ft_nwkstat` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 25: unknown function `_ft_nwkstat` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/nwsem.prg",
-   "sha256": "d1bb45b49b6eb527bfb511159d8fe99bbf7b4160ef9a80a68f20958a64bc2f88",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_NWSemOpen, ft_NWSemEx, ft_NWSemWait, ft_NWSemSig",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 83: expected `local name [:= expr]`",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 83: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 83: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 83: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 83: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/nwuid.prg",
-   "sha256": "6fe02d15c4dc58d5a1746059e71a5e33935be9a7b0cb81574e8e93ae8357c4d7",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_NWUID",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 78: expected `local name [:= expr]`",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 78: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 78: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 78: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 78: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/ontick.prg",
-   "sha256": "49599414420992687d84c6f72faa31fd02d0b4644b69750e73a885b94ff48ce8",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "STATIC __ft_OnTick, ft_OnTick",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/pegs.prg",
-   "sha256": "30f96626b3fb263b674e2a631f72deb941cbd79c71292588d5bc20fad0d501f0",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_Pegs, STATIC DrawBox, STATIC err_msg, STATIC moremoves",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 210: expected `,` or `}` in the codeblock body, got Some(EqEq)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 210: expected `,` or `}` in the codeblock body, got Some(EqEq)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 210: expected `,` or `}` in the codeblock body, got Some(EqEq)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 210: expected `,` or `}` in the codeblock body, got Some(EqEq)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 210: expected `,` or `}` in the codeblock body, got Some(EqEq)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/pending.prg",
-   "sha256": "6eafb7cd6f2a70e81dbd7f2667b03d9ed27e34e12112b6bdb9a0d2e382b8a92f",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_Pending",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 27: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 27: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 27: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 27: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 27: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/pickday.prg",
-   "sha256": "8b3a61bf5a41989adf35945a12a29fdeb80add8422e337533580b8ce7fe38d7b",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_PickDay",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 26: unknown function `savescreen` (must be defined before use)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 26: unknown function `savescreen` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 26: unknown function `savescreen` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 26: unknown function `savescreen` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 26: unknown function `savescreen` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/popadder.prg",
-   "sha256": "44f88d94f58a608ff68074b0c41d64a4ca8370d208586aec9a3009787269e896",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_Adder, STATIC _ftAddScreen, STATIC _ftChangeDec, STATIC _ftDispTotal",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 310: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 310: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 310: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 310: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 310: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/prtesc.prg",
-   "sha256": "3b85b8a9d3356952fbe03a9db1a0e877ad403254499be130978f856c9c6eddff",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_EscCode",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 31: unknown function `substr` (must be defined before use)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 31: unknown function `substr` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 31: unknown function `substr` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 31: unknown function `substr` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 31: unknown function `substr` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/rand1.prg",
-   "sha256": "4769c6469cf0ec15472da4aa10a67af5f7802b3e60976b815a0e27045c77302f",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_Rand1",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 24: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 24: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 24: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 24: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 24: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/restsets.prg",
-   "sha256": "6a599a37ea8be7c36cef4a130efb978fd442e3829d1d8a0c32578c23897bf1aa",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_RestSets",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 25: unknown function `set` (must be defined before use)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 25: unknown function `aeval` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 25: unknown function `aeval` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 25: unknown function `set` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 25: unknown function `set` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/savesets.prg",
-   "sha256": "d50e37f555ece10cb5e913d6db0dbe69936ed74f7c60b699a78d336dad7d8cae",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_SaveSets",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 30: expected `,` or `}` in the codeblock body, got Some(Assign)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 30: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 30: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 30: expected `,` or `}` in the codeblock body, got Some(Assign)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 30: expected `,` or `}` in the codeblock body, got Some(Assign)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/scancode.prg",
-   "sha256": "19755dadac2573345d69ea022ad170b16108205b7e38b9cbeaf45b5879f67265",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_ScanCode",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 73: expected `local name [:= expr]`",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 73: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 73: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 73: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 73: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/scregion.prg",
-   "sha256": "ffdc0be96b12f16d69cc9a8be16ec1a214a44845ad556178b74d8a1d52359269",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_SavRgn, ft_RstRgn, ft_RgnStack",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 22: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 22: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 22: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 22: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 22: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/sinkey.prg",
-   "sha256": "fcbbd9d03880106c37b653d7b5e902741527efc9a8b3b76c2bb29828bf48d816",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_SInkey",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 27: `PCount` is not in this increment (the calling convention carries no argument count; `hb_PValue` over the declared parameters is the supported introspection)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 42: missing )",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 42: missing )",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 27: `PCount` is not in this increment (the calling convention carries no argument count; `hb_PValue` over the declared parameters is the supported introspection)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 27: `PCount` is not in this increment (the calling convention carries no argument count; `hb_PValue` over the declared parameters is the supported introspection)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/sysmem.prg",
-   "sha256": "5e24fd37a9c1cac62d56aaa4219ec5286644594081f09c3f28497662b11d2383",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_SysMem",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 87: unknown function `memory` (must be defined before use)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 87: unknown function `memory` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 87: unknown function `memory` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 87: unknown function `memory` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 87: unknown function `memory` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/vertmenu.prg",
-   "sha256": "906b50049ab584df3940fe48b661b4a8fc50aa25bf6794462d64c491d4411dd2",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_Menu2",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 41: expected `,` or `}` in the codeblock body, got Some(Assign)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 41: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 41: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 41: expected `,` or `}` in the codeblock body, got Some(Assign)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 41: expected `,` or `}` in the codeblock body, got Some(Assign)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/vidcur.prg",
-   "sha256": "a21de2386c08723eb68b784e66abc5afc9a64a968e224b278cbc7cd349270716",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_SetVcur, ft_GetVCur",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 141: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 141: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 141: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 141: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 141: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/video2.prg",
-   "sha256": "42d7a81036f975038900dce59b7c50a3b65e7df5ff1a481adebd5b3f39d57f5f",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_CLS, ft_VidStr, ft_WrtChr",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 49: unknown function `hb_default` (must be defined before use)",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 51: unexpected token Comma in expression",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 51: unexpected token Comma in expression",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 49: unknown function `hb_default` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 49: unknown function `hb_default` (must be defined before use)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/xbox.prg",
-   "sha256": "46e1234241b19d4138598614ec9eff0b91e7cc75c219137b3ca6c32a19f5697d",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "ft_XBox",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "error: line 100: expected `local name [:= expr]`",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp)",
-   "reference_run": "not-run (library unit; recorded build rc only)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 100: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 100: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 100: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": 1,
-     "diagnostic": "error: line 100: expected `local name [:= expr]`",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/ftint86.ch",
-   "sha256": "e31aa5f1383451e039796cd2960071c2488ec296630680890b278d1731f1cb3a",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives/macros only)",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  },
-  {
-   "file": "contrib/hbnf/ftmenuto.ch",
-   "sha256": "c0f1716fe55e419edc7428711fe68d772106154b9281ca9b4902d060c10f350b",
-   "review": "full source manually read 2026-11-01",
-   "entrypoint": "header (preprocessor directives/macros only)",
-   "build_unit": "contrib/hbnf.hbp",
-   "profile": "C-contrib",
-   "dependencies": "included by unit sources",
-   "boundary": "contrib source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
-   "reference_run": "not-run (header row)",
-   "backends_baseline": {
-    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   },
-   "backends_head": {
-    "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
-    "default": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    },
-    "llvm": {
-     "compile_exit": "not-run",
-     "diagnostic": "header row (not compiled directly)",
-     "link": "not-run",
-     "execution": "not-run",
-     "comparison": "not-run"
-    }
-   }
-  }
- ]
+  "unit_note": "contrib batch 6 sub-batch 6b: hbnf remaining 39 .prg + 2 .ch = 41 files (hbnf top-level COMPLETE: 99 .prg + 2 .ch; 59 tests pending in 6c). C-contrib cumulative 226/695 files. Reference build pin 694428e1 (rc clean, no pipes): hbnf.hbp rc0 (libhbnf.a, all 99 .prg). HR matrix 39 x base/head x default/llvm RE-RUN at the new compiler pin 92947baf (args increment): 9 files diverge base/HEAD (adessort, clrsel, dispmsg, floptst, restsets, savesets, sinkey, vertmenu, video2); in every case HEAD fails LATER or on a more advanced construct. video2 advances vs the previous pin c212a9a6 (empty-Argument now parses; first failure moves from 'unexpected token Comma' line 51 to 'unknown function hb_default' line 49) - the args increment working as designed, recorded, not claimed as compatibility. Diagnostics: 'unknown function' builtin coverage class dominates (iscolor/setcolor/hb_isstring/substr/memory/set/hb_diskspace/hb_osdriveseparator/_ft_nwkstat/hb_default/__defaultnil/savescreen/aeval); 'statement not in subset (identifier-led line)' (8); 'expected local name [:= expr]' (4); 'expected , or } in the codeblock body' (6); SET commands class (cntryset); '`PCount` is not in this increment' (sinkey); 'unterminated escaped result marker' (menuto); 'missing )' baseline-only (3). LLVM column identical to default for all 39. Baseline column labeled BASELINE, never current state. No compatibility claimed.",
+  "reference": "694428e1c12f726675b19324d62167fa77d68185",
+  "sources_unchanged": true,
+  "rows": [
+    {
+      "file": "contrib/hbnf/adapter.prg",
+      "sha256": "4e08fc372731cb7ac5ed7de35fbb454e7c275c211e1fd3e0234b2d32e88fa3d8",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_Adapter",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 49: unknown function `iscolor` (must be defined before use)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 49: unknown function `iscolor` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 49: unknown function `iscolor` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 49: unknown function `iscolor` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 49: unknown function `iscolor` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/adessort.prg",
+      "sha256": "6dec8312394dcd2e04bda16e1d4af255d1f7ca123a339600bac0a938960783ea",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_ADesSort",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 32: expected `,` or `}` in the codeblock body, got Some(Gt)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 29: missing )",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 29: missing )",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 32: expected `,` or `}` in the codeblock body, got Some(Gt)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 32: expected `,` or `}` in the codeblock body, got Some(Gt)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/aemaxlen.prg",
+      "sha256": "155a203d4e6b05caa0722c5e0a71f95a3a8979d9a19c0fbea063bb79a510df33",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_AEMaxLen",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/aeminlen.prg",
+      "sha256": "7687d8c575dc41f991536332eee17f4d223ddf5270d735ff86ebdb76ec8ff548",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_AEMinLen",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 32: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/aredit.prg",
+      "sha256": "d8d533353cf53e3382d8c093a377ef0518fdb6d27ba6e1fe52aa2bcf7515abfc",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_ArEdit",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 233: expected `,` or `}` in the codeblock body, got Some(Assign)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 233: expected `,` or `}` in the codeblock body, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 233: expected `,` or `}` in the codeblock body, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 233: expected `,` or `}` in the codeblock body, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 233: expected `,` or `}` in the codeblock body, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/blink.prg",
+      "sha256": "f791e6006e2107a6ebf99c3e74851b82e21977770179faa53ca83a74977c2bc1",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_Blink",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 31: unknown function `setcolor` (must be defined before use)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 31: unknown function `setcolor` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 31: unknown function `setcolor` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 31: unknown function `setcolor` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 31: unknown function `setcolor` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/byteor.prg",
+      "sha256": "babb7ced8188961011ce708f7daace21f72c57d32a8fc0bf62e022d70f67d58b",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_ByteOr",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 24: unknown function `hb_isstring` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/calendar.prg",
+      "sha256": "a3e5b517d42a984c53297b391a3d92f57ed95420bf3cfeaea051829bfcadb0f7",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_Calendar, STATIC JDOY, STATIC VALS",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 240: expected `local name [:= expr]`",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 240: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 240: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 240: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 240: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/clrsel.prg",
+      "sha256": "953d18fda6b983475cbd933219a2481159298ebff456b1e83d53ad0069fac962",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_ClrSel, STATIC _ftHiLite, STATIC _ftColours, STATIC _ftShowIt",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 245: expected `,` or `}` in the codeblock body, got Some(Assign)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 245: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 245: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 245: expected `,` or `}` in the codeblock body, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 245: expected `,` or `}` in the codeblock body, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/cntryset.prg",
+      "sha256": "34372eda2f9206b360608c2a153bf042b6f2abb574c2e00b6d905684738519ed",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_SetCentury",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 31: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 31: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 31: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 31: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 31: SET commands are not in this increment (measured forms: SET PRINTER/DEVICE/ALTERNATE/MARGIN belong to output routing, SET EXCLUSIVE to the RDD layer, SET CENTURY/DATEFORMAT to the date subsystem - each parked with its subsystem; SET DECIMALS is fixed at the Harbour default 2, oracle hk295)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/default.prg",
+      "sha256": "c828157b6a1342151c34d001d1d3c34b19c96ddb64a5eadd8cddb28358aecb27",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_Default",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 49: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/dfile.prg",
+      "sha256": "68737804dbb25f915a365d47218a63e7ce69de0fb7460d3dbf87651bde51bf41",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_DFSetup, ft_DFClose",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 105: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 105: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 105: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 105: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 105: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/diskfunc.prg",
+      "sha256": "9ae31ea954904caf026dd2747daa058e9e5e23c69cea43d804b93ffc0df8200d",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_DskSize, ft_DskFree",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 106: unknown function `hb_diskspace` (must be defined before use)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 106: unknown function `hb_diskspace` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 106: unknown function `hb_diskspace` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 106: unknown function `hb_diskspace` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 106: unknown function `hb_diskspace` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/dispmsg.prg",
+      "sha256": "b269a5213cc72a93647b99a2677a303dd033f01b7876de92d1c1f7620486cc7a",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_DispMsg",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 112: expected `,` or `}` in the codeblock body, got Some(Assign)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 112: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 112: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 112: expected `,` or `}` in the codeblock body, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 112: expected `,` or `}` in the codeblock body, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/floptst.prg",
+      "sha256": "b54e2dc945bb514592c3d2f6629ed93e3a16a94fd118f20ca29c58dd530519ac",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_FlopTst",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 138: unknown function `hb_osdriveseparator` (must be defined before use)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 148: missing )",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 148: missing )",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 138: unknown function `hb_osdriveseparator` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 138: unknown function `hb_osdriveseparator` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/invclr.prg",
+      "sha256": "b0dc2cb0a9f4e9ba4b2c4acb68f7418b7848e14b3b79afd6bfc1d90818a97b72",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_InvClr",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 28: unknown function `__defaultnil` (must be defined before use)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 28: unknown function `__defaultnil` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 28: unknown function `__defaultnil` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 28: unknown function `__defaultnil` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 28: unknown function `__defaultnil` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/menu1.prg",
+      "sha256": "d5061770ac17ec1e4986d5d3b8652b038703db5fecb8841d45b192ed552014f9",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_Menu1, STATIC __ftAcUdf, STATIC _ftWidest, STATIC _ftLocat",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 246: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 246: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 246: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 246: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 246: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/menuto.prg",
+      "sha256": "3a93e261a40029a58bd62312656b0406f8d0891df2db982d2234cd2705f89076",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_Prompt, ft_MenuTo",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 35: unterminated escaped result marker",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 35: unterminated escaped result marker",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 35: unterminated escaped result marker",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 35: unterminated escaped result marker",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 35: unterminated escaped result marker",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/mouse1.prg",
+      "sha256": "aeeba2b8a9086e16cc0f791d98c4469502d4de71c537d4e53bd7ecd777633278",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_MDblClk, ft_MInRegion, ft_MMickeys, ft_MGetPos",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 6: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/nwlstat.prg",
+      "sha256": "ea4afea73302939ce44659c7466fa09b8bd4a66ff6f27c48f71052a62e054101",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_NWLStat",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 25: unknown function `_ft_nwkstat` (must be defined before use)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 25: unknown function `_ft_nwkstat` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 25: unknown function `_ft_nwkstat` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 25: unknown function `_ft_nwkstat` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 25: unknown function `_ft_nwkstat` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/nwsem.prg",
+      "sha256": "d1bb45b49b6eb527bfb511159d8fe99bbf7b4160ef9a80a68f20958a64bc2f88",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_NWSemOpen, ft_NWSemEx, ft_NWSemWait, ft_NWSemSig",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 83: expected `local name [:= expr]`",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 83: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 83: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 83: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 83: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/nwuid.prg",
+      "sha256": "6fe02d15c4dc58d5a1746059e71a5e33935be9a7b0cb81574e8e93ae8357c4d7",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_NWUID",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 78: expected `local name [:= expr]`",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 78: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 78: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 78: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 78: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/ontick.prg",
+      "sha256": "49599414420992687d84c6f72faa31fd02d0b4644b69750e73a885b94ff48ce8",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "STATIC __ft_OnTick, ft_OnTick",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 47: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/pegs.prg",
+      "sha256": "30f96626b3fb263b674e2a631f72deb941cbd79c71292588d5bc20fad0d501f0",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_Pegs, STATIC DrawBox, STATIC err_msg, STATIC moremoves",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 210: expected `,` or `}` in the codeblock body, got Some(EqEq)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 210: expected `,` or `}` in the codeblock body, got Some(EqEq)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 210: expected `,` or `}` in the codeblock body, got Some(EqEq)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 210: expected `,` or `}` in the codeblock body, got Some(EqEq)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 210: expected `,` or `}` in the codeblock body, got Some(EqEq)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/pending.prg",
+      "sha256": "6eafb7cd6f2a70e81dbd7f2667b03d9ed27e34e12112b6bdb9a0d2e382b8a92f",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_Pending",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 27: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 27: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 27: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 27: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 27: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/pickday.prg",
+      "sha256": "8b3a61bf5a41989adf35945a12a29fdeb80add8422e337533580b8ce7fe38d7b",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_PickDay",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 26: unknown function `savescreen` (must be defined before use)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 26: unknown function `savescreen` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 26: unknown function `savescreen` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 26: unknown function `savescreen` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 26: unknown function `savescreen` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/popadder.prg",
+      "sha256": "44f88d94f58a608ff68074b0c41d64a4ca8370d208586aec9a3009787269e896",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_Adder, STATIC _ftAddScreen, STATIC _ftChangeDec, STATIC _ftDispTotal",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 310: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 310: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 310: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 310: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 310: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/prtesc.prg",
+      "sha256": "3b85b8a9d3356952fbe03a9db1a0e877ad403254499be130978f856c9c6eddff",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_EscCode",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 31: unknown function `substr` (must be defined before use)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 31: unknown function `substr` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 31: unknown function `substr` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 31: unknown function `substr` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 31: unknown function `substr` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/rand1.prg",
+      "sha256": "4769c6469cf0ec15472da4aa10a67af5f7802b3e60976b815a0e27045c77302f",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_Rand1",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 24: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 24: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 24: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 24: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 24: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/restsets.prg",
+      "sha256": "6a599a37ea8be7c36cef4a130efb978fd442e3829d1d8a0c32578c23897bf1aa",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_RestSets",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 25: unknown function `set` (must be defined before use)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 25: unknown function `aeval` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 25: unknown function `aeval` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 25: unknown function `set` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 25: unknown function `set` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/savesets.prg",
+      "sha256": "d50e37f555ece10cb5e913d6db0dbe69936ed74f7c60b699a78d336dad7d8cae",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_SaveSets",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 30: expected `,` or `}` in the codeblock body, got Some(Assign)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 30: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 30: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 30: expected `,` or `}` in the codeblock body, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 30: expected `,` or `}` in the codeblock body, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/scancode.prg",
+      "sha256": "19755dadac2573345d69ea022ad170b16108205b7e38b9cbeaf45b5879f67265",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_ScanCode",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 73: expected `local name [:= expr]`",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 73: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 73: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 73: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 73: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/scregion.prg",
+      "sha256": "ffdc0be96b12f16d69cc9a8be16ec1a214a44845ad556178b74d8a1d52359269",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_SavRgn, ft_RstRgn, ft_RgnStack",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 22: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 22: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 22: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 22: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 22: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/sinkey.prg",
+      "sha256": "fcbbd9d03880106c37b653d7b5e902741527efc9a8b3b76c2bb29828bf48d816",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_SInkey",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 27: `PCount` is not in this increment (the calling convention carries no argument count; `hb_PValue` over the declared parameters is the supported introspection)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 42: missing )",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 42: missing )",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 27: `PCount` is not in this increment (the calling convention carries no argument count; `hb_PValue` over the declared parameters is the supported introspection)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 27: `PCount` is not in this increment (the calling convention carries no argument count; `hb_PValue` over the declared parameters is the supported introspection)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/sysmem.prg",
+      "sha256": "5e24fd37a9c1cac62d56aaa4219ec5286644594081f09c3f28497662b11d2383",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_SysMem",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 87: unknown function `memory` (must be defined before use)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 87: unknown function `memory` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 87: unknown function `memory` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 87: unknown function `memory` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 87: unknown function `memory` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/vertmenu.prg",
+      "sha256": "906b50049ab584df3940fe48b661b4a8fc50aa25bf6794462d64c491d4411dd2",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_Menu2",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 41: expected `,` or `}` in the codeblock body, got Some(Assign)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 41: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 41: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 41: expected `,` or `}` in the codeblock body, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 41: expected `,` or `}` in the codeblock body, got Some(Assign)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/vidcur.prg",
+      "sha256": "a21de2386c08723eb68b784e66abc5afc9a64a968e224b278cbc7cd349270716",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_SetVcur, ft_GetVCur",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 141: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 141: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 141: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 141: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 141: statement not in the subset (identifier-led line is not an assignment; expected `name := expr`)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/video2.prg",
+      "sha256": "42d7a81036f975038900dce59b7c50a3b65e7df5ff1a481adebd5b3f39d57f5f",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_CLS, ft_VidStr, ft_WrtChr",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 49: unknown function `hb_default` (must be defined before use)",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 51: unexpected token Comma in expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 51: unexpected token Comma in expression",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 49: unknown function `hb_default` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 49: unknown function `hb_default` (must be defined before use)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/xbox.prg",
+      "sha256": "46e1234241b19d4138598614ec9eff0b91e7cc75c219137b3ca6c32a19f5697d",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "ft_XBox",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "error: line 100: expected `local name [:= expr]`",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp)",
+      "reference_run": "not-run (library unit; recorded build rc only)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 100: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 100: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 100: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": 1,
+          "diagnostic": "error: line 100: expected `local name [:= expr]`",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/ftint86.ch",
+      "sha256": "e31aa5f1383451e039796cd2960071c2488ec296630680890b278d1731f1cb3a",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "header (preprocessor directives/macros only)",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "included by unit sources",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+      "reference_run": "not-run (header row)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": "not-run",
+          "diagnostic": "header row (not compiled directly)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": "not-run",
+          "diagnostic": "header row (not compiled directly)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": "not-run",
+          "diagnostic": "header row (not compiled directly)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": "not-run",
+          "diagnostic": "header row (not compiled directly)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    },
+    {
+      "file": "contrib/hbnf/ftmenuto.ch",
+      "sha256": "c0f1716fe55e419edc7428711fe68d772106154b9281ca9b4902d060c10f350b",
+      "review": "full source manually read 2026-11-01",
+      "entrypoint": "header (preprocessor directives/macros only)",
+      "build_unit": "contrib/hbnf.hbp",
+      "profile": "C-contrib",
+      "dependencies": "included by unit sources",
+      "boundary": "contrib source at upstream pin",
+      "reference_build_exit": 0,
+      "reference_build_note": "rc0 (unit .hbp; header consumed by unit sources)",
+      "reference_run": "not-run (header row)",
+      "backends_baseline": {
+        "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+        "default": {
+          "compile_exit": "not-run",
+          "diagnostic": "header row (not compiled directly)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": "not-run",
+          "diagnostic": "header row (not compiled directly)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      },
+      "backends_head": {
+        "label": "compiler pin 92947baf (src/hbc.rs sha256 2b9a5d6ba060740168d6646a4b1e134ecff65ac6a6d41fc127de6154b7c9419f; verified identical to branch tip after the args-increment commit)",
+        "default": {
+          "compile_exit": "not-run",
+          "diagnostic": "header row (not compiled directly)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        },
+        "llvm": {
+          "compile_exit": "not-run",
+          "diagnostic": "header row (not compiled directly)",
+          "link": "not-run",
+          "execution": "not-run",
+          "comparison": "not-run"
+        }
+      }
+    }
+  ],
+  "corrections": [
+    "2026-11-01: mechanical integrity verification done (string-aware comment strip vs raw @694428e1): 89/114 files byte-identical after comment-strip; 24 differ ONLY by inline comments retained in compressed + 2 mapping collisions (hbnetio.hbp, sddsqlt3 test.sqlite3 binary); 1 REAL code loss: hbmxml/tests/testmxml.prg 'foo/*/two' mxmlFindPath block (~20 lines), re-read from raw and recorded. Reads marked REPORTED pending independent contrast stand on compressed+raw-patch evidence."
+  ]
 }
