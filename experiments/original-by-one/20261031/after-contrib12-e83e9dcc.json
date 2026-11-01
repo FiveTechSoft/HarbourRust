@@ -15,7 +15,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "identifier-led statement not in subset",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbsqlit3/hdbc.prg",
@@ -26,7 +26,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "reduced VAR expression atom",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbsqlit3/tests/authoriz.prg",
@@ -37,7 +37,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbsqlit3/tests/backup.prg",
@@ -48,7 +48,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbsqlit3/tests/blob.prg",
@@ -59,7 +59,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbsqlit3/tests/demo.prg",
@@ -70,7 +70,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbsqlit3/tests/hdbc.prg",
@@ -81,7 +81,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbsqlit3/tests/hooks.prg",
@@ -92,7 +92,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbsqlit3/tests/metadata.prg",
@@ -103,7 +103,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbsqlit3/tests/pack.prg",
@@ -114,7 +114,7 @@
       "llvm_identical_default": true,
       "head_advances_vs_base": false,
       "class": "#require directive parked",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     },
     {
       "path": "contrib/hbsqlit3/hbsqlit3.ch",
@@ -122,12 +122,13 @@
       "sha256": "f19b52c070344f027cb9a5ab8fa8667d1e8839fda8f97cc358068542fd760672",
       "first_fail": null,
       "class": "header - no direct compile",
-      "evidence_level": "inventory+matrix"
+      "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
     }
   ],
   "notes": "hbsqlit3 COMPLETE (11: 2 top .prg + 1 .ch + 8 tests). hbsqlit3.hbp rc0 pin 694428e1. Matrix uniform base==HEAD==LLVM; classes: #require parked (7), identifier-led statement (errstr 171), reduced VAR atom (hdbc 59). No compatibility claimed.",
   "evidence_level": "inventory+matrix (NOT manual line-by-line review)",
   "corrections": [
-    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed."
+    "2026-11-01 evidence-level correction (per main 01:47): rows in this ledger are INVENTORY+MATRIX evidence (compressed source generated, sha256 recorded, base/head/LLVM first-fail matrix, reference build rc where present). No manual line-by-line source read was performed for these rows - compressed-file generation is not reading. Do not cite these rows as manually reviewed.",
+    "2026-11-01: 10 source rows read in full (1111 compressed lines; hbsqlit3.hbp = build manifest, non-source). Marked REPORTED pending independent contrast per main 01:50 rule. Content: errstr SWITCH over SQLITE_* constants (case;RETURN style), OOP hdbc wrapper (CREATE CLASS, INLINE methods, ::self vars), sqlite API tests (authorizer/backup/blob/hooks/metadata/pack/demo) with callbacks, trace_v2 blocks, prepared statements."
   ]
 }
