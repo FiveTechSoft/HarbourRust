@@ -1,5 +1,5 @@
 {
- "unit_note": "contrib batch 1: hbamf(2) + hbblat(4) + hbblink(2) + hbbmp(2) + hbbz2(2) = 12/695 C-contrib files. All 5 unit .hbp reference builds rc0 at pin 694428e1 (libraries, no safe deterministic executable run). First diagnostics identical baseline/HEAD on all 8 compilable .prg: #require class (tests), CREATE CLASS VAR INIT 'reduced VAR expression atom' (blatcls:57, known class), 'unterminated dotted word' (hbamfobj:367), 'unknown dotted word `..`' (blinker:318), assignment-in-call-args 'got Some(Assign)' (hbbmptst:13).",
+ "unit_note": "contrib batch 1: hbamf(2) + hbblat(4) + hbblink(2) + hbbmp(2) + hbbz2(2) = 12/695 C-contrib files. 4 unit .hbp reference builds rc0 at pin 694428e1 (hbamf, hbblink, hbbmp, hbbz2: libraries, no safe deterministic executable run); hbblat.hbp rc50 = hbmk2 intentional stop on non-Windows (-stop{!win}, blat is Windows-only, no objects produced) - dependency class environment/Windows-only; original misrecorded rc0 due to piped capture, corrected after-contrib2. First diagnostics identical baseline/HEAD on all 8 compilable .prg: #require class (tests), CREATE CLASS VAR INIT 'reduced VAR expression atom' (blatcls:57, known class), 'unterminated dotted word' (hbamfobj:367), 'unknown dotted word `..`' (blinker:318), assignment-in-call-args 'got Some(Assign)' (hbbmptst:13).",
  "reference": "694428e1c12f726675b19324d62167fa77d68185",
  "sources_unchanged": true,
  "rows": [
@@ -106,8 +106,8 @@
    "profile": "C-contrib",
    "dependencies": "blatwrp.c (Windows Blat DLL); hbblat.ch error defines",
    "boundary": "contrib library/test source at upstream pin",
-   "reference_build_exit": 0,
-   "reference_build_note": "rc0 (blatcls.prg -> lib; Windows-only blatwrp skipped on Linux per .hbp) (unit .hbp)",
+   "reference_build_exit": 50,
+   "reference_build_note": "rc50 hbmk2 -stop{!win}: intentional stop, blat is Windows-only; no objects produced on Linux (dependency class: environment/Windows-only). Original misrecorded as rc0 in 0cd58c56 due to piped capture; corrected after-contrib2. (unit .hbp)",
    "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
    "backends_baseline": {
     "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
@@ -154,7 +154,7 @@
    "dependencies": "header only",
    "boundary": "contrib library/test source at upstream pin",
    "reference_build_exit": null,
-   "reference_build_note": "built as part of unit .hbp: rc0 (blatcls.prg -> lib; Windows-only blatwrp skipped on Linux per .hbp)",
+   "reference_build_note": "unit .hbp build rc50 (-stop{!win}, Windows-only); no lib produced on Linux. Original misrecorded rc0 in 0cd58c56; corrected after-contrib2.",
    "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
    "backends_baseline": {
     "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
@@ -175,7 +175,7 @@
    "dependencies": "#require hbblat; win_GetCommandLineParam (Windows)",
    "boundary": "contrib library/test source at upstream pin",
    "reference_build_exit": null,
-   "reference_build_note": "built as part of unit .hbp: rc0 (blatcls.prg -> lib; Windows-only blatwrp skipped on Linux per .hbp)",
+   "reference_build_note": "unit .hbp build rc50 (-stop{!win}, Windows-only); no lib produced on Linux. Original misrecorded rc0 in 0cd58c56; corrected after-contrib2.",
    "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
    "backends_baseline": {
     "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
@@ -222,7 +222,7 @@
    "dependencies": "#require hbblat; network + Windows blat",
    "boundary": "contrib library/test source at upstream pin",
    "reference_build_exit": null,
-   "reference_build_note": "built as part of unit .hbp: rc0 (blatcls.prg -> lib; Windows-only blatwrp skipped on Linux per .hbp)",
+   "reference_build_note": "unit .hbp build rc50 (-stop{!win}, Windows-only); no lib produced on Linux. Original misrecorded rc0 in 0cd58c56; corrected after-contrib2.",
    "reference_run": "not-run (library unit; test harness needs network/Windows/linked contrib lib - recorded build rc0 only)",
    "backends_baseline": {
     "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
