@@ -1,0 +1,244 @@
+{
+ "phase": "extras/utils/contrib build units",
+ "order": "inventory path lexicographic: extras first, then utils, then contrib",
+ "unit_note": "superlib + template COMPLETE. EXTRAS PHASE COMPLETE: all 35 inventoried extras files recorded (batches 1-9). Next phase: utils/ (20 B-utils).",
+ "reference": "694428e1c12f726675b19324d62167fa77d68185",
+ "sources_unchanged": true,
+ "rows": [
+  {
+   "file": "extras/superlib/hbsuper.prg",
+   "sha256": "0b8e487613fb50d7b04504fbc8fc186a65459574c57c0d0f08a27971c10f8c61",
+   "review": "full source manually read 2026-11-01 (131 lines)",
+   "entrypoint": "none (library: CDIR/ISPRN/RAT_*/SHIFTY wrappers)",
+   "build_unit": "superlib.hbp (-hblib) lists hbsuper.prg + ~200 s_*/r_* .prg and 4 .c files",
+   "profile": "B-extras, GPLv2 + Harbour linking exception where header present (no source copied)",
+   "dependencies": "mouse M*() GT wrappers; Clipper Toolbox-compatible stubs",
+   "boundary": "library of utility wrappers",
+   "reference_build_exit": 6,
+   "reference_build_note": "superlib.hbp FAILS rc6 'No code generated': the hbp references ~200 s_*.prg/r_*.prg sources ABSENT in this checkout (upstream unit incomplete here; only hbsuper.prg present, matching the inventory)",
+   "reference_run": "not-run",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 166: expected `function name(...)`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 166: expected `function name(...)`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 166: expected `function name(...)`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 166: expected `function name(...)`",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/template/core.prg",
+   "sha256": "58a98d3778cb1cb4dcee7712bc7f01c69b8bdc91d696c43bbd71ef90d41db3eb",
+   "review": "full source manually read 2026-11-01 (6 lines)",
+   "entrypoint": "none (library: hbtpl_MyPublicFunction)",
+   "build_unit": "hbtpl.hbp (-hblib core.prg + corec.c)",
+   "profile": "B-extras, GPLv2 + Harbour linking exception where header present (no source copied)",
+   "dependencies": "hbtpl.ch include; C counterpart corec.c (not inventoried: not .prg/.ch/.hb)",
+   "boundary": "template contrib skeleton lib",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbtpl.hbp builds lib OK at pin 694428e1",
+   "reference_run": "not-run (library)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no main function",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no main function",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: no main function",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: no main function",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/template/tests/sample.prg",
+   "sha256": "71236341740e3362df5db6ae10936e5bee505867ab549dd8079a344756a38cb2",
+   "review": "full source manually read 2026-11-01 (18 lines)",
+   "entrypoint": "Main",
+   "build_unit": "template tests (exe against hbtpl lib via #require hbtpl)",
+   "profile": "B-extras, GPLv2 + Harbour linking exception where header present (no source copied)",
+   "dependencies": "#require hbtpl; hbtpl.ch command HBTPL_PRINT; calls C function hbtpl_MyPublicFunction_In_C",
+   "boundary": "demo: prints API results",
+   "reference_build_exit": 0,
+   "reference_build_note": "hbmk2 sample.prg builds OK (auto-resolves ../hbtpl.hbc) at pin 694428e1",
+   "reference_run": "run: rc0, stdout = GT screen frame showing 'It works'/'It works from C'/'100'/'Hello' (GT screen, not byte-portable)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/template/tests/test.prg",
+   "sha256": "b313436d2b9c2e96478c8e2335173cf517f51deef32d2033f22a590124e3c945",
+   "review": "full source manually read 2026-11-01 (15 lines)",
+   "entrypoint": "Main",
+   "build_unit": "template tests (hbtest-based unit test)",
+   "profile": "B-extras, GPLv2 + Harbour linking exception where header present (no source copied)",
+   "dependencies": "#require hbtpl + #require hbtest; HBTEST..IS assertions",
+   "boundary": "unit test via hbtest framework",
+   "reference_build_exit": 6,
+   "reference_build_note": "hbmk2 test.prg FAILS rc6 'No code generated': #require hbtest not resolvable in this tree (dependency class)",
+   "reference_run": "not-run (no executable)",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 1: unknown directive #require in this PoC",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  },
+  {
+   "file": "extras/template/tests/hbstart.hb",
+   "sha256": "138c779b249061bf0fef568a48b222d362926418850003500f3acb70c614f571",
+   "review": "full source manually read 2026-11-01 (3 lines)",
+   "entrypoint": "top-level statement (hbrun startup script)",
+   "build_unit": "hbrun startup: hbshell_ext_load( 'hbtpl' )",
+   "profile": "B-extras, GPLv2 + Harbour linking exception where header present (no source copied)",
+   "dependencies": "hbrun shell extension loader",
+   "boundary": "hbrun startup script; not run (requires interactive hbrun shell session)",
+   "reference_build_exit": null,
+   "reference_build_note": "not built (hbrun script)",
+   "reference_run": "not-run",
+   "backends_baseline": {
+    "label": "BASELINE compiler d999a46 pinned for ledger comparability - NOT current compiler state",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 3: unknown function `hbshell_ext_load` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 3: unknown function `hbshell_ext_load` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   },
+   "backends_head": {
+    "label": "published HEAD c212a9a6 (src/hbc.rs sha256 3a7555e2...)",
+    "default": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 3: unknown function `hbshell_ext_load` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    },
+    "llvm": {
+     "compile_exit": 1,
+     "diagnostic": "error: line 3: unknown function `hbshell_ext_load` (must be defined before use)",
+     "link": "not-run",
+     "execution": "not-run",
+     "comparison": "not-run"
+    }
+   }
+  }
+ ]
+}
