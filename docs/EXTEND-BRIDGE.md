@@ -267,6 +267,33 @@ never the trace alone. `.hb` sources are compiled by `hbc` + `as`
 first; hbmk2 receives the resulting `.o` files (also listable in an
 official `.hbp`).
 
+### Windows (milestone 2.6)
+
+The same sources build for `--target=windows` with a mingw-w64
+cross toolchain (no CRT anywhere: hbc emits kernel32 calls and
+`hbhbr.o` imports VirtualAlloc/VirtualFree, GetStdHandle+WriteFile and
+ExitProcess directly):
+
+```
+x86_64-w64-mingw32-gcc -c -O2 -ffreestanding -fno-stack-protector \
+    -Iextend extend/hbhbr.c -o hbhbr.o
+hbc app.hb app.s --target=windows
+x86_64-w64-mingw32-as -o app.o app.s
+x86_64-w64-mingw32-gcc -c -O2 myext.c -Iextend -o myext.o
+x86_64-w64-mingw32-ld -o app.exe app.o myext.o hbhbr.o \
+    -e _start --subsystem console -lkernel32
+```
+
+Porting notes an extension author must know: `HB_LONG`/`HB_ULONG`/
+`HB_SIZE` are 64-bit on BOTH targets (Windows `long` is 32-bit - LLP64,
+so the bridge widens its own types there, like Harbour does); a block
+call from C crosses through the Win64 variant of the hbc_blk_launch
+trampoline (the C caller's rdi/rsi are saved across the block - hbc
+code uses them internally); and the per-symbol thunk keeps the Win64
+32-byte shadow space over the two C calls it makes. Behaviour is
+byte-identical with the Linux build on the whole extend/demo suite
+(each demo's stdout, stderr and exit code compared, CRLF aside).
+
 ## Not in milestone 1 (named limits)
 
 - Dates and hashes across the boundary; array mutation, resize and
@@ -280,8 +307,6 @@ official `.hbp`).
   is not supported on that handle in this increment - use the
   hb_par*/hb_stor* families, which read and write through. Each fails closed at compile time or as a registered clean
   runtime error.
-- Windows: the bridge is Linux-only in this increment (hbc rejects
-  `EXTERNAL` with `--target=windows`).
 - Embedded C (`#pragma BEGINDUMP`/`ENDDUMP`): hbc rejects it with an
   explicit diagnostic - hbc has no C stage. Future milestone through
   hbmk2: extract the C block and compile it as a separate unit (the
