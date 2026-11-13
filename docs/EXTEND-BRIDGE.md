@@ -188,6 +188,34 @@ Milestone 2.4 (arrays, read-only, 2026-11-13):
   end-to-end probe in this slice.
 - Demo: extend/demo/apiarr.c + apiarr.hb (build like the m1 demo).
 
+Milestone 2.5 (callbacks: codeblocks across the bridge, 2026-11-13):
+
+- A codeblock argument whose body returns an INTEGER crosses as a
+  tag-7 Dyn casilla {7, codeptr}; hb_itemType / hb_parinfo report
+  HB_IT_BLOCK ("B", 0x1000) and HB_ISBLOCK(i) answers true. A
+  NIL-returning block is a compile-time named rejection (the C side
+  cannot tell a raw i64 from the NIL Dyn pair without compile-time
+  knowledge, so the boundary enforces BRet::Int).
+- The hb_eval* family mirrors the pinned header exactly
+  (hbapiitm.h:57-68): HB_EVALINFO is a CALLER-ALLOCATED struct
+  { HB_USHORT paramCount; PHB_ITEM pItems[10]; } (HB_EVAL_PARAM_MAX_
+  9), not an opaque pointer. hb_evalNew(&info, pBlock) -> HB_BOOL
+  (0 on a non-block item), hb_evalPutParam(&info, pItem) appends one
+  INTEGER parameter (anything else is a named rejection with exit 1;
+  the 10th parameter returns HB_FALSE - Harbour's own frame limit),
+  hb_evalLaunch(&info) runs the block and returns the integer result
+  as a NEW OWNED item, hb_evalRelease(&info) clears the frame.
+- The block runs through hbc_blk_launch, a standalone asm trampoline
+  with an explicit ABI (rdi=codeptr, rsi=value array, rdx=count): it
+  pushes the 16-byte {value, meta=0} slots left to right with hbc's
+  own block convention (param k of n at 16*(n-k)(%rbp)) and restores
+  its rbp-anchored frame BY ADDRESS, so nothing the block clobbers
+  can unbalance the caller. Read-only like the rest of the bridge:
+  the block runs within the C function's lifetime, no state persists.
+- Probes: extend/demo/apieval.c + apieval.hb (2-integer eval round
+  trip, parinfo 4096, HB_ISBLOCK), apievalnil.hb (compile-time
+  rejection), apievalbad.c + apievalbad.hb (runtime named rejection).
+
 Oracle-pinned semantics (contrast against real Harbour, 2026-11-13):
 
 - `hb_parc`/`hb_parclen` on a non-string argument (number, NIL,
@@ -241,11 +269,12 @@ official `.hbp`).
 
 ## Not in milestone 1 (named limits)
 
-- Dates, hashes and codeblocks across the boundary; array mutation,
-  resize and array return values; callbacks into Harbour code
-  (`hb_vmEvalBlock`); `hb_errRT` error recovery.
+- Dates and hashes across the boundary; array mutation, resize and
+  array return values; codeblocks with non-integer results and eval
+  parameters beyond integers; `hb_errRT` error recovery.
   (Scalar f64 crossed in milestone 2.3; `@` over Dyn locals in 2.2;
-  Dyn-held arrays read-only in 2.4.)
+  Dyn-held arrays read-only in 2.4; integer-result codeblocks and the
+  hb_eval* family in 2.5.)
   Named limit of 2.2: `hb_param` on a byref argument returns the
   MARKER casilla and the item API (`hb_itemType`, `hb_itemNew`, ...)
   is not supported on that handle in this increment - use the

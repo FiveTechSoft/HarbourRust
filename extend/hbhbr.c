@@ -215,11 +215,13 @@ static void * sys_mmap( unsigned long len )
 }
 static void sys_munmap( void * addr, unsigned long len )
 {
+    long result;
     register long rsi __asm__( "rsi" ) = (long) len;
     __asm__ volatile( "syscall"
-        : /* no output */
-        : "a"( 11L ), "D"( addr ), "r"( rsi )
+        : "=a"( result )
+        : "0"( 11L ), "D"( addr ), "r"( rsi )
         : "rcx", "r11", "memory" );
+    (void) result;
 }
 static void sys_write_err( const char * msg, unsigned long len )
 {
@@ -620,47 +622,43 @@ PHB_ITEM hb_itemReturn( PHB_ITEM pItem )
  * back as a new owned item; a NIL-returning block never reaches here
  * (compile-time named rejection on the .hb side). */
 
-/* Calls the code pointer with hbc's block convention: the parameters
- * as 16-byte {value, meta} slots pushed left to right (meta 0 - the
+/* The block call runs through a STANDALONE asm trampoline with an
+ * explicit ABI (rdi=codeptr, rsi=values, rdx=count): the parameters as
+ * 16-byte {value, meta} slots pushed left to right (meta 0 - the
  * checker pins integer parameters, whose meta word is never read),
- * result in %rax. rbx/r12 are saved/restored inside the trampoline
- * itself; the stack pad keeps the slot layout contiguous. */
-static long launch_trampoline( long codeptr, const unsigned long * vals, long count )
-{
-    long ret;
-    __asm__ volatile(
-        "push %%rbx\n"
-        "push %%r12\n"
-        "sub $8, %%rsp\n"
-        "mov %[cnt], %%rcx\n"
-        "mov %[cnt], %%r12\n"
-        "mov %[sl], %%rsi\n"
-        "mov %[cp], %%rbx\n"
-        "test %%rcx, %%rcx\n"
-        "jz 2f\n"
-        "1:\n"
-        "sub $16, %%rsp\n"
-        "mov (%%rsi), %%rax\n"
-        "mov %%rax, (%%rsp)\n"
-        "movq $0, 8(%%rsp)\n"
-        "add $16, %%rsi\n"
-        "dec %%rcx\n"
-        "jnz 1b\n"
-        "2:\n"
-        "call *%%rbx\n"
-        "mov %%rax, %%rdx\n"
-        "mov %%r12, %%rax\n"
-        "shl $4, %%rax\n"
-        "add %%rax, %%rsp\n"
-        "add $8, %%rsp\n"
-        "mov %%rdx, %%rax\n"
-        "pop %%r12\n"
-        "pop %%rbx\n"
-        : "=a"( ret )
-        : [cp] "r"( codeptr ), [sl] "r"( vals ), [cnt] "r"( count )
-        : "rcx", "rdx", "rsi", "memory" );
-    return ret;
-}
+ * result in %rax. The frame is rbp-anchored and restored by address
+ * (lea -16(%rbp),%rsp), not by count arithmetic, so nothing the block
+ * clobbers can unbalance the caller - and no GCC register allocation
+ * can reinterpret the convention (review finding on the inline-asm
+ * version). */
+__asm__(
+    ".p2align 3\n"
+    ".globl hbc_blk_launch\n"
+    "hbc_blk_launch:\n"
+    "    push %rbp\n"
+    "    mov %rsp, %rbp\n"
+    "    push %rbx\n"
+    "    push %r12\n"
+    "    mov %rdx, %rcx\n"
+    "    mov %rdi, %rbx\n"
+    "    test %rcx, %rcx\n"
+    "    jz 2f\n"
+    "1:\n"
+    "    sub $16, %rsp\n"
+    "    mov (%rsi), %rax\n"
+    "    mov %rax, (%rsp)\n"
+    "    movq $0, 8(%rsp)\n"
+    "    add $8, %rsi\n"
+    "    dec %rcx\n"
+    "    jnz 1b\n"
+    "2:\n"
+    "    call *%rbx\n"
+    "    lea -16(%rbp), %rsp\n"
+    "    pop %r12\n"
+    "    pop %rbx\n"
+    "    pop %rbp\n"
+    "    ret\n" );
+extern long hbc_blk_launch( long codeptr, const unsigned long * vals, long count );
 
 HB_BOOL hb_evalNew( PHB_EVALINFO pEvalInfo, PHB_ITEM pItem )
 {
@@ -701,7 +699,7 @@ PHB_ITEM hb_evalLaunch( PHB_EVALINFO pEvalInfo )
     n = pEvalInfo->paramCount;
     for( i = 0; i < n; i++ )
         vals[ i ] = item_words( pEvalInfo->pItems[ i + 1 ] )[ 1 ];
-    ret = launch_trampoline( codeptr, vals, n );
+    ret = hbc_blk_launch( codeptr, vals, n );
     return hb_itemPutNL( hb_itemNew( (PHB_ITEM) 0 ), ret );
 }
 
@@ -709,6 +707,18 @@ HB_BOOL hb_evalRelease( PHB_EVALINFO pEvalInfo )
 {
     int i;
     if( ! pEvalInfo ) return 0;
+    /* evalNew / successful PutParam transfer owned items to this frame.
+     * hb_param handles remain borrowed from the active C call, including
+     * the single byref hop performed by cell_ptr. Never unmap those slots. */
+    for( i = 0; i <= pEvalInfo->paramCount; i++ )
+    {
+        PHB_ITEM p = pEvalInfo->pItems[ i ];
+        int arg, borrowed = 0;
+        if( ! p ) continue;
+        for( arg = 1; arg <= hb_pcount(); arg++ )
+            if( p == (PHB_ITEM) cell_ptr( arg ) ) { borrowed = 1; break; }
+        if( ! borrowed ) hb_itemRelease( p );
+    }
     pEvalInfo->paramCount = 0;
     for( i = 0; i <= HB_EVAL_PARAM_MAX_; i++ ) pEvalInfo->pItems[ i ] = (PHB_ITEM) 0;
     return 1;
