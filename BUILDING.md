@@ -9,7 +9,7 @@ versions will usually work, but these are the verified ones.
 Verified with rustc 1.99.1 (stable).
 
 ```
-rustc -O src/hbc.rs -o hbc
+rustc --edition=2021 -O src/hbc.rs -o hbc
 ```
 
 No crates, no network access, no build system. The resulting `hbc` is a
@@ -64,7 +64,7 @@ the Rust standard library needs):
 rustup target add x86_64-pc-windows-gnu
 CRT=/path/to/mingw-w64-14/usr/x86_64-w64-mingw32/lib   # provides crt2.o and the import libs
 GCC=/path/to/gcc/x86_64-w64-mingw32/libgcc/dir         # provides libgcc.a and libgcc_eh.a
-rustc -O --target x86_64-pc-windows-gnu \
+rustc --edition=2021 -O --target x86_64-pc-windows-gnu \
   -C linker=rust-lld -C linker-flavor=ld.lld -C link-self-contained=no \
   -C link-arg=$CRT/crt2.o -C link-arg=-L$CRT -C link-arg=-L$GCC \
   src/hbc.rs -o hbc.exe
