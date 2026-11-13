@@ -26,6 +26,11 @@ use std::env;
 use std::fs;
 use std::process;
 
+thread_local! {
+    // Compiler admission flag only, never emitted user mutable state.
+    static CURDIR_LINUX_NATIVE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
 // The preprocessor is part of hbc: every compile runs it automatically
 // (shared engine in pp.rs; hpp is only a standalone debug frontend).
 #[path = "pp.rs"]
@@ -1528,7 +1533,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "dfree", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "dfree", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -5258,6 +5263,15 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::StrOwn);
             }
+            if is_builtin(id,"curdir") {
+                if !CURDIR_LINUX_NATIVE.with(|v| v.get()) {
+                    return Err(format!("line {}: CurDir is measured only on the ordinary Linux backend in this increment", n));
+                }
+                if args.len() > 1 || args.iter().any(|a| !matches!(a, Expr::Str(_) | Expr::Nil)) {
+                    return Err(format!("line {}: CurDir supports no argument or one literal string/NIL in this increment; dynamic/extra argument evaluation is not covered", n));
+                }
+                return Ok(Ty::StrOwn);
+            }
             if is_builtin(id,"replicate") {
                 if args.len()!=2 { return Err(format!("line {}: `replicate` takes 2 arguments in this increment",n)); }
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
@@ -8311,6 +8325,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
+            if is_builtin(id,"curdir") { return; } // admitted args are inert literals only
             if is_builtin(id,"replicate") {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
@@ -9153,6 +9168,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str("    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n");
             }
             out.push_str("    add $32, %rsp\n");
+        }
+        Expr::Call(id,_) if is_builtin(id,"curdir") => {
+            out.push_str("    call hbc_curdir_linux\n");
         }
         Expr::Call(id,args) if is_builtin(id,"replicate") => {
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
@@ -10680,7 +10698,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "asc") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
             if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
-            if is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
+            if is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
                 // Branch unification mirrors the checker (oracle hk321).
@@ -11570,17 +11588,14 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                 // space-trims the END of the line (hk22/hk24/hk25);
                 // interior spacing is preserved exactly
                 // (`? "ab  ", 5` keeps the string's trailing spaces).
-                // The trim is reproduced by dropping the static suffix
-                // of empty-rendering items together with their preceding
-                // separators, and by right-trimming a surviving trailing
-                // string at runtime INTO A HOLD (hbc_pending/hbc_pstrt)
-                // that the next output resolves (numbers never trail
-                // spaces). Registered edges: a trailing ALL-SPACES
-                // string still leaves the separator before it; and a
-                // `??` statement that prints NOTHING (empty string /
-                // empty-rendering item) re-emits the hold early, so
-                // `?? "ab  " ?? "" ? "x"` keeps the spaces where
-                // Harbour's buffered line would trim them.
+                // Every formatted string holds its trailing spaces, not
+                // just the last statically visible item: a later empty
+                // or all-spaces item cannot prove the earlier spaces are
+                // interior. A later visible byte flushes both the held
+                // string spaces and the item separators. Raw writes do
+                // not participate in this console hold.
+                // An empty `??` does not flush it; a later newline drops
+                // it, and a later visible fragment re-emits it.
                 // OutStd preserves every separator and trailing byte.
                 let last_vis = if raw { es.len().checked_sub(1) } else { es.iter().rposition(|e| !renders_empty(e)) };
                 // Right-trim spaces (0x20) off %rdx bytes at %rax.
@@ -11590,11 +11605,16 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                     let t = expr_ty(e, env, sigs);
                     let off = 16 * (es.len() - 1 - i);
                     if i > 0 {
-                        if !stderr && !raw { out.push_str("    call hbc_pflush\n"); }
-                        out.push_str("    call hbc_print_sep\n");
+                        // A separator before a runtime-empty trailing string
+                        // belongs to the same pending console line as spaces
+                        // from the preceding item. Flush only when a later
+                        // formatted item actually writes. Raw channels keep it.
+                        if !stderr && !raw { out.push_str("    addq $1, hbc_pending(%rip)\n"); }
+                        else { out.push_str("    call hbc_print_sep\n"); }
                     }
                     if renders_empty(e) { continue; }
                     let is_last = !raw && last_vis == Some(i);
+                    let hold_string = !stderr && !raw;
                     if cg_iif_out_rawdyn(e, env, sigs).is_some() {
                         // {tag, payload} from the eval step: tags 2/4 =
                         // raw borrowed string cell (never freed - the
@@ -11610,7 +11630,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         }
                         out.push_str(&format!("    call hbc_print_dyncell\n    jmp .Lpre{}\n", id));
                         out.push_str(&format!(".Lprs{}:\n    mov %rdx, %rax\n    mov -8(%rax), %rdx\n", id));
-                        if is_last && !stderr {
+                        if hold_string {
                             out.push_str("    call hbc_pstrt\n");
                         } else {
                             if is_last { out.push_str(rtrim); }
@@ -11621,7 +11641,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         }
                         out.push_str(&format!("    jmp .Lpre{}\n", id));
                         out.push_str(&format!(".Lprf{}:\n    mov %rdx, %rax\n    mov -8(%rax), %rdx\n", id));
-                        if is_last && !stderr {
+                        if hold_string {
                             out.push_str("    call hbc_pstrt\n");
                         } else {
                             if is_last { out.push_str(rtrim); }
@@ -11640,7 +11660,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         // As the last visible item the string is trimmed
                         // at the line end like any other string (hk25).
                         out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
-                        if is_last {
+                        if is_last || hold_string {
                             out.push_str("    cmp $2, %rdx\n    jne 95f\n    mov -8(%rax), %rdx\n");
                             if stderr {
                                 out.push_str(rtrim);
@@ -11698,10 +11718,10 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         // follows the asymmetric 10/20 field (hk327/hk328).
                         Ty::I64 => out.push_str("    test %rdx, %rdx\n    jz 991f\n    call hbc_print_i64\n    jmp 992f\n991:\n    call hbc_print_i64c\n992:\n"),
                         Ty::Str | Ty::StrOwn => {
-                            // Line-end space trim (hk22/hk24): only the
-                            // LAST visible item can trail spaces. The
-                            // trim is HELD, not dropped (q1-q17).
-                            if is_last && !stderr {
+                            // Any string can be followed only by runtime
+                            // empty/all-spaces items. Hold trailing spaces
+                            // until a later visible byte proves them interior.
+                            if hold_string {
                                 out.push_str("    call hbc_pstrt\n");
                             } else {
                                 if is_last { out.push_str(rtrim); }
@@ -11722,9 +11742,12 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             // Integer tags carry their own display provenance;
                             // the container's static type does not choose it.
                             if !stderr && !raw {
-                                out.push_str(&format!("    cmp $0, %rax\n    je 87f\n    cmp $9, %rax\n    je 87f\n    cmp $1, %rax\n    je 87f\n    cmp $3, %rax\n    je 87f\n    cmp $2, %rax\n    je 89f\n    cmp $4, %rax\n    jne 88f\n89:\n    mov -8(%rdx), %rcx\n    test %rcx, %rcx\n    jz 88f\n87:\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n88:\n", off, off + 8));
+                                // String-tagged Dyn values use the same hold
+                                // without changing their ownership/free path.
+                                out.push_str(&format!("    cmp $2, %rax\n    je 89f\n    cmp $4, %rax\n    jne 87f\n89:\n    mov %rdx, %rax\n    mov -8(%rax), %rdx\n    call hbc_pstrt\n    jmp 86f\n87:\n    cmp $0, %rax\n    je 85f\n    cmp $9, %rax\n    je 85f\n    cmp $1, %rax\n    je 85f\n    cmp $3, %rax\n    jne 88f\n85:\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n88:\n    call hbc_print_dyn\n86:\n", off, off + 8));
+                            } else {
+                                out.push_str("    call hbc_print_dyn\n");
                             }
-                            out.push_str("    call hbc_print_dyn\n");
                             // An owned temporary (a call result) releases a
                             // tag-4 payload right after printing; a Var stays
                             // owned by its slot, and a DArrDyn cell read stays
@@ -17926,6 +17949,8 @@ hbc_str_cache: .zero 64
     out = out.replace("@REG_SFREE_W@", if instrument { REG_SFREE_W } else { "" });
     out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
     out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
+    // Emit the cwd helper only when referenced (independent of output rendering).
+    if out.contains("call hbc_curdir_linux") { out.push_str(CURDIR_LINUX_HELPER); }
     finalize_trace(out, target)
 }
 
@@ -20183,6 +20208,7 @@ fn main() {
         eprintln!("usage: hbc <input.hb> <output.s> [--target=linux|windows] [-I dir]...");
         process::exit(2);
     }
+    CURDIR_LINUX_NATIVE.with(|v| v.set(!llvm && matches!(target, Target::Linux)));
     if llvm && instrument { eprintln!("error: LLVM scalar: --instrument is not supported; registry checks must not be silently omitted"); process::exit(1); }
     // Preprocessing runs automatically on every compile. Errors cite the
     // line in the ORIGINAL file for the main input; lines injected by an
@@ -20621,3 +20647,35 @@ fn main() {
     println!("{} -> {} ({} functions)", args[1], args[2], funcs.len());
 }
 
+
+// Black-box Linux GTSTD oracle: physical cwd without its leading slash;
+// root, syscall failure (measured with deleted cwd), and paths of >=264 bytes return empty.
+// 263-byte cwd succeeds. Fixed 264-byte syscall buffer measures that boundary
+// without truncating a longer path or trusting the shell's PWD variable.
+const CURDIR_LINUX_HELPER: &str = r#"
+    .text
+hbc_curdir_linux:
+    push %rbp
+    mov %rsp, %rbp
+    sub $272, %rsp
+    mov $79, %eax
+    mov %rsp, %rdi
+    mov $264, %esi
+    syscall
+    test %rax, %rax
+    jle .Lcurdir_empty
+    cmp $2, %rax
+    jb .Lcurdir_empty
+    cmpb $47, (%rsp)
+    jne .Lcurdir_empty
+    lea 1(%rsp), %rdi
+    lea -2(%rax), %rsi
+    jmp .Lcurdir_copy
+.Lcurdir_empty:
+    mov %rsp, %rdi
+    xor %esi, %esi
+.Lcurdir_copy:
+    call hbc_strcpy
+    leave
+    ret
+"#;
