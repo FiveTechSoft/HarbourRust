@@ -4,7 +4,7 @@ Write Harbour. Run native. Rust architecture.
 
 ![Harbour 4 Flash Edition](assets/harbour4-flash-edition.jpg)
 
-HarbourRust is an ahead-of-time compiler for Harbour, written in Rust. It translates Harbour source directly into x86-64 assembly and produces native executables: no VM, no interpreter. Support grows construct by construct, with byte-for-byte checks against the original Harbour compiler wherever applicable and explicit records of known differences. Unsupported syntax is rejected explicitly at compile time.
+HarbourRust is an ahead-of-time compiler for Harbour, written in Rust. It translates Harbour source directly into x86-64 assembly and produces native executables: no VM, no interpreter. Support grows construct by construct, with byte-for-byte checks against the original Harbour compiler wherever applicable and explicit records of known differences. Unsupported syntax is rejected explicitly at compile time. Harbour sources in this repository use the standard `.prg` extension.
 
 ## Memory model
 
@@ -12,8 +12,10 @@ No VM, no pcode, no garbage collector. Ownership checked at compile time, with d
 
 ## Current status
 
-The current compiler includes the independently reviewed Date/CToD port and
-the CurDir/trailing-space work. Against the pinned Harbour source:
+The current compiler includes the independently reviewed Date/CToD port,
+the CurDir/trailing-space work, and the bounded C Extend-System bridge (v9)
+on Linux and Windows x64 (Windows verified under Wine 11.0, not on real
+Windows). Against the pinned Harbour source:
 
 - **31/268** originals under `tests/` compile, or **31/1041** across the full inventory.
 - **29/31** fresh executions match stdout, stderr and exit status exactly.
@@ -35,6 +37,20 @@ See the [Date port record](docs/DATE-PORT-2026-11-13.md) for the exact scope.
 See the [current baseline](docs/BASELINE-2026-11-13.md) for evidence, caveats,
 known failures and the history of published increments.
 
+## Active development
+
+Two lines of work are in progress. Neither is part of the published compiler,
+and no speed or capability claim is made for them until they are integrated,
+measured and published.
+
+- **DBF support.** Read-only dBASE III tables (`dbUseArea`, `FieldGet`,
+  `DbSkip`, `RecNo`/`LastRec`, `BOF`/`EOF`, `Deleted`, `dbCloseArea`) are in
+  integration: an own MIT implementation, checked byte-for-byte against the
+  real Harbour compiler on the same sources and fixtures. Not yet in main.
+- **Classes and objects.** An own high-performance design - flat-table method
+  dispatch and fixed-offset DATA access - is in a verified spike. Not yet in
+  main.
+
 ## What the native path does not need
 
 | Component | HarbourRust ordinary AOT | Harbour pcode | Harbour `-gc3` |
@@ -43,7 +59,7 @@ known failures and the history of published increments.
 | Pcode and its runtime interpreter | Neither | Pcode executed by the VM | Direct C for generated function bodies; Harbour runtime services remain |
 | Tracing garbage collector | No | Harbour runtime GC | Harbour runtime GC |
 | Harbour runtime/RTL linkage | Own embedded native helpers for the supported subset, not the full Harbour runtime | Harbour runtime/RTL | Harbour runtime/RTL |
-| C Extend API | C Extend API bridge: milestone 1 available on Linux (verified byte-exact against official Harbour and real hbmk2); Windows in progress. | Supported | Supported |
+| C Extend API | Bounded C Extend API bridge on Linux and Windows x64 (verified byte-exact against official Harbour and real hbmk2; Windows under Wine 11.0, not real Windows). | Supported | Supported |
 
 No tracing GC does not mean no memory management: native allocation/free helpers manage supported values, and a limited persistent-value path uses reference counting. This is not full Harbour dynamic-sharing compatibility. `-gc3` generates C calls to Harbour's runtime helpers; it does not turn Harbour into the same freestanding native model as HarbourRust.
 
@@ -51,11 +67,11 @@ No tracing GC does not mean no memory management: native allocation/free helpers
 
 Download the prebuilt `hbc` (Linux x86-64) or `hbc.exe` (Windows x86-64) from [v0.1.1](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.1.1). **Neither Rust nor a C compiler is needed to use these binaries or to build the supported native-only examples.** The ordinary path is Harbour source -> `hbc` -> assembly -> GNU `as` -> GNU `ld` -> native executable. Linux needs GNU binutils; Windows needs MinGW-w64 binutils and its KERNEL32 import library, with the tool names required by `build.bat` on `PATH`.
 
-The release also includes `hello.exe`, `arrays_hashes.exe` and `dates.exe`: run these Windows samples directly without a compiler, assembler or linker. They were tested under Wine 11.0, not on real Windows. The compiler binaries have OS/library requirements listed in the release notes. Building `hbc` itself from source requires Rust; building and linking C extensions with the Linux milestone-1 bridge requires a C toolchain, which is outside the native-only path. The bridge is in current source, not in the older v0.1.1 compiler binaries.
+The release also includes `hello.exe`, `arrays_hashes.exe` and `dates.exe`: run these Windows samples directly without a compiler, assembler or linker. They were tested under Wine 11.0, not on real Windows. The compiler binaries have OS/library requirements listed in the release notes. Building `hbc` itself from source requires Rust; building and linking C extensions with the bounded C bridge requires a C toolchain, which is outside the native-only path. The bridge is in current source, not in the older v0.1.1 compiler binaries.
 
 ## Harbour standard-function compatibility
 
-HarbourRust provides a growing native compatibility layer for the supported subset of Harbour's standard functions, including `QOut`/`QQOut`, `Len`, `AAdd`/`ASize`, hash operations and `Date`/`CToD`. These functions use Harbour-compatible names and measured behavior where supported, with explicit limits and known differences. This is not the complete Harbour runtime or a general implementation of Harbour's C Extend API; arbitrary Harbour libraries are not currently plug-compatible. The [Linux milestone-1 C bridge](docs/EXTEND-BRIDGE.md) supports scalar integer, logical, string and NIL arguments and returns through a measured subset of `hb_par*`/`hb_ret*`. Arrays, dates, floating point, by-reference arguments and callbacks are outside this milestone; Windows support is planned.
+HarbourRust provides a growing native compatibility layer for the supported subset of Harbour's standard functions, including `QOut`/`QQOut`, `Len`, `AAdd`/`ASize`, hash operations and `Date`/`CToD`. These functions use Harbour-compatible names and measured behavior where supported, with explicit limits and known differences. This is not the complete Harbour runtime or a general implementation of Harbour's C Extend API; arbitrary Harbour libraries are not currently plug-compatible. The [bounded C Extend bridge](docs/EXTEND-BRIDGE.md) covers scalar integers, doubles, logicals, strings and NIL, oracle-verified items, by-reference scalar arguments, read-only arrays and bounded C-to-codeblock callbacks, through a measured subset of `hb_par*`/`hb_ret*`/`hb_eval*`, on Linux and Windows x64 (Windows verified under Wine 11.0). Dates and hashes across the boundary, array mutation and resize, and array return values remain outside its scope.
 
 ## Recorded executable size and speed
 
