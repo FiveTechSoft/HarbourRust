@@ -1,0 +1,55 @@
+name: macOS ARM64 feasibility (not a release build)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  macos-feasibility:
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify ARM64 host and toolchain
+        run: |
+          set -eu
+          test "$(uname -m)" = arm64
+          uname -a
+          sw_vers
+          rustc --version
+          clang --version
+      - name: Build the compiler from the checked-out source
+        run: rustc --edition=2021 -O src/hbc.rs -o hbc
+      - name: Emit the bounded LLVM smoke sample
+        run: |
+          set -eu
+          cat > macos.hb <<'PRG'
+          function Main()
+          local s:="hello", a:={3,5,7},i,n:=0
+          for i:=1 to Len(a)
+          n:=n+a[i]
+          next
+          ? s
+          ? "soma",n
+          ? "fatorial",Factorial(10)
+          return nil
+          function Factorial(n)
+          return IIF(n<=1,1,n*Factorial(n-1))
+          PRG
+          ./hbc macos.hb program.ll --experimental-llvm
+          clang -target arm64-apple-macos14 -c program.ll -o program.o
+      - name: Verify the current runtime boundary (expected to need a Darwin adapter)
+        run: |
+          set -eu
+          # This is deliberately NOT continue-on-error: a link failure is not a smoke pass.
+          # main currently emits an x86-64/Linux assembly runtime sidecar.
+          # The first run records the exact Darwin linker/assembler errors for that source.
+          clang -target arm64-apple-macos14 program.o program.ll.runtime.s -o smoke
+          ./smoke > smoke.stdout
+          python3 - <<'PY'
+          from pathlib import Path
+          expected=b'\nhello\nsoma         15\nfatorial    3628800'
+          actual=Path('smoke.stdout').read_bytes()
+          assert actual == expected, (actual, expected)
+          PY
