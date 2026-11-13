@@ -32,7 +32,7 @@ use std::process;
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { F64, I64, Str, Bool, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefStrOwn, DArrDyn, AView }
+enum Ty { NumLocal, F64, I64, Str, Bool, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefStrOwn, DArrDyn, AView }
 
 // What a codeblock body's LAST expression returns (original t1.prg piece):
 // Int = an i64 in %rax; Nil = a payload-free Dyn NIL pair (%rax=1, %rdx=0,
@@ -432,8 +432,44 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
 // dec metadata into %ecx (0 for integers - hb_itemGetNDDec). Integers
 // convert with cvtsi2sd like the VM's (double)n reads (oracle hk300:
 // 2^53+1 rounds to 2^53 and compares .T. against 9007199254740992.0).
+
+// Returns payload in rax and kind/format word in rdx. Pure scalar copies only.
+fn cg_num(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    match expr_ty(e,env,sigs) {
+        Ty::F64 => {cg_f64_load(e,env,sigs,strs,out,target);out.push_str("    movq %xmm0, %rax\n    mov %rdi, %rdx\n");},
+        Ty::NumLocal => match e {
+            Expr::Var(id) => {let v=env.iter().rev().find(|v|v.name==*id).unwrap();out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -{}(%rbp), %rdx\n",v.off,v.off-8));},
+            Expr::Bin(op,a,b) => {
+                let (aa,bb,ee)=num_temps(a,b,env,sigs,strs,out,target);
+                let l=fresh_lbl();let d=fresh_lbl();
+                out.push_str(&format!("    mov -{}(%rbp), %rdx\n    or -{}(%rbp), %rdx\n    cmp $1, %rdx\n    ja .Lnfloat{}\n    mov -{}(%rbp), %rax\n    mov -{}(%rbp), %rcx\n",aa.off-8,bb.off-8,l,aa.off,bb.off));
+                let ins=match op {'+'=>"add",'-'=>"sub",'*'=>"imul",_=>unreachable!("checked numeric-local op")};
+                out.push_str(&format!("    {} %rcx, %rax\n    jo .Lnfloat{}\n    xor %edx, %edx\n    jmp .Lndone{}\n.Lnfloat{}:\n",ins,l,d,l));
+                let ex=Expr::Bin(*op,Box::new(Expr::Var(aa.name.clone())),Box::new(Expr::Var(bb.name.clone())));
+                cg_f64_load(&ex,&ee,sigs,strs,out,target);
+                out.push_str(&format!("    movq %xmm0, %rax\n    mov %rdi, %rdx\n.Lndone{}:\n",d));
+            },
+            _=>unreachable!("numeric-local expression rejected before lowering"),
+        },
+        Ty::I64 => {cg_expr(e,env,sigs,strs,out,target);out.push_str(if fold_int(e).is_some(){"    mov $1, %edx\n"}else{"    xor %edx, %edx\n"});},
+        _=>unreachable!("checked numeric local input"),
+    }
+}
+fn num_temps(a: &Expr,b: &Expr,env: &[CgLocal],sigs: &[Sig],strs: &mut Vec<String>,out: &mut String,target: Target)->(CgLocal,CgLocal,Vec<CgLocal>){
+    let off=AVIEW_FRAME_END.with(|c|{let x=c.get()+32;c.set(x);x});let id=fresh_lbl();
+    let aa=CgLocal{name:format!("__num_a_{}",id),ty:Ty::NumLocal,off};
+    let bb=CgLocal{name:format!("__num_b_{}",id),ty:Ty::NumLocal,off:off-16};
+    cg_num(a,env,sigs,strs,out,target);out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",aa.off,aa.off-8));
+    cg_num(b,env,sigs,strs,out,target);out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",bb.off,bb.off-8));
+    let mut ee=env.to_vec();ee.push(aa.clone());ee.push(bb.clone());(aa,bb,ee)
+}
+
 fn cg_f64_operand(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
-    if expr_ty(e, env, sigs) == Ty::F64 {
+    if expr_ty(e,env,sigs)==Ty::NumLocal {
+        cg_num(e,env,sigs,strs,out,target);
+        let l=fresh_lbl();let d=fresh_lbl();
+        out.push_str(&format!("    cmp $1, %rdx\n    ja .Lnopfloat{}\n    cvtsi2sd %rax, %xmm0\n    xor %ecx, %ecx\n    jmp .Lnopdone{}\n.Lnopfloat{}:\n    movq %rax, %xmm0\n    movzwl %dx, %ecx\n.Lnopdone{}:\n",l,d,l,d));
+    } else if expr_ty(e, env, sigs) == Ty::F64 {
         cg_f64_load(e, env, sigs, strs, out, target);
         out.push_str("    mov %rdi, %rcx\n    movzwl %cx, %ecx\n");
     } else {
@@ -3126,6 +3162,43 @@ struct Sig {
 // Rust String); integers are Copy (like a Rust i64). Printing borrows.
 // ---------------------------------------------------------------------------
 
+
+// Numeric-local contract: a 16-byte inline scalar. The second word is 0
+// for computed I64, 1 for literal/folded I64 provenance; F64 metadata is
+// always >= 655360 (width >= 10, decimals in low 16 bits). No heap,
+// cleanup, general Dyn tag, parameter ABI or borrowed storage is involved.
+thread_local! {
+    static NUM_LOCALS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
+}
+fn mixed_local(id: &str) -> bool { NUM_LOCALS.with(|s| s.borrow().contains(id)) }
+fn prescan_numeric(f: &Func) -> std::collections::HashSet<String> {
+    use std::collections::{HashMap,HashSet};
+    fn collect<'a>(ss: &'a [Stmt], out: &mut Vec<(&'a String,&'a Expr)>, decl: &mut HashSet<String>) {
+        for s in ss { match s {
+            Stmt::Local(_,id,e) => {decl.insert(id.clone());out.push((id,e));},
+            Stmt::Assign(_,id,e) => out.push((id,e)),
+            Stmt::If(_,_,a,b) => {collect(a,out,decl);collect(b,out,decl);},
+            Stmt::While(_,_,b) | Stmt::For(_,_,_,_,_,b) => collect(b,out,decl),
+            _ => {}
+        }}
+    }
+    fn bits(e: &Expr,m: &HashMap<String,u8>) -> u8 {match e {
+        Expr::Int(_) => 1, Expr::Float(..)|Expr::FloatV(..) => 2,
+        Expr::Var(v) => *m.get(v).unwrap_or(&0),
+        Expr::Bin(op,a,b) => {let a=bits(a,m);let b=bits(b,m);if a==0||b==0{0}else if (a|b)&4!=0{4}else if matches!(op,'/'|'%'|'^'){2}else{a|b}},
+        Expr::Call(id,_) if is_builtin(id,"round") => 2,
+        _ => 4,
+    }}
+    let mut stores=Vec::new();let mut declared=HashSet::new();collect(&f.stmts,&mut stores,&mut declared);
+    let counters:HashSet<String>=f.stmts.iter().enumerate().filter_map(|(si,s)|match s {Stmt::Local(_,id,Expr::Nil) if bare_local_is_for_counter(&f.stmts,si,id)=>Some(id.clone()),_=>None}).collect();
+    let mut m=HashMap::<String,u8>::new();
+    loop {let old=m.clone();for (id,e) in &stores {let b=if counters.contains(*id)&&matches!(e,Expr::Nil){1}else{bits(e,&m)};*m.entry((*id).clone()).or_default()|=b;}if old==m{break}}
+    let mut mixed:HashSet<String>=m.iter().filter(|(id,b)|**b==3 && declared.contains(*id)).map(|(id,_)|id.clone()).collect();
+    loop {let old=mixed.clone();for (id,e) in &stores {if mixed.contains(*id){if let Expr::Var(v)=e {if declared.contains(v)&&!counters.contains(v)&&matches!(m.get(v),Some(1|2|3)){mixed.insert(v.clone());}}}}if old==mixed{break}}
+    mixed
+}
+fn set_numeric(f: &Func) { NUM_LOCALS.with(|s| *s.borrow_mut()=prescan_numeric(f)); }
+
 #[derive(Clone)]
 struct Local {
     name: String,
@@ -3206,7 +3279,8 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
         fn tname(t: Ty) -> &'static str {
             match t {
                 Ty::I64 => "an integer",
-                Ty::F64 => "a float",
+                Ty::NumLocal => "a runtime I64/F64 LOCAL",
+        Ty::F64 => "a float",
                 Ty::Str => "a string",
                 Ty::Dyn => "a NIL-capable value",
                 Ty::StrOwn => "a string",
@@ -4438,6 +4512,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             Some(v) => Ok(v.ty),
         },
         Expr::Call(id, args) => {
+            if !is_builtin(id,"round") && !is_output_call(id) && args.iter().any(|e| NUM_LOCALS.with(|ns|ns.borrow().iter().any(|v|expr_mentions(e,v)))) {
+                return Err(format!("line {}: mixed numeric LOCAL cannot cross a function or unsupported builtin ABI",n));
+            }
+
             if is_bitindex(id) {
                 if args.len() != 2 { return Err(format!("line {}: `{}` takes two arguments in this increment",n,id)); }
                 if type_expr(&args[0],env,sigs,n)? != Ty::I64 {
@@ -5139,7 +5217,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `round` takes two arguments", n));
                 }
                 let tn = type_expr(&args[0], env, sigs, n)?;
-                if !matches!(tn, Ty::I64 | Ty::F64) {
+                if !matches!(tn, Ty::I64 | Ty::F64 | Ty::NumLocal) {
                     return Err(format!("line {}: `round` expects a numeric first argument (Harbour raises RT error EG_ARG; compile-time typed here)", n));
                 }
                 let td = type_expr(&args[1], env, sigs, n)?;
@@ -5573,6 +5651,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         Expr::Bin(op, a, b) => {
             let ta = type_expr(a, env, sigs, n)?;
             let tb = type_expr(b, env, sigs, n)?;
+            if ta==Ty::NumLocal || tb==Ty::NumLocal {
+                if !matches!(ta,Ty::I64|Ty::F64|Ty::NumLocal)||!matches!(tb,Ty::I64|Ty::F64|Ty::NumLocal)||!matches!(op,'+'|'-'|'*'|'/') {
+                    return Err(format!("line {}: mixed numeric LOCAL arithmetic supports numeric +,-,*,/ only",n));
+                }
+                return Ok(if *op=='/'||ta==Ty::F64||tb==Ty::F64{Ty::F64}else{Ty::NumLocal});
+            }
+
             // String `+` concatenation (oracle hk215): both operands
             // strings, result a fresh owned buffer copying both - Harbour
             // value semantics, variables keep their own copies.
@@ -5708,7 +5793,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // compares references while our static arrays are
                 // copied into the frame (D5/D7 family), so an element
                 // compare would answer .T. where Harbour answers .F.
-                if matches!(ta, Ty::I64 | Ty::F64) && matches!(tb, Ty::I64 | Ty::F64) { return Ok(Ty::Bool); } // numeric `==` compares values like `=` (hk124; floats hk296)
+                if matches!(ta, Ty::I64 | Ty::F64 | Ty::NumLocal) && matches!(tb, Ty::I64 | Ty::F64 | Ty::NumLocal) { return Ok(Ty::Bool); } // numeric `==` compares values like `=` (hk124; floats hk296)
                 if ta == Ty::Bool && tb == Ty::Bool { return Ok(Ty::Bool); } // hk202: t == t is .T.
                 // NIL handled above (hk128/hk129): identity and equality
                 // coincide where NIL is one side; same codegen as `=`.
@@ -5797,7 +5882,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             if ta == Ty::I64 && tb == Ty::I64 {
                 return Ok(Ty::Bool);
             }
-            if matches!(ta, Ty::I64 | Ty::F64) && matches!(tb, Ty::I64 | Ty::F64) {
+            if matches!(ta, Ty::I64 | Ty::F64 | Ty::NumLocal) && matches!(tb, Ty::I64 | Ty::F64 | Ty::NumLocal) {
                 // Float comparisons: plain IEEE double compare with
                 // integer operands converted (oracles hk280/hk296/hk300).
                 return Ok(Ty::Bool);
@@ -6157,6 +6242,7 @@ fn check_block_body(params: &[String], body: &[Expr], sigs: &mut Vec<Sig>, n: us
 
 fn ty_name(t: Ty) -> &'static str {
     match t {
+        Ty::NumLocal => "a runtime I64/F64 LOCAL",
         Ty::F64 => "a float",
         Ty::I64 => "an integer",
         Ty::RefI64 => "a by-reference integer",
@@ -6653,7 +6739,10 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     }
                 }
                 apply_moves(e, env, sigs, true);
-                let t = if t == Ty::I64 && dyn_names.contains(id) { Ty::Dyn } else { t };
+                let t = if mixed_local(id) && matches!(t,Ty::I64|Ty::F64|Ty::NumLocal) {
+                    if byref_names.contains(id) { return Err(format!("line {}: mixed numeric LOCAL cannot cross by-reference storage",n)); }
+                    Ty::NumLocal
+                } else if t == Ty::I64 && dyn_names.contains(id) { Ty::Dyn } else { t };
                 // A local passed as `@s` anywhere in this function needs an
                 // owned-capable slot from the start: the callee frees and
                 // re-stores through the pointer (hk218).
@@ -6740,6 +6829,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
             }
             Stmt::Ret(n, Some(e)) => {
                 let t = type_expr(e, env, sigs, *n)?;
+                if t==Ty::NumLocal {return Err(format!("line {}: mixed numeric LOCAL return ABI is not in this increment",n));}
                 if t == Ty::F64 {
                     // Float return (63zd): the caller receives a COPY of
                     // the {value, metadata} pair - scalars own nothing
@@ -7912,7 +8002,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if env[idx].ro {
                     return Err(format!("line {}: cannot assign to the `for` loop variable `{}` (it advances only via the loop itself)", n, id));
                 }
-                if env[idx].ty == Ty::DArrU && matches!(t, Ty::DArr | Ty::DArr2 | Ty::DArrDyn) {
+                if env[idx].ty == Ty::NumLocal && matches!(t,Ty::I64|Ty::F64|Ty::NumLocal) {
+                    // Executed stores, not the prescan, select the runtime kind.
+                } else if env[idx].ty == Ty::DArrU && matches!(t, Ty::DArr | Ty::DArr2 | Ty::DArrDyn) {
                     // Assigning a pinned dynamic array pins the empty `{}`.
                     env[idx].ty = t;
                 } else if env[idx].ty == Ty::Dyn && matches!(t, Ty::I64 | Ty::Bool | Ty::Dyn | Ty::Str | Ty::StrOwn) {
@@ -8201,7 +8293,7 @@ fn fold_int(e: &Expr) -> Option<i64> {
     }
 }
 fn size_of(t: Ty) -> usize {
-    match t { Ty::F64 => 16, Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(..) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefStrOwn | Ty::AView => 8 }
+    match t { Ty::NumLocal | Ty::F64 => 16, Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(..) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefStrOwn | Ty::AView => 8 }
 }
 
 #[derive(Clone)]
@@ -8343,6 +8435,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             match v.ty {
                 Ty::RefI64 => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n", v.off)),
                 Ty::RefStrOwn => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n    mov 8(%r11), %rdx\n", v.off)),
+                Ty::NumLocal => unreachable!("numeric locals load through cg_num"),
                 Ty::F64 => unreachable!("floats load through cg_f64_load (xmm0/rdi), never the rax/rdx channel"),
                 Ty::I64 | Ty::Block(..) | Ty::Bool | Ty::AView => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
                 Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrDyn => {
@@ -9057,14 +9150,6 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 unreachable!("checked: hb_HValueAt takes a hash variable");
             }
             out.push_str("    test %rax, %rax\n    je 85f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 86f\n85:\n    call hbc_bound_error\n86:\n");
-            // Ownership (reviewer, 1Nov): the hit path dereferences the
-            // hash entry and returns a BORROWED view whose payload stays
-            // owned by the hash, but consumers treat a Call result as an
-            // owned temporary (switch frees it, Dyn stores move it, print
-            // consumes it). Clone a string payload at the producer
-            // boundary so the caller owns its copy; the bound-error path
-            // never reaches here.
-            cg_dyn_clone_if_str(out);
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hget") => {
             // hb_HGet(h, key [, default]): key first (borrowed), then
@@ -9100,14 +9185,6 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 unreachable!("checked: hb_HGet takes a hash variable");
             }
             out.push_str("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
-            // Ownership (reviewer, 1Nov): the hit path dereferences the
-            // hash entry and returns a BORROWED view whose payload stays
-            // owned by the hash, but consumers treat a Call result as an
-            // owned temporary (switch frees it, Dyn stores move it, print
-            // consumes it). Clone a string payload at the producer
-            // boundary so the caller owns its copy; the bound-error path
-            // never reaches here.
-            cg_dyn_clone_if_str(out);
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hgetdef") => {
             // hb_HGetDef(h, key [, default]): hbc_hget does the lookup
@@ -9151,22 +9228,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 unreachable!("checked: hb_HGetDef takes a hash variable");
             }
             let addend = if temp_key { 48 } else { 32 };
-            // Ownership (reviewer, 1Nov): the hit path returns a BORROWED
-            // view of the hash entry (the hash owns the payload); clone a
-            // string payload so the caller owns its copy. The miss path
-            // returns the saved default cells: a Var or hash-cell default
-            // is likewise a borrowed view of its owner's slot, cloned at
-            // the same boundary; an owned temporary default (a call
-            // result) already moves in as-is, and scalar defaults tag
-            // through unchanged.
-            out.push_str("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n");
-            cg_dyn_clone_if_str(out);
-            out.push_str("    jmp 82f\n81:\n    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n");
-            if args.len() == 3 && expr_ty(&args[2], env, sigs) == Ty::Dyn
-                && (matches!(&args[2], Expr::Var(_)) || expr_is_hash_cell(&args[2], env)) {
-                cg_dyn_clone_if_str(out);
-            }
-            out.push_str(&format!("82:\n    add ${}, %rsp\n", addend));
+            out.push_str(&format!("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 82f\n81:\n    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n82:\n    add ${}, %rsp\n", addend));
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hsetdef") => {
             // hb_HSetDef(h, key [, default]): key first (borrowed),
@@ -9211,12 +9273,6 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             } else {
                 unreachable!("checked: hb_HSetDef takes a hash variable");
             }
-            // Ownership (reviewer, 1Nov): hbc_hsetdef returns the entry's
-            // pair - a BORROWED view owned by the hash (present key, newly
-            // stored default, or the NIL cell). Clone a string payload so
-            // the caller owns its copy, the same producer boundary as
-            // hb_HGet / hb_HGetDef / hb_HValueAt.
-            cg_dyn_clone_if_str(out);
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hclone") => {
             // hb_HClone(h): the helper deep-copies every entry into a
@@ -10277,6 +10333,10 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::Float(..) | Expr::FloatV(..) => Ty::F64,
         Expr::Int(_) | Expr::Inc(..) | Expr::IdxCompound(..) => Ty::I64,
         Expr::Bin(op, a, b) => {
+            if *op=='/' && (expr_ty(a,env,sigs)==Ty::NumLocal || expr_ty(b,env,sigs)==Ty::NumLocal) {return Ty::F64;}
+
+            if (expr_ty(a,env,sigs)==Ty::NumLocal || expr_ty(b,env,sigs)==Ty::NumLocal) && *op!='/' && expr_ty(a,env,sigs)!=Ty::F64 && expr_ty(b,env,sigs)!=Ty::F64 { return Ty::NumLocal; }
+
             if matches!(expr_ty(a, env, sigs), Ty::Str | Ty::StrOwn) || matches!(expr_ty(b, env, sigs), Ty::Str | Ty::StrOwn) {
                 Ty::StrOwn
             } else if *op == '%' {
@@ -10484,15 +10544,6 @@ fn cg_dyn_free_old(out: &mut String, off: usize) {
 
 // rax=tag, rdx=payload -> the pair with any string (tag 2 or 4) cloned
 // into a fresh owned tag-4 copy. Scalar tags pass through untouched.
-// Hash cell reads (h["k"]) are BORROWED views of the hash entry, exactly
-// like Var reads of a Dyn slot: the hash owns the payload. Sites that
-// treat a value as an owned temporary must clone these at the boundary
-// too (reviewer, 1Nov: h["k"] into an owned Dyn store freed hash-owned
-// payload).
-fn expr_is_hash_cell(e: &Expr, env: &[CgLocal]) -> bool {
-    matches!(e, Expr::Index(v, _) if env.iter().rev().any(|x| x.name == *v && x.ty == Ty::Hash))
-}
-
 fn cg_dyn_clone_if_str(out: &mut String) {
     out.push_str("    cmp $2, %rax\n    je 88f\n    cmp $4, %rax\n    jne 89f\n88:\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n89:\n");
 }
@@ -10502,6 +10553,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
         match s {
             Stmt::Local(_, id, e) => {
                 let mut t = expr_ty(e, env, sigs);
+                if mixed_local(id) && matches!(t,Ty::I64|Ty::F64|Ty::NumLocal) { t=Ty::NumLocal; }
                 // Same prescan widening as cg_stmts (probe n2): an i64
                 // initializer whose local later receives a Dyn value gets
                 // the 16-byte slot.
@@ -10999,6 +11051,16 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 unreachable!("checker restricts `==` on arrays to variables");
             }
         }
+        Expr::Cmp(op,a,b) if expr_ty(a,env,sigs)==Ty::NumLocal || expr_ty(b,env,sigs)==Ty::NumLocal => {
+            let (aa,bb,ee)=num_temps(a,b,env,sigs,strs,out,target);let l=fresh_lbl();let d=fresh_lbl();
+            let ex=Expr::Cmp(*op,Box::new(Expr::Var(aa.name.clone())),Box::new(Expr::Var(bb.name.clone())));
+            out.push_str(&format!("    mov -{}(%rbp), %rdx\n    or -{}(%rbp), %rdx\n    cmp $1, %rdx\n    ja .Lncmpfloat{}\n",aa.off-8,bb.off-8,l));
+            let mut ii=ee.clone();for v in ii.iter_mut().rev().take(2){v.ty=Ty::I64;}
+            cg_cond_jump(&ex,&ii,sigs,strs,out,target,true_label);out.push_str(&format!("    jmp .Lncmpdone{}\n.Lncmpfloat{}:\n",d,l));
+            for v in [&aa,&bb] {let skip=fresh_lbl();out.push_str(&format!("    cmpq $1, -{}(%rbp)\n    ja .Lncmpskip{}\n    mov -{}(%rbp), %rax\n    cvtsi2sd %rax, %xmm0\n    movsd %xmm0, -{}(%rbp)\n    movq $655360, -{}(%rbp)\n.Lncmpskip{}:\n",v.off-8,skip,v.off,v.off,v.off-8,skip));}
+            let mut ff=ee;for v in ff.iter_mut().rev().take(2){v.ty=Ty::F64;}
+            cg_cond_jump(&ex,&ff,sigs,strs,out,target,true_label);out.push_str(&format!(".Lncmpdone{}:\n",d));
+        }
         Expr::Cmp(op, a, b) if expr_ty(a, env, sigs) == Ty::F64 || expr_ty(b, env, sigs) == Ty::F64 => {
             // Float comparison (oracles hk280/hk296/hk300): IEEE value
             // compare, integer operands converted with cvtsi2sd (2^53+1
@@ -11159,6 +11221,9 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             continue;
                         }
                     }
+                    if expr_ty(e,env,sigs)==Ty::NumLocal {
+                        cg_num(e,env,sigs,strs,out,target);out.push_str("    push %rdx\n    push %rax\n");continue;
+                    }
                     if expr_ty(e, env, sigs) == Ty::F64 {
                         // Pair protocol: value bits at off, dec count at
                         // off+8 (read back with movsd/mov below).
@@ -11311,10 +11376,16 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         }
                         continue;
                     }
+                    if t==Ty::NumLocal {
+                        if !stderr && !raw {out.push_str("    call hbc_pflush\n");}
+                        let l=fresh_lbl();let d=fresh_lbl();
+                        out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdi\n    cmp $1, %rdi\n    ja .Lnprfloat{}\n    je 991f\n    call hbc_print_i64c\n    jmp 992f\n991:\n    call hbc_print_i64\n992:\n    jmp .Lnprdone{}\n.Lnprfloat{}:\n    movq %rax, %xmm0\n    call hbc_print_num_f64\n.Lnprdone{}:\n",off,off+8,l,d,l,d));continue;
+                    }
                     if t == Ty::F64 {
                         // Numbers never trail spaces: no line-end trim.
                         if !stderr && !raw { out.push_str("    call hbc_pflush\n"); }
-                        out.push_str(&format!("    movsd {}(%rsp), %xmm0\n    mov {}(%rsp), %rdi\n    call hbc_print_f64\n", off, off + 8));
+                        let printer=if NUM_LOCALS.with(|ns|ns.borrow().iter().any(|v|expr_mentions(e,v))){"hbc_print_num_f64"}else{"hbc_print_f64"};
+                        out.push_str(&format!("    movsd {}(%rsp), %xmm0\n    mov {}(%rsp), %rdi\n    call {}\n", off, off + 8,printer));
                         continue;
                     }
                     if !stderr && !raw && matches!(t, Ty::I64 | Ty::Bool) {
@@ -11324,7 +11395,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                     match t {
                         Ty::RefI64 | Ty::RefStrOwn => unreachable!("expr_ty maps by-reference params to their pointee"),
                         Ty::AView => unreachable!("whole-array-view printing rejected in analysis"),
-                        Ty::F64 => unreachable!("handled above"),
+                        Ty::NumLocal | Ty::F64 => unreachable!("handled above"),
                         // Literal (or compile-time foldable, hk326) keeps
                         // literal provenance; a runtime-computed integer
                         // follows the asymmetric 10/20 field (hk327/hk328).
@@ -11441,6 +11512,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
             }
             Stmt::Local(_, id, e) => {
                 let mut t = expr_ty(e, env, sigs);
+                if mixed_local(id) && matches!(t,Ty::I64|Ty::F64|Ty::NumLocal) { t=Ty::NumLocal; }
                 // Prescan widening (probe n2): an i64 initializer whose
                 // local later receives a Dyn value gets the 16-byte slot;
                 // the i64 initializer is tagged in as {0, payload}.
@@ -11490,6 +11562,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     }
                 }
                 match t {
+                    Ty::NumLocal => {
+                        cg_num(e,env,sigs,strs,out,target);
+                        out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",off,off-8));
+                    }
                     Ty::F64 => {
                         // Two dynamic slots: value + decimal metadata
                         // (reassignment replaces both; copies carry both).
@@ -11525,7 +11601,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // pair: clone any string payload so the new
                                 // slot owns its own copy (the same boundary
                                 // rule as Dyn-to-Dyn assignment).
-                                if t == Ty::Dyn && (matches!(e, Expr::Var(_)) || expr_is_hash_cell(e, env)) { // hash cell reads borrow the entry pair too (reviewer, 1Nov)
+                                if t == Ty::Dyn && matches!(e, Expr::Var(_)) {
                                     cg_dyn_clone_if_str(out);
                                     // ains P2 stage 1: a tag-8 (array) copy
                                     // would alias the owner - clean error.
@@ -12252,6 +12328,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         continue;
                     }
                 }
+
+                if lty==Ty::NumLocal {
+                    cg_num(e,env,sigs,strs,out,target);
+                    out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",off,off-8));continue;
+                }
                 // ains P2 stage 1: an all-scalar-literal array literal
                 // into a Dyn slot (bare LOCAL) builds an OWNED Dyn-cell
                 // array (checker guarantees the literal-only shape) and
@@ -12268,6 +12349,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     }
                 }
                 match t {
+                    Ty::NumLocal => {
+                        cg_num(e,env,sigs,strs,out,target);
+                        out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",off,off-8));
+                    }
                     Ty::F64 => {
                         // Two dynamic slots: value + decimal metadata
                         // (reassignment replaces both; copies carry both).
@@ -12324,10 +12409,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // no-op (a tag-8 payload would otherwise be
                                 // freed before the store).
                                 if let Expr::Var(src) = e { if src == id { continue; } }
-                                // A hash cell read (h["k"]) is borrowed the
-                                // same way - the hash owns the payload
-                                // (reviewer, 1Nov).
-                                if matches!(e, Expr::Var(_)) || expr_is_hash_cell(e, env) {
+                                if matches!(e, Expr::Var(_)) {
                                     cg_dyn_clone_if_str(out);
                                     // ains P2 stage 1: copying a Dyn var
                                     // holding an ARRAY (tag 8) would alias
@@ -13715,6 +13797,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         None => f.name.clone(),
         Some(m) => format!("{}__br{}", f.name, m.iter().map(|b| if *b { "1" } else { "0" }).collect::<String>()),
     };
+    set_numeric(f);
     let mut lenv: Vec<CgLocal> = Vec::new();
     let mut frame = 0usize;
     // Parameters occupy the first frame slots, sized by their pinned type.
@@ -17534,6 +17617,58 @@ fn emit_strings(out: &mut String, strs: &[String]) {
 // universal; the half-up tie at digit 16 has no direct oracle yet.
 const F64_HELPER: &str = r#"
 # hbc_print_f64: %xmm0 = value, %rdi = dec_count. Frontier: nonzero |x| >= 1e-17 and the (int,dec) measured zone of hbc.rs (oracles hk278-hk288).
+# Integral F64 values are exact integers within the checked i64 range.
+# Avoid decimal normalization losing low digits near 2^53. This helper
+# is used only by the mixed numeric LOCAL output boundary.
+hbc_print_num_f64:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    mov %rdi, -8(%rbp)
+    movsd %xmm0, -16(%rbp)
+    cvttsd2si %xmm0, %rax
+    mov $0x8000000000000000, %rcx
+    cmp %rcx, %rax
+    je .Lnum_fallback
+    cvtsi2sd %rax, %xmm1
+    ucomisd %xmm1, %xmm0
+    jp .Lnum_fallback
+    jne .Lnum_fallback
+    mov $10, %ecx
+    mov $9999999999, %r11
+    cmp %r11, %rax
+    jg .Lnum_wide
+    cmp $-999999999, %rax
+    jge .Lnum_width
+.Lnum_wide:
+    mov $20, %ecx
+.Lnum_width:
+    mov %rdi, %r11
+    shr $16, %r11
+    cmp %rcx, %r11
+    jne .Lnum_fallback
+    call hbc_print_i64c
+    movzwl -8(%rbp), %edx
+    test %edx, %edx
+    jz .Lnum_print_done
+    inc %edx
+    lea .Lnum_decimal_zeros(%rip), %rax
+    call hbc_print_str
+.Lnum_print_done:
+    leave
+    ret
+.Lnum_fallback:
+    mov -8(%rbp), %rdi
+    movsd -16(%rbp), %xmm0
+    leave
+    jmp hbc_print_f64
+.pushsection .rodata
+.Lnum_decimal_zeros:
+    .ascii "."
+    .rept 435
+    .byte 48
+    .endr
+.popsection
 hbc_print_f64:
     push %rbp
     mov %rsp, %rbp
@@ -19635,6 +19770,7 @@ fn main() {
             let brp: std::collections::HashSet<usize> = byref_params.get(&f.name).cloned().unwrap_or_default().into_iter().collect();
             let byref_names: std::collections::HashSet<String> = byref_locals.get(&f.name).cloned().unwrap_or_default();
             let dyn_names = prescan_dyn(f, &view, &ptys);
+            set_numeric(f);
             // Direct self-recursion retry (fib piece). A recursive call
             // that precedes every RETURN of its own function deadlocks
             // the fixpoint on "`f` never returns a value" (fib.prg):
