@@ -10987,7 +10987,9 @@ fn cg_dyn_free_old(out: &mut String, off: usize) {
 // thunk hbc_fn_<name> forwards name/argc/argv to hbc_ext_dispatch.
 fn cg_ext_call(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) -> bool {
     if sigs.iter().any(|v| v.name == id) || !EXTERNS.with(|c| c.borrow().contains(id)) { return false; }
-    let _ = target; // externs are Linux-only in this increment (rejected in main)
+    // The marshal below is target-independent: arguments cross as
+    // 16-byte stack casillas and the per-target thunk owns the ABI
+    // details of the C call itself.
     let mut str_slots: Vec<usize> = Vec::new();
     for (ai, a) in args.iter().enumerate() {
         if let Expr::ByRef(vn) = a {
@@ -16724,11 +16726,20 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
     // the section-walk dispatcher survives only in objects hbc emitted
     // before this change (they carry their own copy) and keeps working
     // against new hbhbr.o, whose HB_FUNC still registers its section
-    // entry. Linux only in this increment (Windows rejected in main);
-    // nothing here is emitted for a program without EXTERNAL.
-    if !externs.is_empty() && matches!(target, Target::Linux) {
+    // entry. Nothing here is emitted for a program without EXTERNAL.
+    if !externs.is_empty() {
         for name in externs.iter() {
-            out.push_str(&format!("hbc_fn_{}:\n    push %rbp\n    mov %rsp, %rbp\n    mov 16(%rbp), %rax\n    mov %rax, hbc_ext_argc(%rip)\n    lea 32(%rbp), %rax\n    mov %rax, hbc_ext_argv(%rip)\n    movq $1, hbc_ext_ret_tag(%rip)\n    movq $0, hbc_ext_ret_pay(%rip)\n    call HBHBR_FN_{}\n    call hbc_ext_end\n    mov hbc_ext_ret_tag(%rip), %rax\n    mov hbc_ext_ret_pay(%rip), %rdx\n    pop %rbp\n    ret\n", name, name.to_ascii_uppercase()));
+            // The thunk reads its own hbc-convention frame (argc at
+            // 16(%rbp), casillas from 32(%rbp)); that layout is the same
+            // on both targets. The C calls it makes (HBHBR_FN_<NAME>,
+            // hbc_ext_end) follow the platform ABI: SysV needs nothing
+            // extra (rsp is 16-aligned at the call after push %rbp),
+            // Win64 additionally requires the caller's 32-byte shadow
+            // space, kept allocated across both calls.
+            match target {
+                Target::Linux => out.push_str(&format!("hbc_fn_{}:\n    push %rbp\n    mov %rsp, %rbp\n    mov 16(%rbp), %rax\n    mov %rax, hbc_ext_argc(%rip)\n    lea 32(%rbp), %rax\n    mov %rax, hbc_ext_argv(%rip)\n    movq $1, hbc_ext_ret_tag(%rip)\n    movq $0, hbc_ext_ret_pay(%rip)\n    call HBHBR_FN_{}\n    call hbc_ext_end\n    mov hbc_ext_ret_tag(%rip), %rax\n    mov hbc_ext_ret_pay(%rip), %rdx\n    pop %rbp\n    ret\n", name, name.to_ascii_uppercase())),
+                Target::Windows => out.push_str(&format!("hbc_fn_{}:\n    push %rbp\n    mov %rsp, %rbp\n    mov 16(%rbp), %rax\n    mov %rax, hbc_ext_argc(%rip)\n    lea 32(%rbp), %rax\n    mov %rax, hbc_ext_argv(%rip)\n    movq $1, hbc_ext_ret_tag(%rip)\n    movq $0, hbc_ext_ret_pay(%rip)\n    sub $32, %rsp\n    call HBHBR_FN_{}\n    call hbc_ext_end\n    add $32, %rsp\n    mov hbc_ext_ret_tag(%rip), %rax\n    mov hbc_ext_ret_pay(%rip), %rdx\n    pop %rbp\n    ret\n", name, name.to_ascii_uppercase())),
+            }
         }
         // hbhbr.o calls back into these runtime helpers across the
         // object boundary; without the bridge they stay internal.
@@ -19254,7 +19265,9 @@ hbc_print_i64c:
 # the bytes, length header at payload-8 - same layout as a hash key
 # copy); tag 8 (Dyn-held array) prints NOTHING (Harbour oracle: a whole
 # array prints as an empty line). Integer tag 9 uses hbc_print_i64;
-# tag 0 uses the runtime width from hbc_print_i64c.
+# tag 0 uses the runtime width from hbc_print_i64c; tag 5 (Dyn double,
+# with the decimal count in the tag's high bits) takes the field arm
+# below (hbc_pflush, then hbc_print_num_f64).
 hbc_print_dyn:
     cmp $9, %rax
     jne 90f
@@ -19274,6 +19287,10 @@ hbc_print_dyn:
     je 11f
     cmp $8, %rax
     je 9f
+    mov %rax, %r10
+    and $255, %r10
+    cmp $5, %r10
+    je 14f
     lea .Lnilmsg(%rip), %rax
     mov $3, %edx
     call hbc_print_str
@@ -19292,6 +19309,31 @@ hbc_print_dyn:
 12: mov $3, %edx
     call hbc_print_str
     jmp 9f
+    # Dyn double (milestone 2.6: reachable on Windows through the Extend
+    # bridge - a C hb_retnd / itemReturn answer): same arm as the Linux
+    # variant. Flush the pending separator BEFORE the field (review v7),
+    # width by the asymmetric 10/20 zone, dec from the tag's high bits
+    # (0 = the hb_itemPutND default, 2).
+14: movq %rdx, %xmm0
+    push %rax
+    call hbc_pflush
+    pop %rax
+    mov $10, %edi
+    movsd .Ldynw_hi(%rip), %xmm1
+    ucomisd %xmm1, %xmm0
+    ja 15f
+    movsd .Ldynw_lo(%rip), %xmm1
+    ucomisd %xmm1, %xmm0
+    jae 16f
+15: mov $20, %edi
+16: shl $16, %rdi
+    shr $8, %rax
+    test %rax, %rax
+    jnz 17f
+    mov $2, %eax
+17: or %rax, %rdi
+    leave
+    jmp hbc_print_num_f64
 9:  leave
     ret
 
@@ -20603,8 +20645,8 @@ fn main() {
         if prog.funcs.iter().any(|f| f.name == *name) { continue; }
         if !externs.contains(name) { externs.push(name.clone()); }
     }
-    if !externs.is_empty() && (matches!(target, Target::Windows) || llvm) {
-        eprintln!("error: EXTERNAL (C Extend bridge) is Linux-only in this increment, and not available on the --experimental-llvm emit path (docs/EXTEND-BRIDGE.md)");
+    if !externs.is_empty() && llvm {
+        eprintln!("error: EXTERNAL (C Extend bridge) is not available on the --experimental-llvm emit path (docs/EXTEND-BRIDGE.md)");
         process::exit(1);
     }
     EXTERNS.with(|c| *c.borrow_mut() = externs.iter().cloned().collect());

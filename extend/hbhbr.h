@@ -1,13 +1,17 @@
-/* hbhbr.h - HarbourRust Extend-System bridge, milestone 1 (Linux).
+/* hbhbr.h - HarbourRust Extend-System bridge (Linux and Windows).
  *
  * HarbourRust's OWN implementation (MIT), API-compatible with the C
  * Extend System subset below. No Harbour code is copied or translated;
  * Harbour is only the behavioural reference. See docs/EXTEND-BRIDGE.md.
  *
  * Usage: compile your extension with any standard C compiler
- *   gcc -c -O2 -I<repo>/extend myext.c -o myext.o
+ *   gcc -c -O2 -I<repo>/extend myext.c -o myext.o            (Linux)
+ *   x86_64-w64-mingw32-gcc -c -O2 -I<repo>/extend myext.c -o myext.o
+ *                                                            (Windows)
  * and link it with the hbc-generated object and hbhbr.o:
- *   ld -o app app.o myext.o hbhbr.o        (or via hbmk2, see the doc)
+ *   ld -o app app.o myext.o hbhbr.o          (Linux, or via hbmk2)
+ *   x86_64-w64-mingw32-ld -o app.exe app.o myext.o hbhbr.o \
+ *       -e _start --subsystem console -lkernel32            (Windows)
  *
  * A C extension function is declared with HB_FUNC(NAME) and reads its
  * parameters with the hb_par family and answers with the hb_ret
@@ -20,9 +24,19 @@
 extern "C" {
 #endif
 
+/* 64-bit value carriers on BOTH targets. Windows is LLP64 (its long
+ * is 32-bit), so the value-carrying types widen there; int stays
+ * 32-bit everywhere. This matches Harbour, whose HB_LONG is 64-bit on
+ * every desktop target. */
+#ifdef _WIN32
+typedef long long          HB_LONG;
+typedef unsigned long long HB_ULONG;
+typedef unsigned long long HB_SIZE;
+#else
 typedef long          HB_LONG;
 typedef unsigned long HB_ULONG;
 typedef unsigned long HB_SIZE;
+#endif
 typedef int           HB_BOOL;
 typedef unsigned int  HB_U32;
 typedef HB_U32        HB_TYPE;   /* Harbour hbdefs.h: typedef HB_U32 HB_TYPE */
@@ -77,9 +91,9 @@ typedef void *      PHB_ITEM;
 int           hb_pcount( void );
 HB_ULONG      hb_parinfo( int iParam );          /* hb_parinfo(0) = param count */
 int           hb_extIsNil( int iParam );         /* HarbourRust extension (no Harbour twin) */
-PHB_ITEM      hb_param( int iParam, long lMask ); /* non-NULL when the type matches (Harbour hbapi.h:630) */
+PHB_ITEM      hb_param( int iParam, HB_LONG lMask ); /* non-NULL when the type matches (Harbour hbapi.h:630) */
 int           hb_parni( int iParam );
-long          hb_parnl( int iParam );
+HB_LONG       hb_parnl( int iParam );
 double        hb_parnd( int iParam );
 int           hb_parl( int iParam );
 const char *  hb_parc( int iParam );   /* NUL-terminated scratch copy, valid until this C function returns */
@@ -90,7 +104,7 @@ HB_SIZE       hb_parclen( int iParam );          /* byte length (NUL-safe access
 void hb_ret( void );                      /* NIL */
 void hb_retl( int iTrueFalse );
 void hb_retni( int iNumber );
-void hb_retnl( long lNumber );
+void hb_retnl( HB_LONG lNumber );
 void hb_retnd( double dNumber );
 void hb_retc( const char * szText );                    /* C string, copied */
 void hb_retclen( const char * szText, HB_SIZE nLen );   /* counted bytes, copied */
@@ -102,7 +116,7 @@ PHB_ITEM      hb_itemNew( PHB_ITEM pNull );      /* :106 - NULL -> NIL item; els
 HB_BOOL       hb_itemRelease( PHB_ITEM pItem );  /* :140 */
 HB_TYPE       hb_itemType( PHB_ITEM pItem );     /* :145 */
 int           hb_itemGetNI( PHB_ITEM pItem );    /* :98 */
-long          hb_itemGetNL( PHB_ITEM pItem );    /* :99 */
+HB_LONG       hb_itemGetNL( PHB_ITEM pItem );    /* :99 */
 double        hb_itemGetND( PHB_ITEM pItem );    /* :96 */
 HB_BOOL       hb_itemGetL( PHB_ITEM pItem );     /* :94 */
 char *        hb_itemGetC( PHB_ITEM pItem );     /* :86 - fresh copy: hb_xfree it */
@@ -110,7 +124,7 @@ HB_SIZE       hb_itemGetCLen( PHB_ITEM pItem );  /* :88 - byte length, 0 if not 
 HB_SIZE       hb_itemCopyC( PHB_ITEM pItem, char * szBuffer, HB_SIZE nLen ); /* :82 */
 void          hb_xfree( void * pMemory );        /* hbapi.h:490 */
 PHB_ITEM      hb_itemPutNI( PHB_ITEM pItem, int iNumber );        /* :125 */
-PHB_ITEM      hb_itemPutNL( PHB_ITEM pItem, long lNumber );       /* :126 */
+PHB_ITEM      hb_itemPutNL( PHB_ITEM pItem, HB_LONG lNumber );     /* :126 */
 PHB_ITEM      hb_itemPutND( PHB_ITEM pItem, double dNumber );     /* :124 */
 PHB_ITEM      hb_itemPutL( PHB_ITEM pItem, HB_BOOL bValue );      /* :123 */
 PHB_ITEM      hb_itemPutC( PHB_ITEM pItem, const char * szText ); /* :110 */
@@ -135,7 +149,7 @@ PHB_ITEM      hb_arrayGetItemPtr( PHB_ITEM pArray, HB_SIZE nIndex ); /* :809 */
 HB_SIZE       hb_parinfa( int iParamNum, HB_SIZE nArrayIndex ); /* :629 - 0: length; n: element type */
 HB_TYPE       hb_arrayGetType( PHB_ITEM pArray, HB_SIZE nIndex );    /* :827 */
 int           hb_arrayGetNI( PHB_ITEM pArray, HB_SIZE nIndex );      /* :818 */
-long          hb_arrayGetNL( PHB_ITEM pArray, HB_SIZE nIndex );      /* :819 */
+HB_LONG       hb_arrayGetNL( PHB_ITEM pArray, HB_SIZE nIndex );    /* :819 */
 double        hb_arrayGetND( PHB_ITEM pArray, HB_SIZE nIndex );      /* :822 */
 HB_BOOL       hb_arrayGetL( PHB_ITEM pArray, HB_SIZE nIndex );       /* :817 */
 char *        hb_arrayGetC( PHB_ITEM pArray, HB_SIZE nIndex );       /* :811 - fresh copy: hb_xfree it */
@@ -172,7 +186,7 @@ int hb_storc( const char * szText, int iParam );                    /* hbapi.h:7
 int hb_storclen( const char * szText, HB_SIZE nLength, int iParam );/* :756 */
 int hb_storl( int iLogical, int iParam );                           /* :762 */
 int hb_storni( int iValue, int iParam );                            /* :763 */
-int hb_stornl( long lValue, int iParam );                           /* :764 */
+int hb_stornl( HB_LONG lValue, int iParam );                        /* :764 */
 int hb_stornd( double dValue, int iParam );                         /* :766 */
 
 /* Type-test macros, same spellings as Harbour. */
