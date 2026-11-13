@@ -1058,7 +1058,7 @@ impl P {
             }
             Some(Tok::Int(v)) => {
                 match v.parse::<u128>() {
-                    Ok(k) if k <= i64::MAX as u128 => Ok(Expr::Int(v)),
+                    Ok(k) if k <= i64::MAX as u128 => Ok(Expr::Int(k.to_string())),
                     _ => Err(format!("line {}: integer literal out of range (i64)", self.n)),
                 }
             }
