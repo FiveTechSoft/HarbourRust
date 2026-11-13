@@ -11619,9 +11619,15 @@ fn cg_persistent_store(v:&CgLocal,e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut V
             cg_persistent_scalar(e,env,sigs,strs,out,target);
             out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",end-i*16,end-i*16-8));
         }
-        out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n    movq ${}, (%rax)\n    add $8, %rax\n",8+16*es.len(),es.len()));
+        // Header: free-capacity bytes, reference count, logical length.
+        // Payload-8 stays the length used by existing accessors.
+        out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n    movq ${}, (%rax)\n    movq $1, 8(%rax)\n    movq ${}, 16(%rax)\n    add $24, %rax\n",24+16*es.len(),16+16*es.len(),es.len()));
         for(i,_)in es.iter().enumerate(){out.push_str(&format!("    mov -{}(%rbp), %r10\n    mov %r10, {}(%rax)\n    mov -{}(%rbp), %r10\n    mov %r10, {}(%rax)\n",end-i*16,i*16,end-i*16-8,i*16+8));}
         out.push_str("    mov %rax, %rdx\n    mov $8, %eax\n");
+    }else if matches!(e, Expr::Var(id) if static_dyn(id)) {
+        cg_value(e,env,sigs,strs,out,target);
+        let k=fresh_lbl();
+        out.push_str(&format!("    cmp $8, %rax\n    jne .Lpretain{}\n    addq $1, -16(%rdx)\n    jc hbc_oom\n.Lpretain{}:\n",k,k));
     }else{cg_persistent_scalar(e,env,sigs,strs,out,target);}
     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    call hbc_persistent_release\n    mov -{}(%rbp), %r11\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, (%r11)\n    mov %rdx, 8(%r11)\n",v.off,v.off));
@@ -16204,8 +16210,13 @@ hbc_persistent_release:
     mov %r10, %rdi
     test %rdi, %rdi
     jz 81f
-    mov -8(%rdi), %rsi
-    call hbc_dfree
+    subq $1, -16(%rdi)
+    jnz 81f
+    # Only scalar cells are admitted. Release the shared block itself.
+    # hbc_free sees capacity-in-bytes at payload-24 via data=payload-16.
+    sub $16, %rdi
+    mov $1, %esi
+    call hbc_free
 81: leave
     ret
 ");
@@ -19814,6 +19825,7 @@ fn validate_persistent(f:&Func)->Result<(),String> {
     }}
     fn walk(ss:&[Stmt],roots:&HashSet<String>)->Result<(),String> {
         for st in ss {let ok=match st {
+            Stmt::Assign(_,dst,Expr::Var(src)) if roots.contains(dst) && roots.contains(src)=>true,
             Stmt::Static(_,_,e)|Stmt::Local(_,_,e)|Stmt::Assign(_,_,e)|Stmt::Ret(_,Some(e))|Stmt::CallStmt(_,e)=>ex(e,roots,false),
             Stmt::Print(_,es,_)=>es.iter().all(|e|ex(e,roots,true)),
             Stmt::ArrSet(_,id,i,e) if roots.contains(id)=>ex(e,roots,false)&&ex(i,roots,false)&&!expr_has_call(i)&&!expr_mentions(i,id),
