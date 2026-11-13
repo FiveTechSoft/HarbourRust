@@ -1,7 +1,7 @@
 #!/bin/sh
-# compile.sh - chain the full HarbourRust build for one program on Linux:
+# build.sh - chain the full HarbourRust build for one program on Linux:
 #   hbc -> GNU as -> GNU ld -> native x86-64 ELF binary.
-# Usage: ./compile.sh prog.hb [output-name]
+# Usage: ./build.sh prog.hb [output-name]
 # Stops at the first failing step (set -e); a partial result is never
 # reported as success. HBC env var overrides the compiler path.
 set -e

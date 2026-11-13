@@ -50,7 +50,7 @@ From Windows Command Prompt at the repository root, with `hbc.exe` there:
 
 ```bat
 set "HBC=%CD%\hbc.exe"
-dist\compile.bat ejemplos\hola.hb hello
+dist\build.bat ejemplos\hola.hb hello
 hello.exe
 ```
 
