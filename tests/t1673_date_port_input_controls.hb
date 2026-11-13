@@ -1,0 +1,10 @@
+PROCEDURE Main()
+? CToD("1/5/1999")
+? CToD("1"+Chr(0)+"5"+Chr(0)+"1999")
+? CToD("1/5/19"+Chr(0)+"99")
+? CToD(Chr(9)+"1/5/99")
+? CToD("1/"+Chr(10)+"5/99")
+? CToD("2/29/2000")
+? CToD("")
+? CToD("  /  /  ")
+RETURN
