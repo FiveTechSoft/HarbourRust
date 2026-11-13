@@ -13666,6 +13666,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         }
                     }
                     out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    if v.ty == Ty::RefDyn {
+                        out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, (%r11)\n    jne hbc_type_error\n    mov 8(%r11), %r11\n    addq $1, -16(%r11)\n    jc hbc_oom\n    mov %r11, 24(%rsp)\n", v.off));
+                    }
                     if expr_ty(ie, env, sigs) == Ty::Dyn {
                         cg_expr(ie, env, sigs, strs, out, target);
                         out.push_str("    call hbc_dyn_to_i64\n");
@@ -13674,12 +13677,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     }
                     out.push_str("    mov %rax, %rcx\n");
                     if v.ty==Ty::RefDyn {
-                        out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, (%r11)\n    jne hbc_type_error\n    mov 8(%r11), %r11\n    cmp $1, %rcx\n    jl .Lwbnd{}\n    cmp -8(%r11), %rcx\n    jg .Lwbnd{}\n",v.off,kw,kw));
+                        out.push_str(&format!("    mov 24(%rsp), %r11\n    cmp $1, %rcx\n    jl .Lwbnd{}\n    cmp -8(%r11), %rcx\n    jg .Lwbnd{}\n",kw,kw));
                     }else{
                     out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, -{}(%rbp)\n    jne hbc_type_error\n    cmp $1, %rcx\n    jl .Lwbnd{}\n    cmp -8(%r11), %rcx\n    jg .Lwbnd{}\n", v.off - 8, v.off, kw, kw));                    }
 
                     out.push_str("    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
-                    out.push_str(&format!("    mov %r10, 16(%rsp)\n    cmpq $4, (%r10)\n    jne .Lwnf{}\n    mov 8(%r10), %rdi\n    test %rdi, %rdi\n    jz .Lwnf{}\n    call hbc_freestr\n.Lwnf{}:\n    mov 16(%rsp), %r10\n    mov (%rsp), %rax\n    mov %rax, (%r10)\n    mov 8(%rsp), %rax\n    mov %rax, 8(%r10)\n    add $32, %rsp\n    jmp .Lwdone{}\n.Lwbnd{}:\n    call hbc_bound_error\n.Lwdone{}:\n", kw, kw, kw, kw, kw, kw));
+                    out.push_str(&format!("    mov %r10, 16(%rsp)\n    cmpq $4, (%r10)\n    jne .Lwnf{}\n    mov 8(%r10), %rdi\n    test %rdi, %rdi\n    jz .Lwnf{}\n    call hbc_freestr\n.Lwnf{}:\n    mov 16(%rsp), %r10\n    mov (%rsp), %rax\n    mov %rax, (%r10)\n    mov 8(%rsp), %rax\n    mov %rax, 8(%r10)\n{}    add $32, %rsp\n    jmp .Lwdone{}\n.Lwbnd{}:\n    call hbc_bound_error\n.Lwdone{}:\n", kw, kw, kw, if v.ty == Ty::RefDyn { "    mov 24(%rsp), %rdi\n    call hbc_persistent_payload_release\n" } else { "" }, kw, kw, kw));
                 } else if v.ty == Ty::Hash {
                     // h[k] := v: value FIRST, then the key (probe h4).
                     // Both wait on the stack across hbc_hput, which copies
@@ -16210,6 +16213,15 @@ hbc_persistent_release:
     mov %r10, %rdi
     test %rdi, %rdi
     jz 81f
+    call hbc_persistent_payload_release
+81: leave
+    ret
+
+# rdi is a retained scalar-array payload, not a root-slot address.
+hbc_persistent_payload_release:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
     subq $1, -16(%rdi)
     jnz 81f
     # Only scalar cells are admitted. Release the shared block itself.
@@ -19828,7 +19840,7 @@ fn validate_persistent(f:&Func)->Result<(),String> {
             Stmt::Assign(_,dst,Expr::Var(src)) if roots.contains(dst) && roots.contains(src)=>true,
             Stmt::Static(_,_,e)|Stmt::Local(_,_,e)|Stmt::Assign(_,_,e)|Stmt::Ret(_,Some(e))|Stmt::CallStmt(_,e)=>ex(e,roots,false),
             Stmt::Print(_,es,_)=>es.iter().all(|e|ex(e,roots,true)),
-            Stmt::ArrSet(_,id,i,e) if roots.contains(id)=>ex(e,roots,false)&&ex(i,roots,false)&&!expr_has_call(i)&&!expr_mentions(i,id),
+            Stmt::ArrSet(_,id,i,e) if roots.contains(id)=>ex(e,roots,false)&&ex(i,roots,false)&&!expr_mentions(i,id),
             Stmt::If(_,c,a,b)=>{walk(a,roots)?;walk(b,roots)?;ex(c,roots,false)},
             Stmt::While(_,c,b)=>{walk(b,roots)?;ex(c,roots,false)},
             Stmt::For(_,_,a,b,_,body)=>{walk(body,roots)?;ex(a,roots,false)&&ex(b,roots,false)},
