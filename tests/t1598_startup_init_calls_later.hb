@@ -1,0 +1,9 @@
+INIT PROCEDURE A()
+Later()
+RETURN
+PROCEDURE Main()
+? "main"
+RETURN
+PROCEDURE Later()
+? "later"
+RETURN

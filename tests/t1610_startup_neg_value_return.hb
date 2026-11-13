@@ -1,0 +1,4 @@
+INIT PROCEDURE Boot()
+RETURN "owned"
+PROCEDURE Main()
+RETURN

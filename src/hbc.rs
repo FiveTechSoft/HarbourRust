@@ -881,6 +881,7 @@ enum Stmt {
 }
 
 struct Func {
+    init: bool, // single-module startup hook, not a callable user symbol
     name: String,
     params: Vec<String>,
     ret: Option<Ty>,
@@ -1635,6 +1636,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
             continue;
         }
         match toks[0].clone() {
+            Tok::KwInit | Tok::KwExit if toks.get(1) == Some(&Tok::KwFunction) => return Ok(()),
             Tok::KwFunction => return Ok(()),
             Tok::KwMethod | Tok::KwCreate => return Ok(()),
             Tok::KwReturn if depth == 0 => return Ok(()),
@@ -2898,9 +2900,9 @@ fn parse(src: &str) -> Result<Prog, String> {
         // resolution - memvars are not in this subset, the declaration
         // alone has no runtime effect, so it is accepted and ignored.
         // REQUEST (hk250a) is a link-time module request with no meaning
-        // for this compiler. INIT/EXIT PROCEDURE (startup/teardown
-        // semantics) and file-scope STATIC variables (global storage, not
-        // in the subset) keep named rejections.
+        // for this compiler. Parameterless NIL-returning INIT hooks have
+        // a single-module startup route below. EXIT teardown and file-scope
+        // STATIC variables (global storage) keep named rejections.
         if matches!(&toks[0], Tok::Ident(id) if id.eq_ignore_ascii_case("memvar")) {
             // Declaration only: it creates NO storage. Any later memvar
             // reference still fails with the usual unknown-variable error,
@@ -2921,10 +2923,16 @@ fn parse(src: &str) -> Result<Prog, String> {
             i += 1;
             continue;
         }
-        if (toks[0] == Tok::KwInit || toks[0] == Tok::KwExit)
-            && toks.len() >= 2 && toks[1] == Tok::KwFunction {
-            return Err(format!("line {}: INIT/EXIT PROCEDURE is not in this increment (startup/teardown ordering needs its own design)", n));
+        if toks[0] == Tok::KwExit && toks.get(1) == Some(&Tok::KwFunction) {
+            return Err(format!("line {}: EXIT PROCEDURE is not in this increment (teardown ordering needs its own design)", n));
         }
+        let init = toks[0] == Tok::KwInit && toks.get(1) == Some(&Tok::KwFunction);
+        let mut init_header = if init { toks[1..].to_vec() } else { toks.to_vec() };
+        // The original initproc.prg calls its hook Init, a contextual name.
+        if init && init_header.get(1) == Some(&Tok::KwInit) {
+            init_header[1] = Tok::Ident("init".to_string());
+        }
+        let toks: &[Tok] = &init_header;
         // STATIC FUNCTION/PROCEDURE is plain visibility: a single-module
         // compiler has one visibility domain (oracle hk249). File-scope
         // STATIC variables are global storage, not in this subset.
@@ -3004,7 +3012,7 @@ fn parse(src: &str) -> Result<Prog, String> {
                 return Err(format!("line {}: method `{}` defined for unknown class `{}`", n, mname, cname));
             }
             i += 1;
-            let mut f = Func { name: format!("{}__{}", cname, mname), params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
+            let mut f = Func { init: false, name: format!("{}__{}", cname, mname), params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
             parse_stmts(&lines, &mut i, &mut f.stmts, 0)?;
             if i >= lines.len() || lines[i].1[0] != Tok::KwReturn {
                 return Err(format!("method `{}` of `{}` without closing return", mname, cname));
@@ -3030,7 +3038,7 @@ fn parse(src: &str) -> Result<Prog, String> {
                 // `function main()` after an implicit group trips the
                 // duplicate-function check (Harbour silently prefers the
                 // explicit one, hk247e).
-                let mut f = Func { name: "main".to_string(), params: Vec::new(), ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
+                let mut f = Func { init: false, name: "main".to_string(), params: Vec::new(), ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
                 parse_stmts(&lines, &mut i, &mut f.stmts, 0)?;
                 if i < lines.len() && lines[i].1[0] == Tok::KwReturn {
                     let (rn, rt) = &lines[i];
@@ -3075,8 +3083,11 @@ fn parse(src: &str) -> Result<Prog, String> {
             }
             _ => return Err(format!("line {}: expected `function name(...)`", n)),
         };
+        if init && !params.is_empty() {
+            return Err(format!("line {}: INIT procedures with parameters are not in this increment", n));
+        }
         i += 1;
-        let mut f = Func { name, params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
+        let mut f = Func { init, name: if init { format!("{}$", name) } else { name }, params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
         parse_stmts(&lines, &mut i, &mut f.stmts, 0)?;
         if i >= lines.len() || lines[i].1[0] != Tok::KwReturn {
             return Err(format!("function `{}` without closing return", f.name));
@@ -3088,6 +3099,24 @@ fn parse(src: &str) -> Result<Prog, String> {
             _ => parse_ret_expr(toks[1..].to_vec(), *n)?,
         };
         f.stmts.push(stmt);
+        if init {
+            // A startup call has no user argument frame or result consumer.
+            // Keep retained values/global storage outside this first route.
+            fn check_init(ss: &[Stmt]) -> bool {
+                ss.iter().all(|st| match st {
+                    Stmt::Static(..) => false,
+                    Stmt::Ret(_, None | Some(Expr::Nil)) => true,
+                    Stmt::Ret(..) => false,
+                    Stmt::If(_, _, a, b) => check_init(a) && check_init(b),
+                    Stmt::While(_, _, b) | Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => check_init(b),
+                    Stmt::Switch(_, _, arms, other) => arms.iter().all(|(_,_,b)| check_init(b)) && other.as_ref().map_or(true, |(_,b)| check_init(b)),
+                    _ => true,
+                })
+            }
+            if !check_init(&f.stmts) {
+                return Err(format!("line {}: INIT procedures require bare/NIL returns and no STATIC declarations in this increment", n));
+            }
+        }
         funcs.push(f);
         i += 1;
     }
@@ -16314,6 +16343,11 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
     match target {
         Target::Linux => {
             out.push_str("    .text\n    .globl _start\n_start:\n");
+            // Pinned oracle: INIT hooks run in reverse source order, once
+            // before Main. Ordinary symbols cannot spell the '$' suffix.
+            for f in funcs.iter().rev().filter(|f| f.init) {
+                out.push_str(&format!("    call hbc_fn_{}\n", f.name));
+            }
             out.push_str("    call hbc_fn_main\n    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n");
             out.push_str("    mov $60, %eax\n    xor %edi, %edi\n    syscall\n\n");
         }
@@ -16326,6 +16360,11 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
             // The Win64 loader does not guarantee one specific rsp % 16 at
             // the entry point; align explicitly instead of assuming.
             out.push_str("    and $-16, %rsp\n    sub $48, %rsp\n");
+            // Pinned oracle: INIT hooks run in reverse source order, once
+            // before Main. Ordinary symbols cannot spell the '$' suffix.
+            for f in funcs.iter().rev().filter(|f| f.init) {
+                out.push_str(&format!("    call hbc_fn_{}\n", f.name));
+            }
             out.push_str("    call hbc_fn_main\n    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n");
             out.push_str("    xor %ecx, %ecx\n");
             out.push_str("    call ExitProcess\n\n");
@@ -20183,6 +20222,10 @@ fn main() {
     }
     if !prog.classes.is_empty() || !prog.methods.is_empty() {
         eprintln!("error: classes are not in this increment yet (the parser landed; the runtime representation is pending the user's decision)");
+        process::exit(1);
+    }
+    if llvm && prog.funcs.iter().any(|f| f.init) {
+        eprintln!("error: LLVM scalar: INIT startup procedures are not in this increment");
         process::exit(1);
     }
     let mut funcs = prog.funcs;

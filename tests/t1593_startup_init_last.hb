@@ -1,0 +1,6 @@
+PROCEDURE Main()
+? "main"
+RETURN
+INIT PROCEDURE Late()
+? "late"
+RETURN

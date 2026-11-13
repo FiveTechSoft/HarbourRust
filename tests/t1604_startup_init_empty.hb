@@ -1,0 +1,6 @@
+INIT PROCEDURE Boot()
+
+RETURN
+PROCEDURE Main()
+? "main"
+RETURN

@@ -1,0 +1,10 @@
+INIT PROCEDURE A()
+IF .T.
+? "early"
+RETURN
+ENDIF
+? "late"
+RETURN
+PROCEDURE Main()
+? "main"
+RETURN
