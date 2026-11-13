@@ -9665,7 +9665,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 } else if expr_ty(&args[2], env, sigs) == Ty::Bool {
                     out.push_str("    movq $3, 16(%rsp)\n    mov %rax, 24(%rsp)\n");
                 } else {
-                    out.push_str("    movq $0, 16(%rsp)\n    mov %rax, 24(%rsp)\n");
+                    // Match the numeric display tag every other hash
+                    // write uses, so hbc_hsetdef's stored-tag
+                    // comparison keeps a present integer (t592).
+                    cg_i64_tagged(out);
+                    out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");
                 }
             } else {
                 // No default: the cell is NIL (tag 1, payload 0); the
