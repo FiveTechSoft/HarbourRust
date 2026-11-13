@@ -1,0 +1,11 @@
+PROCEDURE Main()
+LOCAL s := "ab"
+LOCAL x
+FOR EACH x IN s
+IF Sink(s)
+? x
+ENDIF
+NEXT
+RETURN
+FUNCTION Sink(v)
+RETURN .T.

@@ -1,0 +1,11 @@
+PROCEDURE Main()
+LOCAL s := "ab"
+LOCAL x
+Scan(@s)
+RETURN
+PROCEDURE Scan(s)
+LOCAL x
+FOR EACH x IN s
+? Asc(x)
+NEXT
+RETURN

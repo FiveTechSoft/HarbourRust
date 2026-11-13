@@ -3160,6 +3160,10 @@ struct Sig {
     // parameter - the callee's pin error is the honest diagnostic, and a
     // check against a placeholder would be a placeholder artifact.
     inferred: Vec<bool>,
+    // Narrow observer procedures get an owned string COPY at ordinary
+    // value-call boundaries. Their syntactic proof admits only NIL locals,
+    // observation-only string iteration and bare/NIL returns.
+    string_iter_copy: Vec<bool>,
     // arg_ev[i]: at least one call site passes a FLOAT argument for
     // parameter i (63zd). Recorded by the checker's call-argument walk
     // even while the parameter is a placeholder; pin_params merges it
@@ -3808,7 +3812,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     walk(f, a, sigs, lit, pin, printed, *n)?; walk(f, b, sigs, lit, pin, printed, *n)?;
                     walk_stmts(f, body, sigs, lit, pin, printed, nil_ret)?;
                 }
-                Stmt::ForEach(n, _, c, body) => {
+                Stmt::ForEach(n, lv, c, body) => {
+                    // ASC of the iterator supplies string evidence for an
+                    // otherwise unconstrained collection parameter. It is
+                    // not a caller-shape guess: incompatible callers reject.
+                    if foreach_string_asc_evidence(body, lv) {
+                        let copied = if let Expr::Var(p) = c { string_iterator_observer(f, p) } else { false };
+                        pin_vars(f, c, if copied { Ty::StrOwn } else { Ty::Str }, pin, *n)?;
+                    }
                     walk(f, c, sigs, lit, pin, printed, *n)?;
                     walk_stmts(f, body, sigs, lit, pin, printed, nil_ret)?;
                 }
@@ -5338,6 +5349,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             let si = sigs.iter().position(|v| v.name == *id)
                 .ok_or_else(|| format!("line {}: unknown function `{}` (must be defined before use)", n, id))?;
+            let sig_string_copy = sigs[si].string_iter_copy.clone();
             let (sig_params, sig_borrowed, sig_arr_moved, sig_aview, sig_ret, sig_inferred) = {
                 let s = &sigs[si];
                 (s.params.clone(), s.borrowed.clone(), s.arr_moved.clone(), s.aview.clone(), s.ret, s.inferred.clone())
@@ -5348,6 +5360,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Err(format!("line {}: `{}` takes {} argument(s), got {}", n, id, sig_params.len(), args.len()));
             }
             for i in 0..sig_params.len() {
+                if sig_string_copy[i] && (args.get(i).is_none() || matches!(args.get(i), Some(Expr::ByRef(_)))) {
+                    return Err(format!("line {}: string iterator observer `{}` requires an explicit by-value string argument", n, id));
+                }
                 if root_position(id,i) {
                     match args.get(i) {
                         Some(Expr::ByRef(v)) if static_dyn(v) => {},
@@ -5670,7 +5685,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         }
                         // A Dyn target CLONES at the boundary (the
                         // caller keeps its value), so no move is marked.
-                        if sig_params[i] != Ty::Dyn {
+                        if sig_params[i] != Ty::Dyn && !sig_string_copy[i] {
                             if let Some(x) = env.iter_mut().find(|x| x.name == *v && matches!(x.ty, Ty::Str | Ty::StrOwn)) { x.moved = true; }
                         }
                     }
@@ -6587,6 +6602,66 @@ fn foreach_barr_lv_ok(stmts: &[Stmt], name: &str) -> bool {
     })
 }
 
+// A string iterator borrows one BYTE at a time. This first route accepts
+// only immediate observations, never a stored/returned/captured character,
+// user calls, mutation or nested iteration. Unknown forms fail closed even
+// when dead. The collection is a variable, so no new temporary owner exists.
+fn string_iterator_observer(f: &Func, p: &str) -> bool {
+    let mut seen = false;
+    f.params.len() == 1 && f.stmts.iter().all(|s| match s {
+        Stmt::Local(_, id, Expr::Nil) => id != p,
+        Stmt::ForEach(_, lv, Expr::Var(c), body) if c == p && lv != p => {
+            seen = true;
+            foreach_string_asc_evidence(body, lv) && foreach_string_body_safe(body)
+        },
+        Stmt::Ret(_, None) | Stmt::Ret(_, Some(Expr::Nil)) => true,
+        _ => false,
+    }) && seen
+}
+
+fn foreach_string_asc_evidence(stmts: &[Stmt], lv: &str) -> bool {
+    fn ex(e: &Expr, lv: &str) -> bool {
+        match e {
+            Expr::Call(id, args) => (is_builtin(id, "asc")
+                && matches!(args.as_slice(), [Expr::Var(v)] if v == lv))
+                || args.iter().any(|e| ex(e, lv)),
+            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b)
+                | Expr::LAnd(a, b) | Expr::LOr(a, b) => ex(a, lv) || ex(b, lv),
+            Expr::LNot(e) => ex(e, lv),
+            _ => false,
+        }
+    }
+    stmts.iter().any(|s| match s {
+        Stmt::Print(_, es, _) => es.iter().any(|e| ex(e, lv)),
+        Stmt::If(_, c, a, b) => ex(c, lv) || foreach_string_asc_evidence(a, lv)
+            || foreach_string_asc_evidence(b, lv),
+        _ => false,
+    })
+}
+
+fn foreach_string_body_safe(stmts: &[Stmt]) -> bool {
+    fn read(e: &Expr) -> bool {
+        match e {
+            Expr::Int(_) | Expr::Float(..) | Expr::FloatV(..) | Expr::Str(_)
+                | Expr::Var(_) | Expr::Nil | Expr::Log(_) => true,
+            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b)
+                | Expr::LAnd(a, b) | Expr::LOr(a, b) => read(a) && read(b),
+            Expr::LNot(e) => read(e),
+            Expr::Call(id, args) if ["asc", "len", "valtype", "empty", "chr",
+                "hb_ntos", "str", "trim", "ltrim", "rtrim", "alltrim", "iif"]
+                .iter().any(|n| is_builtin(id, n)) => args.iter().all(read),
+            _ => false,
+        }
+    }
+    stmts.iter().all(|s| match s {
+        Stmt::Print(_, es, _) => es.iter().all(read),
+        Stmt::If(_, c, a, b) => read(c) && foreach_string_body_safe(a)
+            && foreach_string_body_safe(b),
+        Stmt::Exit(_) | Stmt::Loop(_) | Stmt::Ret(_, None) => true,
+        _ => false,
+    })
+}
+
 fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     fn mentions(e: &Expr, name: &str) -> bool {
         match e {
@@ -7173,7 +7248,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if matches!(ct, Ty::Arr(_)) {
                     return Err(format!("line {}: `for each` over fixed-size stack arrays is not in this increment; use a dynamic array collection (the native iterator requires tagged cells)", n));
                 }
-                if !matches!(ct, Ty::DArr | Ty::DArrU | Ty::DArrS | Ty::Hash) {
+                let string_iter = matches!(ct, Ty::Str | Ty::StrOwn);
+                if string_iter && (!matches!(coll, Expr::Var(_)) || !foreach_string_body_safe(body)) {
+                    return Err(format!("line {}: string `for each` requires a variable collection and an observation-only body (print, pure string/scalar observations, if, exit, loop or bare return); storage, mutation, user calls and nested iteration are not in this increment", n));
+                }
+                if !matches!(ct, Ty::DArr | Ty::DArrU | Ty::DArrS | Ty::Hash | Ty::Str | Ty::StrOwn) {
                     return Err(format!("line {}: `for each` needs a flat or string array or a hash in this increment", n));
                 }
                 let kp = match env.iter().position(|v| v.name == *var) {
@@ -7197,7 +7276,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 // flat DArr so indexed reads/writes type naturally; it
                 // stays read-only for PLAIN assignment (reseat), while
                 // element writes go through (hk119).
-                env[kp].ty = if sub_mid { Ty::DArr } else { Ty::Dyn };
+                env[kp].ty = if sub_mid { Ty::DArr } else if string_iter { Ty::Str } else { Ty::Dyn };
                 env[kp].ro = true;
                 let outer = env.len();
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
@@ -7213,7 +7292,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         return Err(format!("line {}: the `for each` collection `{}` cannot be modified, moved or grown inside its own loop in this increment (the loop borrows it)", n, cn));
                     }
                 }
-                let lv_ok = if sub_mid {
+                let lv_ok = if string_iter {
+                    true // The stricter observation-only proof above covers every body form.
+                } else if sub_mid {
                     foreach_barr_lv_ok(body, var)
                 } else {
                     foreach_lv_readonly(body, var)
@@ -8333,7 +8414,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 // A static array argument is COPIED at the boundary (33l):
                 // the source variable keeps its value.
                 let copy = matches!(a, Expr::Var(v) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::Arr(_))));
-                let m = !copy && !sig.aview.get(i).copied().unwrap_or(false) && i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::StrOwn || sig.params[i] == Ty::DArr || sig.params[i] == Ty::DArr2 || sig.params[i] == Ty::DArr3 || sig.params[i] == Ty::DArr4 || sig.params[i] == Ty::DArrS || sig.params[i] == Ty::Hash);
+                let m = !copy && !sig.string_iter_copy.get(i).copied().unwrap_or(false) && !sig.aview.get(i).copied().unwrap_or(false) && i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::StrOwn || sig.params[i] == Ty::DArr || sig.params[i] == Ty::DArr2 || sig.params[i] == Ty::DArr3 || sig.params[i] == Ty::DArr4 || sig.params[i] == Ty::DArrS || sig.params[i] == Ty::Hash);
                 apply_moves(a, env, sigs, m);
             }
         }
@@ -9725,6 +9806,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // 16*(n-k)(%rbp) in the callee after its prologue.
             let psig = sigs.iter().find(|v| v.name == *id).map(|v| v.params.clone());
             let pborrowed = sigs.iter().find(|v| v.name == *id).map(|v| v.borrowed.clone());
+            let pcopied = sigs.iter().find(|v| v.name == *id).map(|v| v.string_iter_copy.clone());
             for (ai, a) in args.iter().enumerate() {
                 if psig.as_ref().and_then(|p|p.get(ai)) == Some(&Ty::AView) {
                     match a {
@@ -9885,11 +9967,13 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     continue;
                 }
-                if ta == Ty::Str && pty == Some(Ty::StrOwn) {
-                    // A rodata string argument to an owned-string
-                    // parameter: the callee owns and frees its parameter,
-                    // so the call boundary hands over a fresh copy.
+                if (ta == Ty::Str && pty == Some(Ty::StrOwn)) || pcopied.as_ref().and_then(|p| p.get(ai)).copied() == Some(true) {
+                    // Copy into the owned observer parameter; a named input
+                    // keeps its owner. A computed input is freed AFTER copy.
+                    let temp = ta == Ty::StrOwn && !matches!(a, Expr::Var(_));
+                    if temp { out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n"); }
                     out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                    if temp { out.push_str("    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n"); }
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 } else if ta == Ty::Str || ta == Ty::DArr || ta == Ty::DArr2 || ta == Ty::DArr3 || ta == Ty::DArr4 || ta == Ty::DArrS || ta == Ty::StrOwn || ta == Ty::Hash {
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
@@ -10852,7 +10936,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 *frame += 16; // loop variable: the current element as a Dyn
                 let kl = env.iter().position(|v| v.name == *var).expect("checker found the local");
                 let saved = (env[kl].ty, env[kl].off);
-                env[kl].ty = Ty::Dyn;
+                env[kl].ty = if matches!(expr_ty(coll, env, sigs), Ty::Str | Ty::StrOwn) { Ty::Str } else { Ty::Dyn };
                 env[kl].off = *frame;
                 layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names);
                 env[kl].ty = saved.0;
@@ -11427,6 +11511,11 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                 // widths are identical to `?`.
                 // Arguments (including nested output) have already evaluated.
                 let render_start = out.len();
+                // GTSTD presentation replaces NUL with '.', but raw output
+                // verbs preserve it. Arguments (and their output effects)
+                // have already completed, so this mode covers only rendering.
+                out.push_str(if !stderr && !raw { "    movq $1, hbc_console_mode(%rip)\n" }
+                    else { "    movq $0, hbc_console_mode(%rip)\n" });
                 // Harbour QOut line flush (q1-q17): trailing spaces are
                 // held (hbc_pending) and resolved at the NEXT output:
                 // a `?` newline flushes the previous line and the held
@@ -11633,6 +11722,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                 if !es.is_empty() {
                     out.push_str(&format!("    add ${}, %rsp\n", 16 * es.len()));
                 }
+                out.push_str("    movq $0, hbc_console_mode(%rip)\n");
                 if stderr {
                     // Route only the rendering fragment, never argument effects.
                     let fragment = out.split_off(render_start);
@@ -12403,7 +12493,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // (the DArrRef param layout), so reads, writes and
                 // len go through the shared memory.
                 let lv_borrow = matches!(coll, Expr::Index2(id2, _, _) if matches!(env.iter().rev().find(|v| v.name == *id2).map(|v| v.ty), Some(Ty::DArr4)));
-                env[kl].ty = if lv_borrow { Ty::DArrRef } else { Ty::Dyn };
+                env[kl].ty = if lv_borrow { Ty::DArrRef } else if matches!(ct, Ty::Str | Ty::StrOwn) { Ty::Str } else { Ty::Dyn };
                 env[kl].off = lv_off;
                 out.push_str(&format!(".Lfec_{}_{}:
 ", fname, id));
@@ -12425,6 +12515,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
 ", lv_off));
                 } else {
                 match ct {
+                    Ty::Str | Ty::StrOwn => out.push_str("    add %r11, %rax\n    mov $1, %edx\n"),
                     Ty::Arr(_) => out.push_str("    shl $3, %rax
     add %r11, %rax
     mov (%rax), %rdx
@@ -16215,6 +16306,7 @@ hbc_replicate:
 fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> String {
     let mut out = String::new();
     out.push_str("# generated by hbc (PoC: Harbour syntax -> x86-64 assembly)\n");
+    out.push_str(CONSOLE_NUL_HELPER);
     match target {
         Target::Linux => out.push_str("# target: linux - no libc, I/O via own syscall helpers at the end\n"),
         Target::Windows => out.push_str("# target: windows - no CRT, I/O via own helpers calling kernel32 at the end\n"),
@@ -16316,7 +16408,7 @@ hbc_persistent_payload_release:
     out.push_str(r#"
 # hbc_print_str: %rax = ptr, %rdx = len. Writes the raw bytes, no newline:
 # Harbour `?` emits the newline BEFORE the items (probes b51-b57).
-hbc_print_str:
+hbc_write_bytes:
     mov %rax, %rsi
     mov $1, %eax
     mov $1, %edi
@@ -17805,14 +17897,18 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if out.contains("call hbc_eprint_") {
         let original = out.clone();
         out.push_str("\n    .text\n");
-        for name in ["str", "sep", "i64", "i64c", "dyn", "dynlit", "dyncell", "f64"] {
-            let label = format!("\nhbc_print_{}:", name);
+        // The raw writer, not the console wrapper, owns stderr's byte
+        // route. dynlit is obsolete; numeric-local F64 has its own entry.
+        for name in ["str", "sep", "i64", "i64c", "dyn", "dyncell", "num_f64", "f64"] {
+            let label = if name == "str" { "\nhbc_write_bytes:".to_string() }
+                else { format!("\nhbc_print_{}:", name) };
             let start = original.find(&label).expect("print helper exists") + 1;
             let rest = &original[start..];
             let end = rest.find("\nhbc_").unwrap_or(rest.len());
             let end = rest[..end].find("\n    .section").unwrap_or(end);
-            let mut helper = rest[..end].replace("hbc_print_", "hbc_eprint_")
-                .replace(".Lf64_", ".Lef64_");
+            let mut helper = rest[..end].replace("hbc_write_bytes", "hbc_eprint_str")
+                .replace("hbc_print_", "hbc_eprint_")
+                .replace(".Lf64_", ".Lef64_").replace(".Lnum_", ".Lenum_");
             helper = match target {
                 Target::Linux => helper.replace("mov $1, %edi", "mov $2, %edi"),
                 Target::Windows => helper.replace("mov $-11, %ecx", "mov $-12, %ecx"),
@@ -18386,9 +18482,59 @@ hbc_print_f64:
 // every call. Only VOLATILE registers (rax, rcx, rdx, r8-r11) are touched;
 // no callee-saved register needs preserving. Return values of kernel32
 // calls are not checked (no I/O error handling in this PoC).
+// Presentation only: copy bounded chunks to stack scratch, replace NUL,
+// then use the target's existing raw writer. Source bytes, lengths, ownership
+// and allocation counters are untouched. Other GTSTD controls stay outside
+// this increment; OutStd/OutErr bypass conversion entirely.
+const CONSOLE_NUL_HELPER: &str = r#"
+    .bss
+    .balign 8
+hbc_console_mode: .quad 0
+    .text
+hbc_print_str:
+    cmpq $0, hbc_console_mode(%rip)
+    je hbc_write_bytes
+    push %rbp
+    mov %rsp, %rbp
+    sub $288, %rsp
+    mov %rax, -8(%rbp)
+    mov %rdx, -16(%rbp)
+.Lcnull_chunk:
+    mov -16(%rbp), %rcx
+    test %rcx, %rcx
+    jz .Lcnull_done
+    cmp $256, %rcx
+    jbe .Lcnull_count
+    mov $256, %ecx
+.Lcnull_count:
+    mov %rcx, -24(%rbp)
+    mov -8(%rbp), %rsi
+    xor %r8d, %r8d
+.Lcnull_byte:
+    movzbl (%rsi,%r8), %eax
+    test %eax, %eax
+    jnz .Lcnull_store
+    mov $46, %eax
+.Lcnull_store:
+    mov %al, -288(%rbp,%r8)
+    inc %r8
+    cmp %rcx, %r8
+    jb .Lcnull_byte
+    lea -288(%rbp), %rax
+    mov %rcx, %rdx
+    call hbc_write_bytes
+    mov -24(%rbp), %rcx
+    add %rcx, -8(%rbp)
+    sub %rcx, -16(%rbp)
+    jmp .Lcnull_chunk
+.Lcnull_done:
+    leave
+    ret
+"#;
+
 const WIN_HELPERS: &str = r#"
 # hbc_print_str: %rax = ptr, %rdx = len. Prints the bytes + newline.
-hbc_print_str:
+hbc_write_bytes:
     push %rbp
     mov %rsp, %rbp
     sub $64, %rsp
@@ -20182,6 +20328,7 @@ fn main() {
         params: vec![Ty::I64; f.params.len()],
         ret: if f.name == "main" { None } else { inline_ret_seed(f) },
         inferred: vec![false; f.params.len()],
+        string_iter_copy: f.params.iter().map(|p| string_iterator_observer(f, p)).collect(),
         arg_ev: vec![None; f.params.len()],
         nil_ev: vec![false; f.params.len()],
     }).collect();
@@ -20319,7 +20466,7 @@ fn main() {
                 }
                 if first_pin_err.is_none() { first_pin_err = Some(m); }
             }
-            cur.push(Sig { name: f.name.clone(), nil_ret_only: view[fi].nil_ret_only, borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], aview: vec![false; ptys.len()], params: ptys.clone(), ret, inferred, arg_ev: view[fi].arg_ev.clone(), nil_ev: view[fi].nil_ev.clone() });
+            cur.push(Sig { name: f.name.clone(), string_iter_copy: view[fi].string_iter_copy.clone(), nil_ret_only: view[fi].nil_ret_only, borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], aview: vec![false; ptys.len()], params: ptys.clone(), ret, inferred, arg_ev: view[fi].arg_ev.clone(), nil_ev: view[fi].nil_ev.clone() });
             f.ret = ret;
         }
         // Types/returns converge by fresh re-inference (cur) against the

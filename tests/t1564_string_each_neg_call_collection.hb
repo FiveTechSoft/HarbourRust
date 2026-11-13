@@ -1,0 +1,6 @@
+PROCEDURE Main()
+LOCAL x
+FOR EACH x IN Chr(65)
+? x
+NEXT
+RETURN

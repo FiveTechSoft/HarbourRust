@@ -1535,3 +1535,25 @@ pos tests/t1544_sw_dynstr_ret.hb \n      1000\n    111000
 posx tests/t1545_sw_nil_err.hb 1 Argument error: SWITCH\nCallstack:\n  at main (tests/t1545_sw_nil_err.hb:3)
 pos tests/t1546_sw_nil_empty.hb \nafter
 pos tests/t1547_sw_empty_noeval.hb \nafter
+
+# Read-only string iteration and GTSTD NUL presentation.
+pos tests/t1548_string_each_observe.hb \n        65          1 C\n         0          1 C\n        90          1 C\n       987          3\n       987          0\na\nc\n       987\n        97\n       987 abc
+pos tests/t1549_string_each_copies.hb \n        65\n         0\n        90\nA.Z          3\n        65\n         0\n        90\n       108\n       105\n       116\n        65\n        66\nA.Z          3
+pos tests/t1550_string_each_early_return.hb \n        97\nabc
+streams tests/t1551_string_each_nul_output.hb tests/t1551_stdout.out tests/t1551_stderr.out
+pos tests/t1552_string_each_balance.hb \n.T.          3
+neg tests/t1553_string_each_neg_assign_var.hb string `for each` requires
+neg tests/t1554_string_each_neg_assign_source.hb string `for each` requires
+neg tests/t1555_string_each_neg_copy_char.hb string `for each` requires
+neg tests/t1556_string_each_neg_return_char.hb string `for each` requires
+neg tests/t1557_string_each_neg_user_call.hb string `for each` requires
+neg tests/t1558_string_each_neg_hash_escape.hb string `for each` requires
+neg tests/t1559_string_each_neg_array_escape.hb string `for each` requires
+neg tests/t1560_string_each_neg_block_escape.hb string `for each` requires
+neg tests/t1561_string_each_neg_inline_write.hb string `for each` requires
+neg tests/t1562_string_each_neg_nested.hb string `for each` requires
+neg tests/t1563_string_each_neg_effect_condition.hb string `for each` requires
+neg tests/t1564_string_each_neg_call_collection.hb string `for each` requires
+neg tests/t1565_string_each_neg_byref_observer.hb requires an explicit by-value string argument
+neg tests/t1566_string_each_neg_omitted_observer.hb requires an explicit by-value string argument
+neg tests/t1567_string_each_neg_same_var.hb loop variable cannot be the collection itself
