@@ -36,3 +36,9 @@ never a compatibility success.
 | c16_cap_mutate | capture is by reference | n:=99 after creation -> block prints 99 |
 | c17_cap_shared | two blocks share the cell | set via one, read via other: 7 |
 
+
+## Historical hk probes
+
+The 99 numbered hk `.prg` files formerly at the repository root are in
+[`legacy-hk/`](legacy-hk/README.md). Their source bytes and filenames are unchanged.
+These are separate from the probes and expected.json described above.
