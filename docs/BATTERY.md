@@ -4024,3 +4024,55 @@ itself (original, not versioned - Harbour source stays oracle-side)
 runs byte-exact, 440 bytes, on Linux and Wine; its Dyn signatures stay
 outside the LLVM scalar subset (named rejection, default backend
 only).
+
+
+## Historical Date record from pre-integration main
+
+> The following is preserved historical text. Its Julian implementation and
+> old test IDs are not the current compiler. See [the independent Date port](DATE-PORT-2026-11-13.md)
+> for the current packed representation, remapped tests and verification limits.
+
+### 64bc: the date type, part 1 - Date(), CToD(+), comparisons and Empty
+
+hk483-hk485 match compiled Harbour for the first date slice: a DOUBLE
+Ty::Date scalar whose 8-byte payload is the Harbour julian long (the
+FLIEGEL/Van-Flandern encode and decode formulas, hb_date.c) with the
+EMPTY date pinned to payload 0. DATE() returns today through the
+runtime utc-clock path on Linux (clock_gettime) and GetLocalTime on
+Windows; a local-TZ loader is a registered limit. CToD ports
+hb_dateUnformatRaw over the default MM/DD/YY format: digit runs per
+field with one-or-more non-digit separators (the third separator stops
+the parse), and a year value below 100 maps +1900 through
+hb_setUpdateEpoch at default SET EPOCH 1900 (leading zeros irrelevant,
+set.c:1130, measured through Year()); anything else - m>12, day>month
+limit, bogus leading garbage, a 5-digit year, February 29 on a
+non-leap year - encodes the EMPTY date, which renders `  /  /  ` (8
+bytes, 6 at a QOut line end, probe d7). Real dates render mm/dd/yy.
+
+Comparisons run the julian payload through the existing integer
+COMPARE machinery; mixed date/number or date/mail comparisons are
+Harbour's BASE/1071 argument error (headless hang, hk485) - a
+compile-time named rejection here. Date arithmetic (date +/- integer,
+date - date) is measured (d1) but parked for the NEXT date increment.
+Date params and date-in-hash/tag-5-Dyn surfaces stay outside this
+increment: an uninferable date parameter is the named
+"cannot infer the type of parameter" rejection, and a date argument
+into a Dyn parameter names "must be a dynamic value, got a date"
+(t1092). CTO() rejects non-strings by name; date() rejects any
+argument count. ValType(date)=D and Empty(date) are HK-STYLE POSITIVE
+cases (Empty is the payload==0 test, hk483).
+
+Runtime helpers hbc_date_encode/hbc_ctod/hbc_today/hbc_print_date land
+in both blobs; a manual code-page Windows-4-byte -vs- 8-byte STACK
+STORE mismatch in hbc_date_encode's scratch slots (the upper dword of
+every 32-bit store stayed stack-garbage under Wine: the 4th call
+returned 2^32+payload) is FIXED to 64-bit stores after a hand probe;
+the 4-per-call probe now returns the same payload four times (mp8).
+
+11 manifest cases (t1087-t1093) and 8 named rejections
+(t1094-t1102, including t1092's date-parameter pin limit) bring the
+full battery to 1100 manifest cases plus five harness checks: ALL
+GREEN on Linux x86-64 and Wine 10.20. The frozen 175-original sweep
+stays at 20 COMPILES (sondas/sweep175-64bc.csv). hk483/hk484
+.byte-match compiled Harbour on both targets. No speed claim; hk455
+assembly is unchanged.

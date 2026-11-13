@@ -1,4 +1,4 @@
-# Execution evidence - iteration 2 (Linux x86_64 sandbox, 2026-10-25)
+﻿# Execution evidence - iteration 2 (Linux x86_64 sandbox, 2026-10-25)
 
 Toolchain: rustc 1.99.1 (builds `hbc` only), GNU as 2.38, GNU ld 2.38.
 No Harbour program passes through rustc or LLVM in this iteration.
@@ -615,3 +615,9 @@ bounded and exact). Battery: 125/125 (122 numbered + 3 fixtures),
 Linux + Wine identical. Versioned records: tests/manifest.txt,
 docs/BATTERY.md, docs/battery-categories.txt. Benchmark re-run post-fix:
 arith 200 runs 50ms vs Harbour 269ms, outputs byte-identical.
+
+## Iteration 64bc (Linux x86-64 + Wine 10.20, charles sandbox, 2026-10-30)
+
+Toolchain: rustc 1.99.1 builds hbc; GNU as/ld for ELF
+(x86_64-w64-mingw32 binutils + kernel32 import lib for PE).
+Oracle: harbour-core repo held in ~/dev/harbour-core at 694428e1 and reproducible, built on charles (64 cores)
