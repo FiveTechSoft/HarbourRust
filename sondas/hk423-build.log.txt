@@ -1,5 +1,0 @@
-Harbour 3.2.1dev (r2610242111)
-Copyright (c) 1999-2025, https://harbour.github.io/
-Compiling 'sondas/hk423.prg'...
-Lines 13, Functions/Procedures 2
-Generating C source output to '/tmp/hbmk_ppt3a2.dir/hk423.c'... Done.

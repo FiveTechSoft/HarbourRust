@@ -1,7 +1,0 @@
-Harbour 3.2.1dev (r2610242111)
-Copyright (c) 1999-2025, https://harbour.github.io/
-Compiling 'hk451.prg'...
-hk451.prg(2) Warning W0001  Hello MSG
-hk451.prg(6) Warning W0001  MixedCase
-Lines 9, Functions/Procedures 1
-Generating C source output to '/tmp/hbmk_74vp8z.dir/hk451.c'... Done.

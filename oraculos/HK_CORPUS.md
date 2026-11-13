@@ -1,3 +1,5 @@
+> Historical probe note (2026-11-13): `archived-probe:` and `historical-probe:` identify evidence from earlier revisions, not current checkout paths. The extra probe directory was removed at the owner's request; the regression manifest and oracle corpus remain. Its last full snapshot is in commit `595ecd87b214068047844acbf430f0da817deeb7`.
+
 # Corpus consolidado de sondas-oráculo Harbour (hk)
 
 Cada bloque ```` ```harbour hkNN ```` contiene el programa de contraste hkNN.prg VERBATIM
@@ -2129,7 +2131,7 @@ return nil
 
 ### hk155 - hb_HDel: borrado, clave ausente y vaciado (26 oct 2026)
 
-Fuente `sondas_ac/hkeys/hk155.prg`, compilada con
+Fuente `historical-probe:hkeys/hk155.prg`, compilada con
 `hbmk2 hk155.prg -gtstd -ohk155` (solo librerías core). Salida verbatim:
 
 ```
@@ -2142,7 +2144,7 @@ todas deja len 0. Reproducido byte a byte por t521 en Linux y Wine.
 
 ### hk156 - hb_HDel: re-alta al final y clave vacía (26 oct 2026)
 
-Fuente `sondas_ac/hkeys/hk156.prg`, compilada con
+Fuente `historical-probe:hkeys/hk156.prg`, compilada con
 `hbmk2 hk156.prg -gtstd -ohk156` (solo librerías core). Salida verbatim:
 
 ```
@@ -2157,7 +2159,7 @@ límite nombrado del incremento: las lecturas piden claves Str/StrOwn).
 
 ### hk157 - hb_HHasKey: membresía exacta y sensible a caso (26 oct 2026)
 
-Fuente `sondas_ac/hkeys/hk157.prg`, compilada con
+Fuente `historical-probe:hkeys/hk157.prg`, compilada con
 `hbmk2 hk157.prg -gtstd -ohk157` (solo librerías core). Salida verbatim:
 
 ```
@@ -2173,7 +2175,7 @@ registrada de representación booleana).
 
 ### hk158 - hb_HGet: lectura, default inaplicado y BASE/1132 en ausente (26 oct 2026)
 
-Fuentes `sondas_ac/hkeys/hk158*.prg`, compiladas con
+Fuentes `historical-probe:hkeys/hk158*.prg`, compiladas con
 `hbmk2 <f> -gtstd -o<x>` (solo librerías core), medidas por separado tras
 un cuelgue inicial: hk158a (existentes 1 y 2; la ausente "zz" sin default
 levanta el diálogo BASE/1132 «Bound error: array access» y CUELGA
@@ -2187,7 +2189,7 @@ como modo de fallo con salida limpia (exit 1), nunca éxito de compat.
 
 ### hk158f - hb_HGet: el default SIEMPRE se evalúa (26 oct 2026)
 
-Fuentes `sondas_ac/hkeys/hk158f1-f3.prg`, compiladas con
+Fuentes `historical-probe:hkeys/hk158f1-f3.prg`, compiladas con
 `hbmk2 <f> -gtstd -o<x>` (solo librerías core). El default es una función
 con efecto (imprime EFFECT y devuelve 42). Verbatim hk158f1 (clave
 presente): `\nEFFECT\n         1\nDONE`; hk158f2 (valor NIL existente):
@@ -2201,7 +2203,7 @@ fija la evaluación en ambos targets.
 
 ### hk159/hk160/hk161 - hb_HSet: escritura funcional, retorno hash y orden CLAVE-valor (26 oct 2026)
 
-Fuentes `sondas_ac/hkeys/hk159.prg`, `hk160.prg`, `hk161.prg`, compiladas
+Fuentes `historical-probe:hkeys/hk159.prg`, `hk160.prg`, `hk161.prg`, compiladas
 con `hbmk2 <f> -gtstd -o<x>` (solo librerías core). hk159 verbatim:
 `\n\n         2\n         2\n\n         2\n         9\nNIL\n         3` -
 la escritura funcional crece len al añadir, sobrescribe en su sitio al
@@ -2217,7 +2219,7 @@ balance 0).
 
 ### hk162/hk163 - hb_HPos: posición 1-based viva y compactación tras borrado (26 oct 2026)
 
-Fuentes `sondas_ac/hkeys/hk162.prg` y `hk163.prg`, compiladas con
+Fuentes `historical-probe:hkeys/hk162.prg` y `hk163.prg`, compiladas con
 `hbmk2 <f> -gtstd -o<x>` (solo librerías core). hk162 verbatim:
 `\n         1\n         2\n         3\n         0\n         0` -
 hb_HPos responde la posición 1-based de inserción entre las entradas
@@ -2228,7 +2230,7 @@ clave realta va al final. t540/t541 reproducen ambos en Linux y Wine.
 
 ### hk164/hk165 - hb_HMerge: la fuente gana en solape, retorno hash y no-mutación (26 oct 2026)
 
-Fuentes `sondas_ac/hkeys/hk164.prg` y `hk165.prg`, compiladas con
+Fuentes `historical-probe:hkeys/hk164.prg` y `hk165.prg`, compiladas con
 `hbmk2 <f> -gtstd -o<x>` (solo librerías core). hk164 verbatim:
 `\n         3\n         1\n        22\n         3\n         2\n         3` -
 la fuente GANA en clave solapada («bb»: 2 a 22) manteniendo su
@@ -2242,7 +2244,7 @@ superficie (ambos argumentos son variables hash en el PoC).
 
 ### hk166/hk167/hk168 - hb_HClone: copia profunda independiente; autofusión no-op (26 oct 2026)
 
-Fuentes `sondas_ac/hkeys/hk166.prg`, `hk167.prg` y `hk168.prg`,
+Fuentes `historical-probe:hkeys/hk166.prg`, `hk167.prg` y `hk168.prg`,
 compiladas con `hbmk2 <f> -gtstd -o<x>` (solo librerías core). hk166
 verbatim: `\n         1\n         2\n         2\n         3` - la copia
 de hb_HClone es totalmente INDEPENDIENTE: sobrescribir y añadir en el

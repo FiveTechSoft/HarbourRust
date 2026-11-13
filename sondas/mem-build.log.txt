@@ -1,5 +1,0 @@
-Harbour 3.2.1dev (r2610242111)
-Copyright (c) 1999-2025, https://harbour.github.io/
-Compiling '/downloads/64ap-unused/mem.prg'...
-Lines 13, Functions/Procedures 1
-Generating C source output to '/tmp/hbmk_5rbfey.dir/mem.c'... Done.

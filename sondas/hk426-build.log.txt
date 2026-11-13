@@ -1,5 +1,0 @@
-Harbour 3.2.1dev (r2610242111)
-Copyright (c) 1999-2025, https://harbour.github.io/
-Compiling 'sondas/hk426.prg'...
-100100200300400500600Lines 846, Functions/Procedures 2
-Generating C source output to '/tmp/hbmk_xumktr.dir/hk426.c'... Done.

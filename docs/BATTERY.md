@@ -1,3 +1,5 @@
+> Historical probe note (2026-11-13): `archived-probe:` and `historical-probe:` identify evidence from earlier revisions, not current checkout paths. The extra probe directory was removed at the owner's request; the regression manifest and oracle corpus remain. Its last full snapshot is in commit `595ecd87b214068047844acbf430f0da817deeb7`.
+
 # Battery evidence model (since the QOut audit, 2026-10-25)
 
 `tests/manifest.txt` is the versioned record: one line per test,
@@ -2173,7 +2175,7 @@ Linux).
 
 ## 63v - `??` operator (QOut without the leading newline)
 
-Oracles first (hbmk2 -gtstd @694428e1, published in sondas/): hk274
+Oracles first (hbmk2 -gtstd @694428e1, published in the removed probe directory): hk274
 (`?? "ab" ?? "cd" ? "ef" ?? 42 ? "gh"` -> "abcd\nef        42\ngh"),
 hk275 (comma items join with one space; integers right-aligned in a
 10-column field, same as `?`: "a b          1          2\nc d"), hk276
@@ -2235,7 +2237,7 @@ as plain integers (0xABAB -> 43947).
 FIFTH original upstream file: nums.prg compiles and runs BYTE-IDENTICAL
 to the Harbour Linux oracle, exit 0, on Linux native AND on Wine
 (oracle from Linux; oracles hk278-hk284 measured pre-design, published
-in sondas/; helper + plan + standalone driver in design/f64/).
+in the removed probe directory; helper + plan + standalone driver in design/f64/).
 
 Scope (phase 1 only): float literals (incl. `.12` and `0x` hex integers),
 LOCAL storage, `?`/`??` printing, copies and reassignment. A float local
@@ -2273,7 +2275,7 @@ calling); ains.prg still converges to its named `aclone` blocker.
 
 ## 63y - star-rule mapping and measured (int,dec) frontier (733 rows)
 
-Star overflow mapped with hk285-hk288 (published in sondas/). Harbour's
+Star overflow mapped with hk285-hk288 (published in the removed probe directory). Harbour's
 `*` overflow is a value-dependent artifact of hb_itemStrBuf's
 digit-extraction loop (sequential modf*10 with a +0.01 fudge; a rounding
 carry that runs off the left edge of the field stars it): measured stars
@@ -2337,7 +2339,7 @@ Tests: t735/t739 flipped neg -> pos with their oracle outputs
 (10.000000000000000, 1000.0000000000000); t741 covers copy-to-local
 with metadata, unary minus, and same-value-different-writing
 (0.10000000000000001 and 1.0000000000000001, oracle hk289). Sondas
-hk289/hk290 published in sondas/ with hbmk2 -gtstd captures.
+hk289/hk290 published in the removed probe directory with hbmk2 -gtstd captures.
 BATTERY 736 -> 739 runner rows (459 pos + 45 posx + 235 neg) + ABI ALL
 GREEN (Linux native and Wine with Linux oracle). Sweep: COMPILES 5
 (hello, statfun, lnlenli2, calling, nums; nums byte-exact).
@@ -2365,7 +2367,7 @@ as doubles; oracle hk293: -9223372036854775807-1 over -1 prints
 raises a controlled error ("Error: division by zero", exit 1, both
 targets; t746 posx). Harbour raises EG_ZERODIV there (hvm.c
 hb_vmDivide); established from source plus probe hk294 (capture and
-exit state preserved in sondas_ac/hkeys/): hb_errRT_BASE_Subst returns
+exit state preserved in historical-probe:hkeys/): hb_errRT_BASE_Subst returns
 no substitute under the default headless handler, hb_vmDivide leaves
 the result item untouched (the `?` printed the stale slot contents,
 "0", rc 0) - our clean error exit is the registered failure-mode
@@ -2395,7 +2397,7 @@ comparisons keep their existing named rejections (phase 2 continues).
 
 Tests: t744 (fold: hk291/hk293 cases byte-exact), t745 (runtime:
 hk292/hk293 cases byte-exact), t746 (posx, controlled div0), t747/t748
-(neg). Sondas hk291-hk295 published in sondas/ with hbmk2 -gtstd
+(neg). Sondas hk291-hk295 published in the removed probe directory with hbmk2 -gtstd
 captures. BATTERY 739 -> 744 runner rows + ABI ALL GREEN (Linux native
 and Wine with Linux oracle). Sweep: COMPILES 5 (hello, statfun,
 lnlenli2, calling, nums; nums re-verified byte-exact after the printer
@@ -2651,7 +2653,7 @@ median vs HarbourRust 33.7ms = 24.9x. bench_float (2M float
 accumulation, byte-identical): 233.3ms vs 15.5ms = 15.1x. Startup-
 dominated trivial programs (hello/nums/statfun): ~5x, labelled as
 startup, not engine. These are two concrete programs, not an engine
-claim. Bench sources are sondas/bench_int.prg and sondas/bench_float.prg
+claim. Bench sources are archived-probe:bench_int.prg and archived-probe:bench_float.prg
 (raw loops, no elimination: the add and the Lforc label are present in
 the emitted .s). Toolchain record: hbc sha256
 e1a9de1df483f990df0f26049b4e294ec4f81859ee442d3ec5011bd1d1322e88,
@@ -2857,7 +2859,7 @@ original files, not programs that must run; unchanged per policy.
 
 ## 63zm - DO CASE statement; named rejection of the `&` macro operator
 
-Oracles (pinned hbmk2 -gtstd, sondas hk374-hk376 in `sondas/`): DO CASE runs the
+Oracles (pinned hbmk2 -gtstd, sondas hk374-hk376 in `the removed probe directory`): DO CASE runs the
 FIRST matching CASE only - no fall-through (hk374, where the `x == 2` arm runs
 its two statements and the `x == 3` arm never runs); OTHERWISE runs when no CASE
 matched (hk374/hk375); a bare `end` closes the construct as well as `endcase`
@@ -2893,7 +2895,7 @@ against fresh oracle hk377 (output `\none`), the same maneuver as t622 in
 
 ## 63zn - bare `return` inside blocks
 
-Oracles (pinned hbmk2 -gtstd, sondas hk378-hk381 in `sondas/`): a BARE
+Oracles (pinned hbmk2 -gtstd, sondas hk378-hk381 in `the removed probe directory`): a BARE
 `return` is Harbour-valid inside any block and returns NIL - inside an `if`
 (hk378), a `do while` body (hk380) and a `do case` arm (hk381); a valued
 early return keeps its value (hk379, `return x * 10` prints 20). The old
@@ -2915,7 +2917,7 @@ t666 in 63zm. Battery: 827 rows + ABI.
 
 ## 63zo - QOut statement
 
-Oracle hk383 (pinned hbmk2 -gtstd, in `sondas/`): on this build QOut is
+Oracle hk383 (pinned hbmk2 -gtstd, in `the removed probe directory`): on this build QOut is
 BYTE-IDENTICAL to `?` - leading newline per call, space-separated items,
 numbers width-padded, `QOut()` prints a blank line. It desugars in the
 parser to the existing `Stmt::Print(..., false)`; checker, both codegens
@@ -2929,7 +2931,7 @@ Tests: t833 positive (hk383 mirror). Battery: 828 rows + ABI.
 
 ## 63zp - Round()
 
-Oracles hk384/hk386 (pinned hbmk2 -gtstd, in `sondas/`): half away from zero
+Oracles hk384/hk386 (pinned hbmk2 -gtstd, in `the removed probe directory`): half away from zero
 (1.5 -> 2, -2.5 -> -3); the binary-representation traps round UP
 (1.005 -> 1.01, 2.675 -> 2.68, 1.335 -> 1.34); result dec = max(d, 0)
 (3 -> 3.000 with d=3; 123.456 -> 120 with d=-1; zero-padding to d=10);
@@ -3017,7 +3019,7 @@ thread-local chain for future threads or async callbacks. Codeblocks show
 their definition line; continued expressions use the first statement line.
 Source paths are embedded as supplied to the compiler (may be absolute).
 
-Paired speed check, same sondas/bench_int.prg (10M additions) and
+Paired speed check, same archived-probe:bench_int.prg (10M additions) and
 bench_float.prg (2M float additions), same output across Harbour and both
 HarbourRust builds, Linux process wall time median of 7 interleaved runs:
 integer before/trace/Harbour = 0.034172/0.026987/0.852758 seconds;
@@ -3294,7 +3296,7 @@ is copied UNCHANGED into t907_original_while.hb, SHA256
 81542a0a84c8ce27b7205a6c475ed811847b0dd913eac4a19e0f3dc62c40bf57.
 All1000 printed numbers match compiled Harbour byte-for-byte on both
 Linux and Windows/Wine. The other162 examples remain uncompiled, not
-implicitly completed. Full sweep/errors are retained in sondas/sweep175-63zy.csv.
+implicitly completed. Full sweep/errors are retained in archived-probe:sweep175-63zy.csv.
 
 Linux, uninstrumented,9 alternating pairs, same source and exact outputs:
 hk414 performs500000 postincrement additions within a nominal1M FOR range
@@ -3333,7 +3335,7 @@ checksum500000500000,finalcounter1000001. Nine alternating uninstrumented
 Linux pairs including process startup: Harbour median0.044575464s,
 HarbourRust0.003473755s, about12.83x faster
 for this workload only. Full pairs and exact output are retained in
-sondas/hk424-linux-benchmark.json. No Windows/general performance claim.
+archived-probe:hk424-linux-benchmark.json. No Windows/general performance claim.
 
 
 ## 64aa - parenthesized expression statements
@@ -3373,7 +3375,7 @@ hk430:1M parenthesized postincrements, exact checksum1000000 and finalFOR
 counter1000001. Nine alternating uninstrumented Linux pairs, startup
 included: Harbour median0.027322761s,
 HarbourRust0.002888720s, about9.46x faster
-for this workload only. Raw pairs/output retained in sondas/hk430-linux-benchmark.json.
+for this workload only. Raw pairs/output retained in archived-probe:hk430-linux-benchmark.json.
 No general or Windows speed claim.
 
 
@@ -3399,7 +3401,7 @@ missing-label regression is pinned by t948.
 
 hk432 strings/Dyn, hk434 mixed parameter pinning, hk437 unpinned parameter
 and hk439 Len-only string expectation remain rejected, not marked exact.
-Distinct successful probes and all initial outputs remain in sondas.
+Distinct successful probes and all initial outputs are retained in the historical snapshot identified above.
 New t929-t948 add20 cases:943 actual manifest rows +3harness =946 PASS on
 Linux and Windows/Wine. Frozen175 remains13COMPILES. Seven originals move
 past comma parsing to their next real type/function/subsystem limits;
@@ -3409,7 +3411,7 @@ hk441:1M list statements with two postincrements, exact checksum2000000,
 finalFORcounter1000001. Nine alternating uninstrumented Linux pairs,
 including startup: Harbour median0.030397646s,
 HarbourRust0.002380184s, about12.77x faster
-in this workload only. Raw pairs/output in sondas/hk441-linux-benchmark.json;
+in this workload only. Raw pairs/output in archived-probe:hk441-linux-benchmark.json;
 no universal or Windows performance claim.
 
 ## 64ac - sequence move effects reach following sibling expressions
@@ -4073,6 +4075,6 @@ the 4-per-call probe now returns the same payload four times (mp8).
 (t1094-t1102, including t1092's date-parameter pin limit) bring the
 full battery to 1100 manifest cases plus five harness checks: ALL
 GREEN on Linux x86-64 and Wine 10.20. The frozen 175-original sweep
-stays at 20 COMPILES (sondas/sweep175-64bc.csv). hk483/hk484
+stays at 20 COMPILES (archived-probe:sweep175-64bc.csv). hk483/hk484
 .byte-match compiled Harbour on both targets. No speed claim; hk455
 assembly is unchanged.

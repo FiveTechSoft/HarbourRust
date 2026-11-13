@@ -1,5 +1,0 @@
-Harbour 3.2.1dev (r2610242111)
-Copyright (c) 1999-2025, https://harbour.github.io/
-Compiling '/home/sandbox/win/harbour-core/tests/recursiv.prg'...
-Lines 16, Functions/Procedures 2
-Generating C source output to '/tmp/hbmk_60upkp.dir/recursiv.c'... Done.

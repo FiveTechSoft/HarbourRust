@@ -1,3 +1,5 @@
+> Historical evidence note (2026-11-13): extra probe artifacts were removed from the checkout at the owner's request. Their last complete snapshot is commit `595ecd87b214068047844acbf430f0da817deeb7`.
+
 # String concat benchmark (sonda, NOT upstream) - evidence record
 
 Iteration 63f paired measurement, string `+` accumulation loop.
@@ -153,7 +155,7 @@ Harbour binary sha256 d03b02c2...):
   Both now scale ~linearly: amortized O(n) appends on both sides.
   Derived per-append marginal cost from these two points:
   HarbourRust ~2.6 ns vs Harbour ~64 ns (derived, not directly timed).
-- Raw runs: sondas raw21_r3_n20000.txt and scaling_r3_large.txt;
+- Raw historical runs: raw21_r3_n20000.txt and scaling_r3_large.txt; no current checkout path is implied;
   binary/asm SHAs in r3_sha.txt.
 
 Rounds 1-2 above are preserved unchanged: each timing round is its own
