@@ -100,55 +100,55 @@
   "admitted_default_case_count": 18,
   "case_sources_preserved": [
     {
-      "file": "tests/t711_dyn_bool_reassign.hb",
+      "file": "tests/t711_dyn_bool_reassign.prg",
       "equal_to_executed_sha256": true
     },
     {
-      "file": "tests/t933_sequence_string.hb",
+      "file": "tests/t933_sequence_string.prg",
       "equal_to_executed_sha256": true
     },
     {
-      "file": "tests/t941_sequence_assign.hb",
+      "file": "tests/t941_sequence_assign.prg",
       "equal_to_executed_sha256": true
     },
     {
-      "file": "tests/t942_sequence_string_last.hb",
+      "file": "tests/t942_sequence_string_last.prg",
       "equal_to_executed_sha256": true
     },
     {
-      "file": "tests/t1040_seq_dyn_var.hb",
+      "file": "tests/t1040_seq_dyn_var.prg",
       "equal_to_executed_sha256": true
     },
     {
-      "file": "tests/t1370_parexpr_inline_assign.hb",
+      "file": "tests/t1370_parexpr_inline_assign.prg",
       "equal_to_executed_sha256": true
     },
     {
-      "file": "tests/t1371_parexpr_if_seqcond.hb",
+      "file": "tests/t1371_parexpr_if_seqcond.prg",
       "equal_to_executed_sha256": true
     },
     {
-      "file": "tests/t1372_parexpr_iif_strseq.hb",
+      "file": "tests/t1372_parexpr_iif_strseq.prg",
       "equal_to_executed_sha256": true
     },
     {
-      "file": "tests/t1373_return_nil_parens.hb",
+      "file": "tests/t1373_return_nil_parens.prg",
       "equal_to_executed_sha256": true
     },
     {
-      "file": "tests/t1374_pragma_es0.hb",
+      "file": "tests/t1374_pragma_es0.prg",
       "equal_to_executed_sha256": true
     },
     {
-      "file": "tests/t1380_nilonly_shapes.hb",
+      "file": "tests/t1380_nilonly_shapes.prg",
       "equal_to_executed_sha256": true
     },
     {
-      "file": "tests/t1381_seq_dyn_var_observable.hb",
+      "file": "tests/t1381_seq_dyn_var_observable.prg",
       "equal_to_executed_sha256": true
     },
     {
-      "file": "tests/t1382_dyn_bool_readback.hb",
+      "file": "tests/t1382_dyn_bool_readback.prg",
       "equal_to_executed_sha256": true
     }
   ]

@@ -1,26 +1,26 @@
 [
   {
-    "file": "t1219_escape_values.hb",
+    "file": "t1219_escape_values.prg",
     "exact": true,
     "stdout_hex": "0a202020202020202031302020202020202020203133202020202020202020203920202020202020202020372020202020202020202038202020202020202020313220202020202020202031310a2020202020202020393220202020202020202033342020202020202020313133"
   },
   {
-    "file": "t1220_escape_protection.hb",
+    "file": "t1220_escape_protection.prg",
     "exact": true,
     "stdout_hex": "0a583b202f2f2026262022574f524420544f4b454e222020202020202020202038"
   },
   {
-    "file": "t1221_escape_stringify.hb",
+    "file": "t1221_escape_stringify.prg",
     "exact": true,
     "stdout_hex": "0a5b612722625d0a2761226227"
   },
   {
-    "file": "t1222_escape_call_macro.hb",
+    "file": "t1222_escape_call_macro.prg",
     "exact": true,
     "stdout_hex": "0a612c22622078293b2279"
   },
   {
-    "file": "t1223_escape_continuation.hb",
+    "file": "t1223_escape_continuation.prg",
     "exact": true,
     "stdout_hex": "0a61223b62"
   }

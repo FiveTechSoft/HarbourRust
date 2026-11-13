@@ -1942,11 +1942,11 @@
       ]
     },
     {
-      "file": "tests/hbpp/compare.hb",
+      "file": "tests/hbpp/compare.prg",
       "sha256": "bce28eafc7ea745d913d87117e1c39ae68806e9fc7c1bde8342aa5dc723bd4eb",
       "manual_review": "full source read,2026-10-29",
       "profile": "source-review-only; no new compilation or execution",
-      "entrypoint": "top-level .hb script,no Main",
+      "entrypoint": "top-level .prg script,no Main",
       "build_unit": "single source with explicit profile; not auto-runnable",
       "families": [
         "script-startup",
@@ -1996,7 +1996,7 @@
       ]
     },
     {
-      "file": "tests/stripdoc.hb",
+      "file": "tests/stripdoc.prg",
       "sha256": "c7d7e51aaab0011a6b32162c546c41d564ae23a0c269404182494fd42ce53819",
       "manual_review": "full source read,2026-10-29",
       "profile": "source-review-only; no new compilation or execution",
@@ -2040,7 +2040,7 @@
       ]
     },
     {
-      "file": "tests/hbdocext.hb",
+      "file": "tests/hbdocext.prg",
       "sha256": "a1ec8dd634fd6f8c24ce0a33099bfeb8d4c790da1b45c150a51c71fd607d2bf3",
       "manual_review": "full source read,2026-10-29",
       "profile": "source-review-only; no new compilation or execution",
@@ -2084,7 +2084,7 @@
       ]
     },
     {
-      "file": "tests/langchk.hb",
+      "file": "tests/langchk.prg",
       "sha256": "3aa32581e3c4b4cef9eb8092be599005cb5a2cbb698d480a9f88ede1f701ab4b",
       "manual_review": "full source read,2026-10-29",
       "profile": "source-review-only; no new compilation or execution",

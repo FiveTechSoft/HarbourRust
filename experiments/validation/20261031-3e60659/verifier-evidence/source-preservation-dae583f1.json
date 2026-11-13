@@ -1,5 +1,5 @@
 {
-  "file": "tests/t870_qout_block_result_neg.hb",
+  "file": "tests/t870_qout_block_result_neg.prg",
   "base": "38ef5992794aece58bb85e0dfa2448ed69f5dddf",
   "snapshot": "514843374d4033f55a8f30fe5542c38eeeac74db",
   "byte_identical": true,

@@ -79,7 +79,7 @@ Requires Rust and GNU binutils on Linux x86-64. From the repository root:
 
 ```sh
 rustc --edition=2021 -O src/hbc.rs -o hbc
-./hbc tests/samples/hello.hb hello.s --target=linux
+./hbc tests/samples/hello.prg hello.s --target=linux
 as -o hello.o hello.s
 ld -o hello hello.o
 ./hello
@@ -100,7 +100,7 @@ From Windows Command Prompt at the repository root, with `hbc.exe` there:
 
 ```bat
 set "HBC=%CD%\hbc.exe"
-dist\build.bat tests\samples\hello.hb hello
+dist\build.bat tests\samples\hello.prg hello
 hello.exe
 ```
 

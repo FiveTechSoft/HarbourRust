@@ -60,21 +60,21 @@ on real Windows - that check is still pending.
 The subset grows conditional execution: `if <condition> ... [else ...]
 endif`, with integer comparisons (`=  <>  !=  <  <=  >  >=`) and arbitrary
 nesting. Conditions are expressions, so a call can appear inside them
-(`if valor() >= 40`, `tests/t18_if_call_cond.hb`).
+(`if valor() >= 40`, `tests/t18_if_call_cond.prg`).
 
 Branching keeps the same ownership rules, resolved at compile time:
 
 - Locals declared inside a branch are scoped to that branch; sibling
   branches may reuse a name, and using a branch local after `endif` is a
-  compile error (`tests/t19_if_scope.hb`).
+  compile error (`tests/t19_if_scope.prg`).
 - A string moved in one branch counts as moved at the join (like Rust):
-  using it after `endif` is rejected (`tests/t14_if_move_after.hb`).
+  using it after `endif` is rejected (`tests/t14_if_move_after.prg`).
 - A string moved in both branches is moved at the join as well
-  (`tests/t15_if_move_both.hb`).
+  (`tests/t15_if_move_both.prg`).
 - `return` stays at the function top level: a `return` inside an `if`
-  block is rejected (`tests/t16_if_return.hb`).
+  block is rejected (`tests/t16_if_return.prg`).
 - Comparisons are integer-only in this iteration: comparing strings is
-  rejected (`tests/t17_if_str_cmp.hb`). The condition's boolean value
+  rejected (`tests/t17_if_str_cmp.prg`). The condition's boolean value
   cannot be stored, printed or returned.
 
 Every new test runs on both targets with byte-identical output, and the
@@ -93,11 +93,11 @@ Loop semantics:
 
 - The condition is an integer comparison, as in `if`, re-evaluated on
   every iteration; calls are allowed inside it.
-- Body locals are scoped to the body (`tests/t26_while_scope.hb`).
+- Body locals are scoped to the body (`tests/t26_while_scope.prg`).
 - A variable moved inside the body must be live again at `enddo` (that is,
   reassigned); otherwise the next iteration would use a moved value, so
-  `hbc` rejects it (`tests/t24_while_move.hb`, rejected, versus
-  `tests/t25_while_move_reassign.hb`, accepted).
+  `hbc` rejects it (`tests/t24_while_move.prg`, rejected, versus
+  `tests/t25_while_move_reassign.prg`, accepted).
 - After the loop, move states join the pre-loop and end-of-body states:
   the body may have run zero times.
 - `return` stayed at the function top level; iteration 7 lifted that
@@ -107,59 +107,59 @@ Loop semantics:
 
 `exit` leaves the innermost `while`, and `loop` skips to its next
 iteration (Harbour's names for `break` and `continue`). Both are
-compile errors outside a `while` (`tests/t29_exit_outside.hb`), and the
+compile errors outside a `while` (`tests/t29_exit_outside.prg`), and the
 move checker follows them:
 
 - A variable moved on a path that reaches the next iteration must be
-  reassigned before `enddo` **or before `loop`** (`tests/t30_loop_move.hb`,
+  reassigned before `enddo` **or before `loop`** (`tests/t30_loop_move.prg`,
   rejected).
 - A move on a path that leaves via `exit` never reaches the next
   iteration, so it needs no reassignment - Rust accepts the equivalent
-  too (`tests/t31_exit_move_ok.hb`, accepted).
+  too (`tests/t31_exit_move_ok.prg`, accepted).
 - After the loop, move states join the pre-loop state, the fall-through
   end-of-body state, and the state at every `exit`: any of those paths
-  may be the one that ran (`tests/t32_exit_move_use.hb`, rejected).
+  may be the one that ran (`tests/t32_exit_move_use.prg`, rejected).
 
 ## Iteration 7: early return
 
 `return <expr>` is now allowed inside `if` and `while` blocks: it closes
-the function at once with that value (`tests/t16_if_return.hb`,
-`tests/t27_while_return.hb`). Rules, mirroring Rust:
+the function at once with that value (`tests/t16_if_return.prg`,
+`tests/t27_while_return.prg`). Rules, mirroring Rust:
 
 - The closing top-level `return` is still required - an early return is
   an extra exit, not a replacement for it.
 - Every early return carries a value; bare `return` / `return nil` inside
-  a block is rejected (`tests/t33_return_bare_block.hb`).
+  a block is rejected (`tests/t33_return_bare_block.prg`).
 - All returns of a function must agree on the type
-  (`tests/t34_return_type_mix.hb`), and a function that early-returns a
-  value cannot close with `return nil` (`tests/t35_return_nil_closing.hb`).
+  (`tests/t34_return_type_mix.prg`), and a function that early-returns a
+  value cannot close with `return nil` (`tests/t35_return_nil_closing.prg`).
 - A string moved into an early return stays moved on that path, so using
-  it after the block fails at the join (`tests/t36_return_move_join.hb`).
+  it after the block fails at the join (`tests/t36_return_move_join.prg`).
 
 ## Iteration 8: for / next
 
 `for i := <start> to <end> [step <n>] ... next` counts over an integer
-range (`tests/t37_for_basic.hb`: up, stepped, counted down with a
+range (`tests/t37_for_basic.prg`: up, stepped, counted down with a
 negative step, zero-trip). `exit` and `loop` work inside it
-(`tests/t42_for_exit_loop.hb`). Deliberate PoC restrictions, several of
+(`tests/t42_for_exit_loop.prg`). Deliberate PoC restrictions, several of
 them stricter than the analogous Rust constructs:
 
 - The step must be a **non-zero integer literal**, so the counting
-  direction is fixed at compile time (`tests/t43_for_step_zero.hb`,
-  `tests/t44_for_step_expr.hb`). Harbour allows any expression here.
+  direction is fixed at compile time (`tests/t43_for_step_zero.prg`,
+  `tests/t44_for_step_expr.prg`). Harbour allows any expression here.
 - Bounds are evaluated once before the loop and must be integers.
-- The loop variable is scoped to the loop (`tests/t38_for_scope.hb`),
+- The loop variable is scoped to the loop (`tests/t38_for_scope.prg`),
   may not reuse a name already in scope - this PoC does not shadow,
-  unlike Rust (`tests/t39_for_shadow.hb`) - and cannot be assigned
-  inside the body (`tests/t40_for_assign_var.hb`).
+  unlike Rust (`tests/t39_for_shadow.prg`) - and cannot be assigned
+  inside the body (`tests/t40_for_assign_var.prg`).
 - The move checker applies the same join rules as in `while`: a variable
   moved in the body must be reassigned before `next`
-  (`tests/t41_for_move.hb`). These joins are conservative: they can
+  (`tests/t41_for_move.prg`). These joins are conservative: they can
   reject programs that would run fine, which is intended
-  (`tests/t50_for_return_move.hb` is such a case).
+  (`tests/t50_for_return_move.prg` is such a case).
 - Advancing the counter past the i64 range ends the loop instead of
-  wrapping it (`tests/t45_for_overflow_up.hb`,
-  `tests/t46_for_overflow_down.hb`). Without this rule the counter would
+  wrapping it (`tests/t45_for_overflow_up.prg`,
+  `tests/t46_for_overflow_down.prg`). Without this rule the counter would
   wrap and the loop would not terminate.
 - `for`, `to`, `step` and `next` are reserved words now; they can no
   longer be used as identifiers.
@@ -173,7 +173,7 @@ EVIDENCE.md for the reproduction.
 ## Iteration 9: string equality in conditions
 
 `=` and `<>` now work on two strings inside `if` / `while` conditions
-(`tests/t52_str_eq.hb`, `tests/t97_str_eq_rightlen.hb`). The rule is
+(`tests/t52_str_eq.prg`, `tests/t97_str_eq_rightlen.prg`). The rule is
 Harbour's default `=` (SET EXACT OFF), verified by probe b23: the
 comparison runs over the length of the RIGHT operand, with the left
 operand read NUL-padded - "abcd" = "abc" is true, "abc" = "abcd" is
@@ -188,7 +188,7 @@ assignment/return and are borrowed by printing and now by comparison.
 
 - Ordering (`<`, `<=`, `>`, `>=`) works since iteration 10, with the
   same right-operand-length rule (see below). Comparing a string with an integer is a type error
-  (`tests/t53_mixed_cmp.hb`).
+  (`tests/t53_mixed_cmp.prg`).
 
 ## Iteration 10: string ordering (Harbour's default semantics)
 
@@ -205,11 +205,11 @@ byte-wise ordering - Harbour's EXACT ON rule; corrected to the default
 on 2026-10-25. SET EXACT itself is a runtime setting this PoC does not
 have.) Still not
 general string handling: same immutable (ptr, len) values, comparison
-borrows. `tests/t17_if_str_cmp.hb` was converted a second time (it now
-pins ordering working); `tests/t56_str_order_mixed.hb` pins mixed
+borrows. `tests/t17_if_str_cmp.prg` was converted a second time (it now
+pins ordering working); `tests/t56_str_order_mixed.prg` pins mixed
 string/integer ordering as a type error.
 - Comparing borrows both operands: they stay usable and movable after
-  (`tests/t54_str_eq_borrows.hb`).
+  (`tests/t54_str_eq_borrows.prg`).
 - Cost note: `hbc_str_eq` is emitted into every binary (no dead-code
   elimination in this PoC), so `hola` grew from 8,984 to 9,024 bytes.
 
@@ -272,16 +272,16 @@ Integer literals are range-checked (i64).
 ## What the tests demonstrate
 
 1. A Harbour-syntax program compiles to a native x86-64 ELF and runs:
-   `tests/samples/hello.hb` prints `32` and a greeting
-   (`tests/t10_int_copy.hb`, `tests/t11_print_borrows.hb` also run).
+   `tests/samples/hello.prg` prints `32` and a greeting
+   (`tests/t10_int_copy.prg`, `tests/t11_print_borrows.prg` also run).
 2. Use after move is rejected at compile time **by hbc itself**:
-   `tests/samples/broken_borrow.hb` fails with
+   `tests/samples/broken_borrow.prg` fails with
    `error: line 5: use of moved value 'a'`. In iteration 1 this rejection
    came from rustc's borrow checker; now it comes from our own analysis.
    It is still a use-after-move case only - borrowing, references and
    lifetimes beyond "printing borrows" are NOT covered.
 3. The Copy vs move distinction works in Harbour syntax
-   (`tests/t10_int_copy.hb`).
+   (`tests/t10_int_copy.prg`).
 4. Eight rejection tests (`tests/t01`-`t09`) show the front-end rejecting
    injections and out-of-grammar input, with real line numbers. Unicode
    works inside string literals and is rejected in identifiers without
@@ -311,7 +311,7 @@ Integer literals are range-checked (i64).
   `WriteFile` are not checked; a failed write goes unreported.
 - Full Win64 ABI conformance: the alignment and register discipline is
   exercised by the test battery (including a call nested inside an
-  arithmetic expression, `tests/t12_call_in_expr.hb`), not proven in
+  arithmetic expression, `tests/t12_call_in_expr.prg`), not proven in
   general.
 - A pure-Rust toolchain end to end: the assembler and linker are GNU
   binutils (C), and `hbc` itself is built with rustc/LLVM. Cranelift or a
@@ -334,8 +334,8 @@ Integer literals are range-checked (i64).
 ```sh
 mkdir -p gen          # gen/ is not part of the checkout
 rustc -O src/hbc.rs -o hbc
-./hbc tests/samples/hello.hb gen/hello.s && as -o gen/hello.o gen/hello.s && ld -o gen/hello gen/hello.o && ./gen/hello
-./hbc tests/samples/broken_borrow.hb gen/prestamo.s    # rejected by hbc itself
+./hbc tests/samples/hello.prg gen/hello.s && as -o gen/hello.o gen/hello.s && ld -o gen/hello gen/hello.o && ./gen/hello
+./hbc tests/samples/broken_borrow.prg gen/prestamo.s    # rejected by hbc itself
 ```
 
 Windows build (needs mingw-w64 binutils and the `kernel32` import library,
@@ -343,7 +343,7 @@ e.g. Ubuntu packages `binutils-mingw-w64-x86-64` and `mingw-w64-x86-64-dev`;
 running the .exe on Linux needs Wine):
 
 ```sh
-./hbc tests/samples/hello.hb gen/hello_win.s --target=windows
+./hbc tests/samples/hello.prg gen/hello_win.s --target=windows
 x86_64-w64-mingw32-as -o gen/hello_win.o gen/hello_win.s
 x86_64-w64-mingw32-ld -o gen/hello.exe gen/hello_win.o -e _start --subsystem console -lkernel32
 wine gen/hello.exe

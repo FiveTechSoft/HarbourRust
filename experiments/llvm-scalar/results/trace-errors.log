@@ -2,46 +2,46 @@ linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
 Callstack:
-  at deep (error-inc.hb:3)
-  at middle (error-inc.hb:5)
-  at main (error-inc.hb:7)
+  at deep (error-inc.prg:3)
+  at middle (error-inc.prg:5)
+  at main (error-inc.prg:7)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
 Callstack:
-  at deep (error-inc.hb:3)
-  at middle (error-inc.hb:5)
-  at main (error-inc.hb:7)
+  at deep (error-inc.prg:3)
+  at middle (error-inc.prg:5)
+  at main (error-inc.prg:7)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
 Callstack:
-  at descend (error-recursive.hb:4)
-  at descend (error-recursive.hb:4)
-  at descend (error-recursive.hb:4)
-  at descend (error-recursive.hb:4)
-  at main (error-recursive.hb:6)
+  at descend (error-recursive.prg:4)
+  at descend (error-recursive.prg:4)
+  at descend (error-recursive.prg:4)
+  at descend (error-recursive.prg:4)
+  at main (error-recursive.prg:6)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
 Callstack:
-  at descend (error-recursive.hb:4)
-  at descend (error-recursive.hb:4)
-  at descend (error-recursive.hb:4)
-  at descend (error-recursive.hb:4)
-  at main (error-recursive.hb:6)
+  at descend (error-recursive.prg:4)
+  at descend (error-recursive.prg:4)
+  at descend (error-recursive.prg:4)
+  at descend (error-recursive.prg:4)
+  at main (error-recursive.prg:6)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
 Callstack:
-  at main (error-after-call.hb:7)
+  at main (error-after-call.prg:7)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
 Callstack:
-  at main (error-after-call.hb:7)
+  at main (error-after-call.prg:7)

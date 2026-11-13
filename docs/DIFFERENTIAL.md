@@ -37,7 +37,7 @@ Harbour is never passed off as equality.
 
 ## Method (reproduce)
 
-    cp tests/tNN_test.hb /tmp/t.prg
+    cp tests/tNN_test.prg /tmp/t.prg
     hbmk2 -quiet -gtstd -w0 /tmp/t.prg -o/tmp/t_hb && /tmp/t_hb
     # compare against the HarbourRust-compiled run, whitespace-normalized
 

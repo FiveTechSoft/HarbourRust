@@ -1,48 +1,48 @@
 [
   {
-    "file": "tests/t1131_pp_generated_factory.hb",
+    "file": "tests/t1131_pp_generated_factory.prg",
     "stdout_hex": "0a6f6b0a6f6b",
     "exit": 0,
     "exact": true
   },
   {
-    "file": "tests/t1132_pp_generated_collision.hb",
+    "file": "tests/t1132_pp_generated_collision.prg",
     "stdout_hex": "0a6f6b",
     "exit": 0,
     "exact": true
   },
   {
-    "file": "tests/t1133_pp_generated_optional.hb",
+    "file": "tests/t1133_pp_generated_optional.prg",
     "stdout_hex": "0a0a796573",
     "exit": 0,
     "exact": true
   },
   {
-    "file": "tests/t1134_pp_generated_ordinary.hb",
+    "file": "tests/t1134_pp_generated_ordinary.prg",
     "stdout_hex": "0a6f6b",
     "exit": 0,
     "exact": true
   },
   {
-    "file": "tests/t1135_pp_generated_ordered.hb",
+    "file": "tests/t1135_pp_generated_ordered.prg",
     "stdout_hex": "0a202020202020202020310a20202020202020202032",
     "exit": 0,
     "exact": true
   },
   {
-    "file": "tests/t1136_pp_generated_unused.hb",
+    "file": "tests/t1136_pp_generated_unused.prg",
     "stdout_hex": "0a20202020202020202037",
     "exit": 0,
     "exact": true
   },
   {
-    "file": "tests/t1137_pp_generated_multi.hb",
+    "file": "tests/t1137_pp_generated_multi.prg",
     "stdout_hex": "0a202020202020202020310a20202020202020202032",
     "exit": 0,
     "exact": true
   },
   {
-    "file": "tests/t1138_pp_generated_local_scope.hb",
+    "file": "tests/t1138_pp_generated_local_scope.prg",
     "stdout_hex": "0a20202020202020203432",
     "exit": 0,
     "exact": true

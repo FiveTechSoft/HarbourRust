@@ -163,7 +163,7 @@ HB_SIZE       hb_arrayGetCLen( PHB_ITEM pArray, HB_SIZE nIndex );    /* :813 */
  * (docs/EXTEND-BRIDGE.md): parameters must be INTEGER items
  * (hb_evalPutParam over anything else is a named rejection), a
  * NIL-returning block never crosses (compile-time named rejection on
- * the .hb side), and the 10th parameter fills the frame -
+ * the .prg side), and the 10th parameter fills the frame -
  * hb_evalPutParam returns HB_FALSE there. */
 #define HB_EVAL_PARAM_MAX_ 9                                /* hbapiitm.h:57 */
 typedef struct

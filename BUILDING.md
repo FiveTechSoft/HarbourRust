@@ -18,7 +18,7 @@ statically linked Linux x86-64 binary.
 ## 2. Compile a Harbour program to a Linux binary
 
 ```
-./hbc tests/samples/hello.hb hello.s --target=linux
+./hbc tests/samples/hello.prg hello.s --target=linux
 as -o hello.o hello.s
 ld -o hello hello.o
 ./hello
@@ -45,7 +45,7 @@ Then:
 M=tools/mingw/usr/bin
 MLIB=tools/mingw/usr/x86_64-w64-mingw32/lib
 export LD_LIBRARY_PATH=$PWD/tools/mingw/usr/lib
-./hbc tests/samples/hello.hb hello_win.s --target=windows
+./hbc tests/samples/hello.prg hello_win.s --target=windows
 $M/x86_64-w64-mingw32-as -o hello_win.o hello_win.s
 $M/x86_64-w64-mingw32-ld -o hello.exe hello_win.o -e _start --subsystem console -L$MLIB -lkernel32
 ```
@@ -83,7 +83,7 @@ Verified with Wine 10.20 (Kron4ek `wine-10.20-amd64-wow64` build):
 
 ```
 wine ./hello.exe     # prints "Hola desde Harbour!"
-wine ./hbc.exe prog.hb prog.s --target=windows
+wine ./hbc.exe prog.prg prog.s --target=windows
 ```
 
 Wine 11.20 was also tried but does not start in constrained containers
@@ -97,7 +97,7 @@ Under `dist/`:
 | ------------- | ------------------- | ----------------------------------------- |
 | `1-hbc`     | Linux x86-64        | The compiler                              |
 | `2-hbc.exe` | Windows x86-64      | The compiler, cross-built as in section 4 |
-| `3-hello.exe` | Windows x86-64      | `tests/samples/hello.hb` compiled as in section 3 |
+| `3-hello.exe` | Windows x86-64      | `tests/samples/hello.prg` compiled as in section 3 |
 
 The numeric prefixes are an artifact of the upload tool used to publish
 the files; the contents are exactly the verified builds described here.
@@ -139,6 +139,6 @@ bash tests/run_battery.sh
 expected bytes on Linux and under Wine, `posx` adds the exit code, `neg`
 cases must fail compilation with the named message on both targets.
 Intermediate assembly, objects and binaries are written under `gen/`;
-that directory is kept in the repository (with the `gen/arith.hb`
+that directory is kept in the repository (with the `gen/arith.prg`
 fixture the manifest references) so a fresh clone runs the battery
 as-is. A full pass prints `ALL GREEN` as its last line.

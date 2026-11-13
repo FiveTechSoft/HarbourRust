@@ -9,7 +9,7 @@ Reference:694428e1c12f726675b19324d62167fa77d68185
 Source:https://codeload.github.com/harbour/core/tar.gz/694428e1c12f726675b19324d62167fa77d68185
 Tarball SHA256:80ce1e926bf352d4b12d277f06d13df259f9d06322193e1912a6c0c5f1eab355
 
-Inventory:1203 files (1041 .prg,19 .hb,143 .ch). These are NOT1203 examples or
+Inventory:1203 files (1041 .prg,19 .prg,143 .ch). These are NOT1203 examples or
 1060 standalone programs. Profiles partition files, not language coverage:
 A-tests, B-extras, B-utils, C-contrib, internal-source and support. Headers are
 not runnable tests. Entrypoints, runtime dependencies, effects and platform
@@ -204,8 +204,8 @@ The additional pass separates environment queries, report/DBF fixtures,
 module exports/INIT procedures, C-embedded builds, audio, subprocesses,
 loopback sockets, file effects and utility scripts. Small file size does not
 mean safe console example:
-- stripdoc.hb overwrites matching .c/.prg in its current directory.
-- hbpp/compare.hb runs Harbour,Clipper and diff, then deletes intermediates.
+- stripdoc.prg overwrites matching .c/.prg in its current directory.
+- hbpp/compare.prg runs Harbour,Clipper and diff, then deletes intermediates.
 - osshell.prg is marked NOTEST and starts an interactive OS shell.
 - ipclnt connects to127.0.0.1:10000 and sends a quit message. Loopback is not
   permission to contact a pre-existing service.

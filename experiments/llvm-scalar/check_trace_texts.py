@@ -2,7 +2,7 @@
 """Compare diagnostic bytes and volatile store sequence across LLVM emitters."""
 import argparse,pathlib,subprocess,re,json
 p=argparse.ArgumentParser();p.add_argument('--before',required=True);p.add_argument('--after',required=True);p.add_argument('--output-dir',required=True);a=p.parse_args();base=pathlib.Path(__file__).resolve().parent;out=pathlib.Path(a.output_dir).resolve();out.mkdir(parents=True,exist_ok=True);rows=[]
-for file in ['perfextra.hb','corpus.hb','arraywork.hb','error-after-call.hb','error-bitops.hb','error-boolcalls.hb']:
+for file in ['perfextra.prg','corpus.prg','arraywork.prg','error-after-call.prg','error-bitops.prg','error-boolcalls.prg']:
  observations=[]
  for label,compiler in [('before',a.before),('after',a.after)]:
   f=out/(file+'-'+label+'.ll');subprocess.run([str(pathlib.Path(compiler).resolve()),file,str(f),'--experimental-llvm'],cwd=base,check=True,timeout=10);s=f.read_text();defs=dict(re.findall(r'(@str\d+) = private constant \[\d+ x i8\] c"([^"]*)"',s));seq=[]

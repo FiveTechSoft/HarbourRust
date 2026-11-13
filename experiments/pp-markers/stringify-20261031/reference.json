@@ -1,41 +1,41 @@
 [
   {
-    "file": "tests/t1169_pp_stringify_spaces.hb",
+    "file": "tests/t1169_pp_stringify_spaces.prg",
     "stdout_hex": "0a6120202b202020620a616c70686128312c203229",
     "exact": true
   },
   {
-    "file": "tests/t1170_pp_stringify_quotes.hb",
+    "file": "tests/t1170_pp_stringify_quotes.prg",
     "stdout_hex": "0a2268656c6c6f220a2268656c6c6f22",
     "exact": true
   },
   {
-    "file": "tests/t1171_pp_stringify_absent.hb",
+    "file": "tests/t1171_pp_stringify_absent.prg",
     "stdout_hex": "0a4120205a0a4120616c706861205a",
     "exact": true
   },
   {
-    "file": "tests/t1172_pp_stringify_optional.hb",
+    "file": "tests/t1172_pp_stringify_optional.prg",
     "stdout_hex": "0a0a616c706861",
     "exact": true
   },
   {
-    "file": "tests/t1173_pp_stringify_repeat_text.hb",
+    "file": "tests/t1173_pp_stringify_repeat_text.prg",
     "stdout_hex": "0a612061",
     "exact": true
   },
   {
-    "file": "tests/t1174_pp_stringify_call.hb",
+    "file": "tests/t1174_pp_stringify_call.prg",
     "stdout_hex": "0a616c70686128312c203229",
     "exact": true
   },
   {
-    "file": "tests/t1175_pp_stringify_dotted.hb",
+    "file": "tests/t1175_pp_stringify_dotted.prg",
     "stdout_hex": "0a2e542e202e414e442e202e462e0a613a3d31",
     "exact": true
   },
   {
-    "file": "tests/t1176_pp_stringify_literal_marker.hb",
+    "file": "tests/t1176_pp_stringify_literal_marker.prg",
     "stdout_hex": "0a223c793e222020202020202020202037",
     "exact": true
   }

@@ -59,7 +59,7 @@
    "entrypoint": "none (library: hbtpl_MyPublicFunction)",
    "build_unit": "hbtpl.hbp (-hblib core.prg + corec.c)",
    "profile": "B-extras, GPLv2 + Harbour linking exception where header present (no source copied)",
-   "dependencies": "hbtpl.ch include; C counterpart corec.c (not inventoried: not .prg/.ch/.hb)",
+   "dependencies": "hbtpl.ch include; C counterpart corec.c (not inventoried: not .prg/.ch/.prg)",
    "boundary": "template contrib skeleton lib",
    "reference_build_exit": 0,
    "reference_build_note": "hbtpl.hbp builds lib OK at pin 694428e1",
@@ -194,7 +194,7 @@
    }
   },
   {
-   "file": "extras/template/tests/hbstart.hb",
+   "file": "extras/template/tests/hbstart.prg",
    "sha256": "138c779b249061bf0fef568a48b222d362926418850003500f3acb70c614f571",
    "review": "full source manually read 2026-11-01 (3 lines)",
    "entrypoint": "top-level statement (hbrun startup script)",

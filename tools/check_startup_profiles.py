@@ -3,7 +3,7 @@
 import argparse,pathlib,subprocess,json,re
 p=argparse.ArgumentParser();p.add_argument('--compiler',required=True);p.add_argument('--core',required=True);p.add_argument('--output',required=True);a=p.parse_args()
 repo=pathlib.Path(__file__).resolve().parents[1];compiler=str(pathlib.Path(a.compiler).resolve());out=pathlib.Path(a.output).resolve();out.mkdir(parents=True,exist_ok=True)
-sources=[pathlib.Path(a.core).resolve()/'tests/initproc.prg',repo/'tests/t681_init_proc_neg.hb']+sorted((repo/'tests').glob('t*_startup_*.hb'));sources=[s for s in sources if '_neg_' not in s.name or s.name=='t681_init_proc_neg.hb']
+sources=[pathlib.Path(a.core).resolve()/'tests/initproc.prg',repo/'tests/t681_init_proc_neg.prg']+sorted((repo/'tests').glob('t*_startup_*.prg'));sources=[s for s in sources if '_neg_' not in s.name or s.name=='t681_init_proc_neg.prg']
 rows=[];negative=[]
 def run(cmd):return subprocess.run(list(map(str,cmd)),cwd=repo,capture_output=True,timeout=30)
 for source in sources:

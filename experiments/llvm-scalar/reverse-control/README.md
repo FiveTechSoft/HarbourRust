@@ -1,7 +1,7 @@
 # Isolated reverse diagnostic control
 
 Opt-in only. Normal product tracing remains unchanged. This is the wrapping
-inverse recurrence from perfextra.hb, NOT the masked/bounded Harbour full-process
+inverse recurrence from perfextra.prg, NOT the masked/bounded Harbour full-process
 case and NOT a full Harbour language speed claim.
 
 The same Rust host links LLVM and equivalent hand-written Rust recurrence:

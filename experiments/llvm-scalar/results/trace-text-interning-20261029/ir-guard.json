@@ -2,42 +2,42 @@
   "scope": "IR diagnostic text bytes and volatile update sequence; runtime/error tests separately required. Not pointer-identity ABI or performance proof.",
   "rows": [
     {
-      "file": "perfextra.hb",
+      "file": "perfextra.prg",
       "before_constants": 41,
       "after_constants": 33,
       "volatile_text_and_length_stores": 82,
       "byte_sequence_exact": true
     },
     {
-      "file": "corpus.hb",
+      "file": "corpus.prg",
       "before_constants": 37,
       "after_constants": 29,
       "volatile_text_and_length_stores": 74,
       "byte_sequence_exact": true
     },
     {
-      "file": "arraywork.hb",
+      "file": "arraywork.prg",
       "before_constants": 30,
       "after_constants": 27,
       "volatile_text_and_length_stores": 60,
       "byte_sequence_exact": true
     },
     {
-      "file": "error-after-call.hb",
+      "file": "error-after-call.prg",
       "before_constants": 8,
       "after_constants": 6,
       "volatile_text_and_length_stores": 16,
       "byte_sequence_exact": true
     },
     {
-      "file": "error-bitops.hb",
+      "file": "error-bitops.prg",
       "before_constants": 8,
       "after_constants": 6,
       "volatile_text_and_length_stores": 16,
       "byte_sequence_exact": true
     },
     {
-      "file": "error-boolcalls.hb",
+      "file": "error-boolcalls.prg",
       "before_constants": 8,
       "after_constants": 5,
       "volatile_text_and_length_stores": 16,

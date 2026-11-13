@@ -15,8 +15,8 @@ for name in ['bitmix','minmaxloop','callloop','reverse','whileflow']:
  for p in ['cur_','ll_']:s+=f'fn {p}{name}(n:i64)->i64;\n'
 s+='}\n'
 base=pathlib.Path('run/bench-traced-rust.rs').read_text();s+=base[base.index('unsafe extern "C" {static mut'):base.index('#[inline(never)] fn rust_sumloop')]
-# Literal line origins match perfextra.hb. Preserve every dynamic trace update.
-def at(f,n):return f'f.at("  at {f} (perfextra.hb:{n})\\n");'
+# Literal line origins match perfextra.prg. Preserve every dynamic trace update.
+def at(f,n):return f'f.at("  at {f} (perfextra.prg:{n})\\n");'
 def head(f):return '#[inline(never)] fn rust_'+f+'(n:i64)->i64 {let mut f=frame();f.enter();'
 def traces(f,ns):return ''.join(at(f,n)for n in ns)
 s+=head('bitmix')+traces('bitmix',[3,3])+'let mut i=0i64;'+at('bitmix',4)+'let mut x=1i64;'+at('bitmix',5)+'i=1;while i<=n {'+at('bitmix',6)+'x=(x.wrapping_mul(3)|i)^(x&255);if let Some(v)=i.checked_add(1){i=v}else{break}}'+at('bitmix',8)+'f.leave();x}\n'

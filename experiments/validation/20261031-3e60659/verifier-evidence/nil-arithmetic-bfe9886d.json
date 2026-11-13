@@ -6,7 +6,7 @@
     "default-linux": {
       "compile": {
         "exit": 0,
-        "stdout": "/downloads/verify-t1v25148433/tests/t1390_eval_nil_arith.hb -> /downloads/verify-t1v2-contracts/t1390_checked/default-linux/program.s (1 functions)\n",
+        "stdout": "/downloads/verify-t1v25148433/tests/t1390_eval_nil_arith.prg -> /downloads/verify-t1v2-contracts/t1390_checked/default-linux/program.s (1 functions)\n",
         "stderr": ""
       },
       "assemble": {
@@ -21,14 +21,14 @@
       },
       "execution": {
         "exit": 1,
-        "stdout": "\ntestType error: NIL used as a number\nCallstack:\n  at main (/downloads/verify-t1v25148433/tests/t1390_eval_nil_arith.hb:3)\n",
+        "stdout": "\ntestType error: NIL used as a number\nCallstack:\n  at main (/downloads/verify-t1v25148433/tests/t1390_eval_nil_arith.prg:3)\n",
         "stderr": ""
       }
     },
     "default-windows": {
       "compile": {
         "exit": 0,
-        "stdout": "/downloads/verify-t1v25148433/tests/t1390_eval_nil_arith.hb -> /downloads/verify-t1v2-contracts/t1390_checked/default-windows/program.s (1 functions)\n",
+        "stdout": "/downloads/verify-t1v25148433/tests/t1390_eval_nil_arith.prg -> /downloads/verify-t1v2-contracts/t1390_checked/default-windows/program.s (1 functions)\n",
         "stderr": ""
       },
       "assemble": {
@@ -43,7 +43,7 @@
       },
       "execution": {
         "exit": 1,
-        "stdout": "\ntestType error: NIL used as a number\nCallstack:\n  at main (/downloads/verify-t1v25148433/tests/t1390_eval_nil_arith.hb:3)\n",
+        "stdout": "\ntestType error: NIL used as a number\nCallstack:\n  at main (/downloads/verify-t1v25148433/tests/t1390_eval_nil_arith.prg:3)\n",
         "stderr": ""
       }
     },

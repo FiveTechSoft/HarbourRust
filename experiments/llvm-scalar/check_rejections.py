@@ -81,7 +81,7 @@ cases={
  'loop-outside': 'function main()\nloop\nreturn\n'
 }
 for name,source in cases.items():
- p=pathlib.Path('run/reject-'+name+'.hb');p.write_text(source)
+ p=pathlib.Path('run/reject-'+name+'.prg');p.write_text(source)
  for target in ['linux','windows']:
   r=subprocess.run(['run/hbc',str(p),'run/reject.ll','--experimental-llvm','--target='+target],capture_output=True)
   assert r.returncode==1,(name,target,r.stdout,r.stderr)
@@ -89,6 +89,6 @@ for name,source in cases.items():
   if name in ('array-logical','array-mixed-logical','array-dead-logical'):
    assert b'tagged logical/mixed' in r.stderr, (name,r.stderr)
  print('PASS fail-closed',name)
-r=subprocess.run(['run/hbc','corpus.hb','run/reject.ll','--experimental-llvm','--instrument'],capture_output=True)
+r=subprocess.run(['run/hbc','corpus.prg','run/reject.ll','--experimental-llvm','--instrument'],capture_output=True)
 assert r.returncode==1 and b'--instrument is not supported' in r.stderr
 print('PASS fail-closed instrument')

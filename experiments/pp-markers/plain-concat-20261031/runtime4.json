@@ -1,7 +1,7 @@
 {
   "rows": [
     {
-      "file": "t1333_pp_concat_bare.hb",
+      "file": "t1333_pp_concat_bare.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -22,7 +22,7 @@
       }
     },
     {
-      "file": "t1334_pp_concat_call.hb",
+      "file": "t1334_pp_concat_call.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -43,7 +43,7 @@
       }
     },
     {
-      "file": "t1335_pp_concat_math.hb",
+      "file": "t1335_pp_concat_math.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -64,7 +64,7 @@
       }
     },
     {
-      "file": "t1336_pp_concat_nested.hb",
+      "file": "t1336_pp_concat_nested.prg",
       "exact": true,
       "outputs": {
         "ref": {

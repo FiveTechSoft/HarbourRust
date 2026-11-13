@@ -26,7 +26,7 @@ function main()
   one of those, `@` by-reference over a Dyn local (since milestone
   2.2), and Dyn-held arrays READ-ONLY (since milestone 2.4). Statically
   typed arrays, hashes, codeblocks and dates are compile time named
-  rejections, and Dyn-float arithmetic in .hb code is the pending
+  rejections, and Dyn-float arithmetic in .prg code is the pending
   numeric-tower unification (milestone 2.3 notes).
 - Strings cross as owned clones made at the boundary; the C side only
   borrows them during the call. Values returned with `hb_retc`/
@@ -106,7 +106,7 @@ Milestone 2.1 (PHB_ITEM item API, 2026-11-13):
   timestamps or serialization; `hb_itemCopyC`/`hb_itemGetCLen` on a
   non-string are 0; no `hb_itemNew` of an array (needs recursive cell
   alloc) until milestone 2.4's write side lands.
-- Probes: extend/demo/apiitem.c + apiitem.hb (KEEP/COPYC/GETCEMPTY/
+- Probes: extend/demo/apiitem.c + apiitem.prg (KEEP/COPYC/GETCEMPTY/
   LOOPRET exercise the pinned semantics; build like the m1 demo).
 
 Milestone 2.2 (@ by reference, 2026-11-13):
@@ -128,8 +128,8 @@ Milestone 2.2 (@ by reference, 2026-11-13):
 - Named limit: hb_stor* over a @ holding a Dyn ARRAY is a registered
   clean rejection (exit 1, named message) - overwriting would orphan
   the array block and freeing needs a recursive walk. Probe:
-  extend/demo/apistorref.c + .hb.
-- Demo: extend/demo/apiref.c + apiref.hb.
+  extend/demo/apistorref.c + .prg.
+- Demo: extend/demo/apiref.c + apiref.prg.
 
 Milestone 2.3 (f64 at the boundary, 2026-11-13):
 
@@ -149,10 +149,10 @@ Milestone 2.3 (f64 at the boundary, 2026-11-13):
   zero ("         3.50"), and the 20-width rule yields exactly 23
   columns for 12340067895.00; hb_parnl truncates toward zero
   (3.14 -> 3, -3.14 -> -3); hb_parinfo answers 16; HB_ISNUM is .T.
-- NOT in this slice: Dyn-float arithmetic in .hb code (`p * 2` where p
+- NOT in this slice: Dyn-float arithmetic in .prg code (`p * 2` where p
   holds a C double) still raises the clean type error; that unification
   is the Dyn numeric tower decision (H2 architecture note).
-- Demo: extend/demo/apif64.c + apif64.hb (build like the m1 demo).
+- Demo: extend/demo/apif64.c + apif64.prg (build like the m1 demo).
 
 - A double's DECIMAL COUNT crosses with the value (it rides in the tag
   word's high bits of the tag-5 casilla, an internal representation
@@ -160,7 +160,7 @@ Milestone 2.3 (f64 at the boundary, 2026-11-13):
   through hb_itemReturn prints "3.5" byte-exact like the native `?
   3.5`, while a C-constructed double (hb_retnd / hb_itemPutND) keeps
   the dec-2 default. ORACLE-PINNED (694428e, HBR_ECHO row of the
-  combined round). Probe: extend/demo/apiecho.c + apiecho.hb.
+  combined round). Probe: extend/demo/apiecho.c + apiecho.prg.
 
 Milestone 2.4 (arrays, read-only, 2026-11-13):
 
@@ -182,11 +182,11 @@ Milestone 2.4 (arrays, read-only, 2026-11-13):
   would lie about the layout) stay compile-time named rejections;
   array mutation, resize, `hb_itemNew` of an array and array return
   values are not in this increment; NESTED Dyn-held arrays cannot be
-  built on the .hb side yet (a `{1, {7, 8}}` literal into a Dyn local
+  built on the .prg side yet (a `{1, {7, 8}}` literal into a Dyn local
   is a named rejection), so the tag-6 subarray recursion of
   `hb_arrayGetItemPtr` shares the verified flat path but has no
   end-to-end probe in this slice.
-- Demo: extend/demo/apiarr.c + apiarr.hb (build like the m1 demo).
+- Demo: extend/demo/apiarr.c + apiarr.prg (build like the m1 demo).
 
 Milestone 2.5 (callbacks: codeblocks across the bridge, 2026-11-13):
 
@@ -212,9 +212,9 @@ Milestone 2.5 (callbacks: codeblocks across the bridge, 2026-11-13):
   its rbp-anchored frame BY ADDRESS, so nothing the block clobbers
   can unbalance the caller. Read-only like the rest of the bridge:
   the block runs within the C function's lifetime, no state persists.
-- Probes: extend/demo/apieval.c + apieval.hb (2-integer eval round
-  trip, parinfo 4096, HB_ISBLOCK), apievalnil.hb (compile-time
-  rejection), apievalbad.c + apievalbad.hb (runtime named rejection).
+- Probes: extend/demo/apieval.c + apieval.prg (2-integer eval round
+  trip, parinfo 4096, HB_ISBLOCK), apievalnil.prg (compile-time
+  rejection), apievalbad.c + apievalbad.prg (runtime named rejection).
 
 Oracle-pinned semantics (contrast against real Harbour, 2026-11-13):
 
@@ -246,7 +246,7 @@ case-insensitive); write the HB_FUNC name in uppercase by convention.
 gcc -c -O2 -ffreestanding -fno-stack-protector -Iextend extend/hbhbr.c -o hbhbr.o
 
 # program + extension
-hbc app.hb app.s --target=linux
+hbc app.prg app.s --target=linux
 as -o app.o app.s
 gcc -c -O2 myext.c -Iextend -o myext.o
 ld -o app app.o myext.o hbhbr.o
@@ -260,10 +260,10 @@ hbmk2 myext.c app.o hbhbr.o -nohblib \
       -ldflag=-nostdlib -ldflag=-no-pie -ldflag=-Wl,-e,_start -o app
 ```
 
-Caution when checking an hbmk2 run: `hbmk2 file.hb` as the FIRST
+Caution when checking an hbmk2 run: `hbmk2 file.prg` as the FIRST
 argument RUNS the file as a script with Harbour and can fake a PASS on
 stdout. Always verify the produced binary (existence, format, run),
-never the trace alone. `.hb` sources are compiled by `hbc` + `as`
+never the trace alone. `.prg` sources are compiled by `hbc` + `as`
 first; hbmk2 receives the resulting `.o` files (also listable in an
 official `.hbp`).
 
@@ -277,7 +277,7 @@ ExitProcess directly):
 ```
 x86_64-w64-mingw32-gcc -c -O2 -ffreestanding -fno-stack-protector \
     -Iextend extend/hbhbr.c -o hbhbr.o
-hbc app.hb app.s --target=windows
+hbc app.prg app.s --target=windows
 x86_64-w64-mingw32-as -o app.o app.s
 x86_64-w64-mingw32-gcc -c -O2 myext.c -Iextend -o myext.o
 x86_64-w64-mingw32-ld -o app.exe app.o myext.o hbhbr.o \

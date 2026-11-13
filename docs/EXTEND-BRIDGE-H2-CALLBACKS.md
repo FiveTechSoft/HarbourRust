@@ -13,7 +13,7 @@ contract.
 
 ## What exists today
 
-- .hb side: codeblock literals `{|p1, p2| e1, e2}` are statically typed
+- .prg side: codeblock literals `{|p1, p2| e1, e2}` are statically typed
   (`Block(arity, BRet)`), the block VALUE is its 8-byte code pointer
   (Copy, no captures, no environment in this increment).
 - `eval(b, a1..an)`: integer arguments only, arity checked at compile

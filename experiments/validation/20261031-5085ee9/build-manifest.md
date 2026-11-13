@@ -22,7 +22,7 @@ exact binary: the run-time binary hash was never captured. What is proven
 (31Oct 17:29): the hbc binary swept into a124d58 (sha256
 06e4cfef7a7f7ec056c89831f0122f15268c3c4623be506f2092af8d6999f846) is a
 STALE pre-piece-1a build (bit-exact rebuild of hr-aeval@f3e4e5a's src tree;
-it rejects tests/t1422_mixed_dyn_cells.hb with the pre-1a named rejection),
+it rejects tests/t1422_mixed_dyn_cells.prg with the pre-1a named rejection),
 so it cannot be the battery binary, whose green run required piece-1a
 codegen. The abandoned binary is classified pre-1a artifact, not battery
 evidence.

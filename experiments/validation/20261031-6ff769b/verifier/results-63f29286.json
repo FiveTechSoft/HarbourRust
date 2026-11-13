@@ -10,7 +10,7 @@
         "linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t1361_omitted_args_nil_fill.hb -> /downloads/verify-multiarg10074c6-scope/t1361_omitted_args_nil_fill-linux.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t1361_omitted_args_nil_fill.prg -> /downloads/verify-multiarg10074c6-scope/t1361_omitted_args_nil_fill-linux.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -32,7 +32,7 @@
         "windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t1361_omitted_args_nil_fill.hb -> /downloads/verify-multiarg10074c6-scope/t1361_omitted_args_nil_fill-windows.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t1361_omitted_args_nil_fill.prg -> /downloads/verify-multiarg10074c6-scope/t1361_omitted_args_nil_fill-windows.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -75,7 +75,7 @@
         "linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t1362_hb_pvalue_scalars.hb -> /downloads/verify-multiarg10074c6-scope/t1362_hb_pvalue_scalars-linux.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t1362_hb_pvalue_scalars.prg -> /downloads/verify-multiarg10074c6-scope/t1362_hb_pvalue_scalars-linux.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -97,7 +97,7 @@
         "windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t1362_hb_pvalue_scalars.hb -> /downloads/verify-multiarg10074c6-scope/t1362_hb_pvalue_scalars-windows.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t1362_hb_pvalue_scalars.prg -> /downloads/verify-multiarg10074c6-scope/t1362_hb_pvalue_scalars-windows.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -140,7 +140,7 @@
         "linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t1363_hb_pvalue_dyn.hb -> /downloads/verify-multiarg10074c6-scope/t1363_hb_pvalue_dyn-linux.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t1363_hb_pvalue_dyn.prg -> /downloads/verify-multiarg10074c6-scope/t1363_hb_pvalue_dyn-linux.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -162,7 +162,7 @@
         "windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t1363_hb_pvalue_dyn.hb -> /downloads/verify-multiarg10074c6-scope/t1363_hb_pvalue_dyn-windows.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t1363_hb_pvalue_dyn.prg -> /downloads/verify-multiarg10074c6-scope/t1363_hb_pvalue_dyn-windows.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -205,7 +205,7 @@
         "linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t1364_hb_pvalue_byref.hb -> /downloads/verify-multiarg10074c6-scope/t1364_hb_pvalue_byref-linux.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t1364_hb_pvalue_byref.prg -> /downloads/verify-multiarg10074c6-scope/t1364_hb_pvalue_byref-linux.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -227,7 +227,7 @@
         "windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t1364_hb_pvalue_byref.hb -> /downloads/verify-multiarg10074c6-scope/t1364_hb_pvalue_byref-windows.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t1364_hb_pvalue_byref.prg -> /downloads/verify-multiarg10074c6-scope/t1364_hb_pvalue_byref-windows.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -270,7 +270,7 @@
         "linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t64_params_strarg.hb -> /downloads/verify-multiarg10074c6-scope/t64_params_strarg-linux.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t64_params_strarg.prg -> /downloads/verify-multiarg10074c6-scope/t64_params_strarg-linux.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -292,7 +292,7 @@
         "windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t64_params_strarg.hb -> /downloads/verify-multiarg10074c6-scope/t64_params_strarg-windows.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t64_params_strarg.prg -> /downloads/verify-multiarg10074c6-scope/t64_params_strarg-windows.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -335,7 +335,7 @@
         "linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t667_param_literal_infer.hb -> /downloads/verify-multiarg10074c6-scope/t667_param_literal_infer-linux.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t667_param_literal_infer.prg -> /downloads/verify-multiarg10074c6-scope/t667_param_literal_infer-linux.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -357,7 +357,7 @@
         "windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t667_param_literal_infer.hb -> /downloads/verify-multiarg10074c6-scope/t667_param_literal_infer-windows.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t667_param_literal_infer.prg -> /downloads/verify-multiarg10074c6-scope/t667_param_literal_infer-windows.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -400,7 +400,7 @@
         "linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t702_return_only_param.hb -> /downloads/verify-multiarg10074c6-scope/t702_return_only_param-linux.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t702_return_only_param.prg -> /downloads/verify-multiarg10074c6-scope/t702_return_only_param-linux.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -422,7 +422,7 @@
         "windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t702_return_only_param.hb -> /downloads/verify-multiarg10074c6-scope/t702_return_only_param-windows.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t702_return_only_param.prg -> /downloads/verify-multiarg10074c6-scope/t702_return_only_param-windows.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -465,7 +465,7 @@
         "linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t881_qout_param_copy_only.hb -> /downloads/verify-multiarg10074c6-scope/t881_qout_param_copy_only-linux.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t881_qout_param_copy_only.prg -> /downloads/verify-multiarg10074c6-scope/t881_qout_param_copy_only-linux.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -487,7 +487,7 @@
         "windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t881_qout_param_copy_only.hb -> /downloads/verify-multiarg10074c6-scope/t881_qout_param_copy_only-windows.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t881_qout_param_copy_only.prg -> /downloads/verify-multiarg10074c6-scope/t881_qout_param_copy_only-windows.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -530,7 +530,7 @@
         "linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t914_unary_plus_literal.hb -> /downloads/verify-multiarg10074c6-scope/t914_unary_plus_literal-linux.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t914_unary_plus_literal.prg -> /downloads/verify-multiarg10074c6-scope/t914_unary_plus_literal-linux.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -552,7 +552,7 @@
         "windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t914_unary_plus_literal.hb -> /downloads/verify-multiarg10074c6-scope/t914_unary_plus_literal-windows.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t914_unary_plus_literal.prg -> /downloads/verify-multiarg10074c6-scope/t914_unary_plus_literal-windows.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -595,7 +595,7 @@
         "linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t944_sequence_literal.hb -> /downloads/verify-multiarg10074c6-scope/t944_sequence_literal-linux.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t944_sequence_literal.prg -> /downloads/verify-multiarg10074c6-scope/t944_sequence_literal-linux.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -617,7 +617,7 @@
         "windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-multiarg10074c6/tests/t944_sequence_literal.hb -> /downloads/verify-multiarg10074c6-scope/t944_sequence_literal-windows.s (2 functions)\n",
+            "stdout": "/downloads/verify-multiarg10074c6/tests/t944_sequence_literal.prg -> /downloads/verify-multiarg10074c6-scope/t944_sequence_literal-windows.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {

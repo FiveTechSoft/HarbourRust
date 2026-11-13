@@ -9,7 +9,7 @@
         "linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-d16ec77/tests/t1354_idxcompound_stmt.hb -> /downloads/verify-d16ec77-scope/t1354_idxcompound_stmt-linux.s (1 functions)\n",
+            "stdout": "/downloads/verify-d16ec77/tests/t1354_idxcompound_stmt.prg -> /downloads/verify-d16ec77-scope/t1354_idxcompound_stmt-linux.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -31,7 +31,7 @@
         "windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-d16ec77/tests/t1354_idxcompound_stmt.hb -> /downloads/verify-d16ec77-scope/t1354_idxcompound_stmt-windows.s (1 functions)\n",
+            "stdout": "/downloads/verify-d16ec77/tests/t1354_idxcompound_stmt.prg -> /downloads/verify-d16ec77-scope/t1354_idxcompound_stmt-windows.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -69,7 +69,7 @@
         "linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-d16ec77/tests/t1355_idxcompound_expr_order.hb -> /downloads/verify-d16ec77-scope/t1355_idxcompound_expr_order-linux.s (2 functions)\n",
+            "stdout": "/downloads/verify-d16ec77/tests/t1355_idxcompound_expr_order.prg -> /downloads/verify-d16ec77-scope/t1355_idxcompound_expr_order-linux.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -91,7 +91,7 @@
         "windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-d16ec77/tests/t1355_idxcompound_expr_order.hb -> /downloads/verify-d16ec77-scope/t1355_idxcompound_expr_order-windows.s (2 functions)\n",
+            "stdout": "/downloads/verify-d16ec77/tests/t1355_idxcompound_expr_order.prg -> /downloads/verify-d16ec77-scope/t1355_idxcompound_expr_order-windows.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -129,7 +129,7 @@
         "linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-d16ec77/tests/t1357_idxcompound_oob_order.hb -> /downloads/verify-d16ec77-scope/t1357_idxcompound_oob_order-linux.s (2 functions)\n",
+            "stdout": "/downloads/verify-d16ec77/tests/t1357_idxcompound_oob_order.prg -> /downloads/verify-d16ec77-scope/t1357_idxcompound_oob_order-linux.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -144,14 +144,14 @@
           },
           "execution": {
             "exit": 1,
-            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77/tests/t1357_idxcompound_oob_order.hb:12)\n",
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77/tests/t1357_idxcompound_oob_order.prg:12)\n",
             "stderr": ""
           }
         },
         "windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-d16ec77/tests/t1357_idxcompound_oob_order.hb -> /downloads/verify-d16ec77-scope/t1357_idxcompound_oob_order-windows.s (2 functions)\n",
+            "stdout": "/downloads/verify-d16ec77/tests/t1357_idxcompound_oob_order.prg -> /downloads/verify-d16ec77-scope/t1357_idxcompound_oob_order-windows.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -166,7 +166,7 @@
           },
           "execution": {
             "exit": 1,
-            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77/tests/t1357_idxcompound_oob_order.hb:12)\n",
+            "stdout": "Bound error: array access\nCallstack:\n  at main (/downloads/verify-d16ec77/tests/t1357_idxcompound_oob_order.prg:12)\n",
             "stderr": ""
           }
         }

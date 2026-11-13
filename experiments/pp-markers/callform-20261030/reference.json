@@ -1,41 +1,41 @@
 [
   {
-    "file": "tests/t1148_pp_call_optional.hb",
+    "file": "tests/t1148_pp_call_optional.prg",
     "stdout_hex": "0a20202020202020203432",
     "exact": true
   },
   {
-    "file": "tests/t1149_pp_call_overload.hb",
+    "file": "tests/t1149_pp_call_overload.prg",
     "stdout_hex": "0a202020202020202034322020202020202020203432",
     "exact": true
   },
   {
-    "file": "tests/t1150_pp_call_order.hb",
+    "file": "tests/t1150_pp_call_order.prg",
     "stdout_hex": "0a20202020202020202032",
     "exact": true
   },
   {
-    "file": "tests/t1151_pp_call_case.hb",
+    "file": "tests/t1151_pp_call_case.prg",
     "stdout_hex": "0a202020202020202034322020202020202020203432",
     "exact": true
   },
   {
-    "file": "tests/t1152_pp_call_remove.hb",
+    "file": "tests/t1152_pp_call_remove.prg",
     "stdout_hex": "0a20202020202020203432",
     "exact": true
   },
   {
-    "file": "tests/t1153_pp_call_quoted.hb",
+    "file": "tests/t1153_pp_call_quoted.prg",
     "stdout_hex": "0a462837292020202020202020203432",
     "exact": true
   },
   {
-    "file": "tests/t1154_pp_call_chain.hb",
+    "file": "tests/t1154_pp_call_chain.prg",
     "stdout_hex": "0a20202020202020203432",
     "exact": true
   },
   {
-    "file": "tests/t1155_pp_call_nested.hb",
+    "file": "tests/t1155_pp_call_nested.prg",
     "stdout_hex": "0a20202020202020203432",
     "exact": true
   }

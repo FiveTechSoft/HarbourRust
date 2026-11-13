@@ -41,7 +41,7 @@ def build(cmd, cwd):
     assert r.returncode == 0, (cmd, r.stdout, r.stderr)
 
 rows = []
-sources = [original] + sorted((repo / 'tests').glob('t15[6789][0-9]_text_*.hb'))
+sources = [original] + sorted((repo / 'tests').glob('t15[6789][0-9]_text_*.prg'))
 sources = [s for s in sources if '_neg_' not in s.name]
 for source in sources:
     work = out / source.stem
@@ -83,7 +83,7 @@ if a.wrong_controls:
          '&quote_literal(raws[li].trim_start())', original, out / original.stem),
         ('expand-literal', '&quote_literal(raws[li])',
          '&quote_literal(&expand(raws[li], &pp.defs, line)?)',
-         repo / 'tests/t1571_text_macro.hb', out / 't1571_text_macro'),
+         repo / 'tests/t1571_text_macro.prg', out / 't1571_text_macro'),
     ]
     for name, old, new, source, expected_dir in changes:
         work = out / name

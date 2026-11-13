@@ -439,151 +439,151 @@ ll_main:
 	.section	.rodata,"a",@progbits
 	.p2align	4, 0x0
 .Lstr0:
-	.ascii	"  at sumloop (corpus.hb:2)\n"
+	.ascii	"  at sumloop (corpus.prg:2)\n"
 	.size	.Lstr0, 27
 
 	.type	.Lstr1,@object
 	.p2align	4, 0x0
 .Lstr1:
-	.ascii	"  at sumloop (corpus.hb:2)\n"
+	.ascii	"  at sumloop (corpus.prg:2)\n"
 	.size	.Lstr1, 27
 
 	.type	.Lstr2,@object
 	.p2align	4, 0x0
 .Lstr2:
-	.ascii	"  at sumloop (corpus.hb:3)\n"
+	.ascii	"  at sumloop (corpus.prg:3)\n"
 	.size	.Lstr2, 27
 
 	.type	.Lstr3,@object
 	.p2align	4, 0x0
 .Lstr3:
-	.ascii	"  at sumloop (corpus.hb:4)\n"
+	.ascii	"  at sumloop (corpus.prg:4)\n"
 	.size	.Lstr3, 27
 
 	.type	.Lstr4,@object
 	.p2align	4, 0x0
 .Lstr4:
-	.ascii	"  at sumloop (corpus.hb:5)\n"
+	.ascii	"  at sumloop (corpus.prg:5)\n"
 	.size	.Lstr4, 27
 
 	.type	.Lstr5,@object
 	.p2align	4, 0x0
 .Lstr5:
-	.ascii	"  at sumloop (corpus.hb:7)\n"
+	.ascii	"  at sumloop (corpus.prg:7)\n"
 	.size	.Lstr5, 27
 
 	.type	.Lstr6,@object
 	.p2align	4, 0x0
 .Lstr6:
-	.ascii	"  at branchloop (corpus.hb:9)\n"
+	.ascii	"  at branchloop (corpus.prg:9)\n"
 	.size	.Lstr6, 30
 
 	.type	.Lstr7,@object
 	.p2align	4, 0x0
 .Lstr7:
-	.ascii	"  at branchloop (corpus.hb:9)\n"
+	.ascii	"  at branchloop (corpus.prg:9)\n"
 	.size	.Lstr7, 30
 
 	.type	.Lstr8,@object
 	.p2align	4, 0x0
 .Lstr8:
-	.ascii	"  at branchloop (corpus.hb:10)\n"
+	.ascii	"  at branchloop (corpus.prg:10)\n"
 	.size	.Lstr8, 31
 
 	.type	.Lstr9,@object
 	.p2align	4, 0x0
 .Lstr9:
-	.ascii	"  at branchloop (corpus.hb:11)\n"
+	.ascii	"  at branchloop (corpus.prg:11)\n"
 	.size	.Lstr9, 31
 
 	.type	.Lstr10,@object
 	.p2align	4, 0x0
 .Lstr10:
-	.ascii	"  at branchloop (corpus.hb:12)\n"
+	.ascii	"  at branchloop (corpus.prg:12)\n"
 	.size	.Lstr10, 31
 
 	.type	.Lstr11,@object
 	.p2align	4, 0x0
 .Lstr11:
-	.ascii	"  at branchloop (corpus.hb:13)\n"
+	.ascii	"  at branchloop (corpus.prg:13)\n"
 	.size	.Lstr11, 31
 
 	.type	.Lstr12,@object
 	.p2align	4, 0x0
 .Lstr12:
-	.ascii	"  at branchloop (corpus.hb:15)\n"
+	.ascii	"  at branchloop (corpus.prg:15)\n"
 	.size	.Lstr12, 31
 
 	.type	.Lstr13,@object
 	.p2align	4, 0x0
 .Lstr13:
-	.ascii	"  at branchloop (corpus.hb:18)\n"
+	.ascii	"  at branchloop (corpus.prg:18)\n"
 	.size	.Lstr13, 31
 
 	.type	.Lstr14,@object
 	.p2align	4, 0x0
 .Lstr14:
-	.ascii	"  at fact (corpus.hb:20)\n"
+	.ascii	"  at fact (corpus.prg:20)\n"
 	.size	.Lstr14, 25
 
 	.type	.Lstr15,@object
 	.p2align	4, 0x0
 .Lstr15:
-	.ascii	"  at fact (corpus.hb:20)\n"
+	.ascii	"  at fact (corpus.prg:20)\n"
 	.size	.Lstr15, 25
 
 	.type	.Lstr16,@object
 	.p2align	4, 0x0
 .Lstr16:
-	.ascii	"  at recurrence (corpus.hb:22)\n"
+	.ascii	"  at recurrence (corpus.prg:22)\n"
 	.size	.Lstr16, 31
 
 	.type	.Lstr17,@object
 	.p2align	4, 0x0
 .Lstr17:
-	.ascii	"  at recurrence (corpus.hb:22)\n"
+	.ascii	"  at recurrence (corpus.prg:22)\n"
 	.size	.Lstr17, 31
 
 	.type	.Lstr18,@object
 	.p2align	4, 0x0
 .Lstr18:
-	.ascii	"  at recurrence (corpus.hb:23)\n"
+	.ascii	"  at recurrence (corpus.prg:23)\n"
 	.size	.Lstr18, 31
 
 	.type	.Lstr19,@object
 	.p2align	4, 0x0
 .Lstr19:
-	.ascii	"  at recurrence (corpus.hb:24)\n"
+	.ascii	"  at recurrence (corpus.prg:24)\n"
 	.size	.Lstr19, 31
 
 	.type	.Lstr20,@object
 	.p2align	4, 0x0
 .Lstr20:
-	.ascii	"  at recurrence (corpus.hb:25)\n"
+	.ascii	"  at recurrence (corpus.prg:25)\n"
 	.size	.Lstr20, 31
 
 	.type	.Lstr21,@object
 	.p2align	4, 0x0
 .Lstr21:
-	.ascii	"  at recurrence (corpus.hb:27)\n"
+	.ascii	"  at recurrence (corpus.prg:27)\n"
 	.size	.Lstr21, 31
 
 	.type	.Lstr22,@object
 	.p2align	4, 0x0
 .Lstr22:
-	.ascii	"  at main (corpus.hb:29)\n"
+	.ascii	"  at main (corpus.prg:29)\n"
 	.size	.Lstr22, 25
 
 	.type	.Lstr23,@object
 	.p2align	4, 0x0
 .Lstr23:
-	.ascii	"  at main (corpus.hb:29)\n"
+	.ascii	"  at main (corpus.prg:29)\n"
 	.size	.Lstr23, 25
 
 	.type	.Lstr24,@object
 	.p2align	4, 0x0
 .Lstr24:
-	.ascii	"  at main (corpus.hb:30)\n"
+	.ascii	"  at main (corpus.prg:30)\n"
 	.size	.Lstr24, 25
 
 	.section	".note.GNU-stack","",@progbits

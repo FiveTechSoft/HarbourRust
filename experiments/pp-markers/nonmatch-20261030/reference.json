@@ -1,16 +1,16 @@
 [
   {
-    "file": "tests/t1145_pp_nonmatch_procedure.hb",
+    "file": "tests/t1145_pp_nonmatch_procedure.prg",
     "stdout_hex": "0a20202020202020202037",
     "exact": true
   },
   {
-    "file": "tests/t1146_pp_nonmatch_assignment.hb",
+    "file": "tests/t1146_pp_nonmatch_assignment.prg",
     "stdout_hex": "0a20202020202020202037",
     "exact": true
   },
   {
-    "file": "tests/t1147_pp_nonmatch_call.hb",
+    "file": "tests/t1147_pp_nonmatch_call.prg",
     "stdout_hex": "0a20202020202020202037",
     "exact": true
   }

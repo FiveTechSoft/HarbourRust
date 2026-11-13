@@ -67,13 +67,13 @@ The earlier design note that described the accumulator as bounded below
 keep up once the loop index exceeds 1000003, so the accumulator grows to
 about 4.9e15.
 
-Original source preserved unchanged: bench/b1_int.hb, sha256
+Original source preserved unchanged: bench/b1_int.prg, sha256
 b2aa4c6cb0768dbd40da3ff16890ce892f71dec3af677c2030ec5559e4e6b101
 (frozen 2026-10-25 08:08 CET).
 
 ## Replacement bounded case: b1b_int_bounded
 
-New versioned program bench/b1b_int_bounded.hb; the original b1_int.hb is
+New versioned program bench/b1b_int_bounded.prg; the original b1_int.prg is
 untouched. A second reset guards the accumulator once the loop index
 exceeds the subtraction constant, so the accumulator stays below
 101000000 (< 2^31) at all times: Harbour and HarbourRust both run the

@@ -12,7 +12,7 @@ Commit 6df951a, branch experiment/llvm-scalar-aot.
   unknown function) the builtin invalidated; the guarded hole is
   unchanged and the test was re-pointed to a genuinely unknown name.
   The recovered positive shape of t1369 is kept as its own observable
-  positive test t1411_replicate_userfn_arg.hb (oracle expectation:
+  positive test t1411_replicate_userfn_arg.prg (oracle expectation:
   "\nababab"), without replacing the neg guard.
 - Oracle provenance: every expectation from Harbour @694428e1 runs.
 - Independent verifier closure 15:42 (verifier-evidence/): 8 positives

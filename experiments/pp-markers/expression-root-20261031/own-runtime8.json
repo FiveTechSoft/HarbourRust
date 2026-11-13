@@ -1,7 +1,7 @@
 {
   "rows": [
     {
-      "file": "t1346_pp_root_expression.hb",
+      "file": "t1346_pp_root_expression.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -22,7 +22,7 @@
       }
     },
     {
-      "file": "t1347_pp_root_reorder.hb",
+      "file": "t1347_pp_root_reorder.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -43,7 +43,7 @@
       }
     },
     {
-      "file": "t1348_pp_root_iterations.hb",
+      "file": "t1348_pp_root_iterations.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -64,7 +64,7 @@
       }
     },
     {
-      "file": "t1349_pp_root_index.hb",
+      "file": "t1349_pp_root_index.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -85,7 +85,7 @@
       }
     },
     {
-      "file": "t1350_pp_root_macro_normal.hb",
+      "file": "t1350_pp_root_macro_normal.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -106,7 +106,7 @@
       }
     },
     {
-      "file": "t1351_pp_root_macro_expr.hb",
+      "file": "t1351_pp_root_macro_expr.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -127,7 +127,7 @@
       }
     },
     {
-      "file": "t1352_pp_root_comparisons.hb",
+      "file": "t1352_pp_root_comparisons.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -148,7 +148,7 @@
       }
     },
     {
-      "file": "t1353_pp_root_overlap.hb",
+      "file": "t1353_pp_root_overlap.prg",
       "exact": true,
       "outputs": {
         "ref": {

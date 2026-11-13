@@ -167,7 +167,7 @@ Two experimental-only defects found by differential tests are fixed:
   Interior strings retain their bytes and separators. The existing all-space
   final-string separator behavior is preserved, not silently changed.
 
-`audit.hb` compares complete output on Linux and Wine for both fixes, argument
+`audit.prg` compares complete output on Linux and Wine for both fixes, argument
 side effects before printing, lazy IIF, branch-local names and WHILE. Ten
 fail-closed checks cover logical output through branches/IIF, float, array, NIL,
 string variable, byref, unsupported builtin/logical operator/EXIT, and instrument.
@@ -231,12 +231,12 @@ order is value-then-index, matching the current backend (probe adv2).
 Still fail-closed, with explicit rejection tests: dynamic Array(n), AAdd
 growth, nested arrays, array parameters, whole-array copies, FOR EACH.
 
-Correctness: arraywork.hb joins the exact-output differential set (Linux);
-error-bound.hb and error-bound-write.hb compare stdout/stderr/exit 1
+Correctness: arraywork.prg joins the exact-output differential set (Linux);
+error-bound.prg and error-bound-write.prg compare stdout/stderr/exit 1
 byte-exact against the current backend, including the trace callstack.
 validate.rs runs 4076 differential calls (1013 of them arraywalk).
 
-Workload: arraywork.hb arraywalk(n): a fixed 16-element I64 array,
+Workload: arraywork.prg arraywalk(n): a fixed 16-element I64 array,
 n iterations of a[j] := a[j] + i with rotating j (bounds-checked every
 access), then a full reduce with len(a). Trace-equivalent medians
 (31 samples after warmup, CPU pinned, input 1M, ns/call):
@@ -326,14 +326,14 @@ merge normalizes the result to 0/1. NOT inverts the normalized condition.
 Logical output remains outside the slice; logical function signatures were added
 in the later logical-call increment.
 
-`logic.hb` covers all eight three-input truth combinations, nested operators,
+`logic.prg` covers all eight three-input truth combinations, nested operators,
 logical-local assignments, IIF value contexts, WHILE termination, prefix
 increment effects, ordered calls, and skipped invalid array indices. Its
 88 integer outputs are checked against an independent Python truth/effect
 oracle (including 27 signed input triples through an I64 function), in addition to byte-exact comparison against the current backend.
 The compiler's current-backend short-circuit implementation and the existing
-`t601_shortcircuit.hb` regression establish the expected lazy evaluation.
-`error-logic-and.hb` and `error-logic-or.hb` cover RHS bounds failures that MUST
+`t601_shortcircuit.prg` regression establish the expected lazy evaluation.
+`error-logic-and.prg` and `error-logic-or.prg` cover RHS bounds failures that MUST
 execute, including full nested callstack bytes and exit1. The fixtures use
 variable indices so the existing static checker does not reject the program
 before runtime. I64 helper parameters use arithmetic to pin inference; no
@@ -364,14 +364,14 @@ A stack of lowering destinations handles nesting without changing runtime
 values, ownership or trace-frame layout. Function return still unlinks its
 trace frame; EXIT/LOOP do not unlink the function they remain inside.
 
-`loopcontrol.hb` checks forward/reverse FOR, WHILE, both nesting orders,
+`loopcontrol.prg` checks forward/reverse FOR, WHILE, both nesting orders,
 both terminating IF arms, skipped code, zero-trip loops, signed-max/min
 increment termination and early returns. Complete output is compared with
 the current backend in Linux and under Wine, plus 33 explicit expected
 integer observations. Existing regressions t28/t42/t48/t49 define the
-innermost-loop and continue-to-increment semantics. `error-loopcontrol.hb`
+innermost-loop and continue-to-increment semantics. `error-loopcontrol.prg`
 checks the exact diagnostic callstack after nested EXIT/LOOP and a completed
-early-returning function; error-loop-test.hb checks WHILE-test origin on the
+early-returning function; error-loop-test.prg checks WHILE-test origin on the
 next iteration reached by LOOP. EXIT/LOOP outside a loop still fail in analysis.
 This does not add FOR EACH or admit ownership-bearing loop bodies to LLVM.
 
@@ -394,7 +394,7 @@ no dead IR into the actual module. This reuses the exact support checks rather
 than maintaining a second, potentially divergent syntax whitelist. Regressions
 reject dead strings after EXIT, RETURN and a two-terminated-arm IF; division
 after LOOP; and an unsupported builtin behind consecutive terminators.
-Supported unreachable statements in loopcontrol.hb still compile and remain
+Supported unreachable statements in loopcontrol.prg still compile and remain
 unexecuted. Default code generation and all frontend semantics are unchanged.
 
 Fresh audit result: run.sh 37 PASS lines, 5089 function comparisons and 20
@@ -432,11 +432,11 @@ sequence cannot silently print as integer and a large final literal keeps
 its established field width. No float, owned, tagged or NIL value support
 is added; every child passes the existing lowering checks.
 
-`sequence.hb` checks increment/call order, use as a function argument,
+`sequence.prg` checks increment/call order, use as a function argument,
 short-circuited sequences, WHILE-test effects, indexed reads and value-before-
 index writes, nested sequences, and a large final integer literal. The full
 output bytes match the current backend, with 25 independent expected integer
-observations. `error-sequence.hb` checks exact callstack/exit/output on a
+observations. `error-sequence.prg` checks exact callstack/exit/output on a
 failing middle expression, including that later effects do not execute.
 Logical-output and floating-result sequences retain explicit rejection tests.
 This adds evaluation support, not a performance or Rust-quality claim.
@@ -475,10 +475,10 @@ The current backend's matching-type rules and first-on-tie signed comparison
 establish the semantics; the broader existing t1066/t1067 regressions include
 variants (byref/float/logical) not admitted by this increment.
 
-minmax.hb covers signed extremes, ties, nested calls, prefix/sequence effects,
+minmax.prg covers signed extremes, ties, nested calls, prefix/sequence effects,
 argument-call order, and large literal print provenance. Complete bytes match
 the current backend on Linux and PE under Wine, with 22 independent expected
-integer observations. error-minmax.hb checks that the first argument's effect
+integer observations. error-minmax.prg checks that the first argument's effect
 precedes a failing second-argument index, including exact diagnostic bytes.
 There are no new speed, size or Rust-comparison claims.
 
@@ -498,10 +498,10 @@ named rejection; it works in conditions/IIF inside the existing slice.
 No dynamic indices, float conversion, new value representation or ABI helper
 is introduced. Existing frontend restrictions and default codegen are unchanged.
 
-bitops.hb checks negative operands, bit63, variadic evaluation effects,
+bitops.prg checks negative operands, bit63, variadic evaluation effects,
 nested operations, conditionals/short-circuiting and sequence operands. Full
 output matches the normal backend on Linux and PE/Wine, with 29 independently
-expected integers. error-bitops.hb checks an error in the second of three
+expected integers. error-bitops.prg checks an error in the second of three
 arguments, preserving the first effect and suppressing the third. Regression
 rejections cover BitTest output (direct/local), dynamic/out-of-range indices
 and float operands. No new performance or Rust-quality claim follows.
@@ -548,10 +548,10 @@ even if its elements are zero. Its logical result is tracked through locals
 and sequences; logical output remains rejected. String, NIL, float and dynamic
 collection operands remain unsupported. No representation or helper is added.
 
-empty.hb checks signed limits, scalar/logical values, all-zero nonempty arrays,
+empty.prg checks signed limits, scalar/logical values, all-zero nonempty arrays,
 indexed elements, call/increment/sequence effects and short-circuited logical
 operands, with exact backend output and 20 independent expected integers.
-error-empty.hb checks exact diagnostic bytes on an invalid element operand.
+error-empty.prg checks exact diagnostic bytes on an invalid element operand.
 Direct/local output and string/NIL operands have explicit rejection tests.
 This is scoped builtin support, not a speed/size or broad Rust-quality claim.
 
@@ -561,7 +561,7 @@ battery 1086 PASS, zero FAIL. Linux and PE/Wine only, not native Windows.
 
 ## Cross-feature correctness interaction, 29 October 2026
 
-interaction.hb combines fixed-array updates, signed Min/Max, bit operations,
+interaction.prg combines fixed-array updates, signed Min/Max, bit operations,
 Empty, short-circuit conditions, sequences, LOOP/EXIT and a final bounds-guarded
 WHILE across 33 signed inputs. An independent Python state-machine oracle checks
 the full resulting integers in addition to exact current/LLVM output on Linux
@@ -580,12 +580,12 @@ metadata now marks logical parameters and return-call expressions, including
 assignments/IIF/sequences, so they cannot bypass logical-output rejection.
 No inferred integer/logical coercion is added. Byref remains unsupported.
 
-boolcalls.hb checks argument/return propagation, nested calls, self recursion,
+boolcalls.prg checks argument/return propagation, nested calls, self recursion,
 mutual recursion and short-circuited calls with effects, with 37 independent
 expected integers and exact normal/LLVM bytes on both targets. Existing
-`t601_shortcircuit.hb` now runs unchanged against its frozen expected output
+`t601_shortcircuit.prg` now runs unchanged against its frozen expected output
 on Linux and Wine (eight unchanged-source regressions in the regular suite).
-error-boolcalls.hb checks the complete callstack across logical call frames.
+error-boolcalls.prg checks the complete callstack across logical call frames.
 Direct returned-logical output, logical parameter output, local copies of
 logical returns and logical byref retain explicit rejection fixtures. Existing
 t602 output remains outside the slice: adding signatures does not add logical
@@ -617,10 +617,10 @@ execute before the outer print starts; separators/newlines and final literal
 string trimming retain the current backend's behavior. Prior logical-output
 rejection fixtures were removed because that feature is now explicitly admitted.
 
-booloutput.hb covers logical locals/branches/IIF/sequences/returned values,
+booloutput.prg covers logical locals/branches/IIF/sequences/returned values,
 BitTest/Empty, ordered nested printing, short-circuited effects, QQOut joining,
 and mixed literal/string spacing. A full independent byte oracle checks these
-spaces/tokens, in addition to current-vs-LLVM parity. error-booloutput.hb
+spaces/tokens, in addition to current-vs-LLVM parity. error-booloutput.prg
 confirms an error while evaluating a later item prevents the outer newline or
 earlier logical item from printing. Existing t602/t606/t722 now pass unchanged
 against manifest bytes on Linux and Wine; eleven existing sources are checked
@@ -641,7 +641,7 @@ right. Result classification follows the first operand's checked type. The
 frontend still rejects mixed logical/integer inputs and floats remain outside
 the emitter. No coercion, representation or ABI change is introduced.
 
-boolminmax.hb checks the complete two-input truth table, nested results and
+boolminmax.prg checks the complete two-input truth table, nested results and
 locals, Empty/NOT/conditions, and both argument effects even when the first
 would determine the result. Independent expected bytes and current-backend
 comparison cover Linux and PE/Wine. Two former rejection fixtures are removed
@@ -660,7 +660,7 @@ not merely a rejected program or hypothetical concern.
 Logical classification is now saved/restored at statement-block boundaries.
 Each arm/nested body starts from the enclosing classifications; block-local
 names cannot contaminate sibling arms. The frontend's fixed outer-variable
-types and existing physical slots are unchanged. boolscope.hb checks both
+types and existing physical slots are unchanged. boolscope.prg checks both
 runtime arms, both Bool/I64 declaration orders, enclosing logical locals and
 nested disjoint locals, against independent full bytes and current-backend
 output on Linux and Wine. No checker, representation, ownership or ABI change.
@@ -695,7 +695,7 @@ change, not a performance improvement or language expansion.
 
 ## Signed-I64 extreme-value correctness, 29 October 2026
 
-integeredges.hb checks eight signed operand pairs including min/max I64,
+integeredges.prg checks eight signed operand pairs including min/max I64,
 -1/0/1 and +/-2^32. An independent arbitrary-precision Python oracle reduces
 +/-/* modulo2^64 back to signed I64 and checks six signed comparisons,
 Min/Max and XOR. The independent oracle compares value/logical tokens, while
@@ -721,11 +721,11 @@ terminated/error lowering results; dead-tail probes still discard their IR
 and allocations. Existing array reassignment writes remain sequential rather
 than acquiring invented temporary-copy semantics.
 
-scopedslots.hb covers both disjoint-array lengths, scalar/array names in both
+scopedslots.prg covers both disjoint-array lengths, scalar/array names in both
 orders, Bool/scalar names, repeated declarations, nested WHILE/IF, reused and
 implicit FOR counters, initializer call order and dependent reassignment.
 Independent bytes and current/LLVM output match on Linux and PE/Wine.
-error-scopedslots.hb checks exact origin/callstack for a scoped-array bounds
+error-scopedslots.prg checks exact origin/callstack for a scoped-array bounds
 failure. Unsupported scoped strings behind EXIT still reject. The old two
 rejection fixtures now correspond to explicitly admitted valid programs and
 are replaced by success coverage. Entry-only alloca placement was inspected
@@ -789,7 +789,7 @@ The frontend remains authoritative: Bool == NIL and ordering literal NIL
 still reject. Strings, arrays, NIL/NIL, output-call results and stored Dyn
 remain outside this LLVM change. Neither checker nor runtime/ABI is changed.
 
-The unchanged t982_original_ifinline.hb now runs on Linux and PE/Wine against
+The unchanged t982_original_ifinline.prg now runs on Linux and PE/Wine against
 its existing manifest bytes and default-backend output. Its SHA256 is
 cef71077a08117c32e49ec468be7f38a5ca5817aa2a6175136ba4ed5cf3afa08, identical
 to upstream harbour/core 694428e1 tests/ifinline.prg. The existing 64ak Harbour
@@ -816,7 +816,7 @@ is admitted. Variable arms and nested string IIF remain rejected.
 
 exit-original.prg is unchanged upstream harbour/core 694428e1 tests/exit.prg,
 SHA256 a14961def1156ec029d6c93bfbda7ce05b9ee5900f842e42843046bff1a9163d.
-It is also byte-identical to archived-probe:hk323.prg and tests/t777_for_reuse.hb.
+It is also byte-identical to archived-probe:hk323.prg and tests/t777_for_reuse.prg.
 Linux and PE/Wine output matches explicit expected bytes, the manifest and
 the default backend. The documented 63ze Harbour comparison is historical,
 not a fresh Harbour execution. printchoice checks effect order, both choices,

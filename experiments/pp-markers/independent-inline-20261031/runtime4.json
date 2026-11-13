@@ -1,7 +1,7 @@
 {
   "rows": [
     {
-      "file": "t1342_pp_independent_ident.hb",
+      "file": "t1342_pp_independent_ident.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -22,7 +22,7 @@
       }
     },
     {
-      "file": "t1343_pp_independent_plain.hb",
+      "file": "t1343_pp_independent_plain.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -43,7 +43,7 @@
       }
     },
     {
-      "file": "t1344_pp_independent_temporal.hb",
+      "file": "t1344_pp_independent_temporal.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -64,7 +64,7 @@
       }
     },
     {
-      "file": "t1345_pp_independent_call.hb",
+      "file": "t1345_pp_independent_call.prg",
       "exact": true,
       "outputs": {
         "ref": {

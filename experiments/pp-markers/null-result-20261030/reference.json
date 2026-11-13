@@ -2,37 +2,37 @@
   "scope": "6own console programs freshly rebuilt Harbour versus default exact bytes. LLVM equality separately checked in battery.",
   "rows": [
     {
-      "file": "tests/t1121_pp_null_erase.hb",
+      "file": "tests/t1121_pp_null_erase.prg",
       "stdout_hex": "0a7965730a796573",
       "exit": 0,
       "exact": true
     },
     {
-      "file": "tests/t1122_pp_null_group.hb",
+      "file": "tests/t1122_pp_null_group.prg",
       "stdout_hex": "0a0a796573",
       "exit": 0,
       "exact": true
     },
     {
-      "file": "tests/t1123_pp_null_payload.hb",
+      "file": "tests/t1123_pp_null_payload.prg",
       "stdout_hex": "0a7965730a7965730a796573",
       "exit": 0,
       "exact": true
     },
     {
-      "file": "tests/t1124_pp_null_mixed.hb",
+      "file": "tests/t1124_pp_null_mixed.prg",
       "stdout_hex": "0a2e462e0a2e542e",
       "exit": 0,
       "exact": true
     },
     {
-      "file": "tests/t1125_pp_null_translate.hb",
+      "file": "tests/t1125_pp_null_translate.prg",
       "stdout_hex": "0a0a796573",
       "exit": 0,
       "exact": true
     },
     {
-      "file": "tests/t1126_pp_null_name.hb",
+      "file": "tests/t1126_pp_null_name.prg",
       "stdout_hex": "0a0a20202020202020203432",
       "exit": 0,
       "exact": true

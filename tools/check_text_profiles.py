@@ -15,7 +15,7 @@ rows=[]
 def run(cmd):return subprocess.run(list(map(str,cmd)),cwd=repo,capture_output=True,timeout=30)
 def build(cmd):
  r=run(cmd);assert r.returncode==0,(cmd,r.stderr);return r
-sources=[core/'tests/vec1.prg']+sorted((repo/'tests').glob('t15[6789][0-9]_text_*.hb'))
+sources=[core/'tests/vec1.prg']+sorted((repo/'tests').glob('t15[6789][0-9]_text_*.prg'))
 sources=[s for s in sources if '_neg_' not in s.name]
 for source in sources:
  for target in ['linux','windows']:
@@ -24,7 +24,7 @@ for source in sources:
   r=run([compiler,source,ll,'--target='+target,'--experimental-llvm','-I',repo/'tests'])
   row={'file':source.name,'target':target,'admitted':r.returncode==0};rows.append(row)
   (out/(source.stem+'-'+target+'.stderr')).write_bytes(r.stderr)
-  if source.name != 't1573_text_inactive.hb':
+  if source.name != 't1573_text_inactive.prg':
    assert r.returncode != 0 and b'bare TEXT literal streams require exact terminal presentation' in r.stderr,row
    row['diagnostic']=r.stderr.decode(errors='replace');continue
   assert r.returncode==0,(row,r.stderr)
@@ -52,7 +52,7 @@ for line in (repo/'tests/manifest.txt').read_text().splitlines():
    assert ok,(cmd,r.stderr)
 no_trace=[]
 for source in sources:
- if source.name=='t1573_text_inactive.hb':continue
+ if source.name=='t1573_text_inactive.prg':continue
  for target in ['linux','windows']:
   r=run([compiler,source,out/'no-trace.ll','--target='+target,'--experimental-llvm-no-trace','-I',repo/'tests'])
   ok=r.returncode!=0 and b'bare TEXT literal streams require exact terminal presentation' in r.stderr

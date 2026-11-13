@@ -2,7 +2,7 @@
   "scope": "6own plain type runtime oracle checks,not original corpus growth",
   "rows": [
     {
-      "file": "t1265_pp_plain_type_name.hb",
+      "file": "t1265_pp_plain_type_name.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -23,7 +23,7 @@
       }
     },
     {
-      "file": "t1266_pp_plain_type_expression.hb",
+      "file": "t1266_pp_plain_type_expression.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -44,7 +44,7 @@
       }
     },
     {
-      "file": "t1267_pp_plain_type_call.hb",
+      "file": "t1267_pp_plain_type_call.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -65,7 +65,7 @@
       }
     },
     {
-      "file": "t1268_pp_plain_type_reorder.hb",
+      "file": "t1268_pp_plain_type_reorder.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -86,7 +86,7 @@
       }
     },
     {
-      "file": "t1269_pp_plain_type_repeats.hb",
+      "file": "t1269_pp_plain_type_repeats.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -107,7 +107,7 @@
       }
     },
     {
-      "file": "t1270_pp_plain_type_operand.hb",
+      "file": "t1270_pp_plain_type_operand.prg",
       "exact": true,
       "outputs": {
         "ref": {

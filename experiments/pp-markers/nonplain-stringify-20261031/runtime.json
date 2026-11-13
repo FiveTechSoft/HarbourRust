@@ -1,26 +1,26 @@
 [
   {
-    "file": "tests/t1228_pp_identifier_stringify.hb",
+    "file": "tests/t1228_pp_identifier_stringify.prg",
     "stdout": "\nalpha_2 alpha_2",
     "exact": true
   },
   {
-    "file": "tests/t1229_pp_restricted_stringify.hb",
+    "file": "tests/t1229_pp_restricted_stringify.prg",
     "stdout": "\nBETA BETA",
     "exact": true
   },
   {
-    "file": "tests/t1230_pp_wildcard_stringify.hb",
+    "file": "tests/t1230_pp_wildcard_stringify.prg",
     "stdout": "\nf(1,2), \"a  b\"",
     "exact": true
   },
   {
-    "file": "tests/t1231_pp_wildcard_normal.hb",
+    "file": "tests/t1231_pp_wildcard_normal.prg",
     "stdout": "\nf(1,2) \"a  b\"",
     "exact": true
   },
   {
-    "file": "tests/t1232_pp_optional_marker_stringify.hb",
+    "file": "tests/t1232_pp_optional_marker_stringify.prg",
     "stdout": "\nalpha alpha",
     "exact": true
   }

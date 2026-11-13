@@ -1,8 +1,8 @@
-PASS existing regression t1161_pp_atoms_compare.hb linux
-PASS existing regression t1161_pp_atoms_compare.hb windows
-PASS existing regression t1162_pp_atoms_assign.hb linux
+PASS existing regression t1161_pp_atoms_compare.prg linux
+PASS existing regression t1161_pp_atoms_compare.prg windows
+PASS existing regression t1162_pp_atoms_assign.prg linux
 Traceback (most recent call last):
   File "/home/sandbox/work/harbourrust/experiments/llvm-scalar/check_regressions.py", line 71, in <module>
     assert result.returncode == want_rc and result.stderr == b'', (case, target, backend, result)
-AssertionError: ('t1162_pp_atoms_assign.hb', 'windows', 'llvm', CompletedProcess(args=['/home/sandbox/work/wine-run.sh', 'experiments/llvm-scalar/run/reg-t1162_pp_atoms_assign-windows-llvm.exe'], returncode=0, stdout=b'\n        42', stderr=b'wine: Unhandled page fault on read access to 0000000000000008 at address 00000002279B2B41 (thread 0090), starting debugger...\n'))
-overload.hb windows
+AssertionError: ('t1162_pp_atoms_assign.prg', 'windows', 'llvm', CompletedProcess(args=['/home/sandbox/work/wine-run.sh', 'experiments/llvm-scalar/run/reg-t1162_pp_atoms_assign-windows-llvm.exe'], returncode=0, stdout=b'\n        42', stderr=b'wine: Unhandled page fault on read access to 0000000000000008 at address 00000002279B2B41 (thread 0090), starting debugger...\n'))
+overload.prg windows

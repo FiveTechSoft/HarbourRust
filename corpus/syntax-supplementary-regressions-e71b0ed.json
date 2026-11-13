@@ -3,7 +3,7 @@
   "scope": "Seven manually read existing regressions,28fresh compile checks. Supplementary evidence links,not expansion/completion of17seedfamilies. Fresh compile status separated from prior default runtime evidence. No reference original executed.",
   "cases": [
     {
-      "file": "tests/t747_set_decimals.hb",
+      "file": "tests/t747_set_decimals.prg",
       "sha256": "9ad3da7ffe414f5457e09bfd34707914e481ec07772607f60c97a8dcaf6f675a",
       "workstream": "strings-dates-settings",
       "meaning": "rejection-boundary,not SET implementation",
@@ -49,7 +49,7 @@
       "runtime_evidence": "default full battery e71b0ed local+remote1098PASS includes this manifest row. This metadata step does not run it; LLVM compile acceptance is not a new LLVM runtime pass."
     },
     {
-      "file": "tests/t813_set_callstmt_neg.hb",
+      "file": "tests/t813_set_callstmt_neg.prg",
       "sha256": "279eecf8374a05abf07e22413db2490b0e257337b79509d7d4be3931ed6cccd5",
       "workstream": "strings-dates-settings",
       "meaning": "rejection-boundary,not Date/SET implementation",
@@ -95,7 +95,7 @@
       "runtime_evidence": "default full battery e71b0ed local+remote1098PASS includes this manifest row. This metadata step does not run it; LLVM compile acceptance is not a new LLVM runtime pass."
     },
     {
-      "file": "tests/t814_set_century_neg.hb",
+      "file": "tests/t814_set_century_neg.prg",
       "sha256": "0310eaf88dfdff5e2de90ab6c4c0f85a7a023af52ae3053e7f406844f2d8dd50",
       "workstream": "strings-dates-settings",
       "meaning": "rejection-boundary,not century/date implementation",
@@ -141,7 +141,7 @@
       "runtime_evidence": "default full battery e71b0ed local+remote1098PASS includes this manifest row. This metadata step does not run it; LLVM compile acceptance is not a new LLVM runtime pass."
     },
     {
-      "file": "tests/t815_set_printer_neg.hb",
+      "file": "tests/t815_set_printer_neg.prg",
       "sha256": "3a2e9e71474fe9bcd444829c51a772f486a9ff463e5a25eb6268dcd4a7bea9b4",
       "workstream": "strings-dates-settings",
       "meaning": "rejection-boundary,not output routing implementation",
@@ -187,7 +187,7 @@
       "runtime_evidence": "default full battery e71b0ed local+remote1098PASS includes this manifest row. This metadata step does not run it; LLVM compile acceptance is not a new LLVM runtime pass."
     },
     {
-      "file": "tests/t854_trim_forms.hb",
+      "file": "tests/t854_trim_forms.prg",
       "sha256": "3b06465fe18a213086634e35993ce0d37875897ab50ffd1f614ad34b154c0c27",
       "workstream": "strings-dates-settings",
       "meaning": "selected trim bytes/numeric type/format boundaries,not all strings",
@@ -254,7 +254,7 @@
       "runtime_evidence": "default full battery e71b0ed local+remote1098PASS includes this manifest row. This metadata step does not run it; LLVM compile acceptance is not a new LLVM runtime pass."
     },
     {
-      "file": "tests/t1019_procline_ancestor_neg.hb",
+      "file": "tests/t1019_procline_ancestor_neg.prg",
       "sha256": "484204ae2983a3feaa1339d6fad6c5ec0163324f411a1f843dfa60a53838655f",
       "workstream": "environment-introspection",
       "meaning": "negative current-frame boundary,not ancestor-stack support",
@@ -300,7 +300,7 @@
       "runtime_evidence": "default full battery e71b0ed local+remote1098PASS includes this manifest row. This metadata step does not run it; LLVM compile acceptance is not a new LLVM runtime pass."
     },
     {
-      "file": "tests/t1051_procname_current.hb",
+      "file": "tests/t1051_procname_current.prg",
       "sha256": "9fae60bdda08c3c54d56745ee8b49ea2c139cd0befbd00a715aa94874e536506",
       "workstream": "environment-introspection",
       "meaning": "current frame name with static call/block,not complete stack introspection",

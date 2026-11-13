@@ -3,7 +3,7 @@ os.chdir(pathlib.Path(__file__).resolve().parent);h='./run/hbc';env=os.environ
 for case in ['error-borrowedraw','error-void-argument','error-void-return','error-void-recursive','error-nilcompare','error-nilcompare-left','error-inc','error-recursive','error-after-call','error-include','error-bound','error-bound-write','error-logic-and','error-logic-or','error-loopcontrol','error-loop-test','error-sequence','error-minmax','error-bitops','error-empty','error-boolcalls','error-booloutput','error-scopedslots']:
  for target in ['linux']+(['windows'] if env.get('M') and env.get('WINE') else []):
   for backend in ['current','llvm']:
-   p=f'run/{case}-{backend}-{target}';cmd=[h,case+'.hb',p+'.ll' if backend=='llvm' else p+'.s','--target='+target]
+   p=f'run/{case}-{backend}-{target}';cmd=[h,case+'.prg',p+'.ll' if backend=='llvm' else p+'.s','--target='+target]
    if backend=='llvm':cmd+=['--experimental-llvm']
    subprocess.run(cmd,check=True,stdout=subprocess.DEVNULL)
    if backend=='llvm':

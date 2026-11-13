@@ -1,6 +1,6 @@
-corpus.hb -> run/corpus-current.s (5 functions)
+corpus.prg -> run/corpus-current.s (5 functions)
 PASS Linux exact output corpus
-edge.hb -> run/edge-current.s (2 functions)
+edge.prg -> run/edge-current.s (2 functions)
 PASS Linux exact output edge
 3063 differential scalar calls PASS
 PASS Linux ABI canary

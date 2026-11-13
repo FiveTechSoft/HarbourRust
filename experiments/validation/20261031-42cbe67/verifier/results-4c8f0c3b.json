@@ -76,7 +76,7 @@
         "linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-fib42cbe67/tests/t1358_recursive_self_ret.hb -> /downloads/verify-fib42cbe67-scope/t1358-linux.s (2 functions)\n",
+            "stdout": "/downloads/verify-fib42cbe67/tests/t1358_recursive_self_ret.prg -> /downloads/verify-fib42cbe67-scope/t1358-linux.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -98,7 +98,7 @@
         "windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-fib42cbe67/tests/t1358_recursive_self_ret.hb -> /downloads/verify-fib42cbe67-scope/t1358-windows.s (2 functions)\n",
+            "stdout": "/downloads/verify-fib42cbe67/tests/t1358_recursive_self_ret.prg -> /downloads/verify-fib42cbe67-scope/t1358-windows.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -142,7 +142,7 @@
         "linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-fib42cbe67/tests/t1359_recursive_mutual.hb -> /downloads/verify-fib42cbe67-scope/t1359-linux.s (3 functions)\n",
+            "stdout": "/downloads/verify-fib42cbe67/tests/t1359_recursive_mutual.prg -> /downloads/verify-fib42cbe67-scope/t1359-linux.s (3 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -164,7 +164,7 @@
         "windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-fib42cbe67/tests/t1359_recursive_mutual.hb -> /downloads/verify-fib42cbe67-scope/t1359-windows.s (3 functions)\n",
+            "stdout": "/downloads/verify-fib42cbe67/tests/t1359_recursive_mutual.prg -> /downloads/verify-fib42cbe67-scope/t1359-windows.s (3 functions)\n",
             "stderr": ""
           },
           "assemble": {

@@ -1,7 +1,7 @@
 {
   "rows": [
     {
-      "file": "t1326_pp_inline_ident_one.hb",
+      "file": "t1326_pp_inline_ident_one.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -22,7 +22,7 @@
       }
     },
     {
-      "file": "t1328_pp_inline_ident_join.hb",
+      "file": "t1328_pp_inline_ident_join.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -43,7 +43,7 @@
       }
     },
     {
-      "file": "t1329_pp_inline_ident_call.hb",
+      "file": "t1329_pp_inline_ident_call.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -64,7 +64,7 @@
       }
     },
     {
-      "file": "t1330_pp_inline_ident_suffix.hb",
+      "file": "t1330_pp_inline_ident_suffix.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -85,7 +85,7 @@
       }
     },
     {
-      "file": "t1331_pp_inline_ident_quote.hb",
+      "file": "t1331_pp_inline_ident_quote.prg",
       "exact": true,
       "outputs": {
         "ref": {

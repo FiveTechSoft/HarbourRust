@@ -1,7 +1,7 @@
 {
   "rows": [
     {
-      "file": "t1339_pp_readmit_alias.hb",
+      "file": "t1339_pp_readmit_alias.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -22,7 +22,7 @@
       }
     },
     {
-      "file": "t1340_pp_readmit_call.hb",
+      "file": "t1340_pp_readmit_call.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -43,7 +43,7 @@
       }
     },
     {
-      "file": "t1341_pp_readmit_fixed.hb",
+      "file": "t1341_pp_readmit_fixed.prg",
       "exact": true,
       "outputs": {
         "ref": {
