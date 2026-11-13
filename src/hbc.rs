@@ -515,7 +515,7 @@ fn trace_unlink(off: usize, out: &mut String) {
 }
 fn stmt_line(s: &Stmt) -> usize {
     match s {
-        Stmt::Local(n,..) | Stmt::Print(n,..) | Stmt::Ret(n,..) | Stmt::If(n,..) |
+        Stmt::Local(n,..) | Stmt::Static(n,..) | Stmt::Print(n,..) | Stmt::Ret(n,..) | Stmt::If(n,..) |
         Stmt::While(n,..) | Stmt::Assign(n,..) | Stmt::HDel(n,..) | Stmt::HDelAt(n,..) |
         Stmt::HClear(n,..) | Stmt::HFill(n,..) | Stmt::HMerge(n,..) | Stmt::HCopy(n,..) |
         Stmt::HSet(n,..) | Stmt::HSetCaseMatch(n,..) | Stmt::ArrSet(n,..) |
@@ -839,6 +839,7 @@ enum CaseLit { Int(String), Str(String) }
 #[derive(Debug)]
 enum Stmt {
     Local(usize, String, Expr),
+    Static(usize, String, Expr), // process-owned integer slot, never activation-owned
     Print(usize, Vec<Expr>, bool), // bool: true = `??` (no leading newline)
     Ret(usize, Option<Expr>),
     If(usize, Expr, Vec<Stmt>, Vec<Stmt>), // line, condition, then, else (possibly empty)
@@ -1614,6 +1615,24 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
     while *i < lines.len() {
         let (n, toks) = &lines[*i];
         let n = *n;
+        if matches!(&toks[0], Tok::Ident(k) if k.eq_ignore_ascii_case("static")) {
+            if toks.get(1) == Some(&Tok::KwFunction) { return Ok(()); }
+            if depth != 0 { return Err(format!("line {}: STATIC declarations inside a control-flow block are not in this increment", n)); }
+            let mut declaration = toks.clone();
+            declaration[0] = Tok::KwLocal;
+            let mut local = Vec::new();
+            parse_stmts(&[(n, declaration)], &mut 0, &mut local, depth)?;
+            for st in local {
+                if let Stmt::Local(ln, name, value) = st {
+                    if !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) {
+                        return Err(format!("line {}: local STATIC currently requires a folded i64 constant initializer; NIL, floats and owned payloads need persistent tagged storage", n));
+                    }
+                    out.push(Stmt::Static(ln, name, value));
+                }
+            }
+            *i += 1;
+            continue;
+        }
         match toks[0].clone() {
             Tok::KwFunction => return Ok(()),
             Tok::KwMethod | Tok::KwCreate => return Ok(()),
@@ -3168,6 +3187,7 @@ struct Sig {
 // always >= 655360 (width >= 10, decimals in low 16 bits). No heap,
 // cleanup, general Dyn tag, parameter ABI or borrowed storage is involved.
 thread_local! {
+    static CHECKED_I64: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static NUM_LOCALS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
 }
 fn mixed_local(id: &str) -> bool { NUM_LOCALS.with(|s| s.borrow().contains(id)) }
@@ -3697,7 +3717,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     fn walk_stmts(f: &Func, stmts: &[Stmt], sigs: &[Sig], lit: &mut Vec<(String, Ty)>, pin: &mut Vec<Option<Ty>>, printed: &mut Vec<bool>, nil_ret: bool) -> Result<(), String> {
         for st in stmts {
             match st {
-                Stmt::Local(n, name, e) => {
+                Stmt::Local(n, name, e) | Stmt::Static(n, name, e) => {
                     walk(f, e, sigs, lit, pin, printed, *n)?;
                     match e {
                         Expr::Str(_) => lit.push((name.clone(), Ty::Str)),
@@ -4223,7 +4243,7 @@ fn borrow_expr_ok(e: &Expr, pname: &str) -> bool {
 fn borrow_stmts_ok(stmts: &[Stmt], pname: &str) -> Option<usize> {
     for s in stmts {
         let bad = match s {
-            Stmt::Local(n, id, e) => {
+            Stmt::Local(n, id, e) | Stmt::Static(n, id, e) => {
                 if id == pname || !borrow_expr_ok(e, pname) { Some(*n) } else { None }
             }
             Stmt::Print(n, items, _) => {
@@ -4375,7 +4395,7 @@ fn aview_mentions(e: &Expr, p: &str) -> bool {
 }
 fn aview_stmts_safe(ss: &[Stmt], p: &str, sigs: &[Sig], strict: bool) -> bool {
     ss.iter().all(|s| match s {
-        Stmt::Local(_,v,e) | Stmt::Assign(_,v,e) => v != p && aview_expr_safe(e,p,sigs,strict,false,false),
+        Stmt::Local(_,v,e) | Stmt::Static(_,v,e) | Stmt::Assign(_,v,e) => v != p && aview_expr_safe(e,p,sigs,strict,false,false),
         Stmt::Print(_,es,_) => es.iter().all(|e| aview_expr_safe(e,p,sigs,strict,false,true)),
         Stmt::Ret(_,Some(e)) => aview_expr_safe(e,p,sigs,strict,false,false),
         Stmt::Ret(_,None) | Stmt::Exit(_) | Stmt::Loop(_) => true,
@@ -4398,7 +4418,7 @@ fn aview_array_evidence(ss: &[Stmt], p: &str) -> bool {
         _ => false,
     }}
     ss.iter().any(|st| match st {
-        Stmt::Local(_,_,e)|Stmt::Assign(_,_,e)|Stmt::CallStmt(_,e)|Stmt::Ret(_,Some(e)) => ex(e,p),
+        Stmt::Local(_,_,e) | Stmt::Static(_,_,e)|Stmt::Assign(_,_,e)|Stmt::CallStmt(_,e)|Stmt::Ret(_,Some(e)) => ex(e,p),
         Stmt::Print(_,es,_) => es.iter().any(|a|ex(a,p)),
         Stmt::If(_,c,a,b) => ex(c,p)||aview_array_evidence(a,p)||aview_array_evidence(b,p),
         Stmt::While(_,c,b) => ex(c,p)||aview_array_evidence(b,p),
@@ -6330,7 +6350,7 @@ fn prescan_dyn(f: &Func, sigs: &[Sig], ptys: &[Ty]) -> std::collections::HashSet
     fn scan_darr(stmts: &[Stmt], darr: &mut HashSet<String>) {
         for st in stmts {
             match st {
-                Stmt::Local(_, id, Expr::DArrNew) => { darr.insert(id.clone()); }
+                Stmt::Local(_, id, Expr::DArrNew) | Stmt::Static(_, id, Expr::DArrNew) => { darr.insert(id.clone()); }
                 Stmt::Local(_, id, Expr::ArrLit(es)) if es.iter().any(|e| matches!(e, Expr::ArrLit(_) | Expr::DArrNew)) => { darr.insert(id.clone()); }
                 Stmt::If(_, _, t, e) => { scan_darr(t, darr); scan_darr(e, darr); }
                 Stmt::While(_, _, b) => scan_darr(b, darr),
@@ -6345,7 +6365,7 @@ fn prescan_dyn(f: &Func, sigs: &[Sig], ptys: &[Ty]) -> std::collections::HashSet
     fn collect<'a>(stmts: &'a [Stmt], out: &mut Vec<(&'a String, &'a Expr)>) {
         for st in stmts {
             match st {
-                Stmt::Local(_, id, e) | Stmt::Assign(_, id, e) => out.push((id, e)),
+                Stmt::Local(_, id, e) | Stmt::Static(_, id, e) | Stmt::Assign(_, id, e) => out.push((id, e)),
                 Stmt::If(_, _, t, e) => { collect(t, out); collect(e, out); }
                 Stmt::While(_, _, b) => collect(b, out),
                 Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => collect(b, out),
@@ -6506,7 +6526,7 @@ fn foreach_barr_lv_ok(stmts: &[Stmt], name: &str) -> bool {
         Stmt::AAddSub(_, id, i, e) | Stmt::ASizeSub(_, id, i, e) => id != name && !mentions(i, name) && !mentions(e, name),
         Stmt::AAddSub2(_, id, i, j, e) | Stmt::ASizeSub2(_, id, i, j, e) => id != name && !mentions(i, name) && !mentions(j, name) && !mentions(e, name),
         Stmt::AAddSub3(_, id, i, j, k, e) | Stmt::ASizeSub3(_, id, i, j, k, e) => id != name && !mentions(i, name) && !mentions(j, name) && !mentions(k, name) && !mentions(e, name),
-        Stmt::Local(_, _, e) => !mentions(e, name),
+        Stmt::Local(_, _, e) | Stmt::Static(_, _, e) => !mentions(e, name),
         Stmt::If(_, _, a, b) => foreach_barr_lv_ok(a, name) && foreach_barr_lv_ok(b, name),
         Stmt::While(_, _, b) => foreach_barr_lv_ok(b, name),
         Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => foreach_barr_lv_ok(b, name),
@@ -6550,7 +6570,7 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
         Stmt::AAddSub(_, _, i, e) | Stmt::ASizeSub(_, _, i, e) => !mentions(i, name) && !mentions(e, name),
         Stmt::AAddSub2(_, _, i, j, e) | Stmt::ASizeSub2(_, _, i, j, e) => !mentions(i, name) && !mentions(j, name) && !mentions(e, name),
         Stmt::AAddSub3(_, _, i, j, k, e) | Stmt::ASizeSub3(_, _, i, j, k, e) => !mentions(i, name) && !mentions(j, name) && !mentions(k, name) && !mentions(e, name),
-        Stmt::Local(_, _, e) => !mentions(e, name),
+        Stmt::Local(_, _, e) | Stmt::Static(_, _, e) => !mentions(e, name),
         Stmt::If(_, _, a, b) => foreach_lv_readonly(a, name) && foreach_lv_readonly(b, name),
         Stmt::While(_, _, b) => foreach_lv_readonly(b, name),
         Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => foreach_lv_readonly(b, name),
@@ -6590,7 +6610,7 @@ fn stmts_mention(stmts: &[Stmt], name: &str) -> bool {
 
 fn stmt_mentions(s: &Stmt, name: &str) -> bool {
     match s {
-        Stmt::Local(_, id, e) => id == name || expr_mentions(e, name),
+        Stmt::Local(_, id, e) | Stmt::Static(_, id, e) => id == name || expr_mentions(e, name),
         Stmt::Print(_, items, _) => items.iter().any(|e| expr_mentions(e, name)),
         Stmt::Ret(_, Some(e)) => expr_mentions(e, name),
         Stmt::Ret(_, None) | Stmt::Exit(_) | Stmt::Loop(_) => false,
@@ -6715,7 +6735,10 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
                 apply_moves(e, env, sigs, true);
             }
-            Stmt::Local(n, id, e) => {
+            Stmt::Local(n, id, e) | Stmt::Static(n, id, e) => {
+                if matches!(s, Stmt::Static(..)) && (dyn_names.contains(id) || mixed_local(id)) {
+                    return Err(format!("line {}: local STATIC cannot widen from integer storage in this increment", n));
+                }
                 if env.iter().any(|v| v.name == *id) {
                     return Err(format!("line {}: duplicate local `{}`", n, id));
                 }
@@ -8388,6 +8411,8 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
                 out.push_str("    mov %rdx, %rax\n");
+            } else if lty == Ty::RefI64 {
+                out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov %rax, (%r11)\n", off));
             } else {
                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
             }
@@ -8560,7 +8585,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 Expr::Var(v) => {
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                     match var.ty {
-                        Ty::I64 | Ty::F64 => konst(out, want_num),
+                        Ty::I64 | Ty::F64 | Ty::RefI64 => konst(out, want_num),
                         Ty::Bool | Ty::Str | Ty::StrOwn => konst(out, false),
                         Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn | Ty::AView | Ty::Arr(_) => konst(out, !want_num),
                         // ains P2 stage 1: a Dyn variable dispatches on
@@ -8673,7 +8698,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 Expr::Var(v) => {
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                     match var.ty {
-                        Ty::I64 => vt_letter(strs, out, "N"),
+                        Ty::I64 | Ty::RefI64 => vt_letter(strs, out, "N"),
                         Ty::Bool => vt_letter(strs, out, "L"), // hk197
                         Ty::Str | Ty::StrOwn => vt_letter(strs, out, "C"),
                         Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::AView | Ty::Arr(_) => vt_letter(strs, out, "A"),
@@ -10132,6 +10157,9 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 }
                 _ => unreachable!(),
             }
+            if matches!(op, '+' | '-' | '*') && CHECKED_I64.with(|c|c.get()) {
+                out.push_str("    jo hbc_static_overflow\n");
+            }
         }
     }
 }
@@ -10460,7 +10488,7 @@ fn byref_names_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
     fn st(stmts: &[Stmt], out: &mut std::collections::HashSet<String>) {
         for s in stmts {
             match s {
-                Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) | Stmt::CallStmt(_, e) => ex(e, out),
+                Stmt::Local(_, _, e) | Stmt::Static(_, _, e) | Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) | Stmt::CallStmt(_, e) => ex(e, out),
                 Stmt::Print(_, es, _) => { for e in es { ex(e, out); } }
                 Stmt::If(_, c, t, el) => { ex(c, out); st(t, out); st(el, out); }
                 Stmt::While(_, c, b) => { ex(c, out); st(b, out); }
@@ -10506,7 +10534,7 @@ fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String,
     fn st(stmts: &[Stmt], out: &mut std::collections::BTreeSet<(String, Vec<bool>)>) {
         for s in stmts {
             match s {
-                Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) | Stmt::CallStmt(_, e) => ex(e, out),
+                Stmt::Local(_, _, e) | Stmt::Static(_, _, e) | Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) | Stmt::CallStmt(_, e) => ex(e, out),
                 Stmt::Print(_, es, _) => { for e in es { ex(e, out); } }
                 Stmt::If(_, c, t, el) => { ex(c, out); st(t, out); st(el, out); }
                 Stmt::While(_, c, b) => { ex(c, out); st(b, out); }
@@ -10551,6 +10579,10 @@ fn cg_dyn_clone_if_str(out: &mut String) {
 fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &mut usize, darr_slots: &mut Vec<(usize, u8)>, dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
     for (si, s) in stmts.iter().enumerate() {
         match s {
+            Stmt::Static(_, id, _) => {
+                *frame += 8;
+                env.push(CgLocal { name: id.clone(), ty: Ty::RefI64, off: *frame });
+            }
             Stmt::Local(_, id, e) => {
                 let mut t = expr_ty(e, env, sigs);
                 if mixed_local(id) && matches!(t,Ty::I64|Ty::F64|Ty::NumLocal) { t=Ty::NumLocal; }
@@ -11509,6 +11541,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     Ty::Dyn => out.push_str("    cmp $4, %rax\n    jne 95f\n    mov %rdx, %rdi\n    test %rdi, %rdi\n    je 95f\n    call hbc_freestr\n95:\n"),
                     _ => {}
                 }
+            }
+            Stmt::Static(_, id, _) => {
+                *frame += 8;
+                let off = *frame;
+                let owner = CUR_FN.with(|c| c.borrow().clone());
+                out.push_str(&format!("    lea hbc_static_{}_{}_{}(%rip), %rax\n    mov %rax, -{}(%rbp)\n", owner.len(), owner, id, off));
+                env.push(CgLocal { name: id.clone(), ty: Ty::RefI64, off });
             }
             Stmt::Local(_, id, e) => {
                 let mut t = expr_ty(e, env, sigs);
@@ -13713,7 +13752,7 @@ fn collect_blocks_expr(e: &Expr, out: &mut Vec<(usize, Vec<String>, Vec<Expr>)>)
 fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<Expr>)>) {
     for s in stmts {
         match s {
-            Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) => collect_blocks_expr(e, out),
+            Stmt::Local(_, _, e) | Stmt::Static(_, _, e) | Stmt::Assign(_, _, e) => collect_blocks_expr(e, out),
             Stmt::HDel(_, _, e) => { collect_blocks_expr(e, out); }
             Stmt::HDelAt(_, _, e) => { collect_blocks_expr(e, out); }
             Stmt::HClear(_, _) => {}
@@ -13798,6 +13837,16 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         Some(m) => format!("{}__br{}", f.name, m.iter().map(|b| if *b { "1" } else { "0" }).collect::<String>()),
     };
     set_numeric(f);
+    // Fixed-i64 persistent or borrowed storage cannot silently wrap.
+    // Full numeric promotion in these slots remains a named boundary.
+    CHECKED_I64.with(|c| c.set(f.stmts.iter().any(|s| matches!(s, Stmt::Static(..))) || byref.map(|m|m.iter().any(|b|*b)).unwrap_or(false)));
+    if byref.is_none() {
+        for st in &f.stmts {
+            if let Stmt::Static(_, id, Expr::Int(value)) = st {
+                out.push_str(&format!("    .data\n    .align 8\nhbc_static_{}_{}_{}: .quad {}\n    .text\n", f.name.len(), f.name, id, value));
+            }
+        }
+    }
     let mut lenv: Vec<CgLocal> = Vec::new();
     let mut frame = 0usize;
     // Parameters occupy the first frame slots, sized by their pinned type.
@@ -16665,6 +16714,16 @@ hbc_div0_error:
 
 # Integer increment cannot silently wrap. Harbour promotes to double;
 # this fixed-I64 increment reports that uncovered boundary before store.
+hbc_static_overflow:
+    lea .Lstaticovmsg(%rip), %rsi
+    mov $63, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 hbc_inc_overflow:
     lea .Lincmsg(%rip), %rsi
     mov $50, %edx
@@ -17569,6 +17628,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Lboundmsg:\n    .byte 66,111,117,110,100,32,101,114,114,111,114,58,32,97,114,114,97,121,32,97,99,99,101,115,115,10\n");
     // "Error: division by zero\n" (24 bytes; EG_ZERODIV, probe hk294)
     out.push_str(".Ldiv0msg:\n    .byte 69,114,114,111,114,58,32,100,105,118,105,115,105,111,110,32,98,121,32,122,101,114,111,10\n");
+    out.push_str(".Lstaticovmsg:\n    .byte 76,105,109,105,116,58,32,115,116,97,116,105,99,47,98,121,114,101,102,32,105,110,116,101,103,101,114,32,97,114,105,116,104,109,101,116,105,99,32,110,101,101,100,115,32,110,117,109,101,114,105,99,32,112,114,111,109,111,116,105,111,110,10\n");
     out.push_str(".Lincmsg:\n    .byte 76,105,109,105,116,58,32,105,110,99,114,101,109,101,110,116,32,111,118,101,114,102,108,111,119,32,110,101,101,100,115,32,110,117,109,101,114,105,99,32,112,114,111,109,111,116,105,111,110,10\n");
     out.push_str(".Lf64rangemsg:\n    .byte 69,114,114,111,114,58,32,102,108,111,97,116,32,102,105,101,108,100,32,111,117,116,32,111,102,32,114,97,110,103,101,10\n");
     out.push_str(".Lroundmsg:\n    .byte 69,114,114,111,114,58,32,114,111,117,110,100,32,100,101,99,32,111,117,116,32,111,102,32,114,97,110,103,101,10\n");
@@ -18729,6 +18789,17 @@ hbc_div0_error:
     mov $1, %ecx
     call ExitProcess
 
+hbc_static_overflow:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Lstaticovmsg(%rip), %rax
+    mov $63, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
 hbc_inc_overflow:
     push %rbp
     mov %rsp, %rbp
@@ -19554,6 +19625,19 @@ fn main() {
         Ok(p) => p,
         Err(msg) => { eprintln!("error: {}", msg); process::exit(1); }
     };
+    for f in &prog.funcs {
+        let statics: std::collections::HashSet<&String> = f.stmts.iter().filter_map(|s| if let Stmt::Static(_,id,_) = s {Some(id)}else{None}).collect();
+        fn validate(ss: &[Stmt], names: &std::collections::HashSet<&String>) -> Result<(), String> {
+            for st in ss { match st {
+                Stmt::For(n,id,_,_,_,_) | Stmt::ForEach(n,id,_,_) if names.contains(id) => return Err(format!("line {}: STATIC loop counters require persistent counter lowering and are not in this increment",n)),
+                Stmt::If(_,_,a,b) => {validate(a,names)?;validate(b,names)?;},
+                Stmt::While(_,_,b) | Stmt::For(_,_,_,_,_,b) | Stmt::ForEach(_,_,_,b) => validate(b,names)?,
+                Stmt::Switch(_,_,arms,other) => {for (_,_,b) in arms {validate(b,names)?;} if let Some((_,b))=other {validate(b,names)?;}},
+                _ => {}
+            }} Ok(())
+        }
+        if let Err(msg)=validate(&f.stmts,&statics) {eprintln!("error: {}",msg);process::exit(1);}
+    }
     if !prog.classes.is_empty() || !prog.methods.is_empty() {
         eprintln!("error: classes are not in this increment yet (the parser landed; the runtime representation is pending the user's decision)");
         process::exit(1);
@@ -19600,7 +19684,7 @@ fn main() {
     fn scan_byref_stmts(stmts: &[Stmt], cur: &str, params: &mut std::collections::HashMap<String, Vec<usize>>, names: &mut std::collections::HashMap<String, std::collections::HashSet<String>>, variants: &mut std::collections::BTreeSet<(String, Vec<bool>)>) {
         for st in stmts {
             match st {
-                Stmt::Local(_, _, e) | Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) | Stmt::CallStmt(_, e) => scan_byref_expr(e, cur, params, names, variants),
+                Stmt::Local(_, _, e) | Stmt::Static(_, _, e) | Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) | Stmt::CallStmt(_, e) => scan_byref_expr(e, cur, params, names, variants),
                 Stmt::Print(_, es, _) => { for e in es { scan_byref_expr(e, cur, params, names, variants); } }
                 Stmt::If(_, c, t, el) => { scan_byref_expr(c, cur, params, names, variants); scan_byref_stmts(t, cur, params, names, variants); scan_byref_stmts(el, cur, params, names, variants); }
                 Stmt::While(_, c, b) => { scan_byref_expr(c, cur, params, names, variants); scan_byref_stmts(b, cur, params, names, variants); }
