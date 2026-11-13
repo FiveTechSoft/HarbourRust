@@ -6,7 +6,7 @@ HarbourRust is an ahead-of-time compiler for Harbour, written in Rust. It transl
 
 ## Memory model
 
-Sin VM, sin pcode, sin garbage collector. Ownership comprobado en tiempo de compilación y liberación determinista, sin contadores ni pausas. La misma familia de diseños sin GC a la que pertenecen Rust y el reciente lenguaje Goose.
+No VM, no pcode, no garbage collector. Ownership checked at compile time, with deterministic release and no pause times; one limited persistent-value path uses reference counting (see below). In the same family of GC-free designs as Rust and the recent Goose language.
 
 ## Current status
 
