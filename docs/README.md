@@ -25,6 +25,10 @@ stays short.
 - [Oracle records](../oraculos/) and [other probes](../probes/).
 - [Design notes](../design/) and [experiments](../experiments/).
 
+- [Former main development history](MAIN-DEVELOPMENT-HISTORY.md): the separate
+  main README, including its historical Date work, preserved during integration.
+- [Independent Date port](DATE-PORT-2026-11-13.md): current representation and limits.
+
 ## Source and tests
 
 - [Compiler source](../src/).

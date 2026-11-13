@@ -1,0 +1,12 @@
+PROCEDURE Main()
+ ? Date()
+ ? ValType(Date())
+ ? ValType(CToD("02/04/1999"))
+ ? CToD("02/04/1999")
+ ? CToD("02/04/99")
+ ? CToD("12/31/2065")
+ ? CToD("1/5/99")
+ ? CToD("")
+ ? CToD("garbage")
+ ? Empty(CToD("")), Empty(CToD("01/05/1999"))
+return nil
