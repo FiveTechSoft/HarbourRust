@@ -53,9 +53,10 @@ fn block_body_kind(body: &[Expr], sigs: &[Sig]) -> BRet {
 }
 
 // Dyn is the tagged-union value for any route that can carry NIL (probes
-// n1/n2/n3): a 16-byte {tag, payload} pair, tag 0 = i64 payload, tag 1 =
-// NIL. No integer is reserved - i64::MIN is an ordinary payload. Pure i64
-// stays 8 bytes wherever NIL is proven absent. In registers a Dyn travels
+// n1/n2/n3): a 16-byte {tag, payload} pair. Integer tag 0 is runtime
+// display provenance, tag 9 literal/copy provenance, and tag 1 is NIL.
+// No integer payload is reserved. Scalar I64 slots also use 16 bytes
+// (value plus display provenance). In registers a Dyn travels
 // as rax=tag, rdx=payload (the Str ptr/len convention reused); on the
 // stack the tag is the first word, payload the second.
 
@@ -451,7 +452,7 @@ fn cg_num(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: 
             },
             _=>unreachable!("numeric-local expression rejected before lowering"),
         },
-        Ty::I64 => {cg_expr(e,env,sigs,strs,out,target);out.push_str(if fold_int(e).is_some(){"    mov $1, %edx\n"}else{"    xor %edx, %edx\n"});},
+        Ty::I64 => {cg_expr(e,env,sigs,strs,out,target);},
         _=>unreachable!("checked numeric local input"),
     }
 }
@@ -8277,9 +8278,9 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 
 // ---------------------------------------------------------------------------
 // Code generation: x86-64 assembly (AT&T syntax), freestanding.
-//   i64 value  -> %rax
+//   I64 value  -> %rax = value, %rdx = display provenance (0/1)
 //   Str value  -> %rax = ptr, %rdx = len
-// Locals live in the stack frame: i64 takes 8 bytes, Str takes 16.
+// Scalar I64 and Str locals both take 16 bytes in the stack frame.
 // ---------------------------------------------------------------------------
 
 // Constant fold of a pure integer expression (literal +,-,* tree):
@@ -8316,7 +8317,7 @@ fn fold_int(e: &Expr) -> Option<i64> {
     }
 }
 fn size_of(t: Ty) -> usize {
-    match t { Ty::NumLocal | Ty::F64 => 16, Ty::I64 => 8, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(..) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefStrOwn | Ty::AView => 8 }
+    match t { Ty::NumLocal | Ty::F64 | Ty::I64 => 16, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(..) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefStrOwn | Ty::AView => 8 }
 }
 
 #[derive(Clone)]
@@ -8370,7 +8371,70 @@ fn cg_aview_cell(root: &CgLocal, ie: &Expr, env: &[CgLocal], sigs: &[Sig], strs:
     out.push_str(&format!("    mov %rax, %rdi\n    mov (%rsp), %rsi\n    add $16, %rsp\n    lea -{}(%rbp), %rdx\n    call hbc_aview_get\n",child));
 }
 
+thread_local! {
+    static I64_META_REFS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
+}
+fn i64_meta_ref(v: &CgLocal) -> bool {
+    v.ty == Ty::RefI64 && I64_META_REFS.with(|s| s.borrow().contains(&v.name))
+}
+
+// I64 format is carried in rdx: 1 literal/copy, 0 runtime result.
+// This is an output-format step only, not the full I32/I64/F64 cell model.
 fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    if expr_ty(e, env, sigs) == Ty::I64 {
+        if let Expr::Call(id, args) = e {
+            if (is_builtin(id, "min") || is_builtin(id, "max")) && args.len() == 2 {
+                cg_expr(&args[0], env, sigs, strs, out, target);
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                cg_expr(&args[1], env, sigs, strs, out, target);
+                let k = fresh_lbl();
+                // On equality Harbour returns the first item's metadata.
+                out.push_str(&format!("    cmp %rax, (%rsp)\n    {} .Limeta{}\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n.Limeta{}:\n    add $16, %rsp\n", if is_builtin(id, "min") { "jg" } else { "jl" }, k, k));
+                return;
+            }
+        }
+    }
+    cg_expr_inner(e, env, sigs, strs, out, target);
+    if expr_ty(e, env, sigs) != Ty::I64 { return; }
+    match e {
+        Expr::Var(id) => {
+            let v = env.iter().rev().find(|v| v.name == *id).expect("checked variable");
+            if v.ty == Ty::I64 {
+                out.push_str(&format!("    mov -{}(%rbp), %rdx\n", v.off - 8));
+            } else if i64_meta_ref(v) {
+                out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov 8(%r11), %rdx\n", v.off));
+            } else {
+                out.push_str("    xor %edx, %edx\n");
+            }
+        }
+        // These routes already return the selected/snapshotted metadata.
+        Expr::Inc(..) | Expr::Set(..) | Expr::Seq(_) => {}
+        Expr::Call(id, _) if is_builtin(id, "iif") || is_builtin(id, "eval")
+            || sigs.iter().any(|s| s.name == *id && s.ret == Some(Ty::I64)) => {}
+        _ => out.push_str(if fold_int(e).is_some() {
+            "    mov $1, %edx\n"
+        } else {
+            "    xor %edx, %edx\n"
+        }),
+    }
+}
+
+// Convert an evaluated integer to the existing float ABI while carrying
+// its dynamic literal/runtime field provenance. This does not decide
+// whether a Harbour value should be converted at this boundary.
+fn cg_i64_f64_format(out: &mut String) {
+    let k = fresh_lbl();
+    out.push_str(&format!("    cvtsi2sd %rax, %xmm0\n    mov %rax, %r8\n    mov $10, %edi\n    test %rdx, %rdx\n    jz .Lifmtmacro{}\n    test %rax, %rax\n    js .Lifmtmacro{}\n    xor %edi, %edi\n    mov $10, %r9\n.Lifmtdigits{}:\n    inc %edi\n    xor %edx, %edx\n    div %r9\n    test %rax, %rax\n    jnz .Lifmtdigits{}\n    inc %edi\n    cmp $10, %edi\n    jge .Lifmtend{}\n    mov $10, %edi\n    jmp .Lifmtend{}\n.Lifmtmacro{}:\n    mov $9999999999, %r9\n    cmp %r9, %r8\n    jg .Lifmtwide{}\n    cmp $-999999999, %r8\n    jge .Lifmtend{}\n.Lifmtwide{}:\n    mov $20, %edi\n.Lifmtend{}:\n    shl $16, %rdi\n    mov %r8, %rax\n",k,k,k,k,k,k,k,k,k,k,k));
+}
+
+// rax integer value, rdx scalar format -> rax Dyn tag, rdx payload.
+// Format is 0 runtime / 1 literal; clobbers r11 only.
+fn cg_i64_tagged(out: &mut String) {
+    out.push_str("    mov %rax, %r11\n    imul $9, %rdx, %rax\n    mov %r11, %rdx\n");
+}
+
+
+fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     match e {
         Expr::Seq(es) => {
             for e in es {
@@ -8404,17 +8468,18 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 // Dyn slot: tag the scalar in (mirror of the statement
                 // Dyn re-tag, probe n2); a live tag-4 payload is released
                 // first. The expression's value is the scalar itself.
-                let tag = if rt == Ty::Bool { 3 } else { 0 };
-                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 cg_dyn_free_old(out, off);
-                out.push_str(&format!("    mov (%rsp), %rdx\n    add $16, %rsp\n    mov ${}, %eax\n", tag));
-                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
-                out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
-                out.push_str("    mov %rdx, %rax\n");
+                out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n");
+                if rt==Ty::I64 {cg_i64_tagged(out);}else{out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");}
+                out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",off,off-8));
+                out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
             } else if lty == Ty::RefI64 {
                 out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov %rax, (%r11)\n", off));
+                if i64_meta_ref(v) {out.push_str("    mov %rdx, 8(%r11)\n");}
             } else {
                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
+                if lty==Ty::I64 {out.push_str(&format!("    mov %rdx, -{}(%rbp)\n",off-8));}
             }
         }
         Expr::SelfObj | Expr::SelfGet(_) | Expr::Send(_, _, _) => unreachable!("rejected before codegen"),
@@ -8450,10 +8515,12 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             } else {
                 out.push_str(&format!("    lea -{}(%rbp), %r10\n", v.off));
             }
+            if v.ty==Ty::I64 || i64_meta_ref(v) {out.push_str("    mov 8(%r10), %rdx\n");}else{out.push_str("    xor %edx, %edx\n");}
             out.push_str("    mov (%r10), %rax\n    mov %rax, %r11\n");
             out.push_str(if *delta > 0 { "    add $1, %r11\n" } else { "    sub $1, %r11\n" });
             out.push_str("    jo hbc_inc_overflow\n    mov %r11, (%r10)\n");
-            if *prefix { out.push_str("    mov %r11, %rax\n"); }
+            if v.ty==Ty::I64 || i64_meta_ref(v) {out.push_str("    movq $0, 8(%r10)\n");}
+            if *prefix { out.push_str("    mov %r11, %rax\n    xor %edx, %edx\n"); }
         }
         Expr::Var(id) => {
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
@@ -8491,22 +8558,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     cg_f64_load(a, env, sigs, strs, out, target);
                 } else {
                     cg_expr(a, env, sigs, strs, out, target);
-                    out.push_str("    cvtsi2sd %rax, %xmm0\n");
-                    let lit_len: Option<u32> = if let Expr::Int(txt) = a {
-                        let neg = txt.starts_with('-');
-                        let digits = txt.trim_start_matches('-').len() as u32;
-                        if !neg && digits >= 10 { Some(digits + 1) } else {
-                            let v: i64 = txt.parse().expect("checked");
-                            Some(if v > 9999999999 || v < -999999999 { 20 } else { 10 })
-                        }
-                    } else { None };
-                    if let Some(l) = lit_len {
-                        out.push_str(&format!("    mov ${}, %edi\n", l << 16));
-                    } else {
-                        let lw = fresh_lbl();
-                        let ld = fresh_lbl();
-                        out.push_str(&format!("    mov $10, %edi\n    mov $9999999999, %r11\n    cmp %r11, %rax\n    jg .Lf64w{}\n    cmp $-999999999, %rax\n    jge .Lf64w{}\n.Lf64w{}:\n    mov $20, %edi\n.Lf64w{}:\n    shl $16, %rdi\n", lw, ld, lw, ld));
-                    }
+                    cg_i64_f64_format(out);
                 }
             };
             if ta == Ty::F64 || tb == Ty::F64 {
@@ -8567,6 +8619,10 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     out.push_str("    xor %eax, %eax
     test %r10, %r10
     sete %al
+    cmp $9, %r10
+    sete %ah
+    or %ah, %al
+    movzbq %al, %rax
 ");
                 } else {
                     out.push_str("    xor %eax, %eax
@@ -9126,7 +9182,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             // insertion-order position or 0 (hk178-hk183).
             cg_value(&args[1], env, sigs, strs, out, target);
             if expr_ty(&args[1], env, sigs) == Ty::I64 {
-                out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                cg_i64_tagged(out);
             }
             if expr_ty(&args[1], env, sigs) == Ty::Bool {
                 out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -9506,7 +9562,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
             let k = match expr_ty(&args[0], env, sigs) { Ty::Block(k, _) => k, _ => unreachable!("checked") };
             for a in &args[1..] {
                 cg_expr(a, env, sigs, strs, out, target);
-                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
             }
             if args.len() - 1 > k {
                 out.push_str(&format!("    add ${}, %rsp\n", 16 * (args.len() - 1 - k)));
@@ -9546,9 +9602,12 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                 let v = env[i].clone();
                 out.push_str(&format!(".Lpv{}_{}:\n", k, i));
                 match v.ty {
-                    Ty::I64 => out.push_str(&format!("    mov -{}(%rbp), %rdx\n    xor %eax, %eax\n", v.off)),
+                    Ty::I64 => {out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -{}(%rbp), %rdx\n", v.off,v.off-8));cg_i64_tagged(out);},
                     Ty::Bool => out.push_str(&format!("    mov -{}(%rbp), %rdx\n    mov $3, %eax\n", v.off)),
-                    Ty::RefI64 => out.push_str(&format!("    mov -{}(%rbp), %r10\n    mov (%r10), %rdx\n    xor %eax, %eax\n", v.off)),
+                    Ty::RefI64 => {
+                        out.push_str(&format!("    mov -{}(%rbp), %r10\n    mov (%r10), %rax\n",v.off));
+                        if i64_meta_ref(&v) {out.push_str("    mov 8(%r10), %rdx\n");cg_i64_tagged(out);}else{out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");}
+                    },
                     Ty::Str | Ty::StrOwn => {
                         out.push_str(&format!("    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n", v.off, v.off - 8));
                     }
@@ -9656,25 +9715,8 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     // 12345678901 prints width 12), a computed integer
                     // keeps HB_LONG_LENGTH (20 beyond 9999999999 /
                     // -999999999, else 10).
-                    let lit_len: Option<u32> = if let Expr::Int(txt) = a {
-                        let neg = txt.starts_with('-');
-                        let digits = txt.trim_start_matches('-').len() as u32;
-                        if !neg && digits >= 10 {
-                            Some(digits + 1)
-                        } else {
-                            let v: i64 = txt.parse().expect("checked");
-                            Some(if v > 9999999999 || v < -999999999 { 20 } else { 10 })
-                        }
-                    } else { None };
                     cg_expr(a, env, sigs, strs, out, target);
-                    out.push_str("    cvtsi2sd %rax, %xmm0\n");
-                    if let Some(l) = lit_len {
-                        out.push_str(&format!("    mov ${}, %edi\n", l << 16));
-                    } else {
-                        let lw = fresh_lbl();
-                        let ld = fresh_lbl();
-                        out.push_str(&format!("    mov $10, %edi\n    mov $9999999999, %r11\n    cmp %r11, %rax\n    jg .Lf64w{}\n    cmp $-999999999, %rax\n    jge .Lf64w{}\n.Lf64w{}:\n    mov $20, %edi\n.Lf64w{}:\n    shl $16, %rdi\n", lw, ld, lw, ld));
-                    }
+                    cg_i64_f64_format(out);
                     out.push_str("    sub $16, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rdi, 8(%rsp)\n");
                     continue;
                 }
@@ -9702,12 +9744,13 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     // Dyn argument to an i64 parameter: extract with the
                     // runtime tag check (NIL -> clean type error).
                     out.push_str("    call hbc_dyn_to_i64\n");
-                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     continue;
                 }
                 if ta == Ty::I64 && pty == Some(Ty::Dyn) {
                     // i64 argument to a Dyn parameter: tag it in.
-                    out.push_str("    sub $16, %rsp\n    movq $0, (%rsp)\n    mov %rax, 8(%rsp)\n");
+                    cg_i64_tagged(out);
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     continue;
                 }
                 if ta == Ty::Bool && pty == Some(Ty::Dyn) {
@@ -9770,6 +9813,7 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
                     }
                 } else {
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                    if ta==Ty::I64 {out.push_str("    mov %rdx, 8(%rsp)\n");}
                 }
             }
             // Omitted trailing parameters (multiarg): pad the boundary
@@ -10214,7 +10258,7 @@ fn cg_darr2_literal(es: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<S
                 for (p, ie) in inner.iter().enumerate() {
                     cg_expr(ie, env, sigs, strs, out, target);
                     if expr_ty(ie, env, sigs) == Ty::I64 {
-                        out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                        cg_i64_tagged(out);
                     }
                     if expr_ty(ie, env, sigs) == Ty::Bool {
                         out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -10287,7 +10331,7 @@ fn cg_darr1_literal(es: &[Expr], out: &mut String) {
     out.push_str("    mov %rax, %r11\n");
     for (i, e) in es.iter().enumerate() {
         let (tag, val) = match e {
-            Expr::Int(v) => (0i64, v.clone()),
+            Expr::Int(v) => (9i64, v.clone()),
             Expr::Log(b) => (3i64, if *b { "1".to_string() } else { "0".to_string() }),
             _ => unreachable!("checker"),
         };
@@ -10314,7 +10358,7 @@ fn cg_darrdyn_literal(es: &[Expr], strs: &mut Vec<String>, out: &mut String) {
         match e {
             // imm64 payloads go through a register: a 64-bit immediate
             // cannot be encoded as a store operand (verifier 5085ee9).
-            Expr::Int(v) => out.push_str(&format!("    mov ${}, %r10\n    mov (%rsp), %r11\n    movq $0, {}(%r11)\n    mov %r10, {}(%r11)\n", v, i * 16, i * 16 + 8)),
+            Expr::Int(v) => out.push_str(&format!("    mov ${}, %r10\n    mov (%rsp), %r11\n    movq $9, {}(%r11)\n    mov %r10, {}(%r11)\n", v, i * 16, i * 16 + 8)),
             Expr::Log(b) => out.push_str(&format!("    mov (%rsp), %r11\n    movq $3, {}(%r11)\n    movq ${}, {}(%r11)\n", i * 16, if *b { 1 } else { 0 }, i * 16 + 8)),
             Expr::Nil => out.push_str(&format!("    mov (%rsp), %r11\n    movq $1, {}(%r11)\n    movq $0, {}(%r11)\n", i * 16, i * 16 + 8)),
             Expr::Str(s) => {
@@ -10654,7 +10698,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 *frame += 8; // hidden slot holding the evaluated end bound
                 // Reuse (hk323): the existing slot is written, no new one.
                 if !env.iter().any(|v| v.name == *var) {
-                    *frame += 8;
+                    *frame += size_of(Ty::I64);
                     env.push(CgLocal { name: var.clone(), ty: Ty::I64, off: *frame });
                 }
                 layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names);
@@ -10673,7 +10717,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 // word; string/dyn the two-word pair).
                 if !matches!(sel, Expr::Var(_)) {
                     match expr_ty(sel, env, sigs) {
-                        Ty::I64 => *frame += 8,
+                        Ty::I64 => *frame += size_of(Ty::I64),
                         _ => *frame += 16,
                     }
                 }
@@ -10834,7 +10878,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 out.push_str(&format!("    cmp $2, %r10\n    je .Ldys{}\n    cmp $4, %r10\n    je .Ldys{}\n", lid, lid));
                 match op {
                     CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq => {
-                        out.push_str(&format!("    cmp $0, %r10\n    je .Ldyn{}\n", lid));
+                        out.push_str(&format!("    cmp $0, %r10\n    je .Ldyn{}\n    cmp $9, %r10\n    je .Ldyn{}\n", lid,lid));
                         // tag 1 (NIL) or any other tag: the previous
                         // fold - `=` is .F., `#` is .T. (hk35, n1);
                         // `==` against a string answers .F. for a NIL
@@ -10924,14 +10968,14 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                         // registered failure mode - hk139/hk139b/
                         // hk139c).
                         cg_expr(a, env, sigs, strs, out, target);
-                        if ta == Ty::I64 { out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n"); }
+                        if ta == Ty::I64 { cg_i64_tagged(out); }
                         if ta == Ty::Bool { out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"); }
                         match target {
                             Target::Linux => out.push_str("    push %rax\n    push %rdx\n"),
                             Target::Windows => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n"),
                         }
                         cg_expr(b, env, sigs, strs, out, target);
-                        if tb == Ty::I64 { out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n"); }
+                        if tb == Ty::I64 { cg_i64_tagged(out); }
                         if tb == Ty::Bool { out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"); }
                         out.push_str("    mov %rax, %rcx\n    mov %rdx, %r8\n");
                         match target {
@@ -11341,7 +11385,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
                         out.push_str(&format!("    cmp $2, %rax\n    je .Lprs{}\n    cmp $4, %rax\n    je .Lprs{}\n    cmp $7, %rax\n    je .Lprf{}\n", id, id, id));
                         if !stderr && !raw {
-                            out.push_str("    cmp $0, %rax\n    je 87f\n    cmp $1, %rax\n    je 87f\n    cmp $3, %rax\n    jne 88f\n87:\n    push %rdx\n    push %rax\n    call hbc_pflush\n    pop %rax\n    pop %rdx\n88:\n");
+                            out.push_str("    cmp $0, %rax\n    je 87f\n    cmp $9, %rax\n    je 87f\n    cmp $1, %rax\n    je 87f\n    cmp $3, %rax\n    jne 88f\n87:\n    push %rdx\n    push %rax\n    call hbc_pflush\n    pop %rax\n    pop %rdx\n88:\n");
                         }
                         out.push_str(&format!("    call hbc_print_dyncell\n    jmp .Lpre{}\n", id));
                         out.push_str(&format!(".Lprs{}:\n    mov %rdx, %rax\n    mov -8(%rax), %rdx\n", id));
@@ -11431,7 +11475,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         // Literal (or compile-time foldable, hk326) keeps
                         // literal provenance; a runtime-computed integer
                         // follows the asymmetric 10/20 field (hk327/hk328).
-                        Ty::I64 => out.push_str(if fold_int(e).is_some() { "    call hbc_print_i64\n" } else { "    call hbc_print_i64c\n" }),
+                        Ty::I64 => out.push_str("    test %rdx, %rdx\n    jz 991f\n    call hbc_print_i64\n    jmp 992f\n991:\n    call hbc_print_i64c\n992:\n"),
                         Ty::Str | Ty::StrOwn => {
                             // Line-end space trim (hk22/hk24): only the
                             // LAST visible item can trail spaces. The
@@ -11454,13 +11498,12 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         }
                         Ty::Dyn => {
                             // DArrDyn cell reads carry literal provenance
-                            // (piece 1a cells are literal-only): the lit
-                            // variant prints tag 0 with the literal rule.
+                            // Integer tags carry their own display provenance;
+                            // the container's static type does not choose it.
                             if !stderr && !raw {
-                                out.push_str(&format!("    cmp $0, %rax\n    je 87f\n    cmp $1, %rax\n    je 87f\n    cmp $3, %rax\n    je 87f\n    cmp $2, %rax\n    je 89f\n    cmp $4, %rax\n    jne 88f\n89:\n    mov -8(%rdx), %rcx\n    test %rcx, %rcx\n    jz 88f\n87:\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n88:\n", off, off + 8));
+                                out.push_str(&format!("    cmp $0, %rax\n    je 87f\n    cmp $9, %rax\n    je 87f\n    cmp $1, %rax\n    je 87f\n    cmp $3, %rax\n    je 87f\n    cmp $2, %rax\n    je 89f\n    cmp $4, %rax\n    jne 88f\n89:\n    mov -8(%rdx), %rcx\n    test %rcx, %rcx\n    jz 88f\n87:\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n88:\n", off, off + 8));
                             }
-                            let lit_cell = matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && x.ty == Ty::DArrDyn));
-                            out.push_str(if lit_cell { "    call hbc_print_dynlit\n" } else { "    call hbc_print_dyn\n" });
+                            out.push_str("    call hbc_print_dyn\n");
                             // An owned temporary (a call result) releases a
                             // tag-4 payload right after printing; a Var stays
                             // owned by its slot, and a DArrDyn cell read stays
@@ -11573,7 +11616,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 *frame += size_of(t);
                 let off = *frame;
                 if bare_cnt {
-                    out.push_str(&format!("    movq $0, -{}(%rbp)\n", off));
+                    out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", off,off-8));
                     env.push(CgLocal { name: id.clone(), ty: t, off });
                     continue;
                 }
@@ -11588,7 +11631,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                             cg_value(v, env, sigs, strs, out, target);
                             if expr_ty(v, env, sigs) == Ty::I64 {
-                                out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                                cg_i64_tagged(out);
                             }
                             if expr_ty(v, env, sigs) == Ty::Bool {
                                 out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -11601,6 +11644,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     }
                 }
                 match t {
+                    Ty::I64 => {
+                        if bare_cnt {out.push_str("    xor %eax, %eax\n    xor %edx, %edx\n");}else{cg_value(e,env,sigs,strs,out,target);}
+                        out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",off,off-8));
+                    }
                     Ty::NumLocal => {
                         cg_num(e,env,sigs,strs,out,target);
                         out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",off,off-8));
@@ -11615,7 +11662,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     _ => {
                         cg_value(e, env, sigs, strs, out, target);
                         if i64_init {
-                            out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                            cg_i64_tagged(out);
                         }
                         if byref_str {
                             // rodata -> owned copy (hbc_strcpy), or the
@@ -11719,7 +11766,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // return expression is tagged into the {0, payload} pair.
                 if expr_ty(e, env, sigs) == Ty::I64
                     && sigs.iter().any(|sg| sg.name == fname && sg.ret == Some(Ty::Dyn)) {
-                    out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                    cg_i64_tagged(out);
                 }
                 // A rodata string returned under an owned-string signature
                 // (Str/StrOwn unification): the caller owns the result, so
@@ -11792,9 +11839,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     cg_value(sel, env, sigs, strs, out, target);
                     match st {
                         Ty::I64 => {
-                            *frame += 8;
+                            *frame += size_of(Ty::I64);
                             let off = *frame;
-                            out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
+                            out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off,off-8));
                             env.push(CgLocal { name: hname.clone(), ty: Ty::I64, off });
                             (hname, off, false)
                         }
@@ -11850,7 +11897,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             // equality; every other tag is a non-match
                             // (cross-family is .F. in SWITCH, oracle
                             // sw-dyn-xsn - never an error here).
-                            out.push_str(&format!("    cmpq $0, -{}(%rbp)\n    jne {}\n", hoff, skip));
+                            let numeric=fresh_lbl();
+                            out.push_str(&format!("    cmpq $0, -{}(%rbp)\n    je .Lswfmt{}\n    cmpq $9, -{}(%rbp)\n    jne {}\n.Lswfmt{}:\n", hoff,numeric,hoff,skip,numeric));
                             out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov ${}, %r11\n    cmp %r11, %rax\n    je {}\n", hoff - 8, v, stub));
                             out.push_str(&format!("{}:\n", skip));
                         }
@@ -11945,8 +11993,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // counter; otherwise a fresh slot.
                 let reuse_off = env.iter().rev().find(|v| v.name == *var && v.ty == Ty::I64).map(|v| v.off);
                 cg_value(start, env, sigs, strs, out, target);
-                let i_off = if let Some(o) = reuse_off { o } else { *frame += 8; *frame };
-                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", i_off));
+                let i_off = if let Some(o) = reuse_off { o } else { *frame += size_of(Ty::I64); *frame };
+                out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", i_off,i_off-8));
                 cg_value(end, env, sigs, strs, out, target);
                 *frame += 8;
                 let end_off = *frame;
@@ -11972,7 +12020,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // Advancing past the i64 range would wrap the counter and
                 // the loop would not terminate: overflow ends the loop.
                 out.push_str(&format!("    jo .Lfore_{}_{}\n", fname, id));
-                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", i_off));
+                out.push_str(&format!("    mov %rax, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", i_off,i_off-8));
                 out.push_str(&format!("    jmp .Lforc_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lfore_{}_{}:\n", fname, id));
             }
@@ -12288,6 +12336,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let l = env.iter().find(|v| v.name == *id).expect("analysis checked the local exists");
                 let off = l.off;
                 let lty = l.ty;
+                if t==Ty::I64 && (lty==Ty::I64 || (lty==Ty::RefI64 && i64_meta_ref(l))) {
+                    cg_value(e,env,sigs,strs,out,target);
+                    if lty==Ty::I64 {out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",off,off-8));}
+                    else {out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov %rax, (%r11)\n    mov %rdx, 8(%r11)\n",off));}
+                    continue;
+                }
                 // Move-LHS string grow (Harbour's own pattern, hvm.c
                 // hb_vmPlus + itemapi.c hb_itemReSizeString): `s := s + rhs`
                 // on a plain owned local appends through hbc_strgrow - in
@@ -12356,7 +12410,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                             cg_value(v, env, sigs, strs, out, target);
                             if expr_ty(v, env, sigs) == Ty::I64 {
-                                out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                                cg_i64_tagged(out);
                             }
                             if expr_ty(v, env, sigs) == Ty::Bool {
                                 out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -12424,9 +12478,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // Dyn slot, i64 value: tag it in (probe n2:
                                 // reassignment re-tags a live variable).
                                 // A live tag-4 payload is released first.
-                                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                                 cg_dyn_free_old(out, off);
-                                out.push_str("    mov (%rsp), %rdx\n    add $16, %rsp\n    xor %eax, %eax\n");
+                                out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
+                                if t==Ty::I64 {cg_i64_tagged(out);}else{out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");}
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
                             }
@@ -12435,7 +12490,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // i64 slot receiving a Dyn: the tag is
                                 // checked at runtime (NIL -> clean error).
                                 out.push_str("    call hbc_dyn_to_i64\n");
-                                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
+                                out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off,off-8));
                             }
                             Ty::Dyn => {
                                 // A Var is a borrowed VIEW of its slot: a
@@ -12579,7 +12634,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         for (p, xe) in inner.iter().enumerate() {
                             cg_expr(xe, env, sigs, strs, out, target);
                             if expr_ty(xe, env, sigs) == Ty::I64 {
-                                out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                                cg_i64_tagged(out);
                             }
                             if expr_ty(xe, env, sigs) == Ty::Bool {
                                 out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -12622,7 +12677,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // (i64 -> {0, v}, NIL/Dyn -> copied pair).
                     cg_expr(e, env, sigs, strs, out, target);
                     if expr_ty(e, env, sigs) == Ty::I64 {
-                        out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                        cg_i64_tagged(out);
                     }
                     if expr_ty(e, env, sigs) == Ty::Bool {
                         out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -12886,7 +12941,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 cg_value(e, env, sigs, strs, out, target);
                 out.push_str("    sub $96, %rsp\n");
                 match rt {
-                    Ty::I64 => out.push_str("    mov %rax, %rdx\n    movq $0, 24(%rsp)\n    movq $0, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    movq $0, 56(%rsp)\n"),
+                    Ty::I64 => {cg_i64_tagged(out);out.push_str("    movq $0, 24(%rsp)\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    movq $0, 56(%rsp)\n");},
                     Ty::Bool => out.push_str("    mov %rax, %rdx\n    movq $0, 24(%rsp)\n    movq $3, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    movq $0, 56(%rsp)\n"),
                     Ty::Str => out.push_str("    movq $1, 24(%rsp)\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    movq $0, 56(%rsp)\n"),
                     Ty::StrOwn => {
@@ -12918,6 +12973,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     cmp $8, %rax
     je hbc_type_error
     cmp $0, %rax
+    je .Lfdp@K@
+    cmp $9, %rax
     je .Lfdp@K@
     cmp $1, %rax
     je .Lfdp@K@
@@ -13095,7 +13152,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         for (p, xe) in inner.iter().enumerate() {
                             cg_expr(xe, env, sigs, strs, out, target);
                             if expr_ty(xe, env, sigs) == Ty::I64 {
-                                out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                                cg_i64_tagged(out);
                             }
                             if expr_ty(xe, env, sigs) == Ty::Bool {
                                 out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -13131,7 +13188,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 } else {
                 cg_expr(e, env, sigs, strs, out, target);
                 if expr_ty(e, env, sigs) == Ty::I64 {
-                    out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                    cg_i64_tagged(out);
                 }
                 if expr_ty(e, env, sigs) == Ty::Bool {
                     out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -13183,7 +13240,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
                 cg_expr(e, env, sigs, strs, out, target);
                 if expr_ty(e, env, sigs) == Ty::I64 {
-                    out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                    cg_i64_tagged(out);
                 }
                 if expr_ty(e, env, sigs) == Ty::Bool {
                     out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -13239,7 +13296,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
                 cg_expr(e, env, sigs, strs, out, target);
                 if expr_ty(e, env, sigs) == Ty::I64 {
-                    out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                    cg_i64_tagged(out);
                 }
                 if expr_ty(e, env, sigs) == Ty::Bool {
                     out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -13297,7 +13354,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 cg_value(ve, env, sigs, strs, out, target);
                 if expr_ty(ve, env, sigs) == Ty::I64 {
-                    out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                    cg_i64_tagged(out);
                 }
                 if expr_ty(ve, env, sigs) == Ty::Bool {
                     out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -13392,7 +13449,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let var = env.iter().rev().find(|x| x.name == *id).expect("checked");
                 cg_value(e, env, sigs, strs, out, target);
                 if expr_ty(e, env, sigs) == Ty::I64 {
-                    out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                    cg_i64_tagged(out);
                 }
                 if expr_ty(e, env, sigs) == Ty::Bool {
                     out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -13428,7 +13485,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         for (p2, ie2) in inner.iter().enumerate() {
                             cg_expr(ie2, env, sigs, strs, out, target);
                             if expr_ty(ie2, env, sigs) == Ty::I64 {
-                                out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                                cg_i64_tagged(out);
                             }
                             if expr_ty(ie2, env, sigs) == Ty::Bool {
                                 out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -13507,7 +13564,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     let rt = expr_ty(e, env, sigs);
                     cg_value(e, env, sigs, strs, out, target);
                     match rt {
-                        Ty::I64 => out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n"),
+                        Ty::I64 => cg_i64_tagged(out),
                         Ty::Bool => out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"),
                         Ty::Str => out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"),
                         Ty::Dyn => {} // NIL literal: already the {1, 0} pair
@@ -13531,7 +13588,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // the temporaries stay owned here.
                     cg_value(e, env, sigs, strs, out, target);
                     if expr_ty(e, env, sigs) == Ty::I64 {
-                        out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                        cg_i64_tagged(out);
                     }
                     if expr_ty(e, env, sigs) == Ty::Bool {
                         out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -13557,7 +13614,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // so the write lands in the owner's cell (oracle hk86).
                     cg_expr(e, env, sigs, strs, out, target);
                     if expr_ty(e, env, sigs) == Ty::I64 {
-                        out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                        cg_i64_tagged(out);
                     }
                     if expr_ty(e, env, sigs) == Ty::Bool {
                         out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -13604,7 +13661,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
                 cg_expr(e, env, sigs, strs, out, target);
                 if expr_ty(e, env, sigs) == Ty::I64 {
-                    out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                    cg_i64_tagged(out);
                 }
                 if expr_ty(e, env, sigs) == Ty::Bool {
                     out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -13649,7 +13706,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
                 cg_expr(e, env, sigs, strs, out, target);
                 if expr_ty(e, env, sigs) == Ty::I64 {
-                    out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                    cg_i64_tagged(out);
                 }
                 if expr_ty(e, env, sigs) == Ty::Bool {
                     out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -13688,7 +13745,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
                 cg_expr(e, env, sigs, strs, out, target);
                 if expr_ty(e, env, sigs) == Ty::I64 {
-                    out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+                    cg_i64_tagged(out);
                 }
                 if expr_ty(e, env, sigs) == Ty::Bool {
                     out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
@@ -13794,7 +13851,7 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
     let mut lenv: Vec<CgLocal> = Vec::new();
     let mut frame = 0usize;
     for p in params {
-        frame += 8;
+        frame += size_of(Ty::I64);
         lenv.push(CgLocal { name: p.clone(), ty: Ty::I64, off: frame });
     }
     let n = lenv.len();
@@ -13816,8 +13873,8 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
     trace_location(&format!("<block#{}>", id), block_line, strs, out);
     for (k, v) in lenv.iter().enumerate() {
         let src = 16 * (n - k);
-        out.push_str(&format!("    mov {}(%rbp), %rax\n", src));
-        out.push_str(&format!("    mov %rax, -{}(%rbp)\n", v.off));
+        out.push_str(&format!("    mov {}(%rbp), %rax\n    mov {}(%rbp), %rdx\n", src,src+8));
+        out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", v.off,v.off-8));
     }
     for (i, e) in body.iter().enumerate() {
         cg_expr(e, &lenv, sigs, strs, out, target);
@@ -13837,13 +13894,19 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         Some(m) => format!("{}__br{}", f.name, m.iter().map(|b| if *b { "1" } else { "0" }).collect::<String>()),
     };
     set_numeric(f);
+    I64_META_REFS.with(|c|{
+        let mut refs=std::collections::HashSet::new();
+        for st in &f.stmts {if let Stmt::Static(_,id,_)=st {refs.insert(id.clone());}}
+        if let Some(mask)=byref {if let Some(sg)=sigs.iter().find(|s|s.name==f.name) {for(i,p)in f.params.iter().enumerate(){if mask.get(i).copied().unwrap_or(false)&&sg.params[i]==Ty::I64 {refs.insert(p.clone());}}}}
+        *c.borrow_mut()=refs;
+    });
     // Fixed-i64 persistent or borrowed storage cannot silently wrap.
     // Full numeric promotion in these slots remains a named boundary.
     CHECKED_I64.with(|c| c.set(f.stmts.iter().any(|s| matches!(s, Stmt::Static(..))) || byref.map(|m|m.iter().any(|b|*b)).unwrap_or(false)));
     if byref.is_none() {
         for st in &f.stmts {
             if let Stmt::Static(_, id, Expr::Int(value)) = st {
-                out.push_str(&format!("    .data\n    .align 8\nhbc_static_{}_{}_{}: .quad {}\n    .text\n", f.name.len(), f.name, id, value));
+                out.push_str(&format!("    .data\n    .align 8\nhbc_static_{}_{}_{}: .quad {}, 1\n    .text\n", f.name.len(), f.name, id, value));
             }
         }
     }
@@ -13935,10 +13998,10 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     // Copy incoming arguments from the caller's stack into the parameter
     // slots: arguments were pushed left to right, so arg k sits at
     // 16*(n-k)(%rbp) after this prologue (the last argument is nearest).
-    // A string argument occupies both words of its slot (pointer, length).
+    // Two-word arguments carry pointer/length, value/format, or tag/payload.
     for (k, v) in lenv[..nparams].iter().enumerate() {
         let src = 16 * (nparams - k);
-        if v.ty == Ty::Str || v.ty == Ty::DArr || v.ty == Ty::Dyn || v.ty == Ty::DArr2 || v.ty == Ty::DArr3 || v.ty == Ty::DArr4 || v.ty == Ty::DArrS || v.ty == Ty::StrOwn || v.ty == Ty::Hash || v.ty == Ty::F64 {
+        if v.ty == Ty::I64 || v.ty == Ty::Str || v.ty == Ty::DArr || v.ty == Ty::Dyn || v.ty == Ty::DArr2 || v.ty == Ty::DArr3 || v.ty == Ty::DArr4 || v.ty == Ty::DArrS || v.ty == Ty::StrOwn || v.ty == Ty::Hash || v.ty == Ty::F64 {
             // Two-word slots: (pointer, length) for owned data; (value
             // bits, packed metadata) for a float parameter (63zd).
             out.push_str(&format!("    mov {}(%rbp), %rax\n    mov {}(%rbp), %rdx\n", src, src + 8));
@@ -15240,17 +15303,20 @@ hbc_hsetcasematch:
 41: mov %rsi, -16(%rax)
     ret
 
-# hbc_hscan: rdi = hash slot address, rsi = value tag (0 = i64,
+# hbc_hscan: rdi = hash slot address, rsi = value tag (0/9 = i64,
 # 1 = NIL), rdx = value payload, rcx = start (1-based; 0 scans from
 # the first live entry, negative finds nothing). Returns rax = the
 # 1-based insertion-order position of the first entry whose stored
-# {tag, payload} equals the value, 0 when absent (hk178-hk180: first
+# numeric kind and payload equal the value, 0 when absent (hk178-hk180: first
 # match wins, the start is inclusive, a stored NIL matches a NIL
 # argument; hk179: start 0/negative/out-of-range and empty-hash
 # edges). Leaf: caller-saved registers only, no allocation, the hash
 # is only read.
 hbc_hscan:
-    test %rcx, %rcx
+    cmp $9, %rsi
+    jne 849f
+    xor %esi, %esi
+849: test %rcx, %rcx
     js 853f
     je 850f
     dec %rcx
@@ -15263,7 +15329,11 @@ hbc_hscan:
     mov %rcx, %rax
     shl $5, %rax
     add %r8, %rax
-    cmp 16(%rax), %rsi
+    mov 16(%rax), %r10
+    cmp $9, %r10
+    jne 848f
+    xor %r10d, %r10d
+848: cmp %r10, %rsi
     jne 852f
     cmp 24(%rax), %rdx
     jne 852f
@@ -16278,8 +16348,8 @@ hbc_print_i64:
 # stamps runtime integers with the 10/20 macro length (hbdefs.h; oracle
 # w_var, 31Oct): 10 for -999999999..9999999999, else 20. Literal/folded
 # integers use hbc_print_i64 instead (positives max(10, digits+1));
-# Dyn-array cells in piece 1a hold literal-only values, so the Dyn
-# tag-0 arm prints via hbc_print_i64.
+# Dyn integers carry the same provenance explicitly: tag 9 is
+# literal/copy, tag 0 runtime-computed.
 hbc_print_i64c:
     push %rbp
     mov %rsp, %rbp
@@ -16337,9 +16407,14 @@ hbc_print_i64c:
 # probe n1) for tag 1, the raw string bytes for tag 2 (payload points at
 # the bytes, length header at payload-8 - same layout as a hash key
 # copy); tag 8 (Dyn-held array) prints NOTHING (Harbour oracle: a whole
-# array prints as an empty line); otherwise the numeric payload via
-# hbc_print_i64.
+# array prints as an empty line). Integer tag 9 uses hbc_print_i64;
+# tag 0 uses the runtime width from hbc_print_i64c.
 hbc_print_dyn:
+    cmp $9, %rax
+    jne 90f
+    mov %rdx, %rax
+    jmp hbc_print_i64
+90:
     test %rax, %rax
     jz 8f
     cmp $2, %rax
@@ -16381,6 +16456,11 @@ hbc_print_dyn:
 # every other tag (5 is reserved) raise the clean registered type error.
 # The cell is BORROWED: nothing is ever freed here.
 hbc_print_dyncell:
+    cmp $9, %rax
+    jne 90f
+    mov %rdx, %rax
+    jmp hbc_print_i64
+90:
     test %rax, %rax
     jz 8f
     cmp $1, %rax
@@ -16413,50 +16493,21 @@ hbc_print_dyncell:
     mov -8(%rax), %rdx
     jmp hbc_print_str
 
-# hbc_print_dynlit: hbc_print_dyn variant for DArrDyn LITERAL cell reads
-# (piece 1a): every cell is born from a literal, and Harbour stamps the
-# literal display length (oracle v_w/width_variable, 31Oct), so tag 0
-# prints via hbc_print_i64. Dyn values WITHOUT literal provenance keep
-# hbc_print_dyn (i64c macro) - the pre-existing ABI contract.
-hbc_print_dynlit:
-    test %rax, %rax
-    jz 8f
-    cmp $2, %rax
-    je 9f
-    cmp $4, %rax
-    je 9f
-    cmp $3, %rax
-    je 11f
-    lea .Lnilmsg(%rip), %rsi
-    mov $3, %edx
-    mov $1, %eax
-    mov $1, %edi
-    syscall
-    ret
-8:  mov %rdx, %rax
-    jmp hbc_print_i64
-11: lea .Lfmsg(%rip), %rsi
-    test %rdx, %rdx
-    jz 12f
-    lea .Ltmsg(%rip), %rsi
-12: mov $3, %edx
-    mov $1, %eax
-    mov $1, %edi
-    syscall
-    ret
-9:  mov %rdx, %rax
-    mov -8(%rax), %rdx
-    jmp hbc_print_str
-
-
-# hbc_dyn_to_i64: %rax = tag, %rdx = payload -> %rax = payload. NIL here is
+# hbc_dyn_to_i64: tagged pair -> %rax = value, %rdx = format
+# (0 runtime, 1 literal/copy). NIL here is
 # a Harbour type error (arithmetic/ordering/indexing on NIL); its dialog
 # cannot be probed headless, so this fails cleanly - registered failure
 # mode alongside hbc_bound_error, NOT a compat success.
 hbc_dyn_to_i64:
+    cmp $9, %rax
+    je 91f
     test %rax, %rax
     jnz hbc_type_error
     mov %rdx, %rax
+    xor %edx, %edx
+    ret
+91: mov %rdx, %rax
+    mov $1, %edx
     ret
 # hbc_aview_get (ains piece 1b, spec v3): rdi = header {kind, ptr, len},
 # rsi = 1-based index, rdx = 32-byte out slot in the CALLER frame (only
@@ -16550,6 +16601,13 @@ hbc_dynlog_error:
 # dialog hangs headless) - clean named exit 1 via hbc_dyncmp_eq_error,
 # registered failure mode, not exact equivalence. Leaf routine.
 hbc_dyn_eq:
+    cmp $9, %rax
+    jne 91f
+    xor %eax, %eax
+91: cmp $9, %rcx
+    jne 92f
+    xor %ecx, %ecx
+92:
     # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
     cmp $4, %rax
     jne 80f
@@ -16596,6 +16654,13 @@ hbc_dyn_eq:
 # equivalence. A NIL casilla in an ordering comparison is a Harbour type
 # error: hbc_type_error (registered failure mode). Leaf routine.
 hbc_dynxcmp:
+    cmp $9, %rax
+    jne 91f
+    xor %eax, %eax
+91: cmp $9, %rcx
+    jne 92f
+    xor %ecx, %ecx
+92:
     # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
     cmp $4, %rax
     jne 80f
@@ -16645,6 +16710,13 @@ hbc_dynxcmp:
 # dialog hangs headless): a clean named exit 1, registered failure mode,
 # not exact equivalence. Leaf routine: the error path is a noreturn stub.
 hbc_dynxeq_dd:
+    cmp $9, %rax
+    jne 91f
+    xor %eax, %eax
+91: cmp $9, %rcx
+    jne 92f
+    xor %ecx, %ecx
+92:
     # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
     cmp $4, %rax
     jne 80f
@@ -18346,8 +18418,8 @@ hbc_print_i64:
 # stamps runtime integers with the 10/20 macro length (hbdefs.h; oracle
 # w_var, 31Oct): 10 for -999999999..9999999999, else 20. Literal/folded
 # integers use hbc_print_i64 instead (positives max(10, digits+1));
-# Dyn-array cells in piece 1a hold literal-only values, so the Dyn
-# tag-0 arm prints via hbc_print_i64.
+# Dyn integers carry the same provenance explicitly: tag 9 is
+# literal/copy, tag 0 runtime-computed.
 hbc_print_i64c:
     push %rbp
     mov %rsp, %rbp
@@ -18400,9 +18472,14 @@ hbc_print_i64c:
 # probe n1) for tag 1, the raw string bytes for tag 2 (payload points at
 # the bytes, length header at payload-8 - same layout as a hash key
 # copy); tag 8 (Dyn-held array) prints NOTHING (Harbour oracle: a whole
-# array prints as an empty line); otherwise the numeric payload via
-# hbc_print_i64.
+# array prints as an empty line). Integer tag 9 uses hbc_print_i64;
+# tag 0 uses the runtime width from hbc_print_i64c.
 hbc_print_dyn:
+    cmp $9, %rax
+    jne 90f
+    mov %rdx, %rax
+    jmp hbc_print_i64
+90:
     push %rbp
     mov %rsp, %rbp
     sub $48, %rsp
@@ -18446,6 +18523,11 @@ hbc_print_dyn:
 # every other tag (5 is reserved) raise the clean registered type error.
 # The cell is BORROWED: nothing is ever freed here.
 hbc_print_dyncell:
+    cmp $9, %rax
+    jne 90f
+    mov %rdx, %rax
+    jmp hbc_print_i64
+90:
     push %rbp
     mov %rsp, %rbp
     sub $48, %rsp
@@ -18481,51 +18563,19 @@ hbc_print_dyncell:
 9:  leave
     ret
 
-# hbc_print_dynlit: hbc_print_dyn variant for DArrDyn LITERAL cell reads
-# (piece 1a): every cell is born from a literal, and Harbour stamps the
-# literal display length (oracle v_w/width_variable, 31Oct), so tag 0
-# prints via hbc_print_i64. Dyn values WITHOUT literal provenance keep
-# hbc_print_dyn (i64c macro) - the pre-existing ABI contract.
-hbc_print_dynlit:
-    push %rbp
-    mov %rsp, %rbp
-    sub $48, %rsp
-    test %rax, %rax
-    jz 8f
-    cmp $2, %rax
-    je 10f
-    cmp $4, %rax
-    je 10f
-    cmp $3, %rax
-    je 11f
-    lea .Lnilmsg(%rip), %rax
-    mov $3, %edx
-    call hbc_print_str
-    jmp 9f
-8:  mov %rdx, %rax
-    call hbc_print_i64
-    jmp 9f
-10: mov %rdx, %rax
-    mov -8(%rax), %rdx
-    call hbc_print_str
-    jmp 9f
-11: lea .Lfmsg(%rip), %rax
-    test %rdx, %rdx
-    jz 12f
-    lea .Ltmsg(%rip), %rax
-12: mov $3, %edx
-    call hbc_print_str
-    jmp 9f
-9:  leave
-    ret
-
-
-# hbc_dyn_to_i64: %rax = tag, %rdx = payload -> %rax = payload. NIL here is
+# hbc_dyn_to_i64: tagged pair -> %rax = value, %rdx = format
+# (0 runtime, 1 literal/copy). NIL here is
 # a Harbour type error; see the linux copy for the failure-mode note.
 hbc_dyn_to_i64:
+    cmp $9, %rax
+    je 91f
     test %rax, %rax
     jnz hbc_type_error
     mov %rdx, %rax
+    xor %edx, %edx
+    ret
+91: mov %rdx, %rax
+    mov $1, %edx
     ret
 # hbc_aview_get (ains piece 1b, spec v3): rdi = header {kind, ptr, len},
 # rsi = 1-based index, rdx = 32-byte out slot in the CALLER frame (only
@@ -18620,6 +18670,13 @@ hbc_dynlog_error:
 # dialog hangs headless) - clean named exit 1 via hbc_dyncmp_eq_error,
 # registered failure mode, not exact equivalence. Leaf routine.
 hbc_dyn_eq:
+    cmp $9, %rax
+    jne 91f
+    xor %eax, %eax
+91: cmp $9, %rcx
+    jne 92f
+    xor %ecx, %ecx
+92:
     # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
     cmp $4, %rax
     jne 80f
@@ -18666,6 +18723,13 @@ hbc_dyn_eq:
 # equivalence. A NIL casilla in an ordering comparison is a Harbour type
 # error: hbc_type_error (registered failure mode). Leaf routine.
 hbc_dynxcmp:
+    cmp $9, %rax
+    jne 91f
+    xor %eax, %eax
+91: cmp $9, %rcx
+    jne 92f
+    xor %ecx, %ecx
+92:
     # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
     cmp $4, %rax
     jne 80f
@@ -18715,6 +18779,13 @@ hbc_dynxcmp:
 # dialog hangs headless): a clean named exit 1, registered failure mode,
 # not exact equivalence. Leaf routine: the error path is a noreturn stub.
 hbc_dynxeq_dd:
+    cmp $9, %rax
+    jne 91f
+    xor %eax, %eax
+91: cmp $9, %rcx
+    jne 92f
+    xor %ecx, %ecx
+92:
     # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
     cmp $4, %rax
     jne 80f
