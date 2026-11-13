@@ -111,9 +111,9 @@ also visible at the dist upload commit
 binaries), and verified by running them
 (Linux natively, Windows under Wine 10.20, not real Windows): `2-hbc.exe`
 and `1-hbc` emit byte-identical assembly for the same input, and `3-hola.exe`
-prints its expected output. `dist/compile.sh` (Linux) and `dist/compile.bat` (Windows) chain the three
+prints its expected output. `dist/build.sh` (Linux) and `dist/build.bat` (Windows) chain the three
 steps for one program (`hbc` -> `as` -> `ld`) and stop at the first failing
-step. compile.sh was verified end-to-end on Linux; compile.bat chains the
+step. build.sh was verified end-to-end on Linux; build.bat chains the
 exact commands of section 3 and needs MinGW-w64 binutils on PATH on real
 Windows (not exercised under Wine, where our as/ld are Linux binaries).
 
