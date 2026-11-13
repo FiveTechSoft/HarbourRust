@@ -3219,10 +3219,25 @@ fn prescan_numeric(f: &Func) -> std::collections::HashSet<String> {
     loop {let old=mixed.clone();for (id,e) in &stores {if mixed.contains(*id){if let Expr::Var(v)=e {if declared.contains(v)&&!counters.contains(v)&&matches!(m.get(v),Some(1|2|3)){mixed.insert(v.clone());}}}}if old==mixed{break}}
     mixed
 }
+thread_local! {
+    static ROOT_PARAMS: std::cell::RefCell<std::collections::HashMap<String,std::collections::HashSet<String>>> = std::cell::RefCell::new(std::collections::HashMap::new());
+}
+fn root_param(f:&str,p:&str)->bool { ROOT_PARAMS.with(|m|m.borrow().get(f).map_or(false,|ps|ps.contains(p))) }
+fn root_position(f:&str,i:usize)->bool {
+    ROOT_POSITION.with(|m|m.borrow().get(f).map_or(false,|ps|ps.contains(&i)))
+}
+thread_local! {
+    static ROOT_VARIANTS: std::cell::RefCell<std::collections::BTreeSet<(String,Vec<bool>)>> = std::cell::RefCell::new(std::collections::BTreeSet::new());
+    static ROOT_POSITION: std::cell::RefCell<std::collections::HashMap<String,std::collections::HashSet<usize>>> = std::cell::RefCell::new(std::collections::HashMap::new());
+}
 fn static_dyn(id: &str) -> bool { STATIC_DYN.with(|s|s.borrow().contains(id)) }
 fn set_numeric(f: &Func) {
     NUM_LOCALS.with(|s| *s.borrow_mut()=prescan_numeric(f));
-    STATIC_DYN.with(|s|*s.borrow_mut()=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {Some(id.clone())}else{None}).collect());
+    STATIC_DYN.with(|s|{
+        let mut roots:std::collections::HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {Some(id.clone())}else{None}).collect();
+        for p in &f.params {if root_param(&f.name,p){roots.insert(p.clone());}}
+        *s.borrow_mut()=roots;
+    });
 }
 
 #[derive(Clone)]
@@ -3251,6 +3266,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     let mut pin: Vec<Option<Ty>> = vec![None; n];
     let mut lit: Vec<(String, Ty)> = Vec::new(); // literal-initialized locals
     let mut printed: Vec<bool> = vec![false; n]; // params printed as a whole-variable item
+    // Root-reference parameters keep tagged storage regardless of how their
+    // current value is used. Their full body still passes ordinary checking.
+    for(i,p)in f.params.iter().enumerate(){if root_param(&f.name,p){pin[i]=Some(Ty::Dyn);}}
     // ains piece 1b (spec v3): a parameter the call-site fixpoint already
     // flipped to an array view keeps that pin across rounds. Its body uses
     // are validated under the read-only view rules by the body check, so
@@ -3371,6 +3389,8 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     }
     // Pin parameter vars appearing directly (not under a call) in e.
     fn pin_vars(f: &Func, e: &Expr, ty: Ty, pin: &mut Vec<Option<Ty>>, n: usize) -> Result<(), String> {
+        if matches!(e,Expr::Var(v) if root_param(&f.name,v)){return Ok(());}
+
         // String parameters are uniformly OWNED strings (StrOwn): the
         // callee owns and frees its parameter, a rodata argument is
         // copied at the call boundary and an owned argument moves. One
@@ -3423,6 +3443,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 pin_vars(f, re, Ty::I64, pin, n)
             }
             Expr::Index(id, ie) => {
+                if root_param(&f.name,id) {return pin_vars(f,ie,Ty::I64,pin,n);}
                 if is_param(f, id).map(|pi| pin[pi] == Some(Ty::AView)).unwrap_or(false) {
                     // ains piece 1b: indexing a view parameter is a read;
                     // pinning only types the index expression.
@@ -4202,7 +4223,15 @@ fn expr_mentions(e: &Expr, name: &str) -> bool {
         Expr::Index3(id, i, j, k) => id == name || expr_mentions(i, name) || expr_mentions(j, name) || expr_mentions(k, name),
         Expr::Index4(id, i, j, k, l) => id == name || expr_mentions(i, name) || expr_mentions(j, name) || expr_mentions(k, name) || expr_mentions(l, name),
         Expr::ArrLit(es) => es.iter().any(|e| expr_mentions(e, name)),
-        _ => false,
+        // Hash literals, code blocks and message sends also carry expressions
+        // (and Dyn values). Block parameter shadowing is deliberately ignored:
+        // a spurious mention is conservative, a missed one is unsound.
+        Expr::HashLit(ps) => ps.iter().any(|(k, v)| expr_mentions(k, name) || expr_mentions(v, name)),
+        Expr::BlockLit(_, _, es) => es.iter().any(|e| expr_mentions(e, name)),
+        Expr::Send(o, _, args) => expr_mentions(o, name) || args.iter().any(|a| expr_mentions(a, name)),
+        // Leaf forms: no sub-expression and no variable name.
+        Expr::FloatV(..) | Expr::Float(..) | Expr::Int(_) | Expr::Str(_) | Expr::DArrNew
+        | Expr::SelfObj | Expr::SelfGet(_) | Expr::Nil | Expr::Log(_) => false,
     }
 }
 
@@ -5268,6 +5297,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Err(format!("line {}: `PCount` is not in this increment (the calling convention carries no argument count; `hb_PValue` over the declared parameters is the supported introspection)", n));
             }
             if is_builtin(id, "hb_pvalue") {
+                let cur=CUR_FN.with(|c|c.borrow().clone());
+                if ROOT_PARAMS.with(|m|m.borrow().get(&cur).map_or(false,|ps|!ps.is_empty())) {
+                    return Err(format!("line {}: hb_PValue cannot expose a persistent root-reference parameter in this increment",n));
+                }
                 // hb_PValue(n) (multiarg): the n-th DECLARED parameter of the
                 // enclosing function as a Dyn casilla; an out-of-range index
                 // is NIL. Extra call arguments beyond the declared list stay
@@ -5313,6 +5346,14 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // EXTRA arguments stay rejected (multiarg registered limit):
                 // hb_PValue introspection names only the declared list.
                 return Err(format!("line {}: `{}` takes {} argument(s), got {}", n, id, sig_params.len(), args.len()));
+            }
+            for i in 0..sig_params.len() {
+                if root_position(id,i) {
+                    match args.get(i) {
+                        Some(Expr::ByRef(v)) if static_dyn(v) => {},
+                        _=>return Err(format!("line {}: persistent root parameter {} of `{}` requires @persistent-root; by-value, omitted and ordinary LOCAL sources are not supported",n,i+1,id)),
+                    }
+                }
             }
             if args.len() < sig_params.len() {
                 // Harbour fills omitted trailing parameters with NIL
@@ -5453,6 +5494,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     continue;
                 }
                 if let Expr::ByRef(vn) = a {
+                    if root_position(id,i) && static_dyn(vn) {
+                        if !matches!(env.iter().find(|v|v.name==*vn),Some(v) if v.ty==Ty::Dyn && !v.moved) {
+                            return Err(format!("line {}: persistent root argument `{}` has invalid storage",n,vn));
+                        }
+                        continue;
+                    }
                     // `@x` (hk216 family): the callee gets an EXCLUSIVE
                     // borrow of the caller's own slot for the duration of
                     // the call; writes land in the caller's variable.
@@ -9710,7 +9757,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     // itself @-received, hk220): the slot already holds the
                     // owner's address - forward it, never its own address.
                     let v = env.iter().rev().find(|x| x.name == *vn).expect("checked");
-                    if matches!(v.ty, Ty::RefI64 | Ty::RefStrOwn) {
+                    if matches!(v.ty, Ty::RefI64 | Ty::RefStrOwn | Ty::RefDyn) {
                         out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
                     } else {
                         out.push_str(&format!("    lea -{}(%rbp), %rax\n", v.off));
@@ -10646,6 +10693,7 @@ fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String,
     }
     let mut out = std::collections::BTreeSet::new();
     for f in funcs { st(&f.stmts, &mut out); }
+    ROOT_VARIANTS.with(|m|out.extend(m.borrow().iter().cloned()));
     out
 }
 
@@ -14032,7 +14080,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
             // A parameter some caller feeds as `a[i]` arrives as the cell
             // ADDRESS (one word): borrow shape, never freed here.
             let pty = if own_sig.aview[i] { Ty::AView } else if own_sig.borrowed.get(i).copied().unwrap_or(false) && own_sig.params[i] == Ty::DArr { Ty::DArrRef } else if own_sig.borrowed.get(i).copied().unwrap_or(false) && own_sig.params[i] == Ty::DArr2 { Ty::DArrRef2 } else { own_sig.params[i] };
-            let pty = if byref.map(|m| m.get(i).copied().unwrap_or(false)).unwrap_or(false) {
+            let pty = if root_param(&f.name,p) {Ty::RefDyn} else if byref.map(|m| m.get(i).copied().unwrap_or(false)).unwrap_or(false) {
                 // `@`-received parameter: the slot holds the OWNER's slot
                 // address (one word); reads and writes go through it and
                 // the slot is never freed here (hk216/hk218).
@@ -19822,19 +19870,85 @@ enum Target { Linux, Windows }
 #[path = "llvm_scalar.rs"]
 mod llvm_scalar;
 
-// Persistent roots may not escape until sharing/borrowing is implemented.
-// This is a structural precheck, so inference retries cannot hide a panic
-// or admit an array alias as a scalar Dyn copy.
+// Persistent root values may not escape. Explicit @root calls use the
+// distinct stable-root reference category discovered above; owned Dyn
+// slots cannot silently join it. Recursive validation rejects other escapes.
+// Propagate a distinct stable-root reference category along explicit @ calls.
+// Only NIL-initialized STATIC storage starts this category; ordinary Dyn slots
+// never acquire the shared-payload layout through type inference.
+fn discover_root_params(fs:&[Func]) {
+    use std::collections::{HashMap,HashSet};
+    fn ex(e:&Expr,out:&mut Vec<(String,usize,String,Vec<bool>)>) {match e {
+        Expr::Call(id,args)=>{for(i,a)in args.iter().enumerate(){if let Expr::ByRef(v)=a {out.push((id.clone(),i,v.clone(),args.iter().map(|a|matches!(a,Expr::ByRef(_))).collect()));}ex(a,out);}},
+        Expr::Seq(es)|Expr::ArrLit(es)|Expr::BlockLit(_,_,es)=>for e in es{ex(e,out);},
+        Expr::Bin(_,a,b)|Expr::Cmp(_,a,b)|Expr::LAnd(a,b)|Expr::LOr(a,b)|Expr::IdxCompound(_,a,_,b)=>{ex(a,out);ex(b,out);},
+        Expr::Set(_,a)|Expr::LNot(a)|Expr::Index(_,a)=>ex(a,out),
+        Expr::Index2(_,a,b)=>{ex(a,out);ex(b,out);},
+        Expr::Index3(_,a,b,c)=>for e in [a,b,c]{ex(e,out);},
+        Expr::Index4(_,a,b,c,d)=>for e in [a,b,c,d]{ex(e,out);},
+        Expr::HashLit(es)=>for(a,b)in es{ex(a,out);ex(b,out);},
+        Expr::Send(o,_,es)=>{ex(o,out);for e in es{ex(e,out);}},
+        _=>{},
+    }}
+    fn st(ss:&[Stmt],out:&mut Vec<(String,usize,String,Vec<bool>)>) {for s in ss {match s {
+        Stmt::Local(_,_,e)|Stmt::Static(_,_,e)|Stmt::Assign(_,_,e)|Stmt::Ret(_,Some(e))|Stmt::CallStmt(_,e)|Stmt::SendStmt(_,e)|Stmt::SelfSet(_,_,e)|Stmt::HDel(_,_,e)|Stmt::HDelAt(_,_,e)|Stmt::HFill(_,_,e)|Stmt::HSetCaseMatch(_,_,e)|Stmt::AIns(_,_,e)|Stmt::ADel(_,_,e)|Stmt::AAdd(_,_,e)|Stmt::ASize(_,_,e)=>ex(e,out),
+        Stmt::Print(_,es,_)=>for e in es{ex(e,out);},
+        Stmt::ArrSet(_,_,a,b)|Stmt::HSet(_,_,a,b)|Stmt::AAddSub(_,_,a,b)|Stmt::ASizeSub(_,_,a,b)|Stmt::SendSet(_,a,_,b)=>{ex(a,out);ex(b,out);},
+        Stmt::ArrSet2(_,_,a,b,c)|Stmt::AAddSub2(_,_,a,b,c)|Stmt::ASizeSub2(_,_,a,b,c)=>for e in [a,b,c]{ex(e,out);},
+        Stmt::ArrSet3(_,_,a,b,c,d)|Stmt::AAddSub3(_,_,a,b,c,d)|Stmt::ASizeSub3(_,_,a,b,c,d)=>for e in [a,b,c,d]{ex(e,out);},
+        Stmt::ArrSet4(_,_,a,b,c,d,e)=>for e in [a,b,c,d,e]{ex(e,out);},
+        Stmt::HCopy(_,_,_,a,b)=>for e in [a,b].into_iter().flatten(){ex(e,out);},
+        Stmt::AFill(_,_,a,b,c)=>{ex(a,out);for e in [b,c].into_iter().flatten(){ex(e,out);}},
+        Stmt::If(_,c,a,b)=>{ex(c,out);st(a,out);st(b,out);},
+        Stmt::While(_,c,b)|Stmt::ForEach(_,_,c,b)=>{ex(c,out);st(b,out);},
+        Stmt::For(_,_,a,b,_,ss)=>{ex(a,out);ex(b,out);st(ss,out);},
+        Stmt::Switch(_,c,arms,other)=>{ex(c,out);for(_,_,b)in arms{st(b,out);}if let Some((_,b))=other{st(b,out);}},
+        _=>{},
+    }}}
+    let mut roots:HashMap<String,HashSet<String>>=HashMap::new();
+    let mut edges=HashMap::new();
+    for f in fs {
+        roots.insert(f.name.clone(),f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s{Some(id.clone())}else{None}).collect());
+        let mut es=Vec::new();st(&f.stmts,&mut es);edges.insert(f.name.clone(),es);
+    }
+    let mut positions:HashMap<String,HashSet<usize>>=HashMap::new();
+    let mut variants=std::collections::BTreeSet::new();
+    loop {
+        let mut changed=false;
+        for f in fs {for(id,i,src,mask)in &edges[&f.name] {
+            if roots[&f.name].contains(src) {if let Some(dst)=fs.iter().find(|v|v.name==*id) {if let Some(p)=dst.params.get(*i) {
+                changed|=roots.get_mut(id).unwrap().insert(p.clone());
+                positions.entry(id.clone()).or_default().insert(*i);
+                variants.insert((id.clone(),mask.clone()));
+            }}}
+        }}
+        if !changed{break;}
+    }
+    let mut params=HashMap::new();
+    for f in fs {
+        params.insert(f.name.clone(),f.params.iter().enumerate().filter(|(i,_)|positions.get(&f.name).map_or(false,|is|is.contains(i))).map(|(_,p)|p.clone()).collect());
+    }
+    ROOT_PARAMS.with(|m|*m.borrow_mut()=params);
+    ROOT_POSITION.with(|m|*m.borrow_mut()=positions);
+    ROOT_VARIANTS.with(|m|*m.borrow_mut()=variants);
+}
+
 fn validate_persistent(f:&Func)->Result<(),String> {
     use std::collections::HashSet;
-    let roots:HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {Some(id.clone())}else{None}).collect();
+    let mut roots:HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {Some(id.clone())}else{None}).collect();
+    for p in &f.params {if root_param(&f.name,p){roots.insert(p.clone());}}
     fn ex(e:&Expr,roots:&HashSet<String>,whole:bool)->bool {match e {
         Expr::Var(v)=>!roots.contains(v)||whole,
         Expr::ByRef(v)|Expr::Inc(v,..)=>!roots.contains(v),
         Expr::Set(v,r)=>!roots.contains(v)&&ex(r,roots,false),
         Expr::Index(_,i)=>ex(i,roots,false),
-        Expr::Call(id,args)=>args.iter().all(|e|ex(e,roots,is_builtin(id,"valtype")||is_builtin(id,"len")||is_builtin(id,"hb_isarray"))),
+        Expr::Call(id,args)=>args.iter().enumerate().all(|(i,e)|{
+            if let Expr::ByRef(v)=e {if roots.contains(v)&&root_position(id,i){return true;}}
+            ex(e,roots,is_builtin(id,"valtype")||is_builtin(id,"len")||is_builtin(id,"hb_isarray"))
+        }),
         Expr::Seq(es)|Expr::ArrLit(es)=>es.iter().all(|e|ex(e,roots,false)),
+        // Hash literal keys/values follow the ArrLit rule: scalar-producing parts (root[i], len(root), call results) may be stored; a whole root cell, or an expression that merely mentions one, may not be (the literal copies tag/payload without retaining an array payload).
+        Expr::HashLit(ps)=>ps.iter().all(|(k,v)|ex(k,roots,false)&&ex(v,roots,false)),
         Expr::Bin(_,a,b)|Expr::Cmp(_,a,b)|Expr::LAnd(a,b)|Expr::LOr(a,b)=>ex(a,roots,false)&&ex(b,roots,false),
         Expr::LNot(a)=>ex(a,roots,false),
         _=>roots.iter().all(|r|!expr_mentions(e,r)),
@@ -19901,6 +20015,7 @@ fn main() {
         Ok(p) => p,
         Err(msg) => { eprintln!("error: {}", msg); process::exit(1); }
     };
+    discover_root_params(&prog.funcs);
     for f in &prog.funcs {
         if let Err(msg)=validate_persistent(f) {eprintln!("error: {}",msg);process::exit(1);}
         let statics: std::collections::HashSet<&String> = f.stmts.iter().filter_map(|s| if let Stmt::Static(_,id,_) = s {Some(id)}else{None}).collect();
@@ -20111,6 +20226,7 @@ fn main() {
                 Err(m) => (view[fi].params.clone(), view[fi].inferred.clone(), Some(m)),
             };
             for i in 0..ptys.len() {
+                if root_param(&f.name,&f.params[i]) {ptys[i]=Ty::Dyn;view[fi].aview[i]=false;continue;}
                 let evidence = aview_array_evidence(&f.stmts,&f.params[i]);
                 // Cell-classification evidence pins a view only when the
                 // body is strictly view-implementable. Evidence plus an
