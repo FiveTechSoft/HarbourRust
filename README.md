@@ -2,6 +2,8 @@
 
 Write Harbour. Run native. Rust architecture.
 
+![Harbour 4 Flash Edition](assets/harbour4-flash-edition.jpg)
+
 HarbourRust is an ahead-of-time compiler for Harbour, written in Rust. It translates Harbour source directly into x86-64 assembly and produces native executables: no VM, no interpreter. Support grows construct by construct, with byte-for-byte checks against the original Harbour compiler wherever applicable and explicit records of known differences. Unsupported syntax is rejected explicitly at compile time.
 
 ## Memory model
