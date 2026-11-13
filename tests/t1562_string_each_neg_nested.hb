@@ -1,0 +1,9 @@
+PROCEDURE Main()
+LOCAL s := "ab"
+LOCAL x
+FOR EACH x IN s
+FOR EACH x IN s
+? x
+NEXT
+NEXT
+RETURN
