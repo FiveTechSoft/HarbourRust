@@ -32,7 +32,7 @@ use std::process;
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { NumLocal, F64, I64, Str, Bool, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefStrOwn, DArrDyn, AView }
+enum Ty { NumLocal, F64, I64, Str, Bool, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefDyn, RefStrOwn, DArrDyn, AView }
 
 // What a codeblock body's LAST expression returns (original t1.prg piece):
 // Int = an i64 in %rax; Nil = a payload-free Dyn NIL pair (%rax=1, %rdx=0,
@@ -1625,7 +1625,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
             parse_stmts(&[(n, declaration)], &mut 0, &mut local, depth)?;
             for st in local {
                 if let Stmt::Local(ln, name, value) = st {
-                    if !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) {
+                    if !matches!(&value, Expr::Nil) && !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) {
                         return Err(format!("line {}: local STATIC currently requires a folded i64 constant initializer; NIL, floats and owned payloads need persistent tagged storage", n));
                     }
                     out.push(Stmt::Static(ln, name, value));
@@ -3188,6 +3188,7 @@ struct Sig {
 // always >= 655360 (width >= 10, decimals in low 16 bits). No heap,
 // cleanup, general Dyn tag, parameter ABI or borrowed storage is involved.
 thread_local! {
+    static STATIC_DYN: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
     static CHECKED_I64: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static NUM_LOCALS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
 }
@@ -3218,7 +3219,11 @@ fn prescan_numeric(f: &Func) -> std::collections::HashSet<String> {
     loop {let old=mixed.clone();for (id,e) in &stores {if mixed.contains(*id){if let Expr::Var(v)=e {if declared.contains(v)&&!counters.contains(v)&&matches!(m.get(v),Some(1|2|3)){mixed.insert(v.clone());}}}}if old==mixed{break}}
     mixed
 }
-fn set_numeric(f: &Func) { NUM_LOCALS.with(|s| *s.borrow_mut()=prescan_numeric(f)); }
+fn static_dyn(id: &str) -> bool { STATIC_DYN.with(|s|s.borrow().contains(id)) }
+fn set_numeric(f: &Func) {
+    NUM_LOCALS.with(|s| *s.borrow_mut()=prescan_numeric(f));
+    STATIC_DYN.with(|s|*s.borrow_mut()=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {Some(id.clone())}else{None}).collect());
+}
 
 #[derive(Clone)]
 struct Local {
@@ -4672,6 +4677,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         match env.iter().rev().find(|x| x.name == *v) {
                             Some(x) if x.moved => return Err(format!("line {}: use of moved value `{}`", n, v)),
                             Some(x) => match x.ty {
+                                Ty::Dyn if static_dyn(v) => {}
                                 Ty::AView | Ty::DArr | Ty::DArrDyn | Ty::DArr2 | Ty::DArrS | Ty::DArr4 => {}
                                 _ => return Err(format!("line {}: `{}` over this array depth is not measured in this PoC", n, id)),
                             },
@@ -6267,6 +6273,7 @@ fn ty_name(t: Ty) -> &'static str {
         Ty::F64 => "a float",
         Ty::I64 => "an integer",
         Ty::RefI64 => "a by-reference integer",
+        Ty::RefDyn => "a persistent tagged slot",
         Ty::AView => "an array view",
         Ty::RefStrOwn => "a by-reference string",
         Ty::Str => "a string",
@@ -6737,7 +6744,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 apply_moves(e, env, sigs, true);
             }
             Stmt::Local(n, id, e) | Stmt::Static(n, id, e) => {
-                if matches!(s, Stmt::Static(..)) && (dyn_names.contains(id) || mixed_local(id)) {
+                if matches!(s, Stmt::Static(..)) && !static_dyn(id) && (dyn_names.contains(id) || mixed_local(id)) {
                     return Err(format!("line {}: local STATIC cannot widen from integer storage in this increment", n));
                 }
                 if env.iter().any(|v| v.name == *id) {
@@ -7882,7 +7889,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         // tag-8 guard in codegen; RHS before the free of
                         // the old cell payload (parent rule).
                         let vt = type_expr(e, env, sigs, *n)?;
-                        if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Str) && !matches!(e, Expr::Nil) {
+                        let persistent_cell = static_dyn(id) && matches!(e, Expr::Index(src, _) if static_dyn(src));
+                        if static_dyn(id) && !matches!(vt,Ty::I64|Ty::Bool) && !matches!(e,Expr::Nil) && !persistent_cell {
+                            return Err(format!("line {}: persistent tagged STATIC array cell stores currently take integer/logical/NIL only",n));
+                        }
+                        if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Str) && !matches!(e, Expr::Nil) && !persistent_cell {
                             return Err(format!("line {}: storing into a cell of a dynamic array takes an integer, logical, string or NIL value in this stage", n));
                         }
                         if let Expr::Var(vv) = e {
@@ -8002,6 +8013,18 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
             }
             Stmt::Assign(n, id, e) => {
+                if static_dyn(id) {
+                    let vals:Vec<&Expr>=if let Expr::ArrLit(es)=e {es.iter().collect()}else{vec![e]};
+                    for v in vals {
+                        let t=type_expr(v,env,sigs,*n)?;
+                        if !matches!(t,Ty::I64|Ty::Bool|Ty::Dyn) {
+                            return Err(format!("line {}: persistent tagged STATIC currently stores integer/logical/NIL scalar values or arrays of these expressions only",n));
+                        }
+                        apply_moves(v,env,sigs,false);
+                    }
+                    continue;
+                }
+
                 // ains piece 1a: same guard as `local` - a DArrDyn cell
                 // read cannot be stored (the cell owns its payload).
                 if let Expr::Index(v, _) = e {
@@ -8317,7 +8340,7 @@ fn fold_int(e: &Expr) -> Option<i64> {
     }
 }
 fn size_of(t: Ty) -> usize {
-    match t { Ty::NumLocal | Ty::F64 | Ty::I64 => 16, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(..) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefStrOwn | Ty::AView => 8 }
+    match t { Ty::NumLocal | Ty::F64 | Ty::I64 => 16, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(..) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefDyn | Ty::RefStrOwn | Ty::AView => 8 }
 }
 
 #[derive(Clone)]
@@ -8526,7 +8549,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
             match v.ty {
                 Ty::RefI64 => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n", v.off)),
-                Ty::RefStrOwn => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n    mov 8(%r11), %rdx\n", v.off)),
+                Ty::RefDyn | Ty::RefStrOwn => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n    mov 8(%r11), %rdx\n", v.off)),
                 Ty::NumLocal => unreachable!("numeric locals load through cg_num"),
                 Ty::F64 => unreachable!("floats load through cg_f64_load (xmm0/rdi), never the rax/rdx channel"),
                 Ty::I64 | Ty::Block(..) | Ty::Bool | Ty::AView => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
@@ -8651,11 +8674,21 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                             out.push_str(&format!("    mov -{}(%rbp), %r10\n", var.off));
                             classify_tag(out, want_num);
                         }
+                        Ty::RefDyn => {
+                            out.push_str(&format!("    mov -{}(%rbp), %r10\n    mov (%r10), %r10\n", var.off));
+                            classify_tag(out, want_num);
+                        }
                         _ => unreachable!("checked"),
                     }
                 }
                 Expr::Index(v, ie) => {
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                    if var.ty == Ty::RefDyn {
+                        cg_expr(&args[0], env, sigs, strs, out, target);
+                        out.push_str("    mov %rax, %r10\n");
+                        classify_tag(out, want_num);
+                        return;
+                    }
                     if var.ty==Ty::AView {
                         cg_aview_cell(var,ie,env,sigs,strs,out,target);
                         out.push_str("    mov %rax, %r10\n");
@@ -8763,6 +8796,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                             out.push_str(&format!("    mov -{}(%rbp), %r10\n", var.off));
                             vt_classify_scalar(strs, out);
                         }
+                        Ty::RefDyn => {
+                            out.push_str(&format!("    mov -{}(%rbp), %r10\n    mov (%r10), %r10\n", var.off));
+                            vt_classify_scalar(strs, out);
+                        }
                         _ => unreachable!("checked"),
                     }
                 }
@@ -8780,6 +8817,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                         out.push_str("    test %rax, %rax\n    je 85f\n    mov (%rax), %r10\n    jmp 86f\n85:\n    call hbc_bound_error\n86:\n");
                         vt_classify_scalar(strs, out);
                     } else {
+                    if var.ty==Ty::RefDyn {
+                        cg_expr(&args[0],env,sigs,strs,out,target);
+                        out.push_str("    mov %rax, %r10\n");
+                        vt_classify_scalar(strs,out);return;
+                    }
                     if var.ty==Ty::AView {
                         cg_aview_cell(var,ie,env,sigs,strs,out,target);
                         out.push_str("    mov %rax, %r10\n");
@@ -9020,6 +9062,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                         Ty::DArrDyn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash => out.push_str(&format!("    mov -{}(%rbp), %rax\n", var.off - 8)),
                         Ty::AView => out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov 16(%rax), %rax\n", var.off)),
                         Ty::DArrRef | Ty::DArrRef2 => out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov 8(%rax), %rax\n", var.off)),
+                        Ty::RefDyn => out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, (%r11)\n    jne hbc_len_error\n    mov 8(%r11), %rax\n    mov -8(%rax), %rax\n",var.off)),
                         Ty::Arr(k) => out.push_str(&format!("    mov ${}, %rax\n", k)),
                         Ty::Dyn => {
                             // ains P2 stage 1: runtime dispatch. Strings
@@ -9880,6 +9923,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Expr::Index(id, ie) => {
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
+            if v.ty == Ty::RefDyn {
+                cg_expr(ie, env, sigs, strs, out, target);
+                if expr_ty(ie,env,sigs)==Ty::Dyn {out.push_str("    call hbc_dyn_to_i64\n");}
+                out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, (%r11)\n    jne hbc_type_error\n    mov 8(%r11), %r11\n    cmp $1, %rax\n    jl 81f\n    cmp -8(%r11), %rax\n    jg 81f\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov 8(%rax), %rdx\n    mov (%rax), %rax\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n",v.off));
+                return;
+            }
             if v.ty == Ty::Hash {
                 // h["k"] read: hbc_hget scans live entries (byte compare
                 // with length - probes h3b/h12). A miss is a clean bound
@@ -10433,11 +10482,13 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::Var(id) => match env.iter().find(|v| v.name == *id).expect("checked").ty {
             // A by-reference parameter reads as its pointee type (hk216).
             Ty::RefI64 => Ty::I64,
+            Ty::RefDyn => Ty::Dyn,
             Ty::RefStrOwn => Ty::StrOwn,
             t => t,
         },
         Expr::ByRef(id) => match env.iter().find(|v| v.name == *id).expect("checked").ty {
             Ty::RefI64 => Ty::I64,
+            Ty::RefDyn => Ty::Dyn,
             Ty::RefStrOwn => Ty::StrOwn,
             t => t,
         },
@@ -10625,7 +10676,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
         match s {
             Stmt::Static(_, id, _) => {
                 *frame += 8;
-                env.push(CgLocal { name: id.clone(), ty: Ty::RefI64, off: *frame });
+                env.push(CgLocal { name: id.clone(), ty: if static_dyn(id) {Ty::RefDyn}else{Ty::RefI64}, off: *frame });
             }
             Stmt::Local(_, id, e) => {
                 let mut t = expr_ty(e, env, sigs);
@@ -11469,7 +11520,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                     }
                     out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
                     match t {
-                        Ty::RefI64 | Ty::RefStrOwn => unreachable!("expr_ty maps by-reference params to their pointee"),
+                        Ty::RefI64 | Ty::RefDyn | Ty::RefStrOwn => unreachable!("expr_ty maps by-reference params to their pointee"),
                         Ty::AView => unreachable!("whole-array-view printing rejected in analysis"),
                         Ty::NumLocal | Ty::F64 => unreachable!("handled above"),
                         // Literal (or compile-time foldable, hk326) keeps
@@ -11509,7 +11560,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             // owned by its slot, and a DArrDyn cell read stays
                             // owned by its CELL (ains piece 1a - the cell is
                             // borrowed, never moved out).
-                            let cell_borrow = matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArrDyn | Ty::Dyn)));
+                            let cell_borrow = matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArrDyn | Ty::Dyn | Ty::RefDyn)));
                             if !matches!(e, Expr::Var(_)) && !cell_borrow {
                                 out.push_str(&format!("    cmpq $4, {}(%rsp)\n    jne 95f\n    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je 95f\n    call hbc_freestr\n95:\n", off, off + 8));
                             }
@@ -11545,6 +11596,36 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
 // body touches them.
 #[derive(Clone)]
 enum CgFrame { Loop(String, String), Switch(String) }
+
+
+fn cg_persistent_scalar(e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    cg_value(e,env,sigs,strs,out,target);
+    match expr_ty(e,env,sigs) {
+        Ty::I64 => cg_i64_tagged(out),
+        Ty::Bool=>out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"),
+        Ty::Dyn=>{
+            let k=fresh_lbl();
+            out.push_str(&format!("    cmp $0, %rax\n    je .Lpscalar{}\n    cmp $9, %rax\n    je .Lpscalar{}\n    cmp $1, %rax\n    je .Lpscalar{}\n    cmp $3, %rax\n    jne hbc_persistent_scalar_limit\n.Lpscalar{}:\n",k,k,k,k));
+        }, _=>unreachable!("checked persistent scalar"),
+    }
+}
+fn cg_persistent_store(v:&CgLocal,e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    if let Expr::ArrLit(es)=e {
+        // Keep each element's evaluated pair in a distinct frame scratch
+        // before allocation. Recursive calls can replace the root, never
+        // the not-yet-installed new buffer. No partial buffer is exposed.
+        let end=AVIEW_FRAME_END.with(|c|{let end=c.get()+16*es.len();c.set(end);end});
+        for(i,e)in es.iter().enumerate(){
+            cg_persistent_scalar(e,env,sigs,strs,out,target);
+            out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",end-i*16,end-i*16-8));
+        }
+        out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n    movq ${}, (%rax)\n    add $8, %rax\n",8+16*es.len(),es.len()));
+        for(i,_)in es.iter().enumerate(){out.push_str(&format!("    mov -{}(%rbp), %r10\n    mov %r10, {}(%rax)\n    mov -{}(%rbp), %r10\n    mov %r10, {}(%rax)\n",end-i*16,i*16,end-i*16-8,i*16+8));}
+        out.push_str("    mov %rax, %rdx\n    mov $8, %eax\n");
+    }else{cg_persistent_scalar(e,env,sigs,strs,out,target);}
+    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    call hbc_persistent_release\n    mov -{}(%rbp), %r11\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, (%r11)\n    mov %rdx, 8(%r11)\n",v.off,v.off));
+}
 
 fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, flow: &[CgFrame], slots: &[(usize, u8)], dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
     for (si, s) in stmts.iter().enumerate() {
@@ -11590,7 +11671,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let off = *frame;
                 let owner = CUR_FN.with(|c| c.borrow().clone());
                 out.push_str(&format!("    lea hbc_static_{}_{}_{}(%rip), %rax\n    mov %rax, -{}(%rbp)\n", owner.len(), owner, id, off));
-                env.push(CgLocal { name: id.clone(), ty: Ty::RefI64, off });
+                env.push(CgLocal { name: id.clone(), ty: if static_dyn(id) {Ty::RefDyn}else{Ty::RefI64}, off });
             }
             Stmt::Local(_, id, e) => {
                 let mut t = expr_ty(e, env, sigs);
@@ -12332,6 +12413,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    jmp {}\n", c));
             }
             Stmt::Assign(_, id, e) => {
+                if let Some(v)=env.iter().rev().find(|v|v.name==*id && v.ty==Ty::RefDyn) {
+                    cg_persistent_store(v,e,env,sigs,strs,out,target);continue;
+                }
+
                 let t = expr_ty(e, env, sigs);
                 let l = env.iter().find(|v| v.name == *id).expect("analysis checked the local exists");
                 let off = l.off;
@@ -13553,7 +13638,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // skipped here and RETAGGED to a string below - hk14)
                     out.push_str("    mov 8(%r10), %rdi\n    test %rdi, %rdi\n    je 85f\n    sub $16, %rsp\n    mov %r10, (%rsp)\n    call hbc_freestr\n    mov (%rsp), %r10\n    add $16, %rsp\n85:\n");
                     out.push_str("    mov (%rsp), %rax\n    movq $2, (%r10)\n    mov %rax, 8(%r10)\n    add $16, %rsp\n    jmp 86f\n89:\n    call hbc_bound_error\n86:\n");
-                } else if v.ty == Ty::Dyn {
+                } else if matches!(v.ty, Ty::Dyn|Ty::RefDyn) {
                     // ains P2 stage 1: a[i] := scalar on a Dyn-held array
                     // (checker: I64/Bool/Str/NIL RHS). The RHS is tagged
                     // FIRST (rodata strings cloned to owned tag-4 cells),
@@ -13562,13 +13647,17 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // once, and the new pair is stored. .L labels only.
                     let kw = fresh_lbl();
                     let rt = expr_ty(e, env, sigs);
-                    cg_value(e, env, sigs, strs, out, target);
-                    match rt {
-                        Ty::I64 => cg_i64_tagged(out),
-                        Ty::Bool => out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"),
-                        Ty::Str => out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"),
-                        Ty::Dyn => {} // NIL literal: already the {1, 0} pair
-                        _ => unreachable!("checked"),
+                    if v.ty == Ty::RefDyn {
+                        cg_persistent_scalar(e, env, sigs, strs, out, target);
+                    } else {
+                        cg_value(e, env, sigs, strs, out, target);
+                        match rt {
+                            Ty::I64 => cg_i64_tagged(out),
+                            Ty::Bool => out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"),
+                            Ty::Str => out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"),
+                            Ty::Dyn => {},
+                            _ => unreachable!("checked"),
+                        }
                     }
                     out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     if expr_ty(ie, env, sigs) == Ty::Dyn {
@@ -13578,7 +13667,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         cg_expr(ie, env, sigs, strs, out, target);
                     }
                     out.push_str("    mov %rax, %rcx\n");
-                    out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, -{}(%rbp)\n    jne hbc_type_error\n    cmp $1, %rcx\n    jl .Lwbnd{}\n    cmp -8(%r11), %rcx\n    jg .Lwbnd{}\n", v.off - 8, v.off, kw, kw));
+                    if v.ty==Ty::RefDyn {
+                        out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, (%r11)\n    jne hbc_type_error\n    mov 8(%r11), %r11\n    cmp $1, %rcx\n    jl .Lwbnd{}\n    cmp -8(%r11), %rcx\n    jg .Lwbnd{}\n",v.off,kw,kw));
+                    }else{
+                    out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, -{}(%rbp)\n    jne hbc_type_error\n    cmp $1, %rcx\n    jl .Lwbnd{}\n    cmp -8(%r11), %rcx\n    jg .Lwbnd{}\n", v.off - 8, v.off, kw, kw));                    }
+
                     out.push_str("    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
                     out.push_str(&format!("    mov %r10, 16(%rsp)\n    cmpq $4, (%r10)\n    jne .Lwnf{}\n    mov 8(%r10), %rdi\n    test %rdi, %rdi\n    jz .Lwnf{}\n    call hbc_freestr\n.Lwnf{}:\n    mov 16(%rsp), %r10\n    mov (%rsp), %rax\n    mov %rax, (%r10)\n    mov 8(%rsp), %rax\n    mov %rax, 8(%r10)\n    add $32, %rsp\n    jmp .Lwdone{}\n.Lwbnd{}:\n    call hbc_bound_error\n.Lwdone{}:\n", kw, kw, kw, kw, kw, kw));
                 } else if v.ty == Ty::Hash {
@@ -13905,8 +13998,13 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     CHECKED_I64.with(|c| c.set(f.stmts.iter().any(|s| matches!(s, Stmt::Static(..))) || byref.map(|m|m.iter().any(|b|*b)).unwrap_or(false)));
     if byref.is_none() {
         for st in &f.stmts {
-            if let Stmt::Static(_, id, Expr::Int(value)) = st {
-                out.push_str(&format!("    .data\n    .align 8\nhbc_static_{}_{}_{}: .quad {}, 1\n    .text\n", f.name.len(), f.name, id, value));
+            if let Stmt::Static(_, id, value) = st {
+                let words = match value {
+                    Expr::Int(n) => format!("{}, 1", n),
+                    Expr::Nil => "1, 0".to_string(),
+                    _ => unreachable!("checked STATIC"),
+                };
+                out.push_str(&format!("    .data\n    .align 8\nhbc_static_{}_{}_{}: .quad {}\n    .text\n", f.name.len(), f.name, id, words));
             }
         }
     }
@@ -16063,7 +16161,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
     match target {
         Target::Linux => {
             out.push_str("    .text\n    .globl _start\n_start:\n");
-            out.push_str("    call hbc_fn_main\n    call hbc_str_cache_flush\n");
+            out.push_str("    call hbc_fn_main\n    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n");
             out.push_str("    mov $60, %eax\n    xor %edi, %edi\n    syscall\n\n");
         }
         Target::Windows => {
@@ -16075,7 +16173,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
             // The Win64 loader does not guarantee one specific rsp % 16 at
             // the entry point; align explicitly instead of assuming.
             out.push_str("    and $-16, %rsp\n    sub $48, %rsp\n");
-            out.push_str("    call hbc_fn_main\n    call hbc_str_cache_flush\n");
+            out.push_str("    call hbc_fn_main\n    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n");
             out.push_str("    xor %ecx, %ecx\n");
             out.push_str("    call ExitProcess\n\n");
         }
@@ -16093,6 +16191,29 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
         cg_func(f, sigs, &mut strs, &mut out, target, Some(&mask));
     }
 
+    out.push_str(r"
+hbc_persistent_release:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    cmpq $8, (%rdi)
+    jne 81f
+    mov 8(%rdi), %r10
+    movq $1, (%rdi)
+    movq $0, 8(%rdi)
+    mov %r10, %rdi
+    test %rdi, %rdi
+    jz 81f
+    mov -8(%rdi), %rsi
+    call hbc_dfree
+81: leave
+    ret
+");
+    out.push_str("hbc_persistent_cleanup:\n    push %rbp\n    mov %rsp, %rbp\n    sub $32, %rsp\n");
+    for f in funcs {for st in &f.stmts {if let Stmt::Static(_,id,Expr::Nil)=st {
+        out.push_str(&format!("    lea hbc_static_{}_{}_{}(%rip), %rdi\n    call hbc_persistent_release\n",f.name.len(),f.name,id));
+    }}}
+    out.push_str("    leave\n    ret\n");
     // Runtime helpers (ours, hand-written; syscall-only on linux, three
     // kernel32 calls on windows).
     match target {
@@ -16786,6 +16907,16 @@ hbc_div0_error:
 
 # Integer increment cannot silently wrap. Harbour promotes to double;
 # this fixed-I64 increment reports that uncovered boundary before store.
+hbc_persistent_scalar_limit:
+    lea .Lpersistmsg(%rip), %rsi
+    mov $59, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 hbc_static_overflow:
     lea .Lstaticovmsg(%rip), %rsi
     mov $63, %edx
@@ -17700,6 +17831,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Lboundmsg:\n    .byte 66,111,117,110,100,32,101,114,114,111,114,58,32,97,114,114,97,121,32,97,99,99,101,115,115,10\n");
     // "Error: division by zero\n" (24 bytes; EG_ZERODIV, probe hk294)
     out.push_str(".Ldiv0msg:\n    .byte 69,114,114,111,114,58,32,100,105,118,105,115,105,111,110,32,98,121,32,122,101,114,111,10\n");
+    out.push_str(".Lpersistmsg:\n    .byte 76,105,109,105,116,58,32,112,101,114,115,105,115,116,101,110,116,32,83,84,65,84,73,67,32,115,116,111,114,101,115,32,110,101,101,100,32,111,119,110,101,100,32,115,99,97,108,97,114,32,112,97,121,108,111,97,100,115,10\n");
     out.push_str(".Lstaticovmsg:\n    .byte 76,105,109,105,116,58,32,115,116,97,116,105,99,47,98,121,114,101,102,32,105,110,116,101,103,101,114,32,97,114,105,116,104,109,101,116,105,99,32,110,101,101,100,115,32,110,117,109,101,114,105,99,32,112,114,111,109,111,116,105,111,110,10\n");
     out.push_str(".Lincmsg:\n    .byte 76,105,109,105,116,58,32,105,110,99,114,101,109,101,110,116,32,111,118,101,114,102,108,111,119,32,110,101,101,100,115,32,110,117,109,101,114,105,99,32,112,114,111,109,111,116,105,111,110,10\n");
     out.push_str(".Lf64rangemsg:\n    .byte 69,114,114,111,114,58,32,102,108,111,97,116,32,102,105,101,108,100,32,111,117,116,32,111,102,32,114,97,110,103,101,10\n");
@@ -18860,6 +18992,17 @@ hbc_div0_error:
     mov $1, %ecx
     call ExitProcess
 
+hbc_persistent_scalar_limit:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Lpersistmsg(%rip), %rax
+    mov $59, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
 hbc_static_overflow:
     push %rbp
     mov %rsp, %rbp
@@ -19651,6 +19794,40 @@ enum Target { Linux, Windows }
 
 #[path = "llvm_scalar.rs"]
 mod llvm_scalar;
+
+// Persistent roots may not escape until sharing/borrowing is implemented.
+// This is a structural precheck, so inference retries cannot hide a panic
+// or admit an array alias as a scalar Dyn copy.
+fn validate_persistent(f:&Func)->Result<(),String> {
+    use std::collections::HashSet;
+    let roots:HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {Some(id.clone())}else{None}).collect();
+    fn ex(e:&Expr,roots:&HashSet<String>,whole:bool)->bool {match e {
+        Expr::Var(v)=>!roots.contains(v)||whole,
+        Expr::ByRef(v)|Expr::Inc(v,..)=>!roots.contains(v),
+        Expr::Set(v,r)=>!roots.contains(v)&&ex(r,roots,false),
+        Expr::Index(v,i)=>ex(i,roots,false)&&(!roots.contains(v)||(!expr_has_call(i)&&!expr_mentions(i,v))),
+        Expr::Call(id,args)=>args.iter().all(|e|ex(e,roots,is_builtin(id,"valtype")||is_builtin(id,"len")||is_builtin(id,"hb_isarray"))),
+        Expr::Seq(es)|Expr::ArrLit(es)=>es.iter().all(|e|ex(e,roots,false)),
+        Expr::Bin(_,a,b)|Expr::Cmp(_,a,b)|Expr::LAnd(a,b)|Expr::LOr(a,b)=>ex(a,roots,false)&&ex(b,roots,false),
+        Expr::LNot(a)=>ex(a,roots,false),
+        _=>roots.iter().all(|r|!expr_mentions(e,r)),
+    }}
+    fn walk(ss:&[Stmt],roots:&HashSet<String>)->Result<(),String> {
+        for st in ss {let ok=match st {
+            Stmt::Static(_,_,e)|Stmt::Local(_,_,e)|Stmt::Assign(_,_,e)|Stmt::Ret(_,Some(e))|Stmt::CallStmt(_,e)=>ex(e,roots,false),
+            Stmt::Print(_,es,_)=>es.iter().all(|e|ex(e,roots,true)),
+            Stmt::ArrSet(_,id,i,e) if roots.contains(id)=>ex(e,roots,false)&&ex(i,roots,false)&&!expr_has_call(i)&&!expr_mentions(i,id),
+            Stmt::If(_,c,a,b)=>{walk(a,roots)?;walk(b,roots)?;ex(c,roots,false)},
+            Stmt::While(_,c,b)=>{walk(b,roots)?;ex(c,roots,false)},
+            Stmt::For(_,_,a,b,_,body)=>{walk(body,roots)?;ex(a,roots,false)&&ex(b,roots,false)},
+            Stmt::Switch(_,c,arms,other)=>{for(_,_,b)in arms{walk(b,roots)?;}if let Some((_,b))=other{walk(b,roots)?;}ex(c,roots,false)},
+            _=>roots.iter().all(|r|!stmt_mentions(st,r)),
+        };if !ok {return Err(format!("line {}: persistent tagged STATIC cannot escape, alias, borrow, or use an effectful index in this increment",stmt_line(st)));}}
+        Ok(())
+    }
+    walk(&f.stmts,&roots)
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     let mut pos: Vec<&String> = Vec::new();
@@ -19697,6 +19874,7 @@ fn main() {
         Err(msg) => { eprintln!("error: {}", msg); process::exit(1); }
     };
     for f in &prog.funcs {
+        if let Err(msg)=validate_persistent(f) {eprintln!("error: {}",msg);process::exit(1);}
         let statics: std::collections::HashSet<&String> = f.stmts.iter().filter_map(|s| if let Stmt::Static(_,id,_) = s {Some(id)}else{None}).collect();
         fn validate(ss: &[Stmt], names: &std::collections::HashSet<&String>) -> Result<(), String> {
             for st in ss { match st {
@@ -19838,6 +20016,8 @@ fn main() {
             }
         }
         collect(&f.stmts, &mut returns);
+        let persistent:std::collections::HashSet<&String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {Some(id)}else{None}).collect();
+        if !returns.is_empty() && returns.iter().all(|r|matches!(r,Some(Expr::Index(id,_)) if persistent.contains(id))) {return Some(Ty::Dyn);}
         if returns.len() != 1 { return None; }
         if let Some(Expr::Call(id, args)) = returns[0] {
             if is_builtin(id, "iif") && args.len() == 3 {
