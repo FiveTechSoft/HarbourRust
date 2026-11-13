@@ -1685,3 +1685,10 @@ t554), and merged entries stay valid after the SOURCE hash is freed
 
 Battery: 551/551 manifest cases on Linux x86-64 and Wine, plus
 the ABI harness.
+
+## Historical oracle PRG probes
+
+The 99 numbered hk `.prg` probes formerly at the repository root now live in
+[`probes/legacy-hk/`](probes/legacy-hk/README.md), with unchanged names and source bytes.
+Their historical status/output table remains in [3-MANIFEST.md](3-MANIFEST.md).
+This layout change does not add upstream originals or alter compiler semantics.

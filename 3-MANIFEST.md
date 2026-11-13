@@ -1,5 +1,7 @@
 # Corpus de sondas-oráculo Harbour (hk)
 
+Las 99 fuentes `.prg` antes situadas en la raíz están ahora en [`probes/legacy-hk/`](probes/legacy-hk/README.md), conservando sus nombres numerados y sus bytes. Los identificadores hkNN de esta tabla son históricos; el índice enlaza cada identificador con su archivo real.
+
 Cada hkNN.prg es un programa de contraste compilado con `hbmk2 hkNN.prg -gtstd -ohkNN` (Harbour 3.2.1dev). 
 Salida de referencia: la de su ejecución headless (timeout 5s) con esa misma cadena, regenerada el 26 oct 2026 tras la pérdida del workspace. 
 Estados: `verificado` = la salida regenerada coincide byte a byte con la medida publicada/citada en README.md o docs/BATTERY.md; 
