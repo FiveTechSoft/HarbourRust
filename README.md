@@ -31,6 +31,26 @@ See [build instructions](BUILDING.md) for platform-specific details and the
 regression runner. Rebuild from source rather than assuming prebuilt binaries
 match the current compiler.
 
+## Build and run on Windows
+
+Use a Windows `hbc.exe` built from current source following
+[BUILDING.md](BUILDING.md#4-build-the-compiler-itself-as-a-windows-exe-hbcexe).
+Install MinGW-w64 binutils and the KERNEL32 import library; put
+`x86_64-w64-mingw32-as` and `x86_64-w64-mingw32-ld` on `PATH`.
+From Windows Command Prompt at the repository root, with `hbc.exe` there:
+
+```bat
+set "HBC=%CD%\hbc.exe"
+dist\compile.bat ejemplos\hola.hb hello
+hello.exe
+```
+
+The script chains `hbc.exe` -> assembler -> linker and stops on failure.
+`HBC` overrides its default older `dist\2-hbc.exe`; see the build instructions
+for prebuilt-binary provenance. Historical Windows binary checks used Wine
+10.20, not real Windows. The batch script itself has not been tested end to
+end on real Windows or under Wine. No current-HEAD Windows pass is implied.
+
 ## Documentation and examples
 
 - [Documentation index](docs/README.md).
