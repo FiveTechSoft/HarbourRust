@@ -6104,13 +6104,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     if v.moved {
                         return Err(format!("line {}: use of moved value `{}`", n, id));
                     }
-                    // ains P2 stage 1 closure (independent-review
-                    // blocker): the index of a cell read on a Dyn root
-                    // may not mention the root itself - an assignment
-                    // there (a Seq) frees the owner before the tag-8
-                    // guard reads it. Static rejection: the root is
-                    // statically visible (aview-index precedent).
-                    if v.ty == Ty::Dyn && expr_mentions(ie, id) {
+                    // Ordinary Dyn reads still reload the root after the
+                    // index. Persistent STATIC reads retain the captured
+                    // payload before evaluating it; their structural precheck
+                    // rejects root mutation, borrowing and escapes.
+                    if v.ty == Ty::Dyn && !static_dyn(id) && expr_mentions(ie, id) {
                         return Err(format!("line {}: the index of a cell read on the dynamic array `{}` may not mention it (an assignment there frees the array before the read); compute the index into a local first (ains P2 stage 1)", n, id));
                     }
                     // Elements are {tag, payload}: a read is a Dyn value
@@ -7904,11 +7902,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         if type_expr(ie, env, sigs, *n)? != Ty::I64 {
                             return Err(format!("line {}: array index must be an integer", n));
                         }
-                        // ains P2 stage 1 closure (independent-review
-                        // blocker): the index may not mention the root
-                        // itself - an assignment there frees the owner
-                        // before the store's tag-8 guard reads it.
-                        if expr_mentions(ie, id) {
+                        // Ordinary Dyn arrays still reload the root after the
+                        // index. Persistent STATIC arrays capture and retain
+                        // their payload before the index, so safe scalar uses
+                        // of that root do not invalidate the captured base.
+                        if !static_dyn(id) && expr_mentions(ie, id) {
                             return Err(format!("line {}: the index of a cell store on the dynamic array `{}` may not mention it (an assignment there frees the array before the store); compute the index into a local first (ains P2 stage 1)", n, id));
                         }
                         apply_moves(e, env, sigs, false);
@@ -19830,7 +19828,7 @@ fn validate_persistent(f:&Func)->Result<(),String> {
         Expr::Var(v)=>!roots.contains(v)||whole,
         Expr::ByRef(v)|Expr::Inc(v,..)=>!roots.contains(v),
         Expr::Set(v,r)=>!roots.contains(v)&&ex(r,roots,false),
-        Expr::Index(v,i)=>ex(i,roots,false)&&(!roots.contains(v)||!expr_mentions(i,v)),
+        Expr::Index(_,i)=>ex(i,roots,false),
         Expr::Call(id,args)=>args.iter().all(|e|ex(e,roots,is_builtin(id,"valtype")||is_builtin(id,"len")||is_builtin(id,"hb_isarray"))),
         Expr::Seq(es)|Expr::ArrLit(es)=>es.iter().all(|e|ex(e,roots,false)),
         Expr::Bin(_,a,b)|Expr::Cmp(_,a,b)|Expr::LAnd(a,b)|Expr::LOr(a,b)=>ex(a,roots,false)&&ex(b,roots,false),
@@ -19842,7 +19840,7 @@ fn validate_persistent(f:&Func)->Result<(),String> {
             Stmt::Assign(_,dst,Expr::Var(src)) if roots.contains(dst) && roots.contains(src)=>true,
             Stmt::Static(_,_,e)|Stmt::Local(_,_,e)|Stmt::Assign(_,_,e)|Stmt::Ret(_,Some(e))|Stmt::CallStmt(_,e)=>ex(e,roots,false),
             Stmt::Print(_,es,_)=>es.iter().all(|e|ex(e,roots,true)),
-            Stmt::ArrSet(_,id,i,e) if roots.contains(id)=>ex(e,roots,false)&&ex(i,roots,false)&&!expr_mentions(i,id),
+            Stmt::ArrSet(_,id,i,e) if roots.contains(id)=>ex(e,roots,false)&&ex(i,roots,false),
             Stmt::If(_,c,a,b)=>{walk(a,roots)?;walk(b,roots)?;ex(c,roots,false)},
             Stmt::While(_,c,b)=>{walk(b,roots)?;ex(c,roots,false)},
             Stmt::For(_,_,a,b,_,body)=>{walk(body,roots)?;ex(a,roots,false)&&ex(b,roots,false)},
