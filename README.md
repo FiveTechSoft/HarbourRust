@@ -1,8 +1,6 @@
 # HarbourRust
 
-A proof-of-concept compiler for a growing subset of Harbour syntax, written in
-Rust. The ordinary backend emits x86-64 assembly for native executables.
-Unsupported forms fail closed. This is not a complete Harbour compiler.
+HarbourRust is an ahead-of-time compiler for Harbour, written in Rust. It translates Harbour source directly into x86-64 assembly and produces native executables: no VM, no interpreter. Support grows construct by construct, with byte-for-byte checks against the original Harbour compiler wherever applicable and explicit records of known differences. Unsupported syntax is rejected explicitly at compile time.
 
 ## Current status
 

@@ -1,11 +1,12 @@
-> Historical development record, preserved from the former main README.
+> Historical development record, retained from the former main README.
 > Claims describe earlier iterations, not full Harbour compatibility.
+> Introductory framing was updated on 13 November 2026; technical records remain historical.
 > See [the overview](../README.md) for the current branch limits.
 
-# HarbourRust - proof of concept
+# HarbourRust - development history
 
-**What this is:** a small proof of the idea - Harbour syntax, Rust rules,
-native executables. It is not a full compiler and does not claim to be one.
+**Project direction:** Harbour syntax, Rust-inspired rules, native executables.
+Supported forms and known differences are recorded per iteration below.
 
 ## Iteration 2: the Harbour pipeline no longer touches rustc
 
