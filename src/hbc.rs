@@ -5437,16 +5437,29 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     // Extend-System C boundary (docs/EXTEND-BRIDGE.md):
                     // free arity (omitted arguments read NIL in C through
                     // hb_pcount/hb_param); every argument must marshal to
-                    // a Dyn casilla. Arrays, hashes, codeblocks, dates
-                    // and @byref stay named rejections in this increment;
-                    // floats cross as tag-5 Dyn casillas (value bits in the
-                    // payload); the C side only BORROWS during the call.
+                    // a Dyn casilla. Dyn-held arrays cross read-only (2.4)
+                    // and integer-result codeblocks cross as tag-7 (2.5);
+                    // hashes, dates and statically-typed arrays stay named
+                    // rejections; floats cross as tag-5 Dyn casillas
+                    // (value bits in the payload); the C side only BORROWS
+                    // during the call.
                     for a in args.iter() {
-                        if matches!(a, Expr::ByRef(_)) {
-                            return Err(format!("line {}: `@` by-reference across the C Extend boundary needs hb_parbyref: not in this increment (docs/EXTEND-BRIDGE.md)", n));
+                        if let Expr::ByRef(vn) = a {
+                            // `@x` across the C boundary (milestone 2.2):
+                            // x must be a Dyn local so its 16-byte casilla
+                            // address can cross; hb_stor* writes through it.
+                            match env.iter().find(|x| x.name == *vn) {
+                                Some(x) if x.ty == Ty::Dyn => continue,
+                                Some(_) => return Err(format!("line {}: `@{}` across the C Extend boundary needs a Dyn (NIL-able) local in this increment (docs/EXTEND-BRIDGE.md)", n, vn)),
+                                None => return Err(format!("line {}: `@{}` names no local (docs/EXTEND-BRIDGE.md)", n, vn)),
+                            }
                         }
                         match type_expr(a, env, sigs, n)? {
                             Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::Dyn | Ty::F64 => {}
+                            // Milestone 2.5: an integer-result codeblock
+                            // crosses as a tag-7 Dyn casilla {7, codeptr}.
+                            Ty::Block(_, BRet::Int) => {}
+                            Ty::Block(_, _) => return Err(format!("line {}: only codeblocks whose body returns an INTEGER cross the C Extend boundary in this increment (docs/EXTEND-BRIDGE.md)", n)),
                             other => return Err(format!("line {}: {} argument cannot cross the C Extend boundary in this increment (docs/EXTEND-BRIDGE.md)", n, ty_name(other))),
                         }
                     }
@@ -10901,7 +10914,9 @@ fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String,
             Expr::Seq(es) => { for x in es { ex(x, out); } }
             Expr::Call(id, args) => {
                 let mask: Vec<bool> = args.iter().map(|a| matches!(a, Expr::ByRef(_))).collect();
-                if mask.iter().any(|b| *b) {
+                // Extern C calls emit their `@` casillas inline at the
+                // call site (milestone 2.2); no callee variant exists.
+                if mask.iter().any(|b| *b) && !EXTERNS.with(|c| c.borrow().contains(id)) {
                     out.insert((id.clone(), mask));
                 }
                 for a in args { if !matches!(a, Expr::ByRef(_)) { ex(a, out); } }
@@ -10975,6 +10990,14 @@ fn cg_ext_call(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mu
     let _ = target; // externs are Linux-only in this increment (rejected in main)
     let mut str_slots: Vec<usize> = Vec::new();
     for (ai, a) in args.iter().enumerate() {
+        if let Expr::ByRef(vn) = a {
+            // Byref (milestone 2.2): push the ADDRESS of the Dyn casilla
+            // with marker tag 10; hb_par* read through, hb_stor* write
+            // through (docs/EXTEND-BRIDGE.md).
+            let var = env.iter().rev().find(|x| x.name == *vn).expect("checked");
+            out.push_str(&format!("    lea -{}(%rbp), %rax\n    sub $16, %rsp\n    movq $10, (%rsp)\n    mov %rax, 8(%rsp)\n", var.off));
+            continue;
+        }
         match expr_ty(a, env, sigs) {
             Ty::Str | Ty::StrOwn => {
                 cg_value(a, env, sigs, strs, out, target); // rax=ptr, rdx=len
@@ -10986,15 +11009,31 @@ fn cg_ext_call(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mu
                 out.push_str("    sub $16, %rsp\n    movq $3, (%rsp)\n    mov %rax, 8(%rsp)\n");
             }
             Ty::Dyn => {
+                // Milestone 2.4: a Dyn-held array (tag 8) crosses to C as
+                // its borrowed casilla (read-only contract; the caller
+                // keeps ownership, C never frees). hb_arrayLen /
+                // hb_arrayGet* / hb_arrayGetItemPtr read it; the .hb
+                // internal param/return gates stay (ownership).
                 cg_value(a, env, sigs, strs, out, target); // rax=tag, rdx=payload
-                out.push_str("    cmp $8, %rax\n    je hbc_type_error\n    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
             }
             Ty::F64 => {
-                // f64 crosses as tag 5 with the value bits as payload
-                // (scalar Dyn: no allocation, no metadata - printing a
-                // tag-5 Dyn uses dec 2, hb_itemPutND's default).
-                cg_f64_load(a, env, sigs, strs, out, target); // xmm0=value
-                out.push_str("    movq %xmm0, %rax\n    sub $16, %rsp\n    movq $5, (%rsp)\n    mov %rax, 8(%rsp)\n");
+                // f64 crosses as tag 5 with the value bits as payload.
+                // The literal/operation's DECIMAL COUNT rides in the tag
+                // word's high bits (5 | dec<<8) so an echo through C
+                // keeps Harbour's width/dec (oracle: HBR_ECHO(3.5) prints
+                // "3.5", not "3.50"); a C-constructed double keeps the
+                // plain tag and prints dec 2, hb_itemPutND's default.
+                cg_f64_load(a, env, sigs, strs, out, target); // xmm0=value, rdi=(width<<16)|dec
+                out.push_str("    movq %xmm0, %rax\n    mov %rdi, %r10\n    and $0xffff, %r10\n    shl $8, %r10\n    or $5, %r10\n    sub $16, %rsp\n    mov %r10, (%rsp)\n    mov %rax, 8(%rsp)\n");
+            }
+            Ty::Block(..) => {
+                // Milestone 2.5: the block value is its 8-byte code
+                // pointer (Copy); it crosses as a tag-7 Dyn casilla.
+                // The checker already pinned BRet::Int (a NIL-returning
+                // block is a named rejection).
+                cg_value(a, env, sigs, strs, out, target); // rax=codeptr
+                out.push_str("    sub $16, %rsp\n    movq $7, (%rsp)\n    mov %rax, 8(%rsp)\n");
             }
             _ => {
                 // I64 (the checker rejects every other type).
@@ -16679,14 +16718,18 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
     }
 
     // Extend-System bridge (docs/EXTEND-BRIDGE.md): one thunk per
-    // EXTERNAL symbol, plus the dispatcher and the bridge-visible helper
-    // exports. Linux only in this increment (Windows rejected in main);
+    // EXTERNAL symbol. Since the H2.0 binding decision each thunk calls
+    // the extension's HBHBR_FN_<NAME> symbol DIRECTLY (a missing C
+    // function is a link error naming the symbol, like Harbour/hbmk2);
+    // the section-walk dispatcher survives only in objects hbc emitted
+    // before this change (they carry their own copy) and keeps working
+    // against new hbhbr.o, whose HB_FUNC still registers its section
+    // entry. Linux only in this increment (Windows rejected in main);
     // nothing here is emitted for a program without EXTERNAL.
     if !externs.is_empty() && matches!(target, Target::Linux) {
-        for (i, name) in externs.iter().enumerate() {
-            out.push_str(&format!("hbc_fn_{}:\n    mov 8(%rsp), %rsi\n    lea 24(%rsp), %rdx\n    lea .Lextname{}(%rip), %rdi\n    jmp hbc_ext_dispatch\n    .section .rodata\n.Lextname{}:\n    .asciz \"{}\"\n    .text\n", name, i, i, name.to_ascii_uppercase()));
+        for name in externs.iter() {
+            out.push_str(&format!("hbc_fn_{}:\n    push %rbp\n    mov %rsp, %rbp\n    mov 16(%rbp), %rax\n    mov %rax, hbc_ext_argc(%rip)\n    lea 32(%rbp), %rax\n    mov %rax, hbc_ext_argv(%rip)\n    movq $1, hbc_ext_ret_tag(%rip)\n    movq $0, hbc_ext_ret_pay(%rip)\n    call HBHBR_FN_{}\n    call hbc_ext_end\n    mov hbc_ext_ret_tag(%rip), %rax\n    mov hbc_ext_ret_pay(%rip), %rdx\n    pop %rbp\n    ret\n", name, name.to_ascii_uppercase()));
         }
-        out.push_str(EXT_DISPATCH_LINUX);
         // hbhbr.o calls back into these runtime helpers across the
         // object boundary; without the bridge they stay internal.
         out.push_str("    .globl hbc_strcpy\n    .globl hbc_freestr\n");
@@ -17061,7 +17104,9 @@ hbc_print_dyn:
     je 11f
     cmp $8, %rax
     je 13f
-    cmp $5, %rax
+    mov %rax, %r10
+    and $255, %r10
+    cmp $5, %r10
     je 14f
     lea .Lnilmsg(%rip), %rsi
     mov $3, %edx
@@ -17085,6 +17130,9 @@ hbc_print_dyn:
     mov -8(%rax), %rdx
     jmp hbc_print_str
 14: movq %rdx, %xmm0
+    push %rax
+    call hbc_pflush
+    pop %rax
     mov $10, %edi
     movsd .Ldynw_hi(%rip), %xmm1
     ucomisd %xmm1, %xmm0
@@ -17094,7 +17142,11 @@ hbc_print_dyn:
     jae 16f
 15: mov $20, %edi
 16: shl $16, %rdi
-    or $2, %rdi
+    shr $8, %rax
+    test %rax, %rax
+    jnz 17f
+    mov $2, %eax
+17: or %rax, %rdi
     jmp hbc_print_num_f64
 
 # hbc_print_dyncell (ains piece 1b step (c)-next): %rax = tag, %rdx =

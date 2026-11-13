@@ -22,12 +22,12 @@ function main()
 - A name also defined in the file is inert: the Harbour definition wins
   (same rule as `REQUEST` of a local symbol).
 - Argument types that marshal: integer, logical, string, NIL, scalar
-  f64 (since milestone 2.3, as tag-5 Dyn casillas) and Dyn values
-  holding one of those. Arrays, hashes, codeblocks, dates and `@`
-  by-reference arguments are compile time named rejections; a Dyn-held
-  array fails at runtime with the registered clean type error, and
-  Dyn-float arithmetic in .hb code is the pending numeric-tower
-  unification (milestone 2.3 notes).
+  f64 (since milestone 2.3, as tag-5 Dyn casillas), Dyn values holding
+  one of those, `@` by-reference over a Dyn local (since milestone
+  2.2), and Dyn-held arrays READ-ONLY (since milestone 2.4). Statically
+  typed arrays, hashes, codeblocks and dates are compile time named
+  rejections, and Dyn-float arithmetic in .hb code is the pending
+  numeric-tower unification (milestone 2.3 notes).
 - Strings cross as owned clones made at the boundary; the C side only
   borrows them during the call. Values returned with `hb_retc`/
   `hb_retclen` arrive as owned strings the Harbour caller releases with
@@ -44,15 +44,92 @@ HB_FUNC( HBR_ADD )
 }
 ```
 
-Milestone-1 API (`extend/hbhbr.h`): `hb_pcount`, `hb_parinfo` (with
-`hb_parinfo(0)` = count), `hb_param`, `hb_extIsNil`, `hb_parni`,
-`hb_parnl`, `hb_parl`, `hb_parc`, `hb_parclen`, and the return family
-`hb_ret`, `hb_retl`, `hb_retni`, `hb_retnl`, `hb_retc`, `hb_retclen`;
-type-test macros `HB_ISNIL`, `HB_ISCHAR`, `HB_ISNUM`, `HB_ISLOG`; the
-`HB_IT_*` constants carry Harbour's own values so extension code tests
-types identically. `hb_parc` returns a NUL-terminated scratch copy valid
+API surface (`extend/hbhbr.h`): every public name and signature is
+aligned with the pinned Harbour headers (harbour/core @694428e:
+include/hbapi.h and include/hbapiitm.h; the header line is cited next
+to each declaration in hbhbr.h). Parameters: `hb_pcount` (hbapi.h:683),
+`hb_parinfo` (:628, with `hb_parinfo(0)` = count), `hb_param`
+(:630), `hb_parni` (:648), `hb_parnl` (:650), `hb_parl` (:645),
+`hb_parc` (:636), `hb_parclen` (:638). Returns: `hb_ret` (:684),
+`hb_retl` (:697), `hb_retni` (:699), `hb_retnl` (:700), `hb_retnd`
+(:698), `hb_retc` (:685), `hb_retclen` (:689). Items: `hb_itemNew`
+(hbapiitm.h:106), `hb_itemRelease` (:140, HB_BOOL), `hb_itemType`
+(:145, HB_TYPE), `hb_itemGetNI/NL/ND/L/C` (:98/:99/:96/:94/:86),
+`hb_itemGetCLen` (:88 - length; this is the ONLY hb_itemGetCLen),
+`hb_itemCopyC` (:82 - buffer copy, min(len,max) bytes, NO terminator),
+`hb_itemPutNI/NL/ND/L/C/CL` (:125/:126/:124/:123/:110/:111 - all
+return the same PHB_ITEM), `hb_itemReturn` (:141 - COPIES the value;
+the item keeps it, oracle-pinned), `hb_xfree` (hbapi.h:490). Arrays:
+`hb_arrayLen` (:795), `hb_arrayGetItemPtr` (:809), `hb_parinfa`
+(:629), `hb_arrayGetType/NI/NL/ND/L/C/CLen` (:827/:818/:819/:822/
+:817/:811/:813). Byref stores: `hb_storc` (:755), `hb_storclen`
+(:756), `hb_storl` (:762), `hb_storni` (:763), `hb_stornl` (:764),
+`hb_stornd` (:766) - VALUE FIRST, int return (1 written, 0 not
+byref). Type-test macros `HB_ISNIL`, `HB_ISCHAR`, `HB_ISNUM`,
+`HB_ISLOG`, `HB_ISBYREF` (:232), `HB_ISARRAY` (:233), `HB_ISBLOCK`
+(:235). The `HB_IT_*` constants carry Harbour's own values (hbapi.h
+:70-100: NIL 0x0, POINTER 0x1, INTEGER 0x2, HASH 0x4, LONG 0x8,
+DOUBLE 0x10, DATE 0x20, LOGICAL 0x80, SYMBOL 0x100, STRING 0x400,
+MEMOFLAG 0x800, BLOCK 0x1000, BYREF 0x2000, ARRAY 0x8000, ANY
+0xFFFFFFFF). HarbourRust's own extensions (no Harbour twin, marked in
+hbhbr.h): `hb_extIsNil`, and the one-hop byref read-through inside the
+`hb_array*` readers. Harbour has NO `hb_parna`/`hb_parbyref` - the
+canonical patterns are `hb_param(i, HB_IT_ARRAY)` + `hb_arrayGet*` and
+`HB_ISBYREF(i)`. `hb_parc` returns a NUL-terminated scratch copy valid
 until the C function returns (Harbour-like lifetime); use `hb_parclen`
 for embedded-NUL-safe access.
+
+Milestone 2.1 (PHB_ITEM item API, 2026-11-13):
+
+- A PHB_ITEM here is a borrowed pointer to an hbc stack casilla (the
+  Harbour item ABI is reduced to pointer semantics - named limit).
+  `hb_itemNew` copies any source item into a caller-owned casilla
+  (freestand alloc); `hb_itemRelease` (HB_BOOL) releases it.
+  `hb_itemPut*` overwrite in place, releasing an old owned string;
+  `hb_itemGet*` read; `hb_itemType` returns the HB_IT_* type.
+  `hb_itemPutL` accepts any nonzero as true. `hb_itemNew(NULL)`
+  builds a NIL item.
+- ORACLE-PINNED (694428e): `hb_itemReturn` COPIES the value into the
+  return channel - the item KEEPS its value and `hb_itemGetC` still
+  answers afterwards; it is not destructive. `hb_itemCopyC` copies
+  min(len, max) bytes WITHOUT a NUL terminator and returns the count;
+  `hb_itemGetCLen` is the one-argument length. `hb_itemGetC` on a
+  non-string is NULL, on an empty string a NON-NULL alloc; the
+  returned copy is released with `hb_xfree`. `hb_itemPut*` return the
+  same PHB_ITEM.
+- The return channel frees a previous owned string before each new
+  value, so repeated `hb_retc*` calls inside one C function no longer
+  leak (peak RSS of a 5M-call loop probe: 68 kB, was ~140 MB before
+  this fix).
+- Named limits: item identity is borrowed - a casilla may be retyped
+  by the runtime (Harbour allocates fresh items); no item locking,
+  timestamps or serialization; `hb_itemCopyC`/`hb_itemGetCLen` on a
+  non-string are 0; no `hb_itemNew` of an array (needs recursive cell
+  alloc) until milestone 2.4's write side lands.
+- Probes: extend/demo/apiitem.c + apiitem.hb (KEEP/COPYC/GETCEMPTY/
+  LOOPRET exercise the pinned semantics; build like the m1 demo).
+
+Milestone 2.2 (@ by reference, 2026-11-13):
+
+- `@x` crosses when x is a Dyn (NIL-able) local; the C side receives a
+  marker casilla whose payload is the ADDRESS of the caller's casilla.
+  `@` on a statically-typed local or a non-local stays a named
+  compile-time rejection.
+- hb_par* read through the reference; hb_parinfo ORs HB_IT_BYREF over
+  the referred type; test byref with HB_ISBYREF(i) (Harbour's own
+  macro, hbapi.h:232 - Harbour has no hb_parbyref). ORACLE-PINNED
+  (694428e): parinfo(@string) = 9216 (HB_IT_BYREF|HB_IT_STRING).
+- hb_storc/clen/l/ni/nl/nd write the caller's value through the
+  reference with Harbour's exact signatures (value first, int
+  return), releasing an old owned string payload first; on a
+  non-byref argument they are a no-op. ORACLE-PINNED (694428e):
+  hb_storc returns 1 over @s and 0 without byref. Strings stored are
+  hbc-owned copies the caller's Dyn discipline releases.
+- Named limit: hb_stor* over a @ holding a Dyn ARRAY is a registered
+  clean rejection (exit 1, named message) - overwriting would orphan
+  the array block and freeing needs a recursive walk. Probe:
+  extend/demo/apistorref.c + .hb.
+- Demo: extend/demo/apiref.c + apiref.hb.
 
 Milestone 2.3 (f64 at the boundary, 2026-11-13):
 
@@ -77,6 +154,40 @@ Milestone 2.3 (f64 at the boundary, 2026-11-13):
   is the Dyn numeric tower decision (H2 architecture note).
 - Demo: extend/demo/apif64.c + apif64.hb (build like the m1 demo).
 
+- A double's DECIMAL COUNT crosses with the value (it rides in the tag
+  word's high bits of the tag-5 casilla, an internal representation
+  invisible through the masked hb_* API): echoing a literal 3.5 back
+  through hb_itemReturn prints "3.5" byte-exact like the native `?
+  3.5`, while a C-constructed double (hb_retnd / hb_itemPutND) keeps
+  the dec-2 default. ORACLE-PINNED (694428e, HBR_ECHO row of the
+  combined round). Probe: extend/demo/apiecho.c + apiecho.hb.
+
+Milestone 2.4 (arrays, read-only, 2026-11-13):
+
+- A Dyn-held array (tag 8: element count at payload-8, 16-byte
+  {tag,payload} cells at payload) crosses as its BORROWED casilla. The
+  caller keeps ownership; the C side never frees, resizes or stores.
+- `hb_itemType` / `hb_parinfo` report HB_IT_ARRAY ("A");
+  `hb_param(i, HB_IT_ARRAY)` is non-NULL, other type masks NULL.
+- The canonical Harbour pattern works unchanged: `a = hb_param(i,
+  HB_IT_ARRAY)` then `hb_arrayLen(a)` (0 on a non-array, an empty
+  array or NULL), `hb_arrayGetNL/L/ND/NI/C/CLen/Type(a, n)` (1-based)
+  or `hb_arrayGetItemPtr(a, n)` plus the milestone-2.1 item API -
+  NULL on an out-of-range index. `hb_parinfa(i, 0)` is the length and
+  `hb_parinfa(i, n)` the element's HB_IT_* type. (Harbour has no
+  `hb_parna`; it was dropped from this surface.) The `hb_array*`
+  readers follow ONE byref hop, so the same code works on `@a`.
+- Named limits of 2.4: STATICALLY TYPED arrays (DArr slots keep
+  CAPACITY at payload-8, not the count - marshalling them as tag 8
+  would lie about the layout) stay compile-time named rejections;
+  array mutation, resize, `hb_itemNew` of an array and array return
+  values are not in this increment; NESTED Dyn-held arrays cannot be
+  built on the .hb side yet (a `{1, {7, 8}}` literal into a Dyn local
+  is a named rejection), so the tag-6 subarray recursion of
+  `hb_arrayGetItemPtr` shares the verified flat path but has no
+  end-to-end probe in this slice.
+- Demo: extend/demo/apiarr.c + apiarr.hb (build like the m1 demo).
+
 Oracle-pinned semantics (contrast against real Harbour, 2026-11-13):
 
 - `hb_parc`/`hb_parclen` on a non-string argument (number, NIL,
@@ -90,6 +201,12 @@ Oracle-pinned semantics (contrast against real Harbour, 2026-11-13):
 - `hb_parinfo` types a whole number HB_IT_INTEGER inside the 32-bit
   range (42 -> 2, 2147483647 -> 2, -2147483648 -> 2) and HB_IT_LONG
   beyond it (2147483648 -> 8, -2147483649 -> 8).
+- `hb_itemType` of a double is HB_IT_DOUBLE (16). A @string argument:
+  `hb_parinfo` = 9216 (HB_IT_BYREF | HB_IT_STRING), `hb_itemType` =
+  HB_IT_STRING (1024).
+- `hb_storc` returns 1 over a byref argument and 0 on a non-byref one
+  (the whole hb_stor* family shares the value-first, int-returning
+  shape).
 
 Function names are matched case-insensitively (Harbour names are
 case-insensitive); write the HB_FUNC name in uppercase by convention.
@@ -124,10 +241,15 @@ official `.hbp`).
 
 ## Not in milestone 1 (named limits)
 
-- Dates, arrays, hashes and codeblocks across the boundary; `@`
-  by-reference (`hb_parbyref`); callbacks into Harbour code
-  (`hb_vmEvalBlock`); `hb_errRT` error recovery. (Scalar f64 crossed in
-  milestone 2.3; Dyn tag 5 carries the value bits.) Each fails closed at compile time or as a registered clean
+- Dates, hashes and codeblocks across the boundary; array mutation,
+  resize and array return values; callbacks into Harbour code
+  (`hb_vmEvalBlock`); `hb_errRT` error recovery.
+  (Scalar f64 crossed in milestone 2.3; `@` over Dyn locals in 2.2;
+  Dyn-held arrays read-only in 2.4.)
+  Named limit of 2.2: `hb_param` on a byref argument returns the
+  MARKER casilla and the item API (`hb_itemType`, `hb_itemNew`, ...)
+  is not supported on that handle in this increment - use the
+  hb_par*/hb_stor* families, which read and write through. Each fails closed at compile time or as a registered clean
   runtime error.
 - Windows: the bridge is Linux-only in this increment (hbc rejects
   `EXTERNAL` with `--target=windows`).
@@ -147,9 +269,14 @@ official `.hbp`).
   string payload points at bytes, length word at payload-8), pushes
   them left to right, adds an argc slot and calls a per-symbol thunk
   `hbc_fn_<name>`, which forwards name/argc/argv to `hbc_ext_dispatch`.
-- `HB_FUNC(NAME)` places a `{name, fnptr}` entry in the `hbhbr_funcs`
-  linker section; the dispatcher walks it between the GNU-ld-provided
-  `__start_hbhbr_funcs`/`__stop_hbhbr_funcs` bounds and calls the match
+- `HB_FUNC(NAME)` defines the global symbol `HBHBR_FN_<NAME>` and the
+  hbc thunk calls it directly (H2.0 decision): a missing C function is
+  a LINK error naming the symbol, like Harbour/hbmk2. For
+  compatibility, `HB_FUNC` also places a `{name, fnptr}` entry in the
+  `hbhbr_funcs` linker section; objects emitted by a pre-2.0 hbc carry
+  their own section-walk dispatcher (between the GNU-ld-provided
+  `__start_hbhbr_funcs`/`__stop_hbhbr_funcs` bounds) and keep working
+  against new hbhbr.o
   with a SysV-aligned stack. An unmatched name is a clean exit-1
   diagnostic (`error: external function not found: NAME` + callstack).
 - `hbhbr.o` keeps the bridge state (argc/argv/return slot) and the
