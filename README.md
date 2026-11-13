@@ -23,6 +23,26 @@ See the [Date port record](docs/DATE-PORT-2026-11-13.md) for the exact scope.
 See the [current baseline](docs/BASELINE-2026-11-13.md) for evidence, caveats,
 known failures and the history of published increments.
 
+## Harbour standard-function compatibility
+
+HarbourRust provides a growing native compatibility layer for the supported subset of Harbour's standard functions, including `QOut`/`QQOut`, `Len`, `AAdd`/`ASize`, hash operations and `Date`/`CToD`. These functions use Harbour-compatible names and measured behavior where supported, with explicit limits and known differences. This is not the complete Harbour runtime or a general implementation of Harbour's C Extend API; arbitrary Harbour libraries are not currently plug-compatible.
+
+## Recorded executable size and speed
+
+**The recorded native samples are much smaller and faster on these workloads.** These are historical Linux microbenchmarks from 25 October 2026, not measurements of today's release or a claim about every Harbour application.
+
+| Measurement | HarbourRust | Harbour pcode | Harbour -gc3 |
+| --- | ---: | ---: | ---: |
+| `b3_call` executable size, unstripped Linux ELF | **9,032 bytes** | 1,431,608 bytes | 1,431,560 bytes |
+| `b3_call` execution time, median | **33 ms** | 1,591 ms | 972 ms |
+| `b2_str` execution time, median | **520 ms** | 865 ms | 745 ms |
+
+For `b3_call`, the recorded artifact is about **158 times smaller**, and the timing rerun is **48 times faster than pcode** or **29 times faster than -gc3**. Size and timing use different HarbourRust revisions; they must not be combined into a current-release claim.
+
+Method: Linux x86-64, 2 cores/2 GB RAM; median of five runs, matching outputs checked before timing; Harbour `694428e1` with hbmk2 default `-O3`; HarbourRust `ca760e0a` for timings and `99f32d8f` for sizes. The Harbour binaries include the broader RTL and use libc/libm; the native samples have a smaller freestanding runtime and a narrower capability set. No Windows EXE size comparison is claimed. The `b1_int` speed comparison was withdrawn because the two compilers used different numeric type paths.
+
+See [recorded results and corrections](bench/RESULTS.md), [artifact sizes](bench/SIZES.md) and [methodology](bench/METHODOLOGY.md).
+
 ## Build and run on Linux
 
 Requires Rust and GNU binutils on Linux x86-64. From the repository root:
