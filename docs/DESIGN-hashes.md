@@ -1,6 +1,8 @@
+> Historical probe note (2026-11-13): `archived-probe:` and `historical-probe:` identify evidence from earlier revisions, not current checkout paths. The extra probe directory was removed at the owner's request; the regression manifest and oracle corpus remain. Its last full snapshot is in commit `595ecd87b214068047844acbf430f0da817deeb7`.
+
 # Hashes v1 - design notes (IMPLEMENTED as t231-t244, 2026-10-25)
 
-Oracles (compiled hbmk2 -gtstd, sondas_ac/hashes, re-run 2026-10-25):
+Oracles (compiled hbmk2 -gtstd, historical-probe:hashes, re-run 2026-10-25):
 - h1: insertion order preserved; overwrite in place (len stays 2;
   hb_HKeys = [a, b]; h["a"] = 9 after rewrite).
 - h2: {=>} empty, len 0.
@@ -14,7 +16,7 @@ Oracles (compiled hbmk2 -gtstd, sondas_ac/hashes, re-run 2026-10-25):
 - h7/h7b: Harbour allows hash/array self-reference cycles (retained);
   our model: compile error (ownership), same as arrays.
 
-Oracles run for v1 semantics (sondas_ac/hashes2, hbmk2 -gtstd):
+Oracles run for v1 semantics (historical-probe:hashes2, hbmk2 -gtstd):
 - h8: duplicate keys in one literal -> len 1, last value wins
   (overwrite in place).
 - h9: inside a literal each pair evaluates its KEY first, then its

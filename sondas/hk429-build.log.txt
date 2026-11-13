@@ -1,5 +1,0 @@
-Harbour 3.2.1dev (r2610242111)
-Copyright (c) 1999-2025, https://harbour.github.io/
-Compiling 'sondas/hk429.prg'...
-Lines 12, Functions/Procedures 1
-Generating C source output to '/tmp/hbmk_b00hic.dir/hk429.c'... Done.

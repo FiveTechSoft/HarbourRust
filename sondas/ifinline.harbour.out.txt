@@ -1,8 +1,0 @@
-
-Testing Harbour If inline
-         1
-not NIL
-Now changing n to 2
-         2
-not NIL
-ok!

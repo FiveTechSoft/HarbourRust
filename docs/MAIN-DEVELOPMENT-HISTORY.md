@@ -1,3 +1,5 @@
+> Historical probe note (2026-11-13): `archived-probe:` and `historical-probe:` identify evidence from earlier revisions, not current checkout paths. The extra probe directory was removed at the owner's request; the regression manifest and oracle corpus remain. Its last full snapshot is in commit `595ecd87b214068047844acbf430f0da817deeb7`.
+
 > Historical development record, retained from the former main README.
 > Claims describe earlier iterations, not full Harbour compatibility.
 > Introductory framing was updated on 13 November 2026; technical records remain historical.
@@ -719,7 +721,7 @@ PROTECTED/HIDDEN are their own (t292, oracle cl8: Harbour enforces
 them at runtime), `==` identity is its own (t293, oracles
 cl7/cl19). The parser is ours (MIT); the hbclass.ch macros were
 only observed as oracles, never copied. Semantics probed and
-registered so far (sondas_ac/classes, cl1-cl21): sharing on
+registered so far (historical-probe:classes, cl1-cl21): sharing on
 assignment and parameter passing, Self chains, per-instance INIT,
 constructor not auto-run, method-over-DATA precedence, instance
 dispatch with override, child-first INIT order, lax arity,
@@ -1540,7 +1542,7 @@ dates are also outside this increment.
 
 The battery grows to 1100 manifest cases plus five harness checks,
 ALL GREEN on Linux x86-64 and Wine 10.20; the frozen 175 sweep stays
-at 20 COMPILES (see sondas/sweep175-64bc.csv, hk483/hk484
+at 20 COMPILES (see archived-probe:sweep175-64bc.csv, hk483/hk484
 byte-matching compiled Harbour).
 
 Iteration 60 adds hb_HClear(h) and hb_HFill(h, value) (core

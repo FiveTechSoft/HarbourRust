@@ -2860,7 +2860,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
 
 // Class surface (parser landed; runtime representation pending the user's
 // decision): CREATE CLASS / DATA / METHOD / INHERIT declarations, METHOD
-// ... CLASS definitions. Semantics probed in sondas_ac/classes (cl1-cl21).
+// ... CLASS definitions. Semantics probed in historical-probe:classes (cl1-cl21).
 struct ClassDecl {
     name: String,
     parent: Option<String>,

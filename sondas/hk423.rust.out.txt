@@ -1,7 +1,0 @@
-
-         2          5          3
-        15          5
-         1.5 .F. NIL raw
-         2          1
-abc abc         5
-NIL

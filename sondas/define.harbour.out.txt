@@ -1,7 +1,0 @@
-
-testing Harbour /d compiler flag
-Please use /dTEST compiler flag
-Or run 'set HB_USER_PRGFLAGS=/dTEST' if you are using the GNU Make System
-FIRST is defined
-FIRST and SECOND are defined
-FIRST, SECOND and THIRD are defined

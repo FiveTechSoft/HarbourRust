@@ -1,3 +1,5 @@
+> Historical probe note (2026-11-13): `archived-probe:` and `historical-probe:` identify evidence from earlier revisions, not current checkout paths. The extra probe directory was removed at the owner's request; the regression manifest and oracle corpus remain. Its last full snapshot is in commit `595ecd87b214068047844acbf430f0da817deeb7`.
+
 # Experimental LLVM scalar AOT gate
 
 This branch is a feasibility test, not a replacement backend. Default `hbc`
@@ -747,7 +749,7 @@ rejected. A normal declaration binding is created at its original site.
 
 fornext-original.prg is unchanged upstream harbour/core 694428e1's fornext.prg,
 SHA256 7df8bbea5c9daacfe9d8a439ab2d4ebce3417ce4b15628276819b451cc6aa585,
-also identical to the preserved sondas/hk339.prg. Its 337-byte output matches
+also identical to the preserved archived-probe:hk339.prg. Its 337-byte output matches
 an independent expected loop sequence and the historical hk339 record, as
 well as current-vs-LLVM exact output on Linux and PE/Wine. No fresh Harbour
 binary/oracle was built in this increment; that historical reference is stated
@@ -814,7 +816,7 @@ is admitted. Variable arms and nested string IIF remain rejected.
 
 exit-original.prg is unchanged upstream harbour/core 694428e1 tests/exit.prg,
 SHA256 a14961def1156ec029d6c93bfbda7ce05b9ee5900f842e42843046bff1a9163d.
-It is also byte-identical to sondas/hk323.prg and tests/t777_for_reuse.hb.
+It is also byte-identical to archived-probe:hk323.prg and tests/t777_for_reuse.hb.
 Linux and PE/Wine output matches explicit expected bytes, the manifest and
 the default backend. The documented 63ze Harbour comparison is historical,
 not a fresh Harbour execution. printchoice checks effect order, both choices,
