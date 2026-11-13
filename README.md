@@ -4,10 +4,6 @@ HarbourRust is an ahead-of-time compiler for Harbour, written in Rust. It transl
 
 ## Current status
 
-This main branch includes the bounded Date/CToD experiment. The newer compiler
-work on `experiment/llvm-scalar-aot` is being checked before integration.
-Do not assume the two branches have the same supported forms or results.
-
 Fresh Linux regression check on main: **1096/1097**. The inherited failure is
 `tests/t110_pp_include_angle_neg.hb` (negative diagnostic mismatch).
 This is a regression result, not a compatibility percentage. Windows, LLVM,
