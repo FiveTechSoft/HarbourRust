@@ -9924,9 +9924,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         Expr::Index(id, ie) => {
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
             if v.ty == Ty::RefDyn {
+                let k = fresh_lbl();
+                out.push_str(&format!("    sub $32, %rsp\n    mov -{}(%rbp), %r11\n    cmpq $8, (%r11)\n    jne hbc_type_error\n    mov 8(%r11), %r11\n    addq $1, -16(%r11)\n    jc hbc_oom\n    mov %r11, (%rsp)\n", v.off));
                 cg_expr(ie, env, sigs, strs, out, target);
                 if expr_ty(ie,env,sigs)==Ty::Dyn {out.push_str("    call hbc_dyn_to_i64\n");}
-                out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, (%r11)\n    jne hbc_type_error\n    mov 8(%r11), %r11\n    cmp $1, %rax\n    jl 81f\n    cmp -8(%r11), %rax\n    jg 81f\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov 8(%rax), %rdx\n    mov (%rax), %rax\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n",v.off));
+                out.push_str(&format!("    mov (%rsp), %r11\n    cmp $1, %rax\n    jl .Lprbnd{}\n    cmp -8(%r11), %rax\n    jg .Lprbnd{}\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov 8(%rax), %rdx\n    mov (%rax), %rax\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_persistent_payload_release\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n    jmp .Lprdone{}\n.Lprbnd{}:\n    call hbc_bound_error\n.Lprdone{}:\n", k,k,k,k,k));
                 return;
             }
             if v.ty == Ty::Hash {
@@ -19828,7 +19830,7 @@ fn validate_persistent(f:&Func)->Result<(),String> {
         Expr::Var(v)=>!roots.contains(v)||whole,
         Expr::ByRef(v)|Expr::Inc(v,..)=>!roots.contains(v),
         Expr::Set(v,r)=>!roots.contains(v)&&ex(r,roots,false),
-        Expr::Index(v,i)=>ex(i,roots,false)&&(!roots.contains(v)||(!expr_has_call(i)&&!expr_mentions(i,v))),
+        Expr::Index(v,i)=>ex(i,roots,false)&&(!roots.contains(v)||!expr_mentions(i,v)),
         Expr::Call(id,args)=>args.iter().all(|e|ex(e,roots,is_builtin(id,"valtype")||is_builtin(id,"len")||is_builtin(id,"hb_isarray"))),
         Expr::Seq(es)|Expr::ArrLit(es)=>es.iter().all(|e|ex(e,roots,false)),
         Expr::Bin(_,a,b)|Expr::Cmp(_,a,b)|Expr::LAnd(a,b)|Expr::LOr(a,b)=>ex(a,roots,false)&&ex(b,roots,false),
