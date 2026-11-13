@@ -37,7 +37,7 @@ known failures and the history of published increments.
 | Pcode and its runtime interpreter | Neither | Pcode executed by the VM | Direct C for generated function bodies; Harbour runtime services remain |
 | Tracing garbage collector | No | Harbour runtime GC | Harbour runtime GC |
 | Harbour runtime/RTL linkage | Own embedded native helpers for the supported subset, not the full Harbour runtime | Harbour runtime/RTL | Harbour runtime/RTL |
-| C Extend API | Puente Extend API en C: hito 1 disponible en Linux (verificado byte a byte contra Harbour oficial y hbmk2 real); Windows en camino. | Supported | Supported |
+| C Extend API | C Extend API bridge: milestone 1 available on Linux (verified byte-exact against official Harbour and real hbmk2); Windows in progress. | Supported | Supported |
 
 No tracing GC does not mean no memory management: native allocation/free helpers manage supported values, and a limited persistent-value path uses reference counting. This is not full Harbour dynamic-sharing compatibility. `-gc3` generates C calls to Harbour's runtime helpers; it does not turn Harbour into the same freestanding native model as HarbourRust.
 
