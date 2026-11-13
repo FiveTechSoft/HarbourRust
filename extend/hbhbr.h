@@ -65,6 +65,7 @@ int           hb_extIsNil( int iParam );
 const void *  hb_param( int iParam, HB_ULONG mask ); /* non-NULL when the type matches */
 int           hb_parni( int iParam );
 long          hb_parnl( int iParam );
+double        hb_parnd( int iParam );
 int           hb_parl( int iParam );
 const char *  hb_parc( int iParam );   /* NUL-terminated scratch copy, valid until this C function returns */
 HB_SIZE       hb_parclen( int iParam );          /* byte length (NUL-safe access with hb_parc) */
@@ -75,6 +76,7 @@ void hb_ret( void );                      /* NIL */
 void hb_retl( int iTrueFalse );
 void hb_retni( int iNumber );
 void hb_retnl( long lNumber );
+void hb_retnd( double dNumber );
 void hb_retc( const char * szText );                    /* C string, copied */
 void hb_retclen( const char * szText, HB_SIZE nLen );   /* counted bytes, copied */
 

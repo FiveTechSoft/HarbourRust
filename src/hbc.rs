@@ -5437,15 +5437,16 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     // Extend-System C boundary (docs/EXTEND-BRIDGE.md):
                     // free arity (omitted arguments read NIL in C through
                     // hb_pcount/hb_param); every argument must marshal to
-                    // a Dyn casilla. Arrays, hashes, codeblocks, floats,
-                    // dates and @byref stay named rejections in this
-                    // increment; the C side only BORROWS during the call.
+                    // a Dyn casilla. Arrays, hashes, codeblocks, dates
+                    // and @byref stay named rejections in this increment;
+                    // floats cross as tag-5 Dyn casillas (value bits in the
+                    // payload); the C side only BORROWS during the call.
                     for a in args.iter() {
                         if matches!(a, Expr::ByRef(_)) {
                             return Err(format!("line {}: `@` by-reference across the C Extend boundary needs hb_parbyref: not in this increment (docs/EXTEND-BRIDGE.md)", n));
                         }
                         match type_expr(a, env, sigs, n)? {
-                            Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::Dyn => {}
+                            Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::Dyn | Ty::F64 => {}
                             other => return Err(format!("line {}: {} argument cannot cross the C Extend boundary in this increment (docs/EXTEND-BRIDGE.md)", n, ty_name(other))),
                         }
                     }
@@ -10987,6 +10988,13 @@ fn cg_ext_call(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mu
             Ty::Dyn => {
                 cg_value(a, env, sigs, strs, out, target); // rax=tag, rdx=payload
                 out.push_str("    cmp $8, %rax\n    je hbc_type_error\n    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            }
+            Ty::F64 => {
+                // f64 crosses as tag 5 with the value bits as payload
+                // (scalar Dyn: no allocation, no metadata - printing a
+                // tag-5 Dyn uses dec 2, hb_itemPutND's default).
+                cg_f64_load(a, env, sigs, strs, out, target); // xmm0=value
+                out.push_str("    movq %xmm0, %rax\n    sub $16, %rsp\n    movq $5, (%rsp)\n    mov %rax, 8(%rsp)\n");
             }
             _ => {
                 // I64 (the checker rejects every other type).
@@ -17053,6 +17061,8 @@ hbc_print_dyn:
     je 11f
     cmp $8, %rax
     je 13f
+    cmp $5, %rax
+    je 14f
     lea .Lnilmsg(%rip), %rsi
     mov $3, %edx
     mov $1, %eax
@@ -17074,6 +17084,18 @@ hbc_print_dyn:
 9:  mov %rdx, %rax
     mov -8(%rax), %rdx
     jmp hbc_print_str
+14: movq %rdx, %xmm0
+    mov $10, %edi
+    movsd .Ldynw_hi(%rip), %xmm1
+    ucomisd %xmm1, %xmm0
+    ja 15f
+    movsd .Ldynw_lo(%rip), %xmm1
+    ucomisd %xmm1, %xmm0
+    jae 16f
+15: mov $20, %edi
+16: shl $16, %rdi
+    or $2, %rdi
+    jmp hbc_print_num_f64
 
 # hbc_print_dyncell (ains piece 1b step (c)-next): %rax = tag, %rdx =
 # payload of a RAW BORROWED Dyn cell consumed by an output verb (the iif
@@ -18351,6 +18373,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Lnilmsg:\n    .byte 78,73,76\n");
     out.push_str(".Ltmsg:\n    .byte 46,84,46\n");
     out.push_str(".Lfmsg:\n    .byte 46,70,46\n");
+    out.push_str(".Ldynw_hi:\n    .double 9999999999.0\n.Ldynw_lo:\n    .double -999999999.0\n");
     // "Bound error: array access\n" (26 bytes; Harbour wording, probe a1)
     out.push_str(".Lboundmsg:\n    .byte 66,111,117,110,100,32,101,114,114,111,114,58,32,97,114,114,97,121,32,97,99,99,101,115,115,10\n");
     // "Error: division by zero\n" (24 bytes; EG_ZERODIV, probe hk294)
@@ -20528,8 +20551,8 @@ fn main() {
         if prog.funcs.iter().any(|f| f.name == *name) { continue; }
         if !externs.contains(name) { externs.push(name.clone()); }
     }
-    if !externs.is_empty() && matches!(target, Target::Windows) {
-        eprintln!("error: EXTERNAL (C Extend bridge) is Linux-only in this increment (docs/EXTEND-BRIDGE.md)");
+    if !externs.is_empty() && (matches!(target, Target::Windows) || llvm) {
+        eprintln!("error: EXTERNAL (C Extend bridge) is Linux-only in this increment, and not available on the --experimental-llvm emit path (docs/EXTEND-BRIDGE.md)");
         process::exit(1);
     }
     EXTERNS.with(|c| *c.borrow_mut() = externs.iter().cloned().collect());

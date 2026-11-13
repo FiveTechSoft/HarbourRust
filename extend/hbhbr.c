@@ -25,12 +25,14 @@ unsigned long        hbc_ext_ret_tag = 1; /* NIL */
 unsigned long        hbc_ext_ret_pay = 0;
 
 /* hbc Dyn tags: 0/9 integer, 1 NIL, 2 borrowed string, 3 logical,
- * 4 owned string. String payload -> bytes; length word at payload-8. */
+ * 4 owned string, 5 double (payload = value bits, no allocation).
+ * String payload -> bytes; length word at payload-8. */
 #define HBC_TAG_INT     0
 #define HBC_TAG_NIL     1
 #define HBC_TAG_STR_BRW 2
 #define HBC_TAG_LOGICAL 3
 #define HBC_TAG_STR_OWN 4
+#define HBC_TAG_DOUBLE  5
 #define HBC_TAG_INT_LIT 9
 
 static unsigned long cell_tag( int i )
@@ -59,6 +61,7 @@ HB_ULONG hb_parinfo( int iParam )
             long v = (long) cell_pay( iParam );
             return ( v >= -2147483648L && v <= 2147483647L ) ? HB_IT_INTEGER : HB_IT_LONG;
         }
+        case HBC_TAG_DOUBLE:  return HB_IT_DOUBLE;
         case HBC_TAG_LOGICAL: return HB_IT_LOGICAL;
         case HBC_TAG_STR_BRW:
         case HBC_TAG_STR_OWN: return HB_IT_STRING;
@@ -82,7 +85,16 @@ long hb_parnl( int iParam )
 {
     unsigned long t = cell_tag( iParam );
     if( t == HBC_TAG_INT || t == HBC_TAG_INT_LIT ) return (long) cell_pay( iParam );
+    if( t == HBC_TAG_DOUBLE ) { union { unsigned long b; double d; } u; u.b = cell_pay( iParam ); return (long) u.d; }
     return 0; /* Harbour answers 0 on a type mismatch at this API level */
+}
+
+double hb_parnd( int iParam )
+{
+    unsigned long t = cell_tag( iParam );
+    if( t == HBC_TAG_INT || t == HBC_TAG_INT_LIT ) return (double) (long) cell_pay( iParam );
+    if( t == HBC_TAG_DOUBLE ) { union { unsigned long b; double d; } u; u.b = cell_pay( iParam ); return u.d; }
+    return 0.0; /* Harbour answers 0 on a type mismatch at this API level */
 }
 int hb_parni( int iParam ) { return (int) hb_parnl( iParam ); }
 
@@ -198,6 +210,14 @@ void hb_retclen( const char * szText, HB_SIZE nLen )
     hbc_ext_ret_tag = HBC_TAG_STR_OWN;
     hbc_ext_ret_pay = (unsigned long) owned;
 }
+void hb_retnd( double dNumber )
+{
+    union { double d; unsigned long b; } u;
+    u.d = dNumber;
+    hbc_ext_ret_tag = HBC_TAG_DOUBLE;
+    hbc_ext_ret_pay = u.b;
+}
+
 void hb_retc( const char * szText )
 {
     HB_SIZE n = 0;

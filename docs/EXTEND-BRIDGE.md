@@ -21,11 +21,13 @@ function main()
   supplied count), like Harbour.
 - A name also defined in the file is inert: the Harbour definition wins
   (same rule as `REQUEST` of a local symbol).
-- Argument types that marshal in this increment: integer, logical,
-  string, NIL and Dyn values holding one of those. Arrays, hashes,
-  codeblocks, floats, dates and `@` by-reference arguments are compile
-  time named rejections; a Dyn-held array fails at runtime with the
-  registered clean type error.
+- Argument types that marshal: integer, logical, string, NIL, scalar
+  f64 (since milestone 2.3, as tag-5 Dyn casillas) and Dyn values
+  holding one of those. Arrays, hashes, codeblocks, dates and `@`
+  by-reference arguments are compile time named rejections; a Dyn-held
+  array fails at runtime with the registered clean type error, and
+  Dyn-float arithmetic in .hb code is the pending numeric-tower
+  unification (milestone 2.3 notes).
 - Strings cross as owned clones made at the boundary; the C side only
   borrows them during the call. Values returned with `hb_retc`/
   `hb_retclen` arrive as owned strings the Harbour caller releases with
@@ -51,6 +53,29 @@ type-test macros `HB_ISNIL`, `HB_ISCHAR`, `HB_ISNUM`, `HB_ISLOG`; the
 types identically. `hb_parc` returns a NUL-terminated scratch copy valid
 until the C function returns (Harbour-like lifetime); use `hb_parclen`
 for embedded-NUL-safe access.
+
+Milestone 2.3 (f64 at the boundary, 2026-11-13):
+
+- A Harbour float literal or expression crosses as a tag-5 Dyn casilla:
+  the payload IS the 8 value bits (scalar; no allocation, no metadata).
+- `hb_parnd(i)` reads integers as (double) and doubles bit-exact; a
+  non-numeric argument answers 0.0. `hb_retnd(d)` returns a double.
+- `hb_parnl(i)` on a double truncates like Harbour's (long) read.
+- `hb_parinfo(i)` on a double answers HB_IT_DOUBLE (16); HB_ISNUM
+  therefore covers doubles.
+- ValType of a Dyn-held double is "N".
+- Printing a Dyn-held double uses dec 2 (hb_itemPutND's default in
+  Harbour) and the HB_DBL_LENGTH width rule (10, or 20 beyond
+  +/-9999999999). ORACLE-PINNED against real Harbour (pin 694428e,
+  2026-11-13), byte-exact: `?` of an hb_retnd double pads to the
+  10-column field with dec 2 ("         3.14"), keeps the trailing
+  zero ("         3.50"), and the 20-width rule yields exactly 23
+  columns for 12340067895.00; hb_parnl truncates toward zero
+  (3.14 -> 3, -3.14 -> -3); hb_parinfo answers 16; HB_ISNUM is .T.
+- NOT in this slice: Dyn-float arithmetic in .hb code (`p * 2` where p
+  holds a C double) still raises the clean type error; that unification
+  is the Dyn numeric tower decision (H2 architecture note).
+- Demo: extend/demo/apif64.c + apif64.hb (build like the m1 demo).
 
 Oracle-pinned semantics (contrast against real Harbour, 2026-11-13):
 
@@ -99,10 +124,10 @@ official `.hbp`).
 
 ## Not in milestone 1 (named limits)
 
-- Doubles/f64 (Dyn tag 5 stays reserved), dates, arrays, hashes and
-  codeblocks across the boundary; `@` by-reference (`hb_parbyref`);
-  callbacks into Harbour code (`hb_vmEvalBlock`); `hb_errRT` error
-  recovery. Each fails closed at compile time or as a registered clean
+- Dates, arrays, hashes and codeblocks across the boundary; `@`
+  by-reference (`hb_parbyref`); callbacks into Harbour code
+  (`hb_vmEvalBlock`); `hb_errRT` error recovery. (Scalar f64 crossed in
+  milestone 2.3; Dyn tag 5 carries the value bits.) Each fails closed at compile time or as a registered clean
   runtime error.
 - Windows: the bridge is Linux-only in this increment (hbc rejects
   `EXTERNAL` with `--target=windows`).
