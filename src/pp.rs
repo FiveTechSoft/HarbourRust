@@ -2079,6 +2079,13 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                 // here, so the switch changes no byte of output). Every
                 // other #pragma payload stays a named rejection.
                 let a = arg.trim();
+                // BEGINDUMP/ENDDUMP embed raw C into Harbour's .c output.
+                // hbc emits x86-64 assembly with no C in the compile path,
+                // so embedded C gets a named rejection with the supported
+                // route: a separate .c file through the Extend bridge.
+                if emitting && (a.eq_ignore_ascii_case("begindump") || a.eq_ignore_ascii_case("enddump")) {
+                    return Err(format!("line {}: #pragma {} (embedded C) is not supported: hbc has no C stage; put the C in a separate file compiled with a C compiler and link it through the Extend bridge (docs/EXTEND-BRIDGE.md)", line, a));
+                }
                 let inert = a.len() > 3 && a.starts_with("-es") && a[3..].bytes().all(|b| b.is_ascii_digit());
                 if emitting && !inert {
                     return Err(format!("line {}: #pragma `{}` is not in this PoC (only the inert warning-severity switch -es<N> is accepted)", line, a));
