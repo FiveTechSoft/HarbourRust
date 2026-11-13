@@ -18081,6 +18081,13 @@ hbc_panic_exit:
         Target::Windows => out.push_str("    mov $1, %ecx\n    call ExitProcess\n    .section .rdata,\"r\"\n"),
     }
     out.push_str(".Ltrace_header:\n    .byte 67,97,108,108,115,116,97,99,107,58,10\n");
+    if target == Target::Windows {
+        // PE/COFF gas has no ELF .pushsection/.popsection. These private
+        // numeric constant blocks are embedded in .text helpers. Convert
+        // after cloning stderr helpers so their constant blocks stay intact.
+        out = out.replace("\n.pushsection .rodata\n", "\n.section .rdata,\"r\"\n")
+            .replace("\n.popsection\n", "\n.text\n");
+    }
     out
 }
 
