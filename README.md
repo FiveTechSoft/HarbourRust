@@ -20,8 +20,10 @@ changes are reviewed independently before publication.
 
 Linux `Date()` remains UTC, not local time. Date parameters and general dynamic
 Date storage are not supported. Windows smoke tests cover `CToD`, blank dates and
-`ValType` under Wine 11.0; `Date()` and the full Windows regression battery
-remain unverified.
+`ValType` under Wine 11.0. The full Linux + Wine regression runner has now
+been run against main and the bridge increment: both report 1643 passes and
+27 failures, with no new failure cases and all five extra harnesses passing.
+This is not real-Windows verification or a green Windows battery.
 See the [Date port record](docs/DATE-PORT-2026-11-13.md) for the exact scope.
 
 See the [current baseline](docs/BASELINE-2026-11-13.md) for evidence, caveats,
@@ -35,7 +37,7 @@ known failures and the history of published increments.
 | Pcode and its runtime interpreter | Neither | Pcode executed by the VM | Direct C for generated function bodies; Harbour runtime services remain |
 | Tracing garbage collector | No | Harbour runtime GC | Harbour runtime GC |
 | Harbour runtime/RTL linkage | Own embedded native helpers for the supported subset, not the full Harbour runtime | Harbour runtime/RTL | Harbour runtime/RTL |
-| C Extend API | Native bridge in construction; not available yet | Supported | Supported |
+| C Extend API | Puente Extend API en C: hito 1 disponible en Linux (verificado byte a byte contra Harbour oficial y hbmk2 real); Windows en camino. | Supported | Supported |
 
 No tracing GC does not mean no memory management: native allocation/free helpers manage supported values, and a limited persistent-value path uses reference counting. This is not full Harbour dynamic-sharing compatibility. `-gc3` generates C calls to Harbour's runtime helpers; it does not turn Harbour into the same freestanding native model as HarbourRust.
 
@@ -43,11 +45,11 @@ No tracing GC does not mean no memory management: native allocation/free helpers
 
 Download the prebuilt `hbc` (Linux x86-64) or `hbc.exe` (Windows x86-64) from [v0.1.1](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.1.1). **Neither Rust nor a C compiler is needed to use these binaries or to build the supported native-only examples.** The ordinary path is Harbour source -> `hbc` -> assembly -> GNU `as` -> GNU `ld` -> native executable. Linux needs GNU binutils; Windows needs MinGW-w64 binutils and its KERNEL32 import library, with the tool names required by `build.bat` on `PATH`.
 
-The release also includes `hello.exe`, `arrays_hashes.exe` and `dates.exe`: run these Windows samples directly without a compiler, assembler or linker. They were tested under Wine 11.0, not on real Windows. The compiler binaries have OS/library requirements listed in the release notes. Building `hbc` itself from source requires Rust; linking future C extensions will require a C toolchain, which is outside today's native-only path.
+The release also includes `hello.exe`, `arrays_hashes.exe` and `dates.exe`: run these Windows samples directly without a compiler, assembler or linker. They were tested under Wine 11.0, not on real Windows. The compiler binaries have OS/library requirements listed in the release notes. Building `hbc` itself from source requires Rust; building and linking C extensions with the Linux milestone-1 bridge requires a C toolchain, which is outside the native-only path. The bridge is in current source, not in the older v0.1.1 compiler binaries.
 
 ## Harbour standard-function compatibility
 
-HarbourRust provides a growing native compatibility layer for the supported subset of Harbour's standard functions, including `QOut`/`QQOut`, `Len`, `AAdd`/`ASize`, hash operations and `Date`/`CToD`. These functions use Harbour-compatible names and measured behavior where supported, with explicit limits and known differences. This is not the complete Harbour runtime or a general implementation of Harbour's C Extend API; arbitrary Harbour libraries are not currently plug-compatible.
+HarbourRust provides a growing native compatibility layer for the supported subset of Harbour's standard functions, including `QOut`/`QQOut`, `Len`, `AAdd`/`ASize`, hash operations and `Date`/`CToD`. These functions use Harbour-compatible names and measured behavior where supported, with explicit limits and known differences. This is not the complete Harbour runtime or a general implementation of Harbour's C Extend API; arbitrary Harbour libraries are not currently plug-compatible. The [Linux milestone-1 C bridge](docs/EXTEND-BRIDGE.md) supports scalar integer, logical, string and NIL arguments and returns through a measured subset of `hb_par*`/`hb_ret*`. Arrays, dates, floating point, by-reference arguments and callbacks are outside this milestone; Windows support is planned.
 
 ## Recorded executable size and speed
 
@@ -101,7 +103,8 @@ The script chains `hbc.exe` -> assembler -> linker and stops on failure.
 for prebuilt-binary provenance. The v0.1.1 compiler, this batch script and real Windows binutils were tested
 end to end under Wine 11.0 with the greeting, array/hash and date samples.
 Their stdout, stderr and exit status match the Linux/Harbour checks. This is
-a smoke test, not real-Windows verification or the full Windows battery.
+a release smoke test, not real-Windows verification. The later source-level
+Linux + Wine battery result and its inherited failures are recorded above.
 
 ## Documentation and samples
 
