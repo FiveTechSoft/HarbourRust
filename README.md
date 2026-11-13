@@ -4,6 +4,10 @@ Write Harbour. Run native. Rust architecture.
 
 HarbourRust is an ahead-of-time compiler for Harbour, written in Rust. It translates Harbour source directly into x86-64 assembly and produces native executables: no VM, no interpreter. Support grows construct by construct, with byte-for-byte checks against the original Harbour compiler wherever applicable and explicit records of known differences. Unsupported syntax is rejected explicitly at compile time.
 
+## Memory model
+
+Sin VM, sin pcode, sin garbage collector. Ownership comprobado en tiempo de compilación y liberación determinista, sin contadores ni pausas. La misma familia de diseños sin GC a la que pertenecen Rust y el reciente lenguaje Goose.
+
 ## Current status
 
 The current compiler includes the independently reviewed Date/CToD port and
