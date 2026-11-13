@@ -1,0 +1,6 @@
+PROCEDURE Main()
+TEXT
+line
+ENDTEXT
+? ProcLine()
+RETURN

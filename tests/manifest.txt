@@ -1557,3 +1557,29 @@ neg tests/t1564_string_each_neg_call_collection.hb string `for each` requires
 neg tests/t1565_string_each_neg_byref_observer.hb requires an explicit by-value string argument
 neg tests/t1566_string_each_neg_omitted_observer.hb requires an explicit by-value string argument
 neg tests/t1567_string_each_neg_same_var.hb loop variable cannot be the collection itself
+
+# Bare physical-line TEXT streams, preserving literal source bytes.
+pos tests/t1568_text_raw.hb \n  a ; // literal\n/* not comment */\n#not directive\n"q" 'p' [r]\n\n x
+pos tests/t1569_text_empty.hb
+pos tests/t1570_text_blank.hb \n
+pos tests/t1571_text_macro.hb \nWORD &name.
+pos tests/t1572_text_case.hb \nCase\nafter
+pos tests/t1573_text_inactive.hb \nafter
+pos tests/t1574_text_endexact.hb \nENDTEXT other\nhello
+pos tests/t1575_text_outbefore.hb pre\nlast  post
+pos tests/t1576_text_cr.hb \n  a\n b
+pos tests/t1577_text_commentlike.hb \n/* unmatched\nTEXT\n// raw\nafter
+pos tests/t1578_text_unicode.hb \n  año 🦀
+pos tests/t1579_text_origins.hb \nline\n         5
+pos tests/t1580_text_escapes.hb \n"quoted" 'single' [bracket] \\n \\t \\0\nplain
+neg tests/t1581_text_neg_unterminated.hb unterminated TEXT
+neg tests/t1582_text_neg_arguments.hb statement not in the subset
+neg tests/t1583_text_neg_customcommand.hb bare TEXT with custom
+neg tests/t1584_text_neg_customtranslation.hb bare TEXT with custom
+neg tests/t1585_text_neg_alias.hb bare TEXT with custom
+neg tests/t1586_text_neg_generated.hb statement not in the subset
+neg tests/t1587_text_neg_continuation.hb continuation into TEXT
+neg tests/t1588_text_neg_include_boundary.hb unterminated TEXT
+neg tests/t1589_text_neg_control.hb TEXT literal lines with control bytes or more than 79 UTF-8 bytes
+neg tests/t1590_text_neg_long.hb TEXT literal lines with control bytes or more than 79 UTF-8 bytes
+pos tests/t1591_text_boundary.hb \nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

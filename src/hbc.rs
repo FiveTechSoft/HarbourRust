@@ -20155,6 +20155,11 @@ fn main() {
         process::exit(1);
     }
 
+    if llvm && pre.has_bare_text {
+        eprintln!("error: LLVM scalar: bare TEXT literal streams require exact terminal presentation outside this increment");
+        process::exit(1);
+    }
+
     TRACE_ORIGINS.with(|m| *m.borrow_mut() = pre.origins.clone());
     PROC_LINES.with(|m| *m.borrow_mut() = pre.end_lines.clone());
     let prog = match parse(&src) {

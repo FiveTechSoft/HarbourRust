@@ -32,6 +32,7 @@ struct Def {
 }
 
 pub struct Pp {
+    pub has_bare_text: bool, // active source TEXT; LLVM presentation is not yet equivalent
     pub defs: HashMap<String, Def>, // key: exact name (macro names are case-sensitive)
     pub cmds: Vec<Cmd>,             // #command / #xcommand / #translate rules, in order
     call_rules: Vec<Cmd>,
@@ -83,7 +84,7 @@ impl Pp {
             params: vec!["symbol".to_string()], funclike: true,
             body: "( ( symbol ) )".to_string(), dup: 1,
         });
-        Pp { defs, cmds: Vec::new(), call_rules: Vec::new(), next_rule_id:1, incdirs, origins: Vec::new(), end_lines: Vec::new() }
+        Pp { has_bare_text: false, defs, cmds: Vec::new(), call_rules: Vec::new(), next_rule_id:1, incdirs, origins: Vec::new(), end_lines: Vec::new() }
     }
 }
 
@@ -1727,8 +1728,35 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
     let mut in_block = false;
     let mut block_line = 0usize;
     let mut stripped: Vec<String> = Vec::with_capacity(raws.len());
+    // Bare source TEXT is a physical-line literal stream. Classify before
+    // stripping comments: comment/directive/continuation markers in its body
+    // are DATA. The mode is file-local; generated or argument forms stay
+    // outside this increment. 1=open, 2=literal body, 3=close.
+    let mut text_lines = vec![0u8; raws.len()];
+    let mut text_start: Option<usize> = None;
     for (idx, raw) in raws.iter().enumerate() {
-        stripped.push(strip_line(raw, &mut in_block, &mut block_line, idx + 1));
+        if text_start.is_some() {
+            let mut block = false;
+            let mut opening = 0;
+            let end = strip_line(raw, &mut block, &mut opening, idx + 1);
+            if !block && end.trim().eq_ignore_ascii_case("ENDTEXT") {
+                text_lines[idx] = 3;
+                text_start = None;
+            } else {
+                text_lines[idx] = 2;
+            }
+            stripped.push(String::new());
+        } else {
+            let line = strip_line(raw, &mut in_block, &mut block_line, idx + 1);
+            if !in_block && line.trim().eq_ignore_ascii_case("TEXT") {
+                text_lines[idx] = 1;
+                text_start = Some(idx + 1);
+            }
+            stripped.push(line);
+        }
+    }
+    if let Some(line) = text_start {
+        return Err(format!("line {}: unterminated TEXT literal stream (missing ENDTEXT in this file)", line));
     }
     if in_block {
         return Err(format!("line {}: unterminated /* */ comment", block_line));
@@ -1736,6 +1764,29 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
     let mut li = 0usize;
     while li < raws.len() {
         let line = li + 1;
+        if text_lines[li] != 0 {
+            if emitting && text_lines[li] == 1 {
+                // Do not silently bypass a user replacement for the command.
+                // This bounded native route owns only the default bare form.
+                if pp.defs.keys().any(|key| key.eq_ignore_ascii_case("TEXT"))
+                    || !pp.cmds.is_empty() || !pp.call_rules.is_empty() {
+                    return Err(format!("line {}: bare TEXT with custom macro/command/translation rules is not in this increment", line));
+                }
+                pp.has_bare_text = true;
+            }
+            if emitting && text_lines[li] == 2 {
+                if raws[li].chars().any(|c| c.is_control()) || raws[li].len() > 79 {
+                    return Err(format!("line {}: TEXT literal lines with control bytes or more than 79 UTF-8 bytes require terminal presentation semantics outside this increment", line));
+                }
+                out.push_str("? ");
+                out.push_str(&quote_literal(raws[li]));
+                out.push('\n');
+                pp.origins.push((path.to_string(), line));
+                pp.end_lines.push(line);
+            }
+            li += 1;
+            continue;
+        }
         let mut joined = stripped[li].clone();
         loop {
             let mut in_str = false;
@@ -1760,6 +1811,9 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
             joined.pop();
             joined.push(' ');
             li += 1;
+            if text_lines[li] != 0 {
+                return Err(format!("line {}: a continuation into TEXT is not in this increment", line));
+            }
             joined.push_str(stripped[li].trim_start());
         }
         let raw = joined.as_str();

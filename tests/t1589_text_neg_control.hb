@@ -1,0 +1,5 @@
+PROCEDURE Main()
+TEXT
+	tab
+ENDTEXT
+RETURN

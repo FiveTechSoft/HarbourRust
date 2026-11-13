@@ -1,0 +1,5 @@
+PROCEDURE Main()
+TEXT TO x
+line
+ENDTEXT
+RETURN
