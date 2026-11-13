@@ -1,0 +1,5 @@
+PROCEDURE Main()
+TEXT
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ENDTEXT
+RETURN

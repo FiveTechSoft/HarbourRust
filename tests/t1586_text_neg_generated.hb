@@ -1,0 +1,6 @@
+#define STREAM TEXT
+PROCEDURE Main()
+STREAM
+line
+ENDTEXT
+RETURN

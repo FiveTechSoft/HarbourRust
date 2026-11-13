@@ -1,0 +1,6 @@
+PROCEDURE Main()
+TEXT
+  a
+ b
+ENDTEXT
+RETURN
