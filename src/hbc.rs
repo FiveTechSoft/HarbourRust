@@ -7899,7 +7899,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                                 return Err(format!("line {}: cannot assign `{}` into its own element", n, id));
                             }
                         }
-                        if type_expr(ie, env, sigs, *n)? != Ty::I64 {
+                        let index_ty = type_expr(ie, env, sigs, *n)?;
+                        // Persistent stores already convert a Dyn scalar index
+                        // with hbc_dyn_to_i64 after retaining the captured base.
+                        // Ordinary Dyn roots keep their previous I64 boundary.
+                        if index_ty != Ty::I64 && !(static_dyn(id) && index_ty == Ty::Dyn) {
                             return Err(format!("line {}: array index must be an integer", n));
                         }
                         // Ordinary Dyn arrays still reload the root after the
