@@ -675,7 +675,7 @@ pos tests/t677_filescope_skip.hb \nbody
 pos tests/t678_static_func_proc_note.hb \n        42
 pos tests/t679_func_alias.hb \n        42
 pos tests/t680_predef_harbour.hb \n    197121
-neg tests/t681_init_proc_neg.hb INIT/EXIT PROCEDURE is not in this increment
+pos tests/t681_init_proc_neg.hb
 neg tests/t682_static_var_neg.hb file-scope STATIC variables are not in this increment
 neg tests/t683_second_group_neg.hb code outside a function
 neg tests/t684_dup_main_neg.hb duplicate function
@@ -1583,3 +1583,32 @@ neg tests/t1588_text_neg_include_boundary.hb unterminated TEXT
 neg tests/t1589_text_neg_control.hb TEXT literal lines with control bytes or more than 79 UTF-8 bytes
 neg tests/t1590_text_neg_long.hb TEXT literal lines with control bytes or more than 79 UTF-8 bytes
 pos tests/t1591_text_boundary.hb \nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# Single-module parameterless INIT startup procedures.
+pos tests/t1592_startup_init_first.hb \nearly\nmain
+pos tests/t1593_startup_init_last.hb \nlate\nmain
+pos tests/t1594_startup_init_three.hb \nC\nB\nA\nmain
+pos tests/t1595_startup_init_two_lex.hb \na\nz\nmain
+pos tests/t1596_startup_init_early.hb \nearly\nmain
+pos tests/t1597_startup_init_procname.hb \nA$          2\nmain
+pos tests/t1598_startup_init_calls_later.hb \nlater\nmain
+pos tests/t1599_startup_init_and_plain_same.hb \ninit BOOT$\nplain BOOT
+pos tests/t1600_startup_init_helper_trace.hb \nHELPER          5\nmain
+pos tests/t1601_startup_locals.hb \ninit          4\nmain
+pos tests/t1602_startup_arraylocal.hb \n         2\nmain
+pos tests/t1603_startup_init_text.hb \n  literal\nmain
+pos tests/t1604_startup_init_empty.hb \nmain
+pos tests/t1605_startup_init_loop.hb \n         1\n         3\nmain
+pos tests/t1606_startup_init_func_nil.hb \ninit\nmain
+pos tests/t1607_startup_include.hb \nafter\nincluded\nbefore\nmain
+neg tests/t1608_startup_neg_parameters.hb INIT procedures with parameters
+neg tests/t1609_startup_neg_exit.hb EXIT PROCEDURE is not in this increment
+neg tests/t1610_startup_neg_value_return.hb INIT procedures require bare/NIL returns
+neg tests/t1611_startup_neg_dead_return.hb INIT procedures require bare/NIL returns
+neg tests/t1612_startup_neg_switch_return.hb INIT procedures require bare/NIL returns
+neg tests/t1613_startup_neg_static.hb INIT procedures require bare/NIL returns
+neg tests/t1614_startup_neg_call_hook.hb unknown function `boot`
+neg tests/t1615_startup_neg_duplicate.hb duplicate function `boot$`
+neg tests/t1616_startup_neg_no_main.hb no main function
+neg tests/t1617_startup_neg_init_main.hb no main function
+pos tests/t1618_startup_balance.hb \n        12\n        20          2\n.T.

@@ -1,0 +1,9 @@
+INIT PROCEDURE Zebra()
+? "z"
+RETURN
+INIT PROCEDURE Alpha()
+? "a"
+RETURN
+PROCEDURE Main()
+? "main"
+RETURN

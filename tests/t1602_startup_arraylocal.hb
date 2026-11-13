@@ -1,0 +1,7 @@
+INIT PROCEDURE Boot()
+LOCAL a := {1,2,3}
+? a[2]
+RETURN
+PROCEDURE Main()
+? "main"
+RETURN

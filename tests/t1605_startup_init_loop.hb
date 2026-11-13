@@ -1,0 +1,12 @@
+INIT PROCEDURE Boot()
+LOCAL i
+FOR i := 1 TO 3
+IF i == 2
+LOOP
+ENDIF
+? i
+NEXT
+RETURN
+PROCEDURE Main()
+? "main"
+RETURN
