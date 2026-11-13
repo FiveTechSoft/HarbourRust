@@ -1,0 +1,3 @@
+PROCEDURE Main()
+? CurDir(1)
+RETURN

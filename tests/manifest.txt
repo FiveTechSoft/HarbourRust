@@ -1612,3 +1612,42 @@ neg tests/t1615_startup_neg_duplicate.hb duplicate function `boot$`
 neg tests/t1616_startup_neg_no_main.hb no main function
 neg tests/t1617_startup_neg_init_main.hb no main function
 pos tests/t1618_startup_balance.hb \n        12\n        20          2\n.T.
+
+# Linux native CurDir and deferred empty-tail console separators.
+pos tests/t1619_curdir_basic.hb \n.T.
+pos tests/t1620_curdir_drives.hb \n.T. .T. .T.
+pos tests/t1621_curdir_nil.hb \n.T. .T. .T.
+pos tests/t1622_curdir_save.hb \n.T. .T.
+pos tests/t1623_curdir_concat.hb \n.T.
+pos tests/t1624_curdir_loop.hb \ndone
+pos tests/t1625_curdir_return.hb \n.T.
+pos tests/t1626_curdir_branch.hb \n.T.
+pos tests/t1627_curdir_raw_temp.hb .T.
+pos tests/t1628_curdir_dead.hb \ndone
+pos tests/t1629_curdir_spacing_empty.hb \nA\nB
+pos tests/t1630_curdir_spacing_allspaces.hb \nC   after\nD
+pos tests/t1631_curdir_spacing_interior.hb \nD  Z
+pos tests/t1632_curdir_spacing_continuation.hb A\nB
+streams tests/t1633_curdir_spacing_raw.hb tests/t1633.out tests/t1633.err
+neg tests/t1634_curdir_neg_extra.hb CurDir supports no argument or one literal string/NIL
+neg tests/t1635_curdir_neg_number.hb CurDir supports no argument or one literal string/NIL
+neg tests/t1636_curdir_neg_logical.hb CurDir supports no argument or one literal string/NIL
+neg tests/t1637_curdir_neg_variable.hb CurDir supports no argument or one literal string/NIL
+neg tests/t1638_curdir_neg_effect.hb CurDir supports no argument or one literal string/NIL
+neg tests/t1639_curdir_neg_array.hb CurDir supports no argument or one literal string/NIL
+neg tests/t1640_curdir_neg_function.hb CurDir supports no argument or one literal string/NIL
+neg tests/t1641_curdir_neg_dead.hb CurDir supports no argument or one literal string/NIL
+neg tests/t1642_curdir_neg_byref.hb CurDir supports no argument or one literal string/NIL
+pos tests/t1643_curdir_balance.hb \n.T.
+streams tests/t1644_curdir_spacing_review_space_empty.hb tests/t1644.out tests/t1644.err
+streams tests/t1645_curdir_spacing_review_one_empty.hb tests/t1645.out tests/t1645.err
+streams tests/t1646_curdir_spacing_review_two_spaces.hb tests/t1646.out tests/t1646.err
+streams tests/t1647_curdir_spacing_review_next_line.hb tests/t1647.out tests/t1647.err
+streams tests/t1648_curdir_spacing_matrix_vars.hb tests/t1648.out tests/t1648.err
+streams tests/t1649_curdir_spacing_matrix_literals.hb tests/t1649.out tests/t1649.err
+streams tests/t1650_curdir_spacing_matrix_owned.hb tests/t1650.out tests/t1650.err
+streams tests/t1651_curdir_spacing_matrix_strcells.hb tests/t1651.out tests/t1651.err
+streams tests/t1652_curdir_spacing_matrix_dyncells.hb tests/t1652.out tests/t1652.err
+streams tests/t1653_curdir_spacing_matrix_iif_raw.hb tests/t1653.out tests/t1653.err
+streams tests/t1654_curdir_spacing_matrix_iif_owned.hb tests/t1654.out tests/t1654.err
+streams tests/t1655_curdir_spacing_matrix_byref.hb tests/t1655.out tests/t1655.err

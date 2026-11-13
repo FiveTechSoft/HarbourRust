@@ -1,0 +1,5 @@
+PROCEDURE Main()
+IF .F.
+? CurDir(1)
+ENDIF
+RETURN
