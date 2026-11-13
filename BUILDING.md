@@ -18,10 +18,10 @@ statically linked Linux x86-64 binary.
 ## 2. Compile a Harbour program to a Linux binary
 
 ```
-./hbc ejemplos/hola.hb hola.s --target=linux
-as -o hola.o hola.s
-ld -o hola hola.o
-./hola
+./hbc tests/samples/hello.hb hello.s --target=linux
+as -o hello.o hello.s
+ld -o hello hello.o
+./hello
 ```
 
 `as` and `ld` are the standard GNU binutils of the host.
@@ -45,9 +45,9 @@ Then:
 M=tools/mingw/usr/bin
 MLIB=tools/mingw/usr/x86_64-w64-mingw32/lib
 export LD_LIBRARY_PATH=$PWD/tools/mingw/usr/lib
-./hbc ejemplos/hola.hb hola_win.s --target=windows
-$M/x86_64-w64-mingw32-as -o hola_win.o hola_win.s
-$M/x86_64-w64-mingw32-ld -o hola.exe hola_win.o -e _start --subsystem console -L$MLIB -lkernel32
+./hbc tests/samples/hello.hb hello_win.s --target=windows
+$M/x86_64-w64-mingw32-as -o hello_win.o hello_win.s
+$M/x86_64-w64-mingw32-ld -o hello.exe hello_win.o -e _start --subsystem console -L$MLIB -lkernel32
 ```
 
 The emitted code only calls `kernel32.dll` (`GetStdHandle`, `WriteFile`,
@@ -82,7 +82,7 @@ as shown above is what was verified.
 Verified with Wine 10.20 (Kron4ek `wine-10.20-amd64-wow64` build):
 
 ```
-wine ./hola.exe     # prints "Hola desde Harbour!"
+wine ./hello.exe     # prints "Hola desde Harbour!"
 wine ./hbc.exe prog.hb prog.s --target=windows
 ```
 
@@ -97,7 +97,7 @@ Under `dist/`:
 | ------------- | ------------------- | ----------------------------------------- |
 | `1-hbc`     | Linux x86-64        | The compiler                              |
 | `2-hbc.exe` | Windows x86-64      | The compiler, cross-built as in section 4 |
-| `3-hola.exe` | Windows x86-64      | `ejemplos/hola.hb` compiled as in section 3 |
+| `3-hello.exe` | Windows x86-64      | `tests/samples/hello.hb` compiled as in section 3 |
 
 The numeric prefixes are an artifact of the upload tool used to publish
 the files; the contents are exactly the verified builds described here.
@@ -110,7 +110,7 @@ also visible at the dist upload commit
 `1b24443ebcd9834a2b9b43531832e2fb093c1080`, which only added the
 binaries), and verified by running them
 (Linux natively, Windows under Wine 10.20, not real Windows): `2-hbc.exe`
-and `1-hbc` emit byte-identical assembly for the same input, and `3-hola.exe`
+and `1-hbc` emit byte-identical assembly for the same input, and `3-hello.exe`
 prints its expected output. `dist/build.sh` (Linux) and `dist/build.bat` (Windows) chain the three
 steps for one program (`hbc` -> `as` -> `ld`) and stop at the first failing
 step. build.sh was verified end-to-end on Linux; build.bat chains the

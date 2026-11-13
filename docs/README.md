@@ -19,10 +19,10 @@ stays short.
   validation claims and limits. Historical claims remain dated; use the baseline
   above for the current marker.
 - [Battery record](BATTERY.md): detailed historical battery notes and protocols.
-- [Evidence overview](../EVIDENCIA.md).
-- [Historical hk source index](../probes/legacy-hk/README.md) and
+- [Evidence overview](../EVIDENCE.md).
+- [Historical hk source index](../tests/probes/legacy-hk/README.md) and
   [status/output table](../3-MANIFEST.md).
-- [Oracle records](../oraculos/) and [other probes](../probes/).
+- [Oracle records](../tests/oracles/) and [other probes](../probes/).
 - [Design notes](../design/) and [experiments](../experiments/).
 
 - [Former main development history](MAIN-DEVELOPMENT-HISTORY.md): the separate
@@ -32,7 +32,7 @@ stays short.
 ## Source and tests
 
 - [Compiler source](../src/).
-- [Examples](../ejemplos/).
+- [Examples](../tests/samples/).
 - [Regression manifest](../tests/manifest.txt) and [runner](../tests/run_battery.sh).
 
 No source, historical text or test expectation is removed by this documentation

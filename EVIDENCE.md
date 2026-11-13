@@ -6,18 +6,18 @@ No Harbour program passes through rustc or LLVM in this iteration.
 ## Compiler build (Rust, native binary)
 $ rustc -O src/hbc.rs -o hbc        # builds clean, 0 warnings, ELF x86-64
 
-## Positive case: ejemplos/hola.hb -> assembly -> native ELF
-$ ./hbc ejemplos/hola.hb gen/hola.s
-ejemplos/hola.hb -> gen/hola.s (2 functions)
-$ as -o gen/hola.o gen/hola.s && ld -o gen/hola gen/hola.o
-$ ./gen/hola
+## Positive case: tests/samples/hello.hb -> assembly -> native ELF
+$ ./hbc tests/samples/hello.hb gen/hello.s
+tests/samples/hello.hb -> gen/hello.s (2 functions)
+$ as -o gen/hello.o gen/hello.s && ld -o gen/hello gen/hello.o
+$ ./gen/hello
 resultado de z:
 32
 hola desde una funcion
 
-$ file gen/hola
+$ file gen/hello
 ELF 64-bit LSB executable, x86-64, statically linked
-$ ldd gen/hola
+$ ldd gen/hello
 not a dynamic executable            # no libc, no external runtime (own print helpers only)
 $ size: 8,984 bytes                 # ELF file size, headers/alignment included
 
@@ -26,7 +26,7 @@ string in two stack slots and returns them in %rax/%rdx. The print helpers
 are hand-written syscall routines (write + exit), no library calls.
 
 ## Negative case: use after move, rejected BY HBC (not rustc)
-$ ./hbc ejemplos/prestamo_roto.hb gen/prestamo.s
+$ ./hbc tests/samples/broken_borrow.hb gen/prestamo.s
 error: line 5: use of moved value `a` (strings move on assignment; they do not copy)
 exit code 1 - rejected before any code is generated.
 
@@ -79,7 +79,7 @@ tests/t07_unicode_string.hb  `? "olá, año 🦀"`  ->  prints: olá, año 🦀
   fixed version.
 
 ## Timing (toy program; NOT evidence about real workloads)
-compile hola.hb: ~2 ms (hbc) + ~6 ms (as+ld); run: ~1 ms.
+compile hello.hb: ~2 ms (hbc) + ~6 ms (as+ld); run: ~1 ms.
 
 
 ---
@@ -101,17 +101,17 @@ this sandbox, not necessarily of Wine 11.
 $ rustc -O src/hbc.rs -o hbc        # builds clean, 0 warnings
 
 ## Linux regression first (must stay identical)
-hola.hb -> same output (resultado de z: / 32 / hola desde una funcion),
-ELF still 8,984 bytes; prestamo_roto.hb still rejected at line 5.
+hello.hb -> same output (resultado de z: / 32 / hola desde una funcion),
+ELF still 8,984 bytes; broken_borrow.hb still rejected at line 5.
 
 ## Windows build of the same program
-$ ./hbc ejemplos/hola.hb gen/hola_win.s --target=windows
-ejemplos/hola.hb -> gen/hola_win.s (2 functions)
-$ x86_64-w64-mingw32-as -o gen/hola_win.o gen/hola_win.s
-$ x86_64-w64-mingw32-ld -o gen/hola.exe gen/hola_win.o -e _start --subsystem console -lkernel32
-$ file gen/hola.exe
+$ ./hbc tests/samples/hello.hb gen/hello_win.s --target=windows
+tests/samples/hello.hb -> gen/hello_win.s (2 functions)
+$ x86_64-w64-mingw32-as -o gen/hello_win.o gen/hello_win.s
+$ x86_64-w64-mingw32-ld -o gen/hello.exe gen/hello_win.o -e _start --subsystem console -lkernel32
+$ file gen/hello.exe
 PE32+ executable (console) x86-64, for MS Windows        # 5,499 bytes
-$ wine gen/hola.exe
+$ wine gen/hello.exe
 resultado de z:
 32
 hola desde una funcion
@@ -120,13 +120,13 @@ $ echo $?
 
 ## Battery on both targets (outputs must be byte-identical)
 positive (compiled and RUN on linux ELF and on windows PE under Wine):
-  ejemplos/hola.hb            PASS  (32 + greeting, identical)
+  tests/samples/hello.hb            PASS  (32 + greeting, identical)
   tests/t10_int_copy.hb       PASS  (5 / 5 / -5, identical)
   tests/t11_print_borrows.hb  PASS  (hola / hola / 7, identical)
   tests/t07_unicode_string.hb PASS  (olá, año 🦀, identical)
   arithmetic (14/20/14/i64::MAX) PASS (identical)
 negative (hbc itself rejects before codegen, target-independent):
-  ejemplos/prestamo_roto.hb   PASS  error: line 5: use of moved value `a`  (both targets)
+  tests/samples/broken_borrow.hb   PASS  error: line 5: use of moved value `a`  (both targets)
   tests/t01..t09 battery      PASS  same errors as iteration 2, both targets
 
 ## What this does NOT show
@@ -174,7 +174,7 @@ Linux ELF output byte-identical. Generated assembly checked: every nested
 call site now sits between `sub $16, %rsp` and `add $16, %rsp`. Full
 positive battery (hola, t10, t11, unicode, arithmetic) and the negative
 battery re-run after the fixes: identical outputs on both targets.
-hola.exe is still 5,499 bytes. Wine 10.20 wow64, exit code 0.
+hello.exe is still 5,499 bytes. Wine 10.20 wow64, exit code 0.
 
 ---
 
@@ -363,7 +363,7 @@ Comparisons borrow both operands.
 
 count reconciliation (2026-10-25, flagged in review): iteration counts
 in this file number the tests/tXX files only and exclude the three
-fixture programs (ejemplos/hola.hb, ejemplos/prestamo_roto.hb,
+fixture programs (tests/samples/hello.hb, tests/samples/broken_borrow.hb,
 gen/arith.hb). The "55-case" line below was an arithmetic slip: the
 correct count after iteration 9 is 54 numbered tests (51 + 3 new;
 t17 was converted in place), i.e. 57 programs with the fixtures.

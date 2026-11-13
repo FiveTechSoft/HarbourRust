@@ -1,5 +1,5 @@
-PASS ejemplos/hola.hb
-PASS ejemplos/prestamo_roto.hb
+PASS tests/samples/hello.hb
+PASS tests/samples/broken_borrow.hb
 PASS tests/t01_injection_colons.hb
 PASS tests/t02_injection_unsafe.hb
 PASS tests/t03_injection_macro.hb
@@ -379,7 +379,7 @@ PASS tests/t382_asize3_mid.hb
 PASS tests/t383_asize3_mid_nil.hb
 PASS tests/t384_asize3_mid_shrink.hb
 PASS tests/t385_asize3_root_zero.hb
-PASS tests/t386_asize3_nil_casilla.hb
+PASS tests/t386_asize3_nil_cell.hb
 PASS tests/t387_aadd3_mid_lit.hb
 PASS tests/t388_aadd3_mid_order.hb
 PASS tests/t389_aadd3_mid_call.hb
@@ -395,7 +395,7 @@ PASS tests/t398_borrow_param_shrink.hb
 PASS tests/t399_neg_borrow_return.hb
 PASS tests/t400_neg_borrow_passon.hb
 PASS tests/t401_neg_borrow_overlap.hb
-PASS tests/t402_borrow_nil_casilla.hb
+PASS tests/t402_borrow_nil_cell.hb
 PASS tests/t403_neg_borrow_darr3.hb
 PASS tests/t404_neg_borrow_foreach.hb
 PASS tests/t405_neg_borrow_move_conflict.hb
@@ -414,7 +414,7 @@ PASS tests/t417_borrow3_grow.hb
 PASS tests/t418_borrow3_write.hb
 PASS tests/t419_borrow3_shrink.hb
 PASS tests/t420_borrow3_order.hb
-PASS tests/t423_borrow3_nil_casilla.hb
+PASS tests/t423_borrow3_nil_cell.hb
 PASS tests/t421_neg_borrow3_return.hb
 PASS tests/t422_neg_borrow3_overlap.hb
 PASS tests/t424_static_arg_read.hb
@@ -473,7 +473,7 @@ PASS tests/t476_neg_aadd_root4.hb
 PASS tests/t477_arrset_static_var.hb
 PASS tests/t478_aadd_static_var.hb
 PASS tests/t479_aaddsub_static_var.hb
-PASS tests/t480_valtype_darr4_casillas.hb
+PASS tests/t480_valtype_darr4_cells.hb
 PASS tests/t481_foreach_darr4_middle.hb
 PASS tests/t482_foreach_darr4_write.hb
 PASS tests/t483_neg_foreach_darr4_reseat.hb
@@ -488,7 +488,7 @@ PASS tests/t491_exeq_darr.hb
 PASS tests/t492_neg_exeq_static.hb
 PASS tests/t493_exeq_str.hb
 PASS tests/t494_exeq_nil.hb
-PASS tests/t495_exeq_casnil.hb
+PASS tests/t495_exeq_nilcell.hb
 PASS tests/t496_exeq_darr2.hb
 PASS tests/t497_neg_exeq_block.hb
 PASS tests/t498_exeq_darr3.hb
@@ -611,7 +611,7 @@ PASS tests/t614_log_dyn_balance.hb
 PASS tests/t615_valtype_hash_miss.hb
 PASS tests/t616_hash_read_miss.hb
 PASS tests/t617_dyn_nil_condition.hb
-PASS tests/t618_log_dyn_if_casilla.hb
+PASS tests/t618_log_dyn_if_cell.hb
 PASS tests/t619_procedure_kw.hb
 PASS tests/t620_comment_forms.hb
 PASS tests/t621_unterminated_block.hb

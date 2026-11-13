@@ -49,10 +49,10 @@ Requires Rust and GNU binutils on Linux x86-64. From the repository root:
 
 ```sh
 rustc --edition=2021 -O src/hbc.rs -o hbc
-./hbc ejemplos/hola.hb hola.s --target=linux
-as -o hola.o hola.s
-ld -o hola hola.o
-./hola
+./hbc tests/samples/hello.hb hello.s --target=linux
+as -o hello.o hello.s
+ld -o hello hello.o
+./hello
 ```
 
 The compiler build uses Rust's standard library; no Cargo dependencies are
@@ -70,7 +70,7 @@ From Windows Command Prompt at the repository root, with `hbc.exe` there:
 
 ```bat
 set "HBC=%CD%\hbc.exe"
-dist\build.bat ejemplos\hola.hb hello
+dist\build.bat tests\samples\hello.hb hello
 hello.exe
 ```
 
@@ -80,11 +80,11 @@ for prebuilt-binary provenance. Historical Windows binary checks used Wine
 10.20, not real Windows. The batch script itself has not been tested end to
 end on real Windows or under Wine. No current-HEAD Windows pass is implied.
 
-## Documentation and examples
+## Documentation and samples
 
 - [Documentation index](docs/README.md): current results, technical history and protocols.
 - [Development history](docs/DEVELOPMENT-HISTORY.md) and [former main history](docs/MAIN-DEVELOPMENT-HISTORY.md): both long READMEs, preserved.
-- [Examples](ejemplos/): Harbour programs for the supported subset.
+- [Samples](tests/samples/): Harbour programs for the supported subset.
 - [Regression manifest](tests/manifest.txt) and [runner](tests/run_battery.sh).
-- [Historical hk probes](probes/legacy-hk/README.md): 99 PRGs moved out of the root, unchanged.
+- [Historical hk probes](tests/probes/legacy-hk/README.md): 99 PRGs moved out of the root, unchanged.
 - [License](LICENSE): MIT.
