@@ -2,7 +2,7 @@
   "scope": "6own bounded family runtime oracle checks,not original corpus growth",
   "rows": [
     {
-      "file": "t1293_pp_var_family_comma.hb",
+      "file": "t1293_pp_var_family_comma.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -23,7 +23,7 @@
       }
     },
     {
-      "file": "t1294_pp_var_family_reorder.hb",
+      "file": "t1294_pp_var_family_reorder.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -44,7 +44,7 @@
       }
     },
     {
-      "file": "t1295_pp_var_family_in.hb",
+      "file": "t1295_pp_var_family_in.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -65,7 +65,7 @@
       }
     },
     {
-      "file": "t1296_pp_var_family_is.hb",
+      "file": "t1296_pp_var_family_is.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -86,7 +86,7 @@
       }
     },
     {
-      "file": "t1297_pp_var_family_isin.hb",
+      "file": "t1297_pp_var_family_isin.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -107,7 +107,7 @@
       }
     },
     {
-      "file": "t1298_pp_var_family_isto.hb",
+      "file": "t1298_pp_var_family_isto.prg",
       "exact": true,
       "outputs": {
         "ref": {

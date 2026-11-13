@@ -1,34 +1,34 @@
 [
   {
-    "file": "tests/t711_dyn_bool_reassign.hb",
+    "file": "tests/t711_dyn_bool_reassign.prg",
     "full_bytes_equal": false,
     "noncomment_source_equal": true,
     "base_body_sha256": "930eb797f5bf11b4c919b782cff1a98dab2dd8da1b342815ccc1084228b78252",
     "snapshot_body_sha256": "930eb797f5bf11b4c919b782cff1a98dab2dd8da1b342815ccc1084228b78252"
   },
   {
-    "file": "tests/t933_sequence_string.hb",
+    "file": "tests/t933_sequence_string.prg",
     "full_bytes_equal": true,
     "noncomment_source_equal": true,
     "base_body_sha256": "9b13cb0597c016361a4255b581961b784a0546f5687e6aa9e4bdc2b17e75f09f",
     "snapshot_body_sha256": "9b13cb0597c016361a4255b581961b784a0546f5687e6aa9e4bdc2b17e75f09f"
   },
   {
-    "file": "tests/t941_sequence_assign.hb",
+    "file": "tests/t941_sequence_assign.prg",
     "full_bytes_equal": true,
     "noncomment_source_equal": true,
     "base_body_sha256": "1c5d286f89d7d7ead92e9989e732ae0d507c57693dff48304920424d4696171b",
     "snapshot_body_sha256": "1c5d286f89d7d7ead92e9989e732ae0d507c57693dff48304920424d4696171b"
   },
   {
-    "file": "tests/t942_sequence_string_last.hb",
+    "file": "tests/t942_sequence_string_last.prg",
     "full_bytes_equal": true,
     "noncomment_source_equal": true,
     "base_body_sha256": "79f171b7482c6ccd00f164695bd085f1e3d1c1fc0777114157a0a123c32854ce",
     "snapshot_body_sha256": "79f171b7482c6ccd00f164695bd085f1e3d1c1fc0777114157a0a123c32854ce"
   },
   {
-    "file": "tests/t1040_seq_dyn_var.hb",
+    "file": "tests/t1040_seq_dyn_var.prg",
     "full_bytes_equal": false,
     "noncomment_source_equal": true,
     "base_body_sha256": "d2d616713c643bd3be40c062c2404d9a9a05fd83c613c8d3a6923ac5a804c442",

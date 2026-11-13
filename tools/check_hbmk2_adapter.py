@@ -57,7 +57,7 @@ def main():
               'return nil\n',
      'hello': 'function Main()\n  ? "Hello from HarbourRust"\nreturn nil\n'}
     for name, text in fixtures.items():
-        src = out / (name + ".hb")
+        src = out / (name + ".prg")
         src.write_text(text)
         # Same compiler, independent direct native-only as/ld path.
         s, obj, direct = (out / (name + ext) for ext in [".s", ".o", ".direct"])
@@ -78,7 +78,7 @@ def main():
             trace = (work / "hbmk2.stdout").read_text()
             check(name + " native object link trace", "program.o" in trace and "-nostdlib" in trace and "-lhbvm" not in trace)
 
-    src = ROOT / "extend/demo/extdemo.hb"
+    src = ROOT / "extend/demo/extdemo.prg"
     c = ROOT / "extend/demo/myext.c"
     expected = b"\n        23\n         7\nHELLO BRIDGE\nstr,num,log\n"
     # Harbour QOut does not add a trailing newline to the last empty value.
@@ -109,7 +109,7 @@ def main():
         ("poison-hbc", [src], ["--hbc", "/bin/false"]),
         ("fake-hbc-no-asm", [src], ["--hbc", "/bin/true"]),
         ("poison-as", [src], ["--assembler", "/bin/false"]),
-        ("fake-hbmk2-no-binary", [ROOT / "tests/samples/hello.hb"], ["--hbmk2", "/bin/true"]),
+        ("fake-hbmk2-no-binary", [ROOT / "tests/samples/hello.prg"], ["--hbmk2", "/bin/true"]),
         ("multi-module", [src, copied], []),
         ("unsupported-project", [ROOT / "tests/manifest.txt"], []),
         ("missing-tool", [src], ["--hbc", "/no/such/compiler"]),

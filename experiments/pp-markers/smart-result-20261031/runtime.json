@@ -1,31 +1,31 @@
 [
   {
-    "file": "tests/t1233_pp_smart_bare.hb",
+    "file": "tests/t1233_pp_smart_bare.prg",
     "stdout": "\nalpha\nfile.prg",
     "exact": true
   },
   {
-    "file": "tests/t1234_pp_smart_parentheses.hb",
+    "file": "tests/t1234_pp_smart_parentheses.prg",
     "stdout": "\n         3",
     "exact": true
   },
   {
-    "file": "tests/t1235_pp_smart_quotes.hb",
+    "file": "tests/t1235_pp_smart_quotes.prg",
     "stdout": "\na  b\nc  d",
     "exact": true
   },
   {
-    "file": "tests/t1236_pp_smart_list.hb",
+    "file": "tests/t1236_pp_smart_list.prg",
     "stdout": "\nalpha          3 a  b",
     "exact": true
   },
   {
-    "file": "tests/t1237_pp_smart_optional.hb",
+    "file": "tests/t1237_pp_smart_optional.prg",
     "stdout": "\n\nalpha",
     "exact": true
   },
   {
-    "file": "tests/t1238_pp_smart_identifier.hb",
+    "file": "tests/t1238_pp_smart_identifier.prg",
     "stdout": "\nalpha",
     "exact": true
   }

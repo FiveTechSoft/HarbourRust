@@ -11014,7 +11014,7 @@ fn cg_ext_call(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mu
                 // Milestone 2.4: a Dyn-held array (tag 8) crosses to C as
                 // its borrowed casilla (read-only contract; the caller
                 // keeps ownership, C never frees). hb_arrayLen /
-                // hb_arrayGet* / hb_arrayGetItemPtr read it; the .hb
+                // hb_arrayGet* / hb_arrayGetItemPtr read it; the .prg
                 // internal param/return gates stay (ownership).
                 cg_value(a, env, sigs, strs, out, target); // rax=tag, rdx=payload
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
@@ -20605,13 +20605,13 @@ fn main() {
             "--experimental-llvm-no-trace" => {llvm = true; llvm_trace = false;},
             "-I" => { ai += 1; incdirs.push(args.get(ai).expect("-I needs a directory").clone()); }
             _ if a.starts_with("-I") => incdirs.push(a[2..].to_string()),
-            _ if a.starts_with("--") => { eprintln!("usage: hbc <input.hb> <output.s> [--target=linux|windows] [-I dir]..."); process::exit(2); }
+            _ if a.starts_with("--") => { eprintln!("usage: hbc <input.prg> <output.s> [--target=linux|windows] [-I dir]..."); process::exit(2); }
             _ => pos.push(a),
         }
         ai += 1;
     }
     if pos.len() != 2 {
-        eprintln!("usage: hbc <input.hb> <output.s> [--target=linux|windows] [-I dir]...");
+        eprintln!("usage: hbc <input.prg> <output.s> [--target=linux|windows] [-I dir]...");
         process::exit(2);
     }
     CURDIR_LINUX_NATIVE.with(|v| v.set(!llvm && matches!(target, Target::Linux)));

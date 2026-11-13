@@ -25,7 +25,7 @@ if len(cases) != len(expected):
     raise RuntimeError('parser matrix generation changed')
 accepted = rejected = 0
 for i, body in enumerate(cases):
-    source = out / f'p{i}.hb'
+    source = out / f'p{i}.prg'
     source.write_text('function main()\nlocal i := 0\n' + body + '\nreturn\n')
     for target in ('linux', 'windows'):
         result = subprocess.run(

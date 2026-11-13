@@ -457,103 +457,103 @@ ll_main:
 	.section	.rdata,"dr"
 	.p2align	4, 0x0
 .Lstr0:
-	.ascii	"  at sumloop (corpus.hb:2)\n"
+	.ascii	"  at sumloop (corpus.prg:2)\n"
 
 	.p2align	4, 0x0
 .Lstr1:
-	.ascii	"  at sumloop (corpus.hb:2)\n"
+	.ascii	"  at sumloop (corpus.prg:2)\n"
 
 	.p2align	4, 0x0
 .Lstr2:
-	.ascii	"  at sumloop (corpus.hb:3)\n"
+	.ascii	"  at sumloop (corpus.prg:3)\n"
 
 	.p2align	4, 0x0
 .Lstr3:
-	.ascii	"  at sumloop (corpus.hb:4)\n"
+	.ascii	"  at sumloop (corpus.prg:4)\n"
 
 	.p2align	4, 0x0
 .Lstr4:
-	.ascii	"  at sumloop (corpus.hb:5)\n"
+	.ascii	"  at sumloop (corpus.prg:5)\n"
 
 	.p2align	4, 0x0
 .Lstr5:
-	.ascii	"  at sumloop (corpus.hb:7)\n"
+	.ascii	"  at sumloop (corpus.prg:7)\n"
 
 	.p2align	4, 0x0
 .Lstr6:
-	.ascii	"  at branchloop (corpus.hb:9)\n"
+	.ascii	"  at branchloop (corpus.prg:9)\n"
 
 	.p2align	4, 0x0
 .Lstr7:
-	.ascii	"  at branchloop (corpus.hb:9)\n"
+	.ascii	"  at branchloop (corpus.prg:9)\n"
 
 	.p2align	4, 0x0
 .Lstr8:
-	.ascii	"  at branchloop (corpus.hb:10)\n"
+	.ascii	"  at branchloop (corpus.prg:10)\n"
 
 	.p2align	4, 0x0
 .Lstr9:
-	.ascii	"  at branchloop (corpus.hb:11)\n"
+	.ascii	"  at branchloop (corpus.prg:11)\n"
 
 	.p2align	4, 0x0
 .Lstr10:
-	.ascii	"  at branchloop (corpus.hb:12)\n"
+	.ascii	"  at branchloop (corpus.prg:12)\n"
 
 	.p2align	4, 0x0
 .Lstr11:
-	.ascii	"  at branchloop (corpus.hb:13)\n"
+	.ascii	"  at branchloop (corpus.prg:13)\n"
 
 	.p2align	4, 0x0
 .Lstr12:
-	.ascii	"  at branchloop (corpus.hb:15)\n"
+	.ascii	"  at branchloop (corpus.prg:15)\n"
 
 	.p2align	4, 0x0
 .Lstr13:
-	.ascii	"  at branchloop (corpus.hb:18)\n"
+	.ascii	"  at branchloop (corpus.prg:18)\n"
 
 	.p2align	4, 0x0
 .Lstr14:
-	.ascii	"  at fact (corpus.hb:20)\n"
+	.ascii	"  at fact (corpus.prg:20)\n"
 
 	.p2align	4, 0x0
 .Lstr15:
-	.ascii	"  at fact (corpus.hb:20)\n"
+	.ascii	"  at fact (corpus.prg:20)\n"
 
 	.p2align	4, 0x0
 .Lstr16:
-	.ascii	"  at recurrence (corpus.hb:22)\n"
+	.ascii	"  at recurrence (corpus.prg:22)\n"
 
 	.p2align	4, 0x0
 .Lstr17:
-	.ascii	"  at recurrence (corpus.hb:22)\n"
+	.ascii	"  at recurrence (corpus.prg:22)\n"
 
 	.p2align	4, 0x0
 .Lstr18:
-	.ascii	"  at recurrence (corpus.hb:23)\n"
+	.ascii	"  at recurrence (corpus.prg:23)\n"
 
 	.p2align	4, 0x0
 .Lstr19:
-	.ascii	"  at recurrence (corpus.hb:24)\n"
+	.ascii	"  at recurrence (corpus.prg:24)\n"
 
 	.p2align	4, 0x0
 .Lstr20:
-	.ascii	"  at recurrence (corpus.hb:25)\n"
+	.ascii	"  at recurrence (corpus.prg:25)\n"
 
 	.p2align	4, 0x0
 .Lstr21:
-	.ascii	"  at recurrence (corpus.hb:27)\n"
+	.ascii	"  at recurrence (corpus.prg:27)\n"
 
 	.p2align	4, 0x0
 .Lstr22:
-	.ascii	"  at main (corpus.hb:29)\n"
+	.ascii	"  at main (corpus.prg:29)\n"
 
 	.p2align	4, 0x0
 .Lstr23:
-	.ascii	"  at main (corpus.hb:29)\n"
+	.ascii	"  at main (corpus.prg:29)\n"
 
 	.p2align	4, 0x0
 .Lstr24:
-	.ascii	"  at main (corpus.hb:30)\n"
+	.ascii	"  at main (corpus.prg:30)\n"
 
 	.section	.rdata$.refptr.hbc_trace_top,"dr",discard,.refptr.hbc_trace_top
 	.p2align	3, 0x0

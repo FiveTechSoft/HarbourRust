@@ -524,7 +524,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-t1v25148433/tests/t870_qout_block_result_neg.hb -> /downloads/verify-t1v2-contracts/t870_qout_block_result_neg/default-linux/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-t1v25148433/tests/t870_qout_block_result_neg.prg -> /downloads/verify-t1v2-contracts/t870_qout_block_result_neg/default-linux/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -547,7 +547,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-t1v25148433/tests/t870_qout_block_result_neg.hb -> /downloads/verify-t1v2-contracts/t870_qout_block_result_neg/default-windows/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-t1v25148433/tests/t870_qout_block_result_neg.prg -> /downloads/verify-t1v2-contracts/t870_qout_block_result_neg/default-windows/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -601,7 +601,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-t1v25148433/tests/t1384_eval_nil_result.hb -> /downloads/verify-t1v2-contracts/t1384_eval_nil_result/default-linux/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-t1v25148433/tests/t1384_eval_nil_result.prg -> /downloads/verify-t1v2-contracts/t1384_eval_nil_result/default-linux/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -624,7 +624,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-t1v25148433/tests/t1384_eval_nil_result.hb -> /downloads/verify-t1v2-contracts/t1384_eval_nil_result/default-windows/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-t1v25148433/tests/t1384_eval_nil_result.prg -> /downloads/verify-t1v2-contracts/t1384_eval_nil_result/default-windows/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -678,7 +678,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-t1v25148433/tests/t1385_block_param_int.hb -> /downloads/verify-t1v2-contracts/t1385_block_param_int/default-linux/program.s (2 functions)\n",
+            "stdout": "/downloads/verify-t1v25148433/tests/t1385_block_param_int.prg -> /downloads/verify-t1v2-contracts/t1385_block_param_int/default-linux/program.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -701,7 +701,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-t1v25148433/tests/t1385_block_param_int.hb -> /downloads/verify-t1v2-contracts/t1385_block_param_int/default-windows/program.s (2 functions)\n",
+            "stdout": "/downloads/verify-t1v25148433/tests/t1385_block_param_int.prg -> /downloads/verify-t1v2-contracts/t1385_block_param_int/default-windows/program.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -755,7 +755,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-t1v25148433/tests/t1386_block_userfn_nilret.hb -> /downloads/verify-t1v2-contracts/t1386_block_userfn_nilret/default-linux/program.s (2 functions)\n",
+            "stdout": "/downloads/verify-t1v25148433/tests/t1386_block_userfn_nilret.prg -> /downloads/verify-t1v2-contracts/t1386_block_userfn_nilret/default-linux/program.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -778,7 +778,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-t1v25148433/tests/t1386_block_userfn_nilret.hb -> /downloads/verify-t1v2-contracts/t1386_block_userfn_nilret/default-windows/program.s (2 functions)\n",
+            "stdout": "/downloads/verify-t1v25148433/tests/t1386_block_userfn_nilret.prg -> /downloads/verify-t1v2-contracts/t1386_block_userfn_nilret/default-windows/program.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -1397,7 +1397,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-t1v25148433/tests/t1391_block_reassign_samekind.hb -> /downloads/verify-t1v2-contracts/t1391_block_reassign_samekind/default-linux/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-t1v25148433/tests/t1391_block_reassign_samekind.prg -> /downloads/verify-t1v2-contracts/t1391_block_reassign_samekind/default-linux/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -1420,7 +1420,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-t1v25148433/tests/t1391_block_reassign_samekind.hb -> /downloads/verify-t1v2-contracts/t1391_block_reassign_samekind/default-windows/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-t1v25148433/tests/t1391_block_reassign_samekind.prg -> /downloads/verify-t1v2-contracts/t1391_block_reassign_samekind/default-windows/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {

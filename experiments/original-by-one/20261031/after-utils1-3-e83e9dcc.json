@@ -53,11 +53,11 @@
    }
   },
   {
-   "file": "utils/hbmk2/examples/plug_bis.hb",
+   "file": "utils/hbmk2/examples/plug_bis.prg",
    "sha256": "402d50deec513a617de74338236cdf13fd46bee5477382a3291f9a873ede577a",
    "review": "full source manually read 2026-11-01 (190 lines)",
    "entrypoint": "hbmk_plugin_bison (hbmk2 plugin) / Main fallback message",
-   "build_unit": "hbmk2 plugin example (.hb, -plugin=)",
+   "build_unit": "hbmk2 plugin example (.prg, -plugin=)",
    "profile": "B-utils",
    "dependencies": "hbmk_* plugin API; bison tool detection; hb_processRun; FOR EACH parallel arrays",
    "boundary": "bison integration plugin for hbmk2; not run (requires hbmk2 plugin host)",
@@ -100,11 +100,11 @@
    }
   },
   {
-   "file": "utils/hbmk2/examples/plug_tpl.hb",
+   "file": "utils/hbmk2/examples/plug_tpl.prg",
    "sha256": "01932e0ab90b13486f7f2f2f046a2965272001169098d3785b9d7ebef821420e",
    "review": "full source manually read 2026-11-01 (68 lines)",
    "entrypoint": "hbmk_plugin_tpl (hbmk2 plugin) / Main fallback message",
-   "build_unit": "hbmk2 plugin example (.hb, -plugin=)",
+   "build_unit": "hbmk2 plugin example (.prg, -plugin=)",
    "profile": "B-utils",
    "dependencies": "hbmk_* plugin API; SWITCH on cSTATE; hash member access",
    "boundary": "plugin template; not run (requires hbmk2 plugin host)",

@@ -1,66 +1,66 @@
 [
   {
-    "file": "tests/t87_pp_command_bad.hb",
+    "file": "tests/t87_pp_command_bad.prg",
     "before": "incomplete statement",
     "after": "statement not in the subset"
   },
   {
-    "file": "tests/t93_pp_cmd_parenreq.hb",
+    "file": "tests/t93_pp_cmd_parenreq.prg",
     "before": "incomplete statement",
     "after": "statement not in the subset"
   },
   {
-    "file": "tests/t1091_pp_identifier_literal_neg.hb",
+    "file": "tests/t1091_pp_identifier_literal_neg.prg",
     "before": "incomplete statement",
     "after": "statement not in the subset"
   },
   {
-    "file": "tests/t1092_pp_identifier_expr_neg.hb",
+    "file": "tests/t1092_pp_identifier_expr_neg.prg",
     "before": "incomplete statement",
     "after": "statement not in the subset"
   },
   {
-    "file": "tests/t1093_pp_wildcard_follow_neg.hb",
+    "file": "tests/t1093_pp_wildcard_follow_neg.prg",
     "before": "incomplete statement",
     "after": "statement not in the subset"
   },
   {
-    "file": "tests/t1097_pp_identifier_optional.hb",
+    "file": "tests/t1097_pp_identifier_optional.prg",
     "before": "incomplete statement",
     "after": "statement not in the subset"
   },
   {
-    "file": "tests/t1105_pp_restricted_exact_neg.hb",
+    "file": "tests/t1105_pp_restricted_exact_neg.prg",
     "before": "incomplete statement",
     "after": "statement not in the subset"
   },
   {
-    "file": "tests/t1106_pp_restricted_unknown_neg.hb",
+    "file": "tests/t1106_pp_restricted_unknown_neg.prg",
     "before": "incomplete statement",
     "after": "statement not in the subset"
   },
   {
-    "file": "tests/t1107_pp_restricted_prefix_neg.hb",
+    "file": "tests/t1107_pp_restricted_prefix_neg.prg",
     "before": "incomplete statement",
     "after": "statement not in the subset"
   },
   {
-    "file": "tests/t1108_pp_restricted_quote_neg.hb",
+    "file": "tests/t1108_pp_restricted_quote_neg.prg",
     "before": "incomplete statement",
     "after": "statement not in the subset"
   },
   {
-    "file": "tests/t1120_pp_logical_nonmatch_neg.hb",
+    "file": "tests/t1120_pp_logical_nonmatch_neg.prg",
     "before": "incomplete statement",
     "after": "statement not in the subset"
   },
   {
-    "file": "tests/t1130_pp_null_nonmatch_neg.hb",
+    "file": "tests/t1130_pp_null_nonmatch_neg.prg",
     "before": "incomplete statement",
     "after": "statement not in the subset"
   },
   {
-    "file": "tests/t1141_pp_generated_exact_neg.hb",
+    "file": "tests/t1141_pp_generated_exact_neg.prg",
     "before": "incomplete statement",
     "after": "statement not in the subset"
   }

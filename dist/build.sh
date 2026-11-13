@@ -1,12 +1,12 @@
 #!/bin/sh
 # build.sh - chain the full HarbourRust build for one program on Linux:
 #   hbc -> GNU as -> GNU ld -> native x86-64 ELF binary.
-# Usage: ./build.sh prog.hb [output-name]
+# Usage: ./build.sh prog.prg [output-name]
 # Stops at the first failing step (set -e); a partial result is never
 # reported as success. HBC env var overrides the compiler path.
 set -e
 if [ -z "$1" ]; then
-  echo "usage: $0 prog.hb [output-name]" >&2
+  echo "usage: $0 prog.prg [output-name]" >&2
   exit 1
 fi
 src="$1"

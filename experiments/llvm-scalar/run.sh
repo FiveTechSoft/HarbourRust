@@ -8,7 +8,7 @@ mkdir -p run
 "$RUSTC" -O ../../src/hbc.rs -o run/hbc
 # Linux end-to-end output and code generation.
 for case in perfextra corpus edge procline audit arraywork logic loopcontrol sequence minmax bitops empty interaction boolcalls booloutput boolminmax boolscope integeredges scopedslots barecounter discardeffects nilcompare printchoice borrowedstrings longstr-original voideffects returns-original ifelse-original statfun-original exit-original fornext-original; do
- source="$case.hb"; [ "$case" != fornext-original ] || source=fornext-original.prg
+ source="$case.prg"; [ "$case" != fornext-original ] || source=fornext-original.prg
  [ "$case" != exit-original ] || source=exit-original.prg
  case "$case" in longstr-original|returns-original|ifelse-original|statfun-original) source="$case.prg";; esac
  run/hbc "$source" "run/$case-current.s"
@@ -46,9 +46,9 @@ if [ "${RUN_BENCHMARKS:-0}" = 1 ]; then
 "$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static bench.rs -o run/bench
 run/bench "${BENCH_N:-1000000}" > run/bench.csv
 # Deliberately untraced control for comparison to untraced Rust. Not product parity.
-run/hbc corpus.hb run/corpus-no-trace.ll --experimental-llvm-no-trace
+run/hbc corpus.prg run/corpus-no-trace.ll --experimental-llvm-no-trace
 python3 llvm_aot.py run/corpus-no-trace.ll run/corpus-no-trace.o
-run/hbc arraywork.hb run/arraywork-no-trace.ll --experimental-llvm-no-trace
+run/hbc arraywork.prg run/arraywork-no-trace.ll --experimental-llvm-no-trace
 python3 llvm_aot.py run/arraywork-no-trace.ll run/arraywork-no-trace.o
 objcopy --redefine-sym ll_main=ll_main_arraywork run/arraywork-no-trace.o
 "$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current_notrace.o -C link-arg=run/corpus-no-trace.o -C link-arg=run/arraywork-no-trace.o -C relocation-model=static bench.rs -o run/bench-no-trace
@@ -69,7 +69,7 @@ echo 'PASS Linux ABI canary'
 if [ -n "${M:-}" ]; then
  : "${MLIB:?MinGW import-library directory}"
  for case in perfextra corpus edge procline audit arraywork logic loopcontrol sequence minmax bitops empty interaction boolcalls booloutput boolminmax boolscope integeredges scopedslots barecounter discardeffects nilcompare printchoice borrowedstrings longstr-original voideffects returns-original ifelse-original statfun-original exit-original fornext-original; do
-  source="$case.hb"; [ "$case" != fornext-original ] || source=fornext-original.prg
+  source="$case.prg"; [ "$case" != fornext-original ] || source=fornext-original.prg
   [ "$case" != exit-original ] || source=exit-original.prg
  case "$case" in longstr-original|returns-original|ifelse-original|statfun-original) source="$case.prg";; esac
   run/hbc "$source" "run/${case}_w.ll" --target=windows --experimental-llvm

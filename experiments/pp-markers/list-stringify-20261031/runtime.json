@@ -1,26 +1,26 @@
 [
   {
-    "file": "t1197_pp_list_stringify.hb",
+    "file": "t1197_pp_list_stringify.prg",
     "exact": true,
     "stdout_hex": "0a616c70686120202c202020626574610a6128312c7b322c337d292c2062"
   },
   {
-    "file": "t1198_pp_list_normal.hb",
+    "file": "t1198_pp_list_normal.prg",
     "exact": true,
     "stdout_hex": "0a616c70686120626574610a6128312c7b322c337d292062"
   },
   {
-    "file": "t1199_pp_list_quotes.hb",
+    "file": "t1199_pp_list_quotes.prg",
     "exact": true,
     "stdout_hex": "0a22612c62222022632c6422"
   },
   {
-    "file": "t1200_pp_list_absent.hb",
+    "file": "t1200_pp_list_absent.prg",
     "exact": true,
     "stdout_hex": "0a41205a0a4120616c7068612062657461205a"
   },
   {
-    "file": "t1201_pp_list_empty.hb",
+    "file": "t1201_pp_list_empty.prg",
     "exact": true,
     "stdout_hex": "0a616c7068612c2c626574610a2c"
   }

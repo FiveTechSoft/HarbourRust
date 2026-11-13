@@ -6,9 +6,9 @@ No Harbour program passes through rustc or LLVM in this iteration.
 ## Compiler build (Rust, native binary)
 $ rustc -O src/hbc.rs -o hbc        # builds clean, 0 warnings, ELF x86-64
 
-## Positive case: tests/samples/hello.hb -> assembly -> native ELF
-$ ./hbc tests/samples/hello.hb gen/hello.s
-tests/samples/hello.hb -> gen/hello.s (2 functions)
+## Positive case: tests/samples/hello.prg -> assembly -> native ELF
+$ ./hbc tests/samples/hello.prg gen/hello.s
+tests/samples/hello.prg -> gen/hello.s (2 functions)
 $ as -o gen/hello.o gen/hello.s && ld -o gen/hello gen/hello.o
 $ ./gen/hello
 resultado de z:
@@ -26,7 +26,7 @@ string in two stack slots and returns them in %rax/%rdx. The print helpers
 are hand-written syscall routines (write + exit), no library calls.
 
 ## Negative case: use after move, rejected BY HBC (not rustc)
-$ ./hbc tests/samples/broken_borrow.hb gen/prestamo.s
+$ ./hbc tests/samples/broken_borrow.prg gen/prestamo.s
 error: line 5: use of moved value `a` (strings move on assignment; they do not copy)
 exit code 1 - rejected before any code is generated.
 
@@ -34,14 +34,14 @@ Iteration 1 got this same rejection from rustc's borrow checker (E0382);
 now it comes from hbc's own ownership analysis. Still use-after-move only;
 borrowing/references/lifetimes are not covered (see README).
 
-## Copy vs move (tests/t10_int_copy.hb) - runs
+## Copy vs move (tests/t10_int_copy.prg) - runs
     local a := 5
     local b := a      # i64 is Copy: `a` stays usable
     ? a               # 5
     ? b               # 5
     ? a - 10          # -5   (signed printing works, incl. i64::MIN edge by construction)
 
-## Printing borrows (tests/t11_print_borrows.hb) - runs
+## Printing borrows (tests/t11_print_borrows.prg) - runs
     local a := "hola"
     ? a               # borrows; does not move
     local b := a      # now `a` moves into `b`
@@ -54,20 +54,20 @@ borrowing/references/lifetimes are not covered (see README).
     ? 9223372036854775807        -> 9223372036854775807  (i64 max)
 
 ## Rejection battery (hbc rejects before codegen; inputs never executed)
-tests/t01_injection_colons.hb   error: line 2: ':' without '=' (col 10)
-tests/t02_injection_unsafe.hb   error: line 2: character not allowed `{` (U+007B)
-tests/t03_injection_macro.hb    error: line 2: character not allowed `;` (U+003B)
-tests/t04_unicode_ident.hb      error: line 2: character not allowed `ñ` (U+00F1)   (no panic)
-tests/t05_keyword_boundary.hb   error: line 2: statement not in the subset (Ident("localfoo"))
-tests/t06_undefined_var.hb      error: line 2: undefined variable `y`
-tests/t08_type_error.hb         error: line 3: arithmetic requires integers
-tests/t09_duplicate_local.hb    error: line 3: duplicate local `x`
+tests/t01_injection_colons.prg   error: line 2: ':' without '=' (col 10)
+tests/t02_injection_unsafe.prg   error: line 2: character not allowed `{` (U+007B)
+tests/t03_injection_macro.prg    error: line 2: character not allowed `;` (U+003B)
+tests/t04_unicode_ident.prg      error: line 2: character not allowed `ñ` (U+00F1)   (no panic)
+tests/t05_keyword_boundary.prg   error: line 2: statement not in the subset (Ident("localfoo"))
+tests/t06_undefined_var.prg      error: line 2: undefined variable `y`
+tests/t08_type_error.prg         error: line 3: arithmetic requires integers
+tests/t09_duplicate_local.prg    error: line 3: duplicate local `x`
 integer literal 9223372036854775808
                                 error: line 2: integer literal out of range (i64)
                                 (iteration 1 delegated this to rustc; now hbc checks it)
 
 ## Unicode string accepted and runs
-tests/t07_unicode_string.hb  `? "olá, año 🦀"`  ->  prints: olá, año 🦀
+tests/t07_unicode_string.prg  `? "olá, año 🦀"`  ->  prints: olá, año 🦀
 (strings are emitted as raw UTF-8 .byte sequences; no assembler escaping)
 
 ## Known limits observed
@@ -79,7 +79,7 @@ tests/t07_unicode_string.hb  `? "olá, año 🦀"`  ->  prints: olá, año 🦀
   fixed version.
 
 ## Timing (toy program; NOT evidence about real workloads)
-compile hello.hb: ~2 ms (hbc) + ~6 ms (as+ld); run: ~1 ms.
+compile hello.prg: ~2 ms (hbc) + ~6 ms (as+ld); run: ~1 ms.
 
 
 ---
@@ -101,12 +101,12 @@ this sandbox, not necessarily of Wine 11.
 $ rustc -O src/hbc.rs -o hbc        # builds clean, 0 warnings
 
 ## Linux regression first (must stay identical)
-hello.hb -> same output (resultado de z: / 32 / hola desde una funcion),
-ELF still 8,984 bytes; broken_borrow.hb still rejected at line 5.
+hello.prg -> same output (resultado de z: / 32 / hola desde una funcion),
+ELF still 8,984 bytes; broken_borrow.prg still rejected at line 5.
 
 ## Windows build of the same program
-$ ./hbc tests/samples/hello.hb gen/hello_win.s --target=windows
-tests/samples/hello.hb -> gen/hello_win.s (2 functions)
+$ ./hbc tests/samples/hello.prg gen/hello_win.s --target=windows
+tests/samples/hello.prg -> gen/hello_win.s (2 functions)
 $ x86_64-w64-mingw32-as -o gen/hello_win.o gen/hello_win.s
 $ x86_64-w64-mingw32-ld -o gen/hello.exe gen/hello_win.o -e _start --subsystem console -lkernel32
 $ file gen/hello.exe
@@ -120,13 +120,13 @@ $ echo $?
 
 ## Battery on both targets (outputs must be byte-identical)
 positive (compiled and RUN on linux ELF and on windows PE under Wine):
-  tests/samples/hello.hb            PASS  (32 + greeting, identical)
-  tests/t10_int_copy.hb       PASS  (5 / 5 / -5, identical)
-  tests/t11_print_borrows.hb  PASS  (hola / hola / 7, identical)
-  tests/t07_unicode_string.hb PASS  (olá, año 🦀, identical)
+  tests/samples/hello.prg            PASS  (32 + greeting, identical)
+  tests/t10_int_copy.prg       PASS  (5 / 5 / -5, identical)
+  tests/t11_print_borrows.prg  PASS  (hola / hola / 7, identical)
+  tests/t07_unicode_string.prg PASS  (olá, año 🦀, identical)
   arithmetic (14/20/14/i64::MAX) PASS (identical)
 negative (hbc itself rejects before codegen, target-independent):
-  tests/samples/broken_borrow.hb   PASS  error: line 5: use of moved value `a`  (both targets)
+  tests/samples/broken_borrow.prg   PASS  error: line 5: use of moved value `a`  (both targets)
   tests/t01..t09 battery      PASS  same errors as iteration 2, both targets
 
 ## What this does NOT show
@@ -159,10 +159,10 @@ Also: `_start` now aligns the stack explicitly (`and $-16, %rsp`) instead of
 assuming the loader's convention, and the kernel32 return values are
 documented as unchecked (no I/O error handling in this PoC).
 
-Regression test added: tests/t12_call_in_expr.hb (a printing function
+Regression test added: tests/t12_call_in_expr.prg (a printing function
 called inside arithmetic, both operand positions). Run on both targets:
 
-$ ./hbc tests/t12_call_in_expr.hb gen/t12.s --target=windows && x86_64-w64-mingw32-as -o gen/t12.o gen/t12.s && x86_64-w64-mingw32-ld -o gen/t12.exe gen/t12.o -e _start --subsystem console -lkernel32 && wine gen/t12.exe
+$ ./hbc tests/t12_call_in_expr.prg gen/t12.s --target=windows && x86_64-w64-mingw32-as -o gen/t12.o gen/t12.s && x86_64-w64-mingw32-ld -o gen/t12.exe gen/t12.o -e _start --subsystem console -lkernel32 && wine gen/t12.exe
 en valor
 41
 en valor
@@ -189,14 +189,14 @@ New tests (each compiled and run, or rejected, on BOTH targets - Linux ELF
 and Windows PE under Wine 10.20):
 
 positive (byte-identical output on both targets):
-  tests/t13_if_else.hb       PASS  big / exactly seven / eq / ne / ne2 ok / lt / 42
-  tests/t15_if_move_both.hb  PASS  hola / fin   (moved in both branches => moved at join)
-  tests/t18_if_call_cond.hb  PASS  v / si       (call inside the condition)
+  tests/t13_if_else.prg       PASS  big / exactly seven / eq / ne / ne2 ok / lt / 42
+  tests/t15_if_move_both.prg  PASS  hola / fin   (moved in both branches => moved at join)
+  tests/t18_if_call_cond.prg  PASS  v / si       (call inside the condition)
 negative (hbc itself rejects before codegen, exit 1, both targets):
-  tests/t14_if_move_after.hb PASS  error: line 8: use of moved value
-  tests/t16_if_return.hb     PASS  return inside an `if` block rejected
-  tests/t17_if_str_cmp.hb    PASS  comparisons require integers (strings rejected)
-  tests/t19_if_scope.hb      PASS  undefined variable `z` (branch local after endif)
+  tests/t14_if_move_after.prg PASS  error: line 8: use of moved value
+  tests/t16_if_return.prg     PASS  return inside an `if` block rejected
+  tests/t17_if_str_cmp.prg    PASS  comparisons require integers (strings rejected)
+  tests/t19_if_scope.prg      PASS  undefined variable `z` (branch local after endif)
 
 Full regression after the change (iteration 2 + 3 battery):
   positive: hola, t10, t11, t07 (unicode), t12 (call in expr), arithmetic
@@ -228,15 +228,15 @@ New tests (each compiled and run, or rejected, on BOTH targets - Linux ELF
 and Windows PE under Wine 10.20):
 
 positive (byte-identical output on both targets):
-  tests/t20_assign.hb              PASS  1 / 5 / hola / adios / de nuevo
-  tests/t23_while_count.hb         PASS  1 / 2 / dos / 3 / fin / cero viajes
-  tests/t25_while_move_reassign.hb PASS  x / y / y
+  tests/t20_assign.prg              PASS  1 / 5 / hola / adios / de nuevo
+  tests/t23_while_count.prg         PASS  1 / 2 / dos / 3 / fin / cero viajes
+  tests/t25_while_move_reassign.prg PASS  x / y / y
 negative (rejected by hbc itself before codegen, exit 1, both targets):
-  tests/t21_assign_undeclared.hb   PASS  assignment to undeclared variable
-  tests/t22_assign_type.hb         PASS  type mismatch in assignment
-  tests/t24_while_move.hb          PASS  moved in body, not reassigned before enddo
-  tests/t26_while_scope.hb         PASS  undefined variable `z` (body local after enddo)
-  tests/t27_while_return.hb        PASS  return inside a `while` block rejected
+  tests/t21_assign_undeclared.prg   PASS  assignment to undeclared variable
+  tests/t22_assign_type.prg         PASS  type mismatch in assignment
+  tests/t24_while_move.prg          PASS  moved in body, not reassigned before enddo
+  tests/t26_while_scope.prg         PASS  undefined variable `z` (body local after enddo)
+  tests/t27_while_return.prg        PASS  return inside a `while` block rejected
 
 Full regression (iteration 2-4 battery, positive and negative): ALL PASS,
 byte-identical on both targets; the hola Linux ELF is still 8,984 bytes.
@@ -254,15 +254,15 @@ can fall through, `exit` records the move state at its site, and the
 post-loop state joins pre-loop + fall-through + every exit site.
 
 positive (byte-identical output on Linux x86-64 and under Wine):
-- tests/t28_exit_loop.hb - exit at i = 3 prints "1 2 salido"; two `loop`
+- tests/t28_exit_loop.prg - exit at i = 3 prints "1 2 salido"; two `loop`
   skips print "1 3 5 fin"
-- tests/t31_exit_move_ok.hb - move on an exit-only path is accepted
+- tests/t31_exit_move_ok.prg - move on an exit-only path is accepted
   (prints "hola fuera")
 
 negative (rejected by hbc itself before codegen, exit 1, both targets):
-- tests/t29_exit_outside.hb - "exit outside a `while` loop"
-- tests/t30_loop_move.hb - moved before `loop`, no reassignment
-- tests/t32_exit_move_use.hb - the exit path counts as moved after the loop
+- tests/t29_exit_outside.prg - "exit outside a `while` loop"
+- tests/t30_loop_move.prg - moved before `loop`, no reassignment
+- tests/t32_exit_move_use.prg - the exit path counts as moved after the loop
 
 Full 32-case battery re-run after the change: 32/32 pass, `hola` Linux
 ELF still 8,984 bytes. Not yet: `for` loops, early returns.
@@ -274,19 +274,19 @@ the shared per-function epilogue, so the change is parser + checker: the
 parser takes nested returns as statements, and the checker enforces that
 all returns of a function agree on the type.
 
-semantic change (documented, deliberate): tests/t16_if_return.hb and
-tests/t27_while_return.hb pinned the old rejection ("return inside a
+semantic change (documented, deliberate): tests/t16_if_return.prg and
+tests/t27_while_return.prg pinned the old rejection ("return inside a
 block is not in the PoC yet"); they now pin the new positive behavior.
 
 positive (byte-identical output on Linux x86-64 and under Wine):
-- tests/t16_if_return.hb - early return inside if prints "100"
-- tests/t27_while_return.hb - early return inside while prints "21"
+- tests/t16_if_return.prg - early return inside if prints "100"
+- tests/t27_while_return.prg - early return inside while prints "21"
 
 negative (rejected by hbc itself before codegen, exit 1, both targets):
-- tests/t33_return_bare_block.hb - bare `return` inside a block
-- tests/t34_return_type_mix.hb - "return type mismatch"
-- tests/t35_return_nil_closing.hb - early value return, closing nil
-- tests/t36_return_move_join.hb - moved into an early return, used after
+- tests/t33_return_bare_block.prg - bare `return` inside a block
+- tests/t34_return_type_mix.prg - "return type mismatch"
+- tests/t35_return_nil_closing.prg - early value return, closing nil
+- tests/t36_return_move_join.prg - moved into an early return, used after
 
 Full 36-case battery re-run after the change: 36/36 pass, `hola` Linux
 ELF still 8,984 bytes. Not yet: `for` loops.
@@ -308,16 +308,16 @@ the old pinned substrings so t29/t30 keep passing unchanged.
 
 8 new tests (none converted):
 positive (byte-identical output on Linux x86-64 and under Wine):
-- tests/t37_for_basic.hb - up, step 2, step -1 countdown, zero-trip
-- tests/t42_for_exit_loop.hb - loop skips i = 2, exit at i = 5
+- tests/t37_for_basic.prg - up, step 2, step -1 countdown, zero-trip
+- tests/t42_for_exit_loop.prg - loop skips i = 2, exit at i = 5
 
 negative (rejected by hbc itself before codegen, exit 1, both targets):
-- tests/t38_for_scope.hb - loop variable used after `next`
-- tests/t39_for_shadow.hb - loop variable reuses a name in scope
-- tests/t40_for_assign_var.hb - assignment to the loop variable
-- tests/t41_for_move.hb - moved in body, not reassigned before `next`
-- tests/t43_for_step_zero.hb - step 0
-- tests/t44_for_step_expr.hb - non-literal step
+- tests/t38_for_scope.prg - loop variable used after `next`
+- tests/t39_for_shadow.prg - loop variable reuses a name in scope
+- tests/t40_for_assign_var.prg - assignment to the loop variable
+- tests/t41_for_move.prg - moved in body, not reassigned before `next`
+- tests/t43_for_step_zero.prg - step 0
+- tests/t44_for_step_expr.prg - non-literal step
 
 Full 44-case battery re-run after the change: 44/44 pass, `hola` Linux
 ELF still 8,984 bytes. Not yet: string comparisons / first-class
@@ -363,23 +363,23 @@ Comparisons borrow both operands.
 
 count reconciliation (2026-10-25, flagged in review): iteration counts
 in this file number the tests/tXX files only and exclude the three
-fixture programs (tests/samples/hello.hb, tests/samples/broken_borrow.hb,
-gen/arith.hb). The "55-case" line below was an arithmetic slip: the
+fixture programs (tests/samples/hello.prg, tests/samples/broken_borrow.prg,
+gen/arith.prg). The "55-case" line below was an arithmetic slip: the
 correct count after iteration 9 is 54 numbered tests (51 + 3 new;
 t17 was converted in place), i.e. 57 programs with the fixtures.
 
-semantic change (documented, deliberate): tests/t17_if_str_cmp.hb
+semantic change (documented, deliberate): tests/t17_if_str_cmp.prg
 pinned "string comparison is not in the PoC yet" for `=`; it now pins
 ordering (`<`) still being rejected. 1 converted, 3 new:
 
 positive (byte-identical output on Linux x86-64 and under Wine):
-- tests/t52_str_eq.hb - eq/ne matrix: literals, variables, lengths,
+- tests/t52_str_eq.prg - eq/ne matrix: literals, variables, lengths,
   prefixes, empty strings, and a while condition
-- tests/t54_str_eq_borrows.hb - both operands usable and movable after
+- tests/t54_str_eq_borrows.prg - both operands usable and movable after
 
 negative (rejected by hbc itself before codegen, exit 1, both targets):
-- tests/t17_if_str_cmp.hb (converted) - ordering on strings
-- tests/t53_mixed_cmp.hb - string vs integer comparison
+- tests/t17_if_str_cmp.prg (converted) - ordering on strings
+- tests/t53_mixed_cmp.prg - string vs integer comparison
 
 Full battery re-run after the change: 54/54 numbered tests pass (57/57
 with fixtures). `hola` Linux ELF grew from 8,984 to 9,024 bytes because
@@ -393,16 +393,16 @@ parameters.
 -1/0/1): first differing byte decides by unsigned value; a strict
 prefix is less. No collation/locale/Unicode awareness.
 
-tests/t17_if_str_cmp.hb converted a second time (now positive: ordering
+tests/t17_if_str_cmp.prg converted a second time (now positive: ordering
 works). 1 converted, 2 new:
 
 positive (byte-identical output on Linux x86-64 and under Wine):
-- tests/t17_if_str_cmp.hb (converted) - "abc" < "abd"
-- tests/t55_str_order.hb - prefix rule, differing-byte rule, empty
+- tests/t17_if_str_cmp.prg (converted) - "abc" < "abd"
+- tests/t55_str_order.prg - prefix rule, differing-byte rule, empty
   string, byte-value order ("Z" < "a"), <= and >= on equality
 
 negative (rejected by hbc itself before codegen, exit 1, both targets):
-- tests/t56_str_order_mixed.hb - string < integer
+- tests/t56_str_order_mixed.prg - string < integer
 
 Full battery re-run after the change: 56/56 numbered tests pass (59/59
 with fixtures). `hola` Linux ELF is now 9,056 bytes (hbc_str_cmp is

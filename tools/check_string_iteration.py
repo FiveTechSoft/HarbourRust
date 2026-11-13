@@ -40,8 +40,8 @@ def build(cmd, cwd):
 
 rows = []
 sources = [original] + [repo / 'tests' / name for name in [
-    't1548_string_each_observe.hb', 't1549_string_each_copies.hb',
-    't1550_string_each_early_return.hb', 't1551_string_each_nul_output.hb']]
+    't1548_string_each_observe.prg', 't1549_string_each_copies.prg',
+    't1550_string_each_early_return.prg', 't1551_string_each_nul_output.prg']]
 for source in sources:
     work = out / source.stem
     work.mkdir(exist_ok=True)

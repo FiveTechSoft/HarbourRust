@@ -1,7 +1,7 @@
 {
   "rows": [
     {
-      "file": "t1315_pp_factory_separator.hb",
+      "file": "t1315_pp_factory_separator.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -22,7 +22,7 @@
       }
     },
     {
-      "file": "t1316_pp_factory_separator.hb",
+      "file": "t1316_pp_factory_separator.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -43,7 +43,7 @@
       }
     },
     {
-      "file": "t1317_pp_factory_separator.hb",
+      "file": "t1317_pp_factory_separator.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -64,7 +64,7 @@
       }
     },
     {
-      "file": "t1318_pp_factory_separator.hb",
+      "file": "t1318_pp_factory_separator.prg",
       "exact": true,
       "outputs": {
         "ref": {

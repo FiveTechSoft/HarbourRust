@@ -25,7 +25,7 @@ def compare(oracle,candidate,cwd,key,preexec=None):
   (path/(name+'.stdout')).write_bytes(x.stdout);(path/(name+'.stderr')).write_bytes(x.stderr);(path/(name+'.rc')).write_text(str(x.returncode)+'\n')
  rows.append({'key':key,'cwd':str(cwd),'exact':exact,'stdout_bytes':len(o.stdout),'stdout_sha256':hashlib.sha256(o.stdout).hexdigest(),'stderr_bytes':len(o.stderr),'rc':o.returncode});assert exact,rows[-1]
  return o
-sources=[original]+sorted((repo/'tests').glob('t16*_curdir_*.hb'));sources=[s for s in sources if '_neg_' not in s.name and 'balance' not in s.name]
+sources=[original]+sorted((repo/'tests').glob('t16*_curdir_*.prg'));sources=[s for s in sources if '_neg_' not in s.name and 'balance' not in s.name]
 for source in sources:
  work=out/source.stem;work.mkdir(exist_ok=True);before=hashlib.sha256(source.read_bytes()).hexdigest();prg=source if source==original else work/'probe.prg'
  if source!=original:prg.write_bytes(source.read_bytes())
@@ -57,7 +57,7 @@ for instr in [False,True]:
   r=run([raw/name],out,True,deleted);o.append((r.stdout,r.stderr,r.returncode));assert o[-1]==(b'',b'',0)
  rows.append({'key':'deleted-'+str(instr),'exact':o[0]==o[1],'stdout_bytes':0,'stderr_bytes':0,'rc':0})
 if a.wrong_controls:
- changes=[('last-only-hold','let hold_string = !stderr && !raw;','let hold_string = !stderr && !raw && is_last;',repo/'tests/t1644_curdir_spacing_review_space_empty.hb',short,out/'t1644_curdir_spacing_review_space_empty/oracle'),('immediate-separator','    addq $1, hbc_pending(%rip)','    call hbc_pflush\n    call hbc_print_sep',repo/'tests/t1629_curdir_spacing_empty.hb',short,out/'t1629_curdir_spacing_empty/oracle'),('keep-slash','    lea 1(%rsp), %rdi\n    lea -2(%rax), %rsi','    mov %rsp, %rdi\n    lea -1(%rax), %rsi',raw/'probe.prg',short,raw/'oracle'),('short-buffer','    mov $264, %esi','    mov $263, %esi',raw/'probe.prg',longs[2],raw/'oracle')]
+ changes=[('last-only-hold','let hold_string = !stderr && !raw;','let hold_string = !stderr && !raw && is_last;',repo/'tests/t1644_curdir_spacing_review_space_empty.prg',short,out/'t1644_curdir_spacing_review_space_empty/oracle'),('immediate-separator','    addq $1, hbc_pending(%rip)','    call hbc_pflush\n    call hbc_print_sep',repo/'tests/t1629_curdir_spacing_empty.prg',short,out/'t1629_curdir_spacing_empty/oracle'),('keep-slash','    lea 1(%rsp), %rdi\n    lea -2(%rax), %rsi','    mov %rsp, %rdi\n    lea -1(%rax), %rsi',raw/'probe.prg',short,raw/'oracle'),('short-buffer','    mov $264, %esi','    mov $263, %esi',raw/'probe.prg',longs[2],raw/'oracle')]
  for name,old,new,source,cwd,oracle in changes:
   work=out/name;work.mkdir(exist_ok=True);shutil.copytree(repo/'src',work/'src',dirs_exist_ok=True);f=work/'src/hbc.rs';s=f.read_text();assert s.count(old)==1;f.write_text(s.replace(old,new));build([a.rustc,'--edition=2021','-O',f,'-o',work/'hbc'],work);build([work/'hbc',source,'bad.s'],work);build(['as','bad.s','-o','bad.o'],work);build(['ld','bad.o','-o','bad'],work);bad=run([work/'bad'],cwd,True);good=run([oracle],cwd,True);caught=bad.returncode==0 and (bad.stdout,bad.stderr,bad.returncode)!=(good.stdout,good.stderr,good.returncode);controls.append({'name':name,'caught':caught,'rc':bad.returncode});assert caught
 (out/'results.json').write_text(json.dumps({'comparisons':rows,'controls':controls},indent=2)+'\n');print('PASS',len(rows),'exact environment comparisons;',len(controls),'wrong compiler controls caught')

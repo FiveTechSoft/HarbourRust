@@ -47,13 +47,13 @@ t139_arr_neg_mixed and t697_strlit_mixed pinned the pre-piece-1a
 boundary where ANY mixed literal was an error. Piece 1a makes mixed
 scalar literals valid, so both were repointed, not deleted:
 
-- t139.before.hb / t697.before.hb: sources as of 6e65a2e. Old
+- t139.before.prg / t697.before.prg: sources as of 6e65a2e. Old
   expectations: t139 `array elements must be integers`, t697
   `array elements must be integers or logicals`.
-- t139.after.hb: {1, "dos", {3}} - a nested array inside a mixed
+- t139.after.prg: {1, "dos", {3}} - a nested array inside a mixed
   literal. New expectation: `array elements cannot mix integers and
   arrays` (the surviving named rejection).
-- t697.after.hb: {"a", x} with x a variable - a non-literal element.
+- t697.after.prg: {"a", x} with x a variable - a non-literal element.
   Expectation unchanged (`array elements must be integers or
   logicals`): the old message now fires for the non-literal form.
 - Reason for the boundary move: the 25Oct array commission (user
@@ -73,7 +73,7 @@ piece; the builtin lands next).
 Timeline (all times 31Oct CET, compiler binary identical throughout -
 sha256 in hashes.txt):
 
-1. ~16:47 battery run 1: FAIL tests/t528_hget.hb (output mismatch;
+1. ~16:47 battery run 1: FAIL tests/t528_hget.prg (output mismatch;
    builds and exit codes had passed per the harness's fail path).
 2. ~16:49 battery run 2: same FAIL.
 3. Between runs 2 and 3 the only changes were t139/t697 test files

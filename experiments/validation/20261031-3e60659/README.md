@@ -25,7 +25,7 @@ kind-aware eval. Compiler commit 3e60659, branch experiment/llvm-scalar-aot.
 ## Gate history (nothing hidden)
 
 1. Attempt 1 (14:01, strict harness, compiler 3e60659): 167 PASS lines, then
-   ABORTED at t49_nested_loop.hb windows/current: process produced correct
+   ABORTED at t49_nested_loop.prg windows/current: process produced correct
    stdout and exit code 0, but wineserver wrote
    "Unhandled page fault ... starting debugger..." to stderr and the gate
    contract requires empty stderr. Log:

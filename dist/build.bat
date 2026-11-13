@@ -1,12 +1,12 @@
 @echo off
 rem build.bat - chain the full HarbourRust build for one program on Windows:
 rem   hbc.exe -> mingw-w64 as -> mingw-w64 ld -> native x86-64 .exe
-rem Usage: build.bat prog.hb [output-name]
+rem Usage: build.bat prog.prg [output-name]
 rem Stops at the first failing step; a partial result is never reported as
 rem success. Needs x86_64-w64-mingw32-as/-ld on PATH (MinGW-w64 binutils).
 rem HBC env var overrides the compiler path.
 if "%~1"=="" (
-  echo usage: build.bat prog.hb [output-name] 1>&2
+  echo usage: build.bat prog.prg [output-name] 1>&2
   exit /b 1
 )
 set "SRC=%~1"

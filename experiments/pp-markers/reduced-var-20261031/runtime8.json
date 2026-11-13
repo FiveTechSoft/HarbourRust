@@ -2,7 +2,7 @@
   "scope": "8own reduced VAR runtime oracle checks,not original corpus growth",
   "rows": [
     {
-      "file": "t1253_pp_reduced_var_root.hb",
+      "file": "t1253_pp_reduced_var_root.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -23,7 +23,7 @@
       }
     },
     {
-      "file": "t1254_pp_reduced_var_comma.hb",
+      "file": "t1254_pp_reduced_var_comma.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -44,7 +44,7 @@
       }
     },
     {
-      "file": "t1255_pp_reduced_var_type.hb",
+      "file": "t1255_pp_reduced_var_type.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -65,7 +65,7 @@
       }
     },
     {
-      "file": "t1256_pp_reduced_var_init.hb",
+      "file": "t1256_pp_reduced_var_init.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -86,7 +86,7 @@
       }
     },
     {
-      "file": "t1257_pp_reduced_var_reorder.hb",
+      "file": "t1257_pp_reduced_var_reorder.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -107,7 +107,7 @@
       }
     },
     {
-      "file": "t1258_pp_reduced_var_duplicates.hb",
+      "file": "t1258_pp_reduced_var_duplicates.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -128,7 +128,7 @@
       }
     },
     {
-      "file": "t1259_pp_reduced_var_smart.hb",
+      "file": "t1259_pp_reduced_var_smart.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -149,7 +149,7 @@
       }
     },
     {
-      "file": "t1260_pp_reduced_var_operand.hb",
+      "file": "t1260_pp_reduced_var_operand.prg",
       "exact": true,
       "outputs": {
         "ref": {

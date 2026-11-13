@@ -51,7 +51,7 @@ and the section disappear from the call path.
   relocation or decoration surprises on x86-64 (no leading-underscore
   mangling on ELF or PE64).
 - (-) Name matching becomes case-sensitive at the C symbol level. The
-  .hb side stays case-insensitive: hbc uppercases the EXTERNAL name
+  .prg side stays case-insensitive: hbc uppercases the EXTERNAL name
   when it forms the symbol, matching the HB_FUNC uppercase convention.
   An extension with a lowercase `HB_FUNC(myFunc)` stops binding - a
   compile-visible break we document (Harbour's headers force uppercase
@@ -89,5 +89,5 @@ runtime helpers and the printer, not the bridge.
 ## What this decision unblocks
 
 - 2.6 Windows: no PE section research needed.
-- The `.hb` `EXTERNAL` surface and the C `hbhbr.h` contract stay
+- The `.prg` `EXTERNAL` surface and the C `hbhbr.h` contract stay
   byte-identical for extension authors.

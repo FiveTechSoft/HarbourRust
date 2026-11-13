@@ -8,11 +8,11 @@ impl Frame {
 }
 #[inline(never)] fn rust_reverse(n:i64)->i64 {
  let mut f=Frame{prev:std::ptr::null_mut(),text:std::ptr::null(),len:0};f.enter();
- f.at("  at reverse (perfextra.hb:26)\n");f.at("  at reverse (perfextra.hb:26)\n");
- let mut i=0i64;f.at("  at reverse (perfextra.hb:27)\n");let mut x=0i64;
- f.at("  at reverse (perfextra.hb:28)\n");i=n;
- while i>=1 {f.at("  at reverse (perfextra.hb:29)\n");x=x.wrapping_mul(3).wrapping_add(i);if let Some(v)=i.checked_add(-1){i=v}else{break}}
- f.at("  at reverse (perfextra.hb:31)\n");let r=x.wrapping_add(i);f.leave();r
+ f.at("  at reverse (perfextra.prg:26)\n");f.at("  at reverse (perfextra.prg:26)\n");
+ let mut i=0i64;f.at("  at reverse (perfextra.prg:27)\n");let mut x=0i64;
+ f.at("  at reverse (perfextra.prg:28)\n");i=n;
+ while i>=1 {f.at("  at reverse (perfextra.prg:29)\n");x=x.wrapping_mul(3).wrapping_add(i);if let Some(v)=i.checked_add(-1){i=v}else{break}}
+ f.at("  at reverse (perfextra.prg:31)\n");let r=x.wrapping_add(i);f.leave();r
 }
 fn main(){
  let mut count=0;for n in -12..=1000{assert_eq!(unsafe{ll_reverse(n)},rust_reverse(n));unsafe{assert!(hbc_trace_top.is_null());}count+=1;}

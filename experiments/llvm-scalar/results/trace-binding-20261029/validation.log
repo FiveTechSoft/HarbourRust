@@ -184,55 +184,55 @@ help: or use `IntoIterator::into_iter(..)` instead of `.into_iter()` to explicit
 
 warning: 16 warnings emitted
 
-corpus.hb -> run/corpus-current.s (8 functions)
+corpus.prg -> run/corpus-current.s (8 functions)
 PASS Linux exact output corpus
-edge.hb -> run/edge-current.s (2 functions)
+edge.prg -> run/edge-current.s (2 functions)
 PASS Linux exact output edge
-procline.hb -> run/procline-current.s (2 functions)
+procline.prg -> run/procline-current.s (2 functions)
 PASS Linux exact output procline
-audit.hb -> run/audit-current.s (2 functions)
+audit.prg -> run/audit-current.s (2 functions)
 PASS Linux exact output audit
-arraywork.hb -> run/arraywork-current.s (3 functions)
+arraywork.prg -> run/arraywork-current.s (3 functions)
 PASS Linux exact output arraywork
-logic.hb -> run/logic-current.s (3 functions)
+logic.prg -> run/logic-current.s (3 functions)
 PASS Linux exact output logic
-loopcontrol.hb -> run/loopcontrol-current.s (2 functions)
+loopcontrol.prg -> run/loopcontrol-current.s (2 functions)
 PASS Linux exact output loopcontrol
-sequence.hb -> run/sequence-current.s (3 functions)
+sequence.prg -> run/sequence-current.s (3 functions)
 PASS Linux exact output sequence
-minmax.hb -> run/minmax-current.s (2 functions)
+minmax.prg -> run/minmax-current.s (2 functions)
 PASS Linux exact output minmax
-bitops.hb -> run/bitops-current.s (2 functions)
+bitops.prg -> run/bitops-current.s (2 functions)
 PASS Linux exact output bitops
-empty.hb -> run/empty-current.s (2 functions)
+empty.prg -> run/empty-current.s (2 functions)
 PASS Linux exact output empty
-interaction.hb -> run/interaction-current.s (2 functions)
+interaction.prg -> run/interaction-current.s (2 functions)
 PASS Linux exact output interaction
-boolcalls.hb -> run/boolcalls-current.s (7 functions)
+boolcalls.prg -> run/boolcalls-current.s (7 functions)
 PASS Linux exact output boolcalls
-booloutput.hb -> run/booloutput-current.s (3 functions)
+booloutput.prg -> run/booloutput-current.s (3 functions)
 PASS Linux exact output booloutput
-boolminmax.hb -> run/boolminmax-current.s (2 functions)
+boolminmax.prg -> run/boolminmax-current.s (2 functions)
 PASS Linux exact output boolminmax
-boolscope.hb -> run/boolscope-current.s (2 functions)
+boolscope.prg -> run/boolscope-current.s (2 functions)
 PASS Linux exact output boolscope
-integeredges.hb -> run/integeredges-current.s (2 functions)
+integeredges.prg -> run/integeredges-current.s (2 functions)
 PASS Linux exact output integeredges
-scopedslots.hb -> run/scopedslots-current.s (3 functions)
+scopedslots.prg -> run/scopedslots-current.s (3 functions)
 PASS Linux exact output scopedslots
-barecounter.hb -> run/barecounter-current.s (2 functions)
+barecounter.prg -> run/barecounter-current.s (2 functions)
 PASS Linux exact output barecounter
-discardeffects.hb -> run/discardeffects-current.s (2 functions)
+discardeffects.prg -> run/discardeffects-current.s (2 functions)
 PASS Linux exact output discardeffects
-nilcompare.hb -> run/nilcompare-current.s (2 functions)
+nilcompare.prg -> run/nilcompare-current.s (2 functions)
 PASS Linux exact output nilcompare
-printchoice.hb -> run/printchoice-current.s (2 functions)
+printchoice.prg -> run/printchoice-current.s (2 functions)
 PASS Linux exact output printchoice
-borrowedstrings.hb -> run/borrowedstrings-current.s (2 functions)
+borrowedstrings.prg -> run/borrowedstrings-current.s (2 functions)
 PASS Linux exact output borrowedstrings
 longstr-original.prg -> run/longstr-original-current.s (1 functions)
 PASS Linux exact output longstr-original
-voideffects.hb -> run/voideffects-current.s (6 functions)
+voideffects.prg -> run/voideffects-current.s (6 functions)
 PASS Linux exact output voideffects
 returns-original.prg -> run/returns-original-current.s (2 functions)
 PASS Linux exact output returns-original
@@ -289,7 +289,7 @@ PASS Wine exact output barecounter
 PASS Wine exact output discardeffects
 PASS Wine exact output nilcompare
 PASS Wine exact output printchoice
-borrowedstrings.hb -> run/borrowedstrings_current_w.s (2 functions)
+borrowedstrings.prg -> run/borrowedstrings_current_w.s (2 functions)
 PASS Wine exact output borrowedstrings
 longstr-original.prg -> run/longstr-original_current_w.s (1 functions)
 PASS Wine exact output longstr-original
@@ -306,319 +306,319 @@ linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-borrowedraw.hb:5)
+  at main (error-borrowedraw.prg:5)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-borrowedraw.hb:5)
+  at main (error-borrowedraw.prg:5)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-void-argument.hb:7)
+  at main (error-void-argument.prg:7)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-void-argument.hb:7)
+  at main (error-void-argument.prg:7)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-void-return.hb:10)
+  at main (error-void-return.prg:10)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-void-return.hb:10)
+  at main (error-void-return.prg:10)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at helper (error-void-recursive.hb:6)
-  at helper (error-void-recursive.hb:4)
-  at helper (error-void-recursive.hb:4)
-  at main (error-void-recursive.hb:10)
+  at helper (error-void-recursive.prg:6)
+  at helper (error-void-recursive.prg:4)
+  at helper (error-void-recursive.prg:4)
+  at main (error-void-recursive.prg:10)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at helper (error-void-recursive.hb:6)
-  at helper (error-void-recursive.hb:4)
-  at helper (error-void-recursive.hb:4)
-  at main (error-void-recursive.hb:10)
+  at helper (error-void-recursive.prg:6)
+  at helper (error-void-recursive.prg:4)
+  at helper (error-void-recursive.prg:4)
+  at main (error-void-recursive.prg:10)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-nilcompare.hb:4)
+  at main (error-nilcompare.prg:4)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-nilcompare.hb:4)
+  at main (error-nilcompare.prg:4)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-nilcompare-left.hb:4)
+  at main (error-nilcompare-left.prg:4)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-nilcompare-left.hb:4)
+  at main (error-nilcompare-left.prg:4)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
 Callstack:
-  at deep (error-inc.hb:3)
-  at middle (error-inc.hb:5)
-  at main (error-inc.hb:7)
+  at deep (error-inc.prg:3)
+  at middle (error-inc.prg:5)
+  at main (error-inc.prg:7)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
 Callstack:
-  at deep (error-inc.hb:3)
-  at middle (error-inc.hb:5)
-  at main (error-inc.hb:7)
+  at deep (error-inc.prg:3)
+  at middle (error-inc.prg:5)
+  at main (error-inc.prg:7)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
 Callstack:
-  at descend (error-recursive.hb:4)
-  at descend (error-recursive.hb:4)
-  at descend (error-recursive.hb:4)
-  at descend (error-recursive.hb:4)
-  at main (error-recursive.hb:6)
+  at descend (error-recursive.prg:4)
+  at descend (error-recursive.prg:4)
+  at descend (error-recursive.prg:4)
+  at descend (error-recursive.prg:4)
+  at main (error-recursive.prg:6)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
 Callstack:
-  at descend (error-recursive.hb:4)
-  at descend (error-recursive.hb:4)
-  at descend (error-recursive.hb:4)
-  at descend (error-recursive.hb:4)
-  at main (error-recursive.hb:6)
+  at descend (error-recursive.prg:4)
+  at descend (error-recursive.prg:4)
+  at descend (error-recursive.prg:4)
+  at descend (error-recursive.prg:4)
+  at main (error-recursive.prg:6)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
 Callstack:
-  at main (error-after-call.hb:7)
+  at main (error-after-call.prg:7)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
 Callstack:
-  at main (error-after-call.hb:7)
+  at main (error-after-call.prg:7)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
 Callstack:
   at fail (./trace-include.ch:3)
-  at main (error-include.hb:3)
+  at main (error-include.prg:3)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Limit: increment overflow needs numeric promotion
 Callstack:
   at fail (./trace-include.ch:3)
-  at main (error-include.hb:3)
+  at main (error-include.prg:3)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-bound.hb:4)
+  at main (error-bound.prg:4)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-bound.hb:4)
+  at main (error-bound.prg:4)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-bound-write.hb:4)
+  at main (error-bound-write.prg:4)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-bound-write.hb:4)
+  at main (error-bound-write.prg:4)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at probe (error-logic-and.hb:4)
-  at main (error-logic-and.hb:9)
+  at probe (error-logic-and.prg:4)
+  at main (error-logic-and.prg:9)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at probe (error-logic-and.hb:4)
-  at main (error-logic-and.hb:9)
+  at probe (error-logic-and.prg:4)
+  at main (error-logic-and.prg:9)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at probe (error-logic-or.hb:4)
-  at main (error-logic-or.hb:9)
+  at probe (error-logic-or.prg:4)
+  at main (error-logic-or.prg:9)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at probe (error-logic-or.hb:4)
-  at main (error-logic-or.hb:9)
+  at probe (error-logic-or.prg:4)
+  at main (error-logic-or.prg:9)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT 
          7Bound error: array access
 Callstack:
-  at probe (error-loopcontrol.hb:20)
-  at main (error-loopcontrol.hb:25)
+  at probe (error-loopcontrol.prg:20)
+  at main (error-loopcontrol.prg:25)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT 
          7Bound error: array access
 Callstack:
-  at probe (error-loopcontrol.hb:20)
-  at main (error-loopcontrol.hb:25)
+  at probe (error-loopcontrol.prg:20)
+  at main (error-loopcontrol.prg:25)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at probe (error-loop-test.hb:4)
-  at main (error-loop-test.hb:13)
+  at probe (error-loop-test.prg:4)
+  at main (error-loop-test.prg:13)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at probe (error-loop-test.hb:4)
-  at main (error-loop-test.hb:13)
+  at probe (error-loop-test.prg:4)
+  at main (error-loop-test.prg:13)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at probe (error-sequence.hb:4)
-  at main (error-sequence.hb:7)
+  at probe (error-sequence.prg:4)
+  at main (error-sequence.prg:7)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at probe (error-sequence.hb:4)
-  at main (error-sequence.hb:7)
+  at probe (error-sequence.prg:4)
+  at main (error-sequence.prg:7)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT 
          7Bound error: array access
 Callstack:
-  at main (error-minmax.hb:7)
+  at main (error-minmax.prg:7)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT 
          7Bound error: array access
 Callstack:
-  at main (error-minmax.hb:7)
+  at main (error-minmax.prg:7)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT 
          7Bound error: array access
 Callstack:
-  at main (error-bitops.hb:7)
+  at main (error-bitops.prg:7)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT 
          7Bound error: array access
 Callstack:
-  at main (error-bitops.hb:7)
+  at main (error-bitops.prg:7)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-empty.hb:4)
+  at main (error-empty.prg:4)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-empty.hb:4)
+  at main (error-empty.prg:4)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at invalid (error-boolcalls.hb:3)
-  at relay (error-boolcalls.hb:5)
-  at main (error-boolcalls.hb:7)
+  at invalid (error-boolcalls.prg:3)
+  at relay (error-boolcalls.prg:5)
+  at main (error-boolcalls.prg:7)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at invalid (error-boolcalls.hb:3)
-  at relay (error-boolcalls.hb:5)
-  at main (error-boolcalls.hb:7)
+  at invalid (error-boolcalls.prg:3)
+  at relay (error-boolcalls.prg:5)
+  at main (error-boolcalls.prg:7)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-booloutput.hb:4)
+  at main (error-booloutput.prg:4)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at main (error-booloutput.hb:4)
+  at main (error-booloutput.prg:4)
 
 linux current exit 1 stderr b''
 linux llvm exit 1 stderr b''
 linux ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at probe (error-scopedslots.hb:6)
-  at main (error-scopedslots.hb:14)
+  at probe (error-scopedslots.prg:6)
+  at main (error-scopedslots.prg:14)
 
 windows current exit 1 stderr b''
 windows llvm exit 1 stderr b''
 windows ERROR TRACE EXACT Bound error: array access
 Callstack:
-  at probe (error-scopedslots.hb:6)
-  at main (error-scopedslots.hb:14)
+  at probe (error-scopedslots.prg:6)
+  at main (error-scopedslots.prg:14)
 
 PASS fail-closed string-effect-tree
 PASS fail-closed string-chr-high
@@ -699,32 +699,32 @@ PASS fail-closed dead-string-if
 PASS fail-closed exit-outside
 PASS fail-closed loop-outside
 PASS fail-closed instrument
-PASS existing regression t28_exit_loop.hb linux
-PASS existing regression t28_exit_loop.hb windows
-PASS existing regression t42_for_exit_loop.hb linux
-PASS existing regression t42_for_exit_loop.hb windows
-PASS existing regression t48_nested_exit.hb linux
-PASS existing regression t48_nested_exit.hb windows
-PASS existing regression t49_nested_loop.hb linux
-PASS existing regression t49_nested_loop.hb windows
-PASS existing regression t129_arr_loop.hb linux
-PASS existing regression t129_arr_loop.hb windows
-PASS existing regression t980_inline_if_qout.hb linux
-PASS existing regression t980_inline_if_qout.hb windows
-PASS existing regression t982_original_ifinline.hb linux
-PASS existing regression t982_original_ifinline.hb windows
-PASS existing regression t792_barelocal_for.hb linux
-PASS existing regression t792_barelocal_for.hb windows
-PASS existing regression t601_shortcircuit.hb linux
-PASS existing regression t601_shortcircuit.hb windows
-PASS existing regression t602_log_fn.hb linux
-PASS existing regression t602_log_fn.hb windows
-PASS existing regression t606_dotted_forms.hb linux
-PASS existing regression t606_dotted_forms.hb windows
-PASS existing regression t722_qq_logical.hb linux
-PASS existing regression t722_qq_logical.hb windows
-PASS existing regression t907_original_while.hb linux
-PASS existing regression t907_original_while.hb windows
-PASS existing regression t997_original_recursiv.hb linux
-PASS existing regression t997_original_recursiv.hb windows
+PASS existing regression t28_exit_loop.prg linux
+PASS existing regression t28_exit_loop.prg windows
+PASS existing regression t42_for_exit_loop.prg linux
+PASS existing regression t42_for_exit_loop.prg windows
+PASS existing regression t48_nested_exit.prg linux
+PASS existing regression t48_nested_exit.prg windows
+PASS existing regression t49_nested_loop.prg linux
+PASS existing regression t49_nested_loop.prg windows
+PASS existing regression t129_arr_loop.prg linux
+PASS existing regression t129_arr_loop.prg windows
+PASS existing regression t980_inline_if_qout.prg linux
+PASS existing regression t980_inline_if_qout.prg windows
+PASS existing regression t982_original_ifinline.prg linux
+PASS existing regression t982_original_ifinline.prg windows
+PASS existing regression t792_barelocal_for.prg linux
+PASS existing regression t792_barelocal_for.prg windows
+PASS existing regression t601_shortcircuit.prg linux
+PASS existing regression t601_shortcircuit.prg windows
+PASS existing regression t602_log_fn.prg linux
+PASS existing regression t602_log_fn.prg windows
+PASS existing regression t606_dotted_forms.prg linux
+PASS existing regression t606_dotted_forms.prg windows
+PASS existing regression t722_qq_logical.prg linux
+PASS existing regression t722_qq_logical.prg windows
+PASS existing regression t907_original_while.prg linux
+PASS existing regression t907_original_while.prg windows
+PASS existing regression t997_original_recursiv.prg linux
+PASS existing regression t997_original_recursiv.prg windows
 PASS direct trace-global executable linkage and target relocations

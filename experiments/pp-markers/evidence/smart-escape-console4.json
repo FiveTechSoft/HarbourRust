@@ -1,21 +1,21 @@
 [
   {
-    "file": "tests/t1243_pp_smart_escape_ascii.hb",
+    "file": "tests/t1243_pp_smart_escape_ascii.prg",
     "stdout": "\n         3          9\n         3         10",
     "exact": true
   },
   {
-    "file": "tests/t1244_pp_smart_escape_list.hb",
+    "file": "tests/t1244_pp_smart_escape_list.prg",
     "stdout": "\na\"b a\\b",
     "exact": true
   },
   {
-    "file": "tests/t1245_pp_smart_escape_quote.hb",
+    "file": "tests/t1245_pp_smart_escape_quote.prg",
     "stdout": "\na\"b\na\\b",
     "exact": true
   },
   {
-    "file": "tests/t1246_pp_smart_escape_marker.hb",
+    "file": "tests/t1246_pp_smart_escape_marker.prg",
     "stdout": "\n#<x>",
     "exact": true
   }

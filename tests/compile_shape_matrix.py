@@ -38,7 +38,7 @@ expected = [
 accepted = rejected = 0
 for i, expr in enumerate(expressions):
     for j, context in enumerate(contexts):
-        source = out / f'p{i}_{j}.hb'
+        source = out / f'p{i}_{j}.prg'
         source.write_text(header + context.format(e=expr) + '\nreturn\n')
         states = []
         for target in ('linux', 'windows'):

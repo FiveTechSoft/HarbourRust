@@ -65,7 +65,7 @@ build_win() { ./hbc "$1" gen/"$base"_w.s --target=windows --instrument -I tests 
 # the same way). No retries.
 run_pos_kind() { # file expected [exit]
   local f=$1 exp=$2 want_rc=$3 base
-  base=$(basename "$f" .hb)
+  base=$(basename "$f" .prg)
   printf '%b' "$exp" > gen/"$base".expected
   if ! build_linux "$f"; then preserve_failure "$base"; echo "FAIL $f (linux build; snapshot gen/failures/$RUNID/$base)"; fail=1; return; fi
   local out_lin rc_lin
@@ -102,7 +102,7 @@ run_pos_kind() { # file expected [exit]
 }
 run_neg() { # file expected_error_substr
   local f=$1 exp=$2 l w le we base
-  base=$(basename "$f" .hb)
+  base=$(basename "$f" .prg)
   ./hbc "$f" gen/neg.s --target=linux > gen/"$base".neg-linux.out 2>&1; le=$?
   echo "$le" > gen/"$base".neg-linux.rc
   ./hbc "$f" gen/neg_w.s --target=windows > gen/"$base".neg-win.out 2>&1; we=$?
@@ -122,7 +122,7 @@ while IFS= read -r line; do
     pos)  run_pos_kind "$file" "$(echo "$line"|cut -d' ' -f3-|printf '%b' "$(cat)")" "" </dev/null;;
     posx) run_pos_kind "$file" "$(echo "$line"|cut -d' ' -f4-|printf '%b' "$(cat)")" "$(echo "$line"|awk '{print $3}')" </dev/null;;
     pos2)
-      base=$(basename "$file" .hb)
+      base=$(basename "$file" .prg)
       lexp=$(echo "$line"|awk '{print $3}'); wexp=$(echo "$line"|awk '{print $4}')
       if build_linux "$file" && build_win "$file" &&
          timeout 15 "./gen/$base" > "gen/${base}_l.actual" 2>"gen/${base}_l.err" &&
@@ -130,7 +130,7 @@ while IFS= read -r line; do
          cmp -s "$lexp" "gen/${base}_l.actual" && cmp -s "$wexp" "gen/${base}_w.actual" &&
          [ ! -s "gen/${base}_l.err" ]; then echo "PASS $file"; else echo "FAIL $file (exact target bytes)"; fail=1; fi;;
     streams)
-      base=$(basename "$file" .hb)
+      base=$(basename "$file" .prg)
       sexp=$(echo "$line"|awk '{print $3}'); eexp=$(echo "$line"|awk '{print $4}')
       if build_linux "$file" && build_win "$file" &&
          timeout 15 "./gen/$base" >"gen/${base}_l.stdout" 2>"gen/${base}_l.stderr" &&

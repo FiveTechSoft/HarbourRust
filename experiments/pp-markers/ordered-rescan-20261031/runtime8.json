@@ -2,7 +2,7 @@
   "scope": "8own queue runtime oracle checks,not original corpus growth",
   "rows": [
     {
-      "file": "t1282_pp_queue_siblings.hb",
+      "file": "t1282_pp_queue_siblings.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -23,7 +23,7 @@
       }
     },
     {
-      "file": "t1283_pp_queue_nested.hb",
+      "file": "t1283_pp_queue_nested.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -44,7 +44,7 @@
       }
     },
     {
-      "file": "t1284_pp_queue_quoted.hb",
+      "file": "t1284_pp_queue_quoted.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -65,7 +65,7 @@
       }
     },
     {
-      "file": "t1285_pp_queue_factory.hb",
+      "file": "t1285_pp_queue_factory.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -86,7 +86,7 @@
       }
     },
     {
-      "file": "t1286_pp_queue_define.hb",
+      "file": "t1286_pp_queue_define.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -107,7 +107,7 @@
       }
     },
     {
-      "file": "t1287_pp_queue_define_order.hb",
+      "file": "t1287_pp_queue_define_order.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -128,7 +128,7 @@
       }
     },
     {
-      "file": "t1288_pp_queue_function_define.hb",
+      "file": "t1288_pp_queue_function_define.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -149,7 +149,7 @@
       }
     },
     {
-      "file": "t1289_pp_queue_undef.hb",
+      "file": "t1289_pp_queue_undef.prg",
       "exact": true,
       "outputs": {
         "ref": {

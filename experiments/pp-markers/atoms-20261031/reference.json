@@ -1,36 +1,36 @@
 [
   {
-    "file": "tests/t1160_pp_atoms_logical.hb",
+    "file": "tests/t1160_pp_atoms_logical.prg",
     "stdout_hex": "0a2e542e0a2e542e0a2e462e0a2e542e",
     "exact": true
   },
   {
-    "file": "tests/t1161_pp_atoms_compare.hb",
+    "file": "tests/t1161_pp_atoms_compare.prg",
     "stdout_hex": "0a2e542e0a2e542e0a2e542e0a2e542e0a2e542e",
     "exact": true
   },
   {
-    "file": "tests/t1162_pp_atoms_assign.hb",
+    "file": "tests/t1162_pp_atoms_assign.prg",
     "stdout_hex": "0a20202020202020203432",
     "exact": true
   },
   {
-    "file": "tests/t1163_pp_atoms_increment.hb",
+    "file": "tests/t1163_pp_atoms_increment.prg",
     "stdout_hex": "0a202020202020202034320a20202020202020203431",
     "exact": true
   },
   {
-    "file": "tests/t1164_pp_atoms_power.hb",
+    "file": "tests/t1164_pp_atoms_power.prg",
     "stdout_hex": "0a202020202020202020382e3030",
     "exact": true
   },
   {
-    "file": "tests/t1165_pp_atoms_call.hb",
+    "file": "tests/t1165_pp_atoms_call.prg",
     "stdout_hex": "0a2e542e0a2e542e",
     "exact": true
   },
   {
-    "file": "tests/t1166_pp_atoms_quoted.hb",
+    "file": "tests/t1166_pp_atoms_quoted.prg",
     "stdout_hex": "0a2e2054202e203a203d202b202b",
     "exact": true
   }

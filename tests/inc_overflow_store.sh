@@ -5,7 +5,7 @@
 set -eu
 cd "$(dirname "$0")/.."
 for n in 888 903 904 905; do
-  f=tests/t${n}_inc_overflow.hb
+  f=tests/t${n}_inc_overflow.prg
   for target in linux windows; do
     stem=gen/inc_store_${n}_${target}
     ./hbc "$f" "$stem.s" --target="$target" >/dev/null

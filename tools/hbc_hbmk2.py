@@ -25,7 +25,7 @@ def tool(value):
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("sources", nargs="+", help="one .hb/.prg, plus optional .c/.o files")
+    p.add_argument("sources", nargs="+", help="one .prg/.prg, plus optional .c/.o files")
     p.add_argument("-o", "--output", required=True, help="native output executable")
     p.add_argument("-I", "--include", action="append", default=[])
     p.add_argument("--hbc", default=str(ROOT / "hbc"))
@@ -44,9 +44,9 @@ def main(argv=None):
         files = [Path(s).resolve(strict=True) for s in a.sources]
         if any(not s.is_file() for s in files):
             raise ValueError("all sources must be regular files")
-        if any(s.suffix.lower() not in {".hb", ".prg", ".c", ".o"} for s in files):
-            raise ValueError("only .hb/.prg, .c and .o inputs are supported; .hbp/.hbc options are not imported")
-        harbour = [s for s in files if s.suffix.lower() in {".hb", ".prg"}]
+        if any(s.suffix.lower() not in {".prg", ".prg", ".c", ".o"} for s in files):
+            raise ValueError("only .prg/.prg, .c and .o inputs are supported; .hbp/.hbc options are not imported")
+        harbour = [s for s in files if s.suffix.lower() in {".prg", ".prg"}]
         if len(harbour) != 1:
             raise ValueError("exactly one Harbour module is supported: current hbc embeds its own entry/runtime")
         output = Path(a.output).absolute()
@@ -104,7 +104,7 @@ def main(argv=None):
                  str(ROOT / "extend"), str(ROOT / "extend/hbhbr.c"), "-o", "bridge.o"], "bridge")
             objects.append("bridge.o")
         # Only generated filenames enter the project. No source can accidentally
-        # become a first-argument .hb script, and path quoting is not a shell job.
+        # become a first-argument .prg script, and path quoting is not a shell job.
         project = objects + ["-nohblib", "-ldflag=-nostdlib", "-ldflag=-no-pie",
                              "-ldflag=-Wl,-e,_start", "-oresult"]
         (work / "native.hbp").write_text("\n".join(project) + "\n")

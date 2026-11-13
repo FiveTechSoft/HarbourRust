@@ -98,7 +98,7 @@
    "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
   },
   {
-   "path": "contrib/hbnetio/utils/hbnetio/netiomgm.hb",
+   "path": "contrib/hbnetio/utils/hbnetio/netiomgm.prg",
    "kind": "source",
    "sha256": "cfcfeb1951fc82c198d3e0b79b9d8adfba9a6cfe6beec11eb2028121bfd7a5c4",
    "first_fail_base_d999a46": "error: line 82: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",
@@ -109,7 +109,7 @@
    "evidence_level": "manual full-source read REPORTED 2026-11-01, pending independent contrast (matrix/sha evidence intact)"
   },
   {
-   "path": "contrib/hbnetio/utils/hbnetio/rpcdemo.hb",
+   "path": "contrib/hbnetio/utils/hbnetio/rpcdemo.prg",
    "kind": "source",
    "sha256": "da750bbfe740352c3f9dc0c78d29bf6d4da52c41232369016df12a77ae8ee4c9",
    "first_fail_base_d999a46": "error: line 9: unknown dotted word `..` (only .T. .F. .AND. .OR. .NOT. measured, hk197-hk200)",

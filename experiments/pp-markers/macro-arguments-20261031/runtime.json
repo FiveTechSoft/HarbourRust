@@ -1,26 +1,26 @@
 [
   {
-    "file": "t1203_pp_macro_nested_array.hb",
+    "file": "t1203_pp_macro_nested_array.prg",
     "exact": true,
     "stdout_hex": "0a20202020202020202033"
   },
   {
-    "file": "t1204_pp_macro_nested_pair.hb",
+    "file": "t1204_pp_macro_nested_pair.prg",
     "exact": true,
     "stdout_hex": "0a20202020202020202035"
   },
   {
-    "file": "t1205_pp_macro_simultaneous.hb",
+    "file": "t1205_pp_macro_simultaneous.prg",
     "exact": true,
     "stdout_hex": "0a20202020202020202038"
   },
   {
-    "file": "t1206_pp_macro_strings.hb",
+    "file": "t1206_pp_macro_strings.prg",
     "exact": true,
     "stdout_hex": "0a612c62207920632c64"
   },
   {
-    "file": "t1207_pp_macro_nested_calls.hb",
+    "file": "t1207_pp_macro_nested_calls.prg",
     "exact": true,
     "stdout_hex": "0a20202020202020202036"
   }

@@ -2,7 +2,7 @@
   "scope": "6own isolated flags runtime oracle checks,not original corpus growth",
   "rows": [
     {
-      "file": "t1273_pp_var_flags_absent.hb",
+      "file": "t1273_pp_var_flags_absent.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -23,7 +23,7 @@
       }
     },
     {
-      "file": "t1274_pp_var_flags_all.hb",
+      "file": "t1274_pp_var_flags_all.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -44,7 +44,7 @@
       }
     },
     {
-      "file": "t1275_pp_var_flags_aliases.hb",
+      "file": "t1275_pp_var_flags_aliases.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -65,7 +65,7 @@
       }
     },
     {
-      "file": "t1276_pp_var_flags_reorder.hb",
+      "file": "t1276_pp_var_flags_reorder.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -86,7 +86,7 @@
       }
     },
     {
-      "file": "t1278_pp_var_flags_operand.hb",
+      "file": "t1278_pp_var_flags_operand.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -107,7 +107,7 @@
       }
     },
     {
-      "file": "t1279_pp_var_flags_capture.hb",
+      "file": "t1279_pp_var_flags_capture.prg",
       "exact": true,
       "outputs": {
         "ref": {

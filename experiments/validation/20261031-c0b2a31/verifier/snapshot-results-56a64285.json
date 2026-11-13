@@ -575,7 +575,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t711_dyn_bool_reassign.hb -> /downloads/verify-parexpr-contracts/t711_dyn_bool_reassign/default-linux/program.s (2 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t711_dyn_bool_reassign.prg -> /downloads/verify-parexpr-contracts/t711_dyn_bool_reassign/default-linux/program.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -598,7 +598,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t711_dyn_bool_reassign.hb -> /downloads/verify-parexpr-contracts/t711_dyn_bool_reassign/default-windows/program.s (2 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t711_dyn_bool_reassign.prg -> /downloads/verify-parexpr-contracts/t711_dyn_bool_reassign/default-windows/program.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -652,7 +652,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t933_sequence_string.hb -> /downloads/verify-parexpr-contracts/t933_sequence_string/default-linux/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t933_sequence_string.prg -> /downloads/verify-parexpr-contracts/t933_sequence_string/default-linux/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -675,7 +675,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t933_sequence_string.hb -> /downloads/verify-parexpr-contracts/t933_sequence_string/default-windows/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t933_sequence_string.prg -> /downloads/verify-parexpr-contracts/t933_sequence_string/default-windows/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -729,7 +729,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t941_sequence_assign.hb -> /downloads/verify-parexpr-contracts/t941_sequence_assign/default-linux/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t941_sequence_assign.prg -> /downloads/verify-parexpr-contracts/t941_sequence_assign/default-linux/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -752,7 +752,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t941_sequence_assign.hb -> /downloads/verify-parexpr-contracts/t941_sequence_assign/default-windows/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t941_sequence_assign.prg -> /downloads/verify-parexpr-contracts/t941_sequence_assign/default-windows/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -806,7 +806,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t942_sequence_string_last.hb -> /downloads/verify-parexpr-contracts/t942_sequence_string_last/default-linux/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t942_sequence_string_last.prg -> /downloads/verify-parexpr-contracts/t942_sequence_string_last/default-linux/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -829,7 +829,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t942_sequence_string_last.hb -> /downloads/verify-parexpr-contracts/t942_sequence_string_last/default-windows/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t942_sequence_string_last.prg -> /downloads/verify-parexpr-contracts/t942_sequence_string_last/default-windows/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -883,7 +883,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1040_seq_dyn_var.hb -> /downloads/verify-parexpr-contracts/t1040_seq_dyn_var/default-linux/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1040_seq_dyn_var.prg -> /downloads/verify-parexpr-contracts/t1040_seq_dyn_var/default-linux/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -906,7 +906,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1040_seq_dyn_var.hb -> /downloads/verify-parexpr-contracts/t1040_seq_dyn_var/default-windows/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1040_seq_dyn_var.prg -> /downloads/verify-parexpr-contracts/t1040_seq_dyn_var/default-windows/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -960,7 +960,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1370_parexpr_inline_assign.hb -> /downloads/verify-parexpr-contracts/t1370_parexpr_inline_assign/default-linux/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1370_parexpr_inline_assign.prg -> /downloads/verify-parexpr-contracts/t1370_parexpr_inline_assign/default-linux/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -983,7 +983,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1370_parexpr_inline_assign.hb -> /downloads/verify-parexpr-contracts/t1370_parexpr_inline_assign/default-windows/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1370_parexpr_inline_assign.prg -> /downloads/verify-parexpr-contracts/t1370_parexpr_inline_assign/default-windows/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -1037,7 +1037,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1371_parexpr_if_seqcond.hb -> /downloads/verify-parexpr-contracts/t1371_parexpr_if_seqcond/default-linux/program.s (2 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1371_parexpr_if_seqcond.prg -> /downloads/verify-parexpr-contracts/t1371_parexpr_if_seqcond/default-linux/program.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -1060,7 +1060,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1371_parexpr_if_seqcond.hb -> /downloads/verify-parexpr-contracts/t1371_parexpr_if_seqcond/default-windows/program.s (2 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1371_parexpr_if_seqcond.prg -> /downloads/verify-parexpr-contracts/t1371_parexpr_if_seqcond/default-windows/program.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -1114,7 +1114,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1372_parexpr_iif_strseq.hb -> /downloads/verify-parexpr-contracts/t1372_parexpr_iif_strseq/default-linux/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1372_parexpr_iif_strseq.prg -> /downloads/verify-parexpr-contracts/t1372_parexpr_iif_strseq/default-linux/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -1137,7 +1137,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1372_parexpr_iif_strseq.hb -> /downloads/verify-parexpr-contracts/t1372_parexpr_iif_strseq/default-windows/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1372_parexpr_iif_strseq.prg -> /downloads/verify-parexpr-contracts/t1372_parexpr_iif_strseq/default-windows/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -1191,7 +1191,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1373_return_nil_parens.hb -> /downloads/verify-parexpr-contracts/t1373_return_nil_parens/default-linux/program.s (2 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1373_return_nil_parens.prg -> /downloads/verify-parexpr-contracts/t1373_return_nil_parens/default-linux/program.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -1214,7 +1214,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1373_return_nil_parens.hb -> /downloads/verify-parexpr-contracts/t1373_return_nil_parens/default-windows/program.s (2 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1373_return_nil_parens.prg -> /downloads/verify-parexpr-contracts/t1373_return_nil_parens/default-windows/program.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -1268,7 +1268,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1374_pragma_es0.hb -> /downloads/verify-parexpr-contracts/t1374_pragma_es0/default-linux/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1374_pragma_es0.prg -> /downloads/verify-parexpr-contracts/t1374_pragma_es0/default-linux/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -1291,7 +1291,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1374_pragma_es0.hb -> /downloads/verify-parexpr-contracts/t1374_pragma_es0/default-windows/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1374_pragma_es0.prg -> /downloads/verify-parexpr-contracts/t1374_pragma_es0/default-windows/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -1397,7 +1397,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1380_nilonly_shapes.hb -> /downloads/verify-parexpr-contracts/t1380_nilonly_shapes/default-linux/program.s (3 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1380_nilonly_shapes.prg -> /downloads/verify-parexpr-contracts/t1380_nilonly_shapes/default-linux/program.s (3 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -1420,7 +1420,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1380_nilonly_shapes.hb -> /downloads/verify-parexpr-contracts/t1380_nilonly_shapes/default-windows/program.s (3 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1380_nilonly_shapes.prg -> /downloads/verify-parexpr-contracts/t1380_nilonly_shapes/default-windows/program.s (3 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -1474,7 +1474,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1381_seq_dyn_var_observable.hb -> /downloads/verify-parexpr-contracts/t1381_seq_dyn_var_observable/default-linux/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1381_seq_dyn_var_observable.prg -> /downloads/verify-parexpr-contracts/t1381_seq_dyn_var_observable/default-linux/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -1497,7 +1497,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1381_seq_dyn_var_observable.hb -> /downloads/verify-parexpr-contracts/t1381_seq_dyn_var_observable/default-windows/program.s (1 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1381_seq_dyn_var_observable.prg -> /downloads/verify-parexpr-contracts/t1381_seq_dyn_var_observable/default-windows/program.s (1 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -1551,7 +1551,7 @@
         "default-linux": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1382_dyn_bool_readback.hb -> /downloads/verify-parexpr-contracts/t1382_dyn_bool_readback/default-linux/program.s (2 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1382_dyn_bool_readback.prg -> /downloads/verify-parexpr-contracts/t1382_dyn_bool_readback/default-linux/program.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {
@@ -1574,7 +1574,7 @@
         "default-windows": {
           "compile": {
             "exit": 0,
-            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1382_dyn_bool_readback.hb -> /downloads/verify-parexpr-contracts/t1382_dyn_bool_readback/default-windows/program.s (2 functions)\n",
+            "stdout": "/downloads/verify-parexpr73c6ff1/tests/t1382_dyn_bool_readback.prg -> /downloads/verify-parexpr-contracts/t1382_dyn_bool_readback/default-windows/program.s (2 functions)\n",
             "stderr": ""
           },
           "assemble": {

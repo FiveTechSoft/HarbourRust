@@ -544,7 +544,7 @@
     {
       "family": "documentation-extraction",
       "reviewed_sources": [
-        "tests/hbdocext.hb",
+        "tests/hbdocext.prg",
         "tests/hbdoc.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
@@ -616,7 +616,7 @@
         "tests/multifnc/t0.prg",
         "tests/mt/mttest11.prg",
         "tests/sound.prg",
-        "tests/langchk.hb",
+        "tests/langchk.prg",
         "tests/cdow.prg",
         "tests/gtcolors.prg",
         "tests/speed.prg",
@@ -747,10 +747,10 @@
         "tests/fileio2.prg",
         "tests/directry.prg",
         "tests/diskspac.prg",
-        "tests/hbpp/compare.hb",
-        "tests/stripdoc.hb",
-        "tests/hbdocext.hb",
-        "tests/langchk.hb",
+        "tests/hbpp/compare.prg",
+        "tests/stripdoc.prg",
+        "tests/hbdocext.prg",
+        "tests/langchk.prg",
         "tests/usrrdd/exmemo.prg",
         "tests/usrrdd/exhsx.prg",
         "tests/usrrdd/exlog.prg",
@@ -833,8 +833,8 @@
       "family": "foreach",
       "reviewed_sources": [
         "tests/mt/mttest07.prg",
-        "tests/stripdoc.hb",
-        "tests/hbdocext.hb",
+        "tests/stripdoc.prg",
+        "tests/hbdocext.prg",
         "tests/test.prg",
         "tests/base64.prg",
         "tests/pipes.prg",
@@ -1105,7 +1105,7 @@
     {
       "family": "localization",
       "reviewed_sources": [
-        "tests/langchk.hb",
+        "tests/langchk.prg",
         "tests/cdow.prg",
         "tests/langapi.prg",
         "tests/utf8at.prg",
@@ -1312,8 +1312,8 @@
     {
       "family": "pragmas",
       "reviewed_sources": [
-        "tests/stripdoc.hb",
-        "tests/hbdocext.hb",
+        "tests/stripdoc.prg",
+        "tests/hbdocext.prg",
         "tests/pragma.prg",
         "tests/dbgcls.prg",
         "tests/parexpr.prg"
@@ -1324,7 +1324,7 @@
     {
       "family": "preprocessor",
       "reviewed_sources": [
-        "tests/hbpp/compare.hb",
+        "tests/hbpp/compare.prg",
         "tests/linecont.prg",
         "tests/utf8at.prg",
         "tests/define.prg",
@@ -1360,7 +1360,7 @@
       "family": "process-shell",
       "reviewed_sources": [
         "tests/osshell.prg",
-        "tests/hbpp/compare.hb",
+        "tests/hbpp/compare.prg",
         "tests/cmphello.prg",
         "tests/pipes.prg",
         "tests/hrb.prg",
@@ -1439,7 +1439,7 @@
     {
       "family": "runtime-symbol-introspection",
       "reviewed_sources": [
-        "tests/langchk.hb",
+        "tests/langchk.prg",
         "tests/dynsym.prg",
         "tests/profiler.prg"
       ],
@@ -1449,7 +1449,7 @@
     {
       "family": "script-startup",
       "reviewed_sources": [
-        "tests/hbpp/compare.hb",
+        "tests/hbpp/compare.prg",
         "tests/guestbk.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
@@ -1523,7 +1523,7 @@
     {
       "family": "source-rewrite",
       "reviewed_sources": [
-        "tests/stripdoc.hb"
+        "tests/stripdoc.prg"
       ],
       "implementation_status": "not-inferred-from-source-review",
       "next_gate": "see individual review records; representation/effect authority remains separate"

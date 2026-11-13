@@ -9,9 +9,9 @@
 set -e
 cd "$(dirname "$0")/.."
 mkdir -p gen
-printf 'function incprobe(x)\nreturn x++ + ++x\nfunction erprobe()\nreturn OutErr("")\nfunction oprobe()\nreturn OutStd()\nfunction eprobe()\nreturn Len(hb_eol())\nfunction qprobe()\nreturn QQOut()\nfunction bprobe()\nlocal b := {|n| QQOut(), n+1}\nreturn Eval(b, 6)\nfunction dynshow(x)\nreturn QQOut(x)\nfunction nprobe()\nreturn dynshow(AllTrim(" "))\nfunction main()\nreturn\n' > gen/abi_empty.hb
-./hbc gen/abi_empty.hb gen/abi_l.s --target=linux -I tests >/dev/null
-./hbc gen/abi_empty.hb gen/abi_w.s --target=windows -I tests >/dev/null
+printf 'function incprobe(x)\nreturn x++ + ++x\nfunction erprobe()\nreturn OutErr("")\nfunction oprobe()\nreturn OutStd()\nfunction eprobe()\nreturn Len(hb_eol())\nfunction qprobe()\nreturn QQOut()\nfunction bprobe()\nlocal b := {|n| QQOut(), n+1}\nreturn Eval(b, 6)\nfunction dynshow(x)\nreturn QQOut(x)\nfunction nprobe()\nreturn dynshow(AllTrim(" "))\nfunction main()\nreturn\n' > gen/abi_empty.prg
+./hbc gen/abi_empty.prg gen/abi_l.s --target=linux -I tests >/dev/null
+./hbc gen/abi_empty.prg gen/abi_w.s --target=windows -I tests >/dev/null
 
 inject() { # $1 = input .s, $2 = output .s, $3 = linux|windows
   sed '0,/call hbc_fn_main/s//call hbc_abi_test/' "$1" > "$2"

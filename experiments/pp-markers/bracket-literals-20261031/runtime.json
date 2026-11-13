@@ -1,36 +1,36 @@
 [
   {
-    "file": "t1210_bracket_literals.hb",
+    "file": "t1210_bracket_literals.prg",
     "exact": true,
     "stdout_hex": "0a61626320206127226220615b620a612f2f62206126266220613b6220615c62"
   },
   {
-    "file": "t1211_bracket_index_context.hb",
+    "file": "t1211_bracket_index_context.prg",
     "exact": true,
     "stdout_hex": "0a20202020202020202037202020202020202020203820616263"
   },
   {
-    "file": "t1212_bracket_macro.hb",
+    "file": "t1212_bracket_macro.prg",
     "exact": true,
     "stdout_hex": "0a5820612c6220612762"
   },
   {
-    "file": "t1213_bracket_semicolon.hb",
+    "file": "t1213_bracket_semicolon.prg",
     "exact": true,
     "stdout_hex": "0a613b620a632f2f64"
   },
   {
-    "file": "t1214_bracket_array.hb",
+    "file": "t1214_bracket_array.prg",
     "exact": true,
     "stdout_hex": "0a612c6220633b64"
   },
   {
-    "file": "t1215_bracket_translate.hb",
+    "file": "t1215_bracket_translate.prg",
     "exact": true,
     "stdout_hex": "0a574f524420544f4b454e20202020202020202020370a61282c293b62"
   },
   {
-    "file": "t1217_bracket_continuation.hb",
+    "file": "t1217_bracket_continuation.prg",
     "exact": true,
     "stdout_hex": "0a613b620a370a613b62"
   }

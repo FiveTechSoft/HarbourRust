@@ -38,7 +38,7 @@ with tempfile.TemporaryDirectory(prefix='hbc-windows-sections-') as tmp:
     root = Path(tmp)
     count = 0
     for name, source in fixtures.items():
-        src = root / (name + '.hb')
+        src = root / (name + '.prg')
         src.write_text(source)
         for instrument in (False, True):
             asm = root / (name + ('-instrument' if instrument else '') + '.s')

@@ -2,9 +2,9 @@
 # Targeted instrumented cache registry and logical balance tests.
 set -e
 cd "$(dirname "$0")/.."
-printf 'function main()\nreturn\n' >gen/cache_empty.hb
+printf 'function main()\nreturn\n' >gen/cache_empty.prg
 for target in linux windows; do
-  ./hbc gen/cache_empty.hb gen/cache_${target}.s --target=$target --instrument >/dev/null
+  ./hbc gen/cache_empty.prg gen/cache_${target}.s --target=$target --instrument >/dev/null
   for mode in live double size; do
     sed '0,/call hbc_fn_main/s//call hbc_cache_test/' gen/cache_${target}.s >gen/cache_${target}_${mode}.s
     cat >>gen/cache_${target}_${mode}.s <<'ASM'

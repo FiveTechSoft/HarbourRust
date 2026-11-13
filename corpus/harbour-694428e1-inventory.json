@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "reference": "694428e1c12f726675b19324d62167fa77d68185",
-  "scope": "All .prg/.hb/.ch files in the pinned source tree. Source files are not assumed to be standalone examples. No source bodies copied.",
+  "scope": "All .prg/.prg/.ch files in the pinned source tree. Source files are not assumed to be standalone examples. No source bodies copied.",
   "execution_note": "No files executed by this inventory. not-audited does not negate separately recorded execution evidence.",
   "counts": {
     "total": 1203,
     "by_extension": {
-      ".hb": 19,
+      ".prg": 19,
       ".prg": 1041,
       ".ch": 143
     },
@@ -22,7 +22,7 @@
   },
   "files": [
     {
-      "path": "bin/3rdpatch.hb",
+      "path": "bin/3rdpatch.prg",
       "sha256": "9b627106b66dab8447efbbceb3384a93f95e94ed48fe69f166c96edf31eb6d4c",
       "bytes": 35962,
       "profile": "support",
@@ -43,7 +43,7 @@
       }
     },
     {
-      "path": "bin/check.hb",
+      "path": "bin/check.prg",
       "sha256": "47dc1f5f5b57602172c375d26960b08686d47bc9873a2e2ee1ceeb1281403b9e",
       "bytes": 25631,
       "profile": "support",
@@ -62,7 +62,7 @@
       }
     },
     {
-      "path": "bin/commit.hb",
+      "path": "bin/commit.prg",
       "sha256": "6fd0134edad2b636b22f04dc74517ece3f9fd01e736e1a87daaea911fd4fe8b8",
       "bytes": 12443,
       "profile": "support",
@@ -75,14 +75,14 @@
       "llvm_compile": "not-audited",
       "review_hints": {
         "includes": [
-          "check.hb",
+          "check.prg",
           "hbgtinfo.ch"
         ],
         "main_declaration_hint": true
       }
     },
     {
-      "path": "config/lang.hb",
+      "path": "config/lang.prg",
       "sha256": "072020c384fb570ae1166054429318526105d19de710243310e2fececa541362",
       "bytes": 15627,
       "profile": "support",
@@ -96,14 +96,14 @@
       "review_hints": {
         "includes": [
           "directry.ch",
-          "lang2po.hb",
-          "po2lang.hb"
+          "lang2po.prg",
+          "po2lang.prg"
         ],
         "main_declaration_hint": true
       }
     },
     {
-      "path": "config/lang2po.hb",
+      "path": "config/lang2po.prg",
       "sha256": "1f91d543853f2e91acf942b505e48c9f5a963d172b2f8d6b0283b9d778bba5dd",
       "bytes": 5858,
       "profile": "support",
@@ -122,7 +122,7 @@
       }
     },
     {
-      "path": "config/po2lang.hb",
+      "path": "config/po2lang.prg",
       "sha256": "4497d5006bdb55e5432bb7202e945633648fa5acced64bf9a67758b9d19da0b4",
       "bytes": 4032,
       "profile": "support",
@@ -143,7 +143,7 @@
       }
     },
     {
-      "path": "config/postinst.hb",
+      "path": "config/postinst.prg",
       "sha256": "4822d1a39ea8465b52b8a5adc83631da28dc492f4be9c432719e9527b64dca6e",
       "bytes": 29178,
       "profile": "support",
@@ -180,7 +180,7 @@
       }
     },
     {
-      "path": "contrib/gtqtc/hbmk2_qtgt.hb",
+      "path": "contrib/gtqtc/hbmk2_qtgt.prg",
       "sha256": "af42ad8a6a8e4261235cba071d82c660fd0f2f316735ffa371cd87173d3bec4f",
       "bytes": 7026,
       "profile": "C-contrib",
@@ -5289,7 +5289,7 @@
       }
     },
     {
-      "path": "contrib/hbnetio/utils/hbnetio/netiomgm.hb",
+      "path": "contrib/hbnetio/utils/hbnetio/netiomgm.prg",
       "sha256": "cfcfeb1951fc82c198d3e0b79b9d8adfba9a6cfe6beec11eb2028121bfd7a5c4",
       "bytes": 21133,
       "profile": "C-contrib",
@@ -5308,7 +5308,7 @@
       }
     },
     {
-      "path": "contrib/hbnetio/utils/hbnetio/rpcdemo.hb",
+      "path": "contrib/hbnetio/utils/hbnetio/rpcdemo.prg",
       "sha256": "da750bbfe740352c3f9dc0c78d29bf6d4da52c41232369016df12a77ae8ee4c9",
       "bytes": 280,
       "profile": "C-contrib",
@@ -11046,7 +11046,7 @@
       }
     },
     {
-      "path": "contrib/make.hb",
+      "path": "contrib/make.prg",
       "sha256": "c79f7f37ca4d5724a5be2bde81b70cc6cacf65828ba34832c77481f4e0b26145",
       "bytes": 24030,
       "profile": "C-contrib",
@@ -13500,7 +13500,7 @@
       }
     },
     {
-      "path": "extras/template/tests/hbstart.hb",
+      "path": "extras/template/tests/hbstart.prg",
       "sha256": "138c779b249061bf0fef568a48b222d362926418850003500f3acb70c614f571",
       "bytes": 56,
       "profile": "B-extras",
@@ -19394,7 +19394,7 @@
       "compile_compiler": "f5daec7beb1f63af2b416756c063d5e2330c43b9"
     },
     {
-      "path": "tests/hbdocext.hb",
+      "path": "tests/hbdocext.prg",
       "sha256": "a1ec8dd634fd6f8c24ce0a33099bfeb8d4c790da1b45c150a51c71fd607d2bf3",
       "bytes": 648,
       "profile": "A-tests",
@@ -19456,7 +19456,7 @@
       }
     },
     {
-      "path": "tests/hbpp/compare.hb",
+      "path": "tests/hbpp/compare.prg",
       "sha256": "bce28eafc7ea745d913d87117e1c39ae68806e9fc7c1bde8342aa5dc723bd4eb",
       "bytes": 321,
       "profile": "A-tests",
@@ -20053,7 +20053,7 @@
       "compile_compiler": "f5daec7beb1f63af2b416756c063d5e2330c43b9"
     },
     {
-      "path": "tests/langchk.hb",
+      "path": "tests/langchk.prg",
       "sha256": "3aa32581e3c4b4cef9eb8092be599005cb5a2cbb698d480a9f88ede1f701ab4b",
       "bytes": 1035,
       "profile": "A-tests",
@@ -22404,7 +22404,7 @@
       "compile_compiler": "f5daec7beb1f63af2b416756c063d5e2330c43b9"
     },
     {
-      "path": "tests/stripdoc.hb",
+      "path": "tests/stripdoc.prg",
       "sha256": "c7d7e51aaab0011a6b32162c546c41d564ae23a0c269404182494fd42ce53819",
       "bytes": 478,
       "profile": "A-tests",
@@ -22451,7 +22451,7 @@
       "compile_compiler": "f5daec7beb1f63af2b416756c063d5e2330c43b9"
     },
     {
-      "path": "tests/stripid.hb",
+      "path": "tests/stripid.prg",
       "sha256": "d74e04f5706f37ad901b13b6b4f66be439da155e60decdd8925127cb37588265",
       "bytes": 2064,
       "profile": "A-tests",
@@ -23108,7 +23108,7 @@
       }
     },
     {
-      "path": "utils/hbmk2/examples/plug_bis.hb",
+      "path": "utils/hbmk2/examples/plug_bis.prg",
       "sha256": "402d50deec513a617de74338236cdf13fd46bee5477382a3291f9a873ede577a",
       "bytes": 5326,
       "profile": "B-utils",
@@ -23125,7 +23125,7 @@
       }
     },
     {
-      "path": "utils/hbmk2/examples/plug_tpl.hb",
+      "path": "utils/hbmk2/examples/plug_tpl.prg",
       "sha256": "01932e0ab90b13486f7f2f2f046a2965272001169098d3785b9d7ebef821420e",
       "bytes": 1816,
       "profile": "B-utils",

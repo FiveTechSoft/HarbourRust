@@ -8,7 +8,7 @@ Positive expectations are derived per category, not assumed:
 
 - **HB-EXACT** (69 tests): bytes captured from the Harbour 3.2.1dev
   reference compiled with `-gtstd` (clean stdio, no ANSI console codes).
-  The earlier quick oracle (`hbmk2 file.hb` script mode) runs ONLY the
+  The earlier quick oracle (`hbmk2 file.prg` script mode) runs ONLY the
   first function in the file, not `main` - it was never valid for
   multi-function tests and is no longer used as an oracle.
 - **HB-ADAPT-MATCH** (7: t13, t20, t23, t28, t31, t48, t52): Harbour
@@ -51,7 +51,7 @@ re-run after the QOut fix with unchanged configs; see the "Post-QOut
 re-run" table there. b2/b3 outputs byte-identical to Harbour. b1_int is
 WITHDRAWN as a speed comparison (Harbour runs its accumulator in double,
 HarbourRust in i64: different numeric work per iteration); the bounded
-replacement b1b_int_bounded.hb runs integer arithmetic on both models
+replacement b1b_int_bounded.prg runs integer arithmetic on both models
 with byte-identical output. See bench/RESULTS.md.
 
 Ownership across QOut items (t123-t125, neg-MODEL): `? take(v), take(v)`,
@@ -2889,7 +2889,7 @@ evaluation on variables, so they stay parked on this limit.
 Tests: t823-t825 positive (hk374-hk376 mirrors), t826/t827 negative (DO CASE
 forms), t828 negative (named `&` rejection). The old t666 negative lock-in
 ("DO CASE is not in this increment") is superseded by the feature: its
-program is natively valid, so the row flips neg -> pos as t666_do_case.hb
+program is natively valid, so the row flips neg -> pos as t666_do_case.prg
 against fresh oracle hk377 (output `\none`), the same maneuver as t622 in
 63zl and t783 in 63zh. Battery: 823 rows + ABI canary.
 
@@ -3292,7 +3292,7 @@ replaced or used as an oracle for a positive test.
 
 Frozen175 sweep rises from12 to13 COMPILES: only while.prg is newly
 accepted. The original while.prg at harbour/core694428e1c12f726675b19324d62167fa77d68185
-is copied UNCHANGED into t907_original_while.hb, SHA256
+is copied UNCHANGED into t907_original_while.prg, SHA256
 81542a0a84c8ce27b7205a6c475ed811847b0dd913eac4a19e0f3dc62c40bf57.
 All1000 printed numbers match compiled Harbour byte-for-byte on both
 Linux and Windows/Wine. The other162 examples remain uncompiled, not

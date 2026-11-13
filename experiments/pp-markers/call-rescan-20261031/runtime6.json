@@ -1,7 +1,7 @@
 {
   "rows": [
     {
-      "file": "t1319_pp_call_source.hb",
+      "file": "t1319_pp_call_source.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -22,7 +22,7 @@
       }
     },
     {
-      "file": "t1320_pp_call_head.hb",
+      "file": "t1320_pp_call_head.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -43,7 +43,7 @@
       }
     },
     {
-      "file": "t1321_pp_call_rescan.hb",
+      "file": "t1321_pp_call_rescan.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -64,7 +64,7 @@
       }
     },
     {
-      "file": "t1322_pp_call_factory.hb",
+      "file": "t1322_pp_call_factory.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -85,7 +85,7 @@
       }
     },
     {
-      "file": "t1323_pp_call_stringify.hb",
+      "file": "t1323_pp_call_stringify.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -106,7 +106,7 @@
       }
     },
     {
-      "file": "t1324_pp_call_temporal.hb",
+      "file": "t1324_pp_call_temporal.prg",
       "exact": true,
       "outputs": {
         "ref": {

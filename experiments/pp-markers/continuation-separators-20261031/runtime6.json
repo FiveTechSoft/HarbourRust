@@ -1,7 +1,7 @@
 {
   "rows": [
     {
-      "file": "t1309_pp_continuation_separator.hb",
+      "file": "t1309_pp_continuation_separator.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -22,7 +22,7 @@
       }
     },
     {
-      "file": "t1310_pp_continuation_separator.hb",
+      "file": "t1310_pp_continuation_separator.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -43,7 +43,7 @@
       }
     },
     {
-      "file": "t1311_pp_continuation_separator.hb",
+      "file": "t1311_pp_continuation_separator.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -64,7 +64,7 @@
       }
     },
     {
-      "file": "t1312_pp_continuation_separator.hb",
+      "file": "t1312_pp_continuation_separator.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -85,7 +85,7 @@
       }
     },
     {
-      "file": "t1313_pp_continuation_separator.hb",
+      "file": "t1313_pp_continuation_separator.prg",
       "exact": true,
       "outputs": {
         "ref": {
@@ -106,7 +106,7 @@
       }
     },
     {
-      "file": "t1314_pp_continuation_separator.hb",
+      "file": "t1314_pp_continuation_separator.prg",
       "exact": true,
       "outputs": {
         "ref": {

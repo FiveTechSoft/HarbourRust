@@ -59,7 +59,7 @@ zero-arg panic fix + guardrails t1403-t1405 + T1 README corrections).
 
 - One strict run (started 14:56, under the agreed evidence contract: no
   auto-retry, no error silencing): 342 PASS lines, then ABORTED at
-  t1246_pp_smart_escape_marker.hb windows/current. Log:
+  t1246_pp_smart_escape_marker.prg windows/current. Log:
   llvm-gate-cd9fea6-aborted-t1246-wineflake.log (explicit failure,
   preserved). Aborting run observations: rc=0, stdout exactly the
   manifest expectation, stderr one wine shutdown line ("Unhandled page

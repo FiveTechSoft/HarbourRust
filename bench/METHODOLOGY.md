@@ -17,7 +17,7 @@ microbenchmarks; this is NOT a general language performance claim.
 ## Programs
 
 The same source file feeds both compilers (copied byte for byte between the
-.hb and .prg names). Only syntax already implemented by HarbourRust is used;
+.prg and .prg names). Only syntax already implemented by HarbourRust is used;
 no syntax was added to fabricate tests.
 
 - b1_int: for-loop of 1e8 iterations, accumulator bounded below 2e6 so that
@@ -67,7 +67,7 @@ speedups do not depend on missing C optimization on the Harbour side.
 ## Reproduce
 
     # HarbourRust
-    ./hbc bench/b1_int.hb /tmp/b1.s --target=linux && as -o /tmp/b1.o /tmp/b1.s && ld -o /tmp/b1 /tmp/b1.o
+    ./hbc bench/b1_int.prg /tmp/b1.s --target=linux && as -o /tmp/b1.o /tmp/b1.s && ld -o /tmp/b1 /tmp/b1.o
     # harbour/core (pcode and -gc3), from a harbour/core build tree
     hbmk2 -quiet -gtstd -w0 b1_int.prg
     hbmk2 -quiet -gtstd -w0 -gc3 b1_int.prg -ob1_gc3

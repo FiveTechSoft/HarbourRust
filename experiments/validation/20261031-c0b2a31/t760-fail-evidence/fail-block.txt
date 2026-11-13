@@ -1,6 +1,6 @@
-PASS tests/t759_f64_param_polymorph.hb
-FAIL tests/t760_f64_nested_call_arg.hb
+PASS tests/t759_f64_param_polymorph.prg
+FAIL tests/t760_f64_nested_call_arg.prg
   exp: |         2.50|         4.0|
   lin: |         2.50|         4.0|
   win: |
-PASS tests/t761_f64_call_in_expr.hb
+PASS tests/t761_f64_call_in_expr.prg

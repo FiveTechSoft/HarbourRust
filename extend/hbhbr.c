@@ -684,7 +684,7 @@ PHB_ITEM hb_itemReturn( PHB_ITEM pItem )
  * pItems[0] is the block, pItems[1..paramCount] the parameters.
  * Slice: INTEGER parameters only, the block's integer result comes
  * back as a new owned item; a NIL-returning block never reaches here
- * (compile-time named rejection on the .hb side). */
+ * (compile-time named rejection on the .prg side). */
 
 /* The block call runs through a STANDALONE asm trampoline with an
  * explicit ABI (SysV below: rdi=codeptr, rsi=values, rdx=count; the

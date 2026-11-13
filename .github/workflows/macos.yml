@@ -24,7 +24,7 @@ jobs:
       - name: Emit the bounded LLVM smoke sample
         run: |
           set -eu
-          cat > macos.hb <<'PRG'
+          cat > macos.prg <<'PRG'
           function Main()
           local s:="hello", a:={3,5,7},i,n:=0
           for i:=1 to Len(a)
@@ -37,7 +37,7 @@ jobs:
           function Factorial(n)
           return IIF(n<=1,1,n*Factorial(n-1))
           PRG
-          ./hbc macos.hb program.ll --experimental-llvm
+          ./hbc macos.prg program.ll --experimental-llvm
           clang -target arm64-apple-macos14 -c program.ll -o program.o
       - name: Verify the current runtime boundary (expected to need a Darwin adapter)
         run: |

@@ -1,5 +1,5 @@
 {
- "phase": "non-.prg catch-up: inventoried .ch/.hb members of tests/ and extras/ not covered by the .prg-only counts (tests 268 .prg of 275 inventoried; extras 18 .prg of 35 inventoried)",
+ "phase": "non-.prg catch-up: inventoried .ch/.prg members of tests/ and extras/ not covered by the .prg-only counts (tests 268 .prg of 275 inventoried; extras 18 .prg of 35 inventoried)",
  "order": "inventory path lexicographic within each phase",
  "claim_precision": "tests/ phase = 268/268 .prg PLUS the 7 non-.prg recorded here; after this batch all 275 tests + all processed extras units have every inventoried member recorded",
  "reference": "694428e1c12f726675b19324d62167fa77d68185",
@@ -100,12 +100,12 @@
    }
   },
   {
-   "file": "tests/hbdocext.hb",
+   "file": "tests/hbdocext.prg",
    "sha256": "a1ec8dd634fd6f8c24ce0a33099bfeb8d4c790da1b45c150a51c71fd607d2bf3",
    "review": "full source manually read 2026-11-01 (34 lines)",
-   "entrypoint": "Main (.hb Harbour script)",
+   "entrypoint": "Main (.prg Harbour script)",
    "build_unit": "tests/ utility script",
-   "profile": "A-tests .hb script",
+   "profile": "A-tests .prg script",
    "dependencies": "#pragma -w3/-km+/-ko+; Directory(); __hbdoc_ToSource/FromSource; hb_MemoWrit",
    "boundary": "NOT run: mass-rewrites files in cwd (.txt extraction); destructive in a source tree",
    "reference_build_exit": null,
@@ -147,12 +147,12 @@
    }
   },
   {
-   "file": "tests/hbpp/compare.hb",
+   "file": "tests/hbpp/compare.prg",
    "sha256": "bce28eafc7ea745d913d87117e1c39ae68806e9fc7c1bde8342aa5dc723bd4eb",
    "review": "full source manually read 2026-11-01 (13 lines)",
-   "entrypoint": "Main (.hb Harbour script)",
+   "entrypoint": "Main (.prg Harbour script)",
    "build_unit": "tests/ utility script",
-   "profile": "A-tests .hb script",
+   "profile": "A-tests .prg script",
    "dependencies": "top-level statements (no Main): hb_FCopy/hb_run harbour+clipper/diff",
    "boundary": "NOT run: requires clipper.exe (absent) and writes/deletes files in cwd",
    "reference_build_exit": null,
@@ -194,12 +194,12 @@
    }
   },
   {
-   "file": "tests/langchk.hb",
+   "file": "tests/langchk.prg",
    "sha256": "3aa32581e3c4b4cef9eb8092be599005cb5a2cbb698d480a9f88ede1f701ab4b",
    "review": "full source manually read 2026-11-01 (44 lines)",
-   "entrypoint": "Main (.hb Harbour script)",
+   "entrypoint": "Main (.prg Harbour script)",
    "build_unit": "tests/ utility script",
-   "profile": "A-tests .hb script",
+   "profile": "A-tests .prg script",
    "dependencies": "#pragma -w3; __dynsCount/__dynsGetName; hb_langMessage; writes langchk.txt",
    "boundary": "NOT run: writes output file derived from __FILE__ into cwd; read-only traversal",
    "reference_build_exit": null,
@@ -241,12 +241,12 @@
    }
   },
   {
-   "file": "tests/stripdoc.hb",
+   "file": "tests/stripdoc.prg",
    "sha256": "c7d7e51aaab0011a6b32162c546c41d564ae23a0c269404182494fd42ce53819",
    "review": "full source manually read 2026-11-01 (26 lines)",
-   "entrypoint": "Main (.hb Harbour script)",
+   "entrypoint": "Main (.prg Harbour script)",
    "build_unit": "tests/ utility script",
-   "profile": "A-tests .hb script",
+   "profile": "A-tests .prg script",
    "dependencies": "#pragma -w3; __hbdoc_FilterOut; rewrites .c/.prg files in place",
    "boundary": "NOT run: rewrites source files in place (destructive class)",
    "reference_build_exit": null,
@@ -288,12 +288,12 @@
    }
   },
   {
-   "file": "tests/stripid.hb",
+   "file": "tests/stripid.prg",
    "sha256": "d74e04f5706f37ad901b13b6b4f66be439da155e60decdd8925127cb37588265",
    "review": "full source manually read 2026-11-01 (84 lines)",
-   "entrypoint": "Main (.hb Harbour script)",
+   "entrypoint": "Main (.prg Harbour script)",
    "build_unit": "tests/ utility script",
-   "profile": "A-tests .hb script",
+   "profile": "A-tests .prg script",
    "dependencies": "#pragma -w3; StrTran VCS id headers; rewrites files in place",
    "boundary": "NOT run: rewrites source files in place (destructive class)",
    "reference_build_exit": null,

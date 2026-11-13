@@ -41,8 +41,8 @@ def build(cmd, cwd):
     assert r.returncode == 0, (cmd, r.stdout, r.stderr)
 
 rows = []
-sources = [original, repo / 'tests/t681_init_proc_neg.hb'] + sorted((repo / 'tests').glob('t*_startup_*.hb'))
-sources = [s for s in sources if ('_neg_' not in s.name or s.name == 't681_init_proc_neg.hb') and 'balance' not in s.name]
+sources = [original, repo / 'tests/t681_init_proc_neg.prg'] + sorted((repo / 'tests').glob('t*_startup_*.prg'))
+sources = [s for s in sources if ('_neg_' not in s.name or s.name == 't681_init_proc_neg.prg') and 'balance' not in s.name]
 for source in sources:
     work = out / source.stem
     work.mkdir(exist_ok=True)
@@ -81,7 +81,7 @@ if a.wrong_controls:
     changes = [
         ('forward-order', 'funcs.iter().rev().filter(|f| f.init)',
          'funcs.iter().filter(|f| f.init)',
-         repo / 'tests/t1594_startup_init_three.hb', out / 't1594_startup_init_three'),
+         repo / 'tests/t1594_startup_init_three.prg', out / 't1594_startup_init_three'),
         ('skip-hooks', 'funcs.iter().rev().filter(|f| f.init)',
          'funcs.iter().rev().filter(|f| f.init && false)', original, out / original.stem),
     ]
