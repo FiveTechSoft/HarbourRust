@@ -37,7 +37,7 @@ thread_local! {
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { NumLocal, F64, I64, Str, Bool, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefDyn, RefStrOwn, DArrDyn, AView }
+enum Ty { NumLocal, F64, I64, Str, Bool, Date, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefDyn, RefStrOwn, DArrDyn, AView }
 
 // What a codeblock body's LAST expression returns (original t1.prg piece):
 // Int = an i64 in %rax; Nil = a payload-free Dyn NIL pair (%rax=1, %rdx=0,
@@ -1533,7 +1533,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "dfree", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "dfree", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -4777,7 +4777,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 match &args[0] {
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
-                    Expr::Call(id, _) if is_output_call(id) => {}
+                    Expr::Call(id, _) if is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") => {}
                     Expr::Index(v, _) => {
                         // DArr4 first level: child-array casilla -
                         // "A" (hk114, byte-measured via hk117 markers).
@@ -4856,7 +4856,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         }
                     }
                     e => match type_expr(e, env, sigs, n)? {
-                        Ty::I64 | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::Arr(_) | Ty::Dyn | Ty::Bool => {}
+                        Ty::I64 | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::Arr(_) | Ty::Dyn | Ty::Bool | Ty::Date => {}
                         _ => return Err(format!("line {}: `ValType` is not measured for this type in this PoC", n)),
                     },
                 }
@@ -5262,6 +5262,17 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `padr` expects an integer width",n));
                 }
                 return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"date") {
+                if !args.is_empty() { return Err(format!("line {}: `date` takes no arguments",n)); }
+                return Ok(Ty::Date);
+            }
+            if is_builtin(id,"ctod") {
+                if args.len()!=1 { return Err(format!("line {}: `ctod` takes one argument",n)); }
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
+                    return Err(format!("line {}: `ctod` expects a string",n));
+                }
+                return Ok(Ty::Date);
             }
             if is_builtin(id,"curdir") {
                 if !CURDIR_LINUX_NATIVE.with(|v| v.get()) {
@@ -5783,6 +5794,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         Expr::Bin(op, a, b) => {
             let ta = type_expr(a, env, sigs, n)?;
             let tb = type_expr(b, env, sigs, n)?;
+            if ta==Ty::Date || tb==Ty::Date { return Err(format!("line {}: date arithmetic is outside this increment",n)); }
             if ta==Ty::NumLocal || tb==Ty::NumLocal {
                 if !matches!(ta,Ty::I64|Ty::F64|Ty::NumLocal)||!matches!(tb,Ty::I64|Ty::F64|Ty::NumLocal)||!matches!(op,'+'|'-'|'*'|'/') {
                     return Err(format!("line {}: mixed numeric LOCAL arithmetic supports numeric +,-,*,/ only",n));
@@ -5916,6 +5928,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 let ta = type_expr(a, env, sigs, n)?;
                 let tb = type_expr(b, env, sigs, n)?;
+                if ta==Ty::Date || tb==Ty::Date {
+                    if ta==tb { return Ok(Ty::Bool); }
+                    return Err(format!("line {}: dates compare only with other dates in this increment",n));
+                }
                 // `==` measured so far. Between integers (hk124: 1==1
                 // .T., 1==2 .F.). Between two one-level DYNAMIC array
                 // VARIABLES as reference identity (hk126: a==a .T.,
@@ -5983,6 +5999,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             let ta = type_expr(a, env, sigs, n)?;
             let tb = type_expr(b, env, sigs, n)?;
+            if ta==Ty::Date || tb==Ty::Date {
+                if ta==tb && *op!=CmpOp::Contains { return Ok(Ty::Bool); }
+                return Err(format!("line {}: dates compare only with other dates in this increment",n));
+            }
             // NIL against a string: Harbour answers .F. for `=` (probe n1:
             // "" == NIL is .F., no error). Only `=` / `#` are accepted;
             // ordering NIL is a Harbour runtime error (no headless oracle).
@@ -6381,6 +6401,7 @@ fn ty_name(t: Ty) -> &'static str {
         Ty::RefStrOwn => "a by-reference string",
         Ty::Str => "a string",
         Ty::Bool => "a boolean",
+        Ty::Date => "a date",
         Ty::DArr3 => "an array of arrays of arrays",
         Ty::DArr4 => "an array of arrays of arrays of arrays",
         Ty::DArrS => "an array of strings",
@@ -8325,6 +8346,8 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
+            if is_builtin(id,"date") { return; }
+            if is_builtin(id,"ctod") { apply_moves(&args[0],env,sigs,false); return; }
             if is_builtin(id,"curdir") { return; } // admitted args are inert literals only
             if is_builtin(id,"replicate") {
                 for a in args { apply_moves(a,env,sigs,false); }
@@ -8514,7 +8537,7 @@ fn fold_int(e: &Expr) -> Option<i64> {
     }
 }
 fn size_of(t: Ty) -> usize {
-    match t { Ty::NumLocal | Ty::F64 | Ty::I64 => 16, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(..) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn => 16, Ty::Bool => 8, Ty::RefI64 | Ty::RefDyn | Ty::RefStrOwn | Ty::AView => 8 }
+    match t { Ty::NumLocal | Ty::F64 | Ty::I64 => 16, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(..) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn => 16, Ty::Bool | Ty::Date => 8, Ty::RefI64 | Ty::RefDyn | Ty::RefStrOwn | Ty::AView => 8 }
 }
 
 #[derive(Clone)]
@@ -8726,7 +8749,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 Ty::RefDyn | Ty::RefStrOwn => out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov (%r11), %rax\n    mov 8(%r11), %rdx\n", v.off)),
                 Ty::NumLocal => unreachable!("numeric locals load through cg_num"),
                 Ty::F64 => unreachable!("floats load through cg_f64_load (xmm0/rdi), never the rax/rdx channel"),
-                Ty::I64 | Ty::Block(..) | Ty::Bool | Ty::AView => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
+                Ty::I64 | Ty::Block(..) | Ty::Bool | Ty::Date | Ty::AView => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
                 Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrDyn => {
                     // ptr at -(off), len at -(off-8) — same layout as the store
                     out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
@@ -8958,10 +8981,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     cg_expr(&args[0], env, sigs, strs, out, target);
                     vt_letter(strs, out, "U");
                 }
+                Expr::Call(id,_) if is_builtin(id,"date") || is_builtin(id,"ctod") => {
+                    cg_expr(&args[0],env,sigs,strs,out,target);vt_letter(strs,out,"D");
+                }
                 Expr::Var(v) => {
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                     match var.ty {
                         Ty::I64 | Ty::RefI64 => vt_letter(strs, out, "N"),
+                        Ty::Date => vt_letter(strs,out,"D"),
                         Ty::Bool => vt_letter(strs, out, "L"), // hk197
                         Ty::Str | Ty::StrOwn => vt_letter(strs, out, "C"),
                         Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::AView | Ty::Arr(_) => vt_letter(strs, out, "A"),
@@ -9168,6 +9195,16 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str("    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n");
             }
             out.push_str("    add $32, %rsp\n");
+        }
+        Expr::Call(id,_) if is_builtin(id,"date") => {
+            out.push_str("    call hbc_date_today\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"ctod") => {
+            let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
+            cg_value(&args[0],env,sigs,strs,out,target);
+            if temp { out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"); }
+            out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_ctod\n");
+            if temp { out.push_str("    mov %rax, 8(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    add $16, %rsp\n"); }
         }
         Expr::Call(id,_) if is_builtin(id,"curdir") => {
             out.push_str("    call hbc_curdir_linux\n");
@@ -9736,7 +9773,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 }
                 Ty::Dyn => { out.push_str("    mov $1, %eax\n"); } // literal NIL only
                 Ty::Block(..) => { cg_expr(e, env, sigs, strs, out, target); out.push_str("    xor %eax, %eax\n"); }
-                Ty::I64 | Ty::Bool => {
+                Ty::I64 | Ty::Bool | Ty::Date => {
                     cg_expr(e, env, sigs, strs, out, target);
                     out.push_str("    test %rax, %rax\n    sete %al\n    movzbq %al, %rax\n");
                 }
@@ -10696,6 +10733,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_pvalue") { return Ty::Dyn; }
             if is_builtin(id, "eval") { return match expr_ty(&args[0], env, sigs) { Ty::Block(_, BRet::Nil) => Ty::Dyn, _ => Ty::I64 }; }
             if is_builtin(id, "asc") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
+            if is_builtin(id,"date") || is_builtin(id,"ctod") { return Ty::Date; }
             if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
@@ -11758,6 +11796,12 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                                 out.push_str(&format!("    cmpq $4, {}(%rsp)\n    jne 95f\n    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je 95f\n    call hbc_freestr\n95:\n", off, off + 8));
                             }
                         }
+                        Ty::Date => {
+                            if stderr { out.push_str("    mov $2, %edx\n"); }
+                            else if !raw { out.push_str("    mov $1, %edx\n"); }
+                            else { out.push_str("    xor %edx, %edx\n"); }
+                            out.push_str("    call hbc_date_render\n");
+                        }
                         Ty::Bool => {
                             // .T./.F. (hk197/hk198): the 0/1 payload picks
                             // the literal; plain 3-byte print, no trim.
@@ -11958,7 +12002,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             }
                         }
                         match t {
-                            Ty::I64 | Ty::Block(..) | Ty::Bool => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
+                            Ty::I64 | Ty::Block(..) | Ty::Bool | Ty::Date => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
                             Ty::Str => {
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
@@ -12771,7 +12815,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
                             }
-                            Ty::I64 | Ty::Block(..) | Ty::Bool => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
+                            Ty::I64 | Ty::Block(..) | Ty::Bool | Ty::Date => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
                             Ty::Dyn if lty == Ty::I64 => {
                                 // i64 slot receiving a Dyn: the tag is
                                 // checked at runtime (NIL -> clean error).
@@ -17956,6 +18000,10 @@ hbc_str_cache: .zero 64
 
 // Unify controlled failures only. Normal _start exits are not rewritten.
 fn finalize_trace(mut out: String, target: Target) -> String {
+    if out.contains("call hbc_ctod") || out.contains("call hbc_date_today") || out.contains("call hbc_date_render") {
+        out.push_str(DATE_PORT_HELPERS);
+        out.push_str(match target {Target::Linux=>DATE_TODAY_LINUX,Target::Windows=>DATE_TODAY_WINDOWS});
+    }
     // Add private stderr variants only when used. No mutable routing state:
     // nested OutStd/QOut and controlled diagnostics retain their destination.
     if out.contains("call hbc_eprint_") {
@@ -20676,6 +20724,243 @@ hbc_curdir_linux:
     xor %esi, %esi
 .Lcurdir_copy:
     call hbc_strcpy
+    leave
+    ret
+"#;
+
+// Own packed calendar scalar, YYYYMMDD (zero empty). Not a Harbour Julian
+// payload and never exposed as an integer. Order preserves calendar order.
+// Parser behavior was measured independently; all digit accumulators wrap
+// modulo 2^32, including long runs. No reference implementation imported.
+const DATE_PORT_HELPERS: &str = r#"
+    .text
+# r8d=year, r9d=month, r10d=day -> rax packed scalar, zero invalid.
+hbc_date_pack:
+    cmp $1, %r8d
+    jb .Ldate_bad
+    cmp $9999, %r8d
+    ja .Ldate_bad
+    cmp $1, %r9d
+    jb .Ldate_bad
+    cmp $12, %r9d
+    ja .Ldate_bad
+    cmp $1, %r10d
+    jb .Ldate_bad
+    lea .Ldate_month_lengths(%rip), %r11
+    movzbl -1(%r11,%r9), %ecx
+    cmp $2, %r9d
+    jne .Ldate_day_limit
+    mov %r8d, %eax
+    test $3, %eax
+    jnz .Ldate_day_limit
+    xor %edx, %edx
+    mov $100, %r11d
+    div %r11d
+    test %edx, %edx
+    jnz .Ldate_leap_limit
+    xor %edx, %edx
+    mov %r8d, %eax
+    mov $400, %r11d
+    div %r11d
+    test %edx, %edx
+    jnz .Ldate_day_limit
+.Ldate_leap_limit:
+    inc %ecx
+.Ldate_day_limit:
+    cmp %ecx, %r10d
+    ja .Ldate_bad
+    imul $10000, %r8d, %eax
+    imul $100, %r9d, %ecx
+    add %ecx, %eax
+    add %r10d, %eax
+    ret
+.Ldate_bad:
+    xor %eax, %eax
+    ret
+.Ldate_month_lengths:
+    .byte 31,28,31,30,31,30,31,31,30,31,30,31
+
+# ptr/len rdi/rsi; three unsigned 32-bit runs. Nondigits separate runs.
+hbc_ctod:
+    sub $24, %rsp
+    movq $0, (%rsp)
+    movq $0, 8(%rsp)
+    xor %r8d, %r8d
+    xor %r9d, %r9d
+.Ldate_parse_byte:
+    test %rsi, %rsi
+    jz .Ldate_parse_done
+    movzbl (%rdi), %eax
+    test %eax, %eax
+    jz .Ldate_parse_done
+    inc %rdi
+    dec %rsi
+    sub $48, %eax
+    cmp $9, %eax
+    ja .Ldate_separator
+    mov $1, %r9d
+    imul $10, (%rsp,%r8,4), %ecx
+    add %eax, %ecx
+    mov %ecx, (%rsp,%r8,4)
+    jmp .Ldate_parse_byte
+.Ldate_separator:
+    test %r9d, %r9d
+    jz .Ldate_parse_byte
+    xor %r9d, %r9d
+    inc %r8d
+    cmp $3, %r8d
+    jb .Ldate_parse_byte
+.Ldate_parse_done:
+    mov (%rsp), %r9d
+    mov 4(%rsp), %r10d
+    mov 8(%rsp), %r8d
+    cmp $100, %r8d
+    jae .Ldate_parse_year
+    add $1900, %r8d
+.Ldate_parse_year:
+    add $24, %rsp
+    jmp hbc_date_pack
+
+# rax packed scalar; edx mode:0 raw stdout,1 console hold,2 raw stderr.
+hbc_date_render:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    mov %edx, -4(%rbp)
+    movabs $0x20202f20202f2020, %rcx
+    mov %rcx, -16(%rbp)
+    test %rax, %rax
+    jz .Ldate_render_write
+    xor %edx, %edx
+    mov $100, %ecx
+    div %rcx
+    mov %edx, %r8d
+    xor %edx, %edx
+    div %rcx
+    mov %edx, %r9d
+    xor %edx, %edx
+    div %rcx
+    mov %edx, %eax
+    xor %edx, %edx
+    mov $10, %ecx
+    div %ecx
+    add $48, %al
+    add $48, %dl
+    mov %al, -10(%rbp)
+    mov %dl, -9(%rbp)
+    mov %r9d, %eax
+    xor %edx, %edx
+    div %ecx
+    add $48, %al
+    add $48, %dl
+    mov %al, -16(%rbp)
+    mov %dl, -15(%rbp)
+    mov %r8d, %eax
+    xor %edx, %edx
+    div %ecx
+    add $48, %al
+    add $48, %dl
+    mov %al, -13(%rbp)
+    mov %dl, -12(%rbp)
+.Ldate_render_write:
+    lea -16(%rbp), %rax
+    mov $8, %edx
+    cmpl $0, -4(%rbp)
+    je .Ldate_render_raw
+    cmpl $2, -4(%rbp)
+    je .Ldate_render_error
+    call hbc_pstrt
+    leave
+    ret
+.Ldate_render_raw:
+    call hbc_print_str
+    leave
+    ret
+.Ldate_render_error:
+    call hbc_eprint_str
+    leave
+    ret
+"#;
+
+const DATE_TODAY_LINUX: &str = r#"
+    .text
+# Preserve existing Linux UTC contract. Local timezone handling is deferred.
+hbc_date_today:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    xor %edi, %edi
+    mov $201, %eax
+    syscall
+    test %rax, %rax
+    js .Ldate_today_fail
+    xor %edx, %edx
+    mov $86400, %ecx
+    div %rcx
+    mov %rax, -8(%rbp)
+    movl $1970, -12(%rbp)
+.Ldate_today_year:
+    mov -12(%rbp), %r8d
+    mov $2, %r9d
+    mov $29, %r10d
+    call hbc_date_pack
+    mov $365, %ecx
+    test %rax, %rax
+    jz .Ldate_today_year_days
+    inc %ecx
+.Ldate_today_year_days:
+    cmp %rcx, -8(%rbp)
+    jb .Ldate_today_month_start
+    sub %rcx, -8(%rbp)
+    incl -12(%rbp)
+    jmp .Ldate_today_year
+.Ldate_today_month_start:
+    movl $1, -16(%rbp)
+.Ldate_today_month:
+    mov -12(%rbp), %r8d
+    mov -16(%rbp), %r9d
+    lea .Ldate_month_lengths(%rip), %rcx
+    movzbl -1(%rcx,%r9), %r10d
+    cmp $2, %r9d
+    jne .Ldate_today_month_days
+    mov $29, %r10d
+    call hbc_date_pack
+    mov $28, %r10d
+    test %rax, %rax
+    jz .Ldate_today_month_days
+    inc %r10d
+.Ldate_today_month_days:
+    cmp %r10, -8(%rbp)
+    jb .Ldate_today_finish
+    sub %r10, -8(%rbp)
+    incl -16(%rbp)
+    jmp .Ldate_today_month
+.Ldate_today_finish:
+    mov -12(%rbp), %r8d
+    mov -16(%rbp), %r9d
+    mov -8(%rbp), %r10d
+    inc %r10d
+    call hbc_date_pack
+    leave
+    ret
+.Ldate_today_fail:
+    xor %eax, %eax
+    leave
+    ret
+"#;
+
+const DATE_TODAY_WINDOWS: &str = r#"
+    .text
+hbc_date_today:
+    push %rbp
+    mov %rsp, %rbp
+    sub $64, %rsp
+    lea -16(%rbp), %rcx
+    call GetLocalTime
+    movzwl -16(%rbp), %r8d
+    movzwl -14(%rbp), %r9d
+    movzwl -10(%rbp), %r10d
+    call hbc_date_pack
     leave
     ret
 "#;
