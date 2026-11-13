@@ -4,12 +4,12 @@ These 99 `.prg` files were moved from the repository root without changing their
 names or source bytes. They are historical black-box probes, not the 1041 unchanged
 upstream Harbour originals and not an addition to the test admission count.
 
-The historical status/output table remains in [3-MANIFEST.md](../../3-MANIFEST.md).
+The historical status/output table remains in [3-MANIFEST.md](../../../3-MANIFEST.md).
 Its hk identifiers omit the numeric filename prefix. For a selected probe, from
 the repository root, compile the actual path, for example:
 
 ```sh
-hbmk2 probes/legacy-hk/1-hk124.prg -gtstd -o/tmp/hk124
+hbmk2 tests/probes/legacy-hk/1-hk124.prg -gtstd -o/tmp/hk124
 ```
 
 Some probes intentionally error or open an interactive dialogue. Moving the files

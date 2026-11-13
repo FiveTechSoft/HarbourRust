@@ -42,7 +42,7 @@ D	gen/cache_windows_live.s
 D	gen/cache_windows_size.s
 D	gen/compile_shape_matrix.log
 D	gen/hola
-D	gen/hola.exe
+D	gen/hello.exe
 D	gen/hola.o
 D	gen/hola.s
 D	gen/hola_w.o

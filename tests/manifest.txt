@@ -1,5 +1,5 @@
-pos ejemplos/hola.hb \nresultado de z:\n        32\nhola desde una funcion
-neg ejemplos/prestamo_roto.hb line 5: use of moved value
+pos tests/samples/hello.hb \nresultado de z:\n        32\nhola desde una funcion
+neg tests/samples/broken_borrow.hb line 5: use of moved value
 neg tests/t01_injection_colons.hb trailing tokens after expression
 neg tests/t02_injection_unsafe.hb trailing tokens after expression
 neg tests/t03_injection_macro.hb trailing tokens after expression
@@ -379,7 +379,7 @@ pos tests/t382_asize3_mid.hb \n         1\n         3\n         2\n         1\n 
 posx tests/t383_asize3_mid_nil.hb 1 Argument error: array access\nCallstack:\n  at main (tests/t383_asize3_mid_nil.hb:6)
 pos tests/t384_asize3_mid_shrink.hb \n         1\n         1\n         0\n         0
 pos tests/t385_asize3_root_zero.hb \n         0\n         0\n         0
-posx tests/t386_asize3_nil_casilla.hb 1 Argument error: ASIZE\nCallstack:\n  at main (tests/t386_asize3_nil_casilla.hb:5)
+posx tests/t386_asize3_nil_cell.hb 1 Argument error: ASIZE\nCallstack:\n  at main (tests/t386_asize3_nil_cell.hb:5)
 pos tests/t387_aadd3_mid_lit.hb \n         2\n         5\n         6\n         0\n         0
 pos tests/t388_aadd3_mid_order.hb \neval\nval\n         2
 pos tests/t389_aadd3_mid_call.hb \n         2\n         2\n         0\n         0
@@ -395,7 +395,7 @@ pos tests/t398_borrow_param_shrink.hb \n         0\n         1\n         0\n    
 neg tests/t399_neg_borrow_return.hb is borrowed from its caller
 neg tests/t400_neg_borrow_passon.hb is borrowed from its caller
 neg tests/t401_neg_borrow_overlap.hb no other argument of the same call may mention it
-posx tests/t402_borrow_nil_casilla.hb 1 Argument error: PARAM\nCallstack:\n  at main (tests/t402_borrow_nil_casilla.hb:7)
+posx tests/t402_borrow_nil_cell.hb 1 Argument error: PARAM\nCallstack:\n  at main (tests/t402_borrow_nil_cell.hb:7)
 neg tests/t403_neg_borrow_darr3.hb indexing applies to arrays
 neg tests/t404_neg_borrow_foreach.hb cannot be modified, moved or grown inside its own loop
 neg tests/t405_neg_borrow_move_conflict.hb cannot also receive an owned array
@@ -414,7 +414,7 @@ pos tests/t417_borrow3_grow.hb \n         0\n         3\n         2\n         8\
 pos tests/t418_borrow3_write.hb \n         0\n        42\n         0\n         0
 pos tests/t419_borrow3_shrink.hb \n         2\n         0\n         1\n         2\n         0\n         0
 pos tests/t420_borrow3_order.hb \neval\n         2\n         2\n         0\n         0\n         0
-posx tests/t423_borrow3_nil_casilla.hb 1 Argument error: PARAM\nCallstack:\n  at main (tests/t423_borrow3_nil_casilla.hb:8)
+posx tests/t423_borrow3_nil_cell.hb 1 Argument error: PARAM\nCallstack:\n  at main (tests/t423_borrow3_nil_cell.hb:8)
 neg tests/t421_neg_borrow3_return.hb is borrowed from its caller
 neg tests/t422_neg_borrow3_overlap.hb no other argument of the same call may mention it
 pos tests/t424_static_arg_read.hb \n         3\n         2\n         0\n         3\n         3\n         0\n         0
@@ -474,7 +474,7 @@ neg tests/t476_neg_aadd_root4.hb `AAdd` on the root of a four-level array is not
 pos tests/t477_arrset_static_var.hb \n         2\n         2\n         2\n         0\n         0
 pos tests/t478_aadd_static_var.hb \n         2\n         1\n         1\n         0\n         0
 pos tests/t479_aaddsub_static_var.hb \n         8\n         8\n         0\n         0
-pos tests/t480_valtype_darr4_casillas.hb \nA\nA\nA\nU\nN
+pos tests/t480_valtype_darr4_cells.hb \nA\nA\nA\nU\nN
 pos tests/t481_foreach_darr4_middle.hb \nA\nA\n         5\nNIL
 pos tests/t482_foreach_darr4_write.hb \n         9\n         9\nNIL
 neg tests/t483_neg_foreach_darr4_reseat.hb cannot assign to the `for` loop variable
@@ -489,7 +489,7 @@ pos tests/t491_exeq_darr.hb \n         1\n         0\n         1
 neg tests/t492_neg_exeq_static.hb measured only between two integers, between two strings, between two one-level dynamic array variables and against NIL
 pos tests/t493_exeq_str.hb \n         1\n         0\n         0\n         0\n         1\n         0
 pos tests/t494_exeq_nil.hb \n         1\n         0\n         0\n         0
-pos tests/t495_exeq_casnil.hb \n         0\n         0\n         1\n         0\n         0
+pos tests/t495_exeq_nilcell.hb \n         0\n         0\n         1\n         0\n         0
 pos tests/t496_exeq_darr2.hb \n         1\n         0\n         1
 neg tests/t497_neg_exeq_block.hb identity is per evaluation
 pos tests/t498_exeq_darr3.hb \n         1\n         0\n         1
@@ -612,7 +612,7 @@ pos tests/t614_log_dyn_balance.hb \n         0
 posx tests/t615_valtype_hash_miss.hb 1 Bound error: array access\nCallstack:\n  at main (tests/t615_valtype_hash_miss.hb:6)
 posx tests/t616_hash_read_miss.hb 1 Bound error: array access\nCallstack:\n  at main (tests/t616_hash_read_miss.hb:5)
 posx tests/t617_dyn_nil_condition.hb 1 Type error: condition is not a logical\nCallstack:\n  at main (tests/t617_dyn_nil_condition.hb:7)
-pos tests/t618_log_dyn_if_casilla.hb \nsi\nno2\ngiro
+pos tests/t618_log_dyn_if_cell.hb \nsi\nno2\ngiro
 pos tests/t619_procedure_kw.hb \n         7\n         8\n         1\nNIL
 pos tests/t620_comment_forms.hb \none\ntwo\nstr /* kept */ ok
 neg tests/t621_unterminated_block.hb unterminated /* */ comment

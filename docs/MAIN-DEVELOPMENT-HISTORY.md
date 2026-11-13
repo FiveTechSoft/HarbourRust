@@ -49,10 +49,10 @@ mingw-w64 build of GNU binutils (`x86_64-w64-mingw32-as` / `-ld`) with the
 No MSVC, no C runtime: the PE has no CRT startup; `_start` calls
 `hbc_fn_main` and then `ExitProcess`.
 
-The produced PE32+ executable runs: `ejemplos/hola.exe` prints `32` and the
+The produced PE32+ executable runs: `tests/samples/hello.exe` prints `32` and the
 greeting under **Wine 10.20 (wow64 build)**, and the full test battery
 produces byte-identical output on the Linux and Windows builds of every
-program (see EVIDENCIA.md). Running under Wine is not the same as running
+program (see EVIDENCE.md). Running under Wine is not the same as running
 on real Windows - that check is still pending.
 
 ## Iteration 4: if / else / endif
@@ -168,7 +168,7 @@ Adversarial review note (2026-10-25): the overflow rule above was added
 after a review of the first `for` implementation found that
 `for i := 9223372036854775806 to 9223372036854775807` did not terminate
 (the counter wrapped to i64::MIN and the loop kept going). See
-EVIDENCIA.md for the reproduction.
+EVIDENCE.md for the reproduction.
 
 ## Iteration 9: string equality in conditions
 
@@ -272,10 +272,10 @@ Integer literals are range-checked (i64).
 ## What the tests demonstrate
 
 1. A Harbour-syntax program compiles to a native x86-64 ELF and runs:
-   `ejemplos/hola.hb` prints `32` and a greeting
+   `tests/samples/hello.hb` prints `32` and a greeting
    (`tests/t10_int_copy.hb`, `tests/t11_print_borrows.hb` also run).
 2. Use after move is rejected at compile time **by hbc itself**:
-   `ejemplos/prestamo_roto.hb` fails with
+   `tests/samples/broken_borrow.hb` fails with
    `error: line 5: use of moved value 'a'`. In iteration 1 this rejection
    came from rustc's borrow checker; now it comes from our own analysis.
    It is still a use-after-move case only - borrowing, references and
@@ -334,8 +334,8 @@ Integer literals are range-checked (i64).
 ```sh
 mkdir -p gen          # gen/ is not part of the checkout
 rustc -O src/hbc.rs -o hbc
-./hbc ejemplos/hola.hb gen/hola.s && as -o gen/hola.o gen/hola.s && ld -o gen/hola gen/hola.o && ./gen/hola
-./hbc ejemplos/prestamo_roto.hb gen/prestamo.s    # rejected by hbc itself
+./hbc tests/samples/hello.hb gen/hello.s && as -o gen/hello.o gen/hello.s && ld -o gen/hello gen/hello.o && ./gen/hello
+./hbc tests/samples/broken_borrow.hb gen/prestamo.s    # rejected by hbc itself
 ```
 
 Windows build (needs mingw-w64 binutils and the `kernel32` import library,
@@ -343,10 +343,10 @@ e.g. Ubuntu packages `binutils-mingw-w64-x86-64` and `mingw-w64-x86-64-dev`;
 running the .exe on Linux needs Wine):
 
 ```sh
-./hbc ejemplos/hola.hb gen/hola_win.s --target=windows
-x86_64-w64-mingw32-as -o gen/hola_win.o gen/hola_win.s
-x86_64-w64-mingw32-ld -o gen/hola.exe gen/hola_win.o -e _start --subsystem console -lkernel32
-wine gen/hola.exe
+./hbc tests/samples/hello.hb gen/hello_win.s --target=windows
+x86_64-w64-mingw32-as -o gen/hello_win.o gen/hello_win.s
+x86_64-w64-mingw32-ld -o gen/hello.exe gen/hello_win.o -e _start --subsystem console -lkernel32
+wine gen/hello.exe
 ```
 
 
@@ -1696,6 +1696,6 @@ the ABI harness.
 ## Historical oracle PRG probes
 
 The 99 numbered hk `.prg` probes formerly at the repository root now live in
-[`probes/legacy-hk/`](../probes/legacy-hk/README.md), with unchanged names and source bytes.
+[`tests/probes/legacy-hk/`](../tests/probes/legacy-hk/README.md), with unchanged names and source bytes.
 Their historical status/output table remains in [3-MANIFEST.md](../3-MANIFEST.md).
 This layout change does not add upstream originals or alter compiler semantics.
