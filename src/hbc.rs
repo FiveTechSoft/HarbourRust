@@ -2875,6 +2875,9 @@ struct Prog {
     funcs: Vec<Func>,
     classes: Vec<ClassDecl>,
     methods: Vec<MethodDef>,
+    // File-scope `EXTERNAL name` declarations (Extend-System C bridge,
+    // docs/EXTEND-BRIDGE.md): (line, lowercase symbol).
+    externs: Vec<(usize, String)>,
 }
 
 fn parse(src: &str) -> Result<Prog, String> {
@@ -2896,6 +2899,7 @@ fn parse(src: &str) -> Result<Prog, String> {
     let mut classes: Vec<ClassDecl> = Vec::new();
     let mut methods: Vec<MethodDef> = Vec::new();
     let mut requests: Vec<(usize, String)> = Vec::new();
+    let mut externs: Vec<(usize, String)> = Vec::new();
     let mut i = 0usize;
     while i < lines.len() {
         let (n, toks) = &lines[i];
@@ -2924,6 +2928,26 @@ fn parse(src: &str) -> Result<Prog, String> {
             match toks.get(1) {
                 Some(Tok::Ident(sym)) if toks.len() == 2 => requests.push((n, sym.to_lowercase())),
                 _ => return Err(format!("line {}: REQUEST with a symbol list is not in this increment (the subset has no module linking)", n)),
+            }
+            i += 1;
+            continue;
+        }
+        if matches!(&toks[0], Tok::Ident(id) if id.eq_ignore_ascii_case("external")) {
+            // EXTERNAL names a function resolved at LINK time through the
+            // Extend-System bridge (docs/EXTEND-BRIDGE.md): the symbol is
+            // provided by a C object (HB_FUNC) and called with Dyn
+            // casillas. Comma-separated symbol list, like Harbour.
+            if toks.len() == 1 {
+                return Err(format!("line {}: EXTERNAL expects at least one symbol", n));
+            }
+            let mut k = 1;
+            while k < toks.len() {
+                match &toks[k] {
+                    Tok::Ident(sym) => externs.push((n, sym.clone())),
+                    Tok::Comma if k > 1 && k + 1 < toks.len() => {}
+                    _ => return Err(format!("line {}: EXTERNAL expects a comma-separated symbol list", n)),
+                }
+                k += 1;
             }
             i += 1;
             continue;
@@ -3137,7 +3161,7 @@ fn parse(src: &str) -> Result<Prog, String> {
             return Err(format!("line {}: REQUEST `{}` cannot be honored: the subset has no module linking; only functions defined in this file may be requested", ln, sym));
         }
     }
-    Ok(Prog { funcs, classes, methods })
+    Ok(Prog { funcs, classes, methods, externs })
 }
 
 // Comma-separated parameter names out of a method declaration's token
@@ -3227,6 +3251,12 @@ struct Sig {
 // cleanup, general Dyn tag, parameter ABI or borrowed storage is involved.
 thread_local! {
     static STATIC_DYN: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
+    // Extend-System C bridge (docs/EXTEND-BRIDGE.md): lowercase names
+    // declared `EXTERNAL` at file scope. Such a name has NO signature
+    // entry; its calls marshal Dyn casillas to a linked C function
+    // (HB_FUNC) through hbc_ext_dispatch instead of the internal
+    // calling convention.
+    static EXTERNS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
     static CHECKED_I64: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static NUM_LOCALS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
 }
@@ -5401,8 +5431,28 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // (registered absence of Harbour's CLI channel).
                 return Ok(Ty::Dyn);
             }
-            let si = sigs.iter().position(|v| v.name == *id)
-                .ok_or_else(|| format!("line {}: unknown function `{}` (must be defined before use)", n, id))?;
+            let si = match sigs.iter().position(|v| v.name == *id) {
+                Some(si) => si,
+                None if EXTERNS.with(|c| c.borrow().contains(id)) => {
+                    // Extend-System C boundary (docs/EXTEND-BRIDGE.md):
+                    // free arity (omitted arguments read NIL in C through
+                    // hb_pcount/hb_param); every argument must marshal to
+                    // a Dyn casilla. Arrays, hashes, codeblocks, floats,
+                    // dates and @byref stay named rejections in this
+                    // increment; the C side only BORROWS during the call.
+                    for a in args.iter() {
+                        if matches!(a, Expr::ByRef(_)) {
+                            return Err(format!("line {}: `@` by-reference across the C Extend boundary needs hb_parbyref: not in this increment (docs/EXTEND-BRIDGE.md)", n));
+                        }
+                        match type_expr(a, env, sigs, n)? {
+                            Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::Dyn => {}
+                            other => return Err(format!("line {}: {} argument cannot cross the C Extend boundary in this increment (docs/EXTEND-BRIDGE.md)", n, ty_name(other))),
+                        }
+                    }
+                    return Ok(Ty::Dyn);
+                }
+                None => return Err(format!("line {}: unknown function `{}` (must be defined before use; a C extension function is declared with EXTERNAL and its object linked - docs/EXTEND-BRIDGE.md)", n, id)),
+            };
             let sig_string_copy = sigs[si].string_iter_copy.clone();
             let (sig_params, sig_borrowed, sig_arr_moved, sig_aview, sig_ret, sig_inferred) = {
                 let s = &sigs[si];
@@ -8476,7 +8526,19 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
-            let sig = sigs.iter().find(|v| v.name == *id).expect("checked");
+            let sig = match sigs.iter().find(|v| v.name == *id) {
+                Some(s) => s,
+                None => {
+                    // Extend-System C boundary (docs/EXTEND-BRIDGE.md):
+                    // arguments are READ, never moved - strings cross as
+                    // owned clones made at the boundary.
+                    if EXTERNS.with(|c| c.borrow().contains(id)) {
+                        for a in args { apply_moves(a, env, sigs, false); }
+                        return;
+                    }
+                    panic!("checked");
+                }
+            };
             for (i, a) in args.iter().enumerate() {
                 // A static array argument is COPIED at the boundary (33l):
                 // the source variable keeps its value.
@@ -9882,6 +9944,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str(&format!(".Lpve{}:\n", k));
         }
         Expr::Call(id, args) => {
+            // Extend-System C boundary first (docs/EXTEND-BRIDGE.md): an
+            // EXTERNAL name has no signature entry and marshals through
+            // the bridge instead of the internal calling convention.
+            if cg_ext_call(id, args, env, sigs, strs, out, target) {
+            } else {
             let _ = sigs;
             // Arguments are evaluated and pushed LEFT TO RIGHT (Harbour
             // order; it matters if an argument expression fails, e.g. an
@@ -10092,6 +10159,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str(&format!("    call hbc_fn_{}\n", call_lbl));
             if total > 0 {
                 out.push_str(&format!("    add ${}, %rsp\n", 16 * total));
+            }
             }
         }
         Expr::ArrLit(_) => unreachable!("array literals are emitted via cg_array_value"),
@@ -10745,7 +10813,13 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                 return if ta == Ty::F64 || tb == Ty::F64 { Ty::F64 }
                     else if matches!(ta, Ty::StrOwn) || matches!(tb, Ty::StrOwn) { Ty::StrOwn } else { ta };
             }
-            sigs.iter().find(|v| v.name == *id).expect("checked").ret.expect("checked")
+            match sigs.iter().find(|v| v.name == *id) {
+                Some(s) => s.ret.expect("checked"),
+                // Extend-System C boundary: every EXTERNAL returns a Dyn
+                // casilla (docs/EXTEND-BRIDGE.md).
+                None if EXTERNS.with(|c| c.borrow().contains(id)) => Ty::Dyn,
+                None => panic!("checked"),
+            }
         }
         Expr::Log(_) | Expr::LNot(_) | Expr::LAnd(_, _) | Expr::LOr(_, _) | Expr::Cmp(..) => Ty::Bool,
         Expr::ArrLit(es) => {
@@ -10884,6 +10958,54 @@ fn cg_dyn_free_old(out: &mut String, off: usize) {
     // local label could hijack an enclosing snippet's reference.
     let k = fresh_lbl();
     out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne .Ld8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Ld8z{}\n    call hbc_freestr\n    jmp .Ld8z{}\n.Ld8a{}:\n    cmpq $8, -{}(%rbp)\n    jne .Ld8z{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Ld8z{}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n.Ld8z{}:\n", off, k, off - 8, k, k, k, off, k, off - 8, k, k));
+}
+
+// Extend-System C boundary (docs/EXTEND-BRIDGE.md). Returns true when
+// the call was emitted through the bridge. Each argument is marshaled
+// to a 16-byte Dyn casilla pushed left to right: integers as {0, v},
+// logicals as {3, b}, NIL as {1, 0}; strings cross as OWNED clones
+// (tag 4, via hbc_strcpy) that the caller frees right after the call -
+// the C side only borrows during the call. Dyn values pass through,
+// with the registered clean rejection for a Dyn-held array (tag 8).
+// A final 16-byte slot carries the argument count for hb_pcount; the
+// thunk hbc_fn_<name> forwards name/argc/argv to hbc_ext_dispatch.
+fn cg_ext_call(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) -> bool {
+    if sigs.iter().any(|v| v.name == id) || !EXTERNS.with(|c| c.borrow().contains(id)) { return false; }
+    let _ = target; // externs are Linux-only in this increment (rejected in main)
+    let mut str_slots: Vec<usize> = Vec::new();
+    for (ai, a) in args.iter().enumerate() {
+        match expr_ty(a, env, sigs) {
+            Ty::Str | Ty::StrOwn => {
+                cg_value(a, env, sigs, strs, out, target); // rax=ptr, rdx=len
+                out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    sub $16, %rsp\n    movq $4, (%rsp)\n    mov %rax, 8(%rsp)\n");
+                str_slots.push(ai);
+            }
+            Ty::Bool => {
+                cg_value(a, env, sigs, strs, out, target); // rax=0/1
+                out.push_str("    sub $16, %rsp\n    movq $3, (%rsp)\n    mov %rax, 8(%rsp)\n");
+            }
+            Ty::Dyn => {
+                cg_value(a, env, sigs, strs, out, target); // rax=tag, rdx=payload
+                out.push_str("    cmp $8, %rax\n    je hbc_type_error\n    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            }
+            _ => {
+                // I64 (the checker rejects every other type).
+                cg_value(a, env, sigs, strs, out, target); // rax=value
+                out.push_str("    sub $16, %rsp\n    movq $0, (%rsp)\n    mov %rax, 8(%rsp)\n");
+            }
+        }
+    }
+    let n = args.len();
+    out.push_str(&format!("    sub $16, %rsp\n    movq ${}, (%rsp)\n    movq $0, 8(%rsp)\n    call hbc_fn_{}\n", n, id));
+    // The returned Dyn pair waits in the now-dead argc slot while the
+    // owned string argument clones are released with the same helper
+    // the epilogue uses (hbc_freestr clobbers rax/rdx).
+    out.push_str("    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+    for ai in &str_slots {
+        out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n", 16 * (n - ai) + 8));
+    }
+    out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add ${}, %rsp\n", 16 * (n + 1)));
+    true
 }
 
 // rax=tag, rdx=payload -> the pair with any string (tag 2 or 4) cloned
@@ -16399,7 +16521,105 @@ hbc_replicate:
 
 ";
 
-fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> String {
+
+// Extend-System bridge dispatcher (docs/EXTEND-BRIDGE.md), emitted only
+// when the program declares EXTERNAL symbols. rdi = uppercased function
+// name (NUL-terminated), rsi = argc, rdx = argv (16-byte {tag,payload}
+// casillas; argument i sits at rdx + 16*(argc-i)). Walks the
+// hbhbr_funcs linker section - one {name, fnptr} entry per HB_FUNC in
+// the linked C objects, bounded by the GNU-ld-provided
+// __start_hbhbr_funcs/__stop_hbhbr_funcs - comparing case-insensitively
+// (Harbour function names are case-insensitive). On a match it sets the
+// bridge globals, resets the return slot to NIL, calls the C function
+// with a SysV-aligned stack, releases the C-side scratch copies and
+// returns the Dyn pair in rax/rdx. An unknown name is a registered
+// clean exit-1 diagnostic, same discipline as hbc_bound_error.
+const EXT_DISPATCH_LINUX: &str = r#"
+hbc_ext_dispatch:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    sub $8, %rsp
+    mov %rdi, %rbx
+    mov %rsi, %r12
+    mov %rdx, %r13
+    lea __start_hbhbr_funcs(%rip), %rax
+    lea __stop_hbhbr_funcs(%rip), %rcx
+.Lextwalk:
+    cmp %rcx, %rax
+    jae .Lextmiss
+    mov (%rax), %rdi
+    mov %rbx, %rsi
+.Lextcmp:
+    movzbl (%rdi), %r8d
+    movzbl (%rsi), %r9d
+    cmp %r9b, %r8b
+    je .Lexteq
+    or $0x20, %r8b
+    or $0x20, %r9b
+    cmp %r9b, %r8b
+    jne .Lextnext
+    jmp .Lextadv
+.Lexteq:
+    test %r8b, %r8b
+    je .Lextfound
+.Lextadv:
+    inc %rdi
+    inc %rsi
+    jmp .Lextcmp
+.Lextnext:
+    add $16, %rax
+    jmp .Lextwalk
+.Lextfound:
+    mov %r12, hbc_ext_argc(%rip)
+    mov %r13, hbc_ext_argv(%rip)
+    movq $1, hbc_ext_ret_tag(%rip)
+    movq $0, hbc_ext_ret_pay(%rip)
+    mov 8(%rax), %rax
+    call *%rax
+    call hbc_ext_end
+    mov hbc_ext_ret_tag(%rip), %rax
+    mov hbc_ext_ret_pay(%rip), %rdx
+    add $8, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+.Lextmiss:
+    mov $2, %edi
+    lea .Lextmissmsg(%rip), %rsi
+    mov $36, %edx
+    mov $1, %eax
+    syscall
+    mov %rbx, %rsi
+    xor %edx, %edx
+.Lextnamelen:
+    cmpb $0, (%rsi,%rdx)
+    je .Lextnamewr
+    inc %rdx
+    jmp .Lextnamelen
+.Lextnamewr:
+    mov $2, %edi
+    mov $1, %eax
+    syscall
+    lea .Lextnl(%rip), %rsi
+    mov $1, %edx
+    mov $2, %edi
+    mov $1, %eax
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+    .section .rodata
+.Lextmissmsg: .ascii "error: external function not found: "
+.Lextnl: .asciz "\n"
+    .text
+"#;
+
+fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, instrument: bool) -> String {
     let mut out = String::new();
     out.push_str("# generated by hbc (PoC: Harbour syntax -> x86-64 assembly)\n");
     out.push_str(CONSOLE_NUL_HELPER);
@@ -16448,6 +16668,20 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], target: Target, instrument: bool) -> S
     for (vname, mask) in collect_byref_variants(funcs) {
         let f = funcs.iter().find(|f| f.name == *vname).expect("checked");
         cg_func(f, sigs, &mut strs, &mut out, target, Some(&mask));
+    }
+
+    // Extend-System bridge (docs/EXTEND-BRIDGE.md): one thunk per
+    // EXTERNAL symbol, plus the dispatcher and the bridge-visible helper
+    // exports. Linux only in this increment (Windows rejected in main);
+    // nothing here is emitted for a program without EXTERNAL.
+    if !externs.is_empty() && matches!(target, Target::Linux) {
+        for (i, name) in externs.iter().enumerate() {
+            out.push_str(&format!("hbc_fn_{}:\n    mov 8(%rsp), %rsi\n    lea 24(%rsp), %rdx\n    lea .Lextname{}(%rip), %rdi\n    jmp hbc_ext_dispatch\n    .section .rodata\n.Lextname{}:\n    .asciz \"{}\"\n    .text\n", name, i, i, name.to_ascii_uppercase()));
+        }
+        out.push_str(EXT_DISPATCH_LINUX);
+        // hbhbr.o calls back into these runtime helpers across the
+        // object boundary; without the bridge they stay internal.
+        out.push_str("    .globl hbc_strcpy\n    .globl hbc_freestr\n");
     }
 
     out.push_str(r"
@@ -20286,6 +20520,19 @@ fn main() {
         Ok(p) => p,
         Err(msg) => { eprintln!("error: {}", msg); process::exit(1); }
     };
+    // Extend-System bridge (docs/EXTEND-BRIDGE.md): deduped EXTERNAL
+    // symbols. A symbol also defined in this file is inert (like a
+    // REQUEST of a local symbol); the definition wins every call.
+    let mut externs: Vec<String> = Vec::new();
+    for (_, name) in &prog.externs {
+        if prog.funcs.iter().any(|f| f.name == *name) { continue; }
+        if !externs.contains(name) { externs.push(name.clone()); }
+    }
+    if !externs.is_empty() && matches!(target, Target::Windows) {
+        eprintln!("error: EXTERNAL (C Extend bridge) is Linux-only in this increment (docs/EXTEND-BRIDGE.md)");
+        process::exit(1);
+    }
+    EXTERNS.with(|c| *c.borrow_mut() = externs.iter().cloned().collect());
     discover_root_params(&prog.funcs);
     for f in &prog.funcs {
         if let Err(msg)=validate_persistent(f) {eprintln!("error: {}",msg);process::exit(1);}
@@ -20686,7 +20933,7 @@ fn main() {
     if llvm {
         match llvm_scalar::emit(&funcs, &sigs, target, llvm_trace) {
             Ok(ir) => { fs::write(pos[1], ir).unwrap();
-                let mut rt = emit_asm(&[], &[], target, false);
+                let mut rt = emit_asm(&[], &[], &[], target, false);
                 rt = rt.replace("call hbc_fn_main", "call ll_main");
                 rt.push_str("\n.globl hbc_trace_top\n");
                 fs::write(format!("{}.runtime.s",pos[1]), rt).unwrap();
@@ -20695,7 +20942,7 @@ fn main() {
             Err(e) => {eprintln!("error: {}",e);process::exit(1);}
         }
     }
-    let out = emit_asm(&funcs, &sigs, target, instrument);
+    let out = emit_asm(&funcs, &sigs, &externs, target, instrument);
 
     fs::write(pos[1], out)
         .unwrap_or_else(|e| { eprintln!("cannot write {}: {}", args[2], e); process::exit(2); });
