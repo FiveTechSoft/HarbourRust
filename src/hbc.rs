@@ -7889,7 +7889,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         // tag-8 guard in codegen; RHS before the free of
                         // the old cell payload (parent rule).
                         let vt = type_expr(e, env, sigs, *n)?;
-                        let persistent_cell = static_dyn(id) && matches!(e, Expr::Index(src, _) if static_dyn(src));
+                        let persistent_cell = static_dyn(id) && vt == Ty::Dyn;
                         if static_dyn(id) && !matches!(vt,Ty::I64|Ty::Bool) && !matches!(e,Expr::Nil) && !persistent_cell {
                             return Err(format!("line {}: persistent tagged STATIC array cell stores currently take integer/logical/NIL only",n));
                         }
