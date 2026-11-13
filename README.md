@@ -1,5 +1,7 @@
 # HarbourRust
 
+Write Harbour. Run native. Rust architecture.
+
 HarbourRust is an ahead-of-time compiler for Harbour, written in Rust. It translates Harbour source directly into x86-64 assembly and produces native executables: no VM, no interpreter. Support grows construct by construct, with byte-for-byte checks against the original Harbour compiler wherever applicable and explicit records of known differences. Unsupported syntax is rejected explicitly at compile time.
 
 ## Current status
@@ -17,11 +19,31 @@ LLVM and interactive-terminal support have separate limits. Source and probe
 changes are reviewed independently before publication.
 
 Linux `Date()` remains UTC, not local time. Date parameters and general dynamic
-Date storage are not supported; Windows runtime for the new port is unverified.
+Date storage are not supported. Windows smoke tests cover `CToD`, blank dates and
+`ValType` under Wine 11.0; `Date()` and the full Windows regression battery
+remain unverified.
 See the [Date port record](docs/DATE-PORT-2026-11-13.md) for the exact scope.
 
 See the [current baseline](docs/BASELINE-2026-11-13.md) for evidence, caveats,
 known failures and the history of published increments.
+
+## What the native path does not need
+
+| Component | HarbourRust ordinary AOT | Harbour pcode | Harbour `-gc3` |
+| --- | --- | --- | --- |
+| Harbour VM / HVM | No | Yes | Harbour VM/runtime services remain |
+| Pcode and its runtime interpreter | Neither | Pcode executed by the VM | Direct C for generated function bodies; Harbour runtime services remain |
+| Tracing garbage collector | No | Harbour runtime GC | Harbour runtime GC |
+| Harbour runtime/RTL linkage | Own embedded native helpers for the supported subset, not the full Harbour runtime | Harbour runtime/RTL | Harbour runtime/RTL |
+| C Extend API | Native bridge in construction; not available yet | Supported | Supported |
+
+No tracing GC does not mean no memory management: native allocation/free helpers manage supported values, and a limited persistent-value path uses reference counting. This is not full Harbour dynamic-sharing compatibility. `-gc3` generates C calls to Harbour's runtime helpers; it does not turn Harbour into the same freestanding native model as HarbourRust.
+
+## Use the release without Rust or a C compiler
+
+Download the prebuilt `hbc` (Linux x86-64) or `hbc.exe` (Windows x86-64) from [v0.1.1](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.1.1). **Neither Rust nor a C compiler is needed to use these binaries or to build the supported native-only examples.** The ordinary path is Harbour source -> `hbc` -> assembly -> GNU `as` -> GNU `ld` -> native executable. Linux needs GNU binutils; Windows needs MinGW-w64 binutils and its KERNEL32 import library, with the tool names required by `build.bat` on `PATH`.
+
+The release also includes `hello.exe`, `arrays_hashes.exe` and `dates.exe`: run these Windows samples directly without a compiler, assembler or linker. They were tested under Wine 11.0, not on real Windows. The compiler binaries have OS/library requirements listed in the release notes. Building `hbc` itself from source requires Rust; linking future C extensions will require a C toolchain, which is outside today's native-only path.
 
 ## Harbour standard-function compatibility
 
@@ -76,9 +98,10 @@ hello.exe
 
 The script chains `hbc.exe` -> assembler -> linker and stops on failure.
 `HBC` overrides its default older `dist\2-hbc.exe`; see the build instructions
-for prebuilt-binary provenance. Historical Windows binary checks used Wine
-10.20, not real Windows. The batch script itself has not been tested end to
-end on real Windows or under Wine. No current-HEAD Windows pass is implied.
+for prebuilt-binary provenance. The v0.1.1 compiler, this batch script and real Windows binutils were tested
+end to end under Wine 11.0 with the greeting, array/hash and date samples.
+Their stdout, stderr and exit status match the Linux/Harbour checks. This is
+a smoke test, not real-Windows verification or the full Windows battery.
 
 ## Documentation and samples
 
