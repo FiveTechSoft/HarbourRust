@@ -146,8 +146,8 @@ the current source (sections 1-4) for binaries matching HEAD.
 ## 7. Run the test battery
 
 With the compiler built (section 1), MinGW-w64 extracted (section 3) and
-Wine 10.20 unpacked (section 5). The runners emit `.s` and call the external
-`as`/`ld` path, so the internal writer is not exercised by them:
+Wine 10.20 unpacked (section 5). The Linux/Wine runner emits `.s` and calls
+the external `as`/`ld` path:
 
 ```
 M=tools/mingw/usr/bin \
@@ -156,6 +156,18 @@ WINE=/path/to/wine-10.20-amd64-wow64/bin/wine \
 WINEPREFIX=$PWD/wineprefix WINEDEBUG=-all \
 LD_LIBRARY_PATH=/path/to/wine-10.20-amd64-wow64/lib \
 bash tests/run_battery.sh
+```
+
+On real Windows, the tracked runner uses MinGW binutils by default;
+`HBC_INTERNAL_PE=1` switches it to hbc's internal PE writer, and `GEN_DIR`/
+`MANIFEST_FILE` isolate a run from other jobs:
+
+```
+M=tools/mingw/mingw64/bin \
+MLIB=tools/mingw/mingw64/x86_64-w64-mingw32/lib \
+HBC_INTERNAL_PE=1 GEN_DIR=work/gen-battery \
+MANIFEST_FILE=tests/manifest.txt \
+bash tests/run_battery_win.sh
 ```
 
 `tests/manifest.txt` lists every case: `pos` cases must print the exact

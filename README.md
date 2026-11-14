@@ -111,6 +111,17 @@ work in progress. No unmeasured speed or capability claims are made.
   supported subset, as before.
   See [scope, model and tests](docs/CLASSES.md).
 
+- **Threads and mutexes.** In main and v0.8.0, on Linux x86-64: `hb_threadStart`/
+  `Join`/`Wait`/`Self`/`Detach`/`WaitForAll` and mutex create/lock/unlock/eval/
+  notify queues over an own clone(2)+futex runtime, one-shot initialization and
+  the MT-aware object runtime. Public gates run same-source probes against real
+  Harbour in both modes. Declared limits: Linux-only (`--target=windows` is a
+  named rejection), literal thread arguments only, an error inside a thread
+  prints to stderr and returns NIL instead of opening the interactive error box,
+  `--instrument` with threads is rejected and `hb_memcheck` counters are
+  approximate while threads run.
+  See [scope and limits](docs/THREADS.md).
+
 ## What the native path does not need
 
 | Component | HarbourRust ordinary AOT | Harbour pcode | Harbour `-gc3` |
