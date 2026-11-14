@@ -16,6 +16,8 @@
 
 Each runner snapshots the manifest to `GEN_DIR/manifest.snapshot` and
 records its SHA at start, so concurrent edits cannot corrupt a run.
+Do not edit a runner script while an instance is active: bash may read the
+file lazily, so changes take effect on the next run.
 
 Text expectations are stored with LF (`.gitattributes`).
 `t1041_longstr_linux.out`, `t1041_longstr_windows.out` and
