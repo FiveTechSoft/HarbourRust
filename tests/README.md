@@ -30,5 +30,8 @@ Additional suites and gates:
 - `procmeta/` and `hash-ownership/`: exact stdout/stderr fixtures used by
   `tools/check_procmeta.py` and `tools/check_hash_ownership.py`
   (`--compiler`, `--output`, optional `--wine`).
+- `tools/check_host_target.py`: host-target default matrix; needs separate
+  Linux and Windows compiler binaries plus Wine (`--linux-compiler`,
+  `--windows-compiler`, `--wine`, `--wine-prefix`, `--output`).
 - `oracles/`, `probes/`, `probes/legacy-hk/`: Harbour oracle sources and
   historical probes; see their README files and `3-MANIFEST.md`.
