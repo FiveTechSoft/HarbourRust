@@ -44,6 +44,7 @@ thread_local! {
     // Compiler admission flag only, never emitted user mutable state.
     static DBF_USED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static CURDIR_LINUX_NATIVE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    static MACHO_MODE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
 // The preprocessor is part of hbc: every compile runs it automatically
@@ -5787,7 +5788,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::Date);
             }
             if is_builtin(id,"curdir") {
-                if !CURDIR_LINUX_NATIVE.with(|v| v.get()) {
+                if !CURDIR_LINUX_NATIVE.with(|v| v.get()) && !MACHO_MODE.with(|v| v.get()) {
                     return Err(format!("line {}: CurDir is measured only on the ordinary Linux backend in this increment", n));
                 }
                 if args.len() > 1 || args.iter().any(|a| !matches!(a, Expr::Str(_) | Expr::Nil)) {
@@ -23162,7 +23163,9 @@ hbc_seq_exc: .skip 4096
     out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
     out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
     // Emit the cwd helper only when referenced (independent of output rendering).
-    if out.contains("call hbc_curdir_linux") { out.push_str(CURDIR_LINUX_HELPER); }
+    if out.contains("call hbc_curdir_linux") {
+        out.push_str(if MACHO_MODE.with(|v| v.get()) { CURDIR_DARWIN_HELPER } else { CURDIR_LINUX_HELPER });
+    }
     {
         let active=DBF_USED.with(|v|v.get());
     // Scope arena (Goose hybrid I2): emitted ONLY when the program has at
@@ -23323,7 +23326,13 @@ fn finalize_threads(out: String) -> String {
 fn finalize_trace(mut out: String, target: Target) -> String {
     if out.contains("call hbc_ctod") || out.contains("call hbc_date_today") || out.contains("call hbc_date_render") {
         out.push_str(DATE_PORT_HELPERS);
-        out.push_str(match target {Target::Linux=>DATE_TODAY_LINUX,Target::Windows=>DATE_TODAY_WINDOWS});
+    }
+    if out.contains("call hbc_date_today") {
+        out.push_str(if MACHO_MODE.with(|v| v.get()) {
+            DATE_TODAY_DARWIN
+        } else {
+            match target {Target::Linux=>DATE_TODAY_LINUX,Target::Windows=>DATE_TODAY_WINDOWS}
+        });
     }
     // Add private stderr variants only when used. No mutable routing state:
     // nested OutStd/QOut and controlled diagnostics retain their destination.
@@ -25909,6 +25918,7 @@ fn main() {
     }
     if macho_arm64 { eprintln!("error: Mach-O ARM64 code generation is not implemented yet; --target=macho selects Intel x86-64, not native ARM64"); process::exit(1); }
     if macho && (llvm || external_as) { eprintln!("error: Mach-O Intel currently requires the internal native backend; LLVM and --external-as are not ported"); process::exit(1); }
+    MACHO_MODE.with(|v| v.set(macho));
     CURDIR_LINUX_NATIVE.with(|v| v.set(!macho && !llvm && matches!(target, Target::Linux)));
     if llvm && instrument { eprintln!("error: LLVM scalar: --instrument is not supported; registry checks must not be silently omitted"); process::exit(1); }
     // Preprocessing runs automatically on every compile. Errors cite the
@@ -26448,7 +26458,7 @@ fn main() {
     });
     let arena_active = !macho && !no_arena && !THREADS.with(|c| c.get()) && ARENA_MAP.with(|m| m.borrow().values().any(|a| a.any()));
     ARENA_ACTIVE.with(|a| a.set(arena_active));
-    if macho && (DBF_USED.with(|v|v.get()) || THREADS.with(|v|v.get()) || !externs.is_empty() || CLASSES.with(|v|!v.borrow().is_empty())) { eprintln!("error: Mach-O Intel: DBF, threads, EXTERNAL and classes are not ported in this increment"); process::exit(1); }
+    if macho && (DBF_USED.with(|v|v.get()) || THREADS.with(|v|v.get()) || !externs.is_empty()) { eprintln!("error: Mach-O Intel: DBF, threads and EXTERNAL are not ported in this increment"); process::exit(1); }
     let out = vas::finish(emit_asm(&funcs, &sigs, &externs, target, instrument), target, instrument);
     let out = if macho { hmacho::darwin_asm(&out).unwrap_or_else(|e| {eprintln!("error: {}",e);process::exit(1);}) } else {out};
 
@@ -27032,6 +27042,60 @@ hbc_curdir_linux:
     ret
 "#;
 
+const CURDIR_DARWIN_HELPER: &str = r#"
+    .text
+hbc_curdir_linux:
+    push %rbp
+    mov %rsp, %rbp
+    sub $1040, %rsp
+    lea .Lcurdir_dot(%rip), %rdi
+    xor %esi, %esi
+    mov $2, %eax
+    syscall
+    test %rax, %rax
+    js .Lcurdir_empty
+    mov %rax, -8(%rbp)
+    mov -8(%rbp), %rdi
+    mov $50, %esi
+    lea -1040(%rbp), %rdx
+    mov $72, %eax
+    syscall
+    mov %rax, -16(%rbp)
+    mov -8(%rbp), %rdi
+    mov $3, %eax
+    syscall
+    mov -16(%rbp), %rax
+    test %rax, %rax
+    jnz .Lcurdir_empty
+    lea -1040(%rbp), %r8
+    cmpb $47, (%r8)
+    jne .Lcurdir_empty
+    xor %ecx, %ecx
+.Lcurdir_len:
+    cmpb $0, (%r8,%rcx)
+    je .Lcurdir_len_done
+    inc %rcx
+    cmp $1040, %rcx
+    jae .Lcurdir_empty
+    jmp .Lcurdir_len
+.Lcurdir_len_done:
+    test %rcx, %rcx
+    jz .Lcurdir_empty
+    lea 1(%r8), %rdi
+    mov %rcx, %rsi
+    dec %rsi
+    jmp .Lcurdir_copy
+.Lcurdir_empty:
+    mov %rsp, %rdi
+    xor %esi, %esi
+.Lcurdir_copy:
+    call hbc_strcpy
+    leave
+    ret
+.Lcurdir_dot:
+    .asciz "."
+"#;
+
 // Own packed calendar scalar, YYYYMMDD (zero empty). Not a Harbour Julian
 // payload and never exposed as an integer. Order preserves calendar order.
 // Parser behavior was measured independently; all digit accumulators wrap
@@ -27198,6 +27262,76 @@ hbc_date_today:
     syscall
     test %rax, %rax
     js .Ldate_today_fail
+    xor %edx, %edx
+    mov $86400, %ecx
+    div %rcx
+    mov %rax, -8(%rbp)
+    movl $1970, -12(%rbp)
+.Ldate_today_year:
+    mov -12(%rbp), %r8d
+    mov $2, %r9d
+    mov $29, %r10d
+    call hbc_date_pack
+    mov $365, %ecx
+    test %rax, %rax
+    jz .Ldate_today_year_days
+    inc %ecx
+.Ldate_today_year_days:
+    cmp %rcx, -8(%rbp)
+    jb .Ldate_today_month_start
+    sub %rcx, -8(%rbp)
+    incl -12(%rbp)
+    jmp .Ldate_today_year
+.Ldate_today_month_start:
+    movl $1, -16(%rbp)
+.Ldate_today_month:
+    mov -12(%rbp), %r8d
+    mov -16(%rbp), %r9d
+    lea .Ldate_month_lengths(%rip), %rcx
+    movzbl -1(%rcx,%r9), %r10d
+    cmp $2, %r9d
+    jne .Ldate_today_month_days
+    mov $29, %r10d
+    call hbc_date_pack
+    mov $28, %r10d
+    test %rax, %rax
+    jz .Ldate_today_month_days
+    inc %r10d
+.Ldate_today_month_days:
+    cmp %r10, -8(%rbp)
+    jb .Ldate_today_finish
+    sub %r10, -8(%rbp)
+    incl -16(%rbp)
+    jmp .Ldate_today_month
+.Ldate_today_finish:
+    mov -12(%rbp), %r8d
+    mov -16(%rbp), %r9d
+    mov -8(%rbp), %r10d
+    inc %r10d
+    call hbc_date_pack
+    leave
+    ret
+.Ldate_today_fail:
+    xor %eax, %eax
+    leave
+    ret
+"#;
+
+const DATE_TODAY_DARWIN: &str = r#"
+    .text
+# Preserve existing UTC contract. gettimeofday replaces time(); local
+# timezone handling is deferred. timeval: tv_sec at 0, tv_usec at 8.
+hbc_date_today:
+    push %rbp
+    mov %rsp, %rbp
+    sub $48, %rsp
+    lea -48(%rbp), %rdi
+    xor %esi, %esi
+    mov $96, %eax
+    syscall
+    test %rax, %rax
+    js .Ldate_today_fail
+    mov -48(%rbp), %rax
     xor %edx, %edx
     mov $86400, %ecx
     div %rcx

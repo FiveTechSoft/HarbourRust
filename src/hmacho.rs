@@ -94,10 +94,11 @@ pub fn from_elf(elf: &[u8]) -> Result<Vec<u8>, String> {
     Ok(out)
 }
 
-// Lower only the four OS operations used by the portable scalar/container
-// runtime. An added syscall is a compile-time error, never passed to Darwin
-// with a Linux number. Preserve rdx (Darwin has a second return register) and
-// r10 (mmap flags); retain Linux's negative-error convention for consumers.
+// Lower only the OS operations used by the portable scalar/container
+// runtime, CurDir (open/fcntl/close) and Date (gettimeofday). An added
+// syscall is a compile-time error, never passed to Darwin with a Linux
+// number. Preserve rdx (Darwin has a second return register) and r10
+// (mmap flags); retain Linux's negative-error convention for consumers.
 pub fn darwin_asm(src: &str) -> Result<String, String> {
     let lines: Vec<&str> = src.lines().collect();
     let mut out = String::new();
@@ -117,7 +118,7 @@ pub fn darwin_asm(src: &str) -> Result<String, String> {
             }
         }
         let n = number.ok_or_else(|| format!("Mach-O: unclassified syscall at assembly line {}", i + 1))?;
-        let mac = match n { 1 => 4, 9 => 197, 11 => 73, 60 => 1,
+        let mac = match n { 1 => 4, 2 => 5, 3 => 6, 9 => 197, 11 => 73, 60 => 1, 72 => 92, 96 => 116,
             _ => return Err(format!("Mach-O Intel: OS operation {} is not ported in this increment", n)), };
         serial += 1;
         out.push_str("    push %rdx\n");
@@ -127,9 +128,11 @@ pub fn darwin_asm(src: &str) -> Result<String, String> {
         out.push_str("    pop %rdx\n");
     }
     // Preserve the kernel stack pointer for arena getenv before alignment.
+    // Anchor on newline so `.Ldate_today_month_start:` (contains `_start:`)
+    // is not mistaken for the entry point.
     let out = if out.contains("_start:\n    mov %rsp, %rdi\n    call hbc_arena_env_init") {
         out.replace("_start:\n    mov %rsp, %rdi\n    call hbc_arena_env_init", "_start:\n    mov %rsp, %rdi\n    and $-16, %rsp\n    call hbc_arena_env_init")
-    } else {out.replace("_start:\n", "_start:\n    and $-16, %rsp\n")};
+    } else {out.replace("\n_start:\n", "\n_start:\n    and $-16, %rsp\n")};
     Ok(out.replace("# target: linux - no libc, I/O via own syscall helpers at the end", "# target: macho - experimental Intel Darwin syscall runtime"))
 }
 
@@ -170,7 +173,7 @@ mod tests {
     }
     #[test]
     fn lower_only_known_operations() {
-        for (linux,mac) in [(1,4),(9,197),(11,73),(60,1)] {
+        for (linux,mac) in [(1,4),(2,5),(3,6),(9,197),(11,73),(60,1),(72,92),(96,116)] {
             let out=darwin_asm(&format!("mov ${}, %eax\n    syscall\n",linux)).unwrap();
             assert!(out.contains(&format!("mov ${}, %eax",0x2000000+mac)));
             assert!(out.contains("push %rdx")&&out.contains("pop %rdx"));
