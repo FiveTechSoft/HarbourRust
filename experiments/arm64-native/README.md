@@ -334,3 +334,27 @@ fixed versus mixed-local display, integer extrema, mixed overflow promotion,
 signed zero and decimal provenance. All images pass structural/page-hash
 checks. These are raw kernel/result contracts, not 149 supported source
 programs, a fresh Harbour oracle, real-Mac execution or TRY/unwind support.
+
+## I64 metadata transport before runtime source arithmetic
+
+The private source-call convention now retains each caller's evaluated
+16-byte argument temporary until the callee returns. Existing x0..x7 argument
+register words and limits are unchanged; x8 borrows a pointer to those pair
+temporaries. After capturing the incoming register arguments, the callee
+loads I64 format metadata from the matching pair slot instead of stamping
+literal/copy format 1. F64 still uses two register words; logical arguments
+use one. Return x0/x1 already carries payload and format. x8 is private
+scratch, not a claim about standard AAPCS/Darwin external-call compatibility.
+The pointer never outlives its caller-owned stack area. No new heap ownership
+or mixed NumLocal call/return ABI follows from this change.
+
+This prepares for computed-I64 provenance but does NOT admit source runtime
+arithmetic yet. Current literal/copy programs remain byte-exact against
+current executed x86 output. A new two-program, three-mode source cohort
+checks nested calls, independent copies, returns and eight scalar arguments.
+A second pass explicitly injects format 0/1 words into the emulated caller's
+local slots at marked write observations and checks exact words in nested
+callee locals and returned copies. This injection is raw ABI fixture data,
+not a claim that source arithmetic produced those values. Existing scalar,
+F64, mixed-local, source-origin and frame-limit cohorts still pass; register
+word overflow, arithmetic AST and unsupported escapes still reject.

@@ -273,10 +273,13 @@ impl E<'_> {
                         reg += 1;
                     }
                 }
+                // Keep evaluated pairs alive for the private callee metadata view.
+                // x0..x7 still carry the same scalar/F64 register words.
+                self.c.imm(8, 31, 0, false, false)?;
+                self.c.b(&format!("fn_{n}"), true);
                 if !args.is_empty() {
                     self.c.imm(31, 31, (16 * args.len()) as u16, false, false)?;
                 }
-                self.c.b(&format!("fn_{n}"), true);
                 Ok(ret)
             }
             _ => Err(format!(
@@ -518,18 +521,25 @@ pub fn emit(funcs: &[Func], sigs: &[Sig]) -> Result<Vec<u8>, String> {
         if words > 8 {
             return Err("pair-AST signature exceeds eight register words".into());
         }
+        // Incoming x8 borrows caller argument-pair temporaries until return.
+        // Capture it before any parameter register or stack work can overwrite it.
+        e.c.copy(15, 8)?;
         e.c.imm(31, 31, 64, true, false)?;
         for reg in 0..8 {
             e.c.ldst(reg, 31, (reg as u16) * 8, false)?;
         }
         let mut reg = 0;
-        for (n, k) in f.params.iter().zip(kinds) {
+        for (index, (n, k)) in f.params.iter().zip(kinds).enumerate() {
             e.slot += 16;
             e.c.ldst(0, 31, reg * 8, true)?;
             reg += 1;
             if k == K::Float {
                 e.c.ldst(1, 31, reg * 8, true)?;
                 reg += 1;
+            } else if k == K::Int {
+                // Caller pushes arguments left-to-right, so the first is highest.
+                let off = (16 * (f.params.len() - 1 - index) + 8) as u16;
+                e.c.ldst(1, 15, off, true)?;
             } else {
                 e.c.mov(1, 1)?;
             }
