@@ -170,6 +170,13 @@ MANIFEST_FILE=tests/manifest.txt \
 bash tests/run_battery_win.sh
 ```
 
+`tests/run_battery_win_compile.ps1` is a front-end-only gate for a plain
+Windows install: it runs every manifest entry through `hbc.exe
+--target=windows` and checks compile acceptance and named negative messages,
+without assembling, linking, executing or requiring MinGW, Rust, bash or
+Wine. Runtime behavior is not covered there; use the runner above for
+execution.
+
 `tests/manifest.txt` lists every case: `pos` cases must print the exact
 expected bytes on Linux and under Wine, `posx` adds the exit code, `neg`
 cases must fail compilation with the named message on both targets.
