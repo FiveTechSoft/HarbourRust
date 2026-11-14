@@ -1,0 +1,16 @@
+request DBFNTX
+function Main()
+   dbUseArea(.T., "DBFNTX", "ntxprobe.dbf", "PROBE", .F., .F.)
+   OrdCreate("unique.ntx", "UNIQUE", "NAME", {||FieldGet(1)}, .T.)
+   OrdCondSet(,,,,,,,,,,.T.)
+   OrdCreate("descending.ntx", "DESC", "NAME", {||FieldGet(1)})
+   OrdCondSet("ID > 125", {||FieldGet(2)>125})
+   OrdCreate("conditional.ntx", "COND", "NAME", {||FieldGet(1)})
+   OrdCreate("numeric.ntx", "NUM", "ID", {||FieldGet(2)})
+   OrdCreate("expression.ntx", "EXPR", "Upper(NAME)", {||Upper(FieldGet(1))})
+   dbCloseArea()
+   dbCreate("zero", {{"NAME","C",12,0}}, "DBFNTX")
+   dbUseArea(.T., "DBFNTX", "zero.dbf", "ZERO", .F., .F.)
+   OrdCreate("zero.ntx", "ZERO", "NAME", {||FieldGet(1)})
+   dbCloseArea()
+return nil

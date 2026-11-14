@@ -1538,8 +1538,8 @@ const ASM_RESERVED: &[&str] = &[
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
-    match id { "fieldget" | "dbclosearea" | "dbgotop" | "dbskip" => Some(Ty::Dyn),
-        "recno" | "lastrec" => Some(Ty::I64), "bof" | "eof" | "deleted" | "dbusearea" => Some(Ty::Bool), _ => None }
+    match id { "fieldget" | "dbclosearea" | "dbgotop" | "dbgobottom" | "ordlistclear" | "dbskip" => Some(Ty::Dyn),
+        "recno" | "lastrec" => Some(Ty::I64), "bof" | "eof" | "deleted" | "dbusearea" | "ordlistadd" | "dbseek" | "found" => Some(Ty::Bool), _ => None }
 }
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
@@ -4657,6 +4657,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         return Err(format!("line {}: DBF supports one alias, literal DBFNTX, shared=.F. and readonly=.T.; writes, shared access and other drivers are not supported",n));
                     }
                     if !matches!(type_expr(&args[2],env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: DBF filename must be a string",n));}
+                } else if id=="ordlistadd" || id=="dbseek" {
+                    if (id=="ordlistadd"&&args.len()!=1)||(id=="dbseek"&&(args.is_empty()||args.len()>3)){return Err(format!("line {}: {} expects {}",n,id,if id=="ordlistadd"{"one filename string"}else{"one key string and up to two logical flags"}));}
+                    if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: NTX {} expects a statically typed string (Dyn queries are outside this increment)",n,id));}
+                    for a in &args[1..]{if type_expr(a,env,sigs,n)?!=Ty::Bool{return Err(format!("line {}: NTX seek flags must be logical",n));}}
                 } else if id=="dbskip" || id=="fieldget" {
                     if args.len()>1 || (id=="fieldget"&&args.is_empty()) {return Err(format!("line {}: {} expects {} integer argument",n,id,if id=="dbskip" {"zero or one"} else {"one"}));}
                     for a in args {if !matches!(type_expr(a,env,sigs,n)?,Ty::I64|Ty::Dyn){return Err(format!("line {}: {} expects integer position",n,id));}}
@@ -8872,6 +8876,16 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     if expr_ty(&args[2],env,sigs)==Ty::StrOwn && !matches!(&args[2],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
                     out.push_str("    add $16, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n");
                 },
+                "ordlistadd" | "dbseek" => {
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    sub $48, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 16(%rsp)\n    movq $0, 24(%rsp)\n");
+                    for (i,a) in args.iter().enumerate().skip(1){cg_value(a,env,sigs,strs,out,target);out.push_str(&format!("    mov %rax, {}(%rsp)\n",8+i*8));}
+                    out.push_str("    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n");
+                    out.push_str(if id=="ordlistadd"{"    call hrdbf_app_order_add\n"}else{"    call hrdbf_app_seek\n"});
+                    out.push_str("    mov %rax, 32(%rsp)\n");
+                    if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)){out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+                    out.push_str("    mov 32(%rsp), %rax\n    xor %edx, %edx\n    add $48, %rsp\n");
+                },
                 "fieldget" | "dbskip" => {
                     if args.is_empty(){out.push_str("    mov $1, %eax\n");}else{
                         cg_value(&args[0],env,sigs,strs,out,target);
@@ -8882,9 +8896,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     else{out.push_str("    call hrdbf_app_skip\n    mov $1, %eax\n    xor %edx, %edx\n");}
                 },
                 _ => {
-                    let helper=match id.as_str(){"dbclosearea"=>"close","dbgotop"=>"top","recno"=>"recno","lastrec"=>"lastrec","bof"=>"bof","eof"=>"eof","deleted"=>"deleted",_=>unreachable!()};
+                    let helper=match id.as_str(){"dbclosearea"=>"close","dbgotop"=>"top","dbgobottom"=>"bottom","ordlistclear"=>"order_clear","found"=>"found","recno"=>"recno","lastrec"=>"lastrec","bof"=>"bof","eof"=>"eof","deleted"=>"deleted",_=>unreachable!()};
                     out.push_str(&format!("    call hrdbf_app_{}\n",helper));
-                    if matches!(id.as_str(),"dbclosearea"|"dbgotop"){out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");}
+                    if matches!(id.as_str(),"dbclosearea"|"dbgotop"|"dbgobottom"|"ordlistclear"){out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");}
                 }
             }
         }
