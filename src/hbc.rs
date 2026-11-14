@@ -3883,6 +3883,19 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     // an array of strings (the hb_HKeys shape).
                     } else if ty == Ty::StrOwn {
                         pin_vars(f, &Expr::Var(id.clone()), Ty::DArrS, pin, n)?;
+                    } else if ty == Ty::I64 {
+                        // p[i] read in an integer context (a comparison
+                        // like `if qtys[i] > 0` or arithmetic): the element
+                        // is a scalar, so the parameter is a flat dynamic
+                        // array (the t435 mut(x) shape). Without this the
+                        // named call-argument rejection fired for a plain
+                        // element read, and the failed round left the
+                        // function's other pins unlanded, surfacing a
+                        // stale round-1 error (`len` expects an array) at
+                        // an unrelated line. Conflicts at call sites
+                        // (an element used where the caller passes a
+                        // different array kind) still reject by name.
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::DArr, pin, n)?;
                     } else {
                         return Err(format!("line {}: array parameters are not in this increment", n));
                     }
