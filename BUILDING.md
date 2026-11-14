@@ -8,6 +8,28 @@ included with `include_str!` (`hrobj_blob.s`, `hrobj_blob_mt.s`,
 Everything below was tested with the versions noted; newer versions will
 usually work, but these are the verified ones.
 
+## Use the tracked Windows compiler without a toolchain
+
+`bin/hbc.exe` is the tracked Windows x86-64 compiler snapshot, added in
+`8299ee4` from source `e17223f`, not the historical v0.1.1 download.
+Using it for supported native-only programs requires no Rust, MinGW, C
+compiler, external assembler or linker. From the repository root on Windows:
+
+```bat
+bin\hbc.exe tests\samples\hello.prg hello.exe
+hello.exe
+```
+
+The own writers produce ELF (Linux x86-64), PE32+ (Windows x86-64) and
+experimental Mach-O (macOS Intel x86-64). Native ARM64 remains rejected.
+The exact tracked Windows compiler has Wine 11.0 smoke evidence, not native
+Windows verification; Intel Mach-O has no hardware smoke yet. Section 4 pins
+the source/hash and scope. This is a main snapshot, not a published v0.9.0
+binary. Compiler-build dependencies below are not requirements for using it.
+Only the legacy `--external-as`/explicit assembly pipeline needs assembler
+and linker tools; its Windows path uses MinGW-w64 binutils/import libraries.
+C extensions and the hbmk2 adapter separately need their C toolchain.
+
 ## 1. Build the compiler on Linux
 
 Verified with rustc 1.99.1 (stable).
@@ -89,7 +111,8 @@ The emitted code only calls `kernel32.dll` (`GetStdHandle`, `WriteFile`,
 ## 4. Build the compiler itself as a Windows .exe (hbc.exe)
 
 A current precompiled Windows x86-64 compiler is tracked at `bin/hbc.exe`.
-From the repository root on Windows, no Rust installation is needed to use it:
+From the repository root on Windows, no Rust, MinGW, C compiler, external
+assembler or linker is needed for the supported native-only path:
 
 ```bat
 bin\hbc.exe tests\samples\hello.prg hello.exe
@@ -101,7 +124,9 @@ This binary was cross-built from compiler source at
 at `ecdd2d457e5b2f4e8d360b0bdcdaa58440898a7f`). SHA256:
 `5e1b1e010e609b39a2e05d4d4c3ff47aa079463840ea27633f8f1e6d51a0af0c`.
 Refresh `bin/hbc.exe` and this source pin/hash when the compiler changes;
-it is a versioned snapshot, not automatically rebuilt by `git pull`.
+it is a versioned snapshot, not automatically rebuilt when source changes.
+It was added in `8299ee4`; it is not the v0.1.1 compiler and is not yet a
+published v0.9.0 binary.
 
 Fresh verification used Wine 11.0: this exact compiler, without a target flag,
 compiled `hello.prg` and the four positive `tests/try-catch/` programs to PE32+;
@@ -155,14 +180,17 @@ wine ./hbc.exe prog.prg prog.s --target=windows
 Wine 11.20 was also tried but does not start in constrained containers
 (32 GB address-space reservation); use 10.20.
 
-## 6. Prebuilt binaries in this repo
+## 6. Current snapshot and historical repository binaries
 
-Under `dist/`:
+Use `bin/hbc.exe` for the tracked Windows snapshot described in section 4.
+The `dist/` files below are historical and do not describe its version or
+native-writer requirements:
+
 
 | File          | Platform            | Description                               |
 | ------------- | ------------------- | ----------------------------------------- |
-| `1-hbc`     | Linux x86-64        | The compiler                              |
-| `2-hbc.exe` | Windows x86-64      | The compiler, cross-built as in section 4 |
+| `1-hbc`     | Linux x86-64        | Historical compiler                       |
+| `2-hbc.exe` | Windows x86-64      | Historical compiler, not current bin/hbc.exe |
 | `3-hello.exe` | Windows x86-64      | `tests/samples/hello.prg` compiled as in section 3 |
 
 The numeric prefixes are an artifact of the upload tool used to publish
@@ -184,7 +212,7 @@ exact commands of section 3 and needs MinGW-w64 binutils on PATH on real
 Windows (not exercised under Wine, where our as/ld are Linux binaries).
 
 If `src/hbc.rs` at HEAD is newer than that
-commit, the prebuilt binaries correspond to the older source; rebuild from
+commit, these historical `dist/` binaries correspond to the older source; rebuild from
 the current source (sections 1-4) for binaries matching HEAD.
 
 ## 7. Run the test battery
@@ -202,13 +230,12 @@ LD_LIBRARY_PATH=/path/to/wine-10.20-amd64-wow64/lib \
 bash tests/run_battery.sh
 ```
 
-On real Windows, the tracked runner uses MinGW binutils by default;
+The Windows execution runner uses MinGW binutils by default;
 `HBC_INTERNAL_PE=1` switches it to hbc's internal PE writer, and `GEN_DIR`/
-`MANIFEST_FILE` isolate a run from other jobs:
+`MANIFEST_FILE` isolate a run from other jobs. In internal-PE mode it does not
+need MinGW, so no `M` or `MLIB` setup is required:
 
 ```
-M=tools/mingw/mingw64/bin \
-MLIB=tools/mingw/mingw64/x86_64-w64-mingw32/lib \
 HBC_INTERNAL_PE=1 GEN_DIR=work/gen-battery \
 MANIFEST_FILE=tests/manifest.txt \
 bash tests/run_battery_win.sh

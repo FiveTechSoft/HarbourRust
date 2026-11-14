@@ -1,3 +1,9 @@
+> Toolchain note (14 November 2026): assembler/MinGW requirements below are
+> historical. Current `bin/hbc.exe` uses own native writers and needs no Rust,
+> MinGW, external assembler or linker to compile supported native-only programs.
+> See [current usage](../README.md#use-hbc-without-rust-mingw-or-a-c-compiler)
+> and [the tracked compiler pin and caveats](../BUILDING.md).
+
 > Historical probe note (2026-11-13): `archived-probe:` and `historical-probe:` identify evidence from earlier revisions, not current checkout paths. The extra probe directory was removed at the owner's request; the regression manifest and oracle corpus remain. Its last full snapshot is in commit `595ecd87b214068047844acbf430f0da817deeb7`.
 
 > Historical development record, retained from the former root README.

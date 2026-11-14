@@ -4,7 +4,7 @@ Write Harbour. Run native. Rust architecture.
 
 ![Harbour 4 Flash Edition](assets/harbour4-flash-edition.jpg)
 
-HarbourRust is an ahead-of-time compiler for Harbour, written in Rust. It translates Harbour source directly into x86-64 assembly and produces native executables: no VM, no interpreter. Support grows construct by construct, with byte-for-byte checks against the original Harbour compiler wherever applicable and explicit records of known differences. Unsupported syntax is rejected explicitly at compile time. Harbour sources in this repository use the standard `.prg` extension.
+HarbourRust is an ahead-of-time native compiler for Harbour, written in Rust. **It is NOT a Harbour-to-Rust translator.** Its ordinary path compiles supported Harbour source to x86-64 machine code and packages it with its own ELF, PE32+ or experimental Intel Mach-O writer. No Rust source is generated, and no Rust toolchain is involved when using an already-built `hbc`. Rust is the implementation language of the compiler, not an intermediate language for your program. There is no VM or interpreter. Support grows construct by construct, with byte-for-byte checks against the original Harbour compiler wherever applicable and explicit records of known differences. Unsupported syntax is rejected explicitly at compile time. Harbour sources in this repository use the standard `.prg` extension.
 
 ## Memory model
 
@@ -154,15 +154,26 @@ work in progress. No unmeasured speed or capability claims are made.
 
 No tracing GC does not mean no memory management: native allocation/free helpers manage supported values, and a limited persistent-value path uses reference counting. This is not full Harbour dynamic-sharing compatibility. `-gc3` generates C calls to Harbour's runtime helpers; it does not turn Harbour into the same freestanding native model as HarbourRust.
 
-## Use the release without Rust or a C compiler
+## Use hbc without Rust, MinGW or a C compiler
 
-Download the prebuilt `hbc` (Linux x86-64) or `hbc.exe` (Windows x86-64) from [v0.1.1](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.1.1). **Neither Rust nor a C compiler is needed to use these binaries or to build the supported native-only examples.** Current-source `hbc` writes the native executable itself: Harbour source -> `hbc` -> native ELF (Linux x86-64) or PE32+ (Windows x86-64), with no external assembler or linker. The v0.1.1 binaries above predate that writer and still follow the older assembly -> GNU `as` -> GNU `ld` path, which current-source `hbc` keeps behind `--external-as`. The internal PE writer emits a console image with entry `_start`, fixed ImageBase `0x140000000` and imports limited to a measured kernel32 whitelist (`ExitProcess`, `GetEnvironmentVariableA`, `GetLocalTime`, `GetProcessHeap`, `GetStdHandle`, `HeapAlloc`, `HeapFree`, `WriteFile`); no CRT, SEH, TLS or base relocations are supported.
+The Windows x86-64 compiler is tracked in this repository at [`bin/hbc.exe`](bin/hbc.exe). From a checkout, use it directly; no separate compiler download, Rust installation, MinGW, external assembler or external linker is needed for supported native-only programs:
 
-VAS-eligible programs add `GetSystemInfo`, `VirtualAlloc` and `VirtualFree` to this whitelist (11 entries); ineligible programs retain the original eight-entry whitelist.
+```bat
+bin\hbc.exe tests\samples\hello.prg hello.exe
+hello.exe
+```
 
-The later tags (v0.2.0 through v0.8.0) are source-only: they publish no binary assets, so build from current source for those features.
+**The tracked compiler is a main-branch snapshot, not the old v0.1.1 compiler.** It was built from source at `e17223f` and added to the repository in `8299ee4`; its full source pin and SHA256 are in [BUILDING.md](BUILDING.md#4-build-the-compiler-itself-as-a-windows-exe-hbcexe). It is not automatically rebuilt when source changes. v0.9.0 is not published yet; this snapshot is not a released v0.9.0 binary.
 
-The release also includes `hello.exe`, `arrays_hashes.exe` and `dates.exe`: run these Windows samples directly without a compiler, assembler or linker. They were tested under Wine 11.0, not on real Windows. The compiler binaries have OS/library requirements listed in the release notes. Building `hbc` itself from source requires Rust; building and linking C extensions with the bounded C bridge requires a C toolchain, which is outside the native-only path. The bridge is in current source, not in the older v0.1.1 compiler binaries.
+`hbc` writes supported native executables itself: ELF on Linux x86-64, PE32+ on Windows x86-64, and experimental Mach-O on macOS Intel x86-64. The native-only path needs no external assembler/linker or MinGW import libraries. The tracked compiler defaults to Windows output; use an explicit target for cross-compilation. Mach-O has structural checks but no real-Mac hardware smoke yet; native ARM64 output remains rejected. The exact tracked `bin/hbc.exe` was verified under Wine 11.0, not native Windows: hello and four positive TRY programs compiled and ran, and two TRY negatives rejected. This is not a full-manifest or general compatibility claim.
+
+The internal PE writer emits a console image with entry `_start`, fixed ImageBase `0x140000000` and imports limited to a measured kernel32 whitelist (`ExitProcess`, `GetEnvironmentVariableA`, `GetLocalTime`, `GetProcessHeap`, `GetStdHandle`, `HeapAlloc`, `HeapFree`, `WriteFile`). VAS-eligible programs add `GetSystemInfo`, `VirtualAlloc` and `VirtualFree` (11 entries); ineligible programs retain the original eight. No CRT, SEH, TLS or base relocations are supported.
+
+`--external-as` selects the legacy assembler/linker path. Its Windows route still needs MinGW-w64 binutils and the kernel32 import library. Building `hbc` itself requires Rust and a suitable compiler-build toolchain; building/linking C extensions or using the hbmk2 adapter requires a C toolchain. Those are separate from using the native-only compiler above.
+
+### Historical release binaries
+
+[v0.1.1](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.1.1) contains older Linux/Windows compilers that predate the native writer and the C Extend bridge. They still need the old assembler/linker pipeline and are not the current tracked compiler. Its `hello.exe`, `arrays_hashes.exe` and `dates.exe` samples run without a compiler, assembler or linker; their recorded smoke was Wine 11.0, not real Windows. See that release's notes for OS/library requirements. Tags v0.2.0 through v0.8.0 have no binary release assets; do not confuse them with the separately tracked `bin/hbc.exe` snapshot.
 
 ## Harbour standard-function compatibility
 
@@ -208,7 +219,7 @@ See the [host-target check and limits](docs/HOST-TARGET-DEFAULT.md).
 The compiler build uses Rust's standard library; no Cargo dependencies are
 needed. [Build instructions](BUILDING.md) cover Windows cross-compilation,
 Wine, prebuilt-binary caveats and the test runner. Rebuild from current source
-rather than assuming the older prebuilt binaries match HEAD.
+rather than assuming any tracked or historical compiler binary matches HEAD.
 
 ## Build and run on macOS Intel (experimental)
 
@@ -220,13 +231,14 @@ backend is claimed; see [scope and evidence](docs/MACHO-INTEL.md).
 
 ## Build and run on Windows
 
-Use a Windows `hbc.exe` built from current source following
+Use the tracked `bin/hbc.exe`, or rebuild it following
 [BUILDING.md](BUILDING.md#4-build-the-compiler-itself-as-a-windows-exe-hbcexe).
-No assembler or linker is required: `hbc.exe` writes the PE32+ image itself.
-From Windows Command Prompt at the repository root, with `hbc.exe` there:
+No Rust, MinGW, assembler or linker is required to use the tracked compiler
+on the native-only path: it writes PE32+ itself.
+From Windows Command Prompt at the repository root:
 
 ```bat
-set "HBC=%CD%\hbc.exe"
+set "HBC=%CD%\bin\hbc.exe"
 "%HBC%" tests\samples\hello.prg hello.exe
 hello.exe
 ```
