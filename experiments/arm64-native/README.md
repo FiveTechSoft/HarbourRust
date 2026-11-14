@@ -104,3 +104,10 @@ These supply ABI/layout facts, not copied implementation code:
 - https://raw.githubusercontent.com/apple-oss-distributions/xnu/main/osfmk/kern/cs_blobs.h
 - https://raw.githubusercontent.com/apple-oss-distributions/xnu/main/bsd/dev/arm/systemcalls.c
 - https://raw.githubusercontent.com/apple-oss-distributions/xnu/main/bsd/kern/mach_loader.c
+
+## Numeric runtime follow-up
+
+The [isolated numeric building blocks](numeric/README.md) add own arithmetic,
+value/format glue and emitted ordinary/mixed decimal formatting probes. They
+do not connect runtime arithmetic to this harness's AST or change production
+ARM rejection. Error statuses are not yet language exceptions or trace support.

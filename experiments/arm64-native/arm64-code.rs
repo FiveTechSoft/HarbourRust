@@ -51,6 +51,9 @@ impl Code {
     fn raw(&mut self, w: u32) {
         self.words.push(w)
     }
+    pub fn ret(&mut self) {
+        self.raw(0xd65f03c0);
+    }
     pub fn svc(&mut self) {
         self.raw(0xd4001001);
     }
@@ -147,6 +150,103 @@ impl Code {
     }
     pub fn msub(&mut self, rd: u8, rn: u8, rm: u8, ra: u8) -> Result<(), String> {
         self.raw(0x9b008000 | (reg(rm)? << 16) | (reg(ra)? << 10) | (reg(rn)? << 5) | reg(rd)?);
+        Ok(())
+    }
+    pub fn mul(&mut self, rd: u8, rn: u8, rm: u8, high: bool) -> Result<(), String> {
+        self.raw(
+            (if high { 0x9b407c00 } else { 0x9b007c00 })
+                | (reg(rm)? << 16)
+                | (reg(rn)? << 5)
+                | reg(rd)?,
+        );
+        Ok(())
+    }
+    pub fn asr(&mut self, rd: u8, rn: u8, shift: u8) -> Result<(), String> {
+        if shift > 63 {
+            return Err("ASR shift >63".into());
+        }
+        self.raw(0x9340fc00 | ((shift as u32) << 16) | (reg(rn)? << 5) | reg(rd)?);
+        Ok(())
+    }
+    pub fn scvtf(&mut self, dd: u8, rn: u8) -> Result<(), String> {
+        if dd > 31 {
+            return Err("FP register >31".into());
+        }
+        self.raw(0x9e620000 | (reg(rn)? << 5) | dd as u32);
+        Ok(())
+    }
+    pub fn fp64(&mut self, dd: u8, dn: u8, dm: u8, op: char) -> Result<(), String> {
+        if dd > 31 || dn > 31 || dm > 31 {
+            return Err("FP register >31".into());
+        }
+        let base = match op {
+            '+' => 0x1e602800,
+            '-' => 0x1e603800,
+            '*' => 0x1e600800,
+            '/' => 0x1e601800,
+            _ => return Err("FP64 operation unavailable".into()),
+        };
+        self.raw(base | ((dm as u32) << 16) | ((dn as u32) << 5) | dd as u32);
+        Ok(())
+    }
+    pub fn fabs(&mut self, dd: u8, dn: u8) -> Result<(), String> {
+        if dd > 31 || dn > 31 {
+            return Err("FP register >31".into());
+        }
+        self.raw(0x1e60c000 | ((dn as u32) << 5) | dd as u32);
+        Ok(())
+    }
+    pub fn fcvtzs(&mut self, rd: u8, dn: u8) -> Result<(), String> {
+        if dn > 31 {
+            return Err("FP register >31".into());
+        }
+        self.raw(0x9e780000 | ((dn as u32) << 5) | reg(rd)?);
+        Ok(())
+    }
+    pub fn fcvtzu(&mut self, rd: u8, dn: u8) -> Result<(), String> {
+        if dn > 31 {
+            return Err("FP register >31".into());
+        }
+        self.raw(0x9e790000 | ((dn as u32) << 5) | reg(rd)?);
+        Ok(())
+    }
+    pub fn bits(&mut self, rd: u8, rn: u8, lsb: u8, width: u8) -> Result<(), String> {
+        if width == 0 || lsb > 63 || width > 64 - lsb {
+            return Err("bitfield range".into());
+        }
+        self.raw(
+            0xd3400000
+                | ((lsb as u32) << 16)
+                | (((lsb as u32) + (width as u32) - 1) << 10)
+                | (reg(rn)? << 5)
+                | reg(rd)?,
+        );
+        Ok(())
+    }
+    pub fn fcmp(&mut self, dn: u8, dm: u8) -> Result<(), String> {
+        if dn > 31 || dm > 31 {
+            return Err("FP register >31".into());
+        }
+        self.raw(0x1e602000 | ((dm as u32) << 16) | ((dn as u32) << 5));
+        Ok(())
+    }
+    pub fn fcmp_zero(&mut self, dn: u8) -> Result<(), String> {
+        if dn > 31 {
+            return Err("FP register >31".into());
+        }
+        self.raw(0x1e602008 | ((dn as u32) << 5));
+        Ok(())
+    }
+    pub fn fp_bits(&mut self, rd: u8, dn: u8, to_integer: bool) -> Result<(), String> {
+        if dn > 31 {
+            return Err("FP register >31".into());
+        }
+        let r = reg(rd)?;
+        self.raw(if to_integer {
+            0x9e660000 | ((dn as u32) << 5) | r
+        } else {
+            0x9e670000 | (r << 5) | dn as u32
+        });
         Ok(())
     }
     pub fn cset(&mut self, rd: u8, cond: u8) -> Result<(), String> {
@@ -292,5 +392,46 @@ mod range_tests {
         c.words.resize(262144, 0xd503201f);
         c.label("far").unwrap();
         assert!(c.finish().is_err());
+    }
+}
+
+#[cfg(test)]
+mod numeric_tests {
+    use super::*;
+    #[test]
+    fn rejects_numeric_operands() {
+        let mut c = Code::default();
+        assert!(c.mul(18, 0, 1, false).is_err());
+        assert!(c.mul(0, 18, 1, true).is_err());
+        assert!(c.asr(0, 0, 64).is_err());
+        assert!(c.scvtf(32, 0).is_err());
+        assert!(c.scvtf(0, 18).is_err());
+        assert!(c.fp64(32, 0, 1, '+').is_err());
+        assert!(c.fp64(0, 32, 1, '-').is_err());
+        assert!(c.fp64(0, 0, 32, '*').is_err());
+        assert!(c.fp64(0, 0, 1, '%').is_err());
+        assert!(c.fp_bits(18, 0, true).is_err());
+        assert!(c.fp_bits(0, 32, false).is_err());
+        assert!(c.fcmp(32, 0).is_err());
+        assert!(c.fcmp(0, 32).is_err());
+        assert!(c.fcmp_zero(32).is_err());
+        assert!(c.fabs(32, 0).is_err());
+        assert!(c.fabs(0, 32).is_err());
+        assert!(c.fcvtzu(18, 0).is_err());
+        assert!(c.fcvtzs(0, 32).is_err());
+        assert!(c.bits(18, 0, 0, 1).is_err());
+        assert!(c.bits(0, 32, 0, 1).is_err());
+        assert!(c.bits(0, 0, 64, 1).is_err());
+        assert!(c.bits(0, 0, 0, 0).is_err());
+        assert!(c.bits(0, 0, 1, 64).is_err());
+    }
+    #[test]
+    fn fp_register_18_is_not_the_reserved_integer_x18() {
+        let mut c = Code::default();
+        c.scvtf(18, 0).unwrap();
+        c.fp64(18, 18, 18, '+').unwrap();
+        c.fp_bits(0, 18, true).unwrap();
+        c.fcmp(18, 18).unwrap();
+        assert_eq!(c.finish().unwrap().0.len(), 16);
     }
 }
