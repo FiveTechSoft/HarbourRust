@@ -44,7 +44,7 @@ pos['eight-args']='? Last(1,2,3,4,5,6,7,8)\nRETURN\nFUNCTION Last('+params+')\n'
 neg={
 'runtime-add':'LOCAL x:=1\n? x+1',
 'runtime-div':'LOCAL x:=8\n? x/2',
-'float':'? 1.25',
+
 'static':'STATIC n:=1\n? n',
 'heap':'LOCAL a:={1,2}\n? a',
 'string-local':'LOCAL s:="str"\n? s',
@@ -58,7 +58,7 @@ neg={
 'dead-code-runtime-add':'LOCAL n:=1\nIF .F.\n? n+1\nENDIF',
 'dead-code-static':'IF .F.\nSTATIC n:=1\nENDIF',
 'unused-function':'RETURN\nFUNCTION Never()\nLOCAL n:=1\nRETURN n+1',
-'dead-after-return':'RETURN\n? 2.5',
+'dead-after-return':'RETURN\nLOCAL x:=1.25\n? x+1.0',
 'try':'TRY\n? "x"\nCATCH\n? "y"\nEND',
 'dead-try':'IF .F.\nTRY\n? "x"\nCATCH\n? "y"\nEND\nENDIF',
 }

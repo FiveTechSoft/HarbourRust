@@ -4,7 +4,8 @@ from pathlib import Path
 # Optional development packages are imported normally from PYTHONPATH/venv.
 from unicorn import Uc,UC_ARCH_ARM64,UC_MODE_ARM,UC_HOOK_INTR,UC_HOOK_CODE
 from unicorn.arm64_const import *
-def execute(path,short=None,interrupt=False,failure=False,fault=None,observer=None):
+def execute(path,short=None,interrupt=False,failure=False,fault=None,observer=None,fp_state=(0,0)):
+
  b=Path(path).read_bytes();u=Uc(UC_ARCH_ARM64,UC_MODE_ARM)
  base=0x100000000;page=0x4000;u.mem_map(base,(len(b)+page-1)&-page);u.mem_write(base,b)
  stack=0x200000000;u.mem_map(stack,0x100000);initialsp=stack+0x100000-16;u.reg_write(UC_ARM64_REG_SP,initialsp)
@@ -17,6 +18,8 @@ def execute(path,short=None,interrupt=False,failure=False,fault=None,observer=No
   o+=n
  assert entry is not None
  output=bytearray();calls=[];count=0;alignment_errors=[];reserved=[];state={'interrupted':False,'rc':None}
+ u.reg_write(UC_ARM64_REG_CPACR_EL1,3<<20)
+ u.reg_write(UC_ARM64_REG_FPCR,fp_state[0]);u.reg_write(UC_ARM64_REG_FPSR,fp_state[1])
  u.reg_write(UC_ARM64_REG_X18,0x7654321000011111)
  saved={}
  for i in range(19,29):
@@ -57,6 +60,7 @@ def execute(path,short=None,interrupt=False,failure=False,fault=None,observer=No
   assert u.reg_read(UC_ARM64_REG_SP)==initialsp
   assert u.reg_read(UC_ARM64_REG_FP)==initialfp
   assert all(u.reg_read(UC_ARM64_REG_X0+i)==v for i,v in saved.items())
+  assert u.reg_read(UC_ARM64_REG_FPCR)==fp_state[0] and u.reg_read(UC_ARM64_REG_FPSR)==fp_state[1]
   state['rc']=u.reg_read(UC_ARM64_REG_X0)
  return {'stdout_hex':output.hex(),'rc':state['rc'],'instructions':count,'syscalls':len(calls),'sp_aligned':True,'x18_preserved':True,'mode':'Unicorn + own syscall model, not macOS execution'}
 if __name__=='__main__':

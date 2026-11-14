@@ -1,10 +1,17 @@
 // Isolated AST-to-ARM64 experiment. NOT integrated or advertised by hbc.
+// Finite F64 literal/copy/call/compare only; numeric arithmetic still rejects.
 // Compiled only by make-compiler-probe.py against a copy of the checked frontend.
 // Keeps a named, deliberately narrow boundary; all functions and dead code
 // are visited. The real --target=macho-arm64 continues to reject unchanged.
 use super::*;
 #[path = "arm64-code.rs"]
 mod code;
+#[path = "numeric/decimal-compose.rs"]
+mod compose;
+#[path = "numeric/decimal-image.rs"]
+mod decimal;
+#[path = "pair-print.rs"]
+mod pair_print;
 #[path = "arm64-runtime.rs"]
 mod runtime;
 #[path = "arm64-trace.rs"]
@@ -15,6 +22,7 @@ use code::Code;
 #[derive(Clone, Copy, PartialEq)]
 enum K {
     Int,
+    Float,
     Bool,
     Text,
     Void,
@@ -32,10 +40,12 @@ struct E<'a> {
     seq: usize,
     loops: Vec<(String, String)>,
     fname: String,
+    mixed: std::collections::HashSet<String>,
 }
 fn kind(t: Ty) -> Result<K, String> {
     match t {
         Ty::I64 => Ok(K::Int),
+        Ty::F64 => Ok(K::Float),
         Ty::Bool => Ok(K::Bool),
         _ => Err(format!(
             "ARM64 scalar experiment: type {t:?} is outside this boundary"
@@ -58,10 +68,12 @@ impl E<'_> {
     }
     fn load(&mut self, off: u16) -> Result<(), String> {
         self.c.imm(17, 29, off, true, false)?;
+        self.c.ldst(1, 17, 8, true)?;
         self.c.ldst(0, 17, 0, true)
     }
     fn store(&mut self, off: u16) -> Result<(), String> {
         self.c.imm(17, 29, off, true, false)?;
+        self.c.ldst(1, 17, 8, false)?;
         self.c.ldst(0, 17, 0, false)
     }
     fn push(&mut self) -> Result<(), String> {
@@ -86,7 +98,40 @@ impl E<'_> {
                     0,
                     n.parse::<i64>().map_err(|_| "ARM64 integer range")? as u64,
                 )?;
+                self.c.mov(1, 1)?;
                 Ok(K::Int)
+            }
+            Expr::Float(txt, dec) => {
+                if *dec > 16 {
+                    return Err("pair-AST literal decimal count above16".into());
+                }
+                let v = harbour_parse_f64(txt).ok_or("pair-AST literal parse")?;
+                if !v.is_finite() {
+                    return Err("pair-AST nonfinite literal".into());
+                }
+                self.c.mov(0, v.to_bits())?;
+                self.c.mov(1, (10u64 << 16) | (*dec as u64))?;
+                Ok(K::Float)
+            }
+            Expr::FloatV(bits, dec) => {
+                if *dec > 16 {
+                    return Err("pair-AST folded decimal count above16".into());
+                }
+                let v = f64::from_bits(*bits);
+                if !v.is_finite() {
+                    return Err("pair-AST nonfinite folded literal".into());
+                }
+                self.c.mov(0, *bits)?;
+                self.c.mov(
+                    1,
+                    ((if v > 9999999999.0 || v < -999999999.0 {
+                        20u64
+                    } else {
+                        10
+                    }) << 16)
+                        | (*dec as u64),
+                )?;
+                Ok(K::Float)
             }
             Expr::Log(v) => {
                 self.c.mov(0, *v as u64)?;
@@ -123,12 +168,14 @@ impl E<'_> {
                 Ok(k)
             }
             Expr::Cmp(op, a, b) => {
-                if self.expr(a)? != K::Int {
-                    return Err("ARM64 scalar experiment: comparisons require integers".into());
+                let left = self.expr(a)?;
+                if !matches!(left, K::Int | K::Float) {
+                    return Err("pair-AST comparison kind".into());
                 }
                 self.push()?;
-                if self.expr(b)? != K::Int {
-                    return Err("ARM64 scalar experiment: comparisons require integers".into());
+                let right = self.expr(b)?;
+                if right != left {
+                    return Err("pair-AST mixed comparison rejected".into());
                 }
                 self.pop9()?;
                 let cond = match op {
@@ -140,8 +187,24 @@ impl E<'_> {
                     CmpOp::Ge => 10,
                     _ => return Err("ARM64 scalar experiment: comparison unavailable".into()),
                 };
-                self.c.addsub(31, 9, 0, true, true)?;
-                self.c.cset(0, cond)?;
+                if left == K::Float {
+                    self.c.fp_bits(9, 0, false)?;
+                    self.c.fp_bits(0, 1, false)?;
+                    self.c.fcmp(0, 1)?;
+                    let fcond = match op {
+                        CmpOp::Eq | CmpOp::EqEq => 0,
+                        CmpOp::Ne => 1,
+                        CmpOp::Lt => 4,
+                        CmpOp::Le => 9,
+                        CmpOp::Gt => 12,
+                        CmpOp::Ge => 10,
+                        _ => unreachable!(),
+                    };
+                    self.c.cset(0, fcond)?;
+                } else {
+                    self.c.addsub(31, 9, 0, true, true)?;
+                    self.c.cset(0, cond)?;
+                }
                 Ok(K::Bool)
             }
             Expr::LNot(e) => {
@@ -181,15 +244,28 @@ impl E<'_> {
                         None => K::Void,
                     }
                 };
-                for (e, k) in args.iter().zip(expected) {
-                    if self.expr(e)? != k {
-                        return Err("ARM64 scalar experiment: call argument kind".into());
+                let words: usize = expected
+                    .iter()
+                    .map(|k| if *k == K::Float { 2 } else { 1 })
+                    .sum();
+                if words > 8 {
+                    return Err("pair-AST call exceeds eight register words".into());
+                }
+                for (e, k) in args.iter().zip(&expected) {
+                    if self.expr(e)? != *k {
+                        return Err("pair-AST call kind".into());
                     }
                     self.push()?;
                 }
-                for i in 0..args.len() {
-                    self.c
-                        .ldst(i as u8, 31, (16 * (args.len() - 1 - i)) as u16, true)?;
+                let mut reg = 0;
+                for (i, k) in expected.iter().enumerate() {
+                    let off = (16 * (args.len() - 1 - i)) as u16;
+                    self.c.ldst(reg, 31, off, true)?;
+                    reg += 1;
+                    if *k == K::Float {
+                        self.c.ldst(reg, 31, off + 8, true)?;
+                        reg += 1;
+                    }
                 }
                 if !args.is_empty() {
                     self.c.imm(31, 31, (16 * args.len()) as u16, false, false)?;
@@ -217,10 +293,13 @@ impl E<'_> {
             self.location(s)?;
             match s {
                 Stmt::Local(_, n, e) => {
+                    if self.mixed.contains(n) {
+                        return Err("pair-AST mixed numeric LOCAL tagging unavailable".into());
+                    }
                     let k = self.expr(e)?;
-                    if !matches!(k, K::Int | K::Bool) {
+                    if !matches!(k, K::Int | K::Bool | K::Float) {
                         return Err(
-                            "ARM64 scalar experiment: locals must be integer or logical".into()
+                            "ARM64 scalar experiment: locals must be integer, logical or finite F64".into()
                         );
                     }
                     self.slot = self.slot.checked_add(16).ok_or("ARM64 frame overflow")?;
@@ -273,6 +352,7 @@ impl E<'_> {
                         self.c.b(
                             match k {
                                 K::Int => "rt_i64",
+                                K::Float => "pair_print_f64",
                                 K::Bool => "rt_bool",
                                 K::Text => "rt_write",
                                 K::Void => unreachable!(),
@@ -326,7 +406,7 @@ impl E<'_> {
                             self.c.mov(0, 0)?;
                         }
                         Some(e) => {
-                            if !matches!(self.expr(e)?, K::Int | K::Bool) {
+                            if !matches!(self.expr(e)?, K::Int | K::Bool | K::Float) {
                                 return Err("ARM64 scalar experiment: return kind".into());
                             }
                         }
@@ -357,6 +437,7 @@ pub fn emit(funcs: &[Func], sigs: &[Sig]) -> Result<Vec<u8>, String> {
         seq: 0,
         loops: vec![],
         fname: String::new(),
+        mixed: std::collections::HashSet::new(),
     };
     if !funcs.iter().any(|f| f.name == "main") {
         return Err("ARM64 experiment: main missing".into());
@@ -364,8 +445,21 @@ pub fn emit(funcs: &[Func], sigs: &[Sig]) -> Result<Vec<u8>, String> {
     e.c.prologue(32)?;
     e.c.ldst(19, 31, 0, false)?;
     e.c.mov(19, 0)?;
+    e.c.fp_env(9, false, false)?;
+    e.c.ldst(9, 31, 8, false)?;
+    e.c.fp_env(9, true, false)?;
+    e.c.ldst(9, 31, 16, false)?;
+    e.c.mov(9, 0)?;
+    e.c.fp_env(9, false, true)?;
+    e.c.fp_env(9, true, true)?;
+    e.c.isb();
     e.c.b("fn_main", true);
     e.c.mov(0, 0)?;
+    e.c.ldst(9, 31, 8, true)?;
+    e.c.fp_env(9, false, true)?;
+    e.c.ldst(9, 31, 16, true)?;
+    e.c.fp_env(9, true, true)?;
+    e.c.isb();
     e.c.ldst(19, 31, 0, true)?;
     e.c.epilogue()?;
     for f in funcs {
@@ -397,13 +491,37 @@ pub fn emit(funcs: &[Func], sigs: &[Sig]) -> Result<Vec<u8>, String> {
         e.env.clear();
         e.slot = 0;
         e.fname = f.name.clone();
+        e.mixed = prescan_numeric(f);
         // Separate 48-byte trace storage preserves the existing 4080-byte local limit.
         e.c.imm(31, 31, 48, true, false)?;
         trace::link_at_sp(&mut e.c)?;
-        for (i, (n, t)) in f.params.iter().zip(&sig.params).enumerate() {
-            let k = kind(*t)?;
+        let kinds = sig
+            .params
+            .iter()
+            .map(|t| kind(*t))
+            .collect::<Result<Vec<_>, _>>()?;
+        let words: usize = kinds
+            .iter()
+            .map(|k| if *k == K::Float { 2 } else { 1 })
+            .sum();
+        if words > 8 {
+            return Err("pair-AST signature exceeds eight register words".into());
+        }
+        e.c.imm(31, 31, 64, true, false)?;
+        for reg in 0..8 {
+            e.c.ldst(reg, 31, (reg as u16) * 8, false)?;
+        }
+        let mut reg = 0;
+        for (n, k) in f.params.iter().zip(kinds) {
             e.slot += 16;
-            e.c.copy(0, i as u8)?;
+            e.c.ldst(0, 31, reg * 8, true)?;
+            reg += 1;
+            if k == K::Float {
+                e.c.ldst(1, 31, reg * 8, true)?;
+                reg += 1;
+            } else {
+                e.c.mov(1, 1)?;
+            }
             e.store(e.slot)?;
             e.env.push(V {
                 name: n.clone(),
@@ -411,11 +529,13 @@ pub fn emit(funcs: &[Func], sigs: &[Sig]) -> Result<Vec<u8>, String> {
                 off: e.slot,
             });
         }
+        e.c.imm(31, 31, 64, false, false)?;
         e.block(&f.stmts)?;
         e.c.mov(0, 0)?;
         trace::unlink(&mut e.c)?;
         e.c.epilogue()?;
     }
+    pair_print::emit(&mut e.c)?;
     runtime::emit(&mut e.c)?;
     trace::emit(&mut e.c)?;
     let (code, data) = e.c.finish()?;

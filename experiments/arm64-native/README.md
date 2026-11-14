@@ -31,17 +31,20 @@ Darwin syscall or Apple signing-policy verdict has been tested here.
 
 ## Deliberate scalar boundary
 
-The harness covers integer/logical literals, locals/copies/assignment,
+The original scalar boundary covered integer/logical literals, locals/copies/assignment,
 integer comparisons, logical short-circuiting, IF/WHILE/EXIT/LOOP, scalar
 calls with up to eight arguments, discarded nil-only calls, and formatted
 output. All output items are evaluated before the QOut newline, as in hbc.
 Nonempty literal strings without a trailing space or an embedded CR/LF can
 be printed. Local strings are outside this first boundary.
 
+The finite F64 transport follow-up below extends literal/copy/call/compare
+handling only; runtime arithmetic still rejects.
+
 Every function and AST branch is visited, including unreachable code. Missing
 families reject without writing a new output file. They include runtime
 arithmetic (overflow-to-double and integer provenance are not ported), floating
-point, heap/Dyn values, arrays, hashes, objects, by-reference calls, most
+point arithmetic and nonfinite source values, heap/Dyn values, arrays, hashes, objects, by-reference calls, most
 builtins, STATIC, TRY/CATCH, FOR, INIT, EXTERNAL, threads, pending-console
 spaces/empty strings/multiline strings, assembly output and instrument/LLVM/
 external-assembler modes. A frontend-inferred Dyn recursion result also rejects.
@@ -175,3 +178,73 @@ existing ADR range and 64 MiB writer limits by rejecting out-of-range images;
 no unlimited-depth/size resource guarantee is implied by linked traversal.
 All new execution evidence is instruction emulation plus own syscall models,
 not a Mac loader, Darwin kernel, Apple hardware or signing-policy verdict.
+
+
+## Finite F64 source transport follow-up
+
+After base `7ff3014590cf5c195ee01d08c010f935b271f2f8`, the isolated AST
+harness accepts a deliberately narrow finite F64 boundary: literals and
+already-folded constants within the frontend's existing precision frontier,
+fixed-F64 locals/copies/assignments, F64 parameters/returns, like-kind F64
+comparisons and ordinary formatted output. This does NOT open runtime numeric
+arithmetic. Production hbc is untouched and still rejects ARM targets.
+
+The source checker and signature inference are unchanged. F64 literals use
+hbc's existing Harbour decimal parser, not Rust's float parser. Ordinary
+literal format is width10/decimal-count; folded floating constants retain the
+existing asymmetric10/20 result width. F64 local spills, copies, arguments
+and returns transport BOTH payload and format words. Parameters are captured
+before any input registers can be overwritten. Arguments are evaluated
+left-to-right to16-byte slots before loading outgoing registers. Integer/
+logical parameters keep one GPR each and F64 parameters use two, up to eight
+GPR words total: the old eight-scalar limit still works, but five F64 parameters
+reject. This is a private generated convention, not Apple C aggregate ABI.
+
+Only finite F64 seeds with at most16decimal places are accepted; arithmetic
+expressions still reject, including dead code/unused functions. F64 seeds,
+copy-only propagation and unchanged fixed signatures make source values finite
+throughout this boundary. Mixed I64/F64 comparisons and mixed numeric LOCAL
+storage remain named rejections, rather than guessing coercion or dropping
+runtime kind metadata. The original frontend's F64 return restrictions remain.
+No NumLocal return ABI, numeric branch merge or implicit scalar-promotion ABI
+is introduced. Unsupported AST nodes continue to fail before writing output.
+
+Entry saves incoming FPCR/FPSR, normalizes both to zero for F64 comparison/
+formatting and restores them on normal return, alongside the scalar native
+trace x19 boundary. No TRY/foreign unwind/trap path is claimed. Comparisons
+use the ordered ARM floating conditions, with no integer reinterpretation of
+payload bits. Ordinary F64 output invokes the already-tested own decimal
+composer into a480-byte native frame with a456-byte output buffer, then the
+own byte writer. No external numeric formatter is called. Finite binary64
+has at most309integer digits; with this source cap of16fractional places plus
+sign/point, it fits that buffer. An unexpected composer status fails closed
+with experiment-only exit75: this is not a language error or a claim of source
+reachability. I/O failure continues to exit74 by existing runtime policy.
+
+Fresh source controls:
+
+-23source programs in three syscall/FP-state modes match current native x86
+  stdout exactly: literal widths/decimal provenance, signed zero, copies,
+  assignment, fixed-F64 branches, all seven comparisons with loaded operands,
+  F64 calls/early returns, nested effects and mixed register arguments.
+  Two modes start with nondefault rounding/FTZ/DN and incoming FPSR flags;
+  normal returns restore exact state. SP alignment, x18 and nonvolatile
+  native GPRs are checked by the emulator.
+-11negative sources reject without a new output and preserve an existing
+  output canary: arithmetic/zero division, mixed local, precision>16,
+  unused/dead arithmetic, unused excessive precision, TRY, mixed comparison
+  and five-F64-argument overflow. Numeric-local prescan is per function; the
+  earlier-function negative checks that it cannot inherit the last function's
+  thread-local semantic state.
+-The prior35scalar programs still run exact in three syscall models, including
+  eight-scalar/nested-eight-scalar calls. Of the old22negatives, the simple
+  F64 literal moves to the positive cohort, leaving21; the dead-after-return
+  negative now uses runtime arithmetic rather than an admitted F64 literal.
+-The entire native trace/source-origin/frame-limit checks remain in the runner.
+
+These are source transport/formatting measurements, not arithmetic support or
+a new Harbour VM oracle. Still no caught exceptions, TRY/CATCH/FINALLY,
+cleanup/unwinding, runtime integer overflow at AST level, F64 arithmetic,
+NumLocal, numeric C ABI or actual Mac execution. Keep that distinction when
+reporting the increment: numeric kernels and source literal transport are
+different layers, and their test counts are not compatible-program totals.
