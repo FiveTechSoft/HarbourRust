@@ -111,3 +111,10 @@ The [isolated numeric building blocks](numeric/README.md) add own arithmetic,
 value/format glue and emitted ordinary/mixed decimal formatting probes. They
 do not connect runtime arithmetic to this harness's AST or change production
 ARM rejection. Error statuses are not yet language exceptions or trace support.
+
+
+## Isolated value ABI follow-up
+
+`value-abi/README.md` documents the separate pair-call/local, reversible FP
+boundary and bounded native trace snapshot probes. These do not change this
+scalar harness's arithmetic rejection or add language exception handling.

@@ -57,6 +57,13 @@ impl Code {
     pub fn svc(&mut self) {
         self.raw(0xd4001001);
     }
+    pub fn fp_env(&mut self, r: u8, status: bool, write: bool) -> Result<(), String> {
+        self.raw((if write { 0xd51b4400 } else { 0xd53b4400 }) | ((status as u32) << 5) | reg(r)?);
+        Ok(())
+    }
+    pub fn isb(&mut self) {
+        self.raw(0xd5033fdf);
+    }
     pub fn mov(&mut self, rd: u8, value: u64) -> Result<(), String> {
         let r = reg(rd)?;
         self.raw(0xd2800000 | (((value & 65535) as u32) << 5) | r);
@@ -433,5 +440,39 @@ mod numeric_tests {
         c.fp_bits(0, 18, true).unwrap();
         c.fcmp(18, 18).unwrap();
         assert_eq!(c.finish().unwrap().0.len(), 16);
+    }
+}
+
+#[cfg(test)]
+mod fp_env_tests {
+    use super::*;
+    #[test]
+    fn environment_words_and_reserved_registers() {
+        let mut c = Code::default();
+        for status in [false, true] {
+            assert!(c.fp_env(18, status, false).is_err());
+            assert!(c.fp_env(18, status, true).is_err());
+            assert!(c.fp_env(32, status, false).is_err());
+        }
+        c.fp_env(9, false, false).unwrap();
+        c.fp_env(9, false, true).unwrap();
+        c.fp_env(10, true, false).unwrap();
+        c.fp_env(10, true, true).unwrap();
+        c.isb();
+        let (b, d) = c.finish().unwrap();
+        assert!(d.is_empty());
+        assert_eq!(
+            b,
+            [
+                0xd53b4409u32,
+                0xd51b4409,
+                0xd53b442a,
+                0xd51b442a,
+                0xd5033fdf
+            ]
+            .into_iter()
+            .flat_map(u32::to_le_bytes)
+            .collect::<Vec<_>>()
+        );
     }
 }

@@ -1,0 +1,7 @@
+target triple = "arm64-apple-macosx11.0.0"
+module asm ".section __TEXT,__text,regular,pure_instructions"
+module asm "mrs x9,fpcr"
+module asm "msr fpcr,x9"
+module asm "mrs x10,fpsr"
+module asm "msr fpsr,x10"
+module asm "isb"
