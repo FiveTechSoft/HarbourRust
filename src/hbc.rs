@@ -816,6 +816,7 @@ enum Expr {
     Inc(String, i8, bool), // variable lvalue, delta +1/-1, prefix flag
     Call(String, Vec<Expr>),
     ByRef(String),             // `@x` call argument: exclusive borrow of the caller's slot (hk216 family; alias rejection diverges from hk219, registered)
+    FuncRef(String),           // `@f()` call argument: function reference for hb_threadStart (threads increment)
     Bin(char, Box<Expr>, Box<Expr>),
     Cmp(CmpOp, Box<Expr>, Box<Expr>), // i64 operands only (checked in analysis)
     ArrLit(Vec<Expr>),             // {e1, ..., eN}; i64 elements, fixed size
@@ -1128,7 +1129,17 @@ impl P {
                                 // too (oracle hk221).
                                 self.pos += 1;
                                 match self.bump() {
-                                    Some(Tok::Ident(vn)) => args.push(Expr::ByRef(vn)),
+                                    Some(Tok::Ident(vn)) => {
+                                        // `@f()` (empty list) is a function
+                                        // reference (hb_threadStart); `@x`
+                                        // stays a by-reference argument.
+                                        if self.peek() == Some(&Tok::LParen) && self.toks.get(self.pos + 1) == Some(&Tok::RParen) {
+                                            self.pos += 2;
+                                            args.push(Expr::FuncRef(vn));
+                                        } else {
+                                            args.push(Expr::ByRef(vn));
+                                        }
+                                    },
                                     other => return Err(format!("line {}: `@` expects a variable name, got {:?}", self.n, other)),
                                 }
                             } else if let Some(Tok::Ident(vn)) = self.peek() {
@@ -3349,6 +3360,8 @@ struct ClassInfo {
 }
 thread_local! {
     static CLASSES: std::cell::RefCell<Vec<ClassInfo>> = std::cell::RefCell::new(Vec::new());
+    static THREADS: std::cell::Cell<bool> = std::cell::Cell::new(false);
+    static THUNK_TEXT: std::cell::RefCell<Vec<(String, String)>> = std::cell::RefCell::new(Vec::new());
     static METHOD_CLASS: std::cell::RefCell<std::collections::HashMap<String, u32>> = std::cell::RefCell::new(std::collections::HashMap::new());
     static CUR_METHOD_CLASS: std::cell::Cell<i64> = std::cell::Cell::new(-1);
     // Checker -> codegen handoff: (function, local) pairs the checker
@@ -4542,7 +4555,7 @@ fn expr_mentions(e: &Expr, name: &str) -> bool {
         Expr::Send(o, _, args) => expr_mentions(o, name) || args.iter().any(|a| expr_mentions(a, name)),
         // Leaf forms: no sub-expression and no variable name.
         Expr::FloatV(..) | Expr::Float(..) | Expr::Int(_) | Expr::Str(_) | Expr::DArrNew
-        | Expr::SelfObj | Expr::SelfGet(_) | Expr::Nil | Expr::Log(_) => false,
+        | Expr::SelfObj | Expr::SelfGet(_) | Expr::Nil | Expr::Log(_) | Expr::FuncRef(_) => false,
     }
 }
 
@@ -5647,6 +5660,107 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // introspection is a named rejection, not a silent 0.
                 return Err(format!("line {}: `PCount` is not in this increment (the calling convention carries no argument count; `hb_PValue` over the declared parameters is the supported introspection)", n));
             }
+            if is_builtin(id, "hb_threadstart") {
+                // hb_threadStart(@f(), a1..an) - own clone+futex runtime
+                // (threads F1). The FIRST argument must be a `@f()`
+                // reference to a compile-time-known user function (Harbour
+                // also accepts codeblocks and name strings: named rejection
+                // here). Arguments marshal BY VALUE: strings deep-copied,
+                // objects retained (atomic refcount under the MT blob).
+                // Extra arguments are dropped (the convention carries no
+                // count, and PCount is already a named rejection, so the
+                // drop is unobservable); missing ones pad NIL (Harbour's
+                // lax arity, oracle p17). The handle is a Dyn PTR (tag 14,
+                // Harbour ValType "P").
+                THREADS.with(|c| c.set(true));
+                if args.is_empty() {
+                    return Err(format!("line {}: `hb_threadStart` needs at least a `@f()` function reference", n));
+                }
+                let fname = match &args[0] {
+                    Expr::FuncRef(f) => f.clone(),
+                    _ => return Err(format!("line {}: `hb_threadStart`'s first argument must be a `@f()` function reference in this increment (Harbour also accepts codeblocks and name strings)", n)),
+                };
+                if fname.eq_ignore_ascii_case("main") {
+                    return Err(format!("line {}: `hb_threadStart` cannot start the program's Main on a thread", n));
+                }
+                let sig = match sigs.iter().find(|s| s.name == fname) {
+                    Some(s) => s.clone(),
+                    None => return Err(format!("line {}: `hb_threadStart` references unknown function `{}`", n, fname)),
+                };
+                for (pi, pt) in sig.params.iter().enumerate() {
+                    if !matches!(pt, Ty::I64 | Ty::Dyn | Ty::Obj(_)) {
+                        return Err(format!("line {}: `hb_threadStart` target parameters are integers, objects or dynamic values in this increment (parameter {} of `{}`)", n, pi + 1, fname));
+                    }
+                }
+                let ret_ok = sig.nil_ret_only || matches!(sig.ret, None | Some(Ty::I64) | Some(Ty::Bool) | Some(Ty::Dyn) | Some(Ty::Str) | Some(Ty::StrOwn) | Some(Ty::Obj(_)));
+                if !ret_ok {
+                    return Err(format!("line {}: `hb_threadStart` target returns integer, logical, string, object or dynamic in this increment (`{}`)", n, fname));
+                }
+                for a in &args[1..] {
+                    let ta = type_expr(a, env, sigs, n)?;
+                    if !matches!(ta, Ty::I64 | Ty::Bool | Ty::Dyn | Ty::Str | Ty::StrOwn | Ty::Obj(_)) {
+                        return Err(format!("line {}: `hb_threadStart` arguments are scalar, string or object values in this increment (no floats, dates, arrays, hashes or codeblocks)", n));
+                    }
+                }
+                return Ok(Ty::Dyn);
+            }
+            if is_builtin(id, "hb_threadjoin") {
+                // hb_threadJoin(th [, @r]) -> logical; a successful join
+                // CONSUMES the handle (second join: .F. + NIL, th28).
+                THREADS.with(|c| c.set(true));
+                if args.is_empty() || args.len() > 2 {
+                    return Err(format!("line {}: `hb_threadJoin` takes a thread handle and an optional `@result`", n));
+                }
+                if type_expr(&args[0], env, sigs, n)? != Ty::Dyn {
+                    return Err(format!("line {}: `hb_threadJoin` expects a thread handle (a dynamic PTR value)", n));
+                }
+                if args.len() == 2 {
+                    match &args[1] {
+                        Expr::ByRef(vn) => {
+                            let vt = type_expr(&Expr::Var(vn.clone()), env, sigs, n)?;
+                            if vt != Ty::Dyn {
+                                return Err(format!("line {}: `hb_threadJoin`'s `@result` variable must be dynamic in this increment", n));
+                            }
+                        }
+                        _ => return Err(format!("line {}: `hb_threadJoin`'s second argument must be a `@variable`", n)),
+                    }
+                }
+                return Ok(Ty::Bool);
+            }
+            if is_builtin(id, "hb_threadwait") {
+                THREADS.with(|c| c.set(true));
+                if args.is_empty() || args.len() > 2 {
+                    return Err(format!("line {}: `hb_threadWait` takes a thread handle and an optional timeout in seconds", n));
+                }
+                if type_expr(&args[0], env, sigs, n)? != Ty::Dyn {
+                    return Err(format!("line {}: `hb_threadWait` expects a thread handle (a dynamic PTR value)", n));
+                }
+                if args.len() == 2 && !matches!(type_expr(&args[1], env, sigs, n)?, Ty::I64 | Ty::F64) {
+                    return Err(format!("line {}: `hb_threadWait`'s timeout is a number of seconds", n));
+                }
+                return Ok(Ty::I64);
+            }
+            if is_builtin(id, "hb_threadself") {
+                THREADS.with(|c| c.set(true));
+                if !args.is_empty() {
+                    return Err(format!("line {}: `hb_threadSelf` takes no arguments", n));
+                }
+                return Ok(Ty::Dyn);
+            }
+            if is_builtin(id, "hb_threaddetach") {
+                THREADS.with(|c| c.set(true));
+                if args.len() != 1 || type_expr(&args[0], env, sigs, n)? != Ty::Dyn {
+                    return Err(format!("line {}: `hb_threadDetach` takes a thread handle (a dynamic PTR value)", n));
+                }
+                return Ok(Ty::Bool);
+            }
+            if is_builtin(id, "hb_threadwaitforall") {
+                THREADS.with(|c| c.set(true));
+                if !args.is_empty() {
+                    return Err(format!("line {}: `hb_threadWaitForAll` takes no arguments", n));
+                }
+                return Ok(Ty::Dyn);
+            }
             if is_builtin(id, "hb_pvalue") {
                 let cur=CUR_FN.with(|c|c.borrow().clone());
                 if ROOT_PARAMS.with(|m|m.borrow().get(&cur).map_or(false,|ps|!ps.is_empty())) {
@@ -6211,6 +6325,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         }
         Expr::Nil => Ok(Ty::Dyn),
         Expr::ByRef(_) => Err(format!("line {}: `@` is only valid directly as a call argument (hk221)", n)),
+        Expr::FuncRef(_) => Err(format!("line {}: `@f()` function references are only valid as hb_threadStart's first argument in this increment", n)),
         Expr::Log(_) => Ok(Ty::Bool),
         Expr::LNot(a) => {
             if !matches!(type_expr(a, env, sigs, n)?, Ty::Bool | Ty::Dyn) {
@@ -8791,6 +8906,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
     match e {
         Expr::Seq(es) => { for e in es { apply_moves(e, env, sigs, false); } }
         Expr::ByRef(_) => {} // `@x` borrows the slot for the call; the owner keeps it (hk216)
+        Expr::FuncRef(_) => {} // `@f()` references no variable; hb_threadStart borrows its arguments
         Expr::Var(id) => {
             if moving {
                 if let Some(v) = env.iter_mut().find(|v| v.name == *id && !v.byref && matches!(v.ty, Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash | Ty::DArrDyn)) { v.moved = true; }
@@ -8960,6 +9076,13 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id, "hb_pvalue") {
                 // Read-only mention: the PValue index moves nothing
                 // (multiarg).
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
+            if is_builtin(id, "hb_threadstart") || is_builtin(id, "hb_threadjoin") || is_builtin(id, "hb_threadwait") || is_builtin(id, "hb_threadself") || is_builtin(id, "hb_threaddetach") || is_builtin(id, "hb_threadwaitforall") {
+                // Thread builtins BORROW every argument: hb_threadStart's
+                // marshal deep-copies strings and retains objects itself;
+                // join's `@r` borrows the slot.
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
@@ -9691,6 +9814,409 @@ fn cg_i64_f64_format(out: &mut String) {
 // rax integer value, rdx scalar format -> rax Dyn tag, rdx payload.
 // Format is 0 runtime / 1 literal; clobbers r11 only.
 const HROBJ_BLOB: &str = include_str!("hrobj_blob.s");
+const HROBJ_BLOB_MT: &str = include_str!("hrobj_blob_mt.s");
+
+// Thread runtime (threads F1, own clone(2)+futex design, Linux only):
+// hbc_tls_init seeds the main thread's %fs block; hbc_thread_start /
+// _boot create and run workers; hbc_thread_join_grab consumes a finished
+// handle; hbc_thread_wait polls with an optional timeout; _detach marks
+// a handle fire-and-forget; _waitall drains the registry; hbc_thr_print /
+// _eprint render a PTR handle (0x + uppercase hex) for `?`.
+const THREAD_HELPERS_LINUX: &str = "
+.text
+# hbc_tls_init: allocate the main thread's TLS block and install %fs.
+hbc_tls_init:
+    sub $8, %rsp
+    mov $256, %rdi
+    call hbc_alloc
+    mov %rax, %rbx
+    add $56, %rax
+    mov %rax, 48(%rbx)
+    lea hbc_thr_main_block(%rip), %rax
+    mov %rax, 120(%rbx)
+    mov $158, %eax
+    mov $4098, %rdi
+    mov %rbx, %rsi
+    xor %edx, %edx
+    xor %r10d, %r10d
+    xor %r8d, %r8d
+    syscall
+    add $8, %rsp
+    ret
+
+# hbc_thread_start(rdi=block) -> rax = block, or 0 on any failure.
+# Stack (1 MiB) and TLS (256 B) are raw mmaps, released by the worker in
+# hbc_thread_boot; the block itself is an hbc_alloc released by the
+# joiner. A detached block that is never joined leaks until exit
+# (declared F1 limit, documented in STATUS).
+hbc_thread_start:
+    push %rbx
+    push %r12
+    push %r13
+    mov %rdi, %rbx
+    # stack = mmap(0, 1MiB, RW, PRIVATE|ANON)
+    mov $9, %eax
+    xor %edi, %edi
+    mov $1048576, %esi
+    mov $3, %edx
+    mov $34, %r10d
+    mov $-1, %r8
+    xor %r9d, %r9d
+    syscall
+    cmp $-4095, %rax
+    jae .Lthrs_fail0
+    mov %rax, %r12
+    mov %rax, 40(%rbx)
+    movq $1048576, 48(%rbx)
+    # tls = mmap(0, 256, RW, PRIVATE|ANON)
+    mov $9, %eax
+    xor %edi, %edi
+    mov $256, %esi
+    mov $3, %edx
+    mov $34, %r10d
+    mov $-1, %r8
+    xor %r9d, %r9d
+    syscall
+    cmp $-4095, %rax
+    jae .Lthrs_fail1
+    mov %rax, %r13
+    mov %rax, 56(%rbx)
+    lea 56(%rax), %r11
+    mov %r11, 48(%r13)
+    mov %rbx, 120(%r13)
+    movq $0, 64(%rbx)
+    movq $0, (%rbx)
+    # register the block BEFORE the clone so waitall can't miss it
+    mov %rbx, %rdi
+    call hbc_thr_reg_add
+    # clone(child_stack = stack top, flags = VM|FS|FILES|SIGHAND|THREAD|SYSVSEM)
+    mov $56, %eax
+    mov $0x50f00, %rdi
+    lea 1048576(%r12), %rsi
+    xor %edx, %edx
+    xor %r10d, %r10d
+    xor %r8d, %r8d
+    syscall
+    test %rax, %rax
+    jz .Lthrs_child
+    cmp $-4095, %rax
+    jae .Lthrs_fail2
+    mov %rbx, %rax
+    jmp .Lthrs_out
+.Lthrs_child:
+    mov %rbx, %rdi
+    call hbc_thread_boot
+.Lthrs_fail2:
+    mov %rbx, %rdi
+    call hbc_thr_reg_del
+    mov %r13, %rdi
+    mov $256, %esi
+    mov $11, %eax
+    syscall
+.Lthrs_fail1:
+    mov %r12, %rdi
+    mov $1048576, %esi
+    mov $11, %eax
+    syscall
+.Lthrs_fail0:
+    xor %eax, %eax
+.Lthrs_out:
+    pop %r13
+    pop %r12
+    pop %rbx
+    ret
+
+# hbc_thread_boot(rdi=block): worker entry, never returns.
+hbc_thread_boot:
+    mov %rdi, %rbx
+    mov 56(%rbx), %rsi
+    mov $158, %eax
+    mov $4098, %rdi
+    xor %edx, %edx
+    xor %r10d, %r10d
+    xor %r8d, %r8d
+    syscall
+    mov %rbx, %rdi
+    call *32(%rbx)
+    mov %rax, 8(%rbx)
+    mov %rdx, 16(%rbx)
+    mov $1, %eax
+    xchg %eax, (%rbx)
+    mov %rbx, %rdi
+    mov $1, %esi
+    call hbc_thr_wake
+    call hbc_str_cache_flush
+    mov 56(%rbx), %rdi
+    mov $256, %esi
+    mov $11, %eax
+    syscall
+    mov 40(%rbx), %rdi
+    mov $1048576, %esi
+    mov $11, %eax
+    syscall
+    mov $60, %eax
+    xor %edi, %edi
+    syscall
+
+# hbc_thr_wake(rdi=state addr, rsi=count): futex wake, errno swallowed.
+hbc_thr_wake:
+    mov $202, %eax
+    xor %edx, %edx
+    xor %r10d, %r10d
+    xor %r8d, %r8d
+    syscall
+    ret
+
+# hbc_thr_reg_add(rdi=block): prepend to the registry under the spinlock.
+hbc_thr_reg_add:
+    lea hbc_thr_reg_lock(%rip), %r8
+.Lthraq:
+    lock btsq $0, (%r8)
+    jnc .Lthraq_ok
+.Lthraq_sp:
+    pause
+    lock btsq $0, (%r8)
+    jc .Lthraq_sp
+.Lthraq_ok:
+    lea hbc_thr_reg_head(%rip), %r9
+    mov (%r9), %rax
+    mov %rax, 72(%rdi)
+    mov %rdi, (%r9)
+    lock btrq $0, (%r8)
+    ret
+
+# hbc_thr_reg_del(rdi=block): remove from the registry (join, failed
+# start, detach).
+hbc_thr_reg_del:
+    lea hbc_thr_reg_lock(%rip), %r8
+.Lthrdq:
+    lock btsq $0, (%r8)
+    jnc .Lthrdq_ok
+.Lthrdq_sp:
+    pause
+    lock btsq $0, (%r8)
+    jc .Lthrdq_sp
+.Lthrdq_ok:
+    lea hbc_thr_reg_head(%rip), %r9
+    mov %r9, %rax
+.Lthrdw:
+    mov (%rax), %r10
+    test %r10, %r10
+    jz .Lthrdd
+    cmp %r10, %rdi
+    jne .Lthrdn
+    mov 72(%r10), %r11
+    mov %r11, (%rax)
+    jmp .Lthrdd
+.Lthrdn:
+    lea 72(%r10), %rax
+    jmp .Lthrdw
+.Lthrdd:
+    lock btrq $0, (%r8)
+    ret
+
+# hbc_thread_join_grab(rdi=handle)
+#   -> rax = ok (1/0), rdx = result tag, rcx = result payload.
+# Blocks on the futex until the worker finishes, then consumes the handle
+# (state: 0 running, 1 done, 2 consumed) and frees the block.
+hbc_thread_join_grab:
+    push %rbx
+    mov %rdi, %rbx
+    testq $1, 64(%rbx)
+    jnz .Lthjg_bad
+.Lthjg_spin:
+    mov (%rbx), %eax
+    test %eax, %eax
+    jnz .Lthjg_ready
+    mov $202, %eax
+    mov %rbx, %rdi
+    xor %esi, %esi
+    xor %edx, %edx
+    xor %r10d, %r10d
+    xor %r8d, %r8d
+    syscall
+    jmp .Lthjg_spin
+.Lthjg_ready:
+    mov $2, %eax
+    xchg %eax, (%rbx)
+    cmp $1, %eax
+    jne .Lthjg_bad
+    mov 8(%rbx), %rdx
+    mov 16(%rbx), %rcx
+    mov %rbx, %rdi
+    push %rdx
+    push %rcx
+    call hbc_thr_reg_del
+    pop %rcx
+    pop %rdx
+    # The block STAYS MAPPED with state=2 (consumed): a second join on the
+    # same handle must read state!=1 and return .F. + NIL (oracle th28),
+    # not fault. hbc_alloc'd blocks are raw mmaps reclaimed at process
+    # exit (declared F1 limit, STATUS.md).
+    mov $1, %eax
+    pop %rbx
+    ret
+.Lthjg_bad:
+    xor %eax, %eax
+    mov $1, %edx
+    xor %ecx, %ecx
+    pop %rbx
+    ret
+
+# hbc_thread_wait(rdi=handle, rsi=milliseconds or -1) -> rax = 1 finished,
+# 0 otherwise (timeout, or EINTR recheck still running).
+hbc_thread_wait:
+    push %rbx
+    mov %rdi, %rbx
+    mov (%rbx), %eax
+    test %eax, %eax
+    jnz .Lthw_done
+    cmp $-1, %rsi
+    je .Lthw_forever
+    mov %rsi, %rax
+    xor %edx, %edx
+    mov $1000, %rcx
+    div %rcx
+    sub $32, %rsp
+    mov %rax, (%rsp)
+    imul $1000000, %rdx, %rax
+    mov %rax, 8(%rsp)
+    mov $202, %eax
+    mov %rbx, %rdi
+    xor %esi, %esi
+    xor %edx, %edx
+    mov %rsp, %r10
+    xor %r8d, %r8d
+    syscall
+    add $32, %rsp
+    cmp $-4, %rax
+    je .Lthw_rec
+    cmp $-110, %rax
+    je .Lthw_to
+.Lthw_rec:
+    mov (%rbx), %eax
+    test %eax, %eax
+    jz .Lthw_to
+.Lthw_done:
+    mov $1, %eax
+    pop %rbx
+    ret
+.Lthw_to:
+    xor %eax, %eax
+    pop %rbx
+    ret
+.Lthw_forever:
+    mov $202, %eax
+    mov %rbx, %rdi
+    xor %esi, %esi
+    xor %edx, %edx
+    xor %r10d, %r10d
+    xor %r8d, %r8d
+    syscall
+    mov (%rbx), %eax
+    test %eax, %eax
+    jz .Lthw_forever
+    mov $1, %eax
+    pop %rbx
+    ret
+
+# hbc_thread_self -> rax = this thread's block.
+hbc_thread_self:
+    mov %fs:120, %rax
+    ret
+
+# hbc_thread_detach(rdi=handle) -> rax = 1.
+hbc_thread_detach:
+    push %rbx
+    mov %rdi, %rbx
+    movq $1, 64(%rbx)
+    mov %rbx, %rdi
+    call hbc_thr_reg_del
+    mov $1, %eax
+    pop %rbx
+    ret
+
+# hbc_thread_waitall: block until every registered worker has finished.
+hbc_thread_waitall:
+    push %rbx
+.Lthwa_loop:
+    lea hbc_thr_reg_lock(%rip), %r8
+.Lthwa_aq:
+    lock btsq $0, (%r8)
+    jnc .Lthwa_ok
+.Lthwa_sp:
+    pause
+    lock btsq $0, (%r8)
+    jc .Lthwa_sp
+.Lthwa_ok:
+    lea hbc_thr_reg_head(%rip), %r9
+    mov (%r9), %rbx
+    xor %r10d, %r10d
+.Lthwa_walk:
+    test %rbx, %rbx
+    jz .Lthwa_walked
+    mov (%rbx), %eax
+    test %eax, %eax
+    jz .Lthwa_pending
+    mov 72(%rbx), %rbx
+    jmp .Lthwa_walk
+.Lthwa_pending:
+    mov $1, %r10d
+.Lthwa_walked:
+    lock btrq $0, (%r8)
+    test %r10d, %r10d
+    jz .Lthwa_out
+    mov $202, %eax
+    mov %rbx, %rdi
+    xor %esi, %esi
+    xor %edx, %edx
+    xor %r10d, %r10d
+    xor %r8d, %r8d
+    syscall
+    jmp .Lthwa_loop
+.Lthwa_out:
+    pop %rbx
+    ret
+
+# hbc_thr_print(rdx=ptr) / _eprint: '0x' + 16 uppercase hex digits.
+hbc_thr_print:
+    mov $1, %edi
+    jmp hbc_thr_phex
+hbc_thr_eprint:
+    mov $2, %edi
+hbc_thr_phex:
+    sub $24, %rsp
+    movb $48, (%rsp)
+    movb $120, 1(%rsp)
+    mov $60, %ecx
+    xor %r9d, %r9d
+.Lthphx:
+    mov %rdx, %rax
+    shr %cl, %rax
+    and $15, %rax
+    lea .Lhexdig(%rip), %rsi
+    mov (%rsi,%rax,1), %al
+    movb %al, 2(%rsp,%r9,1)
+    inc %r9d
+    sub $4, %ecx
+    jns .Lthphx
+    mov $1, %eax
+    lea (%rsp), %rsi
+    mov $18, %edx
+    syscall
+    add $24, %rsp
+    ret
+
+.section .rodata
+.Lhexdig: .byte 48,49,50,51,52,53,54,55,56,57,65,66,67,68,69,70
+.data
+.align 8
+hbc_thr_main_block: .zero 80
+hbc_thr_reg_head: .quad 0
+hbc_thr_reg_lock: .quad 0
+.text
+";
+
 
 // Evaluate a scalar value for a DATA casilla (write or INIT): leaves the
 // tagged Dyn pair in rax (tag) / rdx (payload). Strings become fresh OWNED
@@ -9742,9 +10268,10 @@ fn emit_class_runtime(sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, ta
         let parent = c.parent.map(|p| format!("hrobj_desc_{}", p)).unwrap_or_else(|| "0".to_string());
         let mt = if c.slots.is_empty() { "0".to_string() } else { format!(".Lclsmt{}", i) };
         let init = if c.inits.is_empty() { "0".to_string() } else { format!("hrobj_init_{}", i) };
-        out.push_str(&format!("    .data\n    .align 8\nhrobj_desc_{}:\n    .quad .Lclsname{}\n    .quad {}\n    .long {}, {}\n    .long {}, 0\n    .quad {}\n    .quad {}\n    .quad 0\n    .quad 0\n    .quad 0\n    .quad 0\n    .text\n", i, i, parent, c.own_start, c.ndatas, c.slots.len(), mt, init));
+        let lock = if THREADS.with(|c| c.get()) { "    .quad 0\n" } else { "" };
+        out.push_str(&format!("    .data\n    .align 8\nhrobj_desc_{}:\n    .quad .Lclsname{}\n    .quad {}\n    .long {}, {}\n    .long {}, 0\n    .quad {}\n    .quad {}\n    .quad 0\n    .quad 0\n    .quad 0\n    .quad 0\n{}    .text\n", i, i, parent, c.own_start, c.ndatas, c.slots.len(), mt, init, lock));
     }
-    out.push_str(HROBJ_BLOB);
+    out.push_str(if THREADS.with(|c| c.get()) { HROBJ_BLOB_MT } else { HROBJ_BLOB });
     // The blob ends in its `.note` marker sections; re-enter .text for
     // whatever the caller emits next.
     out.push_str("\n    .text\n");
@@ -9837,6 +10364,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str(&format!("    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n\n    cmp $4, %rax\n    jne 83f\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n83:\n", 16 + off * 16 + 8, 16 + off * 16));
         }
         Expr::ByRef(_) => unreachable!("`@` arguments are emitted at the call site"),
+        Expr::FuncRef(_) => unreachable!("`@f()` is marshaled by the hb_threadStart call site"),
         Expr::Int(v) => {
             out.push_str(&format!("    mov ${}, %rax\n", v));
         }
@@ -10134,6 +10662,18 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // %r10 = scalar Dyn tag: 0 i64 -> "N", 1 NIL -> "U", 2 str -> "C"
             fn vt_classify_scalar(strs: &mut Vec<String>, out: &mut String) {
                 out.push_str("    @HBC_TAG_KIND@cmp $6, %r10@HBC_TAG_END@\n    je 99f\n    @HBC_TAG_KIND@cmp $8, %r10@HBC_TAG_END@\n    je 99f\n    @HBC_TAG_KIND@cmp $1, %r10@HBC_TAG_END@\n    je 95f\n    @HBC_TAG_KIND@cmp $2, %r10@HBC_TAG_END@\n    je 96f\n    @HBC_TAG_KIND@cmp $4, %r10@HBC_TAG_END@\n    je 96f\n    @HBC_TAG_KIND@cmp $3, %r10@HBC_TAG_END@\n    je 98f\n");
+                if !CLASSES.with(|c| c.borrow().is_empty()) {
+                    let lo = fresh_lbl();
+                    out.push_str(&format!("    @HBC_TAG_KIND@cmp $13, %r10@HBC_TAG_END@\n    jne .Lvto{}\n", lo));
+                    vt_letter(strs, out, "O");
+                    out.push_str(&format!("    jmp 97f\n.Lvto{}:\n", lo));
+                }
+                if THREADS.with(|c| c.get()) {
+                    let lp = fresh_lbl();
+                    out.push_str(&format!("    @HBC_TAG_KIND@cmp $14, %r10@HBC_TAG_END@\n    jne .Lvtp{}\n", lp));
+                    vt_letter(strs, out, "P");
+                    out.push_str(&format!("    jmp 97f\n.Lvtp{}:\n", lp));
+                }
                 if DBF_USED.with(|v|v.get()) {
                     let no_date=fresh_lbl();let done=fresh_lbl();
                     out.push_str(&format!("    cmpb $11, %r10b\n    jne .Ldbfnotdate{}\n",no_date));
@@ -10617,6 +11157,295 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             } else {
                 unreachable!("checked: hb_HCaseMatch takes a hash variable");
             }
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_threadstart") => {
+            // Marshal: block [0 state|8 rtag|16 rpay|24 ncells|32 thunk|
+            // 40 stack|48 stacksz|56 tls|64 flags|72 next|80.. casillas].
+            // Each argument becomes a Dyn casilla (strings deep-copied,
+            // objects retained); the thunk converts to the callee's
+            // convention on the new thread.
+            let fname = if let Expr::FuncRef(f) = &args[0] { f.clone() } else { unreachable!("checked") };
+            let sig = sigs.iter().find(|s| s.name == fname).expect("checked").clone();
+            let nparams = sig.params.len();
+            let provided = args.len() - 1;
+            let cells = provided.max(nparams);
+            let bsz = 80 + 16 * cells;
+            let l = fresh_lbl();
+            out.push_str(&format!("    mov ${}, %rdi
+    call hbc_alloc
+    sub $16, %rsp
+    mov %rax, (%rsp)
+    movq ${}, 24(%rax)
+    lea hbc_thunk_{}(%rip), %r11
+    mov %r11, 32(%rax)
+", bsz, cells, fname));
+            for (i, a) in args[1..].iter().enumerate() {
+                let ta = expr_ty(a, env, sigs);
+                cg_expr(a, env, sigs, strs, out, target);
+                match ta {
+                    Ty::I64 => cg_i64_tagged(out),
+                    Ty::Bool => out.push_str("    mov %rax, %rdx
+    mov $3, %eax
+"),
+                    Ty::Dyn => {
+                        cg_dyn_clone_if_str(out);
+                        if !CLASSES.with(|c| c.borrow().is_empty()) {
+                            out.push_str(&format!("    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@\n    jne .Lthnoobj{}\n    sub $32, %rsp\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov %rdx, %rdi\n    call hrobj_retain\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n.Lthnoobj{}:\n", l, l));
+                        }
+                    },
+                    Ty::Obj(_) => {
+                        if !obj_fresh(a, env, sigs) {
+                            out.push_str("    sub $16, %rsp
+    mov %rax, (%rsp)
+    mov %rax, %rdi
+    call hrobj_retain
+    mov (%rsp), %rax
+    add $16, %rsp
+");
+                        }
+                        out.push_str("    mov %rax, %rdx
+    mov $13, %eax
+");
+                    },
+                    Ty::Str | Ty::StrOwn => {
+                        let temp = ta == Ty::StrOwn && !matches!(a, Expr::Var(_));
+                        if temp {
+                            out.push_str("    sub $32, %rsp
+    mov %rax, 8(%rsp)
+    mov %rdx, 16(%rsp)
+    mov %rax, %rdi
+    mov %rdx, %rsi
+    call hbc_strcpy
+    mov %rax, 24(%rsp)
+    mov 8(%rsp), %rdi
+    call hbc_freestr
+    mov 24(%rsp), %rdx
+    add $32, %rsp
+    mov $4, %eax
+");
+                        } else {
+                            out.push_str("    mov %rax, %rdi
+    mov %rdx, %rsi
+    call hbc_strcpy
+    mov %rax, %rdx
+    mov $4, %eax
+");
+                        }
+                    },
+                    _ => unreachable!("checked"),
+                }
+                out.push_str(&format!("    mov (%rsp), %r11
+    mov %rax, {}(%r11)
+    mov %rdx, {}(%r11)
+", 80 + 16 * i, 88 + 16 * i));
+            }
+            for i in provided..cells {
+                out.push_str(&format!("    mov (%rsp), %r11
+    movq $1, {}(%r11)
+    movq $0, {}(%r11)
+", 80 + 16 * i, 88 + 16 * i));
+            }
+            out.push_str(&format!("    mov (%rsp), %rdi
+    call hbc_thread_start
+    add $16, %rsp
+    test %rax, %rax
+    jz .Lthf{}
+    mov %rax, %rdx
+    mov $14, %eax
+    jmp .Lthd{}
+.Lthf{}:
+    mov $1, %eax
+    xor %edx, %edx
+.Lthd{}:
+", l, l, l, l));
+            // Thunk (generated once per referenced function): converts the
+            // marshaled Dyn casillas to the callee's parameter convention
+            // and normalizes its return to a Dyn casilla for the joiner.
+            THUNK_TEXT.with(|t| {
+                let mut v = t.borrow_mut();
+                if !v.iter().any(|(n, _)| n == &fname) {
+                    let mut th = String::new();
+                    th.push_str(&format!(".text\nhbc_thunk_{}:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    mov %rdi, %rbx
+", fname));
+                    for (i, pt) in sig.params.iter().enumerate() {
+                        match pt {
+                            Ty::Dyn => th.push_str(&format!("    mov {}(%rbx), %rax
+    mov {}(%rbx), %rdx
+    sub $16, %rsp
+    mov %rax, (%rsp)
+    mov %rdx, 8(%rsp)
+", 80 + 16 * i, 88 + 16 * i)),
+                            Ty::I64 => th.push_str(&format!("    mov {}(%rbx), %rax
+    mov {}(%rbx), %rdx
+    call hbc_dyn_to_i64
+    sub $16, %rsp
+    mov %rax, (%rsp)
+    mov %rdx, 8(%rsp)
+", 80 + 16 * i, 88 + 16 * i)),
+                            Ty::Obj(_) => th.push_str(&format!("    mov {}(%rbx), %rax
+    sub $16, %rsp
+    mov %rax, (%rsp)
+    movq $0, 8(%rsp)
+", 88 + 16 * i)),
+                            _ => unreachable!("checked"),
+                        }
+                    }
+                    th.push_str(&format!("    call hbc_fn_{}
+", fname));
+                    if nparams > 0 { th.push_str(&format!("    add ${}, %rsp
+", 16 * nparams)); }
+                    if sig.nil_ret_only || sig.ret.is_none() { th.push_str("    mov $1, %eax
+    xor %edx, %edx
+"); }
+                    else {
+                        match sig.ret.unwrap() {
+                            Ty::I64 => th.push_str("    mov %rax, %r11
+    imul $9, %rdx, %rax
+    mov %r11, %rdx
+"),
+                            Ty::Bool => th.push_str("    mov %rax, %rdx
+    mov $3, %eax
+"),
+                            Ty::Dyn => {},
+                            Ty::Str => th.push_str("    mov %rax, %rdi
+    mov %rdx, %rsi
+    call hbc_strcpy
+    mov %rax, %rdx
+    mov $4, %eax
+"),
+                            Ty::StrOwn => th.push_str("    sub $32, %rsp
+    mov %rax, 8(%rsp)
+    mov %rdx, 16(%rsp)
+    mov %rax, %rdi
+    mov %rdx, %rsi
+    call hbc_strcpy
+    mov %rax, 24(%rsp)
+    mov 8(%rsp), %rdi
+    call hbc_freestr
+    mov 24(%rsp), %rdx
+    add $32, %rsp
+    mov $4, %eax
+"),
+                            Ty::Obj(_) => th.push_str("    mov %rax, %rdx
+    mov $13, %eax
+"),
+                            _ => unreachable!("checked"),
+                        }
+                    }
+                    th.push_str("    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+");
+                    v.push((fname.clone(), th));
+                }
+            });
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_threadjoin") => {
+            // hbc_thread_join_grab: rdi=handle -> rax=ok, rdx=result tag,
+            // rcx=result payload (fresh ownership for the caller).
+            cg_expr(&args[0], env, sigs, strs, out, target);
+            out.push_str("    mov %rdx, %rdi
+    call hbc_thread_join_grab
+");
+            if let Some(Expr::ByRef(vn)) = args.get(1) {
+                let var = env.iter().rev().find(|x| x.name == *vn).expect("checked");
+                let lf = fresh_lbl();
+                let lo = fresh_lbl();
+                // Release the slot's previous payload before overwriting
+                // (owned string, or object when classes are active).
+                out.push_str(&format!("    sub $16, %rsp
+    mov %rax, (%rsp)
+    mov -{}(%rbp), %rax
+    cmp $4, %rax
+    jne .Lthj{}
+    mov -{}(%rbp), %rdi
+    call hbc_freestr
+.Lthj{}:
+", var.off, lf, var.off - 8, lf));
+                if !CLASSES.with(|c| c.borrow().is_empty()) {
+                    out.push_str(&format!("    mov -{}(%rbp), %rax
+    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@
+    jne .Lthjo{}
+    mov -{}(%rbp), %rdi
+    call hrobj_release
+.Lthjo{}:
+", var.off, lo, var.off - 8, lo));
+                }
+                out.push_str(&format!("    mov (%rsp), %rax
+    add $16, %rsp
+    mov %rdx, -{}(%rbp)
+    mov %rcx, -{}(%rbp)
+", var.off, var.off - 8));
+            } else {
+                // Discarded result: free an owned-string payload.
+                let l2 = fresh_lbl();
+                out.push_str(&format!("    cmp $4, %rdx
+    jne .Lthx{}
+    sub $16, %rsp
+    mov %rax, (%rsp)
+    mov %rcx, %rdi
+    call hbc_freestr
+    mov (%rsp), %rax
+    add $16, %rsp
+.Lthx{}:
+", l2, l2));
+            }
+            out.push_str("    xor %edx, %edx
+");
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_threadwait") => {
+            cg_expr(&args[0], env, sigs, strs, out, target);
+            // The handle waits on the stack: f64 literal loading clobbers rdi.
+            out.push_str("    sub $16, %rsp
+    mov %rdx, (%rsp)
+");
+            if args.len() == 2 {
+                if expr_ty(&args[1], env, sigs) == Ty::F64 {
+                    cg_f64_load(&args[1], env, sigs, strs, out, target);
+                    out.push_str("    mov $1000, %rax
+    cvtsi2sd %rax, %xmm1
+    mulsd %xmm1, %xmm0
+    cvttsd2si %xmm0, %rsi
+");
+                } else {
+                    cg_expr(&args[1], env, sigs, strs, out, target);
+                    out.push_str("    imul $1000, %rax, %rsi
+");
+                }
+            } else {
+                out.push_str("    mov $-1, %rsi
+");
+            }
+            out.push_str("    mov (%rsp), %rdi
+    add $16, %rsp
+    call hbc_thread_wait
+    xor %edx, %edx
+");
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_threadself") => {
+            out.push_str("    call hbc_thread_self
+    mov %rax, %rdx
+    mov $14, %eax
+");
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_threaddetach") => {
+            cg_expr(&args[0], env, sigs, strs, out, target);
+            out.push_str("    mov %rdx, %rdi
+    call hbc_thread_detach
+    xor %edx, %edx
+");
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_threadwaitforall") => {
+            out.push_str("    call hbc_thread_waitall
+    mov $1, %eax
+    xor %edx, %edx
+");
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hscan") => {
             // hb_HScan(h, value [, start]): the value evaluates first
@@ -12010,6 +12839,9 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if let Some(ci) = class_find(id) {
                 return Ty::Obj(ci); // instantiation `TClass()`
             }
+            if is_builtin(id, "hb_threadstart") || is_builtin(id, "hb_threadself") || is_builtin(id, "hb_threadwaitforall") { return Ty::Dyn; }
+            if is_builtin(id, "hb_threadjoin") || is_builtin(id, "hb_threaddetach") { return Ty::Bool; }
+            if is_builtin(id, "hb_threadwait") { return Ty::I64; }
             match sigs.iter().find(|v| v.name == *id) {
                 Some(s) => s.ret.expect("checked"),
                 // Extend-System C boundary: every EXTERNAL returns a Dyn
@@ -12038,6 +12870,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::BlockLit(_, ps, body) => Ty::Block(ps.len(), block_body_kind(body, sigs)),
         Expr::DArrNew => Ty::DArrU,
         Expr::HashLit(_) => Ty::Hash,
+        Expr::FuncRef(_) => Ty::Dyn,
     }
 }
 
@@ -12099,7 +12932,7 @@ fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String,
                 let mask: Vec<bool> = args.iter().map(|a| matches!(a, Expr::ByRef(_))).collect();
                 // Extern C calls emit their `@` casillas inline at the
                 // call site (milestone 2.2); no callee variant exists.
-                if mask.iter().any(|b| *b) && !EXTERNS.with(|c| c.borrow().contains(id)) {
+                if mask.iter().any(|b| *b) && !EXTERNS.with(|c| c.borrow().contains(id)) && !is_builtin(id, "hb_threadjoin") {
                     out.insert((id.clone(), mask));
                 }
                 for a in args { if !matches!(a, Expr::ByRef(_)) { ex(a, out); } }
@@ -18090,6 +18923,14 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         eprintln!("error: classes are Linux-only in this increment (the Windows runtime blob is pending)");
         process::exit(1);
     }
+    if THREADS.with(|c| c.get()) && !matches!(target, Target::Linux) {
+        eprintln!("error: threads are Linux-only in this increment (clone(2) + futex runtime)");
+        process::exit(1);
+    }
+    if THREADS.with(|c| c.get()) && instrument {
+        eprintln!("error: --instrument is not supported with threads in this increment (the allocation registry is process-global)");
+        process::exit(1);
+    }
     let mut out = String::new();
     out.push_str("# generated by hbc (PoC: Harbour syntax -> x86-64 assembly)\n");
     out.push_str(CONSOLE_NUL_HELPER);
@@ -18207,6 +19048,13 @@ hbc_persistent_payload_release:
         out.push_str(&format!("    lea hbc_static_{}_{}_{}(%rip), %rdi\n    call hbc_persistent_release\n",f.name.len(),f.name,id));
     }}}
     out.push_str("    leave\n    ret\n");
+    // Thread thunks (one per hb_threadStart target) and the clone+futex
+    // runtime. Emitted BEFORE the helper-selection contains-checks below
+    // so e.g. the thunk's `call hbc_dyn_to_i64` pulls that helper in.
+    THUNK_TEXT.with(|t| for (_, th) in t.borrow().iter() { out.push_str(th); });
+    if THREADS.with(|c| c.get()) && matches!(target, Target::Linux) {
+        out.push_str(THREAD_HELPERS_LINUX);
+    }
     // Runtime helpers (ours, hand-written; syscall-only on linux, three
     // kernel32 calls on windows).
     match target {
@@ -18230,6 +19078,7 @@ hbc_persistent_payload_release:
             return {
         let active=DBF_USED.with(|v|v.get());
         let mut result=finalize_trace(out,target);
+        if THREADS.with(|c| c.get()) { result = finalize_threads(result); }
         if active {
             result=result.replace("    call hbc_fn_main\n", "    call hbc_fn_main\n    call hrdbf_app_close\n");
             result=result.replace("hbc_panic_exit:\n", "hbc_panic_exit:\n    and $-16, %rsp\n    call hrdbf_app_close\n");
@@ -19849,6 +20698,7 @@ hbc_str_cache: .zero 64
     {
         let active=DBF_USED.with(|v|v.get());
         let mut result=finalize_trace(out,target);
+        if THREADS.with(|c| c.get()) { result = finalize_threads(result); }
         if active {
             result=result.replace("    call hbc_fn_main\n", "    call hbc_fn_main\n    call hrdbf_app_close\n");
             result=result.replace("hbc_panic_exit:\n", "hbc_panic_exit:\n    and $-16, %rsp\n    call hrdbf_app_close\n");
@@ -19948,6 +20798,36 @@ hbc_dbf_eprint:
 }
 
 // Unify controlled failures only. Normal _start exits are not rewritten.
+// Threads F1 (own clone(2)+futex runtime): retarget the mutable codegen
+// globals to the %fs TLS block, seed the main thread's TLS at _start,
+// exit with exit_group (231) from Main while workers keep exit(60), end
+// a panicking worker as just that worker (result NIL for the joiner),
+// and render PTR handles (tag 14) as 0x + uppercase hex. Only runs when
+// the program used a thread builtin; every replace is verified present.
+fn finalize_threads(out: String) -> String {
+    let mut r = out;
+    for (sym, off) in [("hbc_trace_top", 0), ("hbc_pending", 8), ("hbc_console_mode", 16)] {
+        r = r.replace(&format!("{}(%rip)", sym), &format!("%fs:{}", off));
+    }
+    for reg in ["%r10", "%r11", "%r13"] {
+        r = r.replace(&format!("lea hbc_str_cache(%rip), {}", reg), &format!("mov %fs:48, {}", reg));
+    }
+    assert!(r.contains("    .globl _start\n_start:\n"), "threads: _start shape changed");
+    r = r.replacen("    .globl _start\n_start:\n", "    .globl _start\n_start:\n    call hbc_tls_init\n", 1);
+    // The FIRST exit(60) is Main's; the worker boot's exit stays 60.
+    assert_eq!(r.matches("    mov $60, %eax\n    xor %edi, %edi\n    syscall").count(), 2, "threads: exit sites changed");
+    r = r.replacen("    mov $60, %eax\n    xor %edi, %edi\n    syscall", "    mov $231, %eax\n    xor %edi, %edi\n    syscall", 1);
+    let panic_tail = "    call hbc_print_trace\n    mov $60, %eax\n    mov $1, %edi\n    syscall\n";
+    assert!(r.contains(panic_tail), "threads: panic tail shape changed");
+    r = r.replace(panic_tail, "    call hbc_print_trace\n    mov %fs:120, %rbx\n    lea hbc_thr_main_block(%rip), %rax\n    cmp %rax, %rbx\n    je .Lthr_panic_main\n    movq $1, 8(%rbx)\n    movq $0, 16(%rbx)\n    mov $1, %eax\n    xchg %eax, (%rbx)\n    mov %rbx, %rdi\n    mov $1, %esi\n    call hbc_thr_wake\n    call hbc_str_cache_flush\n    mov 56(%rbx), %rdi\n    mov $256, %esi\n    mov $11, %eax\n    syscall\n    mov 40(%rbx), %rdi\n    mov $1048576, %esi\n    mov $11, %eax\n    syscall\n    mov $60, %eax\n    mov $1, %edi\n    syscall\n.Lthr_panic_main:\n    mov $231, %eax\n    mov $1, %edi\n    syscall\n");
+    assert!(r.contains("hbc_print_dyn:\n"), "threads: print_dyn shape changed");
+    r = r.replace("hbc_print_dyn:\n", "hbc_print_dyn:\n    cmpb $14, %al\n    je hbc_thr_print\n");
+    if r.contains("hbc_eprint_dyn:\n") {
+        r = r.replace("hbc_eprint_dyn:\n", "hbc_eprint_dyn:\n    cmpb $14, %al\n    je hbc_thr_eprint\n");
+    }
+    r
+}
+
 fn finalize_trace(mut out: String, target: Target) -> String {
     if out.contains("call hbc_ctod") || out.contains("call hbc_date_today") || out.contains("call hbc_date_render") {
         out.push_str(DATE_PORT_HELPERS);

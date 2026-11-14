@@ -44,7 +44,7 @@ fn effect_uses(e:&Expr,discard:bool,voids:&std::collections::BTreeSet<String>)->
   Expr::Index4(_,a,b,c,d)=>for e in [a,b,c,d]{effect_uses(e,false,voids)?;},
   Expr::HashLit(es)=>for(a,b)in es{effect_uses(a,false,voids)?;effect_uses(b,false,voids)?;},
   Expr::Send(a,_,args)=>{effect_uses(a,false,voids)?;for e in args{effect_uses(e,false,voids)?;}},
-  Expr::FloatV(..)|Expr::Float(..)|Expr::Int(_)|Expr::Str(_)|Expr::Var(_)|Expr::Inc(..)|Expr::ByRef(_)|Expr::DArrNew|Expr::SelfObj|Expr::SelfGet(_)|Expr::Nil|Expr::Log(_)=>{}
+  Expr::FloatV(..)|Expr::Float(..)|Expr::Int(_)|Expr::Str(_)|Expr::Var(_)|Expr::Inc(..)|Expr::ByRef(_)|Expr::FuncRef(_)|Expr::DArrNew|Expr::SelfObj|Expr::SelfGet(_)|Expr::Nil|Expr::Log(_)=>{}
  }Ok(())
 }
 fn check_effect_uses(ss:&[Stmt],voids:&std::collections::BTreeSet<String>)->Result<(),String>{
