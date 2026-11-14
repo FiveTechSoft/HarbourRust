@@ -27,10 +27,10 @@ skip=0
 norm=0
 norm_cmp() { cmp -s <(tr -d '\r' < "$1") <(tr -d '\r' < "$2"); }
 has_cr() { grep -q $'\r' "$1" 2>/dev/null; }
-build_win() { base=${1%.*}; ./hbc "$1" gen/"$base"_w.s --target=windows --instrument -I tests >/dev/null 2>&1 && "$M"/as.exe -o gen/"$base"_w.o gen/"$base"_w.s && "$M"/ld.exe -o gen/"$base".exe gen/"$base"_w.o -e _start --subsystem console -L"$MLIB" -lkernel32; }
+build_win() { base=$(basename "$1"); base=${base%.*}; ./hbc "$1" gen/"$base"_w.s --target=windows --instrument -I tests >/dev/null 2>&1 && "$M"/as.exe -o gen/"$base"_w.o gen/"$base"_w.s && "$M"/ld.exe -o gen/"$base".exe gen/"$base"_w.o -e _start --subsystem console -L"$MLIB" -lkernel32; }
 run_pos_kind() { # file expected [exit]
   local f=$1 exp=$2 want_rc=$3 base
-  base=${f%.*}
+  base=$(basename "$f"); base=${base%.*}
   n=$((n+1))
   if ! build_win "$f"; then echo "FAIL $f (windows build)"; fail=1; return; fi
   local out_win rc_win
@@ -62,7 +62,7 @@ while IFS= read -r line; do
     pos)  run_pos_kind "$file" "$(echo "$line" | cut -d' ' -f3- | xargs -0 printf '%b')" "";;
     posx) run_pos_kind "$file" "$(echo "$line" | cut -d' ' -f4- | xargs -0 printf '%b')" "$(echo "$line"|awk '{print $3}')";;
     pos2)
-      base=${file%.*}
+      base=$(basename "$file"); base=${base%.*}
       fexp=$(echo "$line"|awk '{print $4}')
       n=$((n+1))
       if build_win "$file" &&
@@ -71,7 +71,7 @@ while IFS= read -r line; do
         if has_cr "$fexp" || has_cr "gen/${base}_w.actual"; then norm=$((norm+1)); echo "PASS* $file (normalized newlines)"; else echo "PASS $file"; fi
       else echo "FAIL $file (exact win bytes)"; fail=1; fi;;
     streams)
-      base=${file%.*}
+      base=$(basename "$file"); base=${base%.*}
       sexp=$(echo "$line"|awk '{print $4}'); eexp=$(echo "$line"|awk '{print $5}')
       n=$((n+1))
       if build_win "$file" &&
