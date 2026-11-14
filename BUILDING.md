@@ -112,14 +112,15 @@ full-manifest run was performed for this binary. The earlier Windows 11
 
 To rebuild it yourself:
 
-Cross-compiled from Linux with the `x86_64-pc-windows-gnu` Rust target,
-`rust-lld`, and the MinGW-w64 v14 CRT (the version that ships with Debian
-trixie; older CRTs miss `__mingw_initltssuo_force` and related symbols that
-the Rust standard library needs):
+The tracked binary was cross-compiled from Linux with rustc 1.100.0,
+the `x86_64-pc-windows-gnu` Rust target, `rust-lld`, MinGW-w64 8.0.0
+(`mingw-w64-x86-64-dev` 8.0.0-1, Ubuntu 22.04), and GCC 10-posix
+`libgcc.a` / `libgcc_eh.a`. This explicit, matching CRT route works with
+those versions; MinGW-w64 v14 is not a minimum requirement:
 
 ```
 rustup target add x86_64-pc-windows-gnu
-CRT=/path/to/mingw-w64-14/usr/x86_64-w64-mingw32/lib   # provides crt2.o and the import libs
+CRT=/path/to/mingw-w64-8/usr/x86_64-w64-mingw32/lib   # provides crt2.o and the import libs
 GCC=/path/to/gcc/x86_64-w64-mingw32/libgcc/dir         # provides libgcc.a and libgcc_eh.a
 rustc --edition=2021 -O --target x86_64-pc-windows-gnu \
   -C linker=rust-lld -C linker-flavor=ld.lld -C link-self-contained=no \
@@ -130,9 +131,17 @@ rustc --edition=2021 -O --target x86_64-pc-windows-gnu \
 `libgcc.a` / `libgcc_eh.a` come from a MinGW-w64 GCC package (Debian/Ubuntu
 `gcc-mingw-w64-x86-64-posix`, extractable with `dpkg -x` the same way).
 
-Note: using Rust's self-contained `crt2.o` (the default) produced binaries
-that crash at startup under Wine 10; linking the CRT's own matching `crt2.o`
-as shown above is what was verified.
+Use the CRT package's `crt2.o` together with its matching libraries, as
+shown above. In a fresh rustc 1.100.0 control using this same MinGW-w64 8
+library set, `-C link-self-contained=yes` selected Rust's bundled `crt2.o`
+and failed to link (`__mingw_app_type`, `__mingw_initltssuo_force` and
+related unresolved symbols). That does not mean older matching CRTs fail;
+it shows that these startup objects and libraries cannot be mixed.
+
+An older build note reported a startup crash under Wine 10 with a bundled
+CRT. That historical environment was not reproduced here and is not a
+general Wine 10 or self-contained-CRT claim. The explicit CRT build above
+was freshly verified under Wine 11.0, not native Windows.
 
 ## 5. Run the Windows binaries under Wine (for testing)
 
