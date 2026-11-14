@@ -21002,31 +21002,82 @@ hbc_print_sep:
 # hk274-hk276 comment claim of a per-statement `??` trim, which had no
 # preserved probes and is falsified by q3/q6/q7).
 hbc_pstrt:
-    sub $24, %rsp
+    # Stack slots: current pointer, remaining bytes, trim count.
+    # LF splits formatted console lines; raw writers never enter here.
+    sub $56, %rsp
+    mov %r8, 40(%rsp)
+    mov %rax, (%rsp)
     mov %rdx, 8(%rsp)
-97:
-    cmp $0, %rdx
-    je 98f
-    cmpb $0x20, -1(%rax,%rdx)
-    jne 98f
+.Lpseg_begin:
+    xor %r8d, %r8d
+.Lpseg_scan:
+    cmp %rdx, %r8
+    je .Lpseg_last
+    cmpb $10, (%rax,%r8)
+    je .Lpseg_lf
+    inc %r8
+    jmp .Lpseg_scan
+.Lpseg_lf:
+    lea 1(%rax,%r8), %rcx
+    mov %rcx, (%rsp)
+    sub %r8, %rdx
     dec %rdx
-    jmp 97b
-98:
-    mov 8(%rsp), %rcx
-    sub %rdx, %rcx
-    mov %rcx, 8(%rsp)
+    mov %rdx, 8(%rsp)
+    mov %r8, %rdx
     test %rdx, %rdx
-    jz 96f
-    mov %rax, 16(%rsp)
-    mov %rdx, (%rsp)
+    jz .Lpseg_trim_lf
+    cmpb $13, -1(%rax,%rdx)
+    jne .Lpseg_trim_lf
+    dec %rdx
+.Lpseg_trim_lf:
+    test %rdx, %rdx
+    jz .Lpseg_emit_lf
+    cmpb $32, -1(%rax,%rdx)
+    jne .Lpseg_emit_lf
+    dec %rdx
+    jmp .Lpseg_trim_lf
+.Lpseg_emit_lf:
+    # A visible prefix makes earlier held spaces interior. Otherwise drop.
+    test %rdx, %rdx
+    jz .Lpseg_newline
+    mov %rax, 24(%rsp)
+    mov %rdx, 32(%rsp)
     call hbc_pflush
-    mov 16(%rsp), %rax
-    mov (%rsp), %rdx
-96:
+    mov 24(%rsp), %rax
+    mov 32(%rsp), %rdx
     call hbc_print_str
-    mov 8(%rsp), %rcx
+.Lpseg_newline:
+    movq $0, hbc_pending(%rip)
+    call hbc_print_nl
+    mov (%rsp), %rax
+    mov 8(%rsp), %rdx
+    jmp .Lpseg_begin
+.Lpseg_last:
+    mov %rdx, 16(%rsp)
+.Lpseg_trim_last:
+    test %rdx, %rdx
+    jz .Lpseg_last_ready
+    cmpb $32, -1(%rax,%rdx)
+    jne .Lpseg_last_ready
+    dec %rdx
+    jmp .Lpseg_trim_last
+.Lpseg_last_ready:
+    mov 16(%rsp), %rcx
+    sub %rdx, %rcx
+    mov %rcx, 16(%rsp)
+    test %rdx, %rdx
+    jz .Lpseg_hold
+    mov %rax, 24(%rsp)
+    mov %rdx, 32(%rsp)
+    call hbc_pflush
+    mov 24(%rsp), %rax
+    mov 32(%rsp), %rdx
+    call hbc_print_str
+.Lpseg_hold:
+    mov 16(%rsp), %rcx
     add %rcx, hbc_pending(%rip)
-    add $24, %rsp
+    mov 40(%rsp), %r8
+    add $56, %rsp
     ret
 
 # hbc_pflush: writes the held spaces and clears the hold. Called before
@@ -23335,31 +23386,82 @@ hbc_print_sep:
 # hk274-hk276 comment claim of a per-statement `??` trim, which had no
 # preserved probes and is falsified by q3/q6/q7).
 hbc_pstrt:
-    sub $24, %rsp
+    # Stack slots: current pointer, remaining bytes, trim count.
+    # LF splits formatted console lines; raw writers never enter here.
+    sub $56, %rsp
+    mov %r8, 40(%rsp)
+    mov %rax, (%rsp)
     mov %rdx, 8(%rsp)
-97:
-    cmp $0, %rdx
-    je 98f
-    cmpb $0x20, -1(%rax,%rdx)
-    jne 98f
+.Lpseg_begin:
+    xor %r8d, %r8d
+.Lpseg_scan:
+    cmp %rdx, %r8
+    je .Lpseg_last
+    cmpb $10, (%rax,%r8)
+    je .Lpseg_lf
+    inc %r8
+    jmp .Lpseg_scan
+.Lpseg_lf:
+    lea 1(%rax,%r8), %rcx
+    mov %rcx, (%rsp)
+    sub %r8, %rdx
     dec %rdx
-    jmp 97b
-98:
-    mov 8(%rsp), %rcx
-    sub %rdx, %rcx
-    mov %rcx, 8(%rsp)
+    mov %rdx, 8(%rsp)
+    mov %r8, %rdx
     test %rdx, %rdx
-    jz 96f
-    mov %rax, 16(%rsp)
-    mov %rdx, (%rsp)
+    jz .Lpseg_trim_lf
+    cmpb $13, -1(%rax,%rdx)
+    jne .Lpseg_trim_lf
+    dec %rdx
+.Lpseg_trim_lf:
+    test %rdx, %rdx
+    jz .Lpseg_emit_lf
+    cmpb $32, -1(%rax,%rdx)
+    jne .Lpseg_emit_lf
+    dec %rdx
+    jmp .Lpseg_trim_lf
+.Lpseg_emit_lf:
+    # A visible prefix makes earlier held spaces interior. Otherwise drop.
+    test %rdx, %rdx
+    jz .Lpseg_newline
+    mov %rax, 24(%rsp)
+    mov %rdx, 32(%rsp)
     call hbc_pflush
-    mov 16(%rsp), %rax
-    mov (%rsp), %rdx
-96:
+    mov 24(%rsp), %rax
+    mov 32(%rsp), %rdx
     call hbc_print_str
-    mov 8(%rsp), %rcx
+.Lpseg_newline:
+    movq $0, hbc_pending(%rip)
+    call hbc_print_nl
+    mov (%rsp), %rax
+    mov 8(%rsp), %rdx
+    jmp .Lpseg_begin
+.Lpseg_last:
+    mov %rdx, 16(%rsp)
+.Lpseg_trim_last:
+    test %rdx, %rdx
+    jz .Lpseg_last_ready
+    cmpb $32, -1(%rax,%rdx)
+    jne .Lpseg_last_ready
+    dec %rdx
+    jmp .Lpseg_trim_last
+.Lpseg_last_ready:
+    mov 16(%rsp), %rcx
+    sub %rdx, %rcx
+    mov %rcx, 16(%rsp)
+    test %rdx, %rdx
+    jz .Lpseg_hold
+    mov %rax, 24(%rsp)
+    mov %rdx, 32(%rsp)
+    call hbc_pflush
+    mov 24(%rsp), %rax
+    mov 32(%rsp), %rdx
+    call hbc_print_str
+.Lpseg_hold:
+    mov 16(%rsp), %rcx
     add %rcx, hbc_pending(%rip)
-    add $24, %rsp
+    mov 40(%rsp), %r8
+    add $56, %rsp
     ret
 
 # hbc_pflush: writes the held spaces and clears the hold. Called before
