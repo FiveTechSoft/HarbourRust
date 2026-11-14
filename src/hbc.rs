@@ -3998,8 +3998,18 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             Expr::Log(_) => Ok(()),
             Expr::LNot(a) => { pin_vars(f, a, Ty::Bool, pin, n)?; walk(f, a, sigs, lit, pin, printed, n) }
             Expr::LAnd(a, b) | Expr::LOr(a, b) => {
-                pin_vars(f, a, Ty::Bool, pin, n)?;
-                pin_vars(f, b, Ty::Bool, pin, n)?;
+                // A comparison operand produces its own logical value; the
+                // evidence its own comparison supplies (n <= 30 pins n
+                // i64) must not be overridden with a Bool pin from the
+                // logical form (the ERP `n <= 30 .and. n > 0`, blocker 3.3
+                // of FiveTechSoft/HarbourRust#1). Pin Bool only through
+                // operand shapes that do not self-type (bare values).
+                if !matches!(a.as_ref(), Expr::Cmp(..) | Expr::LAnd(..) | Expr::LOr(..)) {
+                    pin_vars(f, a, Ty::Bool, pin, n)?;
+                }
+                if !matches!(b.as_ref(), Expr::Cmp(..) | Expr::LAnd(..) | Expr::LOr(..)) {
+                    pin_vars(f, b, Ty::Bool, pin, n)?;
+                }
                 walk(f, a, sigs, lit, pin, printed, n)?;
                 walk(f, b, sigs, lit, pin, printed, n)
             }
