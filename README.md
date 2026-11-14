@@ -15,10 +15,9 @@ No VM, no pcode, no garbage collector. Ownership checked at compile time, with d
 The current compiler includes the independently reviewed Date/CToD port,
 the CurDir/trailing-space work, and the bounded C Extend-System bridge (v9)
 on Linux and Windows x64 (Windows verified under Wine 11.0, not on real
-Windows). [v0.4.0](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.4.0)
-also adds bounded read-only dBASE III DBF support on Linux x86-64.
-[v0.5.0](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.5.0) adds
-read-only NTX character-field indexes on the same backend. Main also includes
+Windows). The [read-only DBF increment](docs/DBF-READONLY.md) adds bounded dBASE III
+support on Linux x86-64. The [NTX increment](docs/NTX-READONLY.md) adds
+read-only character-field indexes on the same backend. Main also includes
 the bounded single-tag read-only CDX increment described below.
 Against the pinned Harbour source:
 
@@ -171,9 +170,11 @@ The internal PE writer emits a console image with entry `_start`, fixed ImageBas
 
 `--external-as` selects the legacy assembler/linker path. Its Windows route still needs MinGW-w64 binutils and the kernel32 import library. Building `hbc` itself requires Rust and a suitable compiler-build toolchain; building/linking C extensions or using the hbmk2 adapter requires a C toolchain. Those are separate from using the native-only compiler above.
 
-### Historical release binaries
+### Current download route and removed historical releases
 
-[v0.1.1](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.1.1) contains older Linux/Windows compilers that predate the native writer and the C Extend bridge. They still need the old assembler/linker pipeline and are not the current tracked compiler. Its `hello.exe`, `arrays_hashes.exe` and `dates.exe` samples run without a compiler, assembler or linker; their recorded smoke was Wine 11.0, not real Windows. See that release's notes for OS/library requirements. As checked on 14 November 2026, v0.1.1 has 7 uploaded release assets and [v0.2.0](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.2.0) has 8, including its checksum file. Releases v0.3.0 through v0.8.0 have no uploaded assets. The v0.2.0 downloads also use the historical assembler/linker pipeline; see that release for its own bridge scope and limits. These historical downloads are separate from the tracked `bin/hbc.exe` snapshot.
+All nine historical GitHub releases (v0.1.0 through v0.8.0) and their uploaded assets were removed on 14 November 2026. Git tags remain as source history, not downloadable release binaries. There is currently no published release binary; v0.9.0 is still pending. Use the tracked Windows compiler [bin/hbc.exe](bin/hbc.exe) from the current repository, or build the compiler from source as [BUILDING.md](BUILDING.md) describes.
+
+Do not reuse an old release `hbc.exe` or its `build.bat` for the native-only quick start. The historical v0.1.1/v0.2.0 compilers emitted assembly text even if the output filename ended in `.EXE`; their scripts needed external MinGW-w64 assembler/linker tools to create a real executable. An output extension alone does not convert assembly into PE. The current tracked compiler writes PE32+ directly for supported native-only programs, without those tools.
 
 ## Harbour standard-function compatibility
 

@@ -12,8 +12,10 @@ official Harbour hbmk2 stays an external user-installed tool with its own licens
 - GCC for C extensions and the scalar Extend bridge.
 
 Unlike the direct native-only `hbc` executable-writer path, this hbmk2 route uses a C
-compiler driver even when the Harbour program has no C extension. The older
-v0.1.1 binaries do not include the source compiler's Extend bridge support.
+compiler driver even when the Harbour program has no C extension. The removed
+historical v0.1.1 release binaries did not include the source compiler's Extend
+bridge support. Those downloads are no longer available;
+use the current repository/source route, not an old release binary.
 
 ## Build
 

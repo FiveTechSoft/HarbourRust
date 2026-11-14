@@ -187,16 +187,20 @@ Use `bin/hbc.exe` for the tracked Windows snapshot described in section 4.
 The `dist/` files below are historical and do not describe its version or
 native-writer requirements:
 
-Historical GitHub releases are separate again: as checked on 14 November
-2026, [v0.1.1](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.1.1)
-has 7 uploaded assets and
-[v0.2.0](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.2.0) has 8
-(including `SHA256SUMS.txt`). Releases v0.3.0 through v0.8.0 have no uploaded
-assets. The older v0.1.1/v0.2.0 compiler downloads use an assembler/linker
-pipeline; follow their own release notes, not the current native-writer
-requirements. Their Windows verification was under Wine 11.0, not real
-Windows. Asset counts exclude GitHub-generated source archives.
+All nine historical GitHub releases (v0.1.0 through v0.8.0) and their
+uploaded assets were removed on 14 November 2026. Git tags remain as source
+history. There is currently no published release binary; v0.9.0 remains
+pending. Use [the tracked Windows compiler](bin/hbc.exe) from this repository,
+or build current source. Do not look for the removed release downloads.
 
+The historical v0.1.1/v0.2.0 compilers emitted assembly even when the output was
+named `.EXE`. Their `build.bat` needed MinGW-w64 `as`/`ld` to make a real PE.
+For the current tracked compiler's supported native-only programs, use the
+quick start at the top of this file, not an old release script. A filename
+ending in `.EXE` is not proof that the file contains executable PE bytes.
+
+The `dist/` table below is retained only as repository history. Its legacy
+scripts are not the current native-only entry point.
 
 | File          | Platform            | Description                               |
 | ------------- | ------------------- | ----------------------------------------- |
