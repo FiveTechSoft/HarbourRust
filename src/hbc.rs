@@ -27,6 +27,17 @@ use std::fs;
 use std::process;
 
 thread_local! {
+    // I2 (Goose hybrid): true while emit_asm must carry the scope arena.
+    static ARENA_ACTIVE: std::cell::Cell<bool> = std::cell::Cell::new(false);
+    // I2: per-function arena routing map (set after eligibility; consumed by cg).
+    static ARENA_MAP: std::cell::RefCell<std::collections::HashMap<String, ArenaFn>> =
+        std::cell::RefCell::new(std::collections::HashMap::new());
+    // I2 codegen state: the current function's routing map (None: arena off
+    // here), and the pending root flag consumed by the concat arm.
+    static ARENA_CUR: std::cell::RefCell<Option<ArenaFn>> = std::cell::RefCell::new(None);
+    static CG_ARENA_ROOT: std::cell::Cell<bool> = std::cell::Cell::new(false);
+}
+thread_local! {
     // Compiler admission flag only, never emitted user mutable state.
     static DBF_USED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static CURDIR_LINUX_NATIVE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
@@ -4486,6 +4497,40 @@ fn expr_has_call(e: &Expr) -> bool {
         Expr::IdxCompound(_, a, _, b) => expr_has_call(a) || expr_has_call(b),
         Expr::LAnd(a, b) | Expr::LOr(a, b) => expr_has_call(a) || expr_has_call(b),
         _ => true, // any other shape: not justified - exclude
+    }
+}
+
+// Arena eligibility guard: hbc_strcat FREES its owned operands, so a
+// routed slot may never be a direct concat operand (t648: `s = s + s`
+// munmapped the arena block). collect_concat_operands finds every `+`
+// node (any nesting, including inside call arguments) and gathers the
+// variables of its two operand subtrees; a Call node inside an operand
+// contributes nothing - its result is a fresh temporary, and its
+// arguments are the callee's business (scanned on their own `+` nodes).
+fn concat_operand_vars(e: &Expr, out: &mut Vec<String>) {
+    match e {
+        Expr::Var(v) => out.push(v.clone()),
+        Expr::Call(_, _) => {}
+        Expr::Str(_) | Expr::Int(_) | Expr::Log(_) => {}
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => { concat_operand_vars(a, out); concat_operand_vars(b, out); }
+        Expr::LNot(a) | Expr::Index(_, a) => concat_operand_vars(a, out),
+        Expr::IdxCompound(_, a, _, b) => { concat_operand_vars(a, out); concat_operand_vars(b, out); }
+        Expr::LAnd(a, b) | Expr::LOr(a, b) => { concat_operand_vars(a, out); concat_operand_vars(b, out); }
+        Expr::Seq(es) => for x in es { concat_operand_vars(x, out); }
+        _ => { let mut fv = Vec::new(); free_vars(e, &mut fv); out.extend(fv); }
+    }
+}
+fn collect_concat_operands(e: &Expr, out: &mut Vec<String>) {
+    match e {
+        Expr::Bin('+', a, b) => { concat_operand_vars(a, out); concat_operand_vars(b, out); }
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => { collect_concat_operands(a, out); collect_concat_operands(b, out); }
+        Expr::Var(_) | Expr::Str(_) | Expr::Int(_) | Expr::Log(_) => {}
+        Expr::LNot(a) | Expr::Index(_, a) => collect_concat_operands(a, out),
+        Expr::IdxCompound(_, a, _, b) => { collect_concat_operands(a, out); collect_concat_operands(b, out); }
+        Expr::LAnd(a, b) | Expr::LOr(a, b) => { collect_concat_operands(a, out); collect_concat_operands(b, out); }
+        Expr::Call(_, args) => for x in args { collect_concat_operands(x, out); }
+        Expr::Seq(es) => for x in es { collect_concat_operands(x, out); }
+        _ => {}
     }
 }
 
@@ -9463,6 +9508,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 enum EscClass { Esc, NoEsc }
 
 struct EscEntry {
+    root: String,       // union-find class root (I2 groups eligibility per class)
     name: String,
     ty: Option<Ty>,   // None: declared inside a branch/loop body (the checker's branch envs merge moved flags only, not declarations); treated as heap-relevant
     is_param: bool,
@@ -9853,7 +9899,7 @@ impl<'a> EscPass<'a> {
             let is_param = self.params.contains(&n);
             let crosses_scope = self.crosses.contains(&n);
             let declared_in_loop = self.loop_decl.contains(&n);
-            out.push(EscEntry { ty, is_param, name: n, class, reason, crosses_scope, declared_in_loop });
+            out.push(EscEntry { root, ty, is_param, name: n, class, reason, crosses_scope, declared_in_loop });
         }
         out
     }
@@ -9962,6 +10008,325 @@ fn escape_analysis(
     out
 }
 
+
+// ---------------------------------------------------------------------------
+// Arena eligibility (Goose-hybrid increment I2; design doc
+// docs/harbourrust-goose-hybrid-design.md, "Incremento 2 - arena por
+// ambito"). Consumes the I1 classification map per UNION CLASS: a class is
+// eligible only when every member is a NoEsc, non-param, StrOwn,
+// non-crossing local and EVERY producer into any member is internal
+// (literal/concat/builtin/array-copy roots). Disqualifiers, each verified
+// against the codegen path that would break:
+//   - a user or Extend call root (`s := f()`): the payload arrives already
+//     allocated OUTSIDE the arena, so the slot would mix arena and general
+//     payloads under suppressed frees (the review condition);
+//   - a Dyn-typed root (cg_dyn_clone_if_str boundary clone): the clone
+//     destination is reserved general by design;
+//   - the hbc_strgrow self-append shape (`s := s + e`, exact cg_stmts
+//     condition): strgrow FREES the old mapping internally on realloc, and
+//     an arena pointer there would reach munmap (hbc_os_bad);
+//   - a loop-local member used after its loop: per-iteration rewind would
+//     dangle it. Loop-local classes route per-iteration (mark/rewind at the
+//     loop that declares them); every other eligible class routes to the
+//     function zone (enter/leave at the frame edges).
+// The map is inert until codegen consumes it.
+// ---------------------------------------------------------------------------
+
+#[derive(Default, Clone)]
+struct ArenaFn {
+    fn_zone: std::collections::HashSet<String>,
+    loop_zone: std::collections::HashSet<String>,
+    loops: std::collections::HashSet<usize>, // loop-head lines taking per-iteration mark/rewind
+    // Loop-head line -> the class members declared in that loop: the
+    // per-iteration rewind clears them to NIL, which is exactly Harbour's
+    // re-initialization of a body-local on the next iteration.
+    loop_members: std::collections::HashMap<usize, Vec<String>>,
+}
+impl ArenaFn {
+    fn any(&self) -> bool { !self.fn_zone.is_empty() || !self.loop_zone.is_empty() }
+    fn routed(&self, name: &str) -> bool { self.fn_zone.contains(name) || self.loop_zone.contains(name) }
+}
+fn arena_routed(name: &str) -> bool {
+    ARENA_CUR.with(|c| c.borrow().as_ref().map_or(false, |a| a.routed(name)))
+}
+// Members of the eligible loop whose head is `line` (None when the loop
+// has no arena routing or the arena is off).
+fn arena_loop_members(line: usize) -> Option<Vec<String>> {
+    ARENA_CUR.with(|c| c.borrow().as_ref().and_then(|a| a.loop_members.get(&line).cloned()))
+}
+
+struct EligW<'a> {
+    tymap: &'a std::collections::HashMap<String, Option<Ty>>,
+    env: Vec<CgLocal>,                 // scratch typing env for expr_ty
+    sigs: &'a [Sig],
+    user_fns: &'a std::collections::HashSet<String>,
+    ext: &'a std::collections::HashSet<String>,
+    bad_producer: std::collections::HashSet<String>,
+    // Vars appearing anywhere inside an expression containing a `+`:
+    // hbc_strcat frees its owned operands, so a routed slot used inside
+    // any concat (t648: `s = s + s`) would be freed out from under the
+    // arena. Conservative: numeric `+` trips this too, and numeric slots
+    // are never eligible anyway.
+    concat_ops: std::collections::HashSet<String>,
+    mentions: Vec<(String, usize)>,    // (name, statement line), assignment targets included
+    loop_decls: std::collections::HashMap<String, (usize, usize)>, // name -> (loop head line, loop end line)
+    loop_vars: std::collections::HashSet<String>, // for/foreach control variables (never eligible v1)
+    declared: std::collections::HashSet<String>,
+}
+
+impl<'a> EligW<'a> {
+    fn ty_of(&self, e: &Expr) -> Ty { expr_ty(e, &self.env, self.sigs) }
+    // True when this producer must keep the slot's class OUT of the arena.
+    // v1 is a WHITELIST: only the roots codegen routes today qualify -
+    //   - a string `+` (the concat arm wraps hbc_strcat), except the exact
+    //     strgrow self-append shape (strgrow frees the old mapping
+    //     internally on realloc: munmap on arena memory);
+    //   - a Var of StrOwn type (a move: no allocation, no boundary);
+    //   - a Seq whose last expression qualifies.
+    // Everything else stays general: user/Extend call roots (`s := f()`,
+    // the payload arrives allocated outside), builtin calls, Dyn-typed
+    // roots (boundary clones reserve their destination outside), rodata
+    // literals (hbc_strcpy at the statement site, unrouted today), index
+    // reads, iif, and every other shape. Each later increment adds its
+    // root kind to both lists together (here and the codegen wrap).
+    fn producer_bad(&mut self, target: &str, e: &Expr) -> bool {
+        match e {
+            Expr::Seq(es) => es.last().map_or(true, |x| self.producer_bad(target, x)),
+            Expr::Bin('+', a, b) => {
+                if matches!(**a, Expr::Var(ref v) if *v == target) && !expr_mentions(b, target) && !expr_has_call(b) { return true; }
+                !matches!(expr_ty(e, &self.env, self.sigs), Ty::Str | Ty::StrOwn)
+            }
+            Expr::Var(v) => !matches!(self.tymap.get(v), Some(Some(Ty::StrOwn))),
+            _ => true,
+        }
+    }
+    fn note_expr(&mut self, e: &Expr, line: usize) {
+        let mut fv = Vec::new();
+        free_vars(e, &mut fv);
+        let mut cops = Vec::new();
+        collect_concat_operands(e, &mut cops);
+        for v in cops { self.concat_ops.insert(v); }
+        for v in fv { self.mentions.push((v, line)); }
+        // A nested Set is also a producer into its target.
+        self.walk_sets(e, line);
+    }
+    fn walk_sets(&mut self, e: &Expr, line: usize) {
+        match e {
+            Expr::Set(id, r) => {
+                self.mentions.push((id.clone(), line));
+                if self.producer_bad(id, r) { self.bad_producer.insert(id.clone()); }
+                self.walk_sets(r, line);
+            }
+            Expr::Seq(es) | Expr::ArrLit(es) => { for x in es { self.walk_sets(x, line); } }
+            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => { self.walk_sets(a, line); self.walk_sets(b, line); }
+            Expr::LNot(a) => self.walk_sets(a, line),
+            Expr::Call(_, args) => { for a in args { self.walk_sets(a, line); } }
+            Expr::Index(_, a) => self.walk_sets(a, line),
+            Expr::Index2(_, a, b) | Expr::IdxCompound(_, a, _, b) => { self.walk_sets(a, line); self.walk_sets(b, line); }
+            Expr::Index3(_, a, b, c) => { self.walk_sets(a, line); self.walk_sets(b, line); self.walk_sets(c, line); }
+            Expr::Index4(_, a, b, c, d) => { self.walk_sets(a, line); self.walk_sets(b, line); self.walk_sets(c, line); self.walk_sets(d, line); }
+            Expr::HashLit(ps) => { for (k, v) in ps { self.walk_sets(k, line); self.walk_sets(v, line); } }
+            Expr::Send(o, _, args) => { self.walk_sets(o, line); for a in args { self.walk_sets(a, line); } }
+            _ => {}
+        }
+    }
+    fn declare(&mut self, id: &str, loop_frame: Option<(usize, usize)>) {
+        if self.declared.insert(id.to_string()) {
+            if let Some((head, end)) = loop_frame { self.loop_decls.insert(id.to_string(), (head, end)); }
+        }
+    }
+    fn walk(&mut self, stmts: &[Stmt], loop_stack: &mut Vec<(usize, usize)>) {
+        for s in stmts {
+            let line = stmt_line(s);
+            match s {
+                Stmt::Local(_, id, e) => {
+                    self.declare(id, loop_stack.last().copied());
+                    if self.producer_bad(id, e) { self.bad_producer.insert(id.clone()); }
+                    self.note_expr(e, line);
+                }
+                Stmt::Static(_, id, e) => { self.declare(id, None); self.note_expr(e, line); }
+                Stmt::Assign(_, id, e) => {
+                    self.mentions.push((id.clone(), line));
+                    if self.producer_bad(id, e) { self.bad_producer.insert(id.clone()); }
+                    self.note_expr(e, line);
+                }
+                Stmt::Print(_, es, _) => { for e in es { self.note_expr(e, line); } }
+                Stmt::Ret(_, oe) => { if let Some(e) = oe { self.note_expr(e, line); } }
+                Stmt::If(_, c, t, el) => {
+                    self.note_expr(c, line);
+                    self.walk(t, loop_stack);
+                    self.walk(el, loop_stack);
+                }
+                Stmt::While(_, c, b) => {
+                    self.note_expr(c, line);
+                    let end = max_line(b);
+                    loop_stack.push((line, end));
+                    self.walk(b, loop_stack);
+                    loop_stack.pop();
+                }
+                Stmt::For(_, v, a, b, _, body) => {
+                    self.note_expr(a, line);
+                    self.note_expr(b, line);
+                    let end = max_line(body);
+                    let frame = (line, end);
+                    self.loop_vars.insert(v.clone());
+                    self.declare(v, Some(frame));
+                    loop_stack.push(frame);
+                    self.walk(body, loop_stack);
+                    loop_stack.pop();
+                }
+                Stmt::ForEach(_, v, coll, body) => {
+                    self.note_expr(coll, line);
+                    let end = max_line(body);
+                    let frame = (line, end);
+                    self.loop_vars.insert(v.clone());
+                    self.declare(v, Some(frame));
+                    loop_stack.push(frame);
+                    self.walk(body, loop_stack);
+                    loop_stack.pop();
+                }
+                Stmt::Switch(_, sel, arms, oth) => {
+                    self.note_expr(sel, line);
+                    for (_, _, b) in arms { self.walk(b, loop_stack); }
+                    if let Some((_, b)) = oth { self.walk(b, loop_stack); }
+                }
+                Stmt::Exit(_) | Stmt::Loop(_) | Stmt::HClear(..) | Stmt::HMerge(_, _, _) => {}
+                Stmt::CallStmt(_, e) | Stmt::SendStmt(_, e) => self.note_expr(e, line),
+                Stmt::SelfSet(_, _, e) => self.note_expr(e, line),
+                Stmt::SendSet(_, o, _, e) => { self.note_expr(o, line); self.note_expr(e, line); }
+                Stmt::AAdd(_, id, e) | Stmt::HSetCaseMatch(_, id, e) => {
+                    self.mentions.push((id.clone(), line));
+                    self.note_expr(e, line);
+                }
+                Stmt::AAddSub(_, id, ie, e) => {
+                    self.mentions.push((id.clone(), line));
+                    self.note_expr(ie, line); self.note_expr(e, line);
+                }
+                Stmt::AAddSub2(_, id, ie, ie2, e) => {
+                    self.mentions.push((id.clone(), line));
+                    self.note_expr(ie, line); self.note_expr(ie2, line); self.note_expr(e, line);
+                }
+                Stmt::AAddSub3(_, id, ie, ie2, ie3, e) => {
+                    self.mentions.push((id.clone(), line));
+                    self.note_expr(ie, line); self.note_expr(ie2, line); self.note_expr(ie3, line); self.note_expr(e, line);
+                }
+                Stmt::ASize(_, id, e) | Stmt::HFill(_, id, e) => { self.mentions.push((id.clone(), line)); self.note_expr(e, line); }
+                Stmt::ASizeSub(_, id, ie, e) => { self.mentions.push((id.clone(), line)); self.note_expr(ie, line); self.note_expr(e, line); }
+                Stmt::ASizeSub2(_, id, ie, ie2, e) => { self.mentions.push((id.clone(), line)); self.note_expr(ie, line); self.note_expr(ie2, line); self.note_expr(e, line); }
+                Stmt::ASizeSub3(_, id, ie, ie2, ie3, e) => { self.mentions.push((id.clone(), line)); self.note_expr(ie, line); self.note_expr(ie2, line); self.note_expr(ie3, line); self.note_expr(e, line); }
+                Stmt::AIns(_, id, ie) | Stmt::ADel(_, id, ie) => { self.mentions.push((id.clone(), line)); self.note_expr(ie, line); }
+                Stmt::AFill(_, id, e, se, ce) => {
+                    self.mentions.push((id.clone(), line));
+                    self.note_expr(e, line);
+                    if let Some(x) = se { self.note_expr(x, line); }
+                    if let Some(x) = ce { self.note_expr(x, line); }
+                }
+                Stmt::HDel(_, id, e) | Stmt::HDelAt(_, id, e) => { self.mentions.push((id.clone(), line)); self.note_expr(e, line); }
+                Stmt::HCopy(_, id, id2, se, ce) => {
+                    self.mentions.push((id.clone(), line));
+                    self.mentions.push((id2.clone(), line));
+                    if let Some(x) = se { self.note_expr(x, line); }
+                    if let Some(x) = ce { self.note_expr(x, line); }
+                }
+                Stmt::HSet(_, id, ke, ve) => {
+                    self.mentions.push((id.clone(), line));
+                    self.note_expr(ke, line); self.note_expr(ve, line);
+                }
+                Stmt::ArrSet(_, id, ie, e) => { self.mentions.push((id.clone(), line)); self.note_expr(ie, line); self.note_expr(e, line); }
+                Stmt::ArrSet2(_, id, ie, ie2, e) => { self.mentions.push((id.clone(), line)); self.note_expr(ie, line); self.note_expr(ie2, line); self.note_expr(e, line); }
+                Stmt::ArrSet3(_, id, ie, ie2, ie3, e) => { self.mentions.push((id.clone(), line)); self.note_expr(ie, line); self.note_expr(ie2, line); self.note_expr(ie3, line); self.note_expr(e, line); }
+                Stmt::ArrSet4(_, id, ie, ie2, ie3, ie4, e) => {
+                    self.mentions.push((id.clone(), line));
+                    self.note_expr(ie, line); self.note_expr(ie2, line); self.note_expr(ie3, line); self.note_expr(ie4, line); self.note_expr(e, line);
+                }
+            }
+        }
+    }
+}
+
+fn max_line(stmts: &[Stmt]) -> usize {
+    let mut m = 0;
+    for s in stmts {
+        m = m.max(stmt_line(s));
+        match s {
+            Stmt::If(_, _, t, el) => { m = m.max(max_line(t)); m = m.max(max_line(el)); }
+            Stmt::While(_, _, b) | Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => { m = m.max(max_line(b)); }
+            Stmt::Switch(_, _, arms, oth) => {
+                for (_, _, b) in arms { m = m.max(max_line(b)); }
+                if let Some((_, b)) = oth { m = m.max(max_line(b)); }
+            }
+            _ => {}
+        }
+    }
+    m
+}
+
+fn arena_eligibility(
+    funcs: &[Func],
+    sigs: &[Sig],
+    externs: &[String],
+    reports: &[EscReport],
+    dump: bool,
+) -> std::collections::HashMap<String, ArenaFn> {
+    let user_fns: std::collections::HashSet<String> = funcs.iter().map(|f| f.name.to_ascii_lowercase()).collect();
+    let ext: std::collections::HashSet<String> = externs.iter().map(|e| e.to_ascii_lowercase()).collect();
+    let mut out = std::collections::HashMap::new();
+    for (f, rep) in funcs.iter().zip(reports.iter()) {
+        let tymap: std::collections::HashMap<String, Option<Ty>> =
+            rep.entries.iter().map(|e| (e.name.clone(), e.ty)).collect();
+        // Group members per union class; the class is eligible only when
+        // EVERY member qualifies (the payload moves freely among them).
+        let mut classes: std::collections::HashMap<String, Vec<&EscEntry>> = std::collections::HashMap::new();
+        for e in &rep.entries { classes.entry(e.root.clone()).or_default().push(e); }
+        let env: Vec<CgLocal> = rep.entries.iter()
+            .map(|e| CgLocal { name: e.name.clone(), ty: e.ty.unwrap_or(Ty::Dyn), off: 0 }).collect();
+        let mut w = EligW {
+            tymap: &tymap, env, sigs, user_fns: &user_fns, ext: &ext,
+            bad_producer: std::collections::HashSet::new(),
+            concat_ops: std::collections::HashSet::new(),
+            mentions: Vec::new(),
+            loop_decls: std::collections::HashMap::new(),
+            loop_vars: std::collections::HashSet::new(),
+            declared: f.params.iter().cloned().collect(),
+        };
+        w.walk(&f.stmts, &mut Vec::new());
+        let mut arena = ArenaFn::default();
+        for (_root, members) in classes {
+            if !members.iter().all(|m| m.class == EscClass::NoEsc && !m.is_param
+                && m.ty == Some(Ty::StrOwn) && !m.crosses_scope) { continue; }
+            if members.iter().any(|m| w.bad_producer.contains(&m.name)) { continue; }
+            if members.iter().any(|m| w.concat_ops.contains(&m.name)) { continue; }
+            if members.iter().any(|m| w.loop_vars.contains(&m.name)) { continue; }
+            let loop_members: Vec<&&EscEntry> = members.iter().filter(|m| w.loop_decls.contains_key(&m.name)).collect();
+            // Per-iteration routing is exact only when EVERY member is
+            // declared inside the SAME single loop: Harbour re-initializes
+            // a body-local on each iteration, which the rewind's NIL-clear
+            // reproduces. A member declared outside the loop would keep
+            // its Harbour value across iterations, so a mixed class takes
+            // the function zone instead.
+            let same_loop = !loop_members.is_empty() && loop_members.len() == members.len()
+                && loop_members.iter().map(|m| w.loop_decls[&m.name])
+                    .collect::<std::collections::HashSet<_>>().len() == 1;
+            if same_loop {
+                let (head, end) = w.loop_decls[&loop_members[0].name];
+                let used_after = members.iter().any(|m|
+                    w.mentions.iter().any(|(n, l)| *n == m.name && *l > end));
+                if !used_after {
+                    for m in &members { arena.loop_zone.insert(m.name.clone()); }
+                    arena.loops.insert(head);
+                    arena.loop_members.insert(head, members.iter().map(|m| m.name.clone()).collect());
+                    continue;
+                }
+            }
+            for m in members { arena.fn_zone.insert(m.name.clone()); }
+        }
+        if dump && arena.any() {
+            eprintln!("arena {}: fn-zone {:?} loop-zone {:?} loops {:?}", f.name, arena.fn_zone, arena.loop_zone, arena.loops);
+        }
+        out.insert(f.name.clone(), arena);
+    }
+    out
+}
 
 // ---------------------------------------------------------------------------
 // Code generation: x86-64 assembly (AT&T syntax), freestanding.
@@ -13731,6 +14096,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // (StrOwn slot, print item, comparison, hash key - the
             // established consumers free non-Var StrOwn).
             if *op == '+' && matches!(expr_ty(a, env, sigs), Ty::Str | Ty::StrOwn) {
+                // I2: the outermost concat of an eligible assignment is the
+                // root. The flag is taken HERE, at arm entry, before the
+                // operands evaluate: nested concats (temps) see it cleared
+                // and keep the general allocator with their inline frees.
+                let arena_root = CG_ARENA_ROOT.with(|c| c.replace(false));
                 let a_tmp = expr_ty(a, env, sigs) == Ty::StrOwn && !matches!(a.as_ref(), Expr::Var(_));
                 let b_tmp = expr_ty(b, env, sigs) == Ty::StrOwn && !matches!(b.as_ref(), Expr::Var(_));
                 cg_value(a, env, sigs, strs, out, target);
@@ -13744,8 +14114,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
     mov %rax, %rdx
     mov (%rsp), %rdi
     mov 8(%rsp), %rsi
-    call hbc_strcat
 ");
+                if arena_root { out.push_str("    movb $1, hbc_arena_ok(%rip)
+"); }
+                out.push_str("    call hbc_strcat
+");
+                if arena_root { out.push_str("    movb $0, hbc_arena_ok(%rip)
+"); }
+                out.push_str("");
                 out.push_str("    mov %rax, 24(%rsp)
     mov %rdx, 32(%rsp)
 ");
@@ -14362,7 +14738,7 @@ fn cg_dyn_clone_if_str(out: &mut String) {
     out.push_str("    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@\n    je 88f\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    jne 89f\n88:\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n89:\n");
 }
 
-fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &mut usize, darr_slots: &mut Vec<(usize, u8)>, dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
+fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &mut usize, darr_slots: &mut Vec<(usize, u8)>, dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>, slot_names: &mut std::collections::HashMap<usize, String>) {
     for (si, s) in stmts.iter().enumerate() {
         match s {
             Stmt::Static(_, id, _) => {
@@ -14389,6 +14765,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 env.push(CgLocal { name: id.clone(), ty: t, off: *frame });
                 if matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::Dyn | Ty::DArrDyn | Ty::Obj(_)) {
                     darr_slots.push((*frame, if t == Ty::Dyn { 7 } else if t == Ty::Hash { 2 } else if t == Ty::DArr3 { 3 } else if t == Ty::DArr4 { 6 } else if t == Ty::DArrS { 4 } else if t == Ty::StrOwn { 5 } else if t == Ty::DArrDyn { 8 } else if matches!(t, Ty::Obj(_)) { 9 } else { (t == Ty::DArr2) as u8 }));
+                    slot_names.insert(*frame, id.clone());
                 }
             }
             Stmt::AAdd(_, id, e) => {
@@ -14428,14 +14805,14 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
             }
             Stmt::If(_, _, then_s, else_s) => {
                 let mark = env.len();
-                layout_locals(then_s, env, sigs, frame, darr_slots, dyn_names, byref_names);
+                layout_locals(then_s, env, sigs, frame, darr_slots, dyn_names, byref_names, slot_names);
                 env.truncate(mark);
-                layout_locals(else_s, env, sigs, frame, darr_slots, dyn_names, byref_names);
+                layout_locals(else_s, env, sigs, frame, darr_slots, dyn_names, byref_names, slot_names);
                 env.truncate(mark);
             }
             Stmt::While(_, _, body) => {
                 let mark = env.len();
-                layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names);
+                layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names, slot_names);
                 env.truncate(mark);
             }
             Stmt::For(_, var, _, _, _, body) => {
@@ -14446,7 +14823,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                     *frame += size_of(Ty::I64);
                     env.push(CgLocal { name: var.clone(), ty: Ty::I64, off: *frame });
                 }
-                layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names);
+                layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names, slot_names);
                 env.truncate(mark);
             }
             Stmt::Switch(_, sel, arms, otherwise) => {
@@ -14469,10 +14846,10 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 // Fall-through bodies share the growing environment, like
                 // cg_stmts: no per-body truncation.
                 for (_, _, body) in arms {
-                    layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names);
+                    layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names, slot_names);
                 }
                 if let Some((_, obody)) = otherwise {
-                    layout_locals(obody, env, sigs, frame, darr_slots, dyn_names, byref_names);
+                    layout_locals(obody, env, sigs, frame, darr_slots, dyn_names, byref_names, slot_names);
                 }
                 env.truncate(mark);
             }
@@ -14496,7 +14873,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 let saved = (env[kl].ty, env[kl].off);
                 env[kl].ty = if matches!(expr_ty(coll, env, sigs), Ty::Str | Ty::StrOwn) { Ty::Str } else { Ty::Dyn };
                 env[kl].off = *frame;
-                layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names);
+                layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names, slot_names);
                 env[kl].ty = saved.0;
                 env[kl].off = saved.1;
             }
@@ -15357,7 +15734,12 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
 // stubs before any body runs, so neither EXIT/LOOP nor RETURN inside a
 // body touches them.
 #[derive(Clone)]
-enum CgFrame { Loop(String, String), Switch(String) }
+// Loop: (continue label, end label, Some((head line, rewind at continue
+// target)) when the loop routes arena slots). A `for`/`foreach` continue
+// lands on the step label, which carries the rewind; a `while` continue
+// jumps to the head, so the rewind+clear must be inlined at the `loop`
+// statement.
+enum CgFrame { Loop(String, String, Option<(usize, bool)>), Switch(String) }
 
 
 fn cg_persistent_scalar(e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
@@ -15393,6 +15775,23 @@ fn cg_persistent_store(v:&CgLocal,e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut V
     }else{cg_persistent_scalar(e,env,sigs,strs,out,target);}
     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    call hbc_persistent_release\n    mov -{}(%rbp), %r11\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, (%r11)\n    mov %rdx, 8(%r11)\n",v.off,v.off));
+}
+
+// The result is already evaluated and follows the normal return ABI.
+// No pending arena marks means no emitted instructions (non-arena identity).
+fn arena_return_rewind(marks: usize, f64_result: bool, out: &mut String) {
+    if marks == 0 { return; }
+    out.push_str(if f64_result {
+        "    sub $16, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rdi, 8(%rsp)\n"
+    } else {
+        "    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n"
+    });
+    for _ in 0..marks { out.push_str("    call hbc_arena_rewind\n"); }
+    out.push_str(if f64_result {
+        "    movsd (%rsp), %xmm0\n    mov 8(%rsp), %rdi\n    add $16, %rsp\n"
+    } else {
+        "    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n"
+    });
 }
 
 fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, flow: &[CgFrame], slots: &[(usize, u8)], dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
@@ -15562,7 +15961,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         }
                     }
                     _ => {
+                        let arena_stmt = t == Ty::StrOwn && arena_routed(id);
+                        if arena_stmt { CG_ARENA_ROOT.with(|c| c.set(true)); }
                         cg_value(e, env, sigs, strs, out, target);
+                        if arena_stmt { CG_ARENA_ROOT.with(|c| c.set(false)); }
                         if i64_init {
                             cg_i64_tagged(out);
                         }
@@ -15613,7 +16015,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 } else if class == 4 {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_sfree\n85:\n", off, off - 8));
                                 } else if class == 5 {
-                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n85:\n", off));
+                                    // I2: arena-owned payload; the rewind
+                                    // releases it, hbc_freestr would munmap
+                                    // arena memory (hbc_os_bad).
+                                    if !arena_routed(id) {
+                                        out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n85:\n", off));
+                                    }
                                 } else if class == 8 {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_dfree\n85:\n", off, off - 8));
                                 } else if class == 7 {
@@ -15638,6 +16045,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 cg_print_items(es, *inline, false, false, env, sigs, strs, out, target);
             }
             Stmt::Ret(_, Some(e)) => {
+                // Evaluate the return value before rewinding loop arenas:
+                // its expression may still read a routed loop-local string.
+                let pending_marks = flow.iter().filter(|f| matches!(f, CgFrame::Loop(_, _, Some(_)))).count();
                 if let Ty::Arr(k) = expr_ty(e, env, sigs) {
                     // Static array return: materialize the boundary COPY
                     // as a dynamic array (same shape as the argument
@@ -15652,6 +16062,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             out.push_str(&format!("    mov (%rsp), %r11\n    movq $0, {}(%r11)\n    mov %r10, {}(%r11)\n", p * 16, p * 16 + 8));
                         }
                         out.push_str(&format!("    mov (%rsp), %rax\n    mov ${}, %edx\n    add $16, %rsp\n", k));
+                        arena_return_rewind(pending_marks, false, out);
                         out.push_str(&format!("    jmp .Lret_{}\n", fname));
                     }
                 } else if expr_ty(e, env, sigs) == Ty::F64 {
@@ -15661,6 +16072,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // float temporaries need no shuffling. The shared
                 // epilogue preserves the pair across the slot frees.
                 cg_f64_load(e, env, sigs, strs, out, target);
+                arena_return_rewind(pending_marks, true, out);
                 out.push_str(&format!("    jmp .Lret_{}\n", fname));
                 } else {
                 cg_value(e, env, sigs, strs, out, target);
@@ -15719,13 +16131,16 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
                     }
                 }
+                arena_return_rewind(pending_marks, false, out);
                 out.push_str(&format!("    jmp .Lret_{}\n", fname));
                 }
             }
             Stmt::Ret(_, None) => {
+                let pending_marks = flow.iter().filter(|f| matches!(f, CgFrame::Loop(_, _, Some(_)))).count();
                 // `return` / `return nil` return NIL (probes n1c/n2): the
                 // Dyn tag/payload pair travels like any 16-byte value.
                 out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");
+                arena_return_rewind(pending_marks, false, out);
                 out.push_str(&format!("    jmp .Lret_{}\n", fname));
             }
             Stmt::Switch(_, sel, arms, otherwise) => {
@@ -15877,25 +16292,36 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 env.truncate(mark);
                 out.push_str(&format!(".Lend_{}_{}:\n", fname, id));
             }
-            Stmt::While(_, cond, body) => {
+            Stmt::While(n, cond, body) => {
                 let id = *label;
                 *label += 1;
+                let amem = arena_loop_members(*n);
                 out.push_str(&format!(".Lwhile_{}_{}:\n", fname, id));
                 trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
                 cg_cond_jump(cond, env, sigs, strs, out, target, &format!(".Lbody_{}_{}", fname, id));
                 out.push_str(&format!("    jmp .Lendw_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lbody_{}_{}:\n", fname, id));
+                if amem.is_some() { out.push_str("    call hbc_arena_mark\n"); }
                 let mark = env.len();
                 let mut inner = flow.to_vec();
-                inner.push(CgFrame::Loop(format!(".Lwhile_{}_{}", fname, id), format!(".Lendw_{}_{}", fname, id)));
+                inner.push(CgFrame::Loop(format!(".Lwhile_{}_{}", fname, id), format!(".Lendw_{}_{}", fname, id), amem.as_ref().map(|_| (*n, false))));
                 cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names, byref_names);
+                if let Some(mems) = &amem {
+                    out.push_str("    call hbc_arena_rewind\n");
+                    for m in mems {
+                        if let Some(v) = env.iter().rev().find(|v| v.name == *m) {
+                            out.push_str(&format!("    movq $0, -{}(%rbp)\n", v.off));
+                        }
+                    }
+                }
                 env.truncate(mark);
                 out.push_str(&format!("    jmp .Lwhile_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lendw_{}_{}:\n", fname, id));
             }
-            Stmt::For(_, var, start, end, step, body) => {
+            Stmt::For(n, var, start, end, step, body) => {
                 let id = *label;
                 *label += 1;
+                let amem = arena_loop_members(*n);
                 let mark = env.len();
                 // Evaluate the START first, then the END into a hidden
                 // slot: Harbour's observed order (probe c11: the start's
@@ -15924,11 +16350,20 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 } else {
                     out.push_str(&format!("    jl .Lfore_{}_{}\n", fname, id));
                 }
+                if amem.is_some() { out.push_str("    call hbc_arena_mark\n"); }
                 let mut inner = flow.to_vec();
-                inner.push(CgFrame::Loop(format!(".Lforn_{}_{}", fname, id), format!(".Lfore_{}_{}", fname, id)));
+                inner.push(CgFrame::Loop(format!(".Lforn_{}_{}", fname, id), format!(".Lfore_{}_{}", fname, id), amem.as_ref().map(|_| (*n, true))));
                 cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names, byref_names);
-                env.truncate(mark);
                 out.push_str(&format!(".Lforn_{}_{}:\n", fname, id));
+                if let Some(mems) = &amem {
+                    out.push_str("    call hbc_arena_rewind\n");
+                    for m in mems {
+                        if let Some(v) = env.iter().rev().find(|v| v.name == *m) {
+                            out.push_str(&format!("    movq $0, -{}(%rbp)\n", v.off));
+                        }
+                    }
+                }
+                env.truncate(mark);
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n", i_off));
                 out.push_str(&format!("    add ${}, %rax\n", step));
                 // Advancing past the i64 range would wrap the counter and
@@ -15938,9 +16373,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    jmp .Lforc_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lfore_{}_{}:\n", fname, id));
             }
-            Stmt::ForEach(_, var, coll, body) => {
+            Stmt::ForEach(n, var, coll, body) => {
                 let id = *label;
                 *label += 1;
+                let amem = arena_loop_members(*n);
                 let mark = env.len();
                 // The collection is evaluated ONCE into a hidden pair.
                 // A VARIABLE is borrowed (never freed here); a CALL
@@ -16187,6 +16623,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     cmp -{}(%rbp), %rax
     jg .Lfee_{}_{}
 ", idx_off, coll_off - 8, fname, id));
+                if amem.is_some() { out.push_str("    call hbc_arena_mark\n"); }
                 out.push_str(&format!("    mov -{}(%rbp), %r11
     mov -{}(%rbp), %rax
     dec %rax
@@ -16224,26 +16661,55 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
 ", lv_off, lv_off - 8));
                 }
                 let mut inner = flow.to_vec();
-                inner.push(CgFrame::Loop(format!(".Lfen_{}_{}", fname, id), format!(".Lfee_{}_{}", fname, id)));
+                inner.push(CgFrame::Loop(format!(".Lfen_{}_{}", fname, id), format!(".Lfee_{}_{}", fname, id), amem.as_ref().map(|_| (*n, true))));
                 cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names, byref_names);
                 env[kl].ty = saved_lv.0;
                 env[kl].off = saved_lv.1;
+                out.push_str(&format!(".Lfen_{}_{}:\n", fname, id));
+                if let Some(mems) = &amem {
+                    out.push_str("    call hbc_arena_rewind\n");
+                    for m in mems {
+                        if let Some(v) = env.iter().rev().find(|v| v.name == *m) {
+                            out.push_str(&format!("    movq $0, -{}(%rbp)\n", v.off));
+                        }
+                    }
+                }
                 env.truncate(mark);
-                out.push_str(&format!(".Lfen_{}_{}:
-    incq -{}(%rbp)
+                out.push_str(&format!("    incq -{}(%rbp)
     jmp .Lfec_{}_{}
-", fname, id, idx_off, fname, id));
+", idx_off, fname, id));
                 out.push_str(&format!(".Lfee_{}_{}:
 ", fname, id));
             }
             Stmt::Exit(_) => {
                 match flow.last() {
-                    Some(CgFrame::Loop(_, e)) | Some(CgFrame::Switch(e)) => out.push_str(&format!("    jmp {}\n", e)),
+                    Some(CgFrame::Loop(_, e, al)) => {
+                        // Leaving the loop abandons the iteration's pending
+                        // mark; the condition-fail path to the same end
+                        // label carries none, so the rewind is inline here.
+                        if al.is_some() { out.push_str("    call hbc_arena_rewind\n"); }
+                        out.push_str(&format!("    jmp {}\n", e));
+                    }
+                    Some(CgFrame::Switch(e)) => out.push_str(&format!("    jmp {}\n", e)),
                     None => unreachable!("analysis checked `exit` is inside a loop or switch"),
                 }
             }
             Stmt::Loop(_) => {
-                let c = flow.iter().rev().find_map(|f| match f { CgFrame::Loop(c, _) => Some(c), _ => None }).expect("analysis checked `loop` is inside a loop");
+                let (c, al) = flow.iter().rev().find_map(|f| match f { CgFrame::Loop(c, _, al) => Some((c, al)), _ => None }).expect("analysis checked `loop` is inside a loop");
+                // A for/foreach continue lands on the step label, which
+                // already rewinds and clears; a while continue jumps to
+                // the head, so the iteration's mark is rewound inline and
+                // the slots cleared for the fresh iteration.
+                if let Some((line, false)) = al {
+                    out.push_str("    call hbc_arena_rewind\n");
+                    if let Some(mems) = arena_loop_members(*line) {
+                        for m in mems {
+                            if let Some(v) = env.iter().rev().find(|v| v.name == *m) {
+                                out.push_str(&format!("    movq $0, -{}(%rbp)\n", v.off));
+                            }
+                        }
+                    }
+                }
                 out.push_str(&format!("    jmp {}\n", c));
             }
             Stmt::Assign(_, id, e) => {
@@ -16407,7 +16873,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     }
                     Ty::Arr(_) => cg_array_value(e, off, env, sigs, strs, out, target),
                     _ => {
+                        // I2: eligible StrOwn reassignment routes the root
+                        // allocation (concat arm takes the flag).
+                        let arena_stmt = lty == Ty::StrOwn && t == Ty::StrOwn && arena_routed(id);
+                        if arena_stmt { CG_ARENA_ROOT.with(|c| c.set(true)); }
                         cg_value(e, env, sigs, strs, out, target);
+                        if arena_stmt { CG_ARENA_ROOT.with(|c| c.set(false)); }
                         // Null a moved-out DArr source AFTER the RHS was
                         // fully evaluated (parent rule: move transfers; the
                         // old slot must not free what it no longer owns).
@@ -16501,8 +16972,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // Free the OLD owned copy after the RHS
                                 // exists (fresh slots are zero-initialised,
                                 // so the guard sees null), then store.
+                                // I2: a routed slot's old payload is
+                                // arena-owned; the rewind releases it.
                                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    call hbc_freestr\n86:\n", off));
+                                if !arena_routed(id) {
+                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    call hbc_freestr\n86:\n", off));
+                                }
                                 out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
                             }
                             Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash | Ty::DArrDyn => {
@@ -17923,7 +18398,8 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     let params_frame = frame;
     let mut darr_slots: Vec<(usize, u8)> = Vec::new();
     let byref_names_layout = byref_names_in(&f.stmts);
-    layout_locals(&f.stmts, &mut lenv, sigs, &mut frame, &mut darr_slots, &f.dyn_names, &byref_names_layout);
+    let mut slot_names: std::collections::HashMap<usize, String> = std::collections::HashMap::new();
+    layout_locals(&f.stmts, &mut lenv, sigs, &mut frame, &mut darr_slots, &f.dyn_names, &byref_names_layout, &mut slot_names);
     // Dynamic-array parameters are owned by this function: their slots are
     // freed at the shared epilogue like any other DArr local.
     for v in &lenv[..lenv.len().min(f.params.len())] {
@@ -18001,11 +18477,25 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
             out.push_str(&format!("    mov %rax, -{}(%rbp)\n", v.off));
         }
     }
+    // I2: this function's arena routing (base body only; the `@`-variants
+    // keep the general allocator in this increment).
+    let arena_fn = if byref.is_none() && ARENA_ACTIVE.with(|a| a.get()) {
+        ARENA_MAP.with(|m| m.borrow().get(&f.name).cloned()).filter(|a| a.any())
+    } else { None };
+    let arena_on = arena_fn.is_some();
+    if arena_on {
+        // Function zone: one arena scope per invocation; the eligible
+        // slots' frees are suppressed and the payloads die here.
+        out.push_str("    call hbc_arena_enter
+");
+    }
+    ARENA_CUR.with(|c| *c.borrow_mut() = arena_fn.clone());
     let mut env: Vec<CgLocal> = lenv[..nparams].to_vec();
     let mut walk_frame = params_frame;
     let mut label = 0usize;
     let byref_names = byref_names_in(&f.stmts);
     cg_stmts(&f.stmts, &mut env, &mut walk_frame, sigs, strs, out, target, &lbl, &mut label, &[], &darr_slots, &f.dyn_names, &byref_names);
+    ARENA_CUR.with(|c| *c.borrow_mut() = None);
     // Free every dynamic array still owned on this exit path. A slot is
     // null when its value was moved out (moves null the source, so each
     // allocation has exactly one freeing owner) or when it never held a
@@ -18024,6 +18514,12 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         out.push_str("    sub $16, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rdi, 8(%rsp)\n");
     } else {
         out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+    }
+    if arena_on {
+        // All arena payloads of this frame die here, in one rewind; the
+        // routed slots below skip their individual frees.
+        out.push_str("    call hbc_arena_leave
+");
     }
     for (i, (off, class)) in darr_slots.iter().enumerate() {
         match class {
@@ -18050,7 +18546,23 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
             5 => {
                 // StrOwn: an owned string copy; hbc_freestr(ptr) releases
                 // exactly 16 + cap bytes (cap at ptr-16, len at ptr-8).
-                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hbc_freestr\n91{}:\n", off, i, i));
+                // I2: a function-zone slot's payload is arena-owned; the
+                // rewind above released it, and hbc_freestr on it would
+                // munmap arena memory (hbc_os_bad). A duplicated local
+                // name (branch shadowing) conservatively keeps the free.
+                let routed = arena_fn.as_ref().map_or(false, |a| {
+                    let names: Vec<&CgLocal> = lenv.iter().filter(|v| v.off == *off).collect();
+                    if names.len() == 1 { return a.routed(&names[0].name); }
+                    // A loop-body local is out of lenv by the epilogue but
+                    // keeps its registered free; resolve it by offset.
+                    if names.is_empty() {
+                        if let Some(n) = slot_names.get(off) { return a.routed(n); }
+                    }
+                    false
+                });
+                if !routed {
+                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hbc_freestr\n91{}:\n", off, i, i));
+                }
             }
             8 => {
                 // DArrDyn (ains 1a): free owned cell payloads, then the
@@ -20346,6 +20858,16 @@ hbc_persistent_payload_release:
             out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
             return {
         let active=DBF_USED.with(|v|v.get());
+            // Scope arena (Goose hybrid I2), Windows leg: same wiring as the
+            // Linux block below, which this early return would skip.
+            if ARENA_ACTIVE.with(|a| a.get()) {
+                out = out.replace("hbc_alloc:\n", "hbc_alloc:\n    cmpb $0, hbc_arena_ok(%rip)\n    je 979f\n    movb $0, hbc_arena_ok(%rip)\n    jmp hbc_aalloc\n979:");
+                out = out.replace("    call hbc_str_cache_flush\n", "    call hbc_str_cache_flush\n    call hbc_arena_flush\n");
+                out = out.replace("_start:\n    push %rbp\n    mov %rsp, %rbp\n    and $-16, %rsp\n    sub $48, %rsp\n",
+                    "_start:\n    push %rbp\n    mov %rsp, %rbp\n    and $-16, %rsp\n    sub $48, %rsp\n    call hbc_arena_env_init\n");
+                out.push_str(ARENA_WINDOWS);
+                out = out.replace("@REG_ARENA_ALLOC@", "    decq hbc_mem_allocs(%rip)\n");
+            }
         let mut result=finalize_trace(out,target);
         if THREADS.with(|c| c.get()) { result = finalize_threads(result); }
         if active {
@@ -21109,7 +21631,7 @@ hbc_dynxeq_dd:
     jmp hbc_dynxeq_error
 8:  xor %eax, %eax
     ret
-"#;;
+"#;
         if CLASSES.with(|c| !c.borrow().is_empty()) {
             let marked = blob.replace("    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je 13f\n    mov %rax, %r10", "    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je 13f\n    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@\n    je 13f\n    mov %rax, %r10");
             debug_assert!(marked.contains("$13"), "print blob tag-13 arm must apply");
@@ -21966,6 +22488,30 @@ hbc_str_cache: .zero 64
     if out.contains("call hbc_curdir_linux") { out.push_str(CURDIR_LINUX_HELPER); }
     {
         let active=DBF_USED.with(|v|v.get());
+    // Scope arena (Goose hybrid I2): emitted ONLY when the program has at
+    // least one eligible slot, so arena-less programs keep byte-identical
+    // output (non-contamination gate). Routing lives at hbc_alloc's entry:
+    // codegen sets hbc_arena_ok around the root string allocation of an
+    // eligible statement and clears it right after; the first allocation
+    // inside that call consumes the flag and takes the arena.
+    if ARENA_ACTIVE.with(|a| a.get()) {
+        out = out.replace("hbc_alloc:\n", "hbc_alloc:\n    cmpb $0, hbc_arena_ok(%rip)\n    je 979f\n    movb $0, hbc_arena_ok(%rip)\n    jmp hbc_aalloc\n979:");
+        // Process-exit teardown: the arena's segments and loose blocks are
+        // released after the string-cache flush so HB_MEMCHECK balances
+        // (t1618).
+        out = out.replace("    call hbc_str_cache_flush\n", "    call hbc_str_cache_flush\n    call hbc_arena_flush\n");
+        match target {
+            Target::Linux => {
+                out = out.replace("_start:\n", "_start:\n    mov %rsp, %rdi\n    call hbc_arena_env_init\n");
+                out.push_str(ARENA_LINUX);
+            }
+            Target::Windows => unreachable!("the Windows path returned earlier"),
+        }
+        // Arena-internal allocations are suballocator traffic, invisible to
+        // the instrumented alloc/free balance (their rewinds and the exit
+        // flush munmap without touching the registry either).
+        out = out.replace("@REG_ARENA_ALLOC@", "    decq hbc_mem_allocs(%rip)\n");
+    }
         let mut result=finalize_trace(out,target);
         if THREADS.with(|c| c.get()) { result = finalize_threads(result); }
         if active {
@@ -24373,6 +24919,7 @@ fn main() {
     let mut instrument = false;
     let mut llvm = false;
     let mut no_escape = false;
+    let mut no_arena = false;
     let mut external_as = false;
     let mut llvm_trace = true;
     let mut ai = 1;
@@ -24384,6 +24931,7 @@ fn main() {
             "--external-as" => external_as = true,
             "--instrument" => instrument = true,
             "--no-escape-analysis" => no_escape = true,
+            "--no-arena" => no_arena = true,
             "--experimental-llvm" => llvm = true,
             "--experimental-llvm-no-trace" => {llvm = true; llvm_trace = false;},
             "-I" => { ai += 1; incdirs.push(args.get(ai).expect("-I needs a directory").clone()); }
@@ -24886,10 +25434,12 @@ fn main() {
         }
     }
 
-    // I1 classification only; no codegen consumer.
+    // I1 supplies conservative proof to the I2 arena eligibility consumer.
     if !no_escape {
         let reports = escape_analysis(&funcs, &sigs, &byref_params, &byref_locals);
         if std::env::var("HBC_ESCAPE_DUMP").is_ok() { for r in &reports { r.dump(); } }
+        let arena = arena_eligibility(&funcs, &sigs, &externs, &reports, std::env::var("HBC_ARENA_DUMP").is_ok());
+        ARENA_MAP.with(|m| *m.borrow_mut() = arena);
     }
 
     // Pass 2: generate x86-64 assembly from the validated AST only.
@@ -24923,6 +25473,8 @@ fn main() {
             }
         }
     });
+    let arena_active = !no_arena && !THREADS.with(|c| c.get()) && ARENA_MAP.with(|m| m.borrow().values().any(|a| a.any()));
+    ARENA_ACTIVE.with(|a| a.set(arena_active));
     let out = emit_asm(&funcs, &sigs, &externs, target, instrument);
 
     if pos[1].ends_with(".s") {
@@ -25004,6 +25556,467 @@ fn main() {
 }
 
 
+const ARENA_LINUX: &str = r#"
+# ---- scope arena (Goose hybrid I2): bump segments + loose list ----
+    .bss
+    .align 8
+hbc_arena_seg:    .quad 0
+hbc_arena_off:    .quad 0
+hbc_arena_loose:  .quad 0
+hbc_arena_marksp: .quad 0
+hbc_arena_broken: .quad 0
+hbc_arena_bytes:  .quad 0
+hbc_arena_markstk: .zero 6144
+hbc_arena_ok:     .byte 0
+    .data
+    .align 8
+hbc_arena_on:     .byte 1
+    .text
+# --- env scan: rdi = initial rsp (argc at (%rdi)); HB_ARENA=off -> on=0 ---
+hbc_arena_env_init:
+    mov (%rdi), %rax
+    lea 16(%rdi,%rax,8), %rsi
+    movb $1, hbc_arena_on(%rip)
+.Larenv_loop:
+    mov (%rsi), %rdi
+    test %rdi, %rdi
+    je .Larenv_done
+    mov (%rdi), %rax
+    movabs $0x414e4552415f4248, %rcx   # "HB_ARENA"
+    cmp %rcx, %rax
+    jne .Larenv_next
+    cmpb $61, 8(%rdi)    # '='
+    jne .Larenv_next
+    cmpb $111, 9(%rdi)   # 'o'
+    jne .Larenv_next
+    cmpb $102, 10(%rdi)  # 'f'
+    jne .Larenv_next
+    cmpb $102, 11(%rdi)  # 'f'
+    jne .Larenv_next
+    movb $0, hbc_arena_on(%rip)
+    jmp .Larenv_done
+.Larenv_next:
+    add $8, %rsi
+    jmp .Larenv_loop
+.Larenv_done:
+    cmpb $0, hbc_arena_on(%rip)
+    je .Larenv_ret
+    # Pre-create the base segment: with an empty arena a mark records
+    # seg=NULL, and the rewind would munmap the one segment the next
+    # allocation created - per-iteration mmap+munmap churn (b5 probe).
+    mov $65536, %rdi
+    call hbc_alloc
+@REG_ARENA_ALLOC@    movq $0, (%rax)
+    movq $65536, 8(%rax)
+    mov %rax, hbc_arena_seg(%rip)
+    movq $32, hbc_arena_off(%rip)
+    addq $65536, hbc_arena_bytes(%rip)
+.Larenv_ret:
+    ret
+
+# --- mark / enter (same op) ---
+hbc_arena_mark:
+hbc_arena_enter:
+    mov hbc_arena_marksp(%rip), %rax
+    cmp $256, %rax
+    jae .Larmark_ovf
+    lea (%rax,%rax,2), %r8
+    lea hbc_arena_markstk(%rip), %rcx
+    lea (%rcx,%r8,8), %r8
+    mov hbc_arena_seg(%rip), %rdx
+    mov %rdx, (%r8)
+    mov hbc_arena_off(%rip), %rdx
+    mov %rdx, 8(%r8)
+    mov hbc_arena_loose(%rip), %rdx
+    mov %rdx, 16(%r8)
+    inc %rax
+    mov %rax, hbc_arena_marksp(%rip)
+    ret
+.Larmark_ovf:
+    incq hbc_arena_broken(%rip)
+    ret
+
+# --- rewind / leave (same op) ---
+hbc_arena_rewind:
+hbc_arena_leave:
+    mov hbc_arena_broken(%rip), %rax
+    test %rax, %rax
+    jz .Larw_normal
+    decq hbc_arena_broken(%rip)
+    ret
+.Larw_normal:
+    mov hbc_arena_marksp(%rip), %rax
+    test %rax, %rax
+    je .Larw_ret
+    dec %rax
+    mov %rax, hbc_arena_marksp(%rip)
+    lea (%rax,%rax,2), %r8
+    lea hbc_arena_markstk(%rip), %rcx
+    lea (%rcx,%r8,8), %r8
+    mov (%r8), %r9        # marked seg (r9 survives syscall)
+    mov 8(%r8), %r10      # marked off (r10 survives syscall)
+    # marked loose is re-read from the entry: syscall clobbers r11
+.Larw_loose:
+    mov hbc_arena_loose(%rip), %rdi
+    cmp 16(%r8), %rdi
+    je .Larw_segs
+    mov (%rdi), %rcx
+    mov %rcx, hbc_arena_loose(%rip)
+    mov 8(%rdi), %rsi
+    sub %rsi, hbc_arena_bytes(%rip)
+    mov $11, %eax
+    syscall
+    test %rax, %rax
+    jnz hbc_os_bad
+    jmp .Larw_loose
+.Larw_segs:
+    mov hbc_arena_seg(%rip), %rdi
+.Larw_segloop:
+    cmp %r9, %rdi
+    je .Larw_set
+    mov (%rdi), %rcx
+    mov %rcx, hbc_arena_seg(%rip)
+    mov 8(%rdi), %rsi
+    sub %rsi, hbc_arena_bytes(%rip)
+    mov $11, %eax
+    syscall
+    test %rax, %rax
+    jnz hbc_os_bad
+    mov hbc_arena_seg(%rip), %rdi
+    jmp .Larw_segloop
+.Larw_set:
+    mov %r10, hbc_arena_off(%rip)
+.Larw_ret:
+    ret
+
+# --- aalloc: rdi=size -> rax ---
+hbc_aalloc:
+    add $15, %rdi
+    and $-16, %rdi
+    cmpq $0, hbc_arena_marksp(%rip)
+    je hbc_alloc
+    cmpb $0, hbc_arena_on(%rip)
+    je .Lara_loose
+    mov hbc_arena_bytes(%rip), %rax
+    cmp $268435456, %rax
+    ja .Lara_loose
+    cmp $65504, %rdi
+    ja .Lara_loose
+    mov hbc_arena_seg(%rip), %rcx
+    test %rcx, %rcx
+    je .Lara_newseg
+    mov hbc_arena_off(%rip), %rax
+    lea (%rax,%rdi), %rdx
+    cmp $65536, %rdx
+    ja .Lara_newseg
+    mov %rdx, hbc_arena_off(%rip)
+    add %rax, %rcx
+    mov %rcx, %rax
+    ret
+.Lara_newseg:
+    push %rdi
+    mov $65536, %rdi
+    call hbc_alloc
+@REG_ARENA_ALLOC@    pop %rdi
+    mov hbc_arena_seg(%rip), %rcx
+    mov %rcx, (%rax)
+    movq $65536, 8(%rax)
+    mov %rax, hbc_arena_seg(%rip)
+    addq $65536, hbc_arena_bytes(%rip)
+    lea 32(%rdi), %rcx
+    mov %rcx, hbc_arena_off(%rip)
+    add $32, %rax
+    ret
+.Lara_loose:
+    push %rdi
+    lea 16(%rdi), %rdi
+    call hbc_alloc
+@REG_ARENA_ALLOC@    pop %rdi
+    mov hbc_arena_loose(%rip), %rcx
+    mov %rcx, (%rax)
+    lea 16(%rdi), %rcx
+    mov %rcx, 8(%rax)
+    mov %rax, hbc_arena_loose(%rip)
+    add %rcx, hbc_arena_bytes(%rip)
+    add $16, %rax
+    ret
+
+# --- process-exit teardown: release every segment and loose block so the
+# arena never shows as a leak (HB_MEMCHECK balance, t1618) ---
+hbc_arena_flush:
+.Larf_segloop:
+    mov hbc_arena_seg(%rip), %rdi
+    test %rdi, %rdi
+    je .Larf_looseloop
+    mov (%rdi), %rcx
+    mov %rcx, hbc_arena_seg(%rip)
+    mov 8(%rdi), %rsi
+    sub %rsi, hbc_arena_bytes(%rip)
+    mov $11, %eax
+    syscall
+    test %rax, %rax
+    jnz hbc_os_bad
+    jmp .Larf_segloop
+.Larf_looseloop:
+    mov hbc_arena_loose(%rip), %rdi
+    test %rdi, %rdi
+    je .Larf_done
+    mov (%rdi), %rcx
+    mov %rcx, hbc_arena_loose(%rip)
+    mov 8(%rdi), %rsi
+    sub %rsi, hbc_arena_bytes(%rip)
+    mov $11, %eax
+    syscall
+    test %rax, %rax
+    jnz hbc_os_bad
+    jmp .Larf_looseloop
+.Larf_done:
+    movq $0, hbc_arena_off(%rip)
+    movq $0, hbc_arena_marksp(%rip)
+    ret
+
+"#;
+
+const ARENA_WINDOWS: &str = r#"
+# ---- scope arena (Goose hybrid I2): bump segments + loose list ----
+    .bss
+    .align 8
+hbc_arena_seg:    .quad 0
+hbc_arena_off:    .quad 0
+hbc_arena_loose:  .quad 0
+hbc_arena_marksp: .quad 0
+hbc_arena_broken: .quad 0
+hbc_arena_bytes:  .quad 0
+hbc_arena_markstk: .zero 6144
+hbc_arena_ok:     .byte 0
+hbc_arena_envbuf: .zero 16
+    .data
+    .align 8
+hbc_arena_on:     .byte 1
+    .section .rdata,"r"
+hbc_arena_envname: .asciz "HB_ARENA"
+    .text
+# hbc_arena_free_base: rdi = base to HeapFree
+hbc_arena_free_base:
+    push %rbp
+    mov %rsp, %rbp
+    sub $48, %rsp
+    mov %rdi, 32(%rsp)
+    call GetProcessHeap
+    mov %rax, %rcx
+    xor %edx, %edx
+    mov 32(%rsp), %r8
+    call HeapFree
+    leave
+    ret
+
+# env: HB_ARENA=off -> on=0
+hbc_arena_env_init:
+    push %rbp
+    mov %rsp, %rbp
+    sub $48, %rsp
+    movb $1, hbc_arena_on(%rip)
+    lea hbc_arena_envname(%rip), %rcx
+    lea hbc_arena_envbuf(%rip), %rdx
+    mov $16, %r8d
+    call GetEnvironmentVariableA
+    cmp $3, %rax
+    jne .Larenvw_done
+    lea hbc_arena_envbuf(%rip), %rdx
+    cmpb $111, (%rdx)
+    jne .Larenvw_done
+    cmpb $102, 1(%rdx)
+    jne .Larenvw_done
+    cmpb $102, 2(%rdx)
+    jne .Larenvw_done
+    movb $0, hbc_arena_on(%rip)
+.Larenvw_done:
+    cmpb $0, hbc_arena_on(%rip)
+    je .Larenvw_ret
+    mov $65536, %edi
+    call hbc_alloc
+@REG_ARENA_ALLOC@    movq $0, (%rax)
+    movq $65536, 8(%rax)
+    mov %rax, hbc_arena_seg(%rip)
+    movq $32, hbc_arena_off(%rip)
+    addq $65536, hbc_arena_bytes(%rip)
+.Larenvw_ret:
+    leave
+    ret
+
+# mark / enter (pure memory, no Win32)
+hbc_arena_mark:
+hbc_arena_enter:
+    mov hbc_arena_marksp(%rip), %rax
+    cmp $256, %rax
+    jae .Larmarkw_ovf
+    lea (%rax,%rax,2), %r8
+    lea hbc_arena_markstk(%rip), %rcx
+    lea (%rcx,%r8,8), %r8
+    mov hbc_arena_seg(%rip), %rdx
+    mov %rdx, (%r8)
+    mov hbc_arena_off(%rip), %rdx
+    mov %rdx, 8(%r8)
+    mov hbc_arena_loose(%rip), %rdx
+    mov %rdx, 16(%r8)
+    inc %rax
+    mov %rax, hbc_arena_marksp(%rip)
+    ret
+.Larmarkw_ovf:
+    incq hbc_arena_broken(%rip)
+    ret
+
+# rewind / leave: marked values on the frame (Win32 calls clobber volatiles)
+hbc_arena_rewind:
+hbc_arena_leave:
+    push %rbp
+    mov %rsp, %rbp
+    sub $48, %rsp
+    mov hbc_arena_broken(%rip), %rax
+    test %rax, %rax
+    jz .Larww_normal
+    decq hbc_arena_broken(%rip)
+    jmp .Larww_done
+.Larww_normal:
+    mov hbc_arena_marksp(%rip), %rax
+    test %rax, %rax
+    je .Larww_done
+    dec %rax
+    mov %rax, hbc_arena_marksp(%rip)
+    lea (%rax,%rax,2), %r8
+    lea hbc_arena_markstk(%rip), %rcx
+    lea (%rcx,%r8,8), %r8
+    mov (%r8), %rcx
+    mov %rcx, -8(%rbp)
+    mov 8(%r8), %rcx
+    mov %rcx, -16(%rbp)
+    mov 16(%r8), %rcx
+    mov %rcx, -24(%rbp)
+.Larww_loose:
+    mov hbc_arena_loose(%rip), %rdi
+    cmp -24(%rbp), %rdi
+    je .Larww_segs
+    mov (%rdi), %rcx
+    mov %rcx, hbc_arena_loose(%rip)
+    mov 8(%rdi), %rcx
+    sub %rcx, hbc_arena_bytes(%rip)
+    call hbc_arena_free_base
+    jmp .Larww_loose
+.Larww_segs:
+    mov hbc_arena_seg(%rip), %rdi
+.Larww_segloop:
+    cmp -8(%rbp), %rdi
+    je .Larww_set
+    mov (%rdi), %rcx
+    mov %rcx, hbc_arena_seg(%rip)
+    mov 8(%rdi), %rcx
+    sub %rcx, hbc_arena_bytes(%rip)
+    call hbc_arena_free_base
+    mov hbc_arena_seg(%rip), %rdi
+    jmp .Larww_segloop
+.Larww_set:
+    mov -16(%rbp), %rcx
+    mov %rcx, hbc_arena_off(%rip)
+.Larww_done:
+    leave
+    ret
+
+# aalloc: rdi = size -> rax
+hbc_aalloc:
+    add $15, %rdi
+    and $-16, %rdi
+    cmpq $0, hbc_arena_marksp(%rip)
+    je hbc_alloc
+    cmpb $0, hbc_arena_on(%rip)
+    je .Laraw_loose
+    mov hbc_arena_bytes(%rip), %rax
+    cmp $268435456, %rax
+    ja .Laraw_loose
+    cmp $65504, %rdi
+    ja .Laraw_loose
+    mov hbc_arena_seg(%rip), %rcx
+    test %rcx, %rcx
+    je .Laraw_newseg
+    mov hbc_arena_off(%rip), %rax
+    lea (%rax,%rdi), %rdx
+    cmp $65536, %rdx
+    ja .Laraw_newseg
+    mov %rdx, hbc_arena_off(%rip)
+    add %rax, %rcx
+    mov %rcx, %rax
+    ret
+.Laraw_newseg:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    sub $8, %rsp
+    mov %rdi, %rbx
+    mov $65536, %edi
+    call hbc_alloc
+@REG_ARENA_ALLOC@    mov hbc_arena_seg(%rip), %rcx
+    mov %rcx, (%rax)
+    movq $65536, 8(%rax)
+    mov %rax, hbc_arena_seg(%rip)
+    addq $65536, hbc_arena_bytes(%rip)
+    lea 32(%rbx), %rcx
+    mov %rcx, hbc_arena_off(%rip)
+    add $32, %rax
+    add $8, %rsp
+    pop %rbx
+    pop %rbp
+    ret
+.Laraw_loose:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    sub $8, %rsp
+    mov %rdi, %rbx
+    lea 16(%rdi), %rdi
+    call hbc_alloc
+@REG_ARENA_ALLOC@    mov hbc_arena_loose(%rip), %rcx
+    mov %rcx, (%rax)
+    lea 16(%rbx), %rcx
+    mov %rcx, 8(%rax)
+    mov %rax, hbc_arena_loose(%rip)
+    add %rcx, hbc_arena_bytes(%rip)
+    add $16, %rax
+    add $8, %rsp
+    pop %rbx
+    pop %rbp
+    ret
+
+# process-exit teardown (t1618 balance)
+hbc_arena_flush:
+    push %rbp
+    mov %rsp, %rbp
+    sub $16, %rsp
+.Larfw_segloop:
+    mov hbc_arena_seg(%rip), %rdi
+    test %rdi, %rdi
+    je .Larfw_looseloop
+    mov (%rdi), %rcx
+    mov %rcx, hbc_arena_seg(%rip)
+    mov 8(%rdi), %rcx
+    sub %rcx, hbc_arena_bytes(%rip)
+    call hbc_arena_free_base
+    jmp .Larfw_segloop
+.Larfw_looseloop:
+    mov hbc_arena_loose(%rip), %rdi
+    test %rdi, %rdi
+    je .Larfw_done
+    mov (%rdi), %rcx
+    mov %rcx, hbc_arena_loose(%rip)
+    mov 8(%rdi), %rcx
+    sub %rcx, hbc_arena_bytes(%rip)
+    call hbc_arena_free_base
+    jmp .Larfw_looseloop
+.Larfw_done:
+    movq $0, hbc_arena_off(%rip)
+    movq $0, hbc_arena_marksp(%rip)
+    leave
+    ret
+
+"#;
 // Black-box Linux GTSTD oracle: physical cwd without its leading slash;
 // root, syscall failure (measured with deleted cwd), and paths of >=264 bytes return empty.
 // 263-byte cwd succeeds. Fixed 264-byte syscall buffer measures that boundary

@@ -30,6 +30,7 @@ pub struct PeImage {
 fn hint_of(name: &str) -> u16 {
     match name {
         "ExitProcess" => 366,
+        "GetEnvironmentVariableA" => 588,
         "GetLocalTime" => 632,
         "GetProcessHeap" => 716,
         "GetStdHandle" => 746,
