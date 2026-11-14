@@ -68,7 +68,20 @@ HB_ULONG        hbc_ext_ret_pay = 0;
 #define HBC_TAG_ARRAY   8 /* Dyn-held array: count at payload-8, cells at payload */
 #define HBC_TAG_INT_LIT 9
 #define HBC_TAG_BLOCK   7  /* codeblock: payload = code pointer (2.5) */
+#define HBC_TAG_DATE    11
+#define HBC_TAG_FIELD_NUMERIC 12
 #define HBC_TAG_BYREF   10 /* marker: payload = address of the caller casilla */
+
+/* All tag classification uses one masked accessor. Full tags are copied
+ * intact so width/decimals survive item, return and byref routes. */
+static HB_ULONG tag_kind( HB_ULONG tag ) { return tag & HBC_TAG_MASK; }
+static HB_ULONG field_decimals( HB_ULONG tag ) { return ( tag >> 8 ) & 255; }
+static HB_LONG field_i64( const HB_ULONG * w );
+static HB_ULONG field_type( HB_ULONG tag, HB_ULONG pay )
+{
+    if( field_decimals( tag ) ) return HB_IT_DOUBLE;
+    return ( (HB_LONG) pay >= -2147483648L && (HB_LONG) pay <= 2147483647L ) ? HB_IT_INTEGER : HB_IT_LONG;
+}
 
 /* The raw casilla of argument i, or NULL when omitted. */
 static const HB_ULONG * cell_raw( int i )
@@ -80,13 +93,13 @@ static const HB_ULONG * cell_raw( int i )
 static const HB_ULONG * cell_ptr( int i )
 {
     const HB_ULONG * cas = cell_raw( i );
-    if( cas && cas[ 0 ] == HBC_TAG_BYREF ) return (const HB_ULONG *) cas[ 1 ];
+    if( cas && tag_kind( cas[ 0 ] ) == HBC_TAG_BYREF ) return (const HB_ULONG *) cas[ 1 ];
     return cas;
 }
 static HB_ULONG cell_tag( int i )
 {
     const HB_ULONG * cas = cell_ptr( i );
-    return cas ? ( cas[ 0 ] & HBC_TAG_MASK ) : HBC_TAG_NIL;
+    return cas ? tag_kind( cas[ 0 ] ) : HBC_TAG_NIL;
 }
 static HB_ULONG cell_pay( int i )
 {
@@ -114,6 +127,8 @@ HB_ULONG hb_parinfo( int iParam )
             break;
         }
         case HBC_TAG_DOUBLE:  t = HB_IT_DOUBLE; break;
+        case HBC_TAG_DATE:    t = HB_IT_DATE; break;
+        case HBC_TAG_FIELD_NUMERIC: { const HB_ULONG * w = cell_ptr( iParam ); t = field_type( w[0], w[1] ); break; }
         case HBC_TAG_LOGICAL: t = HB_IT_LOGICAL; break;
         case HBC_TAG_STR_BRW:
         case HBC_TAG_STR_OWN: t = HB_IT_STRING; break;
@@ -123,7 +138,7 @@ HB_ULONG hb_parinfo( int iParam )
         default:              t = HB_IT_NIL; break;
     }
     /* A byref argument carries HB_IT_BYREF over the referred type. */
-    if( raw && raw[ 0 ] == HBC_TAG_BYREF ) t |= HB_IT_BYREF;
+    if( raw && tag_kind( raw[ 0 ] ) == HBC_TAG_BYREF ) t |= HB_IT_BYREF;
     return t;
 }
 
@@ -141,9 +156,9 @@ static const HB_ULONG * arr_cells( const HB_ULONG * w )
     /* An @array argument arrives as the byref marker: read through ONE
      * hop, so hb_arrayLen( hb_param( i, HB_IT_ARRAY ) ) works on @a
      * exactly like real Harbour extension code expects. */
-    if( w && w[ 0 ] == HBC_TAG_BYREF && w[ 1 ] )
+    if( w && tag_kind( w[ 0 ] ) == HBC_TAG_BYREF && w[ 1 ] )
         w = (const HB_ULONG *) w[ 1 ];
-    if( ! w || ( w[ 0 ] != HBC_TAG_ARRAY && w[ 0 ] != HBC_TAG_SUBARR ) || ! w[ 1 ] )
+    if( ! w || ( tag_kind( w[ 0 ] ) != HBC_TAG_ARRAY && tag_kind( w[ 0 ] ) != HBC_TAG_SUBARR ) || ! w[ 1 ] )
         return (const HB_ULONG *) 0;
     return (const HB_ULONG *) w[ 1 ];
 }
@@ -198,7 +213,7 @@ PHB_ITEM hb_param( int iParam, HB_LONG lMask )
     const HB_ULONG * cas;
     if( iParam < 1 || (HB_ULONG) iParam > hbc_ext_argc ) return (PHB_ITEM) 0;
     cas = hbc_ext_argv + 2 * ( hbc_ext_argc - (HB_ULONG) iParam );
-    if( cas[ 0 ] == HBC_TAG_NIL )
+    if( tag_kind( cas[ 0 ] ) == HBC_TAG_NIL )
         return lMask == (HB_LONG) HB_IT_ANY ? (PHB_ITEM) cas : (PHB_ITEM) 0;
     return ( hb_parinfo( iParam ) & (HB_ULONG) lMask ) ? (PHB_ITEM) cas : (PHB_ITEM) 0;
 }
@@ -206,6 +221,7 @@ PHB_ITEM hb_param( int iParam, HB_LONG lMask )
 HB_LONG hb_parnl( int iParam )
 {
     HB_ULONG t = cell_tag( iParam );
+    if( t == HBC_TAG_FIELD_NUMERIC ) return field_i64( cell_ptr( iParam ) );
     if( t == HBC_TAG_INT || t == HBC_TAG_INT_LIT ) return (HB_LONG) cell_pay( iParam );
     if( t == HBC_TAG_DOUBLE ) { union { HB_ULONG b; double d; } u; u.b = cell_pay( iParam ); return (HB_LONG) u.d; }
     return 0; /* Harbour answers 0 on a type mismatch at this API level */
@@ -214,6 +230,7 @@ HB_LONG hb_parnl( int iParam )
 double hb_parnd( int iParam )
 {
     HB_ULONG t = cell_tag( iParam );
+    if( t == HBC_TAG_FIELD_NUMERIC ) return (double) field_i64( cell_ptr( iParam ) );
     if( t == HBC_TAG_INT || t == HBC_TAG_INT_LIT ) return (double) (HB_LONG) cell_pay( iParam );
     if( t == HBC_TAG_DOUBLE ) { union { HB_ULONG b; double d; } u; u.b = cell_pay( iParam ); return u.d; }
     return 0.0; /* Harbour answers 0 on a type mismatch at this API level */
@@ -265,8 +282,13 @@ static void sys_write_err( const char * msg, HB_ULONG len )
         : "a"( 1L ), "D"( 2L ), "r"( rsi ), "r"( rdx )
         : "rcx", "r11", "memory" );
 }
+/* Optional DBF adapter, absent in existing non-DBF programs. Linker resolves
+ * the weak address to zero there. No libc exit or shutdown ordering. */
+extern void hrdbf_app_close( void ) __attribute__( ( weak ) );
 static void sys_exit1( void )
 {
+    if( hrdbf_app_close )
+        hrdbf_app_close();
     __asm__ volatile( "syscall"
         : /* no output */
         : "a"( 60L ), "D"( 1L )
@@ -364,7 +386,7 @@ HB_SIZE hb_parclen( int iParam )
  * leak the intermediate copies (review v3). */
 static void ret_set( HB_ULONG tag, HB_ULONG pay )
 {
-    if( hbc_ext_ret_tag == HBC_TAG_STR_OWN && hbc_ext_ret_pay )
+    if( tag_kind( hbc_ext_ret_tag ) == HBC_TAG_STR_OWN && hbc_ext_ret_pay )
         hbc_freestr( (void *) hbc_ext_ret_pay );
     hbc_ext_ret_tag = tag; hbc_ext_ret_pay = pay;
 }
@@ -415,7 +437,7 @@ void hb_retc( const char * szText )
 static HB_ULONG * stor_ptr( int i )
 {
     const HB_ULONG * raw = cell_raw( i );
-    if( ! raw || raw[ 0 ] != HBC_TAG_BYREF ) return (HB_ULONG *) 0;
+    if( ! raw || tag_kind( raw[ 0 ] ) != HBC_TAG_BYREF ) return (HB_ULONG *) 0;
     return (HB_ULONG *) raw[ 1 ];
 }
 static void stor_scalar( int i, HB_ULONG tag, HB_ULONG pay )
@@ -424,7 +446,7 @@ static void stor_scalar( int i, HB_ULONG tag, HB_ULONG pay )
      * Dyn-held array, tag 8, is left alone: arrays cross in 2.4). */
     HB_ULONG * w = stor_ptr( i );
     if( ! w ) return;
-    if( w[ 0 ] == HBC_TAG_ARRAY || w[ 0 ] == HBC_TAG_SUBARR )
+    if( tag_kind( w[ 0 ] ) == HBC_TAG_ARRAY || tag_kind( w[ 0 ] ) == HBC_TAG_SUBARR )
     {
         /* Overwriting a Dyn-held array through @ would orphan the block
          * (freeing it needs a recursive walk: tag-4 strings, tag-6
@@ -433,7 +455,7 @@ static void stor_scalar( int i, HB_ULONG tag, HB_ULONG pay )
         sys_write_err( msg, sizeof( msg ) - 1 );
         sys_exit1();
     }
-    if( w[ 0 ] == HBC_TAG_STR_OWN && w[ 1 ] ) hbc_freestr( (void *) w[ 1 ] );
+    if( tag_kind( w[ 0 ] ) == HBC_TAG_STR_OWN && w[ 1 ] ) hbc_freestr( (void *) w[ 1 ] );
     w[ 0 ] = tag; w[ 1 ] = pay;
 }
 int hb_storni( int iValue, int iParam )  { stor_scalar( iParam, HBC_TAG_INT, (HB_ULONG) (HB_LONG) iValue ); return stor_ptr( iParam ) != 0; }
@@ -491,15 +513,27 @@ static void item_free( void * body )
 }
 
 static HB_ULONG * item_words( PHB_ITEM p ) { return (HB_ULONG *) p; }
+static HB_LONG field_i64( const HB_ULONG * w )
+{
+    if( field_decimals( w[0] ) )
+    {
+        static const char msg[] = "hbc: DBF decimal numeric cannot enter I64 operation\n";
+        sys_write_err( msg, sizeof( msg ) - 1 );
+        sys_exit1();
+    }
+    return (HB_LONG) w[1];
+}
 
 static HB_ULONG tag_to_type( HB_ULONG t, HB_ULONG pay )
 {
-    switch( t & HBC_TAG_MASK )
+    switch( tag_kind( t ) )
     {
         case HBC_TAG_INT:
         case HBC_TAG_INT_LIT:
             return ( (HB_LONG) pay >= -2147483648L && (HB_LONG) pay <= 2147483647L ) ? HB_IT_INTEGER : HB_IT_LONG;
         case HBC_TAG_DOUBLE:  return HB_IT_DOUBLE;
+        case HBC_TAG_DATE:    return HB_IT_DATE;
+        case HBC_TAG_FIELD_NUMERIC: return field_type( t, pay );
         case HBC_TAG_LOGICAL: return HB_IT_LOGICAL;
         case HBC_TAG_STR_BRW:
         case HBC_TAG_STR_OWN: return HB_IT_STRING;
@@ -522,7 +556,7 @@ static void item_free_str( void * p )
 
 static void item_clear_string( HB_ULONG * w )
 {
-    if( w[ 0 ] == HBC_TAG_STR_OWN && w[ 1 ] ) item_free_str( (void *) w[ 1 ] );
+    if( tag_kind( w[ 0 ] ) == HBC_TAG_STR_OWN && w[ 1 ] ) item_free_str( (void *) w[ 1 ] );
 }
 
 static void item_set_string( HB_ULONG * w, const char * s, HB_ULONG len )
@@ -546,7 +580,7 @@ PHB_ITEM hb_itemNew( PHB_ITEM pNullOrSrc )
     if( pNullOrSrc )
     {
         HB_ULONG * s = item_words( pNullOrSrc );
-        if( s[ 0 ] == HBC_TAG_STR_BRW || s[ 0 ] == HBC_TAG_STR_OWN )
+        if( tag_kind( s[ 0 ] ) == HBC_TAG_STR_BRW || tag_kind( s[ 0 ] ) == HBC_TAG_STR_OWN )
         {
             const char * b = (const char *) s[ 1 ];
             item_set_string( w, b, ( (const HB_ULONG *) b )[ -1 ] );
@@ -576,27 +610,29 @@ HB_LONG hb_itemGetNL( PHB_ITEM p )
 {
     HB_ULONG * w = item_words( p );
     if( ! w ) return 0;
-    if( w[ 0 ] == HBC_TAG_INT || w[ 0 ] == HBC_TAG_INT_LIT ) return (HB_LONG) w[ 1 ];
-    if( ( w[ 0 ] & HBC_TAG_MASK ) == HBC_TAG_DOUBLE ) { union { HB_ULONG b; double d; } u; u.b = w[ 1 ]; return (HB_LONG) u.d; }
+    if( tag_kind( w[0] ) == HBC_TAG_FIELD_NUMERIC ) return field_i64( w );
+    if( tag_kind( w[ 0 ] ) == HBC_TAG_INT || tag_kind( w[ 0 ] ) == HBC_TAG_INT_LIT ) return (HB_LONG) w[ 1 ];
+    if( tag_kind( w[ 0 ] ) == HBC_TAG_DOUBLE ) { union { HB_ULONG b; double d; } u; u.b = w[ 1 ]; return (HB_LONG) u.d; }
     return 0;
 }
 double hb_itemGetND( PHB_ITEM p )
 {
     HB_ULONG * w = item_words( p );
     if( ! w ) return 0.0;
-    if( w[ 0 ] == HBC_TAG_INT || w[ 0 ] == HBC_TAG_INT_LIT ) return (double) (HB_LONG) w[ 1 ];
-    if( ( w[ 0 ] & HBC_TAG_MASK ) == HBC_TAG_DOUBLE ) { union { HB_ULONG b; double d; } u; u.b = w[ 1 ]; return u.d; }
+    if( tag_kind( w[0] ) == HBC_TAG_FIELD_NUMERIC ) return (double) field_i64( w );
+    if( tag_kind( w[ 0 ] ) == HBC_TAG_INT || tag_kind( w[ 0 ] ) == HBC_TAG_INT_LIT ) return (double) (HB_LONG) w[ 1 ];
+    if( tag_kind( w[ 0 ] ) == HBC_TAG_DOUBLE ) { union { HB_ULONG b; double d; } u; u.b = w[ 1 ]; return u.d; }
     return 0.0;
 }
 HB_BOOL hb_itemGetL( PHB_ITEM p )
 {
     HB_ULONG * w = item_words( p );
-    return w && w[ 0 ] == HBC_TAG_LOGICAL && w[ 1 ] != 0;
+    return w && tag_kind( w[ 0 ] ) == HBC_TAG_LOGICAL && w[ 1 ] != 0;
 }
 HB_SIZE hb_itemGetCLen( PHB_ITEM p )
 {
     HB_ULONG * w = item_words( p );
-    if( ! w || ( w[ 0 ] != HBC_TAG_STR_BRW && w[ 0 ] != HBC_TAG_STR_OWN ) ) return 0;
+    if( ! w || ( tag_kind( w[ 0 ] ) != HBC_TAG_STR_BRW && tag_kind( w[ 0 ] ) != HBC_TAG_STR_OWN ) ) return 0;
     return ( (HB_ULONG *) w[ 1 ] )[ -1 ];
 }
 char * hb_itemGetC( PHB_ITEM p )
@@ -607,7 +643,7 @@ char * hb_itemGetC( PHB_ITEM p )
     HB_ULONG * w = item_words( p );
     /* Oracle-pinned (694428e): a non-string (NIL included) answers
      * NULL; an EMPTY string answers a non-NULL allocation. */
-    if( ! w || ( w[ 0 ] != HBC_TAG_STR_BRW && w[ 0 ] != HBC_TAG_STR_OWN ) ) return (char *) 0;
+    if( ! w || ( tag_kind( w[ 0 ] ) != HBC_TAG_STR_BRW && tag_kind( w[ 0 ] ) != HBC_TAG_STR_OWN ) ) return (char *) 0;
     src = (char *) w[ 1 ];
     buf = (char *) item_alloc( n + 1 + 8 ); /* [total][bytes...] for hb_xfree */
     if( ! buf ) return (char *) 0;
@@ -659,12 +695,14 @@ PHB_ITEM hb_itemReturn( PHB_ITEM pItem )
      * later frees it (no destructive NIL-izing, no leak). */
     HB_ULONG * w = item_words( pItem );
     if( ! w ) { hb_ret(); return (PHB_ITEM) 0; }
-    switch( w[ 0 ] & HBC_TAG_MASK )
+    switch( tag_kind( w[ 0 ] ) )
     {
         case HBC_TAG_INT:
         case HBC_TAG_INT_LIT:
         case HBC_TAG_DOUBLE:
         case HBC_TAG_LOGICAL:
+        case HBC_TAG_DATE:
+        case HBC_TAG_FIELD_NUMERIC:
             ret_set( w[ 0 ], w[ 1 ] );
             break;
         case HBC_TAG_STR_BRW:
@@ -772,7 +810,7 @@ HB_BOOL hb_evalNew( PHB_EVALINFO pEvalInfo, PHB_ITEM pItem )
     HB_ULONG * w;
     if( ! pEvalInfo || ! pItem ) return 0;
     w = item_words( pItem );
-    if( ! w || w[ 0 ] != HBC_TAG_BLOCK ) return 0;
+    if( ! w || tag_kind( w[ 0 ] ) != HBC_TAG_BLOCK ) return 0;
     pEvalInfo->paramCount = 0;
     pEvalInfo->pItems[ 0 ] = pItem;
     return 1;
@@ -784,7 +822,7 @@ HB_BOOL hb_evalPutParam( PHB_EVALINFO pEvalInfo, PHB_ITEM pItem )
     if( ! pEvalInfo || ! pItem ) return 0;
     if( pEvalInfo->paramCount >= HB_EVAL_PARAM_MAX_ ) return 0; /* frame full */
     w = item_words( pItem );
-    if( ! w || ( w[ 0 ] != HBC_TAG_INT && w[ 0 ] != HBC_TAG_INT_LIT ) )
+    if( ! w || ( tag_kind( w[ 0 ] ) != HBC_TAG_INT && tag_kind( w[ 0 ] ) != HBC_TAG_INT_LIT ) )
     {
         /* Named rejection (2.5 slice): the block ABI reads raw i64
          * slots, so only INTEGER parameters cross. */
