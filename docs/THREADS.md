@@ -103,14 +103,60 @@ Declared F2 limits:
   mutexes; Harbour's mutexes are not robust either).
 - A failed `hb_mutexLock`/`hb_mutexSubscribe` timeout restarts on a
   spurious wake instead of recomputing the remaining time.
-- `hb_mutexQueueInfo` and `hb_mutexSubscribeNow` are not in F2.
+- `hb_mutexSubscribeNow` is not in F2 (F3 measured it for F4, see
+  below).
+
+## F3: literals in hb_threadStart, hb_threadID/hb_threadIsMain, hb_mutexQueueInfo
+
+- `hb_threadStart(@f(), ...)` accepts compile-time constant arguments:
+  integer, string and logical literals and NIL (oracle th29b; Harbour
+  passes them by value). The worker's parameter infers from the literal
+  like the multiarg call-site trail: an integer literal pins an integer
+  parameter, a string/logical literal pins the tagged union (Harbour's
+  parameter is a variant). Float, Date, array, hash and codeblock
+  arguments stay rejected with the F1 limit.
+- `hb_threadID([th])` -> numeric (Harbour ValType "N", oracle th30b):
+  the kernel tid, unique per thread. With a handle, the tid the worker
+  stored at boot; a join-consumed handle still maps (F1 blocks live
+  until process exit) and keeps returning the id - F3 convention, not
+  a Harbour oracle.
+- `hb_threadIsMain()` -> logical: .T. on the main thread, .F. on a
+  worker (oracle th30b).
+- `hb_mutexQueueInfo(m [, @nSubscribers, @nQueueLength])` -> logical
+  (oracle mt18): .T. for a valid mutex; the 3-arg form fills the
+  waiting-subscriber and queued-value counts, read under the queue
+  spinlock. nSub>0 is a race window and is not oracled.
+- Regression oracles mt15-mt19 pin the measured hb_mutexSubscribe
+  contract: no interaction with the lock (a subscribe consumes a queued
+  value even while ANOTHER thread holds the mutex, mt19), @val
+  UNTOUCHED on timeout (mt15), the mutex is left unlocked after a
+  successful subscribe (mt17).
+- SubscribeNow measured for F4 (f08/f10): it DISCARDS the currently
+  queued values and waits only for FUTURE notifications ("from now").
+  In this Harbour build the mutex destructor raises BASE/1302 after
+  SubscribeNow was used - the declared interactive-error family.
+- hb_threadOnce parked: five API shapes probed (f01, f01b-f01e), all
+  rejected by Harbour with BASE/3012; the control item becomes a
+  ValType "B" after hb_threadOnceInit. Needs more API research.
+
+## Declared F3 limits
+
+- hk-memvar: MEMVARs are not in the subset (their declarations are
+  no-ops; hbc.rs documents this). Measured Harbour semantics for the
+  future dedicated phase (th08): MEMVARs are NOT inherited - a PUBLIC
+  created by main reads Type()="U" in the worker; each thread starts
+  with an empty table.
+- hk-set: Set(_SET_*) is not in the subset (no Set builtin). Measured
+  Harbour semantics (th09): the worker's settings are COPIED from the
+  creator at start (the worker sees main's _SET_DECIMALS) and then
+  diverge per thread.
+- Both are compiler-wide subsystems (each comparable to F1+F2), kept
+  out of the threads increments by design decision (2026-11-14).
 
 ## Not yet (later increments)
 
-`hb_threadOnce`, per-thread MEMVARs and Set(_SET_*) (Harbour copies
-Set from the creator at start), per-thread workareas for DBF,
-`hb_threadID`, `hb_threadIsMain`, `hb_mutexQueueInfo`,
-`hb_mutexSubscribeNow`.
+`hb_threadOnce`, per-thread MEMVARs (hk-memvar) and Set(_SET_*)
+(hk-set), per-thread workareas for DBF, `hb_mutexSubscribeNow`.
 
 ## Object runtime under threads
 
@@ -125,7 +171,7 @@ performance cost of the thread support is a structural 0.0%).
 
 ## Evidence
 
-`tests/threads/` runs the 24-probe same-source differential gate against
+`tests/threads/` runs the 31-probe same-source differential gate against
 real Harbour (`hbmk2 -mt`): every probe compiles under both, runs under
 both, and stdout+stderr compare byte for byte (10 F1 thread probes +
-14 F2 mutex probes).
+14 F2 mutex probes + 7 F3 probes).

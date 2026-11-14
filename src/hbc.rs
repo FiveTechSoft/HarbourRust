@@ -3920,7 +3920,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     for a in args { pin_vars(f, a, Ty::I64, pin, n)?; walk(f, a, sigs, lit, pin, printed, n)?; }
                     return Ok(());
                 }
-                if is_builtin(id, "hb_mutexlock") || is_builtin(id, "hb_mutexunlock") || is_builtin(id, "hb_mutexeval") || is_builtin(id, "hb_mutexnotify") || is_builtin(id, "hb_mutexnotifyall") || is_builtin(id, "hb_mutexsubscribe") {
+                if is_builtin(id, "hb_mutexlock") || is_builtin(id, "hb_mutexunlock") || is_builtin(id, "hb_mutexeval") || is_builtin(id, "hb_mutexnotify") || is_builtin(id, "hb_mutexnotifyall") || is_builtin(id, "hb_mutexsubscribe") || is_builtin(id, "hb_mutexqueueinfo") || is_builtin(id, "hb_threadid") {
                     // The mutex handle is a dynamic PTR value: pin evidence
                     // (mt05/mt07/mt09 workers receive it as a parameter).
                     if !args.is_empty() { pin_vars(f, &args[0], Ty::Dyn, pin, n)?; }
@@ -5710,6 +5710,39 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         return Err(format!("line {}: `hb_threadStart` arguments are scalar, string or object values in this increment (no floats, dates, arrays, hashes or codeblocks)", n));
                     }
                 }
+                // F3 (a): a literal argument pins the target's parameter
+                // like a regular call site's literal evidence (the
+                // multiarg trail). threadStart targets take I64/Dyn/Obj
+                // parameters, so the trail is: Int -> I64, Str/Log ->
+                // the tagged union (Harbour's parameter is a variant; a
+                // scalar body pin absorbs into Dyn by the established
+                // merge rules), an explicit NIL forces the tagged union.
+                // Only PRESENT arguments register - omitted trailing
+                // parameters keep the F1 padding behavior (no nil_ev
+                // from here). Sticky across fixpoint rounds like every
+                // other arg_ev writer.
+                if let Some(ti) = sigs.iter().position(|s| s.name == fname) {
+                    for (i, a) in args[1..].iter().enumerate() {
+                        if i >= sigs[ti].arg_ev.len() { break; }
+                        if matches!(a, Expr::Nil) {
+                            sigs[ti].nil_ev[i] = true;
+                            continue;
+                        }
+                        let ev = match a {
+                            Expr::Int(_) => Some(Ty::I64),
+                            Expr::Str(_) | Expr::Log(_) => Some(Ty::Dyn),
+                            _ => None,
+                        };
+                        if let Some(e) = ev {
+                            sigs[ti].arg_ev[i] = match (sigs[ti].arg_ev[i], e) {
+                                (None, x) => Some(x),
+                                (Some(x), y) if x == y => Some(x),
+                                (Some(Ty::I64), Ty::F64) | (Some(Ty::F64), Ty::I64) => Some(Ty::F64),
+                                (Some(_), _) => Some(Ty::Dyn),
+                            };
+                        }
+                    }
+                }
                 return Ok(Ty::Dyn);
             }
             if is_builtin(id, "hb_threadjoin") {
@@ -5754,6 +5787,31 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `hb_threadSelf` takes no arguments", n));
                 }
                 return Ok(Ty::Dyn);
+            }
+            if is_builtin(id, "hb_threadid") {
+                // hb_threadID([th]) -> numeric (Harbour ValType "N",
+                // oracle th30b): the kernel tid, unique per thread.
+                // With a handle, the tid the worker stored at boot.
+                // A join-CONSUMED handle still maps (F1 blocks live
+                // until process exit), so it keeps returning the id -
+                // named F3 convention, not a Harbour oracle.
+                THREADS.with(|c| c.set(true));
+                if args.len() > 1 {
+                    return Err(format!("line {}: `hb_threadID` takes an optional thread handle", n));
+                }
+                if args.len() == 1 && type_expr(&args[0], env, sigs, n)? != Ty::Dyn {
+                    return Err(format!("line {}: `hb_threadID`'s optional argument is a thread handle (a dynamic PTR value)", n));
+                }
+                return Ok(Ty::I64);
+            }
+            if is_builtin(id, "hb_threadismain") {
+                // hb_threadIsMain() -> logical: .T. on the main thread,
+                // .F. on a worker (oracle th30b).
+                THREADS.with(|c| c.set(true));
+                if !args.is_empty() {
+                    return Err(format!("line {}: `hb_threadIsMain` takes no arguments", n));
+                }
+                return Ok(Ty::Bool);
             }
             if is_builtin(id, "hb_threaddetach") {
                 THREADS.with(|c| c.set(true));
@@ -5878,6 +5936,35 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         }
                     }
                     _ => return Err(format!("line {}: `hb_mutexSubscribe`'s third argument must be a `@variable`", n)),
+                }
+                return Ok(Ty::Bool);
+            }
+            if is_builtin(id, "hb_mutexqueueinfo") {
+                // hb_mutexQueueInfo(m [, @nSubscribers, @nQueueLength])
+                // -> logical (oracle mt18: 3-arg returns .T. and fills
+                // both counts; the 1-arg form returns a logical, f03).
+                // Read under the queue spinlock; nSub>0 is a race
+                // window and is not oracled (F3 design).
+                THREADS.with(|c| c.set(true));
+                MUTEX.with(|c| c.set(true));
+                if args.len() != 1 && args.len() != 3 {
+                    return Err(format!("line {}: `hb_mutexQueueInfo` takes a mutex and optionally two `@count` variables", n));
+                }
+                if type_expr(&args[0], env, sigs, n)? != Ty::Dyn {
+                    return Err(format!("line {}: `hb_mutexQueueInfo` expects a mutex (a dynamic PTR value)", n));
+                }
+                if args.len() == 3 {
+                    for a in &args[1..] {
+                        match a {
+                            Expr::ByRef(vn) => {
+                                let vt = type_expr(&Expr::Var(vn.clone()), env, sigs, n)?;
+                                if vt != Ty::Dyn {
+                                    return Err(format!("line {}: `hb_mutexQueueInfo`'s `@count` variable must be dynamic in this increment", n));
+                                }
+                            }
+                            _ => return Err(format!("line {}: `hb_mutexQueueInfo`'s count arguments must be `@variable`", n)),
+                        }
+                    }
                 }
                 return Ok(Ty::Bool);
             }
@@ -9200,7 +9287,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 return;
             }
             if is_builtin(id, "hb_threadstart") || is_builtin(id, "hb_threadjoin") || is_builtin(id, "hb_threadwait") || is_builtin(id, "hb_threadself") || is_builtin(id, "hb_threaddetach") || is_builtin(id, "hb_threadwaitforall")
-                || is_builtin(id, "hb_mutexcreate") || is_builtin(id, "hb_mutexlock") || is_builtin(id, "hb_mutexunlock") || is_builtin(id, "hb_mutexeval") || is_builtin(id, "hb_mutexnotify") || is_builtin(id, "hb_mutexnotifyall") || is_builtin(id, "hb_mutexsubscribe") {
+                || is_builtin(id, "hb_mutexcreate") || is_builtin(id, "hb_mutexlock") || is_builtin(id, "hb_mutexunlock") || is_builtin(id, "hb_mutexeval") || is_builtin(id, "hb_mutexnotify") || is_builtin(id, "hb_mutexnotifyall") || is_builtin(id, "hb_mutexsubscribe") || is_builtin(id, "hb_mutexqueueinfo") || is_builtin(id, "hb_threadid") || is_builtin(id, "hb_threadismain") {
                 // Thread builtins BORROW every argument: hb_threadStart's
                 // marshal deep-copies strings and retains objects itself;
                 // join's `@r` borrows the slot.
@@ -10057,6 +10144,9 @@ hbc_thread_boot:
     xor %r10d, %r10d
     xor %r8d, %r8d
     syscall
+    mov $186, %eax
+    syscall
+    mov %rax, 80(%rbx)
     mov %rbx, %rdi
     call *32(%rbx)
     mov %rax, 8(%rbx)
@@ -10246,6 +10336,29 @@ hbc_thread_self:
     mov %fs:120, %rax
     ret
 
+# hbc_thread_id -> rax = this thread's kernel tid (gettid(2); unique
+# per thread, oracle th30b - hb_threadID is ValType N).
+hbc_thread_id:
+    mov $186, %eax
+    syscall
+    ret
+
+# hbc_thread_id_of(rdi=block) -> rax = the worker block's stored tid
+# (offset 80, written at boot; F3 header slot ahead of the casillas).
+hbc_thread_id_of:
+    mov 80(%rdi), %rax
+    ret
+
+# hbc_thread_is_main -> rax = 1 on the main thread, 0 on a worker
+# (oracle th30b).
+hbc_thread_is_main:
+    mov %fs:120, %rax
+    lea hbc_thr_main_block(%rip), %rdx
+    cmp %rdx, %rax
+    sete %al
+    movzx %al, %eax
+    ret
+
 # hbc_thread_detach(rdi=handle) -> rax = 1.
 hbc_thread_detach:
     push %rbx
@@ -10352,6 +10465,8 @@ hbc_thr_reg_lock: .quad 0
 //   64 broadcast generation: distinguishes a real broadcast from a
 //      consumed-by-another-subscriber notify (only notifyAll bumps it)
 //   72 internal spinlock (queue, event word, broadcast store)
+//   80 waiter count: subscribers inside the futex wait (F3, QueueInfo
+//      nSub; only a race-window value, nSub>0 is not oracled)
 // Notify nodes: 0 next | 8 tag | 16 payload (24 bytes, owned payload).
 // Measured Harbour semantics implemented here: notify ENQUEUES its value
 // even with zero subscribers, consumed once FIFO (mt06/mt12/mt14);
@@ -10359,10 +10474,10 @@ hbc_thr_reg_lock: .quad 0
 // subscribers and EACH gets the value, nothing queued for later (mt08/mt13).
 const MUTEX_HELPERS_LINUX: &str = "
 .text
-# hbc_mutex_create -> rax = new zeroed MutexBlock (80 bytes).
+# hbc_mutex_create -> rax = new zeroed MutexBlock (88 bytes).
 hbc_mutex_create:
     sub $8, %rsp
-    mov $80, %rdi
+    mov $88, %rdi
     call hbc_alloc
     add $8, %rsp
     ret
@@ -10579,6 +10694,7 @@ hbc_mutex_subscribe:
     mov $1, %eax
     jmp .Lmxs_out
 .Lmxs_empty:
+    incq 80(%rbx)
     mov 40(%rbx), %r13
     mov 64(%rbx), %r14
     lock btrq $0, (%r8)
@@ -10609,6 +10725,7 @@ hbc_mutex_subscribe:
     lock btsq $0, (%r8)
     jc .Lmxs_sp2
 .Lmxs_ok2:
+    decq 80(%rbx)
     mov 24(%rbx), %rax
     test %rax, %rax
     jnz .Lmxs_pop2
@@ -10635,6 +10752,17 @@ hbc_mutex_subscribe:
     mov $2, %eax
     jmp .Lmxs_out
 .Lmxs_to:
+    lea 72(%rbx), %r8
+.Lmxs_taq:
+    lock btsq $0, (%r8)
+    jnc .Lmxs_tok
+.Lmxs_tsp:
+    pause
+    lock btsq $0, (%r8)
+    jc .Lmxs_tsp
+.Lmxs_tok:
+    decq 80(%rbx)
+    lock btrq $0, (%r8)
     xor %eax, %eax
     xor %edx, %edx
     xor %ecx, %ecx
@@ -10642,6 +10770,35 @@ hbc_mutex_subscribe:
     pop %r14
     pop %r13
     pop %r12
+    pop %rbx
+    ret
+
+# hbc_mutex_queue_info(rdi=mutex) -> rax = waiter count (offset 80),
+# rdx = queued values (walk of the FIFO under the spinlock). F3
+# (oracle mt18).
+hbc_mutex_queue_info:
+    push %rbx
+    mov %rdi, %rbx
+    lea 72(%rbx), %r8
+.Lmqi_aq:
+    lock btsq $0, (%r8)
+    jnc .Lmqi_ok
+.Lmqi_sp:
+    pause
+    lock btsq $0, (%r8)
+    jc .Lmqi_sp
+.Lmqi_ok:
+    mov 80(%rbx), %rax
+    mov 24(%rbx), %rcx
+    xor %edx, %edx
+.Lmqi_walk:
+    test %rcx, %rcx
+    jz .Lmqi_done
+    inc %rdx
+    mov (%rcx), %rcx
+    jmp .Lmqi_walk
+.Lmqi_done:
+    lock btrq $0, (%r8)
     pop %rbx
     ret
 
@@ -11594,7 +11751,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Expr::Call(id, args) if is_builtin(id, "hb_threadstart") => {
             // Marshal: block [0 state|8 rtag|16 rpay|24 ncells|32 thunk|
-            // 40 stack|48 stacksz|56 tls|64 flags|72 next|80.. casillas].
+            // 40 stack|48 stacksz|56 tls|64 flags|72 next|80 tid|88..
+            // casillas]. The tid slot is written by hbc_thread_boot
+            // (gettid(2), F3: hb_threadID).
             // Each argument becomes a Dyn casilla (strings deep-copied,
             // objects retained); the thunk converts to the callee's
             // convention on the new thread.
@@ -11603,7 +11762,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let nparams = sig.params.len();
             let provided = args.len() - 1;
             let cells = provided.max(nparams);
-            let bsz = 80 + 16 * cells;
+            let bsz = 88 + 16 * cells;
             let l = fresh_lbl();
             out.push_str(&format!("    mov ${}, %rdi
     call hbc_alloc
@@ -11615,6 +11774,23 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
 ", bsz, cells, fname));
             for (i, a) in args[1..].iter().enumerate() {
                 let ta = expr_ty(a, env, sigs);
+                // F3 (a): literal arguments marshal as explicit Dyn
+                // casillas, no cg_expr (Expr::Str is unreachable there,
+                // and Expr::Int leaves the format half of the i64
+                // channel stale - the literal pins its own tag here).
+                if let Expr::Str(s) = a {
+                    // Intern and copy to an owned payload, the same
+                    // pattern as hb_mutexNotify's literal.
+                    let idx = strs.len();
+                    strs.push(s.clone());
+                    out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n", idx, s.as_bytes().len()));
+                } else if let Expr::Int(v) = a {
+                    out.push_str(&format!("    mov ${}, %rdx\n    mov $9, %eax\n", v));
+                } else if let Expr::Log(b) = a {
+                    out.push_str(&format!("    mov ${}, %rdx\n    mov $3, %eax\n", if *b { 1 } else { 0 }));
+                } else if matches!(a, Expr::Nil) {
+                    out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");
+                } else {
                 cg_expr(a, env, sigs, strs, out, target);
                 match ta {
                     Ty::I64 => cg_i64_tagged(out),
@@ -11668,16 +11844,17 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     },
                     _ => unreachable!("checked"),
                 }
+                }
                 out.push_str(&format!("    mov (%rsp), %r11
     mov %rax, {}(%r11)
     mov %rdx, {}(%r11)
-", 80 + 16 * i, 88 + 16 * i));
+", 88 + 16 * i, 96 + 16 * i));
             }
             for i in provided..cells {
                 out.push_str(&format!("    mov (%rsp), %r11
     movq $1, {}(%r11)
     movq $0, {}(%r11)
-", 80 + 16 * i, 88 + 16 * i));
+", 88 + 16 * i, 96 + 16 * i));
             }
             out.push_str(&format!("    mov (%rsp), %rdi
     call hbc_thread_start
@@ -11713,19 +11890,19 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
     sub $16, %rsp
     mov %rax, (%rsp)
     mov %rdx, 8(%rsp)
-", 80 + 16 * i, 88 + 16 * i)),
+", 88 + 16 * i, 96 + 16 * i)),
                             Ty::I64 => th.push_str(&format!("    mov {}(%rbx), %rax
     mov {}(%rbx), %rdx
     call hbc_dyn_to_i64
     sub $16, %rsp
     mov %rax, (%rsp)
     mov %rdx, 8(%rsp)
-", 80 + 16 * i, 88 + 16 * i)),
+", 88 + 16 * i, 96 + 16 * i)),
                             Ty::Obj(_) => th.push_str(&format!("    mov {}(%rbx), %rax
     sub $16, %rsp
     mov %rax, (%rsp)
     movq $0, 8(%rsp)
-", 88 + 16 * i)),
+", 96 + 16 * i)),
                             _ => unreachable!("checked"),
                         }
                     }
@@ -11866,6 +12043,27 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    call hbc_thread_self
     mov %rax, %rdx
     mov $14, %eax
+");
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_threadid") => {
+            // No argument: this thread's kernel tid (gettid(2)). With a
+            // handle: the tid the worker stored at boot (offset 80).
+            if args.is_empty() {
+                out.push_str("    call hbc_thread_id
+");
+            } else {
+                cg_expr(&args[0], env, sigs, strs, out, target);
+                out.push_str("    mov %rdx, %rdi
+    call hbc_thread_id_of
+");
+            }
+            out.push_str("    xor %edx, %edx
+");
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_threadismain") => {
+            let _ = args;
+            out.push_str("    call hbc_thread_is_main
+    xor %edx, %edx
 ");
         }
         Expr::Call(id, args) if is_builtin(id, "hb_threaddetach") => {
@@ -12122,6 +12320,55 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
 .Lmxs_done{}:
     xor %edx, %edx
 ", var.off, var.off - 8, l));
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_mutexqueueinfo") => {
+            // hbc_mutex_queue_info(rdi=mutex) -> rax = waiter count,
+            // rdx = queued values (read under the queue spinlock).
+            // 3-arg form: each count lands in its @variable as a Dyn
+            // runtime-int casilla (tag 0), freeing any old string or
+            // object payload first (hb_mutexSubscribe's store pattern).
+            // 1-arg form: .T. (f03/mt18).
+            cg_expr(&args[0], env, sigs, strs, out, target);
+            if args.len() == 3 {
+                out.push_str("    mov %rdx, %rdi
+    sub $48, %rsp
+    call hbc_mutex_queue_info
+    mov %rax, (%rsp)
+    mov %rdx, 8(%rsp)
+");
+                for (k, a) in args[1..].iter().enumerate() {
+                    let vn = if let Expr::ByRef(vn) = a { vn.clone() } else { unreachable!("checked") };
+                    let var = env.iter().rev().find(|x| x.name == *vn).expect("checked");
+                    let l = fresh_lbl();
+                    out.push_str(&format!("    mov {}(%rsp), %rax
+    mov %rax, 16(%rsp)
+    mov -{}(%rbp), %rax
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
+    jne .Lmqi_nf{}
+    mov -{}(%rbp), %rdi
+    call hbc_freestr
+.Lmqi_nf{}:
+", 8 * k, var.off, l, var.off - 8, l));
+                    if !CLASSES.with(|c| c.borrow().is_empty()) {
+                        out.push_str(&format!("    mov -{}(%rbp), %rax
+    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@
+    jne .Lmqi_nfo{}
+    mov -{}(%rbp), %rdi
+    call hrobj_release
+.Lmqi_nfo{}:
+", var.off, l, var.off - 8, l));
+                    }
+                    out.push_str(&format!("    mov 16(%rsp), %rax
+    mov %rax, -{}(%rbp)
+    movq $0, -{}(%rbp)
+", var.off - 8, var.off));
+                }
+                out.push_str("    add $48, %rsp
+");
+            }
+            out.push_str("    mov $1, %eax
+    xor %edx, %edx
+");
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hscan") => {
             // hb_HScan(h, value [, start]): the value evaluates first
@@ -13516,10 +13763,10 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                 return Ty::Obj(ci); // instantiation `TClass()`
             }
             if is_builtin(id, "hb_threadstart") || is_builtin(id, "hb_threadself") || is_builtin(id, "hb_threadwaitforall") { return Ty::Dyn; }
-            if is_builtin(id, "hb_threadjoin") || is_builtin(id, "hb_threaddetach") { return Ty::Bool; }
-            if is_builtin(id, "hb_threadwait") { return Ty::I64; }
+            if is_builtin(id, "hb_threadjoin") || is_builtin(id, "hb_threaddetach") || is_builtin(id, "hb_threadismain") { return Ty::Bool; }
+            if is_builtin(id, "hb_threadwait") || is_builtin(id, "hb_threadid") { return Ty::I64; }
             if is_builtin(id, "hb_mutexcreate") || is_builtin(id, "hb_mutexnotify") || is_builtin(id, "hb_mutexnotifyall") { return Ty::Dyn; }
-            if is_builtin(id, "hb_mutexlock") || is_builtin(id, "hb_mutexunlock") || is_builtin(id, "hb_mutexsubscribe") { return Ty::Bool; }
+            if is_builtin(id, "hb_mutexlock") || is_builtin(id, "hb_mutexunlock") || is_builtin(id, "hb_mutexsubscribe") || is_builtin(id, "hb_mutexqueueinfo") { return Ty::Bool; }
             if is_builtin(id, "hb_mutexeval") { return Ty::I64; }
             match sigs.iter().find(|v| v.name == *id) {
                 Some(s) => s.ret.expect("checked"),
@@ -13611,7 +13858,7 @@ fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String,
                 let mask: Vec<bool> = args.iter().map(|a| matches!(a, Expr::ByRef(_))).collect();
                 // Extern C calls emit their `@` casillas inline at the
                 // call site (milestone 2.2); no callee variant exists.
-                if mask.iter().any(|b| *b) && !EXTERNS.with(|c| c.borrow().contains(id)) && !is_builtin(id, "hb_threadjoin") && !is_builtin(id, "hb_mutexsubscribe") {
+                if mask.iter().any(|b| *b) && !EXTERNS.with(|c| c.borrow().contains(id)) && !is_builtin(id, "hb_threadjoin") && !is_builtin(id, "hb_mutexsubscribe") && !is_builtin(id, "hb_mutexqueueinfo") {
                     out.insert((id.clone(), mask));
                 }
                 for a in args { if !matches!(a, Expr::ByRef(_)) { ex(a, out); } }
