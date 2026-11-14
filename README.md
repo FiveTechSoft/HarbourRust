@@ -125,7 +125,7 @@ work in progress. No unmeasured speed or capability claims are made.
 - **Memory paths (14 November).** Bounded persistent `STATIC` roots (scalars and
   flat scalar arrays) are published; file-scope `STATIC` remains a named
   rejection. VAS-backed flat arrays cover exactly 42 of the 1661 manifest
-  programs with compile and runtime opt-outs; conservative scope arenas cover
+  programs, with `--no-vas-arrays` and `HB_VAS_ARRAYS=off` opt-outs; conservative scope arenas cover
   proven non-escaping owned-string unions with `HB_ARENA=off` and `--no-arena`
   fallbacks. Neither replaces general dynamic-array ownership.
   See [VAS arrays](docs/vas-arrays-v1.md) and [dynamic ownership](docs/DESIGN-dynamic-ownership.md).
