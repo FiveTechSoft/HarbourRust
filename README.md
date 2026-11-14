@@ -22,8 +22,8 @@ read-only NTX character-field indexes on the same backend. Main also includes
 the bounded single-tag read-only CDX increment described below.
 Against the pinned Harbour source:
 
-- **31/268** originals under `tests/` compile, or **31/1041** across the full inventory.
-- **29/31** fresh executions match stdout, stderr and exit status exactly.
+- **32/268** originals under `tests/` compile, or **32/1041** across the full inventory.
+- **30/32** fresh executions match stdout, stderr and exit status exactly.
   The other two open error dialogues and time out; they are not passes.
 - Linux regression manifest: **1660/1661**, with only inherited `t110` remaining.
   The hash-default and nested-array shrink fixes resolve `t592`, `t385` and `t419`.
