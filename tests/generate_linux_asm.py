@@ -15,15 +15,15 @@ s=raw.read_text();s=re.sub(r'\.L([A-Za-z0-9_.$]+)',r'.Lhrdbf_\1',s);s=re.sub(r'^
 assert not re.search(r'\.cfi|\.eh_frame|@GOT|@PLT|\.got|\.plt',s)
 # GCC may emit unprefixed static switch/date tables, not just .L labels.
 for label in re.findall(r'^([A-Za-z_.$][A-Za-z0-9_.$]*):',s,re.M):
- if not label.startswith(('hrdbf_','hrv_','hrntx_','.Lhrdbf_')):
+ if not label.startswith(('hrdbf_','hrv_','hrntx_','hrcdx_','.Lhrdbf_')):
   s=re.sub(r'(?<![A-Za-z0-9_.$])'+re.escape(label)+r'(?![A-Za-z0-9_.$])','hrdbf_local_'+label,s)
 labels=re.findall(r'^([A-Za-z_.$][A-Za-z0-9_.$]*):',s,re.M)
 assert len(labels)==len(set(labels))
-assert all(n.startswith(('hrdbf_','hrv_','hrntx_','.Lhrdbf_')) for n in labels),[n for n in labels if not n.startswith(('hrdbf_','hrv_','hrntx_','.Lhrdbf_'))]
+assert all(n.startswith(('hrdbf_','hrv_','hrntx_','hrcdx_','.Lhrdbf_')) for n in labels),[n for n in labels if not n.startswith(('hrdbf_','hrv_','hrntx_','hrcdx_','.Lhrdbf_'))]
 # Direct local entry aliases prevent GAS PLT32 relocations even for calls
 # to our globally exported entrypoints. No external names are admitted.
 for label in labels:
- if label.startswith(('hrdbf_','hrv_','hrntx_')):
+ if label.startswith(('hrdbf_','hrv_','hrntx_','hrcdx_')):
   s=s.replace(label+':',label+':\n.Lhrdbf_entry_'+label+':')
   s=re.sub(r'\b(call|jmp)\s+'+re.escape(label)+r'(?![A-Za-z0-9_.$])',r'\1 .Lhrdbf_entry_'+label,s)
 out.write_text(s)

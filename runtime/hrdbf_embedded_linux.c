@@ -17,5 +17,6 @@
 #include "hrdbf_file_linux.c"
 
 #include "hrntx.c"
+#include "hrcdx.c"
 #include "hrntx_file_linux.c"
 #include "hrdbf_app.c"

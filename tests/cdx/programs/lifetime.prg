@@ -1,0 +1,20 @@
+request DBFCDX
+function Main()
+   local a,b
+   dbUseArea(.T.,"DBFCDX","cdxprobe.dbf","P",.F.,.T.)
+   OrdListAdd("names.cdx")
+   a:=FieldGet(1)
+   dbSeek("K070",.F.,.T.)
+   b:=FieldGet(1)
+   OrdListClear()
+   dbCloseArea()
+   ? a,b,Empty(a),ValType(a)
+   dbUseArea(.T.,"DBFCDX","cdxprobe.dbf","P",.F.,.T.)
+   OrdListAdd("names.cdx")
+   ? dbSeek("K001"+""), RecNo(), FieldGet(1)
+   dbUseArea(.F.,"DBFCDX","cdxprobe.dbf","P",.F.,.T.)
+   dbSkip()
+   ? "reopenedphysical", RecNo(), FieldGet(1), Found()
+   OrdListAdd("names")
+   ? "extension", RecNo(), FieldGet(1), Found()
+return nil
