@@ -1,19 +1,15 @@
 @echo off
-rem build.bat - chain the full HarbourRust build for one program on Windows:
-rem   hbc.exe -> mingw-w64 as -> mingw-w64 ld -> native x86-64 .exe
-rem Usage: build.bat prog.prg [output-name]
-rem Stops at the first failing step; a partial result is never reported as
-rem success. Needs x86_64-w64-mingw32-as/-ld on PATH (MinGW-w64 binutils).
-rem HBC env var overrides the compiler path.
-if "%~1"=="" (
-  echo usage: build.bat prog.prg [output-name] 1>&2
-  exit /b 1
-)
-set "SRC=%~1"
-set "OUT=%~2"
-if "%OUT%"=="" set "OUT=%~n1"
-if "%HBC%"=="" set "HBC=%~dp02-hbc.exe"
-"%HBC%" "%SRC%" "%OUT%.s" --target=windows || exit /b 1
-x86_64-w64-mingw32-as -o "%OUT%.o" "%OUT%.s" || exit /b 1
-x86_64-w64-mingw32-ld -o "%OUT%.exe" "%OUT%.o" -e _start --subsystem console -lkernel32 || exit /b 1
-echo OK: %OUT%.exe
+rem Retired historical compiler helper. Deliberately performs no build.
+echo This is the retired build script for the historical HarbourRust compiler. 1>&2
+echo That compiler wrote assembly and needed external MinGW-w64 as/ld tools. 1>&2
+echo This script is no longer needed and will not run any compiler or assembler. 1>&2
+echo. 1>&2
+echo For supported native-only programs on Windows, use the current repository 1>&2
+echo compiler at bin\hbc.exe. No MinGW, assembler or linker is needed. 1>&2
+echo From the repository root: 1>&2
+echo   bin\hbc.exe tests\samples\hello.prg hello.exe 1>&2
+echo   hello.exe 1>&2
+echo. 1>&2
+echo The binaries in dist are historical, not the current compiler. 1>&2
+echo See README.md and BUILDING.md in the repository root for scope and limits. 1>&2
+exit /b 1
