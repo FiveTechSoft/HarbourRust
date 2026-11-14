@@ -28,6 +28,7 @@ use std::process;
 
 thread_local! {
     // Compiler admission flag only, never emitted user mutable state.
+    static DBF_USED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static CURDIR_LINUX_NATIVE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
@@ -1535,6 +1536,11 @@ const ASM_RESERVED: &[&str] = &[
     // collide with a helper symbol.
     "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "dfree", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
+
+fn dbf_result(id: &str) -> Option<Ty> {
+    match id { "fieldget" | "dbclosearea" | "dbgotop" | "dbskip" => Some(Ty::Dyn),
+        "recno" | "lastrec" => Some(Ty::I64), "bof" | "eof" | "deleted" | "dbusearea" => Some(Ty::Bool), _ => None }
+}
 
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
 
@@ -4642,6 +4648,22 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             Some(v) => Ok(v.ty),
         },
         Expr::Call(id, args) => {
+            if let Some(ty) = dbf_result(id) {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) {return Err(format!("line {}: DBF file adapter is Linux x86-64 only in this increment",n));}
+                DBF_USED.with(|v|v.set(true));
+                if id=="dbusearea" {
+                    if args.len()!=6 {return Err(format!("line {}: dbUseArea requires six explicit arguments: new, DBFNTX, filename, alias, shared=.F., readonly=.T.",n));}
+                    if !matches!(&args[0],Expr::Log(_)) || !matches!(&args[1],Expr::Str(v) if v.eq_ignore_ascii_case("DBFNTX")) || !matches!(&args[3],Expr::Str(v) if !v.is_empty()) || !matches!(&args[4],Expr::Log(false)) || !matches!(&args[5],Expr::Log(true)) {
+                        return Err(format!("line {}: DBF supports one alias, literal DBFNTX, shared=.F. and readonly=.T.; writes, shared access and other drivers are not supported",n));
+                    }
+                    if !matches!(type_expr(&args[2],env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: DBF filename must be a string",n));}
+                } else if id=="dbskip" || id=="fieldget" {
+                    if args.len()>1 || (id=="fieldget"&&args.is_empty()) {return Err(format!("line {}: {} expects {} integer argument",n,id,if id=="dbskip" {"zero or one"} else {"one"}));}
+                    for a in args {if !matches!(type_expr(a,env,sigs,n)?,Ty::I64|Ty::Dyn){return Err(format!("line {}: {} expects integer position",n,id));}}
+                } else if !args.is_empty(){return Err(format!("line {}: {} takes no arguments",n,id));}
+                return Ok(ty);
+            }
+
             if !is_builtin(id,"round") && !is_output_call(id) && args.iter().any(|e| NUM_LOCALS.with(|ns|ns.borrow().iter().any(|v|expr_mentions(e,v)))) {
                 return Err(format!("line {}: mixed numeric LOCAL cannot cross a function or unsupported builtin ABI",n));
             }
@@ -4687,7 +4709,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if arr && !matches!(&args[0], Expr::Var(_)) {
                     return Err(format!("line {}: `Empty` on an array/hash needs a variable in this increment", n));
                 }
-                if t == Ty::Dyn && !matches!(&args[0], Expr::Nil) {
+                if t == Ty::Dyn && !matches!(&args[0], Expr::Nil) && !DBF_USED.with(|v|v.get()) {
                     return Err(format!("line {}: `Empty` on generic Dyn values is not in this increment", n));
                 }
                 if matches!(t, Ty::DArrRef | Ty::DArrRef2) {
@@ -4807,7 +4829,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 match &args[0] {
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
-                    Expr::Call(id, _) if is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") => {}
+                    Expr::Call(id, _) if is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") || dbf_result(id).is_some() => {}
                     Expr::Index(v, _) => {
                         // DArr4 first level: child-array casilla -
                         // "A" (hk114, byte-measured via hk117 markers).
@@ -8378,6 +8400,8 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
         Expr::Bin(_, a, b) => { apply_moves(a, env, sigs, false); apply_moves(b, env, sigs, false); }
         Expr::Cmp(_, a, b) => { apply_moves(a, env, sigs, false); apply_moves(b, env, sigs, false); }
         Expr::Call(id, args) => {
+            if dbf_result(id).is_some(){for a in args{apply_moves(a,env,sigs,false);}return;}
+
             if is_builtin(id, "hb_memcheck") {
                 return;
             }
@@ -8650,7 +8674,7 @@ fn cg_aview_whole(v: &CgLocal, slot: usize, out: &mut String) {
     } else if v.ty == Ty::Dyn {
         // ains P2 stage 1: the ONLY Dyn bridge - tag-8 guard BEFORE the
         // count word at -8(DATA) is read; ptr = DATA, len = count.
-        out.push_str(&format!("    mov -{}(%rbp), %rax\n    cmpq $8, -{}(%rbp)\n    jne hbc_type_error\n    mov -8(%rax), %rdx\n",v.off-8,v.off));
+        out.push_str(&format!("    mov -{}(%rbp), %rax\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n    mov -8(%rax), %rdx\n",v.off-8,v.off));
     } else { out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -{}(%rbp), %rdx\n",v.off,v.off-8)); }
     out.push_str(&format!("    movq ${}, -{}(%rbp)\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n    lea -{}(%rbp), %rax\n",kind,slot,slot-8,slot-16,slot));
 }
@@ -8838,6 +8862,32 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 Ty::Arr(_) => unreachable!("whole-array values are emitted via cg_array_value"),
             }
         }
+        Expr::Call(id,args) if dbf_result(id).is_some() => {
+            match id.as_str() {
+                "dbusearea" => {
+                    cg_value(&args[2],env,sigs,strs,out,target);
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n");
+                    out.push_str(if matches!(args[0],Expr::Log(true)){"    mov $1, %edx\n"}else{"    xor %edx, %edx\n"});
+                    out.push_str("    call hrdbf_app_open\n");
+                    if expr_ty(&args[2],env,sigs)==Ty::StrOwn && !matches!(&args[2],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+                    out.push_str("    add $16, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n");
+                },
+                "fieldget" | "dbskip" => {
+                    if args.is_empty(){out.push_str("    mov $1, %eax\n");}else{
+                        cg_value(&args[0],env,sigs,strs,out,target);
+                        if expr_ty(&args[0],env,sigs)==Ty::Dyn{out.push_str("    call hbc_dyn_to_i64\n");}
+                    }
+                    out.push_str("    mov %rax, %rdi\n");
+                    if id=="fieldget"{out.push_str("    lea hbc_strcpy(%rip), %rsi\n    call hrdbf_app_get\n");}
+                    else{out.push_str("    call hrdbf_app_skip\n    mov $1, %eax\n    xor %edx, %edx\n");}
+                },
+                _ => {
+                    let helper=match id.as_str(){"dbclosearea"=>"close","dbgotop"=>"top","recno"=>"recno","lastrec"=>"lastrec","bof"=>"bof","eof"=>"eof","deleted"=>"deleted",_=>unreachable!()};
+                    out.push_str(&format!("    call hrdbf_app_{}\n",helper));
+                    if matches!(id.as_str(),"dbclosearea"|"dbgotop"){out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");}
+                }
+            }
+        }
         Expr::Call(id, args) if is_builtin(id, "iif") => {
             // iif(cond, a, b) (oracle hk321): LAZY branch selection.
             // The false side falls through, the true side sits behind
@@ -8913,18 +8963,19 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 // %r10 = tag word; result in %rax as Bool (1/0)
                 if want_num {
                     out.push_str("    xor %eax, %eax
-    test %r10, %r10
+    @HBC_TAG_KIND@test %r10, %r10@HBC_TAG_END@
     sete %al
-    cmp $9, %r10
+    @HBC_TAG_KIND@cmp $9, %r10@HBC_TAG_END@
     sete %ah
     or %ah, %al
     movzbq %al, %rax
 ");
+                    if DBF_USED.with(|v|v.get()){out.push_str("    cmpb $12, %r10b\n    sete %dl\n    or %dl, %al\n    movzbq %al, %rax\n");}
                 } else {
                     out.push_str("    xor %eax, %eax
-    cmp $6, %r10
+    @HBC_TAG_KIND@cmp $6, %r10@HBC_TAG_END@
     sete %al
-    cmp $8, %r10
+    @HBC_TAG_KIND@cmp $8, %r10@HBC_TAG_END@
     sete %ah
     or %ah, %al
     movzbq %al, %rax
@@ -9037,8 +9088,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
             // %r10 = scalar Dyn tag: 0 i64 -> "N", 1 NIL -> "U", 2 str -> "C"
             fn vt_classify_scalar(strs: &mut Vec<String>, out: &mut String) {
-                out.push_str("    cmp $6, %r10\n    je 99f\n    cmp $8, %r10\n    je 99f\n    cmp $1, %r10\n    je 95f\n    cmp $2, %r10\n    je 96f\n    cmp $4, %r10\n    je 96f\n    cmp $3, %r10\n    je 98f\n");
-                vt_letter(strs, out, "N");
+                out.push_str("    @HBC_TAG_KIND@cmp $6, %r10@HBC_TAG_END@\n    je 99f\n    @HBC_TAG_KIND@cmp $8, %r10@HBC_TAG_END@\n    je 99f\n    @HBC_TAG_KIND@cmp $1, %r10@HBC_TAG_END@\n    je 95f\n    @HBC_TAG_KIND@cmp $2, %r10@HBC_TAG_END@\n    je 96f\n    @HBC_TAG_KIND@cmp $4, %r10@HBC_TAG_END@\n    je 96f\n    @HBC_TAG_KIND@cmp $3, %r10@HBC_TAG_END@\n    je 98f\n");
+                if DBF_USED.with(|v|v.get()) {
+                    let no_date=fresh_lbl();let done=fresh_lbl();
+                    out.push_str(&format!("    cmpb $11, %r10b\n    jne .Ldbfnotdate{}\n",no_date));
+                    vt_letter(strs,out,"D");out.push_str(&format!("    jmp .Ldbfvt{}\n.Ldbfnotdate{}:\n",done,no_date));
+                    vt_letter(strs,out,"N");out.push_str(&format!(".Ldbfvt{}:\n",done));
+                } else {vt_letter(strs,out,"N");}
+
                 out.push_str("    jmp 97f\n95:\n");
                 vt_letter(strs, out, "U");
                 out.push_str("    jmp 97f\n96:\n");
@@ -9056,6 +9113,17 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 Expr::Call(id, _) if is_output_call(id) => {
                     cg_expr(&args[0], env, sigs, strs, out, target);
                     vt_letter(strs, out, "U");
+                }
+                Expr::Call(id,_) if matches!(dbf_result(id),Some(Ty::Bool)|Some(Ty::I64)) => {
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    vt_letter(strs,out,if dbf_result(id)==Some(Ty::Bool){"L"}else{"N"});
+                }
+                Expr::Call(id,_) if dbf_result(id)==Some(Ty::Dyn) => {
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %r10\n");
+                    vt_classify_scalar(strs,out);
+                    out.push_str("    push %rdx\n    push %rax\n    cmpb $4, 16(%rsp)\n    jne .Ldbfvtkeep");
+                    let k=fresh_lbl();out.push_str(&format!("{}\n    mov 24(%rsp), %rdi\n    call hbc_freestr\n.Ldbfvtkeep{}:\n    pop %rax\n    pop %rdx\n    add $16, %rsp\n",k,k));
                 }
                 Expr::Call(id,_) if is_builtin(id,"date") || is_builtin(id,"ctod") => {
                     cg_expr(&args[0],env,sigs,strs,out,target);vt_letter(strs,out,"D");
@@ -9147,7 +9215,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                         Ty::Dyn => {
                             // ains P2 stage 1: cell tag of a Dyn-held
                             // array (tag-8 guard before the count deref).
-                            out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, -{}(%rbp)\n    jne hbc_type_error\n    cmp $1, %rax\n    jl 87f\n    cmp -8(%r11), %rax\n    jg 87f\n", var.off - 8, var.off));
+                            out.push_str(&format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n    cmp $1, %rax\n    jl 87f\n    cmp -8(%r11), %rax\n    jg 87f\n", var.off - 8, var.off));
                             out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
                             vt_classify_scalar(strs, out);
                         }
@@ -9352,7 +9420,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                         Ty::DArrDyn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash => out.push_str(&format!("    mov -{}(%rbp), %rax\n", var.off - 8)),
                         Ty::AView => out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov 16(%rax), %rax\n", var.off)),
                         Ty::DArrRef | Ty::DArrRef2 => out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov 8(%rax), %rax\n", var.off)),
-                        Ty::RefDyn => out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, (%r11)\n    jne hbc_len_error\n    mov 8(%r11), %rax\n    mov -8(%rax), %rax\n",var.off)),
+                        Ty::RefDyn => out.push_str(&format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, (%r11)@HBC_TAG_END@\n    jne hbc_len_error\n    mov 8(%r11), %rax\n    mov -8(%rax), %rax\n",var.off)),
                         Ty::Arr(k) => out.push_str(&format!("    mov ${}, %rax\n", k)),
                         Ty::Dyn => {
                             // ains P2 stage 1: runtime dispatch. Strings
@@ -9361,7 +9429,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                             // (same 8-byte header convention). A null
                             // payload or any other tag: registered error.
                             let k9 = fresh_lbl();
-                            out.push_str(&format!("    mov -{}(%rbp), %r10\n    mov -{}(%rbp), %rdx\n    cmp $2, %r10\n    je .Llend{}\n    cmp $4, %r10\n    je .Llend{}\n    cmp $8, %r10\n    je .Llend{}\n    jmp hbc_len_error\n.Llend{}:\n    test %rdx, %rdx\n    jz hbc_len_error\n    mov -8(%rdx), %rax\n", var.off, var.off - 8, k9, k9, k9, k9));
+                            out.push_str(&format!("    mov -{}(%rbp), %r10\n    mov -{}(%rbp), %rdx\n    @HBC_TAG_KIND@cmp $2, %r10@HBC_TAG_END@\n    je .Llend{}\n    @HBC_TAG_KIND@cmp $4, %r10@HBC_TAG_END@\n    je .Llend{}\n    @HBC_TAG_KIND@cmp $8, %r10@HBC_TAG_END@\n    je .Llend{}\n    jmp hbc_len_error\n.Llend{}:\n    test %rdx, %rdx\n    jz hbc_len_error\n    mov -8(%rdx), %rax\n", var.off, var.off - 8, k9, k9, k9, k9));
                         }
                         _ => unreachable!("checked"),
                     }
@@ -9851,7 +9919,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     cg_value(e, env, sigs, strs, out, target);
                     out.push_str("    test %rdx, %rdx\n    sete %al\n    movzbq %al, %rax\n");
                 }
-                Ty::Dyn => { out.push_str("    mov $1, %eax\n"); } // literal NIL only
+                Ty::Dyn => {
+                    if DBF_USED.with(|v|v.get()) {
+                        cg_value(e,env,sigs,strs,out,target);
+                        out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hrdbf_app_empty\n");
+                        if !matches!(e,Expr::Var(_)|Expr::Index(..)) {let k=fresh_lbl();out.push_str(&format!("    sub $16, %rsp\n    mov %rax, (%rsp)\n    cmpb $4, 16(%rsp)\n    jne .Ldbfemptykeep{}\n    mov 24(%rsp), %rdi\n    call hbc_freestr\n.Ldbfemptykeep{}:\n    mov (%rsp), %rax\n    add $16, %rsp\n",k,k));}
+                        out.push_str("    add $16, %rsp\n");
+                    }else{out.push_str("    mov $1, %eax\n");}
+                }
                 Ty::Block(..) => { cg_expr(e, env, sigs, strs, out, target); out.push_str("    xor %eax, %eax\n"); }
                 Ty::I64 | Ty::Bool | Ty::Date => {
                     cg_expr(e, env, sigs, strs, out, target);
@@ -9988,7 +10063,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                             let root=env.iter().rev().find(|x|x.name==*v).expect("checked");
                             cg_aview_cell(root,ie,env,sigs,strs,out,target);
                             let ok=fresh_lbl();
-                            out.push_str(&format!("    cmp $6, %rax\n    je .Lavarg{}\n    call hbc_param_error\n.Lavarg{}:\n    mov %rdx, %rax\n",ok,ok));
+                            out.push_str(&format!("    @HBC_TAG_KIND@cmp $6, %rax@HBC_TAG_END@\n    je .Lavarg{}\n    call hbc_param_error\n.Lavarg{}:\n    mov %rdx, %rax\n",ok,ok));
                         }
                         _=>unreachable!("view boundary checked"),
                     }
@@ -10125,14 +10200,15 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     // epilogue like any owned param): a string payload is
                     // cloned at the boundary so caller and callee never
                     // share an allocation.
-                    cg_dyn_clone_if_str(out);
+                    if !(DBF_USED.with(|v|v.get()) && matches!(a, Expr::Call(..))) { cg_dyn_clone_if_str(out); }
+                    // DBF-active call temporaries transfer string ownership.
                     // ains P2 stage 1 closure (independent-review
                     // blocker): a Dyn-held ARRAY (tag 8) may not cross a
                     // normal parameter boundary - the callee epilogue
                     // would free the caller's owner. Registered clean
                     // error, caller keeps the value (the AView bridge is
                     // the only array crossing and guards separately).
-                    out.push_str("    cmp $8, %rax\n    je hbc_type_error\n");
+                    out.push_str("    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je hbc_type_error\n");
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     continue;
                 }
@@ -10228,7 +10304,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
             if v.ty == Ty::RefDyn {
                 let k = fresh_lbl();
-                out.push_str(&format!("    sub $32, %rsp\n    mov -{}(%rbp), %r11\n    cmpq $8, (%r11)\n    jne hbc_type_error\n    mov 8(%r11), %r11\n    addq $1, -16(%r11)\n    jc hbc_oom\n    mov %r11, (%rsp)\n", v.off));
+                out.push_str(&format!("    sub $32, %rsp\n    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, (%r11)@HBC_TAG_END@\n    jne hbc_type_error\n    mov 8(%r11), %r11\n    addq $1, -16(%r11)\n    jc hbc_oom\n    mov %r11, (%rsp)\n", v.off));
                 cg_expr(ie, env, sigs, strs, out, target);
                 if expr_ty(ie,env,sigs)==Ty::Dyn {out.push_str("    call hbc_dyn_to_i64\n");}
                 out.push_str(&format!("    mov (%rsp), %r11\n    cmp $1, %rax\n    jl .Lprbnd{}\n    cmp -8(%r11), %rax\n    jg .Lprbnd{}\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov 8(%rax), %rdx\n    mov (%rax), %rax\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_persistent_payload_release\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n    jmp .Lprdone{}\n.Lprbnd{}:\n    call hbc_bound_error\n.Lprdone{}:\n", k,k,k,k,k));
@@ -10290,7 +10366,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 } else {
                     cg_expr(ie, env, sigs, strs, out, target);
                 }
-                out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, -{}(%rbp)\n    jne hbc_type_error\n    cmp $1, %rax\n    jl 81f\n    cmp -8(%r11), %rax\n    jg 81f\n", v.off - 8, v.off));
+                out.push_str(&format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n    cmp $1, %rax\n    jl 81f\n    cmp -8(%r11), %rax\n    jg 81f\n", v.off - 8, v.off));
                 out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r11\n    mov 8(%rax), %rdx\n    mov %r11, %rax\n    jmp 82f\n");
                 out.push_str("81:\n    call hbc_bound_error\n82:\n");
                 return;
@@ -10324,7 +10400,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 }
                 out.push_str(&format!("    cmp $1, %rax\n    jl 81f\n    cmp -{}(%rbp), %rax\n    jg 81f\n", v.off - 8));
                 out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
-                out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    # A grown casilla (ASize, hk13/hk14) is NIL: a string context\n    # gets a clean error; `? k[i]` prints NIL instead (Print arm).\n    cmpq $2, (%rax)\n    jne hbc_snil_error\n    mov 8(%rax), %rdi\n    mov -8(%rdi), %rsi\n    call hbc_strcpy\n    jmp 82f\n");
+                out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    # A grown casilla (ASize, hk13/hk14) is NIL: a string context\n    # gets a clean error; `? k[i]` prints NIL instead (Print arm).\n    @HBC_TAG_KIND@cmpq $2, (%rax)@HBC_TAG_END@\n    jne hbc_snil_error\n    mov 8(%rax), %rdi\n    mov -8(%rdi), %rsi\n    call hbc_strcpy\n    jmp 82f\n");
                 out.push_str("81:\n    call hbc_bound_error\n82:\n");
                 return;
             }
@@ -10798,6 +10874,8 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             t => t,
         },
         Expr::Call(id, args) => {
+            if let Some(ty)=dbf_result(id){return ty;}
+
             if is_builtin(id, "array") { return match args.len() { 1 => Ty::DArr, 2 => Ty::DArr2, 3 => Ty::DArr3, _ => Ty::DArr4 }; }
             if is_builtin(id, "hb_hkeys") { return Ty::DArrS; }
             if is_builtin(id, "hb_hhaskey") { return Ty::I64; }
@@ -10977,7 +11055,7 @@ fn cg_dyn_free_old(out: &mut String, off: usize) {
     // (borrowed) and scalar tags own nothing. .L labels only: a numeric
     // local label could hijack an enclosing snippet's reference.
     let k = fresh_lbl();
-    out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne .Ld8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Ld8z{}\n    call hbc_freestr\n    jmp .Ld8z{}\n.Ld8a{}:\n    cmpq $8, -{}(%rbp)\n    jne .Ld8z{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Ld8z{}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n.Ld8z{}:\n", off, k, off - 8, k, k, k, off, k, off - 8, k, k));
+    out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne .Ld8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Ld8z{}\n    call hbc_freestr\n    jmp .Ld8z{}\n.Ld8a{}:\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne .Ld8z{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Ld8z{}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n.Ld8z{}:\n", off, k, off - 8, k, k, k, off, k, off - 8, k, k));
 }
 
 // Extend-System C boundary (docs/EXTEND-BRIDGE.md). Returns true when
@@ -10995,6 +11073,7 @@ fn cg_ext_call(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mu
     // 16-byte stack casillas and the per-target thunk owns the ABI
     // details of the C call itself.
     let mut str_slots: Vec<usize> = Vec::new();
+    let mut dyn_temp_slots: Vec<usize> = Vec::new();
     for (ai, a) in args.iter().enumerate() {
         if let Expr::ByRef(vn) = a {
             // Byref (milestone 2.2): push the ADDRESS of the Dyn casilla
@@ -11022,6 +11101,7 @@ fn cg_ext_call(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mu
                 // internal param/return gates stay (ownership).
                 cg_value(a, env, sigs, strs, out, target); // rax=tag, rdx=payload
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                if DBF_USED.with(|v|v.get()) && matches!(a, Expr::Call(..)) {dyn_temp_slots.push(ai);}
             }
             Ty::F64 => {
                 // f64 crosses as tag 5 with the value bits as payload.
@@ -11057,6 +11137,10 @@ fn cg_ext_call(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mu
     for ai in &str_slots {
         out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n", 16 * (n - ai) + 8));
     }
+    for ai in dyn_temp_slots {
+        let done=fresh_lbl();
+        out.push_str(&format!("    cmpb $4, {}(%rsp)\n    jne .Ldbfextfree{}\n    mov {}(%rsp), %rdi\n    call hbc_freestr\n.Ldbfextfree{}:\n",16*(n-ai),done,16*(n-ai)+8,done));
+    }
     out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add ${}, %rsp\n", 16 * (n + 1)));
     true
 }
@@ -11064,7 +11148,7 @@ fn cg_ext_call(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mu
 // rax=tag, rdx=payload -> the pair with any string (tag 2 or 4) cloned
 // into a fresh owned tag-4 copy. Scalar tags pass through untouched.
 fn cg_dyn_clone_if_str(out: &mut String) {
-    out.push_str("    cmp $2, %rax\n    je 88f\n    cmp $4, %rax\n    jne 89f\n88:\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n89:\n");
+    out.push_str("    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@\n    je 88f\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    jne 89f\n88:\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n89:\n");
 }
 
 fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &mut usize, darr_slots: &mut Vec<(usize, u8)>, dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
@@ -11219,7 +11303,36 @@ fn cg_str_contains(out: &mut String, k: usize) {
 // Emits the comparison and jumps to true_label when it holds.
 // rcx = lhs, rax = rhs; cmp computes lhs - rhs. On Windows the lhs is kept
 // in a 16-byte slot so a call inside either operand keeps ABI alignment.
+fn cg_dbf_scalar_container(e:&Expr,env:&[CgLocal],sigs:&[Sig],out:&mut String){
+    if DBF_USED.with(|v|v.get()) && expr_ty(e,env,sigs)==Ty::Dyn {
+        out.push_str("    cmpb $2, %al\n    je hbc_dbf_unsupported\n    cmpb $4, %al\n    je hbc_dbf_unsupported\n");
+    }
+}
+
 fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, true_label: &str) {
+    // DBF-active owned Dyn call operands need one owner until comparison
+    // ends on EITHER branch. Materialize in reserved frame scratch, borrow
+    // through the established lowering, then release temporaries exactly once.
+    if let Expr::Cmp(op,a,b)=cond {
+        let owned=|e:&Expr|expr_ty(e,env,sigs)==Ty::Dyn && matches!(e,Expr::Call(..));
+        if DBF_USED.with(|v|v.get()) && (owned(a)||owned(b)) {
+            let id=fresh_lbl();let mut ee=env.to_vec();let mut vv=Vec::new();
+            for (i,e) in [a.as_ref(),b.as_ref()].iter().enumerate(){
+                let ty=expr_ty(e,env,sigs);let off=aview_scratch();
+                if ty==Ty::F64 {cg_f64_load(e,env,sigs,strs,out,target);out.push_str(&format!("    movsd %xmm0, -{}(%rbp)\n    mov %rdi, -{}(%rbp)\n",off,off-8));}
+                else {cg_value(e,env,sigs,strs,out,target);out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",off,off-8));}
+                let v=CgLocal{name:format!("__dbfcmp_{}_{}",id,i),ty,off};ee.push(v.clone());vv.push(v);
+            }
+            let c=Expr::Cmp(*op,Box::new(Expr::Var(vv[0].name.clone())),Box::new(Expr::Var(vv[1].name.clone())));
+            cg_cond_jump(&c,&ee,sigs,strs,out,target,&format!(".Ldbfcmpt{}",id));
+            out.push_str(&format!("    xor %eax, %eax\n    jmp .Ldbfcmpd{}\n.Ldbfcmpt{}:\n    mov $1, %eax\n.Ldbfcmpd{}:\n    sub $16, %rsp\n    mov %rax, (%rsp)\n",id,id,id));
+            for (e,v) in [a.as_ref(),b.as_ref()].iter().zip(vv.iter()) {
+                if owned(e){let skip=fresh_lbl();out.push_str(&format!("    cmpb $4, -{}(%rbp)\n    jne .Ldbfcmps{}\n    mov -{}(%rbp), %rdi\n    call hbc_freestr\n.Ldbfcmps{}:\n",v.off,skip,v.off-8,skip));}
+                else if v.ty==Ty::StrOwn && !matches!(e,Expr::Var(_)){out.push_str(&format!("    mov -{}(%rbp), %rdi\n    call hbc_freestr\n",v.off));}
+            }
+            out.push_str(&format!("    mov (%rsp), %rax\n    add $16, %rsp\n    test %rax, %rax\n    jnz {}\n",true_label));return;
+        }
+    }
     match cond {
         Expr::Log(b) => {
             out.push_str(&format!("    mov ${}, %eax\n    test %rax, %rax\n    jnz {}\n", if *b { 1 } else { 0 }, true_label));
@@ -11321,11 +11434,12 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 } else {
                     out.push_str("    mov %rcx, %r10\n    mov %r8, %r11\n");
                 }
+                if DBF_USED.with(|v|v.get()) {out.push_str("    cmpb $11, %r10b\n    je hbc_dbf_unsupported\n    cmpb $12, %r10b\n    je hbc_dbf_unsupported\n");}
                 let lid = fresh_lbl();
-                out.push_str(&format!("    cmp $2, %r10\n    je .Ldys{}\n    cmp $4, %r10\n    je .Ldys{}\n", lid, lid));
+                out.push_str(&format!("    @HBC_TAG_KIND@cmp $2, %r10@HBC_TAG_END@\n    je .Ldys{}\n    @HBC_TAG_KIND@cmp $4, %r10@HBC_TAG_END@\n    je .Ldys{}\n", lid, lid));
                 match op {
                     CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq => {
-                        out.push_str(&format!("    cmp $0, %r10\n    je .Ldyn{}\n    cmp $9, %r10\n    je .Ldyn{}\n", lid,lid));
+                        out.push_str(&format!("    @HBC_TAG_KIND@cmp $0, %r10@HBC_TAG_END@\n    je .Ldyn{}\n    @HBC_TAG_KIND@cmp $9, %r10@HBC_TAG_END@\n    je .Ldyn{}\n", lid,lid));
                         // tag 1 (NIL) or any other tag: the previous
                         // fold - `=` is .F., `#` is .T. (hk35, n1);
                         // `==` against a string answers .F. for a NIL
@@ -11837,9 +11951,9 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         // 6/unknown = registered error).
                         let id = print_lbl();
                         out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
-                        out.push_str(&format!("    cmp $2, %rax\n    je .Lprs{}\n    cmp $4, %rax\n    je .Lprs{}\n    cmp $7, %rax\n    je .Lprf{}\n", id, id, id));
+                        out.push_str(&format!("    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@\n    je .Lprs{}\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    je .Lprs{}\n    @HBC_TAG_KIND@cmp $7, %rax@HBC_TAG_END@\n    je .Lprf{}\n", id, id, id));
                         if !stderr && !raw {
-                            out.push_str("    cmp $0, %rax\n    je 87f\n    cmp $9, %rax\n    je 87f\n    cmp $1, %rax\n    je 87f\n    cmp $3, %rax\n    jne 88f\n87:\n    push %rdx\n    push %rax\n    call hbc_pflush\n    pop %rax\n    pop %rdx\n88:\n");
+                            out.push_str("    @HBC_TAG_KIND@cmp $0, %rax@HBC_TAG_END@\n    je 87f\n    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@\n    je 87f\n    @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@\n    je 87f\n    @HBC_TAG_KIND@cmp $3, %rax@HBC_TAG_END@\n    jne 88f\n87:\n    push %rdx\n    push %rax\n    call hbc_pflush\n    pop %rax\n    pop %rdx\n88:\n");
                         }
                         out.push_str(&format!("    call hbc_print_dyncell\n    jmp .Lpre{}\n", id));
                         out.push_str(&format!(".Lprs{}:\n    mov %rdx, %rax\n    mov -8(%rax), %rdx\n", id));
@@ -11874,7 +11988,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         // at the line end like any other string (hk25).
                         out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n", off, off + 8));
                         if is_last || hold_string {
-                            out.push_str("    cmp $2, %rdx\n    jne 95f\n    mov -8(%rax), %rdx\n");
+                            out.push_str("    @HBC_TAG_KIND@cmp $2, %rdx@HBC_TAG_END@\n    jne 95f\n    mov -8(%rax), %rdx\n");
                             if stderr {
                                 out.push_str(rtrim);
                                 out.push_str("    call hbc_print_str\n");
@@ -11888,9 +12002,9 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             }
                         } else {
                             if !stderr && !raw {
-                                out.push_str(&format!("    cmp $2, %rdx\n    jne 95f\n    mov -8(%rax), %rdx\n    test %rdx, %rdx\n    jz 91f\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov -8(%rax), %rdx\n91:\n    call hbc_print_str\n    jmp 96f\n95:\n    call hbc_pflush\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n", off));
+                                out.push_str(&format!("    @HBC_TAG_KIND@cmp $2, %rdx@HBC_TAG_END@\n    jne 95f\n    mov -8(%rax), %rdx\n    test %rdx, %rdx\n    jz 91f\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov -8(%rax), %rdx\n91:\n    call hbc_print_str\n    jmp 96f\n95:\n    call hbc_pflush\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n", off));
                             } else {
-                                out.push_str("    cmp $2, %rdx\n    jne 95f\n    mov -8(%rax), %rdx\n    call hbc_print_str\n    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
+                                out.push_str("    @HBC_TAG_KIND@cmp $2, %rdx@HBC_TAG_END@\n    jne 95f\n    mov -8(%rax), %rdx\n    call hbc_print_str\n    jmp 96f\n95:\n    mov $1, %rax\n    xor %edx, %edx\n    call hbc_print_dyn\n96:\n");
                             }
                         }
                         continue;
@@ -11957,7 +12071,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             if !stderr && !raw {
                                 // String-tagged Dyn values use the same hold
                                 // without changing their ownership/free path.
-                                out.push_str(&format!("    cmp $2, %rax\n    je 89f\n    cmp $4, %rax\n    jne 87f\n89:\n    mov %rdx, %rax\n    mov -8(%rax), %rdx\n    call hbc_pstrt\n    jmp 86f\n87:\n    cmp $0, %rax\n    je 85f\n    cmp $9, %rax\n    je 85f\n    cmp $1, %rax\n    je 85f\n    cmp $3, %rax\n    jne 88f\n85:\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n88:\n    call hbc_print_dyn\n86:\n", off, off + 8));
+                                out.push_str(&format!("    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@\n    je 89f\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    jne 87f\n89:\n    mov %rdx, %rax\n    mov -8(%rax), %rdx\n    call hbc_pstrt\n    jmp 86f\n87:\n    @HBC_TAG_KIND@cmp $0, %rax@HBC_TAG_END@\n    je 85f\n    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@\n    je 85f\n    @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@\n    je 85f\n    @HBC_TAG_KIND@cmp $3, %rax@HBC_TAG_END@\n    jne 88f\n85:\n    call hbc_pflush\n    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n88:\n    call hbc_print_dyn\n86:\n", off, off + 8));
                             } else {
                                 out.push_str("    call hbc_print_dyn\n");
                             }
@@ -11968,7 +12082,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             // borrowed, never moved out).
                             let cell_borrow = matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArrDyn | Ty::Dyn | Ty::RefDyn)));
                             if !matches!(e, Expr::Var(_)) && !cell_borrow {
-                                out.push_str(&format!("    cmpq $4, {}(%rsp)\n    jne 95f\n    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je 95f\n    call hbc_freestr\n95:\n", off, off + 8));
+                                out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, {}(%rsp)@HBC_TAG_END@\n    jne 95f\n    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je 95f\n    call hbc_freestr\n95:\n", off, off + 8));
                             }
                         }
                         Ty::Date => {
@@ -11994,6 +12108,10 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                     out.push_str(&format!("    add ${}, %rsp\n", 16 * es.len()));
                 }
                 out.push_str("    movq $0, hbc_console_mode(%rip)\n");
+                if !stderr && !raw && DBF_USED.with(|v|v.get()) {
+                    let fragment=out.split_off(render_start);
+                    out.push_str(&fragment.replace("call hbc_print_dyn\n","call hbc_dbf_print_line\n"));
+                }
                 if stderr {
                     // Route only the rendering fragment, never argument effects.
                     let fragment = out.split_off(render_start);
@@ -12018,7 +12136,7 @@ fn cg_persistent_scalar(e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>
         Ty::Bool=>out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"),
         Ty::Dyn=>{
             let k=fresh_lbl();
-            out.push_str(&format!("    cmp $0, %rax\n    je .Lpscalar{}\n    cmp $9, %rax\n    je .Lpscalar{}\n    cmp $1, %rax\n    je .Lpscalar{}\n    cmp $3, %rax\n    jne hbc_persistent_scalar_limit\n.Lpscalar{}:\n",k,k,k,k));
+            out.push_str(&format!("    @HBC_TAG_KIND@cmp $0, %rax@HBC_TAG_END@\n    je .Lpscalar{}\n    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@\n    je .Lpscalar{}\n    @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@\n    je .Lpscalar{}\n    @HBC_TAG_KIND@cmp $3, %rax@HBC_TAG_END@\n    jne hbc_persistent_scalar_limit\n.Lpscalar{}:\n",k,k,k,k));
         }, _=>unreachable!("checked persistent scalar"),
     }
 }
@@ -12040,7 +12158,7 @@ fn cg_persistent_store(v:&CgLocal,e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut V
     }else if matches!(e, Expr::Var(id) if static_dyn(id)) {
         cg_value(e,env,sigs,strs,out,target);
         let k=fresh_lbl();
-        out.push_str(&format!("    cmp $8, %rax\n    jne .Lpretain{}\n    addq $1, -16(%rdx)\n    jc hbc_oom\n.Lpretain{}:\n",k,k));
+        out.push_str(&format!("    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    jne .Lpretain{}\n    addq $1, -16(%rdx)\n    jc hbc_oom\n.Lpretain{}:\n",k,k));
     }else{cg_persistent_scalar(e,env,sigs,strs,out,target);}
     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    call hbc_persistent_release\n    mov -{}(%rbp), %r11\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, (%r11)\n    mov %rdx, 8(%r11)\n",v.off,v.off));
@@ -12081,7 +12199,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     mov %rdx, %rsi
     call hbc_free2
 "),
-                    Ty::Dyn => out.push_str("    cmp $4, %rax\n    jne 95f\n    mov %rdx, %rdi\n    test %rdi, %rdi\n    je 95f\n    call hbc_freestr\n95:\n"),
+                    Ty::Dyn => out.push_str("    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    jne 95f\n    mov %rdx, %rdi\n    test %rdi, %rdi\n    je 95f\n    call hbc_freestr\n95:\n"),
                     _ => {}
                 }
             }
@@ -12130,6 +12248,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             cg_value(k, env, sigs, strs, out, target);
                             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                             cg_value(v, env, sigs, strs, out, target);
+                    cg_dbf_scalar_container(v,env,sigs,out);
                             if expr_ty(v, env, sigs) == Ty::I64 {
                                 cg_i64_tagged(out);
                             }
@@ -12191,7 +12310,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                     cg_dyn_clone_if_str(out);
                                     // ains P2 stage 1: a tag-8 (array) copy
                                     // would alias the owner - clean error.
-                                    out.push_str("    cmp $8, %rax\n    je hbc_type_error\n");
+                                    out.push_str("    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je hbc_type_error\n");
                                 }
                                 // The slot can hold a live value when a
                                 // `local` re-declares inside a loop body:
@@ -12220,7 +12339,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                     // epilogue); .L labels (numeric locals
                                     // could hijack a neighboring snippet).
                                     let k8 = fresh_lbl();
-                                    out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne .Ll8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n    jmp 85f\n.Ll8a{}:\n    cmpq $8, -{}(%rbp)\n    jne 85f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n85:\n", off, k8, off - 8, k8, off, off - 8));
+                                    out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne .Ll8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n    jmp 85f\n.Ll8a{}:\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne 85f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n85:\n", off, k8, off - 8, k8, off, off - 8));
                                 } else {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov $16, %esi\n    call hbc_free\n85:\n", off));
                                 }
@@ -12287,7 +12406,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // string payload (tag 4 owned temp): the callee's slot
                 // keeps its copy and the shared epilogue frees it.
                 if expr_ty(e, env, sigs) == Ty::Dyn {
-                    cg_dyn_clone_if_str(out);
+                    if !(DBF_USED.with(|v|v.get()) && matches!(e, Expr::Call(..))) { cg_dyn_clone_if_str(out); }
                     // ains P2 stage 1 closure (independent-review
                     // blocker): a Dyn-held ARRAY (tag 8) may not escape
                     // through a return - the caller would alias the owner
@@ -12295,7 +12414,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // Registered clean error (alias-differential
                     // pattern); Dyn array params/returns stay out of
                     // scope. Scalar Dyn returns pass the guard unchanged.
-                    out.push_str("    cmp $8, %rax\n    je hbc_type_error\n");
+                    out.push_str("    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je hbc_type_error\n");
                 }
                 // Returning a dynamic array MOVES it to the caller: the
                 // source slot is nulled BEFORE the shared epilogue runs, so
@@ -12377,12 +12496,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // the switch has any arm or an otherwise; an entirely
                 // empty SWITCH is a legal no-op.
                 if st == Ty::Dyn && (!arms.is_empty() || otherwise.is_some()) {
-                    out.push_str(&format!("    cmpq $1, -{}(%rbp)\n    je hbc_swxeq_nil_error\n", hoff));
+                    if DBF_USED.with(|v|v.get()){out.push_str(&format!("    cmpb $11, -{}(%rbp)\n    je hbc_dbf_unsupported\n    cmpb $12, -{}(%rbp)\n    je hbc_dbf_unsupported\n",hoff,hoff));}
+                    out.push_str(&format!("    @HBC_TAG_KIND@cmpq $1, -{}(%rbp)@HBC_TAG_END@\n    je hbc_swxeq_nil_error\n", hoff));
                 }
                 let emit_free = |out: &mut String, tag: &str| {
                     match free_class {
                         1 => out.push_str(&format!("    mov -{}(%rbp), %rdi\n    call hbc_freestr\n", hoff)),
-                        2 => out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne .Lswf{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Lswf{}\n    call hbc_freestr\n.Lswf{}:\n", hoff, tag, hoff - 8, tag, tag)),
+                        2 => out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne .Lswf{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Lswf{}\n    call hbc_freestr\n.Lswf{}:\n", hoff, tag, hoff - 8, tag, tag)),
                         _ => {}
                     }
                 };
@@ -12398,7 +12518,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             // (cross-family is .F. in SWITCH, oracle
                             // sw-dyn-xsn - never an error here).
                             let numeric=fresh_lbl();
-                            out.push_str(&format!("    cmpq $0, -{}(%rbp)\n    je .Lswfmt{}\n    cmpq $9, -{}(%rbp)\n    jne {}\n.Lswfmt{}:\n", hoff,numeric,hoff,skip,numeric));
+                            out.push_str(&format!("    @HBC_TAG_KIND@cmpq $0, -{}(%rbp)@HBC_TAG_END@\n    je .Lswfmt{}\n    @HBC_TAG_KIND@cmpq $9, -{}(%rbp)@HBC_TAG_END@\n    jne {}\n.Lswfmt{}:\n", hoff,numeric,hoff,skip,numeric));
                             out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov ${}, %r11\n    cmp %r11, %rax\n    je {}\n", hoff - 8, v, stub));
                             out.push_str(&format!("{}:\n", skip));
                         }
@@ -12408,7 +12528,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             // like hbc_dynxeq_dd); other tags: non-match.
                             let ix = strs.len();
                             strs.push(sv.clone());
-                            out.push_str(&format!("    cmpq $2, -{}(%rbp)\n    je 91f\n    cmpq $4, -{}(%rbp)\n    jne {}\n91:\n", hoff, hoff, skip));
+                            out.push_str(&format!("    @HBC_TAG_KIND@cmpq $2, -{}(%rbp)@HBC_TAG_END@\n    je 91f\n    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne {}\n91:\n", hoff, hoff, skip));
                             out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -8(%rax), %rdx\n    lea .Lstr{}(%rip), %rcx\n    mov ${}, %r8\n    call hbc_str_xeq\n    test %rax, %rax\n    jnz {}\n", hoff - 8, ix, sv.as_bytes().len(), stub));
                             out.push_str(&format!("{}:\n", skip));
                         }
@@ -12914,6 +13034,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             cg_value(k, env, sigs, strs, out, target);
                             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                             cg_value(v, env, sigs, strs, out, target);
+                    cg_dbf_scalar_container(v,env,sigs,out);
                             if expr_ty(v, env, sigs) == Ty::I64 {
                                 cg_i64_tagged(out);
                             }
@@ -13014,7 +13135,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                     // holding an ARRAY (tag 8) would alias
                                     // the single owner - registered clean
                                     // error until a later stage adds AClone.
-                                    out.push_str("    cmp $8, %rax\n    je hbc_type_error\n");
+                                    out.push_str("    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je hbc_type_error\n");
                                 }
                                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                                 cg_dyn_free_old(out, off);
@@ -13181,6 +13302,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // Scalar element: tag it into the {tag, payload} pair
                     // (i64 -> {0, v}, NIL/Dyn -> copied pair).
                     cg_expr(e, env, sigs, strs, out, target);
+                    cg_dbf_scalar_container(e,env,sigs,out);
                     if expr_ty(e, env, sigs) == Ty::I64 {
                         cg_i64_tagged(out);
                     }
@@ -13216,7 +13338,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     sub $48, %rsp
     mov %rax, 16(%rsp)
     mov -@P@(%rbp), %r11
-    cmpq $8, -@T@(%rbp)
+    @HBC_TAG_KIND@cmpq $8, -@T@(%rbp)@HBC_TAG_END@
     jne hbc_type_error
     mov %r11, (%rsp)
     xor %r10, %r10
@@ -13264,7 +13386,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     mov (%rsp), %r11
     mov %rcx, %r10
     shl $4, %r10
-    cmpq $4, (%r11,%r10)
+    @HBC_TAG_KIND@cmpq $4, (%r11,%r10)@HBC_TAG_END@
     jne .Lass@K@
     mov 8(%r11,%r10), %rdi
     test %rdi, %rdi
@@ -13302,7 +13424,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
                 let asm = r#"    mov %rax, %rcx
     mov -@P@(%rbp), %r11
-    cmpq $8, -@T@(%rbp)
+    @HBC_TAG_KIND@cmpq $8, -@T@(%rbp)@HBC_TAG_END@
     jne hbc_type_error
     test %r11, %r11
     jz .Laid@K@
@@ -13317,7 +13439,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     dec %r10
     shl $4, %r10
     add %r11, %r10
-    cmpq $4, (%r10)
+    @HBC_TAG_KIND@cmpq $4, (%r10)@HBC_TAG_END@
     jne .Laisf@K@
     mov 8(%r10), %rdi
     test %rdi, %rdi
@@ -13373,7 +13495,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
                 let asm = r#"    mov %rax, %rcx
     mov -@P@(%rbp), %r11
-    cmpq $8, -@T@(%rbp)
+    @HBC_TAG_KIND@cmpq $8, -@T@(%rbp)@HBC_TAG_END@
     jne hbc_type_error
     test %r11, %r11
     jz .Ladd@K@
@@ -13388,7 +13510,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     dec %r10
     shl $4, %r10
     add %r11, %r10
-    cmpq $4, (%r10)
+    @HBC_TAG_KIND@cmpq $4, (%r10)@HBC_TAG_END@
     jne .Ladsf@K@
     mov 8(%r10), %rdi
     test %rdi, %rdi
@@ -13471,19 +13593,19 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         // fill); only a genuinely owned temporary (call
                         // result etc.) is consumed and freed directly.
                         let borrowed = matches!(e, Expr::Var(_) | Expr::Index(..) | Expr::Index2(..) | Expr::Index3(..) | Expr::Index4(..));
-                        let asm = r#"    cmp $2, %rax
+                        let asm = r#"    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je .Lfds@K@
-    cmp $4, %rax
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
     je .Lfds@K@
-    cmp $8, %rax
+    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@
     je hbc_type_error
-    cmp $0, %rax
+    @HBC_TAG_KIND@cmp $0, %rax@HBC_TAG_END@
     je .Lfdp@K@
-    cmp $9, %rax
+    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     je .Lfdp@K@
-    cmp $1, %rax
+    @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@
     je .Lfdp@K@
-    cmp $3, %rax
+    @HBC_TAG_KIND@cmp $3, %rax@HBC_TAG_END@
     je .Lfdp@K@
     jmp hbc_type_error
 .Lfdp@K@:
@@ -13512,7 +13634,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             let asm2 = r#"    movq $1, 24(%rsp)
     mov %rdx, 32(%rsp)
     mov %rcx, 40(%rsp)
-    cmp $4, %rax
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
     jne .Lfdz@K@
     mov %rdx, 56(%rsp)
     jmp .Lfdd@K@
@@ -13534,7 +13656,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     None => out.push_str("    mov $0x7fffffffffffffff, %rax\n    mov %rax, 64(%rsp)\n"),
                 }
                 let asm = r#"    mov -@P@(%rbp), %r11
-    cmpq $8, -@T@(%rbp)
+    @HBC_TAG_KIND@cmpq $8, -@T@(%rbp)@HBC_TAG_END@
     jne hbc_type_error
     test %r11, %r11
     jz .Lfdn@K@
@@ -13570,7 +13692,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     add %rcx, %rax
     shl $4, %rax
     add (%rsp), %rax
-    cmpq $4, (%rax)
+    @HBC_TAG_KIND@cmpq $4, (%rax)@HBC_TAG_END@
     jne .Lfnf@K@
     mov 8(%rax), %rdi
     test %rdi, %rdi
@@ -13692,6 +13814,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 } else {
                 cg_expr(e, env, sigs, strs, out, target);
+                    cg_dbf_scalar_container(e,env,sigs,out);
                 if expr_ty(e, env, sigs) == Ty::I64 {
                     cg_i64_tagged(out);
                 }
@@ -13744,6 +13867,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
                 }
                 cg_expr(e, env, sigs, strs, out, target);
+                    cg_dbf_scalar_container(e,env,sigs,out);
                 if expr_ty(e, env, sigs) == Ty::I64 {
                     cg_i64_tagged(out);
                 }
@@ -13800,6 +13924,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
                 }
                 cg_expr(e, env, sigs, strs, out, target);
+                    cg_dbf_scalar_container(e,env,sigs,out);
                 if expr_ty(e, env, sigs) == Ty::I64 {
                     cg_i64_tagged(out);
                 }
@@ -13953,6 +14078,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // writes the pair into every entry (hk192).
                 let var = env.iter().rev().find(|x| x.name == *id).expect("checked");
                 cg_value(e, env, sigs, strs, out, target);
+                    cg_dbf_scalar_container(e,env,sigs,out);
                 if expr_ty(e, env, sigs) == Ty::I64 {
                     cg_i64_tagged(out);
                 }
@@ -14081,7 +14207,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     }
                     out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     if v.ty == Ty::RefDyn {
-                        out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, (%r11)\n    jne hbc_type_error\n    mov 8(%r11), %r11\n    addq $1, -16(%r11)\n    jc hbc_oom\n    mov %r11, 24(%rsp)\n", v.off));
+                        out.push_str(&format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, (%r11)@HBC_TAG_END@\n    jne hbc_type_error\n    mov 8(%r11), %r11\n    addq $1, -16(%r11)\n    jc hbc_oom\n    mov %r11, 24(%rsp)\n", v.off));
                     }
                     if expr_ty(ie, env, sigs) == Ty::Dyn {
                         cg_expr(ie, env, sigs, strs, out, target);
@@ -14093,16 +14219,17 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     if v.ty==Ty::RefDyn {
                         out.push_str(&format!("    mov 24(%rsp), %r11\n    cmp $1, %rcx\n    jl .Lwbnd{}\n    cmp -8(%r11), %rcx\n    jg .Lwbnd{}\n",kw,kw));
                     }else{
-                    out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmpq $8, -{}(%rbp)\n    jne hbc_type_error\n    cmp $1, %rcx\n    jl .Lwbnd{}\n    cmp -8(%r11), %rcx\n    jg .Lwbnd{}\n", v.off - 8, v.off, kw, kw));                    }
+                    out.push_str(&format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n    cmp $1, %rcx\n    jl .Lwbnd{}\n    cmp -8(%r11), %rcx\n    jg .Lwbnd{}\n", v.off - 8, v.off, kw, kw));                    }
 
                     out.push_str("    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
-                    out.push_str(&format!("    mov %r10, 16(%rsp)\n    cmpq $4, (%r10)\n    jne .Lwnf{}\n    mov 8(%r10), %rdi\n    test %rdi, %rdi\n    jz .Lwnf{}\n    call hbc_freestr\n.Lwnf{}:\n    mov 16(%rsp), %r10\n    mov (%rsp), %rax\n    mov %rax, (%r10)\n    mov 8(%rsp), %rax\n    mov %rax, 8(%r10)\n{}    add $32, %rsp\n    jmp .Lwdone{}\n.Lwbnd{}:\n    call hbc_bound_error\n.Lwdone{}:\n", kw, kw, kw, if v.ty == Ty::RefDyn { "    mov 24(%rsp), %rdi\n    call hbc_persistent_payload_release\n" } else { "" }, kw, kw, kw));
+                    out.push_str(&format!("    mov %r10, 16(%rsp)\n    @HBC_TAG_KIND@cmpq $4, (%r10)@HBC_TAG_END@\n    jne .Lwnf{}\n    mov 8(%r10), %rdi\n    test %rdi, %rdi\n    jz .Lwnf{}\n    call hbc_freestr\n.Lwnf{}:\n    mov 16(%rsp), %r10\n    mov (%rsp), %rax\n    mov %rax, (%r10)\n    mov 8(%rsp), %rax\n    mov %rax, 8(%r10)\n{}    add $32, %rsp\n    jmp .Lwdone{}\n.Lwbnd{}:\n    call hbc_bound_error\n.Lwdone{}:\n", kw, kw, kw, if v.ty == Ty::RefDyn { "    mov 24(%rsp), %rdi\n    call hbc_persistent_payload_release\n" } else { "" }, kw, kw, kw));
                 } else if v.ty == Ty::Hash {
                     // h[k] := v: value FIRST, then the key (probe h4).
                     // Both wait on the stack across hbc_hput, which copies
                     // the key bytes and the value - the hash owns copies,
                     // the temporaries stay owned here.
                     cg_value(e, env, sigs, strs, out, target);
+                    cg_dbf_scalar_container(e,env,sigs,out);
                     if expr_ty(e, env, sigs) == Ty::I64 {
                         cg_i64_tagged(out);
                     }
@@ -14129,6 +14256,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // child cell's ADDRESS; bounds and base load through it
                     // so the write lands in the owner's cell (oracle hk86).
                     cg_expr(e, env, sigs, strs, out, target);
+                    cg_dbf_scalar_container(e,env,sigs,out);
                     if expr_ty(e, env, sigs) == Ty::I64 {
                         cg_i64_tagged(out);
                     }
@@ -14176,6 +14304,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // index (probe m7); both bounds checked; transient borrows.
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
                 cg_expr(e, env, sigs, strs, out, target);
+                    cg_dbf_scalar_container(e,env,sigs,out);
                 if expr_ty(e, env, sigs) == Ty::I64 {
                     cg_i64_tagged(out);
                 }
@@ -14221,6 +14350,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // null child pointer is a bound error (same as reads).
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
                 cg_expr(e, env, sigs, strs, out, target);
+                    cg_dbf_scalar_container(e,env,sigs,out);
                 if expr_ty(e, env, sigs) == Ty::I64 {
                     cg_i64_tagged(out);
                 }
@@ -14260,6 +14390,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // pointer is a bound error (same as reads).
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
                 cg_expr(e, env, sigs, strs, out, target);
+                    cg_dbf_scalar_container(e,env,sigs,out);
                 if expr_ty(e, env, sigs) == Ty::I64 {
                     cg_i64_tagged(out);
                 }
@@ -14595,7 +14726,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
                 // tag-2 views (FOR EACH over hash keys) and scalar tags
                 // (0/1/3) own nothing.
                 let k7 = fresh_lbl();
-                out.push_str(&format!("    cmpq $4, -{}(%rbp)\n    jne .Le8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hbc_freestr\n    jmp 91{}f\n.Le8a{}:\n    cmpq $8, -{}(%rbp)\n    jne 91{}f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n91{}:\n", off, k7, off - 8, i, i, k7, off, i, off - 8, i, i));
+                out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne .Le8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hbc_freestr\n    jmp 91{}f\n.Le8a{}:\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne 91{}f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n91{}:\n", off, k7, off - 8, i, i, k7, off, i, off - 8, i, i));
             }
             _ => {
                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov $16, %esi\n    call hbc_free\n91{}:\n", off, i, i));
@@ -15834,7 +15965,7 @@ hbc_hsetcasematch:
 # edges). Leaf: caller-saved registers only, no allocation, the hash
 # is only read.
 hbc_hscan:
-    cmp $9, %rsi
+    @HBC_TAG_KIND@cmp $9, %rsi@HBC_TAG_END@
     jne 849f
     xor %esi, %esi
 849: test %rcx, %rcx
@@ -15851,10 +15982,10 @@ hbc_hscan:
     shl $5, %rax
     add %r8, %rax
     mov 16(%rax), %r10
-    cmp $9, %r10
+    @HBC_TAG_KIND@cmp $9, %r10@HBC_TAG_END@
     jne 848f
     xor %r10d, %r10d
-848: cmp %r10, %rsi
+848: @HBC_TAG_KIND@cmp %r10, %rsi@HBC_TAG_END@
     jne 852f
     cmp 24(%rax), %rdx
     jne 852f
@@ -16295,7 +16426,7 @@ hbc_sfree:
     jae 61f
     mov %r13, %rax
     shl $4, %rax
-    cmpq $2, (%rbx,%rax)
+    @HBC_TAG_KIND@cmpq $2, (%rbx,%rax)@HBC_TAG_END@
     jne 62f
     mov 8(%rbx,%rax), %rdi
     call hbc_freestr
@@ -16672,6 +16803,39 @@ hbc_ext_dispatch:
     .text
 "#;
 
+// Scalar kind reads are explicitly annotated at their codegen source sites.
+// Keep non-DBF assembly byte-identical; DBF kind tests read low8 bits only.
+// Do not apply this to indices, array-layout kinds, bytes or NumLocal metadata.
+fn finalize_tag_kind_accessors(out: String, dbf: bool) -> String {
+    let mut result = String::with_capacity(out.len());
+    let mut rest = out.as_str();
+    while let Some(at) = rest.find("@HBC_TAG_KIND@") {
+        result.push_str(&rest[..at]);
+        rest = &rest[at + "@HBC_TAG_KIND@".len()..];
+        let end = rest.find("@HBC_TAG_END@").expect("closed kind accessor");
+        let op = &rest[..end];
+        if !dbf { result.push_str(op); }
+        else {
+            let mut low = op.to_string();
+            for (old,new) in [("%rax","%al"),("%rcx","%cl"),("%rdx","%dl"),("%rsi","%sil"),("%rdi","%dil"),("%r8","%r8b"),("%r9","%r9b"),("%r10","%r10b"),("%r11","%r11b")] {
+                // Memory address registers stay64-bit. Only standalone operands
+                // are renamed, never registers within (...) addressing.
+                let parts:Vec<&str> = low.split(", ").collect();
+                low = parts.iter().map(|p| if *p==old {new.to_string()} else if p.ends_with(old) && !p.contains('(') {p.replace(old,new)} else {p.to_string()}).collect::<Vec<_>>().join(", ");
+            }
+            if low.starts_with("cmpq ") {low.replace_range(..5,"cmpb ");}
+            else if low.starts_with("cmp ") {low.replace_range(..4,"cmpb ");}
+            else if low.starts_with("test ") {low.replace_range(..5,"testb ");}
+            else {panic!("unrecognized scalar kind accessor");}
+            result.push_str(&low);
+        }
+        rest = &rest[end + "@HBC_TAG_END@".len()..];
+    }
+    result.push_str(rest);
+    assert!(!result.contains("@HBC_TAG_"));
+    result
+}
+
 fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, instrument: bool) -> String {
     let mut out = String::new();
     out.push_str("# generated by hbc (PoC: Harbour syntax -> x86-64 assembly)\n");
@@ -16755,7 +16919,7 @@ hbc_persistent_release:
     push %rbp
     mov %rsp, %rbp
     sub $32, %rsp
-    cmpq $8, (%rdi)
+    @HBC_TAG_KIND@cmpq $8, (%rdi)@HBC_TAG_END@
     jne 81f
     mov 8(%rdi), %r10
     movq $1, (%rdi)
@@ -16807,7 +16971,105 @@ hbc_persistent_payload_release:
             out = out.replace("@REG_HFREE_W@", if instrument { REG_HFREE_W } else { "" });
             out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
             out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
-            return finalize_trace(out, target);
+            return {
+        let active=DBF_USED.with(|v|v.get());
+        let mut result=finalize_trace(out,target);
+        if active {
+            result=result.replace("    call hbc_fn_main\n", "    call hbc_fn_main\n    call hrdbf_app_close\n");
+            result=result.replace("hbc_panic_exit:\n", "hbc_panic_exit:\n    and $-16, %rsp\n    call hrdbf_app_close\n");
+            for helper in ["hbc_print_dyn","hbc_print_dyncell"] {
+                let label=format!("{}:\n",helper);
+                result=result.replace(&label,&format!("{}    cmpb $11, %al\n    je hbc_dbf_print\n    cmpb $12, %al\n    je hbc_dbf_print\n",label));
+            }
+            result=result.replace("hbc_dyn_to_i64:\n", "hbc_dyn_to_i64:\n    cmpb $12, %al\n    jne .Ldbfi64old\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    sub $8, %rsp\n    call hrdbf_app_integer\n    add $8, %rsp\n    xor %edx, %edx\n    ret\n.Ldbfi64old:\n");
+            for (helper,wrapper) in [("hbc_dyn_eq","hbc_dbf_equal"),("hbc_dynxeq_dd","hbc_dbf_equal"),("hbc_dynxcmp","hbc_dbf_compare")] {
+                let label=format!("{}:\n",helper);
+                result=result.replace(&label,&format!("{}    cmpb $5, %al\n    je hbc_dbf_unsupported\n    cmpb $5, %cl\n    je hbc_dbf_unsupported\n    cmpb $11, %al\n    je {}\n    cmpb $12, %al\n    je {}\n    cmpb $11, %cl\n    je {}\n    cmpb $12, %cl\n    je {}\n",label,wrapper,wrapper,wrapper,wrapper));
+            }
+            if result.contains("hbc_eprint_dyn:") {
+                for helper in ["hbc_eprint_dyn","hbc_eprint_dyncell"] {let label=format!("{}:\n",helper);result=result.replace(&label,&format!("{}    cmpb $11, %al\n    je hbc_dbf_eprint\n    cmpb $12, %al\n    je hbc_dbf_eprint\n",label));}
+            }
+            result=result.replace("hbc_hscan:\n", "hbc_hscan:\n    cmpb $2, %sil\n    je hbc_dbf_unsupported\n    cmpb $4, %sil\n    je hbc_dbf_unsupported\n    cmpb $5, %sil\n    je hbc_dbf_unsupported\n    cmpb $11, %sil\n    je hbc_dbf_unsupported\n    cmpb $12, %sil\n    je hbc_dbf_unsupported\n");
+            result=result.replace("    mov 16(%rax), %r10\n    @HBC_TAG_KIND@cmp $9, %r10", "    mov 16(%rax), %r10\n    cmpb $5, %r10b\n    je hbc_dbf_unsupported\n    cmpb $11, %r10b\n    je hbc_dbf_unsupported\n    cmpb $12, %r10b\n    je hbc_dbf_unsupported\n    @HBC_TAG_KIND@cmp $9, %r10");
+            result.push_str(r#"
+    .text
+hbc_dbf_unsupported:
+    and $-16, %rsp
+    call hrdbf_app_unsupported
+    ud2
+hbc_dbf_equal:
+    mov %rax, %rdi
+    mov %rdx, %rsi
+    mov %rcx, %rdx
+    mov %r8, %rcx
+    sub $8, %rsp
+    call hrdbf_app_equal
+    add $8, %rsp
+    ret
+hbc_dbf_compare:
+    mov %rax, %rdi
+    mov %rdx, %rsi
+    mov %rcx, %rdx
+    mov %r8, %rcx
+    sub $8, %rsp
+    call hrdbf_app_compare
+    add $8, %rsp
+    ret
+hbc_dbf_print_line:
+    cmpb $11, %al
+    je .Ldbfprint_date_line
+    jmp hbc_print_dyn
+.Ldbfprint_date_line:
+    push %rbp
+    mov %rsp, %rbp
+    sub $288, %rsp
+    mov %rax, %rdi
+    mov %rdx, %rsi
+    mov %rsp, %rdx
+    call hrdbf_app_render
+    mov %rax, %rdx
+    mov %rsp, %rax
+    call hbc_pstrt
+    leave
+    ret
+hbc_dbf_print:
+    push %rbp
+    mov %rsp, %rbp
+    sub $288, %rsp
+    mov %rax, 256(%rsp)
+    mov %rdx, 264(%rsp)
+    call hbc_pflush
+    mov 256(%rsp), %rdi
+    mov 264(%rsp), %rsi
+    mov %rsp, %rdx
+    call hrdbf_app_render
+    mov %rax, %rdx
+    mov %rsp, %rax
+    call hbc_print_str
+    leave
+    ret
+"#);
+            if result.contains("hbc_eprint_dyn:") {
+                result.push_str(r#"
+hbc_dbf_eprint:
+    push %rbp
+    mov %rsp, %rbp
+    sub $288, %rsp
+    mov %rax, %rdi
+    mov %rdx, %rsi
+    mov %rsp, %rdx
+    call hrdbf_app_render
+    mov %rax, %rdx
+    mov %rsp, %rax
+    call hbc_eprint_str
+    leave
+    ret
+"#);
+            }
+            result.push_str(include_str!("../generated/hrdbf_linux.s"));
+        }
+        finalize_tag_kind_accessors(result,active)
+    };
         }
         Target::Linux => {}
     }
@@ -17104,24 +17366,24 @@ hbc_print_i64c:
 # array prints as an empty line). Integer tag 9 uses hbc_print_i64;
 # tag 0 uses the runtime width from hbc_print_i64c.
 hbc_print_dyn:
-    cmp $9, %rax
+    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     jne 90f
     mov %rdx, %rax
     jmp hbc_print_i64
 90:
-    test %rax, %rax
+    @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
     jz 8f
-    cmp $2, %rax
+    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je 9f
-    cmp $4, %rax
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
     je 9f
-    cmp $3, %rax
+    @HBC_TAG_KIND@cmp $3, %rax@HBC_TAG_END@
     je 11f
-    cmp $8, %rax
+    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@
     je 13f
     mov %rax, %r10
     and $255, %r10
-    cmp $5, %r10
+    @HBC_TAG_KIND@cmp $5, %r10@HBC_TAG_END@
     je 14f
     lea .Lnilmsg(%rip), %rsi
     mov $3, %edx
@@ -17173,20 +17435,20 @@ hbc_print_dyn:
 # every other tag (5 is reserved) raise the clean registered type error.
 # The cell is BORROWED: nothing is ever freed here.
 hbc_print_dyncell:
-    cmp $9, %rax
+    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     jne 90f
     mov %rdx, %rax
     jmp hbc_print_i64
 90:
-    test %rax, %rax
+    @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
     jz 8f
-    cmp $1, %rax
+    @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@
     je 13f
-    cmp $2, %rax
+    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je 9f
-    cmp $4, %rax
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
     je 9f
-    cmp $3, %rax
+    @HBC_TAG_KIND@cmp $3, %rax@HBC_TAG_END@
     je 11f
     jmp hbc_type_error
 8:  mov %rdx, %rax
@@ -17216,9 +17478,9 @@ hbc_print_dyncell:
 # cannot be probed headless, so this fails cleanly - registered failure
 # mode alongside hbc_bound_error, NOT a compat success.
 hbc_dyn_to_i64:
-    cmp $9, %rax
+    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     je 91f
-    test %rax, %rax
+    @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
     jnz hbc_type_error
     mov %rdx, %rax
     xor %edx, %edx
@@ -17292,7 +17554,7 @@ hbc_dyn_to_log:
     # Only a logical cell is a valid condition: NIL errors (hk266) and an
     # integer errors (hk267) in Harbour - its dialog cannot be probed
     # headless, so clean named exit 1 (registered failure mode).
-    cmp $3, %rax
+    @HBC_TAG_KIND@cmp $3, %rax@HBC_TAG_END@
     jne hbc_dynlog_error
     mov %rdx, %rax
     ret
@@ -17318,23 +17580,23 @@ hbc_dynlog_error:
 # dialog hangs headless) - clean named exit 1 via hbc_dyncmp_eq_error,
 # registered failure mode, not exact equivalence. Leaf routine.
 hbc_dyn_eq:
-    cmp $9, %rax
+    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     jne 91f
     xor %eax, %eax
-91: cmp $9, %rcx
+91: @HBC_TAG_KIND@cmp $9, %rcx@HBC_TAG_END@
     jne 92f
     xor %ecx, %ecx
 92:
     # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
-    cmp $4, %rax
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
     jne 80f
     mov $2, %eax
-80: cmp $4, %rcx
+80: @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 81f
     mov $2, %ecx
-81: cmp %rcx, %rax
+81: @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
     jne 7f
-    cmp $2, %rax
+    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je 6f
     cmp %r8, %rdx
     jne 8f
@@ -17349,15 +17611,15 @@ hbc_dyn_eq:
     mov %r9, %r8
     mov %r10, %rdx
     jmp hbc_str_eq
-7:  test %rax, %rax
+7:  @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
     je 71f
-    cmp $2, %rax
+    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je 72f
     jmp 8b
-71: cmp $2, %rcx
+71: @HBC_TAG_KIND@cmp $2, %rcx@HBC_TAG_END@
     je hbc_dyncmp_eq_error
     jmp 8b
-72: cmp $1, %rcx
+72: @HBC_TAG_KIND@cmp $1, %rcx@HBC_TAG_END@
     je 8b
     jmp hbc_dyncmp_eq_error
 
@@ -17371,23 +17633,23 @@ hbc_dyn_eq:
 # equivalence. A NIL casilla in an ordering comparison is a Harbour type
 # error: hbc_type_error (registered failure mode). Leaf routine.
 hbc_dynxcmp:
-    cmp $9, %rax
+    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     jne 91f
     xor %eax, %eax
-91: cmp $9, %rcx
+91: @HBC_TAG_KIND@cmp $9, %rcx@HBC_TAG_END@
     jne 92f
     xor %ecx, %ecx
 92:
     # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
-    cmp $4, %rax
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
     jne 80f
     mov $2, %eax
-80: cmp $4, %rcx
+80: @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 81f
     mov $2, %ecx
-81: cmp %rcx, %rax
+81: @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
     jne 70f
-    test %rax, %rax
+    @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
     jnz 71f
     xor %eax, %eax
     cmp %r8, %rdx
@@ -17397,7 +17659,7 @@ hbc_dynxcmp:
     ret
 77: mov $-1, %rax
 79: ret
-71: cmp $2, %rax
+71: @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je 72f
     jmp hbc_type_error
 72: mov -8(%rdx), %r10
@@ -17407,9 +17669,9 @@ hbc_dynxcmp:
     mov %r11, %r8
     mov %r10, %rdx
     jmp hbc_str_cmp
-70: cmp $1, %rax
+70: @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@
     je hbc_type_error
-    cmp $1, %rcx
+    @HBC_TAG_KIND@cmp $1, %rcx@HBC_TAG_END@
     je hbc_type_error
     cmp $1, %r9d
     je hbc_dyncmp_lt_error
@@ -17427,25 +17689,25 @@ hbc_dynxcmp:
 # dialog hangs headless): a clean named exit 1, registered failure mode,
 # not exact equivalence. Leaf routine: the error path is a noreturn stub.
 hbc_dynxeq_dd:
-    cmp $9, %rax
+    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     jne 91f
     xor %eax, %eax
-91: cmp $9, %rcx
+91: @HBC_TAG_KIND@cmp $9, %rcx@HBC_TAG_END@
     jne 92f
     xor %ecx, %ecx
 92:
     # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
-    cmp $4, %rax
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
     jne 80f
     mov $2, %eax
-80: cmp $4, %rcx
+80: @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 81f
     mov $2, %ecx
-81: cmp %rcx, %rax
+81: @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
     jne 5f
-    cmp $2, %rax
+    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je 2f
-    cmp $1, %rax
+    @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@
     je 9f
     cmp %r8, %rdx
     jne 8f
@@ -17463,9 +17725,9 @@ hbc_dynxeq_dd:
     jne 8f
     inc %r9
     jmp 3b
-5:  cmp $1, %rax
+5:  @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@
     je 8f
-    cmp $1, %rcx
+    @HBC_TAG_KIND@cmp $1, %rcx@HBC_TAG_END@
     je 8f
     jmp hbc_dynxeq_error
 8:  xor %eax, %eax
@@ -17999,7 +18261,7 @@ hbc_dfree:
     mov %r13, %rax
     shl $4, %rax
     mov (%rbx,%rax), %rcx
-    cmp $4, %rcx
+    @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 883f
     mov 8(%rbx,%rax), %rdi
     test %rdi, %rdi
@@ -18258,7 +18520,7 @@ hbc_asize:
     jge 76f
     mov %r9, %r10
     shl $4, %r10
-    cmpq $2, (%r13,%r10)
+    @HBC_TAG_KIND@cmpq $2, (%r13,%r10)@HBC_TAG_END@
     jne 82f
     mov 8(%r13,%r10), %rdi
     test %rdi, %rdi
@@ -18317,7 +18579,105 @@ hbc_str_cache: .zero 64
     out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
     // Emit the cwd helper only when referenced (independent of output rendering).
     if out.contains("call hbc_curdir_linux") { out.push_str(CURDIR_LINUX_HELPER); }
-    finalize_trace(out, target)
+    {
+        let active=DBF_USED.with(|v|v.get());
+        let mut result=finalize_trace(out,target);
+        if active {
+            result=result.replace("    call hbc_fn_main\n", "    call hbc_fn_main\n    call hrdbf_app_close\n");
+            result=result.replace("hbc_panic_exit:\n", "hbc_panic_exit:\n    and $-16, %rsp\n    call hrdbf_app_close\n");
+            for helper in ["hbc_print_dyn","hbc_print_dyncell"] {
+                let label=format!("{}:\n",helper);
+                result=result.replace(&label,&format!("{}    cmpb $11, %al\n    je hbc_dbf_print\n    cmpb $12, %al\n    je hbc_dbf_print\n",label));
+            }
+            result=result.replace("hbc_dyn_to_i64:\n", "hbc_dyn_to_i64:\n    cmpb $12, %al\n    jne .Ldbfi64old\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    sub $8, %rsp\n    call hrdbf_app_integer\n    add $8, %rsp\n    xor %edx, %edx\n    ret\n.Ldbfi64old:\n");
+            for (helper,wrapper) in [("hbc_dyn_eq","hbc_dbf_equal"),("hbc_dynxeq_dd","hbc_dbf_equal"),("hbc_dynxcmp","hbc_dbf_compare")] {
+                let label=format!("{}:\n",helper);
+                result=result.replace(&label,&format!("{}    cmpb $5, %al\n    je hbc_dbf_unsupported\n    cmpb $5, %cl\n    je hbc_dbf_unsupported\n    cmpb $11, %al\n    je {}\n    cmpb $12, %al\n    je {}\n    cmpb $11, %cl\n    je {}\n    cmpb $12, %cl\n    je {}\n",label,wrapper,wrapper,wrapper,wrapper));
+            }
+            if result.contains("hbc_eprint_dyn:") {
+                for helper in ["hbc_eprint_dyn","hbc_eprint_dyncell"] {let label=format!("{}:\n",helper);result=result.replace(&label,&format!("{}    cmpb $11, %al\n    je hbc_dbf_eprint\n    cmpb $12, %al\n    je hbc_dbf_eprint\n",label));}
+            }
+            result=result.replace("hbc_hscan:\n", "hbc_hscan:\n    cmpb $2, %sil\n    je hbc_dbf_unsupported\n    cmpb $4, %sil\n    je hbc_dbf_unsupported\n    cmpb $5, %sil\n    je hbc_dbf_unsupported\n    cmpb $11, %sil\n    je hbc_dbf_unsupported\n    cmpb $12, %sil\n    je hbc_dbf_unsupported\n");
+            result=result.replace("    mov 16(%rax), %r10\n    @HBC_TAG_KIND@cmp $9, %r10", "    mov 16(%rax), %r10\n    cmpb $5, %r10b\n    je hbc_dbf_unsupported\n    cmpb $11, %r10b\n    je hbc_dbf_unsupported\n    cmpb $12, %r10b\n    je hbc_dbf_unsupported\n    @HBC_TAG_KIND@cmp $9, %r10");
+            result.push_str(r#"
+    .text
+hbc_dbf_unsupported:
+    and $-16, %rsp
+    call hrdbf_app_unsupported
+    ud2
+hbc_dbf_equal:
+    mov %rax, %rdi
+    mov %rdx, %rsi
+    mov %rcx, %rdx
+    mov %r8, %rcx
+    sub $8, %rsp
+    call hrdbf_app_equal
+    add $8, %rsp
+    ret
+hbc_dbf_compare:
+    mov %rax, %rdi
+    mov %rdx, %rsi
+    mov %rcx, %rdx
+    mov %r8, %rcx
+    sub $8, %rsp
+    call hrdbf_app_compare
+    add $8, %rsp
+    ret
+hbc_dbf_print_line:
+    cmpb $11, %al
+    je .Ldbfprint_date_line
+    jmp hbc_print_dyn
+.Ldbfprint_date_line:
+    push %rbp
+    mov %rsp, %rbp
+    sub $288, %rsp
+    mov %rax, %rdi
+    mov %rdx, %rsi
+    mov %rsp, %rdx
+    call hrdbf_app_render
+    mov %rax, %rdx
+    mov %rsp, %rax
+    call hbc_pstrt
+    leave
+    ret
+hbc_dbf_print:
+    push %rbp
+    mov %rsp, %rbp
+    sub $288, %rsp
+    mov %rax, 256(%rsp)
+    mov %rdx, 264(%rsp)
+    call hbc_pflush
+    mov 256(%rsp), %rdi
+    mov 264(%rsp), %rsi
+    mov %rsp, %rdx
+    call hrdbf_app_render
+    mov %rax, %rdx
+    mov %rsp, %rax
+    call hbc_print_str
+    leave
+    ret
+"#);
+            if result.contains("hbc_eprint_dyn:") {
+                result.push_str(r#"
+hbc_dbf_eprint:
+    push %rbp
+    mov %rsp, %rbp
+    sub $288, %rsp
+    mov %rax, %rdi
+    mov %rdx, %rsi
+    mov %rsp, %rdx
+    call hrdbf_app_render
+    mov %rax, %rdx
+    mov %rsp, %rax
+    call hbc_eprint_str
+    leave
+    ret
+"#);
+            }
+            result.push_str(include_str!("../generated/hrdbf_linux.s"));
+        }
+        finalize_tag_kind_accessors(result,active)
+    }
 }
 
 // Unify controlled failures only. Normal _start exits are not rewritten.
@@ -19272,7 +19632,7 @@ hbc_print_i64c:
 # with the decimal count in the tag's high bits) takes the field arm
 # below (hbc_pflush, then hbc_print_num_f64).
 hbc_print_dyn:
-    cmp $9, %rax
+    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     jne 90f
     mov %rdx, %rax
     jmp hbc_print_i64
@@ -19280,19 +19640,19 @@ hbc_print_dyn:
     push %rbp
     mov %rsp, %rbp
     sub $48, %rsp
-    test %rax, %rax
+    @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
     jz 8f
-    cmp $2, %rax
+    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je 10f
-    cmp $4, %rax
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
     je 10f
-    cmp $3, %rax
+    @HBC_TAG_KIND@cmp $3, %rax@HBC_TAG_END@
     je 11f
-    cmp $8, %rax
+    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@
     je 9f
     mov %rax, %r10
     and $255, %r10
-    cmp $5, %r10
+    @HBC_TAG_KIND@cmp $5, %r10@HBC_TAG_END@
     je 14f
     lea .Lnilmsg(%rip), %rax
     mov $3, %edx
@@ -19349,7 +19709,7 @@ hbc_print_dyn:
 # every other tag (5 is reserved) raise the clean registered type error.
 # The cell is BORROWED: nothing is ever freed here.
 hbc_print_dyncell:
-    cmp $9, %rax
+    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     jne 90f
     mov %rdx, %rax
     jmp hbc_print_i64
@@ -19357,15 +19717,15 @@ hbc_print_dyncell:
     push %rbp
     mov %rsp, %rbp
     sub $48, %rsp
-    test %rax, %rax
+    @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
     jz 8f
-    cmp $1, %rax
+    @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@
     je 13f
-    cmp $2, %rax
+    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je 10f
-    cmp $4, %rax
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
     je 10f
-    cmp $3, %rax
+    @HBC_TAG_KIND@cmp $3, %rax@HBC_TAG_END@
     je 11f
     call hbc_type_error
 8:  mov %rdx, %rax
@@ -19393,9 +19753,9 @@ hbc_print_dyncell:
 # (0 runtime, 1 literal/copy). NIL here is
 # a Harbour type error; see the linux copy for the failure-mode note.
 hbc_dyn_to_i64:
-    cmp $9, %rax
+    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     je 91f
-    test %rax, %rax
+    @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
     jnz hbc_type_error
     mov %rdx, %rax
     xor %edx, %edx
@@ -19468,7 +19828,7 @@ hbc_aview_get:
 hbc_dyn_to_log:
     # Only a logical cell is a valid condition (hk266/hk267); see the
     # linux copy for the failure-mode note.
-    cmp $3, %rax
+    @HBC_TAG_KIND@cmp $3, %rax@HBC_TAG_END@
     jne hbc_dynlog_error
     mov %rdx, %rax
     ret
@@ -19496,23 +19856,23 @@ hbc_dynlog_error:
 # dialog hangs headless) - clean named exit 1 via hbc_dyncmp_eq_error,
 # registered failure mode, not exact equivalence. Leaf routine.
 hbc_dyn_eq:
-    cmp $9, %rax
+    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     jne 91f
     xor %eax, %eax
-91: cmp $9, %rcx
+91: @HBC_TAG_KIND@cmp $9, %rcx@HBC_TAG_END@
     jne 92f
     xor %ecx, %ecx
 92:
     # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
-    cmp $4, %rax
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
     jne 80f
     mov $2, %eax
-80: cmp $4, %rcx
+80: @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 81f
     mov $2, %ecx
-81: cmp %rcx, %rax
+81: @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
     jne 7f
-    cmp $2, %rax
+    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je 6f
     cmp %r8, %rdx
     jne 8f
@@ -19527,15 +19887,15 @@ hbc_dyn_eq:
     mov %r9, %r8
     mov %r10, %rdx
     jmp hbc_str_eq
-7:  test %rax, %rax
+7:  @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
     je 71f
-    cmp $2, %rax
+    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je 72f
     jmp 8b
-71: cmp $2, %rcx
+71: @HBC_TAG_KIND@cmp $2, %rcx@HBC_TAG_END@
     je hbc_dyncmp_eq_error
     jmp 8b
-72: cmp $1, %rcx
+72: @HBC_TAG_KIND@cmp $1, %rcx@HBC_TAG_END@
     je 8b
     jmp hbc_dyncmp_eq_error
 
@@ -19549,23 +19909,23 @@ hbc_dyn_eq:
 # equivalence. A NIL casilla in an ordering comparison is a Harbour type
 # error: hbc_type_error (registered failure mode). Leaf routine.
 hbc_dynxcmp:
-    cmp $9, %rax
+    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     jne 91f
     xor %eax, %eax
-91: cmp $9, %rcx
+91: @HBC_TAG_KIND@cmp $9, %rcx@HBC_TAG_END@
     jne 92f
     xor %ecx, %ecx
 92:
     # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
-    cmp $4, %rax
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
     jne 80f
     mov $2, %eax
-80: cmp $4, %rcx
+80: @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 81f
     mov $2, %ecx
-81: cmp %rcx, %rax
+81: @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
     jne 70f
-    test %rax, %rax
+    @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
     jnz 71f
     xor %eax, %eax
     cmp %r8, %rdx
@@ -19575,7 +19935,7 @@ hbc_dynxcmp:
     ret
 77: mov $-1, %rax
 79: ret
-71: cmp $2, %rax
+71: @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je 72f
     jmp hbc_type_error
 72: mov -8(%rdx), %r10
@@ -19585,9 +19945,9 @@ hbc_dynxcmp:
     mov %r11, %r8
     mov %r10, %rdx
     jmp hbc_str_cmp
-70: cmp $1, %rax
+70: @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@
     je hbc_type_error
-    cmp $1, %rcx
+    @HBC_TAG_KIND@cmp $1, %rcx@HBC_TAG_END@
     je hbc_type_error
     cmp $1, %r9d
     je hbc_dyncmp_lt_error
@@ -19605,25 +19965,25 @@ hbc_dynxcmp:
 # dialog hangs headless): a clean named exit 1, registered failure mode,
 # not exact equivalence. Leaf routine: the error path is a noreturn stub.
 hbc_dynxeq_dd:
-    cmp $9, %rax
+    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     jne 91f
     xor %eax, %eax
-91: cmp $9, %rcx
+91: @HBC_TAG_KIND@cmp $9, %rcx@HBC_TAG_END@
     jne 92f
     xor %ecx, %ecx
 92:
     # tag 4 (owned string) behaves exactly like tag 2 (borrowed string)
-    cmp $4, %rax
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
     jne 80f
     mov $2, %eax
-80: cmp $4, %rcx
+80: @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 81f
     mov $2, %ecx
-81: cmp %rcx, %rax
+81: @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
     jne 5f
-    cmp $2, %rax
+    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je 2f
-    cmp $1, %rax
+    @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@
     je 9f
     cmp %r8, %rdx
     jne 8f
@@ -19641,9 +20001,9 @@ hbc_dynxeq_dd:
     jne 8f
     inc %r9
     jmp 3b
-5:  cmp $1, %rax
+5:  @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@
     je 8f
-    cmp $1, %rcx
+    @HBC_TAG_KIND@cmp $1, %rcx@HBC_TAG_END@
     je 8f
     jmp hbc_dynxeq_error
 8:  xor %eax, %eax
@@ -20179,7 +20539,7 @@ hbc_dfree:
     mov %r13, %rax
     shl $4, %rax
     mov (%rbx,%rax), %rcx
-    cmp $4, %rcx
+    @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 883f
     mov 8(%rbx,%rax), %rdi
     test %rdi, %rdi
@@ -20440,7 +20800,7 @@ hbc_asize:
     jge 76f
     mov %r9, %r10
     shl $4, %r10
-    cmpq $2, (%r13,%r10)
+    @HBC_TAG_KIND@cmpq $2, (%r13,%r10)@HBC_TAG_END@
     jne 82f
     mov 8(%r13,%r10), %rdi
     test %rdi, %rdi
@@ -21338,3 +21698,20 @@ hbc_date_today:
     leave
     ret
 "#;
+
+#[cfg(test)] mod dbf_tag_accessor_tests {
+    use super::*;
+    #[test] fn standalone_operands_not_address_registers() {
+        for (original, low) in [
+            ("cmp $12, %rax", "cmpb $12, %al"),
+            ("cmp %rcx, %rax", "cmpb %cl, %al"),
+            ("test %r10, %r10", "testb %r10b, %r10b"),
+            ("cmpq $8, -16(%rbp)", "cmpb $8, -16(%rbp)"),
+            ("cmpq $4, (%r11,%r10)", "cmpb $4, (%r11,%r10)"),
+        ] {
+            let wrapped = format!("@HBC_TAG_KIND@{}@HBC_TAG_END@",original);
+            assert_eq!(finalize_tag_kind_accessors(wrapped.clone(),false),original);
+            assert_eq!(finalize_tag_kind_accessors(wrapped,true),low);
+        }
+    }
+}
