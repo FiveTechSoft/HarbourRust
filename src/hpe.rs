@@ -179,7 +179,13 @@ pub fn write_pe(img: &PeImage) -> Vec<u8> {
     w32(&mut out, 0);                         // CheckSum: se parchea al final
     w16(&mut out, 3);                         // Subsystem: Windows CUI
     w16(&mut out, 0x160);                     // DllCharacteristics
-    w64(&mut out, 0x200000); w64(&mut out, 0x1000);   // stack reserve/commit
+    // Stack reserve/commit: commit the full 2 MB reserve. A commit of
+    // one page made a frame larger than the initial committed region
+    // fault with 0xC0000005 when a single `sub rsp, size` jumped past
+    // the untouched pages (issue #1: literal arrays of a few thousand
+    // elements live in the frame); with the whole reserve committed the
+    // write lands on allocated memory at any frame size within 2 MB.
+    w64(&mut out, 0x200000); w64(&mut out, 0x200000);   // stack reserve/commit
     w64(&mut out, 0x100000); w64(&mut out, 0x1000);   // heap reserve/commit
     w32(&mut out, 0);                         // LoaderFlags
     w32(&mut out, 16);                        // NumberOfRvaAndSizes
