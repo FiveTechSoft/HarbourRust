@@ -1742,3 +1742,5 @@ pos tests/try-catch/try_break_value.prg \nin try\ncaught: sentinel\nafter end
 pos tests/try-catch/try_nested_crossfn.prg \nouter try\ninner try\ninner finally\nouter caught: Bound error: array access\nouter finally\nafter end
 neg tests/try-catch/try_return_neg.prg E0025: invalid RETURN from within of SEQUENCE code
 neg tests/try-catch/try_exit_neg.prg E0025: invalid EXIT from within of SEQUENCE code
+streams tests/hash-logical/haskey.prg tests/hash-logical/haskey.stdout tests/hash-logical/haskey.stderr
+neg tests/hash-logical/haskey-int-neg.prg arithmetic
