@@ -139,6 +139,60 @@ Declared F2 limits:
   rejected by Harbour with BASE/3012; the control item becomes a
   ValType "B" after hb_threadOnceInit. Needs more API research.
 
+## F4: hb_mutexSubscribeNow, hb_threadOnce
+
+- `hb_mutexSubscribeNow(m, timeoutSecs, @val)` -> logical (oracles
+  mt20-mt22, support probes sn_a..sn_g): FLUSHES the currently queued
+  notifications, then waits only for FUTURE ones ("from now"). A
+  future `hb_mutexNotify` delivers (mt21) and a future
+  `hb_mutexNotifyAll` delivers (mt22). On timeout `@val` is UNTOUCHED
+  and the subscription is disarmed - a later notify queues normally
+  (sn_d). The wait path is hb_mutexSubscribe's: same event word, same
+  broadcast generations, no interaction with the lock.
+- `hb_threadOnce(@control [, bBlock])` -> logical (oracles
+  ton01-ton03): the control starts NIL; the first caller runs the
+  zero-argument block IN ITS OWN THREAD and gets .T.; concurrent
+  callers BLOCK until the block finishes and get .F.; later callers
+  get .F. immediately. The block's return is discarded and the
+  control becomes logical .T. (ValType "U" -> "L", ton01). The 1-arg
+  form CLAIMS the slot without running anything: winner gets .T., the
+  control becomes logical .T., and a later 2-arg call returns .F.
+  without executing its block (ton03). Share the control between
+  threads through a function-local NIL STATIC (a persistent Dyn
+  casilla; ton02) - file-scope STATICs stay the existing named
+  rejection.
+- Correction to the F3 note above: further probing (to_a..to_g)
+  showed the 1-arg form is NOT an error; the BASE/3012 seen earlier
+  came from combining `hb_threadOnceInit(@once, 42)` (a different
+  initializer that stores a plain value) with a later
+  `hb_threadOnce(@once)` on that NUMERIC control. The true semantics
+  are implemented as described in this section.
+- Harbour destructor artifact, declared divergence: if a
+  SubscribeNow flush discards a queued value, or a SubscribeNow wait
+  expires unsatisfied, THIS Harbour build raises BASE/1302 "Object
+  destructor failure: Reference to freed block" when the mutex is
+  destroyed at process exit (an interactive error box that hangs
+  headless; sn_a/sn_d/sn_e/sn_f/sn_g/mt20). HarbourRust exits
+  cleanly. mt20 therefore gates as a prefix oracle: Harbour runs
+  under `timeout` and its stdout must START with HarbourRust's
+  complete output.
+
+## Declared F4 limits
+
+- `hb_threadOnceInit` is NOT implemented: it is a different
+  initializer (`hb_threadOnceInit(@ctl, value)` stores the plain
+  value, ValType follows it). A control that starts non-NIL
+  non-logical is undefined in this increment (Harbour raises
+  BASE/3012 when such a control reaches hb_threadOnce).
+- An error raised by the once-block mid-run belongs to the declared
+  thread-error family (stderr + call stack; the process reports the
+  error). A recursive hb_threadOnce on the same control from the
+  same thread deadlocks (same class as Harbour). Both declared, not
+  oracled.
+- Nodes dropped by a SubscribeNow flush leak with their payloads -
+  the same lifecycle class as consumed nodes (MutexBlocks live until
+  process exit, the declared F2 limit).
+
 ## Declared F3 limits
 
 - hk-memvar: MEMVARs are not in the subset (their declarations are
@@ -155,8 +209,8 @@ Declared F2 limits:
 
 ## Not yet (later increments)
 
-`hb_threadOnce`, per-thread MEMVARs (hk-memvar) and Set(_SET_*)
-(hk-set), per-thread workareas for DBF, `hb_mutexSubscribeNow`.
+per-thread MEMVARs (hk-memvar) and Set(_SET_*)
+(hk-set), per-thread workareas for DBF, `hb_threadOnceInit`.
 
 ## Object runtime under threads
 
@@ -171,7 +225,10 @@ performance cost of the thread support is a structural 0.0%).
 
 ## Evidence
 
-`tests/threads/` runs the 31-probe same-source differential gate against
+`tests/threads/` runs the 37-probe same-source differential gate against
 real Harbour (`hbmk2 -mt`): every probe compiles under both, runs under
 both, and stdout+stderr compare byte for byte (10 F1 thread probes +
-14 F2 mutex probes + 7 F3 probes).
+14 F2 mutex probes + 7 F3 probes + 6 F4 probes). One F4 probe
+(mt20_subnow_flush) gates as a prefix oracle because Harbour hits its
+declared BASE/1302 destructor artifact after a flushed SubscribeNow;
+the other 36 compare byte for byte.
