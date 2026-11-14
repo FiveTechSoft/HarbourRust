@@ -1,0 +1,2 @@
+streams tests/string-cache/capacity.prg tests/string-cache/capacity.stdout tests/string-cache/empty.stderr
+streams tests/string-cache/capacity-memory.prg tests/string-cache/capacity-memory.stdout tests/string-cache/empty.stderr

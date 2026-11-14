@@ -10888,7 +10888,7 @@ hbc_tls_init:
     mov $256, %rdi
     call hbc_alloc
     mov %rax, %rbx
-    add $56, %rax
+    add $128, %rax
     mov %rax, 48(%rbx)
     lea hbc_thr_main_block(%rip), %rax
     mov %rax, 120(%rbx)
@@ -10939,7 +10939,7 @@ hbc_thread_start:
     jae .Lthrs_fail1
     mov %rax, %r13
     mov %rax, 56(%rbx)
-    lea 56(%rax), %r11
+    lea 128(%rax), %r11
     mov %r11, 48(%r13)
     mov %rbx, 120(%r13)
     movq $0, 64(%rbx)
@@ -20984,20 +20984,31 @@ hbc_strcpy:
     sub $8, %rsp
     mov %rdi, %r13
     mov %rsi, %r12
-    # Bounded cache of logically FREE short-string blocks only.
-    # Eight slots indexed by capacity mod8, exact capacity match.
-    # Remove before reuse: every live allocation still has one owner.
-    cmp $256, %rsi
+    # Bounded exact-capacity cache of logically FREE strings <=64 KiB.
+    # Eight buckets, two ways each; at most 16 * 65552 retained bytes.
+    # Unlink before reuse: every live allocation still has one owner.
+    cmp $65536, %rsi
     ja .Lstr_cache_miss
     mov %rsi, %rcx
     and $7, %ecx
+    shl $4, %rcx
     lea hbc_str_cache(%rip), %r10
-    mov (%r10,%rcx,8), %rax
+    add %rcx, %r10
+    mov (%r10), %rax
+    test %rax, %rax
+    jz .Lstr_cache_second
+    cmp %rsi, (%rax)
+    jne .Lstr_cache_second
+    movq $0, (%r10)
+    jmp .Lstr_cache_take
+.Lstr_cache_second:
+    mov 8(%r10), %rax
     test %rax, %rax
     jz .Lstr_cache_miss
     cmp %rsi, (%rax)
     jne .Lstr_cache_miss
-    movq $0, (%r10,%rcx,8)
+    movq $0, 8(%r10)
+.Lstr_cache_take:
     add $16, %rsi
 @REG_CACHE_ALLOC@    incq hbc_mem_allocs(%rip)
     jmp .Lstr_cache_got
@@ -21008,6 +21019,14 @@ hbc_strcpy:
     mov %rax, %rbx
     mov %r12, (%rbx)
     mov %r12, 8(%rbx)
+    cmp $128, %r12
+    jb .Lstr_copy_small
+    mov %r13, %rsi
+    lea 16(%rbx), %rdi
+    mov %r12, %rcx
+    rep movsb
+    jmp 71f
+.Lstr_copy_small:
     xor %ecx, %ecx
 70: cmp %r12, %rcx
     jae 71f
@@ -22770,7 +22789,7 @@ hbc_str_cache_flush:
     jnz hbc_os_bad
 .Lcache_flush_l_skip:
     inc %r12
-    cmp $8, %r12
+    cmp $16, %r12
     jb .Lcache_flush_l_next
     pop %r13
     pop %r12
@@ -23019,14 +23038,22 @@ hbc_freestr:
     mov -16(%rdi), %rsi
     add $16, %rsi
     sub $16, %rdi
-@REG_FREE_L@    cmp $272, %rsi
+@REG_FREE_L@    cmp $65552, %rsi
     ja .Lstr_release_l
     mov (%rdi), %rcx
     and $7, %ecx
+    shl $4, %rcx
     lea hbc_str_cache(%rip), %r11
-    cmpq $0, (%r11,%rcx,8)
+    add %rcx, %r11
+    cmpq $0, (%r11)
+    jne .Lstr_free_second_l
+    mov %rdi, (%r11)
+    incq hbc_mem_frees(%rip)
+    ret
+.Lstr_free_second_l:
+    cmpq $0, 8(%r11)
     jne .Lstr_release_l
-    mov %rdi, (%r11,%rcx,8)
+    mov %rdi, 8(%r11)
     incq hbc_mem_frees(%rip)
     ret
 .Lstr_release_l:
@@ -23404,7 +23431,7 @@ hbc_asize:
     .align 8
 hbc_mem_allocs: .quad 0
 hbc_mem_frees:  .quad 0
-hbc_str_cache: .zero 64
+hbc_str_cache: .zero 128
 
     .text
 # --- TRY/CATCH sequence stack -------------------------------------------
@@ -25381,7 +25408,7 @@ hbc_str_cache_flush:
     jz hbc_os_bad
 .Lcache_flush_w_skip:
     inc %r12
-    cmp $8, %r12
+    cmp $16, %r12
     jb .Lcache_flush_w_next
     add $48, %rsp
     pop %r13
@@ -25625,15 +25652,25 @@ hbc_freestr:
     push %rbp
     mov %rsp, %rbp
     sub $48, %rsp
-@REG_SFREE_W@    cmpq $256, -16(%rdi)
+@REG_SFREE_W@    cmpq $65536, -16(%rdi)
     ja .Lstr_release_w
     mov -16(%rdi), %rcx
     and $7, %ecx
+    shl $4, %rcx
     lea hbc_str_cache(%rip), %r11
-    cmpq $0, (%r11,%rcx,8)
+    add %rcx, %r11
+    cmpq $0, (%r11)
+    jne .Lstr_free_second_w
+    lea -16(%rdi), %rax
+    mov %rax, (%r11)
+    incq hbc_mem_frees(%rip)
+    leave
+    ret
+.Lstr_free_second_w:
+    cmpq $0, 8(%r11)
     jne .Lstr_release_w
     lea -16(%rdi), %rax
-    mov %rax, (%r11,%rcx,8)
+    mov %rax, 8(%r11)
     incq hbc_mem_frees(%rip)
     leave
     ret
@@ -26031,7 +26068,7 @@ hbc_asize:
     .align 8
 hbc_mem_allocs: .quad 0
 hbc_mem_frees:  .quad 0
-hbc_str_cache: .zero 64
+hbc_str_cache: .zero 128
 
     .text
 # --- TRY/CATCH sequence stack -------------------------------------------

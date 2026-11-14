@@ -49,7 +49,7 @@ ASM
 97: cmpq $0, (%r12,%r13,8)
     jne hbc_reg_bad
     inc %r13
-    cmp $8, %r13
+    cmp $16, %r13
     jb 97b
     add $32, %rsp
     pop %r13
