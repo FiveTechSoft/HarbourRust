@@ -45,6 +45,7 @@ reorganization. Relative links in the moved README are adjusted for its new loca
 - [Console LF boundaries](CONSOLE-LF-2026-11-14.md); [ProcName/ProcLine metadata](PROC-METADATA-2026-11-14.md); [hash string ownership](HASH-STRING-OWNERSHIP-2026-11-14.md).
 - [hb_HHasKey logical value](HASH-HASKEY-LOGICAL-2026-11-14.md).
 - [SubStr byte-string support and limits](SUBSTR-2026-11-14.md).
+- [Compile-time scaling profile](COMPILE-SCALING-PROFILE-2026-11-14.md): where compile time goes on statement-heavy sources.
 - [VAS-backed flat arrays](vas-arrays-v1.md); [dynamic ownership](DESIGN-dynamic-ownership.md); [hash design](DESIGN-hashes.md); [NIL tag](DESIGN-nil-tag.md).
 - [C Extend bridge](EXTEND-BRIDGE.md); [H2 binding](EXTEND-BRIDGE-H2-BINDING.md); [H2 callbacks](EXTEND-BRIDGE-H2-CALLBACKS.md).
 - [Differential method](DIFFERENTIAL.md); [preprocessor F0](PP-F0.md); [string concat benchmark](BENCH-strcat.md).
