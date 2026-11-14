@@ -24,7 +24,6 @@ for i,(a,b)in enumerate([(x,y)for x,y in [('0.0','-0.0'),('1.25','2.5'),('2.5','
 neg={
 'runtime-add':'LOCAL x:=1.25\n? x+1.0',
 'runtime-zero-div':'LOCAL x:=1.25\n? x/0.0',
-'mixed-local':'LOCAL x:=1\nx:=1.25\n? x',
 'dec17':'? 0.12345678901234567',
 'dead-arithmetic':'IF .F.\nLOCAL x:=1.25\n? x+2.0\nENDIF',
 'unused-arithmetic':'RETURN\nFUNCTION Never()\nLOCAL x:=1.25\nRETURN x+1.0',
@@ -34,7 +33,6 @@ neg={
 # five F64 arguments in eight GPR words. This is a deliberate no-output reject.
 neg['five-floats']='? Last(1.0,2.0,3.0,4.0,5.0)\nRETURN\nFUNCTION Last(a,b,c,d,e)\n'+''.join(f'IF {x}<0.0\nRETURN 0.0\nENDIF\n'for x in'abcde')+'RETURN e'
 neg['mixed-compare']='LOCAL a:=1\nLOCAL b:=1.0\n? a=b'
-neg['mixed-earlier-function']='LOCAL x:=1\nx:=1.25\n? x\nRETURN\nFUNCTION Last()\nRETURN 1.25'
 neg['unused-dec17']='RETURN\nFUNCTION Never()\nRETURN 0.12345678901234567'
 def src(body):return 'FUNCTION Main()\n'+body+('\n'if '\nFUNCTION 'in body else '\nRETURN\n')
 def run(*args):return subprocess.run(list(map(str,args)),capture_output=True)

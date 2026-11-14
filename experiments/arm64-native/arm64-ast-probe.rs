@@ -10,6 +10,8 @@ mod code;
 mod compose;
 #[path = "numeric/decimal-image.rs"]
 mod decimal;
+#[path = "numeric/decimal-mixed.rs"]
+mod mixedformat;
 #[path = "pair-print.rs"]
 mod pair_print;
 #[path = "arm64-runtime.rs"]
@@ -23,6 +25,7 @@ use code::Code;
 enum K {
     Int,
     Float,
+    Mixed,
     Bool,
     Text,
     Void,
@@ -154,6 +157,9 @@ impl E<'_> {
             }
             Expr::Set(n, e) => {
                 let (k, o) = self.find(n)?;
+                if k == K::Mixed {
+                    return Err("mixed-AST inline assignment expression unavailable".into());
+                }
                 if self.expr(e)? != k {
                     return Err("ARM64 scalar experiment: assignment kind mismatch".into());
                 }
@@ -293,11 +299,14 @@ impl E<'_> {
             self.location(s)?;
             match s {
                 Stmt::Local(_, n, e) => {
+                    let mut k = self.expr(e)?;
                     if self.mixed.contains(n) {
-                        return Err("pair-AST mixed numeric LOCAL tagging unavailable".into());
+                        if !matches!(k, K::Int | K::Float | K::Mixed) {
+                            return Err("mixed-AST local nonnumeric seed".into());
+                        }
+                        k = K::Mixed;
                     }
-                    let k = self.expr(e)?;
-                    if !matches!(k, K::Int | K::Bool | K::Float) {
+                    if !matches!(k, K::Int | K::Bool | K::Float | K::Mixed) {
                         return Err(
                             "ARM64 scalar experiment: locals must be integer, logical or finite F64".into()
                         );
@@ -315,7 +324,8 @@ impl E<'_> {
                 }
                 Stmt::Assign(_, n, e) => {
                     let (k, o) = self.find(n)?;
-                    if self.expr(e)? != k {
+                    let rhs = self.expr(e)?;
+                    if rhs != k && !(k == K::Mixed && matches!(rhs, K::Int | K::Float | K::Mixed)) {
                         return Err("ARM64 scalar experiment: assignment kind".into());
                     }
                     self.store(o)?;
@@ -353,6 +363,7 @@ impl E<'_> {
                             match k {
                                 K::Int => "rt_i64",
                                 K::Float => "pair_print_f64",
+                                K::Mixed => "pair_print_mixed",
                                 K::Bool => "rt_bool",
                                 K::Text => "rt_write",
                                 K::Void => unreachable!(),

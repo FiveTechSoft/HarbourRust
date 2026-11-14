@@ -7,7 +7,7 @@ from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument('--repo',type=Path,required=True);p.add_argument('--without-emulator',action='store_true');a=p.parse_args()
 r=Path(__file__).resolve().parent;repo=a.repo.resolve();rustc=os.environ.get('RUSTC','rustc')
 assert r!=repo/'experiments'/'arm64-native','Copy this experiment outside the checkout first'
-assert hashlib.sha256((repo/'src'/'hbc.rs').read_bytes()).hexdigest()=='7fd6b19bd83f33fe2dbdde1210ad8b3c4a74ed4e7e32dfcb0abe75dfb6311ceb','Frontend changed: review/rebase the isolated harness instead of patching an unknown version'
+assert hashlib.sha256((repo/'src'/'hbc.rs').read_bytes()).hexdigest()=='6408c8e7845d0e461aa5f9fdec7b7cd99839b6df54f48c0387ae56c4fe1f487d','Frontend changed: review/rebase the isolated harness instead of patching an unknown version'
 os.chdir(r)
 def run(*cmd):subprocess.run(list(map(str,cmd)),check=True)
 run(sys.executable,'derive-sha-constants.py')
@@ -33,7 +33,8 @@ if not a.without_emulator:
  run(sys.executable,'test-trace-runtime.py')
  run(sys.executable,'test-ast-trace.py')
  run(sys.executable,'test-pair-source.py')
- for folder in ['trace-fixtures-out','ast-trace-cases','pair-source-cases']:
+ run(sys.executable,'test-mixed-source.py')
+ for folder in ['trace-fixtures-out','ast-trace-cases','pair-source-cases','mixed-source-cases']:
   for f in (r/folder).glob('*.arm'):run(sys.executable,'check_reference.py',f)
  for f in (r/'scalar-battery').glob('*.arm'):run(sys.executable,'check_reference.py',f)
  # Independent parser is optional; it is not used by generation or our verifier.

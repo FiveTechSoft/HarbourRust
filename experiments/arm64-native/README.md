@@ -248,3 +248,49 @@ cleanup/unwinding, runtime integer overflow at AST level, F64 arithmetic,
 NumLocal, numeric C ABI or actual Mac execution. Keep that distinction when
 reporting the increment: numeric kernels and source literal transport are
 different layers, and their test counts are not compatible-program totals.
+
+
+## Mixed numeric LOCAL storage follow-up
+
+On base `7695c5d9154438333563e0a90fcad6f94cd0adfe`, the research harness
+also accepts mixed numeric LOCAL storage, copies and assignments across
+I64/F64 branches. The frontend's per-function numeric prescan selects a mixed
+slot before generation, so assigning another numeric kind never changes its
+16-byte layout. Runtime copies preserve both payload and format words. A copy
+of a mixed local remains mixed even if its immediate declaration expression
+looks like one kind. Branch generation retains that stable storage kind; loop
+updates use the same slots. Ordinary fixed-type scalar/call rules are unchanged.
+
+Format word 1 remains an integer literal/copy and prints through the existing
+integer helper. Floating formats retain their width/decimals and print through
+the already-tested own mixed-integral composer, with its explicit FCVTZS bounds.
+This preserves the distinct ordinary-F64 versus mixed-local formatting rules,
+including integral floating values. Format 0 is computed-integer provenance;
+it cannot be created by this copy-only source boundary, and the private print
+entry fails closed on it rather than print with incorrect literal width.
+That is a reachability claim for this generated entry, not general kernel
+support: the separate numeric kernels already use format 0. No runtime arithmetic
+expression is admitted, so no new source path produces overflow or zero divide.
+The finite-seed/16-decimal print buffer and FP-state contracts remain in force.
+
+Mixed locals cannot be arithmetic/comparison operands in this increment, pass
+to calls/by-reference, or return. Original frontend rejections remain where
+applicable; the harness rejects other uncovered uses before output creation.
+In particular, this is not a new NumLocal return/parameter ABI, numeric coercion
+rule, caught error protocol, TRY/CATCH/FINALLY or cleanup/unwinding mechanism.
+Inline assignment-expression to mixed storage is not admitted. Those are still
+separate steps, not consequences of a working storage slot.
+
+Fresh mixed-storage cohort: 20 programs in three syscall/FP modes exact against
+current native x86 output, including I64->F64->I64 and reverse, independent
+copies before/after kind changes, both branch arms, loop updates, per-function
+same-name locals, signedzero/decimal-width boundaries, integer extrema and
+integral-F64 mixed display. 11 negative programs reject with absent-output and
+existing-file canaries for runtime arithmetic/dead arithmetic, comparisons,
+return, argument/by-reference escape, inline mixed assignment expressions,
+nonnumeric assignment and precision17.
+The previous F64 cohort remains 23 programs x3; its two mixed-local negatives
+move to this positive scope, leaving 9 old negatives. Previous scalar 35x3 and
+21 negatives, trace/source-origin/frame checks and production rejection remain.
+All measurements use instruction emulation/syscall models and current x86
+output, not a fresh Harbour VM oracle or actual Apple platform result.

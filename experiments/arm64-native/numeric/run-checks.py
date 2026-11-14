@@ -4,7 +4,7 @@ import argparse,subprocess,os,sys,hashlib
 p=argparse.ArgumentParser();p.add_argument('--repo',type=Path,required=True);a=p.parse_args()
 r=Path(__file__).resolve().parent;repo=a.repo.resolve()
 assert r!=repo/'experiments'/'arm64-native'/'numeric','Copy the entire arm64-native experiment outside the checkout first'
-assert hashlib.sha256((repo/'src'/'hbc.rs').read_bytes()).hexdigest()=='7fd6b19bd83f33fe2dbdde1210ad8b3c4a74ed4e7e32dfcb0abe75dfb6311ceb','Frontend helper changed; rebase the x86-reference extraction deliberately'
+assert hashlib.sha256((repo/'src'/'hbc.rs').read_bytes()).hexdigest()=='6408c8e7845d0e461aa5f9fdec7b7cd99839b6df54f48c0387ae56c4fe1f487d','Frontend helper changed; rebase the x86-reference extraction deliberately'
 os.environ['HARBOURRUST_REPO']=str(repo);os.chdir(r);rustc=os.environ.get('RUSTC','rustc')
 def run(*args):subprocess.run(list(map(str,args)),check=True)
 run(rustc,'--edition=2021','-O','-C','strip=symbols','build-kernels.rs','-o','build-kernels')
