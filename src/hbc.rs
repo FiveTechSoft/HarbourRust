@@ -1352,7 +1352,12 @@ impl P {
                     }
                     let mut body = Vec::new();
                     loop {
-                        body.push(self.expr()?);
+                        // Full expression level: comparisons and logical
+                        // forms belong in a block body (the ERP evaluation's
+                        // `{|x| x > 2}`, FiveTechSoft/HarbourRust#1 blocker;
+                        // the additive-level expr() stopped before the
+                        // comparison operator).
+                        body.push(self.assign_expr()?);
                         match self.bump() {
                             Some(Tok::Comma) => continue,
                             Some(Tok::RBrace) => break,
