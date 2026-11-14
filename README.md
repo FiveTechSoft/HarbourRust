@@ -122,6 +122,26 @@ work in progress. No unmeasured speed or capability claims are made.
   approximate while threads run.
   See [scope and limits](docs/THREADS.md).
 
+- **Memory paths (14 November).** Bounded persistent `STATIC` roots (scalars and
+  flat scalar arrays) are published; file-scope `STATIC` remains a named
+  rejection. VAS-backed flat arrays cover exactly 42 of the 1661 manifest
+  programs with compile and runtime opt-outs; conservative scope arenas cover
+  proven non-escaping owned-string unions with `HB_ARENA=off` and `--no-arena`
+  fallbacks. Neither replaces general dynamic-array ownership.
+  See [VAS arrays](docs/vas-arrays-v1.md) and [dynamic ownership](docs/DESIGN-dynamic-ownership.md).
+- **Diagnostics and hash ownership (14 November).** `ProcName`/`ProcLine` walk
+  ancestor activations through 48-byte native records; the hash getter,
+  default, set and value paths return owned string temporaries at the
+  language-call boundary, with 112/112 measured channel checks. These are
+  bounded increments, not universal lifetime or Harbour-parity claims.
+  See [ProcName metadata](docs/PROC-METADATA-2026-11-14.md) and [hash ownership](docs/HASH-STRING-OWNERSHIP-2026-11-14.md).
+- **Console LF boundaries and host target (14 November).** Formatted console
+  strings segment at LF, dropping an immediately preceding CR and trailing
+  segment spaces; raw channels and evaluation order are unchanged. `hbc` now
+  starts with the compiler host as its target (ELF on Linux, PE32+ on
+  Windows); explicit `--target` overrides it and older binaries need a rebuild.
+  See [console LF](docs/CONSOLE-LF-2026-11-14.md) and [host target](docs/HOST-TARGET-DEFAULT.md).
+
 ## What the native path does not need
 
 | Component | HarbourRust ordinary AOT | Harbour pcode | Harbour `-gc3` |
