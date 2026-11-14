@@ -33,6 +33,10 @@ Additional suites and gates:
 - `procmeta/` and `hash-ownership/`: exact stdout/stderr fixtures used by
   `tools/check_procmeta.py` and `tools/check_hash_ownership.py`
   (`--compiler`, `--output`, optional `--wine`).
+- `tools/check_host_target_windows.py`: native-Windows host-target gate
+  (`--compiler`, `--repo`, `--out`); checks flagless PE default, explicit
+  Windows and explicit Linux output, and runs the generated EXE. No Wine or
+  external toolchain required.
 - `tools/check_host_target.py`: host-target default matrix; needs separate
   Linux and Windows compiler binaries plus Wine (`--linux-compiler`,
   `--windows-compiler`, `--wine`, `--wine-prefix`, `--output`).
