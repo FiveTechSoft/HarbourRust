@@ -510,6 +510,7 @@ thread_local! {
     static CUR_FN: std::cell::RefCell<String> = std::cell::RefCell::new(String::new());
     static IN_BLOCK: std::cell::Cell<bool> = std::cell::Cell::new(false);
     static TRACE_LINE: std::cell::Cell<usize> = std::cell::Cell::new(0);
+    static PROC_METADATA_LINES: std::cell::Cell<bool> = std::cell::Cell::new(true);
     static TRACE_OFFSET: std::cell::Cell<usize> = std::cell::Cell::new(0);
 }
 fn new_block_id() -> usize { BLOCK_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst) }
@@ -526,11 +527,50 @@ fn trace_location(name: &str, line: usize, strs: &mut Vec<String>, out: &mut Str
     let off = TRACE_OFFSET.with(|o| o.get());
     // r11 is scratch in generated code; flags and value registers survive.
     out.push_str(&format!("    lea .Lstr{}(%rip), %r11\n    mov %r11, -{}(%rbp)\n    movq ${}, -{}(%rbp)\n", id, off - 8, len, off - 16));
+    if PROC_METADATA_LINES.with(|v|v.get()) { out.push_str(&format!("    movq ${}, -{}(%rbp)\n", proc_line, off - 24)); }
 }
-fn trace_link(off: usize, out: &mut String) {
+fn trace_link(off: usize, strs: &mut Vec<String>, out: &mut String) {
     TRACE_OFFSET.with(|o| o.set(off));
     out.push_str(&format!("    mov hbc_trace_top(%rip), %r11\n    mov %r11, -{}(%rbp)\n    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n    lea -{}(%rbp), %r11\n    mov %r11, hbc_trace_top(%rip)\n", off, off - 8, off - 16, off));
+    // Borrowed canonical language name. Diagnostic text layout stays unchanged.
+    let name = PROC_NAME.with(|v| v.borrow().clone());
+    let ix = strs.len(); let len = name.len(); strs.push(name);
+    out.push_str(&format!("    movq $0, -{}(%rbp)\n    lea .Lstr{}(%rip), %r11\n    mov %r11, -{}(%rbp)\n    movq ${}, -{}(%rbp)\n", off - 24, ix, off - 32, len, off - 40));
 }
+// Program-wide fail-closed proof: skipping line stores is allowed only when
+// every checked AST node is known not to invoke stack introspection. A future
+// expression/statement kind lands in the conservative `true` arm. Unknown
+// builtins, function references, Eval/macros and externs keep metadata enabled.
+fn proc_metadata_needed(funcs: &[Func], externs: bool) -> bool {
+    fn expr(e: &Expr, funcs: &[Func]) -> bool {
+        match e {
+            Expr::Int(_) | Expr::Float(..) | Expr::Str(_) | Expr::Log(_) | Expr::Nil | Expr::Var(_) => false,
+            Expr::Bin(_,a,b) | Expr::Cmp(_,a,b) | Expr::LAnd(a,b) | Expr::LOr(a,b) => expr(a,funcs)||expr(b,funcs),
+            Expr::LNot(a) | Expr::Set(_,a) => expr(a,funcs),
+            Expr::Call(id,args) => {
+                if ["procname", "procline", "eval"].iter().any(|n|is_builtin(id,n)) { return true; }
+                let direct = funcs.iter().any(|f| f.name == *id);
+                let safe_builtin = ["str", "len", "hb_ntos", "chr", "asc", "replicate", "empty", "round", "min", "max", "qout", "qqout", "outstd", "outerr"].iter().any(|n|is_builtin(id,n));
+                (!direct && !safe_builtin) || args.iter().any(|a|expr(a,funcs))
+            }
+            _ => true,
+        }
+    }
+    fn stmts(ss:&[Stmt],funcs:&[Func])->bool {
+        ss.iter().any(|s|match s {
+            Stmt::Local(_,_,e)|Stmt::Static(_,_,e)|Stmt::Assign(_,_,e)|Stmt::CallStmt(_,e) => expr(e,funcs),
+            Stmt::Print(_,es,_) => es.iter().any(|e|expr(e,funcs)),
+            Stmt::Ret(_,e) => e.as_ref().map_or(false,|e|expr(e,funcs)),
+            Stmt::If(_,e,a,b) => expr(e,funcs)||stmts(a,funcs)||stmts(b,funcs),
+            Stmt::While(_,e,b) => expr(e,funcs)||stmts(b,funcs),
+            Stmt::For(_,_,a,b,_,ss) => expr(a,funcs)||expr(b,funcs)||stmts(ss,funcs),
+            Stmt::Exit(_)|Stmt::Loop(_) => false,
+            _ => true,
+        })
+    }
+    externs || funcs.iter().any(|f| stmts(&f.stmts,funcs))
+}
+
 fn trace_unlink(off: usize, out: &mut String) {
     out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov %r11, hbc_trace_top(%rip)\n", off));
 }
@@ -3887,7 +3927,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 if is_builtin(id, "hb_memcheck") {
                     return Ok(());
                 }
-                if is_builtin(id, "procline") { return Ok(()); }
+                if is_builtin(id, "procline") || is_builtin(id, "procname") {
+                    for a in args { pin_vars(f,a,Ty::I64,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
+                    return Ok(());
+                }
                 if is_builtin(id, "len") && !args.is_empty() {
                     match &args[0] {
                         Expr::Index(v, _) if is_param(f, v).is_some() => {
@@ -5020,21 +5063,21 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::Bool);
             }
-            if is_builtin(id, "procname") {
-                if args.len() > 1 || (args.len() == 1 && !matches!(&args[0], Expr::Int(v) if v == "0")) {
-                    return Err(format!("line {}: `ProcName` supports only no argument or literal zero (current frame); ancestor/dynamic levels are not in this increment", n));
+            if is_builtin(id, "procname") || is_builtin(id, "procline") {
+                if args.len() > 1 {
+                    return Err(format!("line {}: `{}` supports only no argument or one I64 level; current frame defaults to zero", n, id));
                 }
-                return Ok(Ty::Str);
+                if let Some(a) = args.first() {
+                    if type_expr(a,env,sigs,n)? != Ty::I64 {
+                        return Err(format!("line {}: `{}` level must be I64 in this increment", n,id));
+                    }
+                    apply_moves(a,env,sigs,false);
+                }
+                return Ok(if is_builtin(id,"procname") { Ty::Str } else { Ty::I64 });
             }
             if is_builtin(id, "hb_eol") {
                 if !args.is_empty() { return Err(format!("line {}: `hb_eol` takes no arguments in this increment", n)); }
                 return Ok(Ty::Str);
-            }
-            if is_builtin(id, "procline") {
-                if args.len() > 1 || (args.len() == 1 && !matches!(&args[0], Expr::Int(v) if v == "0")) {
-                    return Err(format!("line {}: `ProcLine` supports only no argument or literal zero (current frame); ancestor/dynamic levels are not in this increment", n));
-                }
-                return Ok(Ty::I64);
             }
             if is_builtin(id, "hb_memcheck") {
                 // alloc/free balance counters (test harness only).
@@ -9265,7 +9308,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id, "hb_memcheck") {
                 return;
             }
-            if is_builtin(id, "procline") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return; }
+            if is_builtin(id, "procline") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { for a in args { apply_moves(a,env,sigs,false); } return; }
             if is_bitindex(id) { apply_moves(&args[0],env,sigs,false); return; }
             if is_bitop(id) { for a in args { apply_moves(a, env, sigs, false); } return; }
             if is_builtin(id, "min") || is_builtin(id, "max") {
@@ -13439,19 +13482,15 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 _ => unreachable!("checked Empty shape"),
             }
         }
-        Expr::Call(id, _) if is_builtin(id, "procname") => {
-            let name = PROC_NAME.with(|v| v.borrow().clone());
-            let ix = strs.len(); let len = name.len(); strs.push(name);
-            out.push_str(&format!("    lea .Lstr{}(%rip), %rax\n    mov ${}, %edx\n", ix, len));
+        Expr::Call(id, args) if is_builtin(id, "procname") || is_builtin(id,"procline") => {
+            if let Some(level) = args.first() { cg_expr(level,env,sigs,strs,out,target); }
+            else { out.push_str("    xor %eax, %eax\n"); }
+            out.push_str(if is_builtin(id,"procname") { "    call hbc_procname\n" } else { "    call hbc_procline\n" });
         }
         Expr::Call(id, _) if is_builtin(id, "hb_eol") => {
             let eol = if matches!(target, Target::Windows) { "\r\n" } else { "\n" };
             let ix = strs.len(); strs.push(eol.to_string());
             out.push_str(&format!("    lea .Lstr{}(%rip), %rax\n    mov ${}, %edx\n", ix, eol.len()));
-        }
-        Expr::Call(id, _) if is_builtin(id, "procline") => {
-            let line = TRACE_LINE.with(|v| v.get());
-            out.push_str(&format!("    mov ${}, %rax\n", line));
         }
         Expr::Call(id, _) if is_builtin(id, "hb_memcheck") => {
             // alloc/free balance counters (test harness only).
@@ -18306,7 +18345,7 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
         lenv.push(CgLocal { name: p.clone(), ty: Ty::I64, off: frame });
     }
     let n = lenv.len();
-    let trace_off = frame + 32;
+    let trace_off = frame + 48;
     frame = trace_off;
     out.push_str(&format!("hbc_blk_{}:\n", id));
     out.push_str("    push %rbp\n    mov %rsp, %rbp\n");
@@ -18319,7 +18358,7 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
     // hb_PValue never reaches a codeblock body (named checker rejection);
     // the marker keeps a missed case a panic, never a silent miscompile.
     CUR_FN.with(|c| *c.borrow_mut() = format!("(blk){}", owner));
-    trace_link(trace_off, out);
+    trace_link(trace_off, strs, out);
     let block_line = TRACE_BLOCK_LINES.with(|m| m.borrow().get(&id).copied()).unwrap_or(0);
     trace_location(&format!("<block#{}>", id), block_line, strs, out);
     for (k, v) in lenv.iter().enumerate() {
@@ -18438,7 +18477,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         }
     }
 
-    let trace_off = frame + 32;
+    let trace_off = frame + 48;
     frame = trace_off;
     AVIEW_FRAME_END.with(|c| c.set((frame+15)&!15));
     let avframe=fresh_lbl();
@@ -18449,7 +18488,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     PROC_NAME.with(|v| *v.borrow_mut() = f.name.split("__br").next().unwrap_or(&f.name).to_ascii_uppercase());
     CUR_FN.with(|c| *c.borrow_mut() = f.name.clone());
     CUR_METHOD_CLASS.with(|c| c.set(match METHOD_CLASS.with(|m| m.borrow().get(&f.name).copied()) { Some(ci) => ci as i64, None => -1 }));
-    trace_link(trace_off, out);
+    trace_link(trace_off, strs, out);
     trace_location(&f.name, f.stmts.first().map(stmt_line).unwrap_or(0), strs, out);
     // Zero-init every dynamic-array slot (parameters included): the
     // epilogue and reassignment free any non-null slot, so every slot must
@@ -22739,6 +22778,55 @@ hbc_trace_top: .quad 0
 # line flush - newline, OutStd write, exit - not at statement end).
 hbc_pending: .quad 0
     .text
+# Language metadata helpers: RAX signed level; no calls, heap or helper frame.
+hbc_procname:
+    shl $32, %rax
+    sar $32, %rax
+    test %rax, %rax
+    js .Lprocname_negative
+    mov hbc_trace_top(%rip), %r11
+.Lprocname_walk:
+    test %r11, %r11
+    jz .Lprocname_empty
+    test %rax, %rax
+    jz .Lprocname_found
+    mov (%r11), %r11
+    dec %rax
+    jmp .Lprocname_walk
+.Lprocname_found:
+    mov 40(%r11), %rdx
+    mov 32(%r11), %rax
+    ret
+.Lprocname_negative:
+    lea .Lprocname_builtin(%rip), %rax
+    mov $8, %edx
+    ret
+.Lprocname_empty:
+    lea .Lprocname_builtin(%rip), %rax
+    xor %edx, %edx
+    ret
+hbc_procline:
+    shl $32, %rax
+    sar $32, %rax
+    test %rax, %rax
+    js .Lprocline_empty
+    mov hbc_trace_top(%rip), %r11
+.Lprocline_walk:
+    test %r11, %r11
+    jz .Lprocline_empty
+    test %rax, %rax
+    jz .Lprocline_found
+    mov (%r11), %r11
+    dec %rax
+    jmp .Lprocline_walk
+.Lprocline_found:
+    mov 24(%r11), %rax
+    ret
+.Lprocline_empty:
+    xor %eax, %eax
+    ret
+.Lprocname_builtin:
+    .ascii "PROCNAME"
 # hbc_print_trace: native diagnostic chain, youngest frame first.
 # No heap, no fixed depth array. Preserve all nonvolatile GPRs.
 hbc_print_trace:
@@ -25556,6 +25644,10 @@ fn main() {
     // types before check_stmts discards their scoped environments.
     vas::classify(&funcs, &sigs, &byref_params, &byref_locals,
         !no_vas && !llvm, !prog.externs.is_empty());
+
+    let procmeta = proc_metadata_needed(&funcs, !externs.is_empty());
+    PROC_METADATA_LINES.with(|v|v.set(procmeta));
+    if std::env::var("HBC_META_DUMP").is_ok() { eprintln!("PROC metadata-lines={}", procmeta); }
 
     // Pass 2: generate x86-64 assembly from the validated AST only.
     if llvm {

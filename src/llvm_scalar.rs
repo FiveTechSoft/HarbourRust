@@ -30,6 +30,7 @@ fn nil_only_body(ss:&[Stmt])->Option<bool>{
 fn effect_uses(e:&Expr,discard:bool,voids:&std::collections::BTreeSet<String>)->Result<(),String>{
  match e {
   Expr::Call(n,args)=>{
+   if (is_builtin(n,"procname")||is_builtin(n,"procline")) && !(args.is_empty()||matches!(&args[..],[Expr::Int(v)]if v=="0")){return Err("LLVM scalar: ProcName/ProcLine ancestor or dynamic level is not supported".into())}
    if voids.contains(n)&&!discard{return Err(format!("LLVM scalar: NIL-only effect call `{}` cannot be used as a value",n))}
    for(i,a)in args.iter().enumerate(){effect_uses(a,discard&&is_builtin(n,"iif")&&i>0,voids)?;}
   },

@@ -1010,10 +1010,10 @@ pos tests/t1015_original_procline.prg \nhello 1          3 Expected:           8
 pos tests/t1016_procline_calls_block.prg \n         2          2\n         7          7\n         4
 pos tests/t1017_procline_continuation.prg \n         3          3\n         4\n         5\n         7
 pos tests/t1018_procline_return_if.prg \n         2\n         4\n         7\n         9
-neg tests/t1019_procline_ancestor_neg.prg current frame
-neg tests/t1020_procline_dynamic_neg.prg current frame
+pos tests/t1019_procline_ancestor_neg.prg \n         0
+pos tests/t1020_procline_dynamic_neg.prg \n         3
 neg tests/t1021_procline_arity_neg.prg current frame
-neg tests/t1022_procline_effect_arg_neg.prg current frame
+pos tests/t1022_procline_effect_arg_neg.prg \n         3
 pos tests/t1023_procline_include.prg \n         2          4
 pos tests/t1024_original_mem.prg
 pos tests/t1025_default_unused_effect.prg \n         2 yes\noverride
@@ -1043,8 +1043,8 @@ neg tests/t1049_empty_arity_neg.prg `Empty` takes one argument
 neg tests/t1050_empty_moved_neg.prg use of moved value
 pos tests/t1051_procname_current.prg \nMAIN MAIN\nMIXCASE MIXCASE(b)MAIN\n         1
 pos tests/t1052_procname_return_block.prg \nWHO .F.          3(b)OTHER (b)OTHER\n         2 OTHER
-neg tests/t1053_procname_ancestor_neg.prg `ProcName` supports only no argument or literal zero
-neg tests/t1054_procname_effect_arg_neg.prg `ProcName` supports only no argument or literal zero
+pos tests/t1053_procname_ancestor_neg.prg
+pos tests/t1054_procname_effect_arg_neg.prg \nMAIN
 pos tests/t1055_procname_byref.prg \nSPECIAL          4
 pos tests/t1056_index_equal.prg \n        11          2          8          9          2\n.T. .T. .T.
 pos tests/t1057_nested_index_equal.prg \n         4          6          8\n.T. .T. .T.
@@ -1674,7 +1674,7 @@ streams tests/t1675_date_port_calendar_matrix.prg tests/t1675.out tests/t1675.er
 streams tests/t1676_date_port_output_matrix.prg tests/t1676.out tests/t1676.err
 pos tests/t1677_date_port_balance.prg \n.T.
 
-# Formatted console LF boundaries, independently measured.
+# Native stack metadata and LF boundary controls, independently measured.
 streams tests/procmeta/newline-oracle/crlf.prg tests/procmeta/newline-oracle/crlf.stdout tests/procmeta/newline-oracle/crlf.stderr
 streams tests/procmeta/newline-oracle/empty_lines.prg tests/procmeta/newline-oracle/empty_lines.stdout tests/procmeta/newline-oracle/empty_lines.stderr
 streams tests/procmeta/newline-oracle/internal.prg tests/procmeta/newline-oracle/internal.stdout tests/procmeta/newline-oracle/internal.stderr
@@ -1684,3 +1684,25 @@ streams tests/procmeta/newline-oracle/lfend.prg tests/procmeta/newline-oracle/lf
 streams tests/procmeta/newline-oracle/lfspaces.prg tests/procmeta/newline-oracle/lfspaces.stdout tests/procmeta/newline-oracle/lfspaces.stderr
 streams tests/procmeta/newline-oracle/raw.prg tests/procmeta/newline-oracle/raw.stdout tests/procmeta/newline-oracle/raw.stderr
 streams tests/procmeta/newline-oracle/trailing_lf.prg tests/procmeta/newline-oracle/trailing_lf.stdout tests/procmeta/newline-oracle/trailing_lf.stderr
+streams tests/procmeta/procname-oracle/blocks.prg tests/procmeta/procname-oracle/blocks.stdout tests/procmeta/procname-oracle/blocks.stderr
+streams tests/procmeta/procname-oracle/depth.prg tests/procmeta/procname-oracle/depth.stdout tests/procmeta/procname-oracle/depth.stderr
+streams tests/procmeta/procname-oracle/edges.prg tests/procmeta/procname-oracle/edges.stdout tests/procmeta/procname-oracle/edges.stderr
+streams tests/procmeta/procname-oracle/effects.prg tests/procmeta/procname-oracle/effects.stdout tests/procmeta/procname-oracle/effects.stderr
+streams tests/procmeta/procname-oracle/init.prg tests/procmeta/procname-oracle/init.stdout tests/procmeta/procname-oracle/init.stderr
+streams tests/procmeta/procname-oracle/procname.prg tests/procmeta/procname-oracle/procname.stdout tests/procmeta/procname-oracle/procname.stderr
+streams tests/procmeta/procname-oracle/recurse.prg tests/procmeta/procname-oracle/recurse.stdout tests/procmeta/procname-oracle/recurse.stderr
+neg tests/procmeta/reject_procline_arity.prg supports only no argument or one I64 level
+neg tests/procmeta/reject_procline_array.prg level must be I64
+neg tests/procmeta/reject_procline_bool.prg level must be I64
+neg tests/procmeta/reject_procline_date.prg level must be I64
+neg tests/procmeta/reject_procline_float.prg level must be I64
+neg tests/procmeta/reject_procline_nil.prg level must be I64
+neg tests/procmeta/reject_procline_str.prg level must be I64
+neg tests/procmeta/reject_procname_arity.prg supports only no argument or one I64 level
+neg tests/procmeta/reject_procname_array.prg level must be I64
+neg tests/procmeta/reject_procname_bool.prg level must be I64
+neg tests/procmeta/reject_procname_date.prg level must be I64
+neg tests/procmeta/reject_procname_float.prg level must be I64
+neg tests/procmeta/reject_procname_nil.prg level must be I64
+neg tests/procmeta/reject_procname_str.prg level must be I64
+streams tests/procmeta/procname-oracle/wide.prg tests/procmeta/procname-oracle/wide.stdout tests/procmeta/procname-oracle/wide.stderr
