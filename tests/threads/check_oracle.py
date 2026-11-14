@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Linux threads differential gate (F1 threads, F2 mutexes). Requires an external real Harbour hbmk2.
+"""Linux threads differential gate (F1 threads, F2 mutexes, F4 SubscribeNow + threadOnce). Requires an external real Harbour hbmk2.
 Every probe is compiled by real Harbour (with -mt) and by HarbourRust from the
 same source; both executables run and their stdout/stderr are compared byte for
 byte. Probes are written so Harbour itself is deterministic: a thread's output
@@ -21,7 +21,22 @@ POSITIVE = ["th01b_start_join", "th03b_args", "th04b_wait", "th05b_join_ret",
     # argument, hb_threadID/hb_threadIsMain, hb_mutexQueueInfo.
     "mt15_sub_selfheld", "mt16_sub_otherholds", "mt17_sub_leaves_unlocked",
     "mt18_queueinfo", "mt19_sub_acquire_timeout",
-    "th29b_literal", "th30b_tid"]
+    "th29b_literal", "th30b_tid",
+    # F4: hb_mutexSubscribeNow (flush + future-only wait, delivery by
+    # notify and by notifyAll) and hb_threadOnce (basic/state,
+    # concurrent blocking, 1-arg claim).
+    "mt21_subnow_future", "mt22_subnow_bcast",
+    "ton01_once_basic", "ton02_once_concurrent", "ton03_once_1arg"]
+
+# F4 special case: mt20 proves SubscribeNow's FLUSH (a queued "a" must
+# NOT be delivered; a future "b" must). Any flushed queued value (or an
+# expired SubscribeNow) poisons Harbour's mutex destructor: at exit
+# Harbour shows BASE/1302 "Object destructor failure", an interactive
+# box that hangs headless (declared divergence family; HarbourRust
+# exits cleanly). The oracle is therefore a stdout-PREFIX comparison:
+# Harbour runs under `timeout` and its stdout must start with
+# HarbourRust's complete output, which must end rc=0.
+PREFIX_ORACLE = ["mt20_subnow_flush"]
 
 def run(cmd, cwd, label, timeout=120):
     p = subprocess.run([str(v) for v in cmd], cwd=cwd, capture_output=True, timeout=timeout)
@@ -66,7 +81,7 @@ def main():
 
     passed, failed = [], []
 
-    for name in POSITIVE:
+    for name in POSITIVE + PREFIX_ORACLE:
         src = inputs / (name + ".prg")
         work = output / name
         work.mkdir()
@@ -76,6 +91,16 @@ def main():
         mine, _ = hbc_compile(hbc, src, work, name)
         if mine is None:
             failed.append((name, "hbc compile/link failed")); continue
+        if name in PREFIX_ORACLE:
+            rhb = run(["timeout", "15", hb], work, name + ".run-harbour", timeout=30)
+            rme = run([mine], work, name + ".run-hbc", timeout=180)
+            if (rme.returncode == 0 and rme.stderr == b""
+                    and rhb.returncode == 124 and rhb.stdout.startswith(rme.stdout)
+                    and len(rme.stdout) > 0):
+                passed.append(name)
+            else:
+                failed.append((name, "prefix oracle mismatch (expected Harbour rc=124 + stdout prefix, HarbourRust rc=0)"))
+            continue
         rhb = run([hb], work, name + ".run-harbour", timeout=180)
         rme = run([mine], work, name + ".run-hbc", timeout=180)
         if rhb.stdout == rme.stdout and rhb.stderr == rme.stderr:
@@ -83,7 +108,7 @@ def main():
         else:
             failed.append((name, "output differs from Harbour"))
 
-    total = len(POSITIVE)
+    total = len(POSITIVE) + len(PREFIX_ORACLE)
     for name, why in failed:
         print("FAIL", name, "-", why)
     print(f"threads gate: {len(passed)}/{total} pass ({total} differential)")
