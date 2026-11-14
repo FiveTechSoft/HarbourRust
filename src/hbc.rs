@@ -12683,7 +12683,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 match expr_ty(e, env, sigs) {
                     Ty::Dyn => {
                         // Discarded casilla: owned string or object.
-                        out.push_str("    cmp $4, %rax\n    jne 82f\n    mov %rdx, %rdi\n    call hbc_freestr\n    jmp 81f\n82:\n    cmp $13, %rax\n    jne 81f\n    mov %rdx, %rdi\n    call hrobj_release\n81:\n");
+                        out.push_str("    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    jne 82f\n    mov %rdx, %rdi\n    call hbc_freestr\n    jmp 81f\n82:\n    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@\n    jne 81f\n    mov %rdx, %rdi\n    call hrobj_release\n81:\n");
                     }
                     Ty::Obj(_) => out.push_str("    mov %rax, %rdi\n    call hrobj_release\n"),
                     Ty::StrOwn => out.push_str("    mov %rax, %rdi\n    call hbc_freestr\n"),
@@ -18371,7 +18371,9 @@ hbc_dynxeq_dd:
     ret
 "#;;
         if CLASSES.with(|c| !c.borrow().is_empty()) {
-            out.push_str(&blob.replace("    cmp $8, %rax\n    je 13f\n    mov %rax, %r10", "    cmp $8, %rax\n    je 13f\n    cmp $13, %rax\n    je 13f\n    mov %rax, %r10"));
+            let marked = blob.replace("    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je 13f\n    mov %rax, %r10", "    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je 13f\n    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@\n    je 13f\n    mov %rax, %r10");
+            debug_assert!(marked.contains("$13"), "print blob tag-13 arm must apply");
+            out.push_str(&marked);
         } else {
             out.push_str(blob);
         }
