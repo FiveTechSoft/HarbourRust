@@ -5459,11 +5459,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             if is_builtin(id, "hb_hhaskey") {
                 // hb_HHasKey(h, key): .T./.F. by a byte-exact,
                 // case-sensitive key (oracle hk157, core hb_HHasKey).
-                // The hash and the key are borrowed. The result is 1/0
-                // (the dialect has no logical type - its `if` takes only
-                // comparisons - so the PoC surface prints and compares
-                // 1/0; the oracle's .T./.F. is the registered boolean
-                // rendering family).
+                // The hash and the key are borrowed. The result is the
+                // logical type: `?` renders .T./.F. like Harbour's
+                // boolean family (hk197/hk198) and an `if` takes it
+                // directly (the 1/0 numeric result was the pre-logical
+                // PoC surface; the ERP evaluation flagged the numeric
+                // render as a real difference, FiveTechSoft/
+                // HarbourRust#1).
                 if args.len() != 2 {
                     return Err(format!("line {}: `hb_HHasKey` takes exactly two arguments", n));
                 }
@@ -5473,7 +5475,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::Str | Ty::StrOwn) {
                     return Err(format!("line {}: hash keys are strings in this increment", n));
                 }
-                return Ok(Ty::I64);
+                return Ok(Ty::Bool);
             }
             if is_builtin(id, "hb_hpos") {
                 // hb_HPos(h, key): the entry's 1-based position among
@@ -12549,16 +12551,16 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             } else {
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
             }
-            if let Expr::Var(v) = &args[0] {
-                let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
-                if temp_key {
-                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hhaskey\n    mov %rax, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 16(%rsp), %rax\n    add $32, %rsp\n", var.off));
+                if let Expr::Var(v) = &args[0] {
+                    let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                    if temp_key {
+                        out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hhaskey\n    movzbq %al, %rax\n    xor %edx, %edx\n    mov %rax, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 16(%rsp), %rax\n    add $32, %rsp\n", var.off));
+                    } else {
+                        out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hhaskey\n    movzbq %al, %rax\n    xor %edx, %edx\n    add $16, %rsp\n", var.off));
+                    }
                 } else {
-                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hbc_hhaskey\n    add $16, %rsp\n", var.off));
+                    unreachable!("checked: hb_HHasKey takes a hash variable");
                 }
-            } else {
-                unreachable!("checked: hb_HHasKey takes a hash variable");
-            }
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hpos") => {
             // hb_HPos(h, key): the key evaluates first (borrowed),
@@ -14718,7 +14720,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
 
             if is_builtin(id, "array") { return match args.len() { 1 => Ty::DArr, 2 => Ty::DArr2, 3 => Ty::DArr3, _ => Ty::DArr4 }; }
             if is_builtin(id, "hb_hkeys") { return Ty::DArrS; }
-            if is_builtin(id, "hb_hhaskey") { return Ty::I64; }
+            if is_builtin(id, "hb_hhaskey") { return Ty::Bool; }
             if is_builtin(id, "hb_hpos") { return Ty::I64; }
             if is_builtin(id, "hb_hscan") { return Ty::I64; }
             if is_builtin(id, "hb_hkeyat") { return Ty::StrOwn; }

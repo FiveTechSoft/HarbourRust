@@ -519,8 +519,8 @@ pos tests/t521_hdel.prg \n         2\na\nc\n         1\n         3\n         2\n
 pos tests/t522_hdel_readd.prg \n         3\na\nc\nbb\n         1\n         3\n        22\n         3
 pos tests/t523_hdel_free.prg \n         1\n         0
 neg tests/t524_neg_hdel_type.prg hb_HDel expects a hash
-pos tests/t525_hhaskey.prg \n         1\n         1\n         0\n         0\n         0\n         0\n         1\n         0
-pos tests/t526_hhaskey_empty.prg \n         0\n         1
+pos tests/t525_hhaskey.prg \n.T.\n.T.\n.F.\n.F.\n.F.\n.F.\n.T.\n.F.
+pos tests/t526_hhaskey_empty.prg \n.F.\n.T.
 neg tests/t527_neg_hhaskey_type.prg expects a hash variable
 pos tests/t528_hget.prg \n         1\n         2\n         1\nNIL\nNIL
 posx tests/t529_posx_hget_missing.prg 1 \n         1Bound error: array access\nCallstack:\n  at main (tests/t529_posx_hget_missing.prg:8)
@@ -538,7 +538,7 @@ pos tests/t540_hpos.prg \n         1\n         2\n         3\n         0\n      
 pos tests/t541_hpos_compact.prg \n         1\n         2\n         3
 pos tests/t542_hpos_owned_key.prg \n         2\n         0\n         0
 neg tests/t543_neg_hpos_type.prg `hb_HPos` expects a hash variable
-pos tests/t544_hhaskey_owned_key.prg \n         1\n         1\n         0\n         0
+pos tests/t544_hhaskey_owned_key.prg \n.T.\n.T.\n         0\n         0
 pos tests/t545_hdel_owned_key.prg \n         1\n         0\n         0
 pos tests/t546_hmerge.prg \n         3\n         1\n        22\n         3\n         2\n         3
 pos tests/t547_hmerge_edges.prg \n         1\n         1\n         1\n         1\n         1
