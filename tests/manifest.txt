@@ -1744,3 +1744,12 @@ neg tests/try-catch/try_return_neg.prg E0025: invalid RETURN from within of SEQU
 neg tests/try-catch/try_exit_neg.prg E0025: invalid EXIT from within of SEQUENCE code
 streams tests/hash-logical/haskey.prg tests/hash-logical/haskey.stdout tests/hash-logical/haskey.stderr
 neg tests/hash-logical/haskey-int-neg.prg arithmetic
+abef
+abcd
+4
+4
+pos tests/t1678_acc_owned_seed.prg 
+abef
+abcd
+         4
+         4

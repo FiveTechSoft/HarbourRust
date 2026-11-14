@@ -15078,7 +15078,10 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 // the 16-byte slot.
                 if t == Ty::I64 && dyn_names.contains(id) { t = Ty::Dyn; }
                 // Same `@s` widening as cg_stmts (hk218): owned-capable slot.
-                if t == Ty::Str && byref_names.contains(id) { t = Ty::StrOwn; }
+                // Empty-literal accumulator (`local c := ""`): the checker
+                // pins StrOwn so owned concatenations land; the slot must be
+                // laid out owned too, or the epilogue never frees it.
+                if t == Ty::Str && (byref_names.contains(id) || matches!(e, Expr::Str(s) if s.is_empty())) { t = Ty::StrOwn; }
                 // Bare-local FOR counter (hk336): i64 slot from
                 // declaration, in lockstep with the checker through the
                 // one shared predicate.
@@ -16237,8 +16240,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // owned-capable slot from the start (the callee frees and
                 // re-stores through the pointer), so a rodata literal
                 // initializer is copied into an owned buffer.
+                // Empty-literal accumulator: the checker pins StrOwn
+                // (710a3cb); codegen must copy the literal into an owned
+                // buffer at init, or the first reassignment frees rodata.
+                let empty_lit_str = t == Ty::Str && matches!(e, Expr::Str(s) if s.is_empty());
                 let byref_str = t == Ty::Str && byref_names.contains(id);
-                if byref_str { t = Ty::StrOwn; }
+                if byref_str || empty_lit_str { t = Ty::StrOwn; }
                 // Bare-local FOR counter (hk336): i64 slot, in lockstep
                 // with the checker and layout through the one shared
                 // predicate. The NIL the slot would hold before the FOR
@@ -16321,7 +16328,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         if i64_init {
                             cg_i64_tagged(out);
                         }
-                        if byref_str {
+                        if byref_str || empty_lit_str {
                             // rodata -> owned copy (hbc_strcpy), or the
                             // epilogue / a `@` callee would free rodata.
                             out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
