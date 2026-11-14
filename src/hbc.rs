@@ -36,6 +36,7 @@ thread_local! {
 // (shared engine in pp.rs; hpp is only a standalone debug frontend).
 #[path = "pp.rs"]
 mod pp;
+mod hasm;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum Ty { NumLocal, F64, I64, Str, Bool, Date, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefDyn, RefStrOwn, DArrDyn, AView, Obj(u32) }
@@ -24371,6 +24372,7 @@ fn main() {
     let mut instrument = false;
     let mut llvm = false;
     let mut no_escape = false;
+    let mut external_as = false;
     let mut llvm_trace = true;
     let mut ai = 1;
     while ai < args.len() {
@@ -24378,6 +24380,7 @@ fn main() {
         match a.as_str() {
             "--target=linux" => target = Target::Linux,
             "--target=windows" => target = Target::Windows,
+            "--external-as" => external_as = true,
             "--instrument" => instrument = true,
             "--no-escape-analysis" => no_escape = true,
             "--experimental-llvm" => llvm = true,
@@ -24921,9 +24924,48 @@ fn main() {
     });
     let out = emit_asm(&funcs, &sigs, &externs, target, instrument);
 
-    fs::write(pos[1], out)
-        .unwrap_or_else(|e| { eprintln!("cannot write {}: {}", args[2], e); process::exit(2); });
-    println!("{} -> {} ({} functions)", args[1], args[2], funcs.len());
+    if pos[1].ends_with(".s") {
+        fs::write(pos[1], out)
+            .unwrap_or_else(|e| { eprintln!("cannot write {}: {}", args[2], e); process::exit(2); });
+        println!("{} -> {} ({} functions)", args[1], args[2], funcs.len());
+        return;
+    }
+
+    // hbc AUTÓNOMO: la salida no termina en .s -> ejecutable ELF directo,
+    // sin invocar as/ld (Fase 1: Linux x86-64). --external-as conserva la
+    // vía externa como fallback. PE64 (Windows) es una Fase 2 aparte.
+    if matches!(target, Target::Windows) {
+        eprintln!("error: executable output for --target=windows (PE64) is not supported yet: emit .s and link externally, or use --target=linux");
+        process::exit(1);
+    }
+    if external_as {
+        let dir = env::temp_dir();
+        let stem = format!("hbc-{}-{}", process::id(), "ext");
+        let s_path = dir.join(format!("{}.s", stem));
+        let o_path = dir.join(format!("{}.o", stem));
+        fs::write(&s_path, &out).unwrap_or_else(|e| { eprintln!("cannot write {:?}: {}", s_path, e); process::exit(2); });
+        let st = process::Command::new("as").arg("--64").arg("-o").arg(&o_path).arg(&s_path).status()
+            .unwrap_or_else(|e| { eprintln!("cannot run as: {}", e); process::exit(2); });
+        if !st.success() { eprintln!("error: as failed on generated assembly"); process::exit(1); }
+        let st = process::Command::new("ld").arg("-s").arg("-o").arg(pos[1]).arg(&o_path).status()
+            .unwrap_or_else(|e| { eprintln!("cannot run ld: {}", e); process::exit(2); });
+        if !st.success() { eprintln!("error: ld failed"); process::exit(1); }
+        let _ = fs::remove_file(&s_path); let _ = fs::remove_file(&o_path);
+        println!("{} -> {} ({} functions, external as/ld)", args[1], args[2], funcs.len());
+        return;
+    }
+    match hasm::assemble(&out) {
+        Ok(bytes) => {
+            fs::write(pos[1], bytes)
+                .unwrap_or_else(|e| { eprintln!("cannot write {}: {}", args[2], e); process::exit(2); });
+            #[cfg(unix)] {
+                use std::os::unix::fs::PermissionsExt;
+                let _ = fs::set_permissions(pos[1], fs::Permissions::from_mode(0o755));
+            }
+            println!("{} -> {} ({} functions, ELF directo)", args[1], args[2], funcs.len());
+        }
+        Err(e) => { eprintln!("error: ensamblador interno: {}", e); process::exit(1); }
+    }
 }
 
 
