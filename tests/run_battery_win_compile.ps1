@@ -40,7 +40,7 @@ foreach ($line in [IO.File]::ReadAllLines($manifest)) {
 }
 Write-Output "manifest entries: $($entries.Count)"
 
-$posPass = 0; $posFail = 0; $negPass = 0; $negFail = 0
+$posPass = 0; $posFail = 0; $negPass = 0; $negFail = 0; $skip = 0
 $failures = New-Object System.Collections.Generic.List[string]
 $i = 0
 foreach ($e in $entries) {
@@ -51,6 +51,12 @@ foreach ($e in $entries) {
         if ($e.Kind -eq 'pos') { $posFail++ } else { $negFail++ }
         continue
     }
+    # Platform exclusions, mirroring tests/run_battery_win.sh: CurDir and
+    # class sources are measured on the ordinary Linux backend only; the
+    # Windows target rejects both by design in these increments.
+    $srcText = [IO.File]::ReadAllText($file)
+    if ($srcText.Contains("CurDir")) { $skip++; Write-Output "SKIP $($e.Path) (CurDir is Linux-backend only)"; continue }
+    if ($srcText -match 'ENDCLASS|CREATE[ ]+CLASS') { $skip++; Write-Output "SKIP $($e.Path) (classes are Linux-backend only in this increment)"; continue }
     if (Test-Path $errFile) { Remove-Item $errFile -Force }
     # stderr is captured to a file via cmd /c: PowerShell 5.1 reformats native
     # stderr through 2>&1 and wraps it at the console width, which corrupts
@@ -80,6 +86,7 @@ $report += "compiler: $hbc (-I tests)"
 $report += "manifest entries: $($entries.Count)"
 $report += "pos: pass=$posPass fail=$posFail"
 $report += "neg: pass=$negPass fail=$negFail"
+$report += "skipped (Linux-backend only by design): $skip"
 $report += ""
 $report += $failures
 $report | Out-File -Encoding utf8 (Join-Path $root "work\battery_windows_report.txt")
