@@ -3356,6 +3356,12 @@ thread_local! {
     // Both layout passes consult it so the slot is 8-byte kind-9 from
     // declaration, in lockstep with the checker's final types.
     static OBJ_NARROW: std::cell::RefCell<std::collections::HashMap<(String, String), u32>> = std::cell::RefCell::new(std::collections::HashMap::new());
+    // Virtual dispatch: while a Send arm emits its synthetic leading-Self
+    // call, this holds the hierarchy-wide mtable slot; the internal-call
+    // emission then loads the target from the RECEIVER's descriptor
+    // instead of calling the statically resolved name (p13: overrides
+    // run, Harbour-virtual).
+    static DISPATCH_SLOT: std::cell::Cell<i64> = std::cell::Cell::new(-1);
 }
 fn class_find(name: &str) -> Option<u32> {
     let key = name.to_lowercase();
@@ -9190,9 +9196,17 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         Expr::Send(recv, name, args) => {
             let ci = match expr_ty(recv, env, sigs) { Ty::Obj(ci) => ci, _ => unreachable!("checked") };
             let lname = name.to_lowercase();
-            if method_lookup(ci, &lname).is_some() {
-                eprintln!("error: classes: method dispatch lands in stage B slice 2 (pending)");
-                process::exit(1);
+            if let Some((slot, fname)) = method_lookup(ci, &lname) {
+                // Virtual dispatch: emit the ordinary leading-Self call
+                // (marshal, NIL padding, arity exactly as checked) but
+                // resolve the target through the receiver's mtable.
+                let mut cargs = Vec::with_capacity(args.len() + 1);
+                cargs.push((**recv).clone());
+                cargs.extend(args.iter().cloned());
+                DISPATCH_SLOT.with(|c| c.set(slot as i64));
+                cg_expr_inner(&Expr::Call(fname, cargs), env, sigs, strs, out, target);
+                DISPATCH_SLOT.with(|c| c.set(-1));
+                return;
             }
             if !args.is_empty() { unreachable!("checked") }
             // DATA casilla read: compile-time offset, borrowed Dyn pair.
@@ -10612,15 +10626,21 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 }
                 if matches!(ta, Ty::Obj(_)) && pty == Some(Ty::Dyn) {
                     // Object to a Dyn parameter: tag 13; the callee owns
-                    // its slot, so the boundary retains for it.
-                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    call hrobj_retain\n    mov (%rsp), %rax\n    add $16, %rsp\n");
+                    // its slot, so the boundary retains for it (a fresh
+                    // call result MOVES instead).
+                    if !obj_fresh(a, env, sigs) {
+                        out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    call hrobj_retain\n    mov (%rsp), %rax\n    add $16, %rsp\n");
+                    }
                     out.push_str("    sub $16, %rsp\n    movq $13, (%rsp)\n    mov %rax, 8(%rsp)\n");
                     continue;
                 }
                 if matches!(ta, Ty::Obj(_)) && matches!(pty, Some(Ty::Obj(_))) {
                     // Object to an object parameter (Self included): the
-                    // callee's slot owns a reference - retain for it.
-                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    call hrobj_retain\n    mov (%rsp), %rax\n    add $16, %rsp\n");
+                    // callee's slot owns a reference - retain for it (a
+                    // fresh call result MOVES instead).
+                    if !obj_fresh(a, env, sigs) {
+                        out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    call hrobj_retain\n    mov (%rsp), %rax\n    add $16, %rsp\n");
+                    }
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    movq $0, 8(%rsp)\n");
                     continue;
                 }
@@ -10679,7 +10699,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let call_lbl = if brmask.iter().any(|b| *b) {
                 format!("{}__br{}", id, brmask.iter().map(|b| if *b { "1" } else { "0" }).collect::<String>())
             } else { id.clone() };
-            out.push_str(&format!("    call hbc_fn_{}\n", call_lbl));
+            let dslot = DISPATCH_SLOT.with(|c| c.get());
+            if dslot >= 0 {
+                // Virtual send: Self is the FIRST (deepest) casilla, its
+                // pointer at casilla+0. Two loads + indirect call.
+                out.push_str(&format!("    mov {}(%rsp), %rax\n    mov (%rax), %rax\n    mov 32(%rax), %rax\n    call *{}(%rax)\n", 16 * (total - 1), dslot * 8));
+            } else {
+                out.push_str(&format!("    call hbc_fn_{}\n", call_lbl));
+            }
             if total > 0 {
                 out.push_str(&format!("    add ${}, %rsp\n", 16 * total));
             }
@@ -11599,6 +11626,13 @@ fn cg_ext_call(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mu
     }
     out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add ${}, %rsp\n", 16 * (n + 1)));
     true
+}
+
+// An Obj-typed call/send result is a FRESH owned reference at the call
+// site (every function retains an Obj return for its caller; hrobj_new
+// starts at 1). Vars and everything else are shared and need a retain.
+fn obj_fresh(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> bool {
+    matches!(e, Expr::Call(..) | Expr::Send(..)) && matches!(expr_ty(e, env, sigs), Ty::Obj(_))
 }
 
 // rax=tag, rdx=payload -> the pair with any string (tag 2 or 4) cloned
@@ -12645,8 +12679,16 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
         trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
         match s {
             Stmt::SendStmt(_, e) => {
-                // Inert DATA read today; method sends exit in cg_expr (slice 2).
                 cg_value(e, env, sigs, strs, out, target);
+                match expr_ty(e, env, sigs) {
+                    Ty::Dyn => {
+                        // Discarded casilla: owned string or object.
+                        out.push_str("    cmp $4, %rax\n    jne 82f\n    mov %rdx, %rdi\n    call hbc_freestr\n    jmp 81f\n82:\n    cmp $13, %rax\n    jne 81f\n    mov %rdx, %rdi\n    call hrobj_release\n81:\n");
+                    }
+                    Ty::Obj(_) => out.push_str("    mov %rax, %rdi\n    call hrobj_release\n"),
+                    Ty::StrOwn => out.push_str("    mov %rax, %rdi\n    call hbc_freestr\n"),
+                    _ => {}
+                }
             }
             Stmt::SelfSet(_, name, e) => {
                 let ci = CUR_METHOD_CLASS.with(|c| c.get());
@@ -12792,7 +12834,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             // moves in; any other source is shared -> retain
                             // (registered sharing semantics).
                             cg_value(e, env, sigs, strs, out, target);
-                            if !matches!(e, Expr::Call(id, _) if class_find(id).is_some()) {
+                            if !obj_fresh(e, env, sigs) {
                                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    call hrobj_retain\n    mov (%rsp), %rax\n    add $16, %rsp\n");
                             }
                             out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
@@ -12901,6 +12943,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    jmp .Lret_{}\n", fname));
                 } else {
                 cg_value(e, env, sigs, strs, out, target);
+                if matches!(expr_ty(e, env, sigs), Ty::Obj(_)) {
+                    // The caller receives its OWN reference (fresh); the
+                    // epilogue still releases the callee's slots.
+                    out.push_str("    mov %rax, %r10\n    mov %rax, %rdi\n    call hrobj_retain\n    mov %r10, %rax\n");
+                }
                 // Mixed int/NIL returns unify to Dyn (probe n2): an i64
                 // return expression is tagged into the {0, payload} pair.
                 if expr_ty(e, env, sigs) == Ty::I64
@@ -12927,6 +12974,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // keeps its copy and the shared epilogue frees it.
                 if expr_ty(e, env, sigs) == Ty::Dyn {
                     if !(DBF_USED.with(|v|v.get()) && matches!(e, Expr::Call(..))) { cg_dyn_clone_if_str(out); }
+                    // A Dyn-held OBJECT likewise crosses with its own
+                    // reference for the caller (class-free programs keep
+                    // byte-identical asm).
+                    if CLASSES.with(|c| !c.borrow().is_empty()) {
+                        out.push_str("    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@\n    jne 80f\n    mov %rax, %r10\n    mov %rdx, %r11\n    mov %rdx, %rdi\n    call hrobj_retain\n    mov %r10, %rax\n    mov %r11, %rdx\n80:\n");
+                    }
                     // ains P2 stage 1 closure (independent-review
                     // blocker): a Dyn-held ARRAY (tag 8) may not escape
                     // through a return - the caller would alias the owner
@@ -13553,7 +13606,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // Sharing assignment: retain the NEW reference first,
                     // then release the old one (`o := o` survives).
                     cg_value(e, env, sigs, strs, out, target);
-                    if matches!(e, Expr::Call(cid, _) if class_find(cid).is_some()) {
+                    if obj_fresh(e, env, sigs) {
                         out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
                     } else {
                         out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    call hrobj_retain\n");
@@ -13566,7 +13619,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // Object into a Dyn slot: tag 13, retain (the slot
                     // becomes an owner), then release the old slot value.
                     cg_value(e, env, sigs, strs, out, target);
-                    if matches!(e, Expr::Call(cid, _) if class_find(cid).is_some()) {
+                    if obj_fresh(e, env, sigs) {
                         out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
                     } else {
                         out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    call hrobj_retain\n");

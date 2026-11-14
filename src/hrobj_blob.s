@@ -98,6 +98,10 @@ hrobj_new:
 .Lhrobj_29:
 	movl	20(%rdi), %edi
 	sall	$4, %edi
+	testl	%edi, %edi
+	jne	.Lhrobj_30b
+	movl	$16, %edi
+.Lhrobj_30b:
 	call	hbc_alloc
 	movl	20(%r12), %ecx
 	movq	%rax, %rbp
