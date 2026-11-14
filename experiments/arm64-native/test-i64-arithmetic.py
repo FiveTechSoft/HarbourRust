@@ -21,14 +21,11 @@ for i,n in enumerate(['0','1','-1','9999999999','10000000000','-999999999','-100
  pos[f'bound-{i}']=f'LOCAL x:={n}\nLOCAL y:=1\n? x,x+y,x-y,x*y\ny:=2\n? x+y,x-y,x*y'
 neg={
 'expr-inc':'LOCAL n:=1\n? n++',
-'div':'LOCAL x:=1\n? x/2',
 'float-add':'LOCAL x:=1.25\n? x+1.0',
 'mixed-add':'LOCAL x:=1\nx:=1.25\n? x+1',
 'mixed-dead':'LOCAL x:=1\nx:=1.25\nIF .F.\n? x+1\nENDIF',
 'remainder':'LOCAL x:=3\n? x%2',
 'power':'LOCAL x:=3\n? x^2',
-'dead-div':'IF .F.\nLOCAL x:=3\n? x/2\nENDIF',
-'unused-div':'RETURN\nFUNCTION Never()\nLOCAL x:=3\nRETURN x/2',
 }
 def src(body):return 'FUNCTION Main()\n'+body+('\n'if '\nFUNCTION 'in body else '\nRETURN\n')
 def run(*args):return subprocess.run(list(map(str,args)),capture_output=True)

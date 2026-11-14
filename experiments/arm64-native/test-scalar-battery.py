@@ -42,7 +42,6 @@ params=','.join('abcdefgh')
 checks='\n'.join('IF '+n+'<0\nRETURN 0\nENDIF'for n in 'abcdefgh')
 pos['eight-args']='? Last(1,2,3,4,5,6,7,8)\nRETURN\nFUNCTION Last('+params+')\n'+checks+'\nRETURN h'
 neg={
-'runtime-div':'LOCAL x:=8\n? x/2',
 
 'static':'STATIC n:=1\n? n',
 'heap':'LOCAL a:={1,2}\n? a',

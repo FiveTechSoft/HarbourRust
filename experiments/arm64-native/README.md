@@ -394,3 +394,42 @@ or caught-error path. Mixed/F64 arithmetic, overflow promotion, coercion,
 TRY/caught-value transport, cleanup/unwinding, production ARM and actual
 Mac execution remain separate work. Every source result here stays I64;
 no new computed F64 decimal/finite frontier is implied.
+
+## Fixed-I64 division and source uncaught-zero boundary
+
+A later bounded source step accepts `/` ONLY with two fixed-I64 operands,
+evaluated left-to-right. The existing own pair division kernel returns an
+F64 result with 2 decimals. Both operands are in the closed I64 range, so
+a nonzero divisor cannot produce an infinite result; no general F64/Mixed
+operand arithmetic or overflow-promotion admission follows. The result
+passes the already-tested metadata/status validator before use. F64
+locals, copies, fixed signatures/returns, comparisons and output retain
+the prior bounded transport rules. A calculated quotient used as another
+arithmetic operand still rejects because it is F64, not fixed I64.
+
+For zero divisors the same entry routes to the existing real native linked
+uncaught diagnostic chain: stdout division-by-zero message, youngest-first
+source trace and exit 1, as checked against current executed x86. This is
+now exercised from source, not merely a raw fixture. The active statement,
+nested calls, include origins and loop refresh remain part of that trace.
+Normal returns restore FP state; process-exiting errors do not promise a
+return or FP restoration. Write faults retain exit 74. No source TRY,
+caught-value transport, exception cleanup or unwinding is admitted.
+
+Fresh division cohort: 25 source programs x3 syscall/FP modes exact against
+current executed x86, including 7 uncaught-zero programs with exact stdout,
+empty stderr and exit 1. Cases cover extrema, tiny finite quotients,
+signed-zero output, width/provenance, compound I64 operands, fixed-F64
+call/return, mixed destinations, operand effects, nested error frames,
+right-operand suppression after an earlier error, includes and loop lines.
+Output-producing cases also check zero/oversize/failing writes, exit 74 and
+no committed output. Seven fail-closed negatives preserve absent-output
+and existing-file canaries for F64/Mixed operands, nested F64-result
+arithmetic, precision and caught/dead-TRY forms.
+
+One old scalar division negative and three fixed-I64 arithmetic negatives
+(division/dead division/unused-function division) move honestly to the new
+positive scope. Prior cohorts now have 35 scalar positives x3 plus 16
+negatives, and 21 I64 add/subtract/multiply positives x3 plus 6 negatives (the
+latter cohort still tests only +,-,*). Other F64 and mixed-local negative
+arithmetic remains rejected. No production ARM or real-Mac execution claim.

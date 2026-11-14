@@ -16,6 +16,9 @@ mod mixedformat;
 mod pair_print;
 #[path = "numeric-result.rs"]
 mod numeric_result;
+#[path = "numeric/numeric-values.rs"] mod values;
+#[path = "numeric/numeric-kernel.rs"] mod numeric;
+#[path = "numeric/numeric-metadata.rs"] mod metadata;
 #[path = "arm64-runtime.rs"]
 mod runtime;
 #[path = "arm64-trace.rs"]
@@ -139,8 +142,8 @@ impl E<'_> {
                 Ok(K::Float)
             }
             Expr::Bin(op, a, b) => {
-                if !matches!(op, '+' | '-' | '*') {
-                    return Err("I64 source arithmetic operator outside +,-,*".into());
+                if !matches!(op, '+' | '-' | '*' | '/') {
+                    return Err("I64 source arithmetic operator outside +,-,*,/".into());
                 }
                 if self.expr(a)? != K::Int {
                     return Err("I64 source arithmetic requires fixed I64 operands".into());
@@ -150,6 +153,18 @@ impl E<'_> {
                     return Err("I64 source arithmetic requires fixed I64 operands".into());
                 }
                 self.pop9()?;
+                if *op == '/' {
+                    // Both operands are fixed I64. Division always produces F64;
+                    // the closed input range is finite and has decimal metadata2.
+                    self.c.copy(2, 0)?;
+                    self.c.mov(3, 1)?;
+                    self.c.copy(0, 9)?;
+                    self.c.mov(1, 1)?;
+                    self.c.b("source_i64_div", true);
+                    self.c.mov(3, 0)?;
+                    self.c.b("result_validate", true);
+                    return Ok(K::Float);
+                }
                 match op {
                     '+' | '-' => self.c.addsub(0, 9, 0, *op == '-', false)?,
                     '*' => self.c.mul(0, 9, 0, false)?,
@@ -586,6 +601,8 @@ pub fn emit(funcs: &[Func], sigs: &[Sig]) -> Result<Vec<u8>, String> {
     }
     pair_print::emit(&mut e.c)?;
     numeric_result::emit(&mut e.c)?;
+    e.c.label("source_i64_div")?;
+    values::emit(&mut e.c, '/')?;
     runtime::emit(&mut e.c)?;
     trace::emit(&mut e.c)?;
     let (code, data) = e.c.finish()?;
