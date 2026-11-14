@@ -248,12 +248,12 @@ hello.exe
 that toolchain is also used by the test runner. `dist\build.bat` chains the
 legacy path and defaults to the older `dist\2-hbc.exe`; set `HBC` to override.
 The internal writer was exercised on Windows 11 x86-64 with an isolated
-native-manifest battery over the current 1726-entry manifest: 1703 cases
+native-manifest battery over the current 1729-entry manifest: 1706 cases
 passed, 23 Linux-only cases were skipped, and no case failed; no stream case
-needed CR normalization. The runner's final summary line was cut by a
-concurrent script edit during that run, but every per-case line is present
-and the counts reconcile to 1726. This is a bounded manifest result, not a
-general compatibility claim. The v0.1.1 compiler and batch script were tested under Wine 11.0 as a
+needed CR normalization. The manifest snapshot and every per-case line are
+recorded in the run log. This is a bounded manifest result, not a general
+compatibility claim.
+The v0.1.1 compiler and batch script were tested under Wine 11.0 as a
 release smoke test.
 
 ## Documentation and samples
