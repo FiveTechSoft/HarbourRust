@@ -32,7 +32,6 @@ neg={
 # Current source accepts scalar signatures but the pair convention cannot pack
 # five F64 arguments in eight GPR words. This is a deliberate no-output reject.
 neg['five-floats']='? Last(1.0,2.0,3.0,4.0,5.0)\nRETURN\nFUNCTION Last(a,b,c,d,e)\n'+''.join(f'IF {x}<0.0\nRETURN 0.0\nENDIF\n'for x in'abcde')+'RETURN e'
-neg['mixed-compare']='LOCAL a:=1\nLOCAL b:=1.0\n? a=b'
 neg['unused-dec17']='RETURN\nFUNCTION Never()\nRETURN 0.12345678901234567'
 def src(body):return 'FUNCTION Main()\n'+body+('\n'if '\nFUNCTION 'in body else '\nRETURN\n')
 def run(*args):return subprocess.run(list(map(str,args)),capture_output=True)

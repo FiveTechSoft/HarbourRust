@@ -433,3 +433,33 @@ positive scope. Prior cohorts now have 35 scalar positives x3 plus 16
 negatives, and 21 I64 add/subtract/multiply positives x3 plus 6 negatives (the
 latter cohort still tests only +,-,*). Other F64 and mixed-local negative
 arithmetic remains rejected. No production ARM or real-Mac execution claim.
+
+## Finite numeric comparisons across local kinds
+
+The source comparison gate now accepts I64, F64 and mixed numeric local
+operands for `=`, `==`, `<>`, `<`, `<=`, `>` and `>=`. It evaluates both
+operands left-to-right and preserves the left payload AND format across
+right-side calls. If both runtime formats are integer 0/1, comparison is
+signed integer and remains exact around 2^53 and the I64 extrema. If either
+format is F64, only integer operands convert to binary64, matching current
+x86 numeric comparison rounding. The two paths must stay distinct: I64
+9007199254740993 differs from I64 9007199254740992, but can compare equal to
+the binary64 representation of the latter after integer-to-double conversion.
+
+This is finite source numeric comparison, not arbitrary tag/type coercion.
+Existing source admission yields finite F64 literals/folds and fixed-I64
+quotients only. No NaN/nonfinite source constructor, F64/Mixed arithmetic,
+string/logical comparison, mixed call/return ABI, caught errors or production
+ARM admission is added. Original parser precision limits remain unchanged;
+large F64 comparison controls are constructed through admitted I64 division,
+not by loosening literal parsing. Display metadata is not numeric value.
+
+Fresh cohort: 39 source programs x3 syscall/FP modes exact against current
+executed x86. All seven operators cover both argument orders, runtime local
+kind transitions, detached mixed copies, branch/loop conditions, quotient
+comparison, left/right effects, signed zero, values around 2^53 and I64
+extrema. Six negative cases retain no-output and existing-file canaries for
+non-numeric operands/operators, unsupported arithmetic and mixed argument
+escape. Three prior comparison negatives migrate to positive scope: F64
+source cohort now has 8 negatives and mixed-local cohort 9. Their positive
+cohorts remain 23x3 and 20x3. Other source/error/trace boundaries stay intact.

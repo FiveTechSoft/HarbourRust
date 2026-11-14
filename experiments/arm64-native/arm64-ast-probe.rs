@@ -212,14 +212,15 @@ impl E<'_> {
             }
             Expr::Cmp(op, a, b) => {
                 let left = self.expr(a)?;
-                if !matches!(left, K::Int | K::Float) {
+                if !matches!(left, K::Int | K::Float | K::Mixed) {
                     return Err("pair-AST comparison kind".into());
                 }
                 self.push()?;
                 let right = self.expr(b)?;
-                if right != left {
-                    return Err("pair-AST mixed comparison rejected".into());
+                if !matches!(right, K::Int | K::Float | K::Mixed) {
+                    return Err("pair-AST comparison requires numeric operands".into());
                 }
+                self.c.ldst(10, 31, 8, true)?;
                 self.pop9()?;
                 let cond = match op {
                     CmpOp::Eq | CmpOp::EqEq => 0,
@@ -230,24 +231,47 @@ impl E<'_> {
                     CmpOp::Ge => 10,
                     _ => return Err("ARM64 scalar experiment: comparison unavailable".into()),
                 };
-                if left == K::Float {
-                    self.c.fp_bits(9, 0, false)?;
-                    self.c.fp_bits(0, 1, false)?;
-                    self.c.fcmp(0, 1)?;
-                    let fcond = match op {
-                        CmpOp::Eq | CmpOp::EqEq => 0,
-                        CmpOp::Ne => 1,
-                        CmpOp::Lt => 4,
-                        CmpOp::Le => 9,
-                        CmpOp::Gt => 12,
-                        CmpOp::Ge => 10,
-                        _ => unreachable!(),
-                    };
-                    self.c.cset(0, fcond)?;
-                } else {
-                    self.c.addsub(31, 9, 0, true, true)?;
-                    self.c.cset(0, cond)?;
-                }
+                let float_path = self.label();
+                let left_float = self.label();
+                let right_float = self.label();
+                let done = self.label();
+                // Compare both integer tags exactly, without lossy double conversion.
+                self.c.imm(31, 10, 1, true, true)?;
+                self.c.bc(&float_path, 8)?;
+                self.c.imm(31, 1, 1, true, true)?;
+                self.c.bc(&float_path, 8)?;
+                self.c.addsub(31, 9, 0, true, true)?;
+                self.c.cset(0, cond)?;
+                self.c.b(&done, false);
+                self.c.label(&float_path)?;
+                self.c.imm(31, 10, 1, true, true)?;
+                self.c.bc(&left_float, 8)?;
+                self.c.scvtf(0, 9)?;
+                let left_done = self.label();
+                self.c.b(&left_done, false);
+                self.c.label(&left_float)?;
+                self.c.fp_bits(9, 0, false)?;
+                self.c.label(&left_done)?;
+                self.c.imm(31, 1, 1, true, true)?;
+                self.c.bc(&right_float, 8)?;
+                self.c.scvtf(1, 0)?;
+                let right_done = self.label();
+                self.c.b(&right_done, false);
+                self.c.label(&right_float)?;
+                self.c.fp_bits(0, 1, false)?;
+                self.c.label(&right_done)?;
+                self.c.fcmp(0, 1)?;
+                let fcond = match op {
+                    CmpOp::Eq | CmpOp::EqEq => 0,
+                    CmpOp::Ne => 1,
+                    CmpOp::Lt => 4,
+                    CmpOp::Le => 9,
+                    CmpOp::Gt => 12,
+                    CmpOp::Ge => 10,
+                    _ => unreachable!(),
+                };
+                self.c.cset(0, fcond)?;
+                self.c.label(&done)?;
                 Ok(K::Bool)
             }
             Expr::LNot(e) => {

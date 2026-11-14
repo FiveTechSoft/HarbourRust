@@ -20,14 +20,12 @@ neg={
 'inline-literal':'LOCAL x:=1\nx:=1.25\n? (x:=1)',
 'inline-copy':'LOCAL x:=1\nx:=1.25\nLOCAL y:=x\n? (y:=x)',
 'arithmetic':'LOCAL x:=1\nx:=1.25\n? x+1',
-'comparison':'LOCAL x:=1\nx:=1.25\n? x=1',
 'return':'? F()\nRETURN\nFUNCTION F()\nLOCAL x:=1\nx:=1.25\nRETURN x',
 'argument':'LOCAL x:=1\nx:=1.25\nF(x)\nRETURN\nFUNCTION F(n)\n? n\nRETURN',
 'borrow':'LOCAL x:=1\nx:=1.25\nF(@x)\nRETURN\nFUNCTION F(n)\n? n\nRETURN',
 'bad-assign':'LOCAL x:=1\nx:=1.25\nx:=.T.\n? x',
 'dead-arithmetic':'LOCAL x:=1\nx:=1.25\nIF .F.\n? x+1\nENDIF',
 'precision':'LOCAL x:=1\nx:=0.12345678901234567\n? x',
-'copy-comparison':'LOCAL x:=1\nx:=1.25\nLOCAL y:=x\n? y=1.25',
 }
 def src(body):return 'FUNCTION Main()\n'+body+('\n'if '\nFUNCTION 'in body else '\nRETURN\n')
 def run(*args):return subprocess.run(list(map(str,args)),capture_output=True)
