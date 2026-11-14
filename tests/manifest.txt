@@ -1748,8 +1748,8 @@ abef
 abcd
 4
 4
-pos tests/t1678_acc_owned_seed.prg 
 abef
 abcd
          4
          4
+pos tests/t1678_acc_owned_seed.prg \nabef\nabcd\n         4\n         4
