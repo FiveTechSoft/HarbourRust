@@ -15,12 +15,18 @@ No VM, no pcode, no garbage collector. Ownership checked at compile time, with d
 The current compiler includes the independently reviewed Date/CToD port,
 the CurDir/trailing-space work, and the bounded C Extend-System bridge (v9)
 on Linux and Windows x64 (Windows verified under Wine 11.0, not on real
-Windows). Against the pinned Harbour source:
+Windows). [v0.4.0](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.4.0)
+also adds bounded read-only dBASE III DBF support on Linux x86-64.
+Against the pinned Harbour source:
 
 - **31/268** originals under `tests/` compile, or **31/1041** across the full inventory.
 - **29/31** fresh executions match stdout, stderr and exit status exactly.
   The other two open error dialogues and time out; they are not passes.
-- Linux regression manifest: **1657/1661**, with the same four inherited failures.
+- Linux regression manifest: **1660/1661**, with only inherited `t110` remaining.
+  The hash-default and nested-array shrink fixes resolve `t592`, `t385` and `t419`.
+- DBF hito 1: **8/8** same-source programs match real Harbour stdout, stderr
+  and exit status byte-for-byte. A separate C bridge probe verifies copied
+  field values after closing the DBF workarea.
 
 These are bounded measurements, not a project completion percentage. Windows,
 LLVM and interactive-terminal support have separate limits. Source and probe
@@ -39,14 +45,16 @@ known failures and the history of published increments.
 
 ## Active development
 
-Two lines of work are in progress. Neither is part of the published compiler,
-and no speed or capability claim is made for them until they are integrated,
-measured and published.
+The first DBF increment is published; broader RDD support and classes remain
+work in progress. No unmeasured speed or capability claims are made.
 
-- **DBF support.** Read-only dBASE III tables (`dbUseArea`, `FieldGet`,
-  `DbSkip`, `RecNo`/`LastRec`, `BOF`/`EOF`, `Deleted`, `dbCloseArea`) are in
-  integration: an own MIT implementation, checked byte-for-byte against the
-  real Harbour compiler on the same sources and fixtures. Not yet in main.
+- **DBF support.** Read-only dBASE III tables are in main and v0.4.0: one
+  workarea, C/N/L/D fields, `dbUseArea`, `FieldGet`, `dbGoTop`, `dbSkip`,
+  `RecNo`/`LastRec`, `BOF`/`EOF`, `Deleted` and `dbCloseArea`, on Linux x86-64.
+  This is an own MIT implementation, checked byte-for-byte against real Harbour.
+  It is not standard RDD compatibility: no NTX/CDX, memo, writes/shared locking,
+  Windows DBF, general static-Date/Dyn conversion or decimal arithmetic/comparison.
+  Unsupported consumers fail explicitly. NTX is next, then CDX.
 - **Classes and objects.** An own high-performance design - flat-table method
   dispatch and fixed-offset DATA access - is in a verified spike. Not yet in
   main.
