@@ -100,3 +100,11 @@ holding object/array; multiple inheritance.
 - DESIGN-stage-B.md committed (f1b993a): runtime blob, descriptors,
   virtual dispatch (2 loads + indirect call), DATA access, ownership
   points, print tag-13, gates.
+
+## Stage B piece 1 (this run)
+- src/hrobj_blob.s: the spike's validated runtime blob adapted to hbc
+  symbols (hbc_sfree -> hbc_freestr; hbc_alloc/hbc_strcpy verified
+  ABI-compatible: alloc rdi=bytes->rax zeroed mapping; freestr rdi=data
+  ptr; strcpy rdi=src rsi=len -> rax owned). NOT yet wired into
+  emit_asm. Windows blob pending: compile hrobj_core.c with mingw at
+  integration time (Wine verification coordinated by parent).
