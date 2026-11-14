@@ -33,7 +33,7 @@ stays short.
 
 - [Compiler source](../src/).
 - [Examples](../tests/samples/).
-- [Regression manifest](../tests/manifest.txt) and [runner](../tests/run_battery.sh).
+- [Regression manifest](../tests/manifest.txt), [runner](../tests/run_battery.sh) and [test-suite map](../tests/README.md).
 
 No source, historical text or test expectation is removed by this documentation
 reorganization. Relative links in the moved README are adjusted for its new location.
