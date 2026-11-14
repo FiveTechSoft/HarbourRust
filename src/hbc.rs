@@ -23093,7 +23093,7 @@ hbc_str_cache: .zero 64
 # address; the throwable runtime-error helpers and Break() push the value
 # on the exception stack and unwind to the innermost pad. FINALLY bodies
 # are local subroutines the normal path and the handler both call; a TRY
-# without CATCH re-enters hbc_seq_unwind afterwards. 256 pads of 64 bytes,
+# without CATCH re-enters hbc_seq_unwind afterwards. 256 pads of 80 bytes (offset 64 saves the receiving trace top),
 # 256 pending exceptions of 16 bytes. Registered limits: the stacks are
 # process-global (TRY inside hb_threadStart code is out of this
 # increment), and an unwound frame's owned temporaries leak (error paths).
@@ -23101,7 +23101,7 @@ hbc_seq_push:
     mov hbc_seq_depth(%rip), %eax
     cmp $256, %eax
     jae hbc_seq_overflow
-    shl $6, %rax
+    imul $80, %rax
     lea hbc_seq_pads(%rip), %r11
     add %rax, %r11
     mov %rbx, 0(%r11)
@@ -23113,6 +23113,8 @@ hbc_seq_push:
     lea 8(%rsp), %rax
     mov %rax, 48(%r11)
     mov %rdi, 56(%r11)
+    mov hbc_trace_top(%rip), %rax
+    mov %rax, 64(%r11)
     incq hbc_seq_depth(%rip)
     ret
 
@@ -23160,7 +23162,7 @@ hbc_seq_unwind:
     jz hbc_seq_uncaught
     dec %eax
     mov %eax, hbc_seq_depth(%rip)
-    shl $6, %rax
+    imul $80, %rax
     lea hbc_seq_pads(%rip), %r11
     add %rax, %r11
     mov 0(%r11), %rbx
@@ -23169,6 +23171,8 @@ hbc_seq_unwind:
     mov 24(%r11), %r13
     mov 32(%r11), %r14
     mov 40(%r11), %r15
+    mov 64(%r11), %rax
+    mov %rax, hbc_trace_top(%rip)
     mov 48(%r11), %rsp
     mov 56(%r11), %r11
     jmp *%r11
@@ -23239,7 +23243,7 @@ hbc_seq_overflow:
     .align 8
 hbc_seq_depth: .skip 8
 hbc_seq_exc_depth: .skip 8
-hbc_seq_pads: .skip 16384
+hbc_seq_pads: .skip 20480
 hbc_seq_exc: .skip 4096
     .data
 @REG_DATA@    .text
@@ -25716,7 +25720,7 @@ hbc_str_cache: .zero 64
 # address; the throwable runtime-error helpers and Break() push the value
 # on the exception stack and unwind to the innermost pad. FINALLY bodies
 # are local subroutines the normal path and the handler both call; a TRY
-# without CATCH re-enters hbc_seq_unwind afterwards. 256 pads of 64 bytes,
+# without CATCH re-enters hbc_seq_unwind afterwards. 256 pads of 80 bytes (offset 64 saves the receiving trace top),
 # 256 pending exceptions of 16 bytes. Registered limits: the stacks are
 # process-global (TRY inside hb_threadStart code is out of this
 # increment), and an unwound frame's owned temporaries leak (error paths).
@@ -25724,7 +25728,7 @@ hbc_seq_push:
     mov hbc_seq_depth(%rip), %eax
     cmp $256, %eax
     jae hbc_seq_overflow
-    shl $6, %rax
+    imul $80, %rax
     lea hbc_seq_pads(%rip), %r11
     add %rax, %r11
     mov %rbx, 0(%r11)
@@ -25736,6 +25740,8 @@ hbc_seq_push:
     lea 8(%rsp), %rax
     mov %rax, 48(%r11)
     mov %rdi, 56(%r11)
+    mov hbc_trace_top(%rip), %rax
+    mov %rax, 64(%r11)
     incq hbc_seq_depth(%rip)
     ret
 
@@ -25783,7 +25789,7 @@ hbc_seq_unwind:
     jz hbc_seq_uncaught
     dec %eax
     mov %eax, hbc_seq_depth(%rip)
-    shl $6, %rax
+    imul $80, %rax
     lea hbc_seq_pads(%rip), %r11
     add %rax, %r11
     mov 0(%r11), %rbx
@@ -25792,6 +25798,8 @@ hbc_seq_unwind:
     mov 24(%r11), %r13
     mov 32(%r11), %r14
     mov 40(%r11), %r15
+    mov 64(%r11), %rax
+    mov %rax, hbc_trace_top(%rip)
     mov 48(%r11), %rsp
     mov 56(%r11), %r11
     jmp *%r11
@@ -25857,7 +25865,7 @@ hbc_seq_overflow:
     .align 8
 hbc_seq_depth: .skip 8
 hbc_seq_exc_depth: .skip 8
-hbc_seq_pads: .skip 16384
+hbc_seq_pads: .skip 20480
 hbc_seq_exc: .skip 4096
     .data
 @REG_DATA@    .text

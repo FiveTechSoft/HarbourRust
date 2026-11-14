@@ -1,0 +1,5 @@
+
+inner finally MIDDLE MAIN
+outer catch MAIN
+outer finally MAIN
+after MAIN

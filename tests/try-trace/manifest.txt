@@ -1,0 +1,7 @@
+streams tests/try-trace/simple.prg tests/try-trace/simple.stdout tests/try-trace/empty.stderr
+streams tests/try-trace/nested.prg tests/try-trace/nested.stdout tests/try-trace/empty.stderr
+streams tests/try-trace/finally-rethrow.prg tests/try-trace/finally-rethrow.stdout tests/try-trace/empty.stderr
+streams tests/try-trace/repeated.prg tests/try-trace/repeated.stdout tests/try-trace/empty.stderr
+streams tests/try-trace/normal.prg tests/try-trace/normal.stdout tests/try-trace/empty.stderr
+streams tests/try-trace/line.prg tests/try-trace/line.stdout tests/try-trace/empty.stderr
+streams tests/try-trace/capacity.prg tests/try-trace/capacity.stdout tests/try-trace/empty.stderr
