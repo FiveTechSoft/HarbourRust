@@ -1,0 +1,15 @@
+# Keep text fixtures with LF in the working tree on every platform.
+# Fixtures whose expected bytes intentionally contain CR stay -text.
+*.bat text eol=crlf
+*.sh text eol=lf
+*.prg text eol=lf
+*.md text eol=lf
+tests/*.out text eol=lf
+tests/*.stdout text eol=lf
+tests/*.stderr text eol=lf
+tests/**/*.out text eol=lf
+tests/**/*.stdout text eol=lf
+tests/**/*.stderr text eol=lf
+tests/t1041_longstr_linux.out -text
+tests/t1041_longstr_windows.out -text
+tests/t1576_text_cr.prg -text

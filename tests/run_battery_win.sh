@@ -74,19 +74,20 @@ while IFS= read -r line; do
       fexp=$(echo "$line"|awk '{print $4}')
       n=$((n+1))
       if build_win "$file" &&
-         timeout 20 "./"$GENDIR"/$base.exe" > ""$GENDIR"/${base}_w.actual" 2>/dev/null &&
-         norm_cmp "$fexp" ""$GENDIR"/${base}_w.actual"; then
-        if has_cr "$fexp" || has_cr ""$GENDIR"/${base}_w.actual"; then norm=$((norm+1)); echo "PASS* $file (normalized newlines)"; else echo "PASS $file"; fi
+         timeout 20 "./"$GENDIR"/$base.exe" > ""$GENDIR"/${base}_w.actual" 2>/dev/null; then
+        if cmp -s "$fexp" ""$GENDIR"/${base}_w.actual"; then echo "PASS $file"
+        elif norm_cmp "$fexp" ""$GENDIR"/${base}_w.actual"; then norm=$((norm+1)); echo "PASS* $file (normalized newlines)"
+        else echo "FAIL $file (exact win bytes)"; fail=1; fi
       else echo "FAIL $file (exact win bytes)"; fail=1; fi;;
     streams)
       base=$(basename "$file"); base=${base%.*}
       sexp=$(echo "$line"|awk '{print $3}'); eexp=$(echo "$line"|awk '{print $4}')
       n=$((n+1))
       if build_win "$file" &&
-         timeout 20 "./"$GENDIR"/$base.exe" >""$GENDIR"/${base}_w.stdout" 2>""$GENDIR"/${base}_w.stderr" &&
-         norm_cmp "$sexp" ""$GENDIR"/${base}_w.stdout" &&
-         norm_cmp "$eexp" ""$GENDIR"/${base}_w.stderr"; then
-        if has_cr "$sexp" || has_cr "$eexp" || has_cr ""$GENDIR"/${base}_w.stdout" || has_cr ""$GENDIR"/${base}_w.stderr"; then norm=$((norm+1)); echo "PASS* $file (normalized newlines)"; else echo "PASS $file"; fi
+         timeout 20 "./"$GENDIR"/$base.exe" >""$GENDIR"/${base}_w.stdout" 2>""$GENDIR"/${base}_w.stderr"; then
+        if cmp -s "$sexp" ""$GENDIR"/${base}_w.stdout" && cmp -s "$eexp" ""$GENDIR"/${base}_w.stderr"; then echo "PASS $file"
+        elif norm_cmp "$sexp" ""$GENDIR"/${base}_w.stdout" && norm_cmp "$eexp" ""$GENDIR"/${base}_w.stderr"; then norm=$((norm+1)); echo "PASS* $file (normalized newlines)"
+        else echo "FAIL $file (separate stdout/stderr bytes)"; fail=1; fi
       else echo "FAIL $file (separate stdout/stderr bytes)"; fail=1; fi;;
     neg)  run_neg "$file" "$(echo "$line"|cut -d' ' -f3-)";;
     '') ;;
