@@ -1616,7 +1616,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -4059,6 +4059,11 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     for a in args { pin_vars(f,a,Ty::I64,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
+                if is_builtin(id,"substr") {
+                    if let Some(a)=args.first() { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
+                    for a in args.iter().skip(1) { pin_vars(f,a,Ty::I64,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
+                    return Ok(());
+                }
                 if is_builtin(id,"padr") {
                     // Arity belongs to the checker; never index past args[0]
                     // here - PadR() with no arguments must reach the checker's
@@ -5780,6 +5785,18 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // borrowed - never freed here.
                 if ta != Ty::I64 && ta != Ty::Dyn {
                     return Err(format!("line {}: `hb_ntos` expects an integer argument in this increment (no decimal formatting yet)",n));
+                }
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"substr") {
+                if !(2..=3).contains(&args.len()) { return Err(format!("line {}: `substr` takes 2 or 3 arguments in this increment",n)); }
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
+                    return Err(format!("line {}: `substr` expects a string as its first argument",n));
+                }
+                for a in &args[1..] {
+                    if type_expr(a,env,sigs,n)? != Ty::I64 {
+                        return Err(format!("line {}: `substr` expects integer position/length in this increment (numeric truncation and Dyn arguments are not covered)",n));
+                    }
                 }
                 return Ok(Ty::StrOwn);
             }
@@ -9544,6 +9561,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 apply_moves(&args[0],env,sigs,false);
                 return;
             }
+            if is_builtin(id,"substr") {
+                for a in args { apply_moves(a,env,sigs,false); }
+                return;
+            }
             if is_builtin(id,"padr") {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
@@ -12381,6 +12402,20 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str("    call hbc_str_int_field\n");
             }
         }
+        Expr::Call(id,args) if is_builtin(id,"substr") => {
+            // Snapshot the source before later arguments can mutate/reassign
+            // its owner, matching Harbour's retained argument value. Numeric
+            // arguments run once in source order. The result owns its copy.
+            let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $48, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
+            if temp { out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n"); }
+            cg_expr(&args[1],env,sigs,strs,out,target);
+            out.push_str("    mov %rax, 24(%rsp)\n");
+            if args.len()==3 { cg_expr(&args[2],env,sigs,strs,out,target); out.push_str("    mov %rax, %rcx\n"); }
+            else { out.push_str("    movabs $9223372036854775807, %rcx\n"); }
+            out.push_str("    mov 8(%rsp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    call hbc_substr\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov 8(%rsp), %rdi\n    call hbc_freestr\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $48, %rsp\n");
+        }
         Expr::Call(id,args) if is_builtin(id,"padr") => {
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
             cg_value(&args[0],env,sigs,strs,out,target);
@@ -14768,6 +14803,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"date") || is_builtin(id,"ctod") { return Ty::Date; }
             if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
+            if is_builtin(id,"substr") { return Ty::StrOwn; }
             if is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
@@ -20522,6 +20558,36 @@ hbc_hclear:
     pop %rbx
     pop %rbp
 861: ret
+
+# hbc_substr: borrowed source rdi/rsi, signed start rdx, signed count rcx.
+# Byte-oriented Harbour semantics: 1-based, zero starts at first byte;
+# negative starts from end and clamps to first, nonpositive count is empty.
+# Bounds checked before pointer arithmetic; every result is an owned copy.
+hbc_substr:
+    test %rcx, %rcx
+    jle .Lsubstr_empty
+    test %rdx, %rdx
+    jg .Lsubstr_positive
+    jz .Lsubstr_bound
+    add %rsi, %rdx
+    jns .Lsubstr_bound
+    xor %edx, %edx
+    jmp .Lsubstr_bound
+.Lsubstr_positive:
+    dec %rdx
+.Lsubstr_bound:
+    cmp %rsi, %rdx
+    jae .Lsubstr_empty
+    add %rdx, %rdi
+    sub %rdx, %rsi
+    cmp %rcx, %rsi
+    jbe .Lsubstr_copy
+    mov %rcx, %rsi
+.Lsubstr_copy:
+    jmp hbc_strcpy
+.Lsubstr_empty:
+    xor %esi, %esi
+    jmp hbc_strcpy
 
 # hbc_trim: rdi/ rsi bytes/len, edx mode1=left2=right3=both.
 # Left whitespace: HT/LF/CR/space only (hk391/392, HB_ISSPACE).

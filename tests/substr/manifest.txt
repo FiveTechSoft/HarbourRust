@@ -1,0 +1,27 @@
+streams tests/substr/basic.prg tests/substr/basic.stdout tests/substr/empty.stderr
+streams tests/substr/bytes.prg tests/substr/bytes.stdout tests/substr/empty.stderr
+streams tests/substr/params.prg tests/substr/params.stdout tests/substr/empty.stderr
+streams tests/substr/lifetime.prg tests/substr/lifetime.stdout tests/substr/empty.stderr
+streams tests/substr/order.prg tests/substr/order.stdout tests/substr/empty.stderr
+streams tests/substr/byref-mutate.prg tests/substr/byref-mutate.stdout tests/substr/empty.stderr
+streams tests/substr/loop.prg tests/substr/loop.stdout tests/substr/empty.stderr
+streams tests/substr/numeric-order.prg tests/substr/numeric-order.stdout tests/substr/empty.stderr
+streams tests/substr/basic-memory.prg tests/substr/basic-memory.stdout tests/substr/empty.stderr
+streams tests/substr/bytes-memory.prg tests/substr/bytes-memory.stdout tests/substr/empty.stderr
+streams tests/substr/params-memory.prg tests/substr/params-memory.stdout tests/substr/empty.stderr
+streams tests/substr/lifetime-memory.prg tests/substr/lifetime-memory.stdout tests/substr/empty.stderr
+streams tests/substr/order-memory.prg tests/substr/order-memory.stdout tests/substr/empty.stderr
+streams tests/substr/byref-mutate-memory.prg tests/substr/byref-mutate-memory.stdout tests/substr/empty.stderr
+streams tests/substr/loop-memory.prg tests/substr/loop-memory.stdout tests/substr/empty.stderr
+neg tests/substr/arity0-neg.prg takes 2 or 3 arguments
+neg tests/substr/arity1-neg.prg takes 2 or 3 arguments
+neg tests/substr/arity4-neg.prg takes 2 or 3 arguments
+neg tests/substr/length-float-neg.prg expects integer position/length
+neg tests/substr/length-nil-neg.prg expects integer position/length
+neg tests/substr/position-dyn-neg.prg expects integer position/length
+neg tests/substr/position-float-neg.prg expects integer position/length
+neg tests/substr/position-logical-neg.prg expects integer position/length
+neg tests/substr/source-array-neg.prg expects a string
+neg tests/substr/source-dyn-neg.prg expects a string
+neg tests/substr/source-int-neg.prg expects a string
+neg tests/substr/source-nil-neg.prg expects a string

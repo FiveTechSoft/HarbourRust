@@ -1,0 +1,12 @@
+function Main()
+? SubStr(Source(),Start(),Count())
+return nil
+function Source()
+? "source"
+return Replicate("ABC",2)
+function Start()
+? "start"
+return 2
+function Count()
+? "count"
+return 3
