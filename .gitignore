@@ -2,3 +2,23 @@
 /experiments/llvm-scalar/bounded-comparison/run/
 /gen/
 /hbc
+
+# Local-only build and scratch artifacts
+/hbc.exe
+/*.pdb
+/hbc_new*
+/hbc_verify*
+/work/
+/tools/mingw/
+/tools/harbour/
+/sondas/
+/find_tok*.py
+/test_*.hb
+/run*.ps1
+/diag.ps1
+/err.txt
+/hola.s
+/out.s
+/out_check.s
+/1-hk124.hb
+/HarbourRust-*.patch.txt
