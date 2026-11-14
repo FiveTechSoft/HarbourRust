@@ -13807,6 +13807,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let psig = sigs.iter().find(|v| v.name == *id).map(|v| v.params.clone());
             let pborrowed = sigs.iter().find(|v| v.name == *id).map(|v| v.borrowed.clone());
             let pcopied = sigs.iter().find(|v| v.name == *id).map(|v| v.string_iter_copy.clone());
+            // Moved-argument source slots to null: deferred until every
+            // argument has been evaluated. Nulling right after the push
+            // broke later arguments that read the same variable (for
+            // example `f(a, len(a))` read the already-nulled slot and
+            // computed 0), while the checker validates every argument
+            // against the pre-move environment, so `len(a)` there is a
+            // legal read of the still-live value.
+            let mut moved_nulls: Vec<(usize, usize)> = Vec::new();
             for (ai, a) in args.iter().enumerate() {
                 if psig.as_ref().and_then(|p|p.get(ai)) == Some(&Ty::AView) {
                     match a {
@@ -13998,13 +14006,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 } else if ta == Ty::Str || ta == Ty::DArr || ta == Ty::DArr2 || ta == Ty::DArr3 || ta == Ty::DArr4 || ta == Ty::DArrS || ta == Ty::StrOwn || ta == Ty::Hash {
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                    // An owned (moved) argument: null the source slot
-                    // right after the copy, so the callee is the only
-                    // owner and the caller's later frees see null.
+                    // An owned (moved) argument: the source slot is nulled
+                    // after ALL arguments are pushed (deferred in
+                    // moved_nulls), so the callee is the only owner and
+                    // the caller's later frees see null.
                     if let Expr::Var(src) = a {
                         if matches!(ta, Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash) {
                             if let Some(sv) = env.iter().rev().find(|x| x.name == *src && matches!(x.ty, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::DArrDyn)) {
-                                out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", sv.off, sv.off - 8));
+                                moved_nulls.push((sv.off, sv.off - 8));
                             }
                         }
                     }
@@ -14012,6 +14021,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
                     if ta==Ty::I64 {out.push_str("    mov %rdx, 8(%rsp)\n");}
                 }
+            }
+            for (o0, o1) in &moved_nulls {
+                out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", o0, o1));
             }
             // Omitted trailing parameters (multiarg): pad the boundary
             // with NIL casillas (tag 1, payload 0); the checker pinned
