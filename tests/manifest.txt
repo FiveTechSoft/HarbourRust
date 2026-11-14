@@ -1673,3 +1673,14 @@ streams tests/t1674_date_port_owned_and_flow.prg tests/t1674.out tests/t1674.err
 streams tests/t1675_date_port_calendar_matrix.prg tests/t1675.out tests/t1675.err
 streams tests/t1676_date_port_output_matrix.prg tests/t1676.out tests/t1676.err
 pos tests/t1677_date_port_balance.prg \n.T.
+
+# Formatted console LF boundaries, independently measured.
+streams tests/procmeta/newline-oracle/crlf.prg tests/procmeta/newline-oracle/crlf.stdout tests/procmeta/newline-oracle/crlf.stderr
+streams tests/procmeta/newline-oracle/empty_lines.prg tests/procmeta/newline-oracle/empty_lines.stdout tests/procmeta/newline-oracle/empty_lines.stderr
+streams tests/procmeta/newline-oracle/internal.prg tests/procmeta/newline-oracle/internal.stdout tests/procmeta/newline-oracle/internal.stderr
+streams tests/procmeta/newline-oracle/internal_crlf.prg tests/procmeta/newline-oracle/internal_crlf.stdout tests/procmeta/newline-oracle/internal_crlf.stderr
+streams tests/procmeta/newline-oracle/lf.prg tests/procmeta/newline-oracle/lf.stdout tests/procmeta/newline-oracle/lf.stderr
+streams tests/procmeta/newline-oracle/lfend.prg tests/procmeta/newline-oracle/lfend.stdout tests/procmeta/newline-oracle/lfend.stderr
+streams tests/procmeta/newline-oracle/lfspaces.prg tests/procmeta/newline-oracle/lfspaces.stdout tests/procmeta/newline-oracle/lfspaces.stderr
+streams tests/procmeta/newline-oracle/raw.prg tests/procmeta/newline-oracle/raw.stdout tests/procmeta/newline-oracle/raw.stderr
+streams tests/procmeta/newline-oracle/trailing_lf.prg tests/procmeta/newline-oracle/trailing_lf.stdout tests/procmeta/newline-oracle/trailing_lf.stderr
