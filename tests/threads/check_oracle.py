@@ -16,7 +16,12 @@ POSITIVE = ["th01b_start_join", "th03b_args", "th04b_wait", "th05b_join_ret",
     "mt01_type", "mt02_lockret", "mt03_recursive", "mt04_race_fixed",
     "mt05_notify_val", "mt06_notify_none", "mt07_notify_one", "mt08_notifyall",
     "mt09_lock_to", "mt10_muteval", "mt11_evalret", "mt12_notify_fifo",
-    "mt13_notifyall_late", "mt14_notify_consumed_once"]
+    "mt13_notifyall_late", "mt14_notify_consumed_once",
+    # F3: subscribe regression oracles (mt15-mt19), literal threadStart
+    # argument, hb_threadID/hb_threadIsMain, hb_mutexQueueInfo.
+    "mt15_sub_selfheld", "mt16_sub_otherholds", "mt17_sub_leaves_unlocked",
+    "mt18_queueinfo", "mt19_sub_acquire_timeout",
+    "th29b_literal", "th30b_tid"]
 
 def run(cmd, cwd, label, timeout=120):
     p = subprocess.run([str(v) for v in cmd], cwd=cwd, capture_output=True, timeout=timeout)
