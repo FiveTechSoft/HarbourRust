@@ -1545,7 +1545,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "dfree", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -5014,6 +5014,30 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     }
                 }
                 return Ok(match args.len() { 1 => Ty::DArr, 2 => Ty::DArr2, 3 => Ty::DArr3, _ => Ty::DArr4 });
+            }
+            if is_builtin(id, "hb_isstring") {
+                // Scalar/string predicate measured against the Harbour oracle.
+                // Reuse the existing read-only ValType contract for indexed
+                // values and Dyn. Never allocate, move or retain an argument.
+                if args.is_empty() { return Ok(Ty::Bool); }
+                if args.len() != 1 {
+                    return Err(format!("line {}: `HB_ISSTRING` supports zero or one argument in this increment (extra-argument effects are not covered)", n));
+                }
+                match &args[0] {
+                    Expr::Log(_) | Expr::Float(..) | Expr::FloatV(..) => {}
+                    Expr::Var(_) => { type_expr(&args[0], env, sigs, n)?; }
+                    _ => {
+                        if let Expr::Index(v, key) = &args[0] {
+                            if env.iter().rev().find(|x| x.name == *v).map(|x| x.ty) == Some(Ty::Hash)
+                                && !matches!(&**key, Expr::Str(_) | Expr::Var(_)) {
+                                return Err(format!("line {}: `HB_ISSTRING` hash keys must be literals or variables in this increment (assign an owned temporary first)", n));
+                            }
+                        }
+                        let vt = Expr::Call("valtype".to_string(), args.clone());
+                        type_expr(&vt, env, sigs, n).map_err(|e| format!("{} (HB_ISSTRING uses the measured ValType read contract)", e))?;
+                    }
+                }
+                return Ok(Ty::Bool);
             }
             if is_builtin(id, "hb_isnumeric") || is_builtin(id, "hb_isarray") {
                 // HB_ISNUMERIC/HB_ISARRAY(x) (ains piece 1b): runtime tag
@@ -9203,6 +9227,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 apply_moves(&args[0], env, sigs, false);
                 return;
             }
+            if is_builtin(id, "hb_isstring") {
+                if let Some(a) = args.first() { apply_moves(a, env, sigs, false); }
+                return;
+            }
             if is_builtin(id, "hb_isnumeric") || is_builtin(id, "hb_isarray") {
                 // ains piece 1b: tag tests borrow their argument.
                 apply_moves(&args[0], env, sigs, false);
@@ -11300,6 +11328,17 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str(&format!("    jmp .Liife{}\n.Liift{}:\n", k, k));
                 scalar_side(&args[1], out);
                 out.push_str(&format!(".Liife{}:\n", k));
+            }
+        }
+        Expr::Call(id, args) if is_builtin(id, "hb_isstring") => {
+            if args.is_empty() || matches!(&args[0], Expr::Log(_) | Expr::Float(..) | Expr::FloatV(..)) {
+                out.push_str("    xor %eax, %eax\n");
+            } else if matches!(&args[0], Expr::Var(_) if !matches!(expr_ty(&args[0], env, sigs), Ty::Dyn | Ty::RefDyn)) {
+                out.push_str(if matches!(expr_ty(&args[0], env, sigs), Ty::Str | Ty::StrOwn | Ty::RefStrOwn) { "    mov $1, %eax\n" } else { "    xor %eax, %eax\n" });
+            } else {
+                let vt = Expr::Call("valtype".to_string(), args.clone());
+                cg_expr(&vt, env, sigs, strs, out, target);
+                out.push_str("    cmpb $67, (%rax)\n    sete %al\n    movzbq %al, %rax\n");
             }
         }
         Expr::Call(id, args) if is_builtin(id, "hb_isnumeric") || is_builtin(id, "hb_isarray") => {
@@ -14041,7 +14080,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_bitindex(id) { return if is_builtin(id,"hb_bittest") {Ty::Bool} else {Ty::I64}; }
             if is_bitop(id) { return Ty::I64; }
             if is_builtin(id, "min") || is_builtin(id, "max") { return expr_ty(&args[0], env, sigs); }
-            if is_builtin(id, "empty") || is_builtin(id, "hb_isnumeric") || is_builtin(id, "hb_isarray") { return Ty::Bool; }
+            if is_builtin(id, "empty") || is_builtin(id, "hb_isnumeric") || is_builtin(id, "hb_isarray") || is_builtin(id, "hb_isstring") { return Ty::Bool; }
             if is_output_call(id) { return Ty::Dyn; }
             if is_builtin(id, "hb_pvalue") { return Ty::Dyn; }
             if is_builtin(id, "eval") { return match expr_ty(&args[0], env, sigs) { Ty::Block(_, BRet::Nil) => Ty::Dyn, _ => Ty::I64 }; }
