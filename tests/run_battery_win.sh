@@ -26,7 +26,7 @@ n=0
 skip=0
 norm=0
 norm_cmp() { cmp -s <(tr -d '\r' < "$1") <(tr -d '\r' < "$2"); }
-has_cr() { grep -q $'\r' "$1" 2>/dev/null; }
+has_cr() { [ "$(tr -cd '\r' < "$1" | wc -c)" -ne 0 ]; }
 build_win() { base=$(basename "$1"); base=${base%.*}; ./hbc "$1" gen/"$base"_w.s --target=windows --instrument -I tests >/dev/null 2>&1 && "$M"/as.exe -o gen/"$base"_w.o gen/"$base"_w.s && "$M"/ld.exe -o gen/"$base".exe gen/"$base"_w.o -e _start --subsystem console -L"$MLIB" -lkernel32; }
 run_pos_kind() { # file expected [exit]
   local f=$1 exp=$2 want_rc=$3 base
