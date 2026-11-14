@@ -20989,14 +20989,14 @@ hbc_at:
 # Used when a tag-2 array element is read out of its array: the reader
 # owns an independent copy, so freeing or moving the array afterwards
 # cannot dangle it.
-hbc_strcpy:
+# hbc_stralloc: rsi=length -> rax=data pointer, rdx=length.
+# Bytes are uninitialized until the owning caller fills every byte.
+# Same bounded cache, headers and logical registry as hbc_strcpy.
+hbc_stralloc:
     push %rbp
     mov %rsp, %rbp
     push %rbx
     push %r12
-    push %r13
-    sub $8, %rsp
-    mov %rdi, %r13
     mov %rsi, %r12
     # Bounded exact-capacity cache of logically FREE strings <=64 KiB.
     # Eight buckets, two ways each; at most 16 * 65552 retained bytes.
@@ -21033,10 +21033,28 @@ hbc_strcpy:
     mov %rax, %rbx
     mov %r12, (%rbx)
     mov %r12, 8(%rbx)
+    lea 16(%rbx), %rax
+    mov %r12, %rdx
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+hbc_strcpy:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    sub $8, %rsp
+    mov %rdi, %r13
+    mov %rsi, %r12
+    call hbc_stralloc
+    mov %rax, %rbx
     cmp $128, %r12
     jb .Lstr_copy_small
     mov %r13, %rsi
-    lea 16(%rbx), %rdi
+    mov %rbx, %rdi
     mov %r12, %rcx
     rep movsb
     jmp 71f
@@ -21045,10 +21063,10 @@ hbc_strcpy:
 70: cmp %r12, %rcx
     jae 71f
     movzbl (%r13,%rcx), %r9d
-    mov %r9b, 16(%rbx,%rcx)
+    mov %r9b, (%rbx,%rcx)
     inc %rcx
     jmp 70b
-71: lea 16(%rbx), %rax
+71: mov %rbx, %rax
     mov %r12, %rdx
     add $8, %rsp
     pop %r13
@@ -21384,24 +21402,18 @@ hbc_padr:
     mov %rdi, %r12
     mov %rsi, %r13
     mov %rdx, %rbx
-    lea 16(%rdx), %rdi
-    call hbc_alloc
-    mov %rbx, (%rax)
-    mov %rbx, 8(%rax)
-    lea 16(%rax), %rcx
-    xor %r8d, %r8d
-3:  cmp %r13, %r8
-    jae 5f
-    movzbl (%r12,%r8), %r9d
-    mov %r9b, (%rcx,%r8)
-    inc %r8
-    jmp 3b
-5:  cmp %rbx, %r8
-    jae 6f
-    movb $32, (%rcx,%r8)
-    inc %r8
-    jmp 5b
-6:  mov %rcx, %rax
+    mov %rdx, %rsi
+    call hbc_stralloc
+    mov %rax, %r10
+    mov %rax, %rdi
+    mov %r12, %rsi
+    mov %r13, %rcx
+    rep movsb
+    mov %rbx, %rcx
+    sub %r13, %rcx
+    movabs $0x2020202020202020, %rax
+    call hbc_strfill
+    mov %r10, %rax
     mov %rbx, %rdx
     add $8, %rsp
     pop %r13
@@ -21409,6 +21421,36 @@ hbc_padr:
     pop %rbx
     pop %rbp
     ret
+
+# Leaf fill: rdi=destination, rcx=byte count, rax=repeated-byte word.
+# Preserves r10 and all callee-saved registers; touches every byte once.
+hbc_strfill:
+1:  cmp $64, %rcx
+    jb 2f
+    mov %rax, 0(%rdi)
+    mov %rax, 8(%rdi)
+    mov %rax, 16(%rdi)
+    mov %rax, 24(%rdi)
+    mov %rax, 32(%rdi)
+    mov %rax, 40(%rdi)
+    mov %rax, 48(%rdi)
+    mov %rax, 56(%rdi)
+    add $64, %rdi
+    sub $64, %rcx
+    jmp 1b
+2:  cmp $8, %rcx
+    jb 3f
+    mov %rax, (%rdi)
+    add $8, %rdi
+    sub $8, %rcx
+    jmp 2b
+3:  test %rcx, %rcx
+    jz 4f
+    mov %al, (%rdi)
+    inc %rdi
+    dec %rcx
+    jmp 3b
+4:  ret
 
 # hbc_replicate: rdi/rsi = source bytes/len, rdx = count -> rax/rdx owned.
 # Harbour Replicate (oracle repl-probes r1): count<=0 or empty source ->
@@ -21422,7 +21464,9 @@ hbc_replicate:
 .Lrep_empty:
     xor %esi, %esi
     jmp hbc_strcpy
-1:  mov %rsi, %rax
+1:  cmp $1, %rdx
+    je hbc_strcpy
+    mov %rsi, %rax
     imul %rdx, %rax
     jo hbc_oom
     test %rax, %rax
@@ -21432,44 +21476,45 @@ hbc_replicate:
     push %rbx
     push %r12
     push %r13
-    sub $24, %rsp
+    sub $8, %rsp
     mov %rdi, %r12
     mov %rsi, %r13
     mov %rax, %rbx
-    lea 16(%rax), %rdi
-    call hbc_alloc
-    mov %rbx, (%rax)
-    mov %rbx, 8(%rax)
-    lea 16(%rax), %rcx
-    xor %r8d, %r8d
-2:  cmp %r13, %r8
-    jae 3f
-    movzbl (%r12,%r8), %r9d
-    mov %r9b, (%rcx,%r8)
-    inc %r8
-    jmp 2b
-3:  mov %r13, %r8
+    mov %rax, %rsi
+    call hbc_stralloc
+    mov %rax, %r10
+    mov %rax, %rdi
+    cmp $1, %r13
+    jne 2f
+    cmp $8192, %rbx
+    jae 2f
+    movzbl (%r12), %eax
+    movabs $0x0101010101010101, %r11
+    imul %r11, %rax
+    mov %rbx, %rcx
+    call hbc_strfill
+    jmp 6f
+2:  mov %r12, %rsi
+    mov %r13, %rcx
+    rep movsb
+    mov %r13, %r8
 4:  cmp %rbx, %r8
     jae 6f
-    mov %r8, %r9
-    mov %rbx, %r10
-    sub %r8, %r10
-    cmp %r10, %r9
-    jle 5f
-    mov %r10, %r9
-5:  lea (%rcx,%r8), %rdi
-    xor %r11d, %r11d
-7:  cmp %r9, %r11
-    jae 8f
-    movzbl (%rcx,%r11), %eax
-    mov %al, (%rdi,%r11)
-    inc %r11
-    jmp 7b
-8:  add %r9, %r8
+    mov %r8, %rcx
+    mov %rbx, %r9
+    sub %r8, %r9
+    cmp %r9, %rcx
+    jbe 5f
+    mov %r9, %rcx
+5:  lea (%r10,%r8), %rdi
+    mov %r10, %rsi
+    mov %rcx, %r9
+    rep movsb
+    add %r9, %r8
     jmp 4b
-6:  mov %rcx, %rax
+6:  mov %r10, %rax
     mov %rbx, %rdx
-    add $24, %rsp
+    add $8, %rsp
     pop %r13
     pop %r12
     pop %rbx
