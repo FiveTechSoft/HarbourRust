@@ -38,8 +38,9 @@ if not a.without_emulator:
  run(sys.executable,'test-i64-arithmetic.py')
  run(sys.executable,'test-i64-division.py')
  run(sys.executable,'test-numeric-comparison.py')
+ run(sys.executable,'test-i64-increment.py')
  run(sys.executable,'test-numeric-result.py')
- for folder in ['trace-fixtures-out','ast-trace-cases','pair-source-cases','mixed-source-cases','i64-transport-cases','i64-arithmetic-cases','i64-division-cases','numeric-comparison-cases','numeric-result-cases']:
+ for folder in ['trace-fixtures-out','ast-trace-cases','pair-source-cases','mixed-source-cases','i64-transport-cases','i64-arithmetic-cases','i64-division-cases','numeric-comparison-cases','i64-increment-cases','numeric-result-cases']:
   for f in (r/folder).glob('*.arm'):run(sys.executable,'check_reference.py',f)
  for f in (r/'scalar-battery').glob('*.arm'):run(sys.executable,'check_reference.py',f)
  # Independent parser is optional; it is not used by generation or our verifier.

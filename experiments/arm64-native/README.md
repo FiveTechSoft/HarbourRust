@@ -463,3 +463,37 @@ non-numeric operands/operators, unsupported arithmetic and mixed argument
 escape. Three prior comparison negatives migrate to positive scope: F64
 source cohort now has 8 negatives and mixed-local cohort 9. Their positive
 cohorts remain 23x3 and 20x3. Other source/error/trace boundaries stay intact.
+
+## Checked expression increment/decrement
+
+The source harness now admits prefix/postfix expression `++`/`--` ONLY on
+fixed-I64 local slots, including the private fixed-I64 parameter slots.
+Postfix yields the old payload AND old format; prefix yields the updated
+payload with computed format 0. Successful mutation stores computed format
+0 in the variable. The update is checked before the store: overflow takes
+the same current-x86 limit path, not wrapping arithmetic or promotion.
+It prints `Limit: increment overflow needs numeric promotion` plus the
+active source trace to stdout and exits 1. Normal returns preserve the
+existing FP/register/stack contracts; process exits do not promise return
+or FP restoration. Output faults still exit 74.
+
+This differs intentionally from standalone `n++`/`--n`, which the existing
+frontend desugars into wrapping fixed-I64 assignment arithmetic. That
+frontend distinction is preserved, not silently regularized. No F64/Mixed
+lvalue, by-reference parameter, arbitrary lvalue, numeric promotion,
+caught-value/TRY/unwind/cleanup or production ARM support is added. The
+original frontend's rejection of direct expression-inc assignment into a
+mixed destination remains; no prescan/type rule was loosened to admit it.
+
+Fresh expression cohort: 21 source programs x3 syscall/FP modes exact
+against current executed x86, including 5 overflow/underflow errors with
+exact stdout/trace/exit 1 and empty stderr. Cases cover old/new provenance,
+width boundaries, copies, calls/returns, parameter mutation, nested arithmetic
+and comparison effects, loop conditions, lazy boolean suppression and
+suppression after overflow. All 21 additionally check three write-fault
+modes with exit 74 and no committed output. Eight negative programs retain
+absent-output and existing-file canaries for unsupported kinds, dead mixed
+increment, non-variable/byref lvalues, caught overflow and the unchanged
+mixed-destination frontend restriction. One old expression-inc negative
+moves to positive scope: the previous fixed-I64 arithmetic cohort keeps
+21 positives x3 and now has 5 negatives. Other source cohorts stay intact.

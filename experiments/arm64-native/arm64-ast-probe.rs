@@ -173,6 +173,24 @@ impl E<'_> {
                 self.c.mov(1, 0)?; // computed I64 provenance, wrapping fixed-type path
                 Ok(K::Int)
             }
+            Expr::Inc(n, delta, prefix) => {
+                let (k, off) = self.find(n)?;
+                if k != K::Int || !matches!(delta, -1 | 1) {
+                    return Err("source increment requires fixed I64 local".into());
+                }
+                self.load(off)?;
+                self.c.copy(9, 0)?;
+                self.c.copy(10, 1)?;
+                self.c.imm(0, 0, 1, *delta < 0, true)?;
+                self.c.bc("rt_inc_overflow", 6)?;
+                self.c.mov(1, 0)?;
+                self.store(off)?;
+                if !*prefix {
+                    self.c.copy(0, 9)?;
+                    self.c.copy(1, 10)?;
+                }
+                Ok(K::Int)
+            }
             Expr::Log(v) => {
                 self.c.mov(0, *v as u64)?;
                 Ok(K::Bool)

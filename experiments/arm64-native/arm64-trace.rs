@@ -59,6 +59,12 @@ pub fn emit(c: &mut Code) -> Result<(), String> {
     c.mov(1, 24)?;
     c.b("rt_write", true);
     c.b("rt_panic", false);
+    c.data("rt_inc_message", b"Limit: increment overflow needs numeric promotion\n")?;
+    c.label("rt_inc_overflow")?;
+    c.adr(0, "rt_inc_message")?;
+    c.mov(1, 50)?;
+    c.b("rt_write", true);
+    c.b("rt_panic", false);
     c.label("rt_panic")?;
     c.b("rt_trace", true);
     c.mov(0, 1)?;
