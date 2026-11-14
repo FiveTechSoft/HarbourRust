@@ -48,8 +48,8 @@ known failures and the history of published increments.
 
 ## Active development
 
-The first DBF and NTX increments are released; single-tag CDX is in main.
-Broader RDD support and classes remain
+The first DBF, NTX and CDX increments are released; classes and objects
+are in main (v0.7.0). Broader RDD support remains
 work in progress. No unmeasured speed or capability claims are made.
 
 - **DBF support.** Read-only dBASE III tables are in main and v0.4.0: one
@@ -74,9 +74,42 @@ work in progress. No unmeasured speed or capability claims are made.
   CDX uses 512-byte pages, NTX 1024; empty-seek BOF differs by driver.
   Multi-tag/structural indexes and wider fields are explicitly rejected.
   See [scope, behavior and tests](docs/CDX-READONLY.md).
-- **Classes and objects.** An own high-performance design - flat-table method
-  dispatch and fixed-offset DATA access - is in a verified spike. Not yet in
-  main.
+- **Classes and objects.** In main and v0.7.0, on Linux x86-64: `CREATE
+  CLASS` / `CLASS ... FROM|INHERIT` with single inheritance, scalar `DATA`
+  with lazy child-first `INIT`, methods and constructors (an implicit
+  default `New()` when the class declares none), virtual dispatch through
+  a flat per-class method table with hierarchy-wide constant slots
+  (overrides patch the inherited slot in place), fixed-offset `DATA`
+  access, Harbour sharing semantics for assignment and parameters,
+  object identity `==`, and `? o` printing. Tag kind 13 is officially in
+  use for objects. This is an own MIT implementation; Harbour serves as
+  the test oracle only, and `#include "hbclass.ch"` is accepted and
+  ignored (no Harbour header content is used). The public differential
+  gate compiles and runs 26 same-source probes under real Harbour and
+  HarbourRust with byte-identical output, plus 3 declared-limit probes
+  and 13 named negatives (**42/42**). The landing kept the Linux
+  regression manifest unchanged and produced byte-identical assembly for
+  all class-free positive programs (no contamination); the runtime blob
+  is AddressSanitizer/UBSan-clean. Measured, not promised: on four
+  same-source microbenchmarks (2M method calls, 2M virtual dispatches,
+  2M DATA read/writes, 500k create/release cycles), this build runs
+  between **14x and 34x faster** than real Harbour (`694428e1`, hbmk2
+  `-gtstd`, default optimization) on the same machine, outputs verified
+  identical before timing, best of 3 runs. These are microbenchmarks of
+  the supported subset; performance on arbitrary Harbour programs is not
+  measured and not claimed. Declared limits (explicit compile-time
+  rejections, never silent): scalar `DATA` only (no object or array
+  members yet); single inheritance only - Harbour's multiple inheritance
+  is a named rejection; members named like reserved words (for example a
+  method named `Step`) are a named parser rejection; compound assignment
+  (`+=`) is outside the expression subset; a method call on a value of
+  statically unknown class is rejected unless the member belongs to
+  exactly one class hierarchy in the program, which pins the receiver to
+  that hierarchy's root class (Harbour resolves these at runtime);
+  classes are Linux-only in this increment (`--target=windows` rejects
+  them by name); `=` as an expression operator remains outside the
+  supported subset, as before.
+  See [scope, model and tests](docs/CLASSES.md).
 
 ## What the native path does not need
 
