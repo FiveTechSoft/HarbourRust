@@ -367,7 +367,7 @@ impl Asm {
             ".section" => {
                 let name = rest.split(|c: char| c == ',' || c.is_whitespace()).next().unwrap_or("");
                 match name {
-                    ".rodata" => self.cur = Sec::Rodata,
+                    ".rodata" | ".rdata" => self.cur = Sec::Rodata,
                     ".note.gnu.property" => self.cur = Sec::Note,
                     ".note.GNU-stack" => self.has_gnu_stack = true,
                     _ => return Err(format!(".section desconocida: {}", name)),
@@ -1320,6 +1320,8 @@ struct Layout {
     text_va: u64, rod_va: u64, dat_va: u64, bss_va: u64, note_va: u64,
     has_rod: bool, has_dat: bool, has_bss: bool, has_note: bool,
     phnum: u64, headers_end: u64,
+    // PE64: símbolos importados de kernel32 -> VA de su thunk (Fase 2).
+    pe_imports: Option<std::collections::HashMap<String, u64>>,
 }
 
 impl Asm {
@@ -1358,6 +1360,9 @@ impl Asm {
                                 Sec::Data => l.dat_va, Sec::Bss => l.bss_va, Sec::Note => l.note_va,
                             };
                             (va + self.loc_offset(*loc, &l.text_offs, l.text_size)) as i64
+                        }
+                        else if let Some(v) = l.pe_imports.as_ref().and_then(|m| m.get(name)) {
+                            *v as i64
                         }
                         else { return Err(format!("símbolo no definido: {}", name)); }
                     }
@@ -1414,7 +1419,11 @@ impl Asm {
         Ok((bytes, offs))
     }
 
-    fn finish(self) -> Result<Vec<u8>, String> {
+    fn finish(self, pe: bool) -> Result<Vec<u8>, String> {
+        // PE64: los imports se escanean antes de la relajación (el resolver
+        // los necesita ya en las pasadas provisionales; a VA 0, los call
+        // rel32 no cambian de tamaño).
+        let pe_import_names = if pe { Some(self.scan_imports()?) } else { None };
         // --- relajación de saltos: crecer a near hasta punto fijo
         let mut near: Vec<bool> = self.text.iter().map(|_| false).collect();
         let prov = Layout {
@@ -1425,6 +1434,8 @@ impl Asm {
             text_va: 0x401000, rod_va: 0, dat_va: 0, bss_va: 0, note_va: 0,
             has_rod: false, has_dat: false, has_bss: false, has_note: false,
             phnum: 4, headers_end: 0,
+            pe_imports: pe_import_names.as_ref()
+                .map(|v| v.iter().map(|s| (s.clone(), 0u64)).collect()),
         };
         // Relajación tipo GAS: los saltos solo crecen; los pads de .p2align se
         // recalculan cada pasada (pueden encoger). El sistema no es monótono por
@@ -1475,7 +1486,206 @@ impl Asm {
             }
             break;
         }
-        self.finish_layout(near, final_offs)
+        if pe {
+            self.finish_pe(near, final_offs, pe_import_names.unwrap())
+        } else {
+            self.finish_layout(near, final_offs)
+        }
+    }
+
+    // Símbolos referenciados y no definidos: candidatos a import kernel32.
+    // Validados contra la lista blanca medida y devueltos ordenados.
+    fn scan_imports(&self) -> Result<Vec<String>, String> {
+        const WHITELIST: [&str; 7] = ["ExitProcess", "GetLocalTime", "GetProcessHeap",
+            "GetStdHandle", "HeapAlloc", "HeapFree", "WriteFile"];
+        fn scan_expr(p: &Parser, e: &Expr, names: &mut Vec<String>) {
+            for (_, t) in &e.0 {
+                if let Term::Sym(n) = t {
+                    if !p.labels.contains_key(n) && !p.consts.contains_key(n) && !names.contains(n) {
+                        names.push(n.clone());
+                    }
+                }
+            }
+        }
+        let mut imports: Vec<String> = Vec::new();
+        for it in &self.text {
+            match it {
+                TItem::Ins { ops, .. } => {
+                    for o in ops {
+                        match o {
+                            Op::Imm(e) => scan_expr(&self.p, e, &mut imports),
+                            Op::Mem { disp, riplab, .. } => {
+                                if let Some(e) = disp { scan_expr(&self.p, e, &mut imports); }
+                                if let Some(n) = riplab {
+                                    if !self.p.labels.contains_key(n) && !self.p.consts.contains_key(n)
+                                        && !imports.contains(n) {
+                                        imports.push(n.clone());
+                                    }
+                                }
+                            }
+                            Op::Star(inner) => {
+                                if let Op::Imm(e) = &**inner { scan_expr(&self.p, e, &mut imports); }
+                                if let Op::Mem { disp, riplab, .. } = &**inner {
+                                    if let Some(e) = disp { scan_expr(&self.p, e, &mut imports); }
+                                    if let Some(n) = riplab {
+                                        if !self.p.labels.contains_key(n) && !imports.contains(n) {
+                                            imports.push(n.clone());
+                                        }
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                TItem::Raw(DItem::Patch4(e)) | TItem::Raw(DItem::Patch8(e)) => {
+                    scan_expr(&self.p, e, &mut imports);
+                }
+                _ => {}
+            }
+        }
+        for sec in [&self.rodata, &self.data] {
+            for d in sec {
+                match d {
+                    DItem::Patch4(e) | DItem::Patch8(e) => scan_expr(&self.p, e, &mut imports),
+                    _ => {}
+                }
+            }
+        }
+        for n in &imports {
+            if !WHITELIST.contains(&n.as_str()) {
+                return Err(format!("PE64: símbolo indefinido '{}' no es un import kernel32 conocido", n));
+            }
+        }
+        imports.sort();
+        Ok(imports)
+    }
+
+    // ---------------------------------------------------------------- PE64 (Fase 2)
+    // Layout medido del oráculo mingw-w64 ld 2.38 con `-s` (ver STATUS Fase 2):
+    // secciones en orden .text,.data,.rdata,.bss,.idata, cada una en página
+    // 0x1000 propia desde RVA 0x1000; ImageBase 0x140000000; thunks de import
+    // al final de .text (FF 25 rel32 + 2 NOP, 8B, orden alfabético INVERSO);
+    // cola de .text: NOPs hasta 16, luego 32B (FF x8, 00 x8) x2.
+    fn finish_pe(self, near: Vec<bool>, offs_pre: Vec<u64>, imports: Vec<String>) -> Result<Vec<u8>, String> {
+        if ditems_size(&self.note) > 0 || self.has_gnu_stack {
+            return Err("PE64: secciones .note no soportadas en windows".into());
+        }
+        // as PE redondea cada sección al alineamiento de sección (mínimo 16).
+        let sec_round = |sz: u64, a: u32| {
+            let a = (a as u64).max(16);
+            (sz + a - 1) & !(a - 1)
+        };
+        let rod_size = sec_round(ditems_size(&self.rodata), self.rod_align);
+        let dat_size = sec_round(ditems_size(&self.data), self.dat_align);
+        let bss_size = sec_round(ditems_size(&self.bss), self.bss_align);
+        let has_rod = rod_size > 0;
+        let has_dat = dat_size > 0;
+        let has_bss = bss_size > 0;
+
+        let n = imports.len() as u64;
+        if n == 0 {
+            return Err("PE64: sin imports (debe llamarse al menos a ExitProcess)".into());
+        }
+
+        const BASE: u64 = 0x140000000;
+        let pad16 = |x: u64| (x + 15) & !15;
+        let next_page = |x: u64| (x + 0xfff) & !0xfff;
+
+        // tamaño de .idata: dir(20)+null(20)+ILT(8(n+1))+IAT(8(n+1))+strings+pad4+n*4+13+pad4
+        let strs_len: u64 = imports.iter()
+            .map(|s| { let l = 2 + s.len() as u64 + 1; (l + 1) & !1 }).sum();
+        let iat_off = 0x28 + 8 * (n + 1);
+        let idata_pre = iat_off + 8 * (n + 1) + strs_len;
+        let idata_size = (((idata_pre + 3) & !3) + 4 * n + 13 + 3) & !3;
+
+        // pasada provisional: imports -> 0 (los call rel32 no cambian de tamaño)
+        let imp0: std::collections::HashMap<String, u64> =
+            imports.iter().map(|s| (s.clone(), 0u64)).collect();
+        let prov = Layout {
+            text_offs: offs_pre.clone(), text_size: 0,
+            rod_size, dat_size, bss_size, note_size: 0,
+            note_off: 0, text_off: 0, rod_off: 0, dat_off: 0, bss_off: 0,
+            text_va: BASE + 0x1000, rod_va: 0, dat_va: 0, bss_va: 0, note_va: 0,
+            has_rod, has_dat, has_bss, has_note: false,
+            phnum: 0, headers_end: 0, pe_imports: Some(imp0),
+        };
+        let (text_pre, _) = self.encode_all(&near, &prov)?;
+        let code_size = text_pre.len() as u64;
+
+        // layout definitivo
+        let thunk_base = pad16(code_size);
+        let after_thunks = thunk_base + 8 * n;
+        let text_total = pad16(after_thunks) + 32;
+        let text_rva: u64 = 0x1000;
+        let mut rva = next_page(text_rva + text_total);
+        let data_rva = if has_dat { let r = rva; rva = next_page(r + dat_size); r } else { 0 };
+        let rdata_rva = if has_rod { let r = rva; rva = next_page(r + rod_size); r } else { 0 };
+        let bss_rva = if has_bss { let r = rva; rva = next_page(r + bss_size); r } else { 0 };
+        let idata_rva = rva;
+        let iat_rva = idata_rva + iat_off;
+
+        // thunks: orden alfabético inverso; import j (alfabético) -> IAT[j]
+        let mut imp_va: std::collections::HashMap<String, u64> =
+            std::collections::HashMap::new();
+        let mut thunk_bytes: Vec<u8> = Vec::new();
+        for (k, name) in imports.iter().rev().enumerate() {
+            let j = (n - 1 - k as u64) as usize; // índice alfabético
+            let off = thunk_base + 8 * k as u64;
+            imp_va.insert(name.clone(), BASE + text_rva + off);
+            let target = iat_rva + 8 * j as u64;
+            let rel = target as i64 - (text_rva + off + 6) as i64;
+            thunk_bytes.extend_from_slice(&[0xFF, 0x25]);
+            thunk_bytes.extend_from_slice(&(rel as i32).to_le_bytes());
+            thunk_bytes.extend_from_slice(&[0x90, 0x90]);
+        }
+
+        let l = Layout {
+            text_offs: offs_pre, text_size: code_size,
+            rod_size, dat_size, bss_size, note_size: 0,
+            note_off: 0, text_off: 0, rod_off: 0, dat_off: 0, bss_off: 0,
+            text_va: BASE + text_rva,
+            rod_va: if has_rod { BASE + rdata_rva } else { 0 },
+            dat_va: if has_dat { BASE + data_rva } else { 0 },
+            bss_va: if has_bss { BASE + bss_rva } else { 0 },
+            note_va: 0,
+            has_rod, has_dat, has_bss, has_note: false,
+            phnum: 0, headers_end: 0, pe_imports: Some(imp_va),
+        };
+        let (text_bytes, _) = self.encode_all(&near, &l)?;
+        if text_bytes.len() as u64 != code_size {
+            return Err(format!("PE64: oscilación interna {} vs {}", code_size, text_bytes.len()));
+        }
+        let mut text = text_bytes;
+        // Medido en ld: el relleno pre-thunks es 0x90 simple; el post-thunks
+        // (hasta 16) usa la tabla NOP multibyte de siempre.
+        text.extend_from_slice(&vec![0x90u8; (thunk_base - code_size) as usize]);
+        text.extend_from_slice(&thunk_bytes);
+        text.extend_from_slice(&nop_fill((pad16(after_thunks) - after_thunks) as usize));
+        for _ in 0..2 { text.extend_from_slice(&[0xFF; 8]); text.extend_from_slice(&[0u8; 8]); }
+
+        let resolve = self.make_resolver(&l);
+        let mut rod_bytes = materialize(&self.rodata, &resolve)?;
+        rod_bytes.resize(rod_size as usize, 0);
+        let mut dat_bytes = materialize(&self.data, &resolve)?;
+        dat_bytes.resize(dat_size as usize, 0);
+
+        let entry_off = match self.p.labels.get("_start") {
+            Some(loc) if loc.sec == Sec::Text => self.loc_offset(*loc, &l.text_offs, code_size),
+            _ => return Err("sin _start".into()),
+        };
+
+        Ok(crate::hpe::write_pe(&crate::hpe::PeImage {
+            text, text_rva: text_rva as u32,
+            data: if has_dat { Some((dat_bytes, data_rva as u32)) } else { None },
+            rdata: if has_rod { Some((rod_bytes, rdata_rva as u32)) } else { None },
+            bss: if has_bss { Some((bss_size, bss_rva as u32)) } else { None },
+            idata_rva: idata_rva as u32,
+            iat_rva: iat_rva as u32,
+            idata_size: idata_size as u32,
+            imports,
+            entry_rva: (text_rva + entry_off) as u32,
+        }))
     }
 
     fn finish_layout(self, near: Vec<bool>, offs_pre: Vec<u64>) -> Result<Vec<u8>, String> {
@@ -1500,7 +1710,7 @@ impl Asm {
             rod_size, dat_size, bss_size, note_size,
             note_off, text_off: 0x1000, rod_off: 0, dat_off: 0, bss_off: 0,
             text_va: 0x401000, rod_va: 0, dat_va: 0, bss_va: 0, note_va: 0,
-            has_rod, has_dat, has_bss, has_note, phnum, headers_end,
+            has_rod, has_dat, has_bss, has_note, phnum, headers_end, pe_imports: None,
         };
         let (text_bytes_pre, offs_pre) = self.encode_all(&near, &prov)?;
         let text_size = text_bytes_pre.len() as u64;
@@ -1551,7 +1761,7 @@ impl Asm {
             rod_size, dat_size, bss_size, note_size,
             note_off, text_off, rod_off, dat_off, bss_off,
             text_va, rod_va, dat_va, bss_va, note_va: 0x400000 + note_off,
-            has_rod, has_dat, has_bss, has_note, phnum, headers_end,
+            has_rod, has_dat, has_bss, has_note, phnum, headers_end, pe_imports: None,
         };
         // pasada final de texto con resolver completo
         let l2 = Layout { text_offs: Vec::new(), ..layout_clone(&l) };
@@ -1652,6 +1862,7 @@ fn prov_clone(l: &Layout) -> Layout {
         text_va: l.text_va, rod_va: l.rod_va, dat_va: l.dat_va, bss_va: l.bss_va, note_va: l.note_va,
         has_rod: l.has_rod, has_dat: l.has_dat, has_bss: l.has_bss, has_note: l.has_note,
         phnum: l.phnum, headers_end: l.headers_end,
+        pe_imports: l.pe_imports.clone(),
     }
 }
 fn layout_clone(l: &Layout) -> Layout { prov_clone(l) }
@@ -1800,7 +2011,7 @@ fn build_elf(s: ElfSpec) -> Vec<u8> {
     out
 }
 
-pub fn assemble(src: &str) -> Result<Vec<u8>, String> {
+fn assemble_target(src: &str, pe: bool) -> Result<Vec<u8>, String> {
     let expanded = expand_rept(src)?;
     let mut a = Asm {
         p: Parser { consts: HashMap::new(), labels: HashMap::new(), numlabels: HashMap::new(), seq: Cell::new(0) },
@@ -1811,5 +2022,13 @@ pub fn assemble(src: &str) -> Result<Vec<u8>, String> {
     for (ln, raw) in expanded.lines().enumerate() {
         a.parse_line(raw).map_err(|e| format!("línea {}: {}: {}", ln + 1, raw.trim(), e))?;
     }
-    a.finish()
+    a.finish(pe)
+}
+
+pub fn assemble(src: &str) -> Result<Vec<u8>, String> {
+    assemble_target(src, false)
+}
+
+pub fn assemble_pe(src: &str) -> Result<Vec<u8>, String> {
+    assemble_target(src, true)
 }
