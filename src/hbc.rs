@@ -13623,9 +13623,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // frees the copies; grow is a clean runtime error here -
                 // Harbour grows with NIL, oracle hk13).
                 // kind 3: three levels (grow NIL casillas like kind 1;
-                // shrink frees removed children RECURSIVELY via
-                // hbc_rfree - they own their own children).
-                let kind = if v.ty == Ty::DArr2 { 1 } else if v.ty == Ty::DArrS { 2 } else if v.ty == Ty::DArr3 || v.ty == Ty::DArrRef2 { 3 } else { 0 };
+                // shrink frees each removed DArr2 child with hbc_free2 -
+                // their DArr1 children are released by that helper).
+                let kind = if v.ty == Ty::DArr2 || v.ty == Ty::DArrRef2 { 1 } else if v.ty == Ty::DArrS { 2 } else if v.ty == Ty::DArr3 { 3 } else { 0 };
                 // DArrRef: address of the owner's cell, like AAdd (hk87).
                 let aptr = if v.ty == Ty::DArrRef || v.ty == Ty::DArrRef2 { format!("mov -{}(%rbp), %rdi", v.off) } else { format!("lea -{}(%rbp), %rdi", v.off) };
                 cg_expr(e, env, sigs, strs, out, target);
@@ -18266,8 +18266,8 @@ hbc_asize:
     call hbc_freestr
 82: inc %r9
     jmp 81b
-    # kind 3: three levels - removed children own their own children,
-    # so they are freed RECURSIVELY (hbc_rfree depth 2)
+    # kind 3: three levels - removed children are DArr2 blocks, freed
+    # with hbc_free2; their DArr1 children are released inside it.
 83: mov (%rbx), %r13
     mov %r12, %r9
 84: cmp 8(%rbx), %r9
@@ -18278,8 +18278,7 @@ hbc_asize:
     test %rdi, %rdi
     jz 85f
     mov 8(%r13,%r10), %rsi
-    mov $2, %edx
-    call hbc_rfree
+    call hbc_free2
 85: inc %r9
     jmp 84b
 76: mov %r12, 8(%rbx)
@@ -20449,8 +20448,9 @@ hbc_asize:
     call hbc_freestr
 82: incq -48(%rbp)
     jmp 81b
-    # kind 3: three levels - recursive free of removed children
-    # (hbc_rfree depth 2); same stack-counter pattern as kind 1.
+    # kind 3: three levels - removed DArr2 children freed with
+    # hbc_free2 (their DArr1 children inside); same stack-counter
+    # pattern as kind 1.
 83: mov (%rbx), %r13
     mov %r12, -48(%rbp)
 84: mov -48(%rbp), %r9
@@ -20462,8 +20462,7 @@ hbc_asize:
     test %rdi, %rdi
     jz 85f
     mov 8(%r13,%r10), %rsi
-    mov $2, %edx
-    call hbc_rfree
+    call hbc_free2
 85: incq -48(%rbp)
     jmp 84b
 76: mov %r12, 8(%rbx)
