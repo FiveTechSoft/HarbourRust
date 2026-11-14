@@ -187,3 +187,26 @@ walk(Expr::Send) y walk_stmts(Stmt::SendSet) en pin_params. p12 y p24
 Sondas nuevas: neg14_ambig_member (error nombrado), p24_param_virtual
 (byte-identico al oraculo). Suite: 25/28 PASS + 13 negativas con rechazo
 nombrado limpio.
+
+## Slice 3 continuacion: estrechamiento en bucles + estres de heap
+
+p25_stress (2000 ciclos Node():New()/Bump/release por iteracion, freelist
+reciclando) destapo un panic real: el estrechamiento Dyn->Obj de un local
+dentro de un cuerpo FOR lo descartaba la env final del checker, asi que
+OBJ_NARROW no lo veia y el layout de codegen dejaba el slot Dyn (panic
+unreachable en el Send). Fix: OBJ_NARROW se registra EN el punto del
+estrechamiento (checker, brazos Local y Assign), no solo desde la env
+final. p25 byte-identico al oraculo Harbour e instantaneo.
+
+Verificacion final del paquete:
+- Bateria Linux (mitad de tests/run_battery.sh, mismas banderas y
+  aceptacion): 1660/1661; el unico fallo es t110_pp_include_angle_neg,
+  HEREDADO de main (falla identico en 9a6f3b4 pristino; lo documenta el
+  propio commit DBF 9f578a3)
+- No-contaminacion: 1007/1007 positivas byte-identicas, 567/567
+  negativas (compilador pristino 9a6f3b4 vs integracion)
+- Suite de clases: 26/29 byte-identicas (p03/p07 '=' del subset y p21 MI
+  son las limitaciones aprobadas) + 13 negativas con rechazo nombrado
+- ASan+UBSan: blob de integracion src/hrobj_blob.s bajo el driver C del
+  spike (gcc -fsanitize=address,undefined), incluido el caso cero-DATA
+  del template dummy: limpio, OK

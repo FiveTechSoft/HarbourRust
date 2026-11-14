@@ -7433,6 +7433,12 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     t
                 };
                 env.push(Local { name: id.clone(), ty: t, moved: false, ro: false, byref: false });
+                // Object narrowing handoff, recorded AT the narrowing
+                // (a declaration inside a loop body leaves the final env
+                // before codegen layout consults OBJ_NARROW).
+                if let Ty::Obj(ci) = t {
+                    OBJ_NARROW.with(|m| { m.borrow_mut().insert((CUR_FN.with(|c| c.borrow().clone()), id.clone()), ci); });
+                }
             }
             Stmt::Print(n, es, _) => {
                 // ains P2 stage 1 closure (independent-review blocker):
@@ -8752,6 +8758,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     // local NARROWS to an object slot (8-byte casilla).
                     // From here on it takes only that class (or NIL).
                     env[idx].ty = t;
+                    // Recorded AT the narrowing: inside a loop body the
+                    // final env never sees it (p25).
+                    if let Ty::Obj(ci) = t {
+                        OBJ_NARROW.with(|m| { m.borrow_mut().insert((CUR_FN.with(|c| c.borrow().clone()), id.clone()), ci); });
+                    }
                 } else if matches!(env[idx].ty, Ty::Obj(_)) && matches!(e, Expr::Nil) {
                     // `o := NIL` releases the reference; the slot stays
                     // object-typed (codegen stores a null pointer).
