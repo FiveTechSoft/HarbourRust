@@ -7,9 +7,9 @@
 #   * --instrument is passed to hbc, like the Linux runner, so registry
 #     cases (t230) and the allocation counters stay comparable.
 #   * Sources use the current .prg extension; .hb is also accepted.
-#   * CurDir is measured on the ordinary Linux backend only. Every case
-#     whose source calls CurDir is SKIPPED here and reported; Windows
-#     rejects it by design.
+#   * CurDir and classes are measured on the ordinary Linux backend only.
+#     Every case whose source calls CurDir or declares a class is SKIPPED
+#     here and reported; Windows rejects both by design in this increment.
 #   * streams/pos2 expectation files were captured through the Linux/Wine
 #     path and contain CRLF, while the native Windows target writes LF.
 #     CR is stripped from both sides for those comparisons and the case is
@@ -58,6 +58,9 @@ while IFS= read -r line; do
   if [ -n "$file" ] && [ -f "$file" ] && grep -q 'CurDir' "$file"; then
     echo "SKIP $file (CurDir is Linux-backend only)"; skip=$((skip+1)); continue
   fi
+  if [ -n "$file" ] && [ -f "$file" ] && grep -qE 'ENDCLASS|CREATE[[:space:]]+CLASS' "$file"; then
+    echo "SKIP $file (classes are Linux-backend only in this increment)"; skip=$((skip+1)); continue
+  fi
   case "$kind" in
     pos)  run_pos_kind "$file" "$(echo "$line" | cut -d' ' -f3- | xargs -0 printf '%b')" "";;
     posx) run_pos_kind "$file" "$(echo "$line" | cut -d' ' -f4- | xargs -0 printf '%b')" "$(echo "$line"|awk '{print $3}')";;
@@ -72,7 +75,7 @@ while IFS= read -r line; do
       else echo "FAIL $file (exact win bytes)"; fail=1; fi;;
     streams)
       base=$(basename "$file"); base=${base%.*}
-      sexp=$(echo "$line"|awk '{print $4}'); eexp=$(echo "$line"|awk '{print $5}')
+      sexp=$(echo "$line"|awk '{print $3}'); eexp=$(echo "$line"|awk '{print $4}')
       n=$((n+1))
       if build_win "$file" &&
          timeout 20 "./gen/$base.exe" >"gen/${base}_w.stdout" 2>"gen/${base}_w.stderr" &&
