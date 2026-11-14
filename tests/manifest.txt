@@ -1736,3 +1736,9 @@ streams tests/hash-ownership/setdef-switch.prg tests/hash-ownership/setdef-switc
 streams tests/hash-ownership/valueat-print.prg tests/hash-ownership/valueat-print.stdout tests/hash-ownership/valueat-print.stderr
 streams tests/hash-ownership/valueat-store.prg tests/hash-ownership/valueat-store.stdout tests/hash-ownership/valueat-store.stderr
 streams tests/hash-ownership/valueat-switch.prg tests/hash-ownership/valueat-switch.stdout tests/hash-ownership/valueat-switch.stderr
+pos tests/try-catch/try_basic.prg \nin try\ncaught: Bound error: array access\nin finally\nafter end
+pos tests/try-catch/try_noerror_finally.prg \nin try\nin finally\nafter end
+pos tests/try-catch/try_break_value.prg \nin try\ncaught: sentinel\nafter end
+pos tests/try-catch/try_nested_crossfn.prg \nouter try\ninner try\ninner finally\nouter caught: Bound error: array access\nouter finally\nafter end
+neg tests/try-catch/try_return_neg.prg E0025: invalid RETURN from within of SEQUENCE code
+neg tests/try-catch/try_exit_neg.prg E0025: invalid EXIT from within of SEQUENCE code
