@@ -1,0 +1,10 @@
+escape main: 2 esc, 0 noesc
+  local a Obj(0) -> ESC (shared object (conservative))
+  local b Obj(1) -> ESC (shared object (conservative))
+escape alpha__set: 2 esc, 0 noesc
+  param Self Obj(0) -> ESC (shared object (conservative))
+  local payload StrOwn -> ESC (stored into an object field)
+escape alpha__new: 1 esc, 0 noesc
+  param Self Obj(0) -> ESC (shared object (conservative))
+escape beta__new: 1 esc, 0 noesc
+  param Self Obj(1) -> ESC (shared object (conservative))

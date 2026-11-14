@@ -1,0 +1,4 @@
+escape consume: 0 esc, 1 noesc
+  param a DArr -> NOESC
+escape main: 1 esc, 0 noesc
+  local arr DArr -> ESC (moved into a call)

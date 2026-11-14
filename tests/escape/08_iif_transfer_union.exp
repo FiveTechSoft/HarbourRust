@@ -1,0 +1,6 @@
+escape pick: 3 esc, 1 noesc
+  param c I64 -> NOESC
+  local x1 StrOwn -> ESC (returned)
+  local x2 StrOwn -> ESC (returned)
+  local r StrOwn -> ESC (returned)
+escape main: 0 esc, 0 noesc

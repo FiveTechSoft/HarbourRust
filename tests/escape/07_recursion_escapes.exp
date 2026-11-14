@@ -1,0 +1,6 @@
+escape walk: 1 esc, 2 noesc
+  param n I64 -> NOESC
+  param acc DArr -> ESC (moved into a call argument)
+  local d I64 -> NOESC
+escape main: 1 esc, 0 noesc
+  local a DArr -> ESC (moved into a call argument)

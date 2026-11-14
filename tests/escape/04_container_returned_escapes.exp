@@ -1,0 +1,5 @@
+escape build: 1 esc, 1 noesc
+  local a DArr -> ESC (returned)
+  local i I64 -> NOESC
+escape main: 0 esc, 1 noesc
+  local r DArr -> NOESC

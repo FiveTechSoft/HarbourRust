@@ -1,0 +1,12 @@
+escape main: 3 esc, 0 noesc
+  local o Obj(0) -> ESC (shared object (conservative))
+  local observed StrOwn -> ESC (moved into a method argument)
+  local moved StrOwn -> ESC (moved into a method argument)
+escape box__read: 1 esc, 1 noesc
+  param Self Obj(0) -> ESC (shared object (conservative))
+  param x StrOwn -> NOESC
+escape box__take: 1 esc, 1 noesc
+  param Self Obj(0) -> ESC (shared object (conservative))
+  param x StrOwn -> NOESC
+escape box__new: 1 esc, 0 noesc
+  param Self Obj(0) -> ESC (shared object (conservative))

@@ -1,0 +1,3 @@
+escape counter: 1 esc, 0 noesc
+  local s I64 -> ESC (process-owned STATIC)
+escape main: 0 esc, 0 noesc

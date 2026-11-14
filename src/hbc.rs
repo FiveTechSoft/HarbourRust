@@ -9002,6 +9002,542 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
 }
 
 // ---------------------------------------------------------------------------
+// Escape analysis (Goose-hybrid increment I1; design doc
+// docs/harbourrust-goose-hybrid-design.md, "Incremento 1 - Analisis de
+// escape en el checker"). A PURE post-convergence pass: it classifies
+// every parameter and local of each function as ESC (its payload can
+// outlive the function frame) or NOESC (it provably dies with the frame),
+// plus two annotations the scope-arena increment (I2) will consume:
+// crosses_scope (the value's lifetime extends into an OUTER syntactic
+// scope, e.g. a loop temp stored into a function-level container: not
+// rewindable at the inner scope's exit) and declared_in_loop. Desconocido
+// always folds into ESC. The pass emits no code and changes no decision of
+// any other pass; the classification map is the artifact. Flags:
+// --no-escape-analysis omits the pass; HBC_ESCAPE_DUMP=1 prints the map.
+//
+// Soundness rule. A payload leaves the frame only when OWNERSHIP leaves
+// it, and ownership transfer in this compiler is exactly what apply_moves
+// marks. This pass re-runs the checker's own apply_moves on a scratch
+// environment carrying the CONVERGED final types (obtained by re-checking
+// each function once against a cloned signature table), mirroring the
+// per-position `moving` flags check_stmts uses (value-storing positions
+// true, reading positions false), so this walk cannot drift from the
+// ownership walk. Clone-semantics uses do not move the payload and are not
+// escapes: Dyn values are cloned at boundaries (cg_dyn_clone_if_str) and
+// the Extend C boundary reads its arguments (apply_moves' EXTERNS arm).
+// There is deliberately NO interprocedural retention inference: an owned
+// move into ANY call classifies ESC, and the borrow exceptions (aview /
+// borrowed cells / string_iter_copy / read-only builtins) are the
+// converged Sig flags and the checker's own apply_moves decisions. Call
+// cycles therefore need no cutting: recursion, direct or mutual, is ESC by
+// the generic rule, as the design doc's conservative cases demand.
+// ---------------------------------------------------------------------------
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+enum EscClass { Esc, NoEsc }
+
+struct EscEntry {
+    name: String,
+    ty: Option<Ty>,   // None: declared inside a branch/loop body (the checker's branch envs merge moved flags only, not declarations); treated as heap-relevant
+    is_param: bool,
+    class: EscClass,
+    reason: String,        // first ESC reason, in program order
+    crosses_scope: bool,   // lifetime reaches an outer syntactic scope (I2: not rewindable at the inner scope exit)
+    declared_in_loop: bool,
+}
+
+// Where the value of an expression goes. The bool carried alongside at the
+// call sites is the checker's `moving` flag for that position.
+enum EscCtx {
+    Transfer(String),      // assignment root: the value moves INTO local `String` (union, not escape)
+    Escape(&'static str),  // the value leaves the frame at this position
+    Store(String),         // the value moves INTO container `String` (joins the container's lifetime)
+    Observe,               // read-only position; only nested owned-call moves escape
+}
+
+struct EscPass<'a> {
+    sigs: &'a [Sig],
+    scratch: Vec<Local>,  // converged env clone; moved flags reset per expression
+    outer_owned: std::collections::HashSet<String>, // params whose storage belongs to an outer frame (borrowed cells, views, @-slots, roots)
+    parent: std::collections::HashMap<String, String>, // union-find over variable names
+    marks: Vec<(String, String)>,  // (name, first reason) in program order
+    crosses: std::collections::HashSet<String>,
+    loop_decl: std::collections::HashSet<String>,
+    decl: std::collections::HashMap<String, (usize, bool)>, // name -> (syntactic depth, declared in a loop body)
+    order: Vec<String>,
+    params: std::collections::HashSet<String>,
+}
+
+impl<'a> EscPass<'a> {
+    fn note(&mut self, n: &str) {
+        if !self.parent.contains_key(n) {
+            self.parent.insert(n.to_string(), n.to_string());
+            self.order.push(n.to_string());
+        }
+    }
+    fn find(&mut self, n: &str) -> String {
+        self.note(n);
+        let mut r = n.to_string();
+        loop {
+            let p = self.parent[&r].clone();
+            if p == r { break; }
+            r = p;
+        }
+        let mut c = n.to_string();
+        while self.parent[&c] != r {
+            let next = self.parent[&c].clone();
+            self.parent.insert(c.clone(), r.clone());
+            c = next;
+        }
+        r
+    }
+    fn union(&mut self, a: &str, b: &str) {
+        let ra = self.find(a);
+        let rb = self.find(b);
+        if ra != rb { self.parent.insert(ra, rb); }
+    }
+    fn esc(&mut self, n: &str, reason: &str) {
+        let r = self.find(n);
+        if !self.marks.iter().any(|(m, _)| *m == r) {
+            self.marks.push((r, reason.to_string()));
+        }
+    }
+    fn ensure_scratch(&mut self, id: &str) {
+        // A branch-local the checker's final env never merged (branch envs
+        // merge moved flags, not declarations). Without a scratch slot
+        // apply_moves cannot register its moves and its stores would
+        // classify false-NOESC - the dangerous direction. A synthetic StrOwn
+        // slot registers every move the value can make; any over-mark lands
+        // on ESC, the safe side.
+        if !self.scratch.iter().any(|v| v.name == id) {
+            let ci = OBJ_NARROW.with(|m| m.borrow().get(&(CUR_FN.with(|c| c.borrow().clone()), id.to_string())).copied());
+            let ty = ci.map(Ty::Obj).unwrap_or(Ty::StrOwn);
+            self.scratch.push(Local { name: id.to_string(), ty, moved: false, ro: false, byref: false });
+        }
+    }
+    // Variables the checker's apply_moves can move, run on the scratch env
+    // with the same `moving` flag the checker used at this position.
+    fn moved_diff(&mut self, e: &Expr, moving: bool) -> Vec<String> {
+        for v in self.scratch.iter_mut() { v.moved = false; }
+        apply_moves(e, &mut self.scratch, self.sigs, moving);
+        self.scratch.iter().filter(|v| v.moved).map(|v| v.name.clone()).collect()
+    }
+    // Variables whose MOVE at the root of `e` is a transfer into `e`'s own
+    // value (the assigned target inherits them), not an escape: the
+    // top-level variable itself, and the owned-string arms of a top-level
+    // iif (apply_moves moves the taken arm; statically either can move).
+    fn transfer_vars(e: &Expr) -> Vec<String> {
+        match e {
+            Expr::Var(x) => vec![x.clone()],
+            Expr::Call(id, args) if is_builtin(id, "iif") => {
+                args[1..].iter().filter_map(|a| if let Expr::Var(v) = a { Some(v.clone()) } else { None }).collect()
+            }
+            _ => Vec::new(),
+        }
+    }
+    fn process_expr(&mut self, e: &Expr, ctx: &EscCtx, moving: bool, depth: usize) {
+        self.meta_walk(e, depth, matches!(ctx, EscCtx::Escape(_)));
+        let moved = self.moved_diff(e, moving);
+        match ctx {
+            EscCtx::Transfer(t) => {
+                let cand = Self::transfer_vars(e);
+                for m in moved {
+                    if cand.iter().any(|c| *c == m) {
+                        if self.decl.get(t).map_or(false, |(d, _)| *d < depth) { self.crosses.insert(m.clone()); }
+                        self.union(&m, t);
+                    } else {
+                        self.esc(&m, "moved into a call argument");
+                    }
+                }
+            }
+            EscCtx::Escape(r) => {
+                for m in moved { self.esc(&m, r); }
+            }
+            EscCtx::Store(c) => {
+                let cand = if moving { Self::transfer_vars(e) } else { Vec::new() };
+                let outer = self.outer_owned.contains(c);
+                for m in moved {
+                    if cand.iter().any(|x| *x == m) {
+                        if outer {
+                            self.esc(&m, "stored into a container owned by an outer frame");
+                        } else {
+                            if self.decl.get(c).map_or(false, |(d, _)| *d < depth) { self.crosses.insert(m.clone()); }
+                            self.union(&m, c);
+                        }
+                    } else {
+                        self.esc(&m, "moved into a call argument");
+                    }
+                }
+            }
+            EscCtx::Observe => {
+                for m in moved { self.esc(&m, "moved into a call argument"); }
+            }
+        }
+    }
+    // Nested assignments and by-reference arguments hide from the
+    // statement-level move scan (apply_moves has no Set arm and `@` never
+    // moves), so they are walked out explicitly. A Set target inside a
+    // RETURNED expression is also marked: its new content leaves the frame.
+    fn meta_walk(&mut self, e: &Expr, depth: usize, in_leaving: bool) {
+        match e {
+            Expr::Set(id, rhs) => {
+                self.note(id);
+                self.decl.entry(id.clone()).or_insert((depth, false));
+                self.ensure_scratch(id);
+                if in_leaving { self.esc(id, "assigned inside a returned expression"); }
+                self.process_expr(rhs, &EscCtx::Transfer(id.clone()), true, depth);
+            }
+            Expr::ByRef(v) => self.esc(v, "passed by reference (`@`)"),
+            Expr::Seq(es) | Expr::ArrLit(es) => { for x in es { self.meta_walk(x, depth, in_leaving); } }
+            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => {
+                self.meta_walk(a, depth, in_leaving);
+                self.meta_walk(b, depth, in_leaving);
+            }
+            Expr::LNot(a) => self.meta_walk(a, depth, in_leaving),
+            Expr::Call(_, args) => { for a in args { self.meta_walk(a, depth, in_leaving); } }
+            Expr::Index(_, a) => self.meta_walk(a, depth, in_leaving),
+            Expr::Index2(_, a, b) => { self.meta_walk(a, depth, in_leaving); self.meta_walk(b, depth, in_leaving); }
+            Expr::Index3(_, a, b, c) => { self.meta_walk(a, depth, in_leaving); self.meta_walk(b, depth, in_leaving); self.meta_walk(c, depth, in_leaving); }
+            Expr::Index4(_, a, b, c, d) => { self.meta_walk(a, depth, in_leaving); self.meta_walk(b, depth, in_leaving); self.meta_walk(c, depth, in_leaving); self.meta_walk(d, depth, in_leaving); }
+            Expr::IdxCompound(_, ie, _, re) => { self.meta_walk(ie, depth, in_leaving); self.meta_walk(re, depth, in_leaving); }
+            Expr::HashLit(ps) => { for (k, v) in ps { self.meta_walk(k, depth, in_leaving); self.meta_walk(v, depth, in_leaving); } }
+            Expr::BlockLit(_, _, body) => {
+                // Captures are a named rejection in this increment, so no
+                // local can be referenced here; mark defensively anyway.
+                let mut fv = Vec::new();
+                for b in body { free_vars(b, &mut fv); }
+                for v in fv {
+                    if self.decl.contains_key(&v) || self.scratch.iter().any(|x| x.name == v) {
+                        self.esc(&v, "captured by a codeblock");
+                    }
+                }
+                for b in body { self.meta_walk(b, depth, in_leaving); }
+            }
+            Expr::Send(o, name, args) => {
+                self.meta_walk(o, depth, in_leaving);
+                for a in args { self.meta_walk(a, depth, in_leaving); }
+                // apply_moves has no Send arm. Mirror codegen's leading-Self
+                // internal call to catch owned moves hidden in method args.
+                let recv_ty = type_expr(o, &mut self.scratch.clone(), &mut self.sigs.to_vec(), 0);
+                if let Ok(Ty::Obj(ci)) = recv_ty {
+                    if let Some((_, fname)) = method_lookup(ci, &name.to_lowercase()) {
+                        let mut actual = vec![(**o).clone()];
+                        actual.extend(args.iter().cloned());
+                        let call = Expr::Call(fname, actual);
+                        for n in self.moved_diff(&call, false) {
+                            self.esc(&n, "moved into a method argument");
+                        }
+                    }
+                } else {
+                    // A receiver that cannot be retyped supplies no proof.
+                    for v in self.scratch.clone() { self.esc(&v.name, "unresolved method receiver (conservative)"); }
+                }
+            }
+            _ => {}
+        }
+    }
+    fn walk(&mut self, stmts: &[Stmt], depth: usize, in_loop: bool) {
+        for s in stmts {
+            match s {
+                Stmt::Local(_, id, e) => {
+                    self.note(id);
+                    self.decl.insert(id.clone(), (depth, in_loop));
+                    if in_loop { self.loop_decl.insert(id.clone()); }
+                    self.ensure_scratch(id);
+                    self.process_expr(e, &EscCtx::Transfer(id.clone()), true, depth);
+                }
+                Stmt::Static(_, id, e) => {
+                    // Process-owned slot: anything it holds outlives the frame.
+                    self.note(id);
+                    self.decl.insert(id.clone(), (depth, in_loop));
+                    self.esc(id, "process-owned STATIC");
+                    self.process_expr(e, &EscCtx::Observe, false, depth);
+                }
+                Stmt::Assign(_, id, e) => {
+                    self.note(id);
+                    if static_dyn(id) {
+                        // Persistent tagged slot: values are stored per
+                        // element without moving (the checker's static_dyn
+                        // arm); the CONTENT is process-owned, so the source
+                        // variable's value leaves the frame.
+                        self.esc(id, "process-owned STATIC");
+                        if let Expr::Var(v) = e { if v != id { self.esc(v, "stored into a process-owned STATIC"); } }
+                        self.process_expr(e, &EscCtx::Observe, false, depth);
+                    } else {
+                        if self.decl.get(id).map_or(false, |(d, _)| *d < depth) { self.crosses.insert(id.clone()); }
+                        self.process_expr(e, &EscCtx::Transfer(id.clone()), true, depth);
+                    }
+                }
+                Stmt::Print(_, es, _) => { for e in es { self.process_expr(e, &EscCtx::Observe, false, depth); } }
+                Stmt::Ret(_, oe) => {
+                    if let Some(e) = oe { self.process_expr(e, &EscCtx::Escape("returned"), true, depth); }
+                }
+                Stmt::If(_, c, t, el) => {
+                    self.process_expr(c, &EscCtx::Observe, false, depth);
+                    self.walk(t, depth + 1, in_loop);
+                    self.walk(el, depth + 1, in_loop);
+                }
+                Stmt::While(_, c, b) => {
+                    self.process_expr(c, &EscCtx::Observe, false, depth);
+                    self.walk(b, depth + 1, true);
+                }
+                Stmt::For(_, v, a, b, _, body) => {
+                    self.process_expr(a, &EscCtx::Observe, false, depth);
+                    self.process_expr(b, &EscCtx::Observe, false, depth);
+                    self.note(v);
+                    // A `for` over an already-declared local reuses that
+                    // slot; only an implicit loop variable is loop-local.
+                    if !self.decl.contains_key(v) { self.loop_decl.insert(v.clone()); }
+                    self.decl.entry(v.clone()).or_insert((depth + 1, true));
+                    self.ensure_scratch(v);
+                    self.walk(body, depth + 1, true);
+                }
+                Stmt::ForEach(_, v, coll, body) => {
+                    self.process_expr(coll, &EscCtx::Observe, false, depth);
+                    self.note(v);
+                    if !self.decl.contains_key(v) { self.loop_decl.insert(v.clone()); }
+                    self.decl.entry(v.clone()).or_insert((depth + 1, true));
+                    self.ensure_scratch(v);
+                    self.walk(body, depth + 1, true);
+                }
+                Stmt::Switch(_, sel, arms, oth) => {
+                    self.process_expr(sel, &EscCtx::Observe, false, depth);
+                    for (_, _, b) in arms { self.walk(b, depth + 1, in_loop); }
+                    if let Some((_, b)) = oth { self.walk(b, depth + 1, in_loop); }
+                }
+                Stmt::Exit(_) | Stmt::Loop(_) => {}
+                Stmt::CallStmt(_, e) => self.process_expr(e, &EscCtx::Escape("moved into a call"), true, depth),
+                Stmt::SendStmt(_, e) => self.process_expr(e, &EscCtx::Observe, false, depth),
+                Stmt::SelfSet(_, _, e) => self.process_expr(e, &EscCtx::Escape("stored into an object field"), true, depth),
+                Stmt::SendSet(_, o, _, e) => {
+                    self.process_expr(o, &EscCtx::Observe, false, depth);
+                    self.process_expr(e, &EscCtx::Escape("stored into an object field"), true, depth);
+                }
+                Stmt::AAdd(_, id, e) => self.process_expr(e, &EscCtx::Store(id.clone()), true, depth),
+                Stmt::AAddSub(_, id, ie, e) => {
+                    self.process_expr(ie, &EscCtx::Observe, false, depth);
+                    self.process_expr(e, &EscCtx::Store(id.clone()), true, depth);
+                }
+                Stmt::AAddSub2(_, id, ie, ie2, e) => {
+                    self.process_expr(ie, &EscCtx::Observe, false, depth);
+                    self.process_expr(ie2, &EscCtx::Observe, false, depth);
+                    // The checker's flag is false here (hk105/pr8 family):
+                    // the stored scalar clones, nothing moves at the root.
+                    self.process_expr(e, &EscCtx::Store(id.clone()), false, depth);
+                }
+                Stmt::AAddSub3(_, id, ie, ie2, ie3, e) => {
+                    self.process_expr(ie, &EscCtx::Observe, false, depth);
+                    self.process_expr(ie2, &EscCtx::Observe, false, depth);
+                    self.process_expr(ie3, &EscCtx::Observe, false, depth);
+                    self.process_expr(e, &EscCtx::Store(id.clone()), false, depth);
+                }
+                Stmt::ASize(_, _, e) => self.process_expr(e, &EscCtx::Observe, false, depth),
+                Stmt::ASizeSub(_, _, ie, e) => {
+                    self.process_expr(ie, &EscCtx::Observe, false, depth);
+                    self.process_expr(e, &EscCtx::Observe, false, depth);
+                }
+                Stmt::ASizeSub2(_, _, ie, ie2, e) => {
+                    self.process_expr(ie, &EscCtx::Observe, false, depth);
+                    self.process_expr(ie2, &EscCtx::Observe, false, depth);
+                    self.process_expr(e, &EscCtx::Observe, false, depth);
+                }
+                Stmt::ASizeSub3(_, _, ie, ie2, ie3, e) => {
+                    self.process_expr(ie, &EscCtx::Observe, false, depth);
+                    self.process_expr(ie2, &EscCtx::Observe, false, depth);
+                    self.process_expr(ie3, &EscCtx::Observe, false, depth);
+                    self.process_expr(e, &EscCtx::Observe, false, depth);
+                }
+                Stmt::AIns(_, _, ie) | Stmt::ADel(_, _, ie) => self.process_expr(ie, &EscCtx::Observe, false, depth),
+                Stmt::AFill(_, _, e, se, ce) => {
+                    // The fill value is cloned per cell (checker flag false).
+                    self.process_expr(e, &EscCtx::Observe, false, depth);
+                    if let Some(x) = se { self.process_expr(x, &EscCtx::Observe, false, depth); }
+                    if let Some(x) = ce { self.process_expr(x, &EscCtx::Observe, false, depth); }
+                }
+                Stmt::HDel(_, _, e) | Stmt::HDelAt(_, _, e) => self.process_expr(e, &EscCtx::Observe, false, depth),
+                Stmt::HClear(..) => {}
+                Stmt::HFill(_, _, e) => self.process_expr(e, &EscCtx::Observe, false, depth),
+                Stmt::HMerge(_, _, _) => {
+                    // Entries are copied during the upsert; nothing moves.
+                }
+                Stmt::HCopy(_, _, _, se, ce) => {
+                    if let Some(x) = se { self.process_expr(x, &EscCtx::Observe, false, depth); }
+                    if let Some(x) = ce { self.process_expr(x, &EscCtx::Observe, false, depth); }
+                }
+                Stmt::HSet(_, id, ke, ve) => {
+                    self.process_expr(ke, &EscCtx::Observe, false, depth);
+                    self.process_expr(ve, &EscCtx::Store(id.clone()), true, depth);
+                }
+                Stmt::HSetCaseMatch(_, _, e) => self.process_expr(e, &EscCtx::Escape("moved at hb_HSetCaseMatch"), true, depth),
+                Stmt::ArrSet(_, id, ie, e) => {
+                    self.process_expr(ie, &EscCtx::Observe, false, depth);
+                    self.process_expr(e, &EscCtx::Store(id.clone()), true, depth);
+                }
+                Stmt::ArrSet2(_, id, ie, ie2, e) => {
+                    self.process_expr(ie, &EscCtx::Observe, false, depth);
+                    self.process_expr(ie2, &EscCtx::Observe, false, depth);
+                    self.process_expr(e, &EscCtx::Store(id.clone()), true, depth);
+                }
+                Stmt::ArrSet3(_, id, ie, ie2, ie3, e) => {
+                    self.process_expr(ie, &EscCtx::Observe, false, depth);
+                    self.process_expr(ie2, &EscCtx::Observe, false, depth);
+                    self.process_expr(ie3, &EscCtx::Observe, false, depth);
+                    self.process_expr(e, &EscCtx::Store(id.clone()), true, depth);
+                }
+                Stmt::ArrSet4(_, id, ie, ie2, ie3, ie4, e) => {
+                    self.process_expr(ie, &EscCtx::Observe, false, depth);
+                    self.process_expr(ie2, &EscCtx::Observe, false, depth);
+                    self.process_expr(ie3, &EscCtx::Observe, false, depth);
+                    self.process_expr(ie4, &EscCtx::Observe, false, depth);
+                    self.process_expr(e, &EscCtx::Store(id.clone()), true, depth);
+                }
+            }
+        }
+    }
+    fn finish(mut self) -> Vec<EscEntry> {
+        // Obj values share payloads through retain, not apply_moves. The
+        // present map has no alias proof for them: never infer arena safety.
+        for v in self.scratch.clone() {
+            if matches!(v.ty, Ty::Obj(_)) {
+                self.esc(&v.name, "shared object (conservative)");
+            }
+        }
+        // Aggregate marks/annotations to the final union roots: any member's
+        // mark escapes the whole class, any member's annotation annotates it
+        // (I2 places a merged value at the outermost scope any member needs).
+        let mut root_reason: Vec<(String, String)> = Vec::new();
+        let marks = std::mem::take(&mut self.marks);
+        for (n, r) in marks {
+            let root = self.find(&n);
+            if !root_reason.iter().any(|(rr, _)| *rr == root) { root_reason.push((root, r)); }
+        }
+        // Scope annotations stay PER NAME: they describe each variable's own
+        // allocation site (I2 keys arena placement on the creating variable:
+        // a crossing value is placed in the outer zone it needs), while the
+        // ESC mark is a property of the whole merged class above.
+        let order = self.order.clone();
+        let mut out = Vec::new();
+        for n in order {
+            let root = self.find(&n);
+            let (class, reason) = match root_reason.iter().find(|(rr, _)| *rr == root) {
+                Some((_, r)) => (EscClass::Esc, r.clone()),
+                None => (EscClass::NoEsc, String::new()),
+            };
+            let ty = self.scratch.iter().find(|v| v.name == n).map(|v| v.ty);
+            let is_param = self.params.contains(&n);
+            let crosses_scope = self.crosses.contains(&n);
+            let declared_in_loop = self.loop_decl.contains(&n);
+            out.push(EscEntry { ty, is_param, name: n, class, reason, crosses_scope, declared_in_loop });
+        }
+        out
+    }
+}
+
+struct EscReport { fname: String, entries: Vec<EscEntry>, recheck_ok: bool }
+
+impl EscReport {
+    fn dump(&self) {
+        let esc = self.entries.iter().filter(|e| e.class == EscClass::Esc).count();
+        let noesc = self.entries.len() - esc;
+        eprintln!("escape {}: {} esc, {} noesc{}", self.fname, esc, noesc, if self.recheck_ok { "" } else { " (checker re-run failed: all-conservative fallback)" });
+        for e in &self.entries {
+            let ty = match e.ty { Some(t) => format!("{:?}", t), None => "?".to_string() };
+            let kind = if e.is_param { "param" } else { "local" };
+            match e.class {
+                EscClass::Esc => eprintln!("  {} {} {} -> ESC ({})", kind, e.name, ty, e.reason),
+                EscClass::NoEsc => eprintln!("  {} {} {} -> NOESC{}{}", kind, e.name, ty,
+                    if e.crosses_scope { " [crosses-scope]" } else { "" },
+                    if e.declared_in_loop { " [loop-local]" } else { "" }),
+            }
+        }
+    }
+}
+
+// The pass entry point. Re-checks each function once against a cloned
+// signature table to obtain the checker's OWN converged environment (final
+// types per local; zero type replay), then walks the statements. A re-check
+// of a converged program cannot fail; on the impossible error the function
+// conservatively reports every known variable ESC.
+fn escape_analysis(
+    funcs: &[Func],
+    sigs: &[Sig],
+    byref_params: &std::collections::HashMap<String, Vec<usize>>,
+    byref_locals: &std::collections::HashMap<String, std::collections::HashSet<String>>,
+) -> Vec<EscReport> {
+    // Rechecking must not leak per-function checker context to codegen.
+    let saved_fn = CUR_FN.with(|c| c.borrow().clone());
+    let saved_method = CUR_METHOD_CLASS.with(|c| c.get());
+    let saved_num = NUM_LOCALS.with(|c| c.borrow().clone());
+    let saved_static = STATIC_DYN.with(|c| c.borrow().clone());
+    let saved_narrow = OBJ_NARROW.with(|c| c.borrow().clone());
+    let mut out = Vec::new();
+    for f in funcs {
+        CUR_METHOD_CLASS.with(|c| c.set(METHOD_CLASS.with(|m| m.borrow().get(&f.name).copied()).map(|ci| ci as i64).unwrap_or(-1)));
+        let sg = sigs.iter().find(|s| s.name == f.name);
+        let ptys: Vec<Ty> = sg.map(|s| s.params.clone()).unwrap_or_default();
+        let brp: std::collections::HashSet<usize> = byref_params.get(&f.name).cloned().unwrap_or_default().into_iter().collect();
+        let byref_names: std::collections::HashSet<String> = byref_locals.get(&f.name).cloned().unwrap_or_default();
+        set_numeric(f);
+        let mut env: Vec<Local> = Vec::new();
+        for (i, p) in f.params.iter().enumerate() {
+            env.push(Local { name: p.clone(), ty: ptys.get(i).copied().unwrap_or(Ty::Dyn), moved: false, ro: false, byref: brp.contains(&i) });
+        }
+        let mut sv: Vec<Sig> = sigs.to_vec();
+        let mut ret = None;
+        let mut ctxs: Vec<ChkCtx> = Vec::new();
+        CUR_FN.with(|c| *c.borrow_mut() = f.name.clone());
+        let ok = check_stmts(&f.stmts, &mut env, &mut sv, &mut ret, &mut ctxs, &f.dyn_names, &byref_names).is_ok();
+        if !ok { env.clear(); }
+        let mut outer_owned: std::collections::HashSet<String> = std::collections::HashSet::new();
+        if let Some(s) = sg {
+            for (i, p) in f.params.iter().enumerate() {
+                if s.borrowed.get(i).copied().unwrap_or(false) || s.aview.get(i).copied().unwrap_or(false) || brp.contains(&i) || root_param(&f.name, p) {
+                    outer_owned.insert(p.clone());
+                }
+            }
+        }
+        let mut pass = EscPass {
+            sigs,
+            scratch: env,
+            outer_owned,
+            parent: std::collections::HashMap::new(),
+            marks: Vec::new(),
+            crosses: std::collections::HashSet::new(),
+            loop_decl: std::collections::HashSet::new(),
+            decl: std::collections::HashMap::new(),
+            order: Vec::new(),
+            params: f.params.iter().cloned().collect(),
+        };
+        // Seed every known variable (params first), then the doc's always-ESC
+        // pre-marks: `@`-received parameters, persistent root parameters, and
+        // every local this function passes as `@x` anywhere (byref_locals).
+        for p in &f.params { pass.note(p); pass.decl.insert(p.clone(), (0, false)); }
+        for v in pass.scratch.clone().iter() { pass.note(&v.name); pass.decl.entry(v.name.clone()).or_insert((0, false)); }
+        for (i, p) in f.params.iter().enumerate() {
+            if brp.contains(&i) { pass.esc(p, "by-reference parameter (`@`-received)"); }
+            if root_param(&f.name, p) { pass.esc(p, "persistent root parameter"); }
+        }
+        for v in &byref_names { pass.esc(v, "passed by reference (`@`)"); }
+        if !ok {
+            for n in pass.order.clone() { pass.esc(&n, "conservative fallback"); }
+        }
+        pass.walk(&f.stmts, 0, false);
+        if !ok {
+            // Include branch/body declarations discovered by the walk too.
+            for n in pass.order.clone() { pass.esc(&n, "conservative fallback"); }
+        }
+        out.push(EscReport { fname: f.name.clone(), entries: pass.finish(), recheck_ok: ok });
+    }
+    CUR_FN.with(|c| *c.borrow_mut() = saved_fn);
+    CUR_METHOD_CLASS.with(|c| c.set(saved_method));
+    NUM_LOCALS.with(|c| *c.borrow_mut() = saved_num);
+    STATIC_DYN.with(|c| *c.borrow_mut() = saved_static);
+    OBJ_NARROW.with(|c| *c.borrow_mut() = saved_narrow);
+    out
+}
+
+
+// ---------------------------------------------------------------------------
 // Code generation: x86-64 assembly (AT&T syntax), freestanding.
 //   I64 value  -> %rax = value, %rdx = display provenance (0/1)
 //   Str value  -> %rax = ptr, %rdx = len
@@ -21687,6 +22223,7 @@ fn main() {
     let mut incdirs: Vec<String> = Vec::new();
     let mut instrument = false;
     let mut llvm = false;
+    let mut no_escape = false;
     let mut llvm_trace = true;
     let mut ai = 1;
     while ai < args.len() {
@@ -21695,6 +22232,7 @@ fn main() {
             "--target=linux" => target = Target::Linux,
             "--target=windows" => target = Target::Windows,
             "--instrument" => instrument = true,
+            "--no-escape-analysis" => no_escape = true,
             "--experimental-llvm" => llvm = true,
             "--experimental-llvm-no-trace" => {llvm = true; llvm_trace = false;},
             "-I" => { ai += 1; incdirs.push(args.get(ai).expect("-I needs a directory").clone()); }
@@ -22195,6 +22733,12 @@ fn main() {
                 process::exit(1);
             }
         }
+    }
+
+    // I1 classification only; no codegen consumer.
+    if !no_escape {
+        let reports = escape_analysis(&funcs, &sigs, &byref_params, &byref_locals);
+        if std::env::var("HBC_ESCAPE_DUMP").is_ok() { for r in &reports { r.dump(); } }
     }
 
     // Pass 2: generate x86-64 assembly from the validated AST only.

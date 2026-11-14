@@ -1,0 +1,10 @@
+escape main: 1 esc, 0 noesc
+  local o Obj(0) -> ESC (shared object (conservative))
+escape box__put: 2 esc, 0 noesc
+  param Self Obj(0) -> ESC (shared object (conservative))
+  local payload StrOwn -> ESC (stored into an object field)
+escape box__read: 1 esc, 1 noesc
+  param Self Obj(0) -> ESC (shared object (conservative))
+  local observed StrOwn -> NOESC
+escape box__new: 1 esc, 0 noesc
+  param Self Obj(0) -> ESC (shared object (conservative))
