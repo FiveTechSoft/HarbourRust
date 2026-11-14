@@ -118,3 +118,60 @@ ARM rejection. Error statuses are not yet language exceptions or trace support.
 `value-abi/README.md` documents the separate pair-call/local, reversible FP
 boundary and bounded native trace snapshot probes. These do not change this
 scalar harness's arithmetic rejection or add language exception handling.
+
+
+## Source-mapped native trace follow-up
+
+After base `f35dd50b7f458f71204f3f4e396f756f354ab3c5`, the scalar experiment
+adds native stack-local diagnostic records. x19 is its private generated top
+pointer: entry preserves the incoming x19, clears the private chain, and
+restores it on normal return. Each generated function links its own record and
+unlinks it before every return. A separate 48-byte aligned allocation leaves
+the established 4080-byte scalar local region (255 slots) unchanged. Records
+hold previous/text-pointer/text-length, not a value interpreter stack.
+
+Each checked statement records the frontend's original file/line mapping,
+including include-file origins; WHILE refreshes the parent call-site location
+on every condition evaluation. The own native trace routine walks linked
+records youngest-first without a fixed-depth snapshot array, skips empty
+locations and prints the same `Callstack:`/location byte shape as current hbc.
+It reuses the own short-write/EINTR/failure writer. Trace-only calls preserve
+nonvolatile registers and return normally; panic prints the active chain and
+exits 1. The standalone uncaught-zero helper writes the current error message,
+then prints the chain and exits 1. This is grounded in the FINALIZED current
+x86 output, not merely the pre-finalize helper assembly: finalize_trace routes
+uncaught exit-1 tails through hbc_panic_exit. A native Linux zero-divisor fixture
+provides an exact full stdout/empty-stderr/exit oracle for a matching raw ARM
+fixture, with an original-source path and line.
+
+The normal parent runner now also executes:
+
+- 141 raw native trace/error controls: depths 0,1,4,5,17,65,257, trace return,
+  panic and zero-error paths, four full/short/EINTR modes, plus no-progress,
+  oversized-return and write-failure cases where output is attempted.
+- A checked scalar source fixture observed at all 15 syscall writes: nested
+  calls, copied locals, early return, condition re-entry after a loop body,
+  caller-chain restoration, and an included line's original path/line.
+  Stdout also matches current native Linux hbc. This is scalar AST evidence,
+  not evidence that pair-numeric locals/calls are source-admitted.
+- Frame boundary controls: 255 scalar locals still run exact and 256 still
+  reject without creating output. All 23 new raw/source images pass the own
+  structural and signature-hash verifier.
+- The existing 35-source cohort in three syscall modes, 22 negative sources,
+  three flag rejections and production ARM rejection remain checked.
+
+The new observer hook in the development emulator only lets tests inspect
+registers/memory at modeled syscalls. It is not called by generated code.
+
+Still outside this boundary: runtime arithmetic, F64/NumLocal AST arguments,
+locals and returns, arbitrary numeric branch merges and print dispatch. The
+zero-error helper is tested with raw generated native fixtures; no accepted
+source expression calls it yet. No caught exception transport, description
+string/ERROR object representation, TRY/CATCH/FINALLY, unwind/cleanup protocol,
+PROCNAME/PROCLINE or general dynamic error family has been added. These remain
+explicit rejections where applicable. The private x19 convention must be
+bridged before any foreign call support. Metadata growth still meets the
+existing ADR range and 64 MiB writer limits by rejecting out-of-range images;
+no unlimited-depth/size resource guarantee is implied by linked traversal.
+All new execution evidence is instruction emulation plus own syscall models,
+not a Mac loader, Darwin kernel, Apple hardware or signing-policy verdict.

@@ -28,6 +28,12 @@ if not a.without_emulator:
  run(sys.executable,'test-runtime.py')
  run(sys.executable,'check-runtime-linux.py')
  run(sys.executable,'test-scalar-battery.py')
+ run(rustc,'--edition=2021','-O','-C','strip=symbols','trace-fixtures.rs','-o','trace-fixtures')
+ run(r/'trace-fixtures',r/'trace-fixtures-out')
+ run(sys.executable,'test-trace-runtime.py')
+ run(sys.executable,'test-ast-trace.py')
+ for folder in ['trace-fixtures-out','ast-trace-cases']:
+  for f in (r/folder).glob('*.arm'):run(sys.executable,'check_reference.py',f)
  for f in (r/'scalar-battery').glob('*.arm'):run(sys.executable,'check_reference.py',f)
  # Independent parser is optional; it is not used by generation or our verifier.
  try:from macholib.MachO import MachO

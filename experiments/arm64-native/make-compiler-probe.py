@@ -8,7 +8,7 @@ src=Path(sys.argv[1])/'src';dest=r/'probe-src';dest.mkdir(exist_ok=True)
 shutil.copytree(src.parent/'generated',r/'generated',dirs_exist_ok=True)
 for f in src.iterdir():
  if f.is_file():shutil.copy2(f,dest/f.name)
-for name in ['arm64-ast-probe.rs','arm64-code.rs','arm64-runtime.rs','arm64-writer.rs','sha256-prototype.rs']:
+for name in ['arm64-ast-probe.rs','arm64-code.rs','arm64-runtime.rs','arm64-trace.rs','arm64-writer.rs','sha256-prototype.rs']:
  shutil.copy2(r/name,dest/name)
 s=(dest/'hbc.rs').read_text();s='// THROWAWAY ARM64 RESEARCH HARNESS. Not production hbc.\n#[path="arm64-ast-probe.rs"]mod arm_probe;\n'+s
 needle='    if macho_arm64 { eprintln!("error: Mach-O ARM64 code generation is not implemented yet; --target=macho selects Intel x86-64, not native ARM64"); process::exit(1); }'

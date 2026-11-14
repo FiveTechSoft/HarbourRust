@@ -4,7 +4,7 @@ from pathlib import Path
 # Optional development packages are imported normally from PYTHONPATH/venv.
 from unicorn import Uc,UC_ARCH_ARM64,UC_MODE_ARM,UC_HOOK_INTR,UC_HOOK_CODE
 from unicorn.arm64_const import *
-def execute(path,short=None,interrupt=False,failure=False,fault=None):
+def execute(path,short=None,interrupt=False,failure=False,fault=None,observer=None):
  b=Path(path).read_bytes();u=Uc(UC_ARCH_ARM64,UC_MODE_ARM)
  base=0x100000000;page=0x4000;u.mem_map(base,(len(b)+page-1)&-page);u.mem_write(base,b)
  stack=0x200000000;u.mem_map(stack,0x100000);initialsp=stack+0x100000-16;u.reg_write(UC_ARM64_REG_SP,initialsp)
@@ -31,6 +31,7 @@ def execute(path,short=None,interrupt=False,failure=False,fault=None):
   pc=uc.reg_read(UC_ARM64_REG_PC);assert bytes(uc.mem_read(pc-4,4))==bytes.fromhex('011000d4')
   n=uc.reg_read(UC_ARM64_REG_X16);args=[uc.reg_read(UC_ARM64_REG_X0+i)for i in range(3)];calls.append([n,*args])
   assert uc.reg_read(UC_ARM64_REG_SP)%16==0
+  if observer is not None: observer(uc,n,args)
   nzcv=uc.reg_read(UC_ARM64_REG_NZCV)&~(1<<29)
   if n==4:
    fd,ptr,length=args;assert fd==1

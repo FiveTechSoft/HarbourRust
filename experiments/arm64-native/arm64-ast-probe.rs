@@ -7,6 +7,8 @@ use super::*;
 mod code;
 #[path = "arm64-runtime.rs"]
 mod runtime;
+#[path = "arm64-trace.rs"]
+mod trace;
 #[path = "arm64-writer.rs"]
 mod writer;
 use code::Code;
@@ -29,6 +31,7 @@ struct E<'a> {
     slot: u16,
     seq: usize,
     loops: Vec<(String, String)>,
+    fname: String,
 }
 fn kind(t: Ty) -> Result<K, String> {
     match t {
@@ -199,9 +202,19 @@ impl E<'_> {
             )),
         }
     }
+    fn location(&mut self, s: &Stmt) -> Result<(), String> {
+        let line = stmt_line(s);
+        let (path, original) = TRACE_ORIGINS
+            .with(|m| m.borrow().get(line.saturating_sub(1)).cloned())
+            .unwrap_or_else(|| ("<unknown>".to_string(), line));
+        let text = format!("  at {} ({}:{})\n", self.fname, path, original);
+        let label = self.label();
+        trace::location(&mut self.c, &label, &text)
+    }
     fn block(&mut self, ss: &[Stmt]) -> Result<(), String> {
         let old = self.env.len();
         for s in ss {
+            self.location(s)?;
             match s {
                 Stmt::Local(_, n, e) => {
                     let k = self.expr(e)?;
@@ -286,6 +299,7 @@ impl E<'_> {
                     let start = self.label();
                     let end = self.label();
                     self.c.label(&start)?;
+                    self.location(s)?;
                     self.cond(e)?;
                     self.c.bc(&end, 0)?;
                     self.loops.push((start.clone(), end.clone()));
@@ -317,6 +331,7 @@ impl E<'_> {
                             }
                         }
                     }
+                    trace::unlink(&mut self.c)?;
                     self.c.epilogue()?;
                 }
                 Stmt::CallStmt(_, e) => {
@@ -341,13 +356,17 @@ pub fn emit(funcs: &[Func], sigs: &[Sig]) -> Result<Vec<u8>, String> {
         slot: 0,
         seq: 0,
         loops: vec![],
+        fname: String::new(),
     };
     if !funcs.iter().any(|f| f.name == "main") {
         return Err("ARM64 experiment: main missing".into());
     }
-    e.c.prologue(0)?;
+    e.c.prologue(32)?;
+    e.c.ldst(19, 31, 0, false)?;
+    e.c.mov(19, 0)?;
     e.c.b("fn_main", true);
     e.c.mov(0, 0)?;
+    e.c.ldst(19, 31, 0, true)?;
     e.c.epilogue()?;
     for f in funcs {
         if f.init || !f.dyn_names.is_empty() {
@@ -377,6 +396,10 @@ pub fn emit(funcs: &[Func], sigs: &[Sig]) -> Result<Vec<u8>, String> {
         e.c.prologue(4080)?;
         e.env.clear();
         e.slot = 0;
+        e.fname = f.name.clone();
+        // Separate 48-byte trace storage preserves the existing 4080-byte local limit.
+        e.c.imm(31, 31, 48, true, false)?;
+        trace::link_at_sp(&mut e.c)?;
         for (i, (n, t)) in f.params.iter().zip(&sig.params).enumerate() {
             let k = kind(*t)?;
             e.slot += 16;
@@ -390,9 +413,11 @@ pub fn emit(funcs: &[Func], sigs: &[Sig]) -> Result<Vec<u8>, String> {
         }
         e.block(&f.stmts)?;
         e.c.mov(0, 0)?;
+        trace::unlink(&mut e.c)?;
         e.c.epilogue()?;
     }
     runtime::emit(&mut e.c)?;
+    trace::emit(&mut e.c)?;
     let (code, data) = e.c.finish()?;
     writer::from_code(&code, &data, 0, "hbc-arm64-scalar-experiment")
 }
