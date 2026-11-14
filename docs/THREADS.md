@@ -59,11 +59,58 @@ hb_threadWaitForAll()                 // block until every worker finishes
   registry is process-global).
 - `hb_memcheck` counters are approximate while threads run.
 
+## F2: mutexes
+
+`hb_mutexCreate()` returns a Dyn PTR handle (tag 14, Harbour ValType
+"P"), the same representation as a thread handle. The runtime is a
+MutexBlock in the same clone(2)+futex family as F1 (own design;
+Harbour's GPL implementation never consulted): a lock-word (cmpxchg +
+futex), the owner ThreadBlock pointer, a recursion count, a FIFO notify
+queue, an event word, a broadcast generation+value and an internal
+spinlock.
+
+- `hb_mutexLock(m [, timeoutSecs])` -> logical: .T. acquired, .F.
+  timeout (mt09). Recursive per thread (mt03).
+- `hb_mutexUnlock(m)` -> logical .T. (mt02). Unlocking a mutex the
+  calling thread does not own is a runtime error: stderr message and
+  the offending thread dies (main survives) via the F1 panic route.
+- `hb_mutexEval(m, {|| ...})`: lock, evaluate, unlock; the result is
+  the codeblock's return (mt10/mt11).
+- `hb_mutexNotify(m [, v])` -> NIL: the value is ENQUEUED even with
+  zero subscribers; a later subscribe consumes it FIFO, exactly once
+  (mt06/mt12/mt14); notify wakes exactly ONE waiting subscriber (mt07).
+- `hb_mutexNotifyAll(m [, v])` -> NIL: broadcast - every subscriber
+  waiting RIGHT NOW wakes and EACH receives the value (mt08); nothing
+  is queued for later subscribers (mt13).
+- `hb_mutexSubscribe(m, timeoutSecs, @val)` -> logical: on success @val
+  receives the delivered value; on timeout @val is untouched
+  (mt13/mt14).
+
+Declared F2 limits:
+- `hb_mutexEval` admits only zero-argument codeblocks with an integer
+  return (Harbour accepts any arguments and any return type).
+- `hb_mutexSubscribe` requires an explicit numeric timeout: Harbour's
+  omitted-argument form `hb_mutexSubscribe(m, , @val)` is not in the
+  grammar. `@val` must be a dynamic variable (same rule as
+  hb_threadJoin's `@result`).
+- Notify values are scalars, strings or objects (no floats, dates,
+  arrays, hashes or codeblocks), marshaled like hb_threadStart
+  arguments (strings deep-copied, objects retained).
+- MutexBlocks, unconsumed notify nodes and the stored broadcast value
+  are reclaimed at process exit only (same allocator contract as F1
+  thread handles).
+- A thread that dies holding a mutex leaves it locked (no robust
+  mutexes; Harbour's mutexes are not robust either).
+- A failed `hb_mutexLock`/`hb_mutexSubscribe` timeout restarts on a
+  spurious wake instead of recomputing the remaining time.
+- `hb_mutexQueueInfo` and `hb_mutexSubscribeNow` are not in F2.
+
 ## Not yet (later increments)
 
-Mutexes (`hb_mutex*`), notify/subscribe, `hb_threadOnce`, per-thread
-MEMVARs and Set(_SET_*) (Harbour copies Set from the creator at start),
-per-thread workareas for DBF, `hb_threadID`, `hb_threadIsMain`.
+`hb_threadOnce`, per-thread MEMVARs and Set(_SET_*) (Harbour copies
+Set from the creator at start), per-thread workareas for DBF,
+`hb_threadID`, `hb_threadIsMain`, `hb_mutexQueueInfo`,
+`hb_mutexSubscribeNow`.
 
 ## Object runtime under threads
 
@@ -78,6 +125,7 @@ performance cost of the thread support is a structural 0.0%).
 
 ## Evidence
 
-`tests/threads/` runs the 10-probe same-source differential gate against
+`tests/threads/` runs the 24-probe same-source differential gate against
 real Harbour (`hbmk2 -mt`): every probe compiles under both, runs under
-both, and stdout+stderr compare byte for byte.
+both, and stdout+stderr compare byte for byte (10 F1 thread probes +
+14 F2 mutex probes).

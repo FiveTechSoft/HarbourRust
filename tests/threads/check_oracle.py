@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Linux threads differential gate (F1). Requires an external real Harbour hbmk2.
+"""Linux threads differential gate (F1 threads, F2 mutexes). Requires an external real Harbour hbmk2.
 Every probe is compiled by real Harbour (with -mt) and by HarbourRust from the
 same source; both executables run and their stdout/stderr are compared byte for
 byte. Probes are written so Harbour itself is deterministic: a thread's output
@@ -12,7 +12,11 @@ import argparse, subprocess, sys, tempfile
 
 POSITIVE = ["th01b_start_join", "th03b_args", "th04b_wait", "th05b_join_ret",
     "th11b_wait_to", "th12b_detach", "th18b_exitwait", "th25b_objreturn",
-    "th27b_ptrcmp", "th28b_join2"]
+    "th27b_ptrcmp", "th28b_join2",
+    "mt01_type", "mt02_lockret", "mt03_recursive", "mt04_race_fixed",
+    "mt05_notify_val", "mt06_notify_none", "mt07_notify_one", "mt08_notifyall",
+    "mt09_lock_to", "mt10_muteval", "mt11_evalret", "mt12_notify_fifo",
+    "mt13_notifyall_late", "mt14_notify_consumed_once"]
 
 def run(cmd, cwd, label, timeout=120):
     p = subprocess.run([str(v) for v in cmd], cwd=cwd, capture_output=True, timeout=timeout)
